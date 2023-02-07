@@ -1,14 +1,8 @@
-> **NOTE:** It is a general template that can be used for a project README.md, example README.md, or any other README.md type in all Kyma repositories in the Kyma organization. Not all the sections are mandatory. Use only those that suit your use case but keep the proposed section order.
+# Telemetry Manager
 
-# {Project Title} (mandatory)
+## Overview
 
-> Modify the title and insert the name of your project. Use Heading 1 (H1).
-
-## Overview (mandatory)
-
-> Provide a description of the project's functionality.
->
-> If it is an example README.md, describe what the example illustrates.
+Telemetry Manager is a module compatible with [Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager) that allow you to add [Telemetry Components](https://kyma-project.io/docs/kyma/latest/01-overview/main-areas/telemetry/) to the Kyma ecosystem.
 
 ## Prerequisites
 
