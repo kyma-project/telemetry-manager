@@ -1,0 +1,1 @@
+module "telemetry-manager"
