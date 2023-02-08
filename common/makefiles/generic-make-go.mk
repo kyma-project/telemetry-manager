@@ -194,7 +194,7 @@ vet-local:
 # Forcing build failing:
 # override IGNORE_LINTING_ISSUES = 
 lint: ## Run various linters
-	$(IGNORE_LINTING_ISSUES)SKIP_VERIFY="true" ADDITIONAL_LINTERS=$(ADDITIONAL_LINTERS) ../../hack/verify-lint.sh $(COMPONENT_DIR) 
+	$(IGNORE_LINTING_ISSUES)SKIP_VERIFY="true" ADDITIONAL_LINTERS=$(ADDITIONAL_LINTERS) hack/verify-lint.sh $(COMPONENT_DIR)
 
 generate-local: ## Run code generation
 	go generate ./...
