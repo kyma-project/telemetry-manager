@@ -2,7 +2,7 @@
 APP_NAME = telemetry-operator
 APP_PATH = components/$(APP_NAME)
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:v20220428-6e81d2c4
-SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/common/makefiles
+SCRIPTS_DIR = $(realpath $(shell pwd))/common/makefiles
 PROJECT_DIR := $(shell pwd)
 OS := $(shell uname)
 
