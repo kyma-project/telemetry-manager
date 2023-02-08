@@ -6,6 +6,11 @@ import (
 	"github.com/kyma-project/kyma/components/telemetry-operator/apis/telemetry/v1alpha1"
 )
 
+const (
+	basicAuthHeaderVariable = "BASIC_AUTH_HEADER"
+	otlpEndpointVariable    = "OTLP_ENDPOINT"
+)
+
 type TLSConfig struct {
 	Insecure bool `yaml:"insecure"`
 }
