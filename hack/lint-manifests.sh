@@ -3,7 +3,7 @@
 readonly OPERATOR_DIR=$1
 readonly CONTROLLER_GEN=$2
 readonly CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-readonly ROOT_PATH="$( cd "${CURRENT_DIR}/../../../" && pwd )"
+readonly ROOT_PATH="$( cd "${CURRENT_DIR}/../" && pwd )"
 
 TMP_DIR=$(mktemp -d)
 

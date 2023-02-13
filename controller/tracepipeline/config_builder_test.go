@@ -18,7 +18,7 @@ var (
 		},
 	}
 
-	tracePipelineHttp = v1alpha1.TracePipelineOutput{
+	tracePipelineHTTP = v1alpha1.TracePipelineOutput{
 		Otlp: &v1alpha1.OtlpOutput{
 			Protocol: "http",
 			Endpoint: v1alpha1.ValueType{
@@ -111,7 +111,7 @@ func TestMakeCollectorConfigSecure(t *testing.T) {
 }
 
 func TestMakeCollectorConfigSecureHttp(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipelineHttp, false)
+	collectorConfig := makeOtelCollectorConfig(tracePipelineHTTP, false)
 	require.False(t, collectorConfig.Exporters.OTLPHTTP.TLS.Insecure)
 }
 
@@ -121,7 +121,7 @@ func TestMakeCollectorConfigInsecure(t *testing.T) {
 }
 
 func TestMakeCollectorConfigInsecureHttp(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipelineHttp, true)
+	collectorConfig := makeOtelCollectorConfig(tracePipelineHTTP, true)
 	require.True(t, collectorConfig.Exporters.OTLPHTTP.TLS.Insecure)
 }
 
