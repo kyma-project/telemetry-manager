@@ -2,3 +2,6 @@
 
 # All files and subdirectories in /docs
 /docs/ @mmitoraj @NHingerl @grego952 @IwonaLanger @nataliasitko
+
+# All .md files
+*.md @mmitoraj @NHingerl @grego952 @IwonaLanger @nataliasitko
