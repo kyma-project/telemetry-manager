@@ -5,7 +5,7 @@
 Telemetry Manager is a module compatible with [Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager) that allow you to add [Telemetry Components](https://kyma-project.io/docs/kyma/latest/01-overview/main-areas/telemetry/) to the Kyma ecosystem.
 
 ## Prerequisites
-
+a
 > List the requirements to run the project or example.
 
 ## Installation
