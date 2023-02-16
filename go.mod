@@ -1,4 +1,4 @@
-module github.com/kyma-project/kyma/components/telemetry-operator
+module github.com/kyma-project/telemetry-manager
 
 go 1.19
 
@@ -6,6 +6,7 @@ require (
 	github.com/go-logr/zapr v1.2.3
 	github.com/google/uuid v1.3.0
 	github.com/kyma-project/kyma/common/logging v0.0.0-20221208072023-1c1502074930
+	github.com/kyma-project/kyma/components/telemetry-operator v0.0.0-20230215162639-6af1bb3e5327
 	github.com/onsi/ginkgo/v2 v2.1.6
 	github.com/onsi/gomega v1.20.1
 	github.com/prometheus/client_golang v1.13.0
@@ -45,7 +46,6 @@ require (
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
