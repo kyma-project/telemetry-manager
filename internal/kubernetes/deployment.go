@@ -39,7 +39,7 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 	}
 
 	replicaSet := getLatestReplicaSet(&d, &allReplicaSets)
-	if  replicaSet == nil {
+	if replicaSet == nil {
 		return false, fmt.Errorf("failed to get latest ReplicaSet")
 	}
 
@@ -47,7 +47,7 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 	return isReady, nil
 }
 
-func getLatestReplicaSet(deployment *v1.Deployment, allReplicaSets *v1.ReplicaSetList) (*v1.ReplicaSet) {
+func getLatestReplicaSet(deployment *v1.Deployment, allReplicaSets *v1.ReplicaSetList) *v1.ReplicaSet {
 	var ownedReplicaSets []*v1.ReplicaSet
 	for i := range allReplicaSets.Items {
 		if metav1.IsControlledBy(&allReplicaSets.Items[i], deployment) {
