@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-project/kyma/components/telemetry-operator/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 )

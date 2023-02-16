@@ -4,6 +4,8 @@ IMG ?= controller:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.1
 
+PROJECT_DIR ?= $(shell pwd)
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -32,6 +34,16 @@ all: build
 # https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_parameters
 # More info on the awk command:
 # http://linuxcommand.org/lc3_adv_awk.php
+
+tls.key:
+	@openssl genrsa -out tls.key 4096
+
+tls.crt: tls.key
+	@openssl req -sha256 -new -key tls.key -out tls.csr -subj '/CN=localhost'
+	@openssl x509 -req -sha256 -days 3650 -in tls.csr -signkey tls.key -out tls.crt
+	@rm tls.csr
+
+gen-webhook-cert: tls.key tls.crt
 
 .PHONY: help
 help: ## Display this help.
@@ -71,7 +83,7 @@ build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
 
 .PHONY: run
-run: manifests generate fmt vet ## Run a controller from your host.
+run: gen-webhook-cert manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
