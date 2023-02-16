@@ -38,16 +38,16 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 		return false, fmt.Errorf("failed to get %s/%s ReplicaSet for deployment: %v", name.Namespace, name.Name, err)
 	}
 
-	replicaSet, err := getLatestReplicaSet(&d, &allReplicaSets)
-	if err != nil || replicaSet == nil {
-		return false, fmt.Errorf("failed to get latest ReplicaSet: %v", err)
+	replicaSet := getLatestReplicaSet(&d, &allReplicaSets)
+	if  replicaSet == nil {
+		return false, fmt.Errorf("failed to get latest ReplicaSet")
 	}
 
 	isReady := replicaSet.Status.ReadyReplicas >= desiredReplicas
 	return isReady, nil
 }
 
-func getLatestReplicaSet(deployment *v1.Deployment, allReplicaSets *v1.ReplicaSetList) (*v1.ReplicaSet, error) {
+func getLatestReplicaSet(deployment *v1.Deployment, allReplicaSets *v1.ReplicaSetList) (*v1.ReplicaSet) {
 	var ownedReplicaSets []*v1.ReplicaSet
 	for i := range allReplicaSets.Items {
 		if metav1.IsControlledBy(&allReplicaSets.Items[i], deployment) {
@@ -56,10 +56,10 @@ func getLatestReplicaSet(deployment *v1.Deployment, allReplicaSets *v1.ReplicaSe
 	}
 
 	if len(ownedReplicaSets) == 0 {
-		return nil, nil
+		return nil
 	}
 
-	return findNewReplicaSet(deployment, ownedReplicaSets), nil
+	return findNewReplicaSet(deployment, ownedReplicaSets)
 }
 
 // findNewReplicaSet returns the new RS this given deployment targets (the one with the same pod template).
