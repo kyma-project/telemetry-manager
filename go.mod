@@ -1,4 +1,4 @@
-module github.com/kyma-project/telemetry-manager
+module github.com/kyma-project/kyma/components/telemetry-operator
 
 go 1.19
 
