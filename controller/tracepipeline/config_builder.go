@@ -2,14 +2,9 @@ package tracepipeline
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/kyma-project/kyma/components/telemetry-operator/apis/telemetry/v1alpha1"
-)
-
-const (
-	basicAuthHeaderVariable = "BASIC_AUTH_HEADER"
-	otlpEndpointVariable    = "OTLP_ENDPOINT"
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
 type TLSConfig struct {
@@ -175,7 +170,7 @@ func makeHeaders(output v1alpha1.TracePipelineOutput) map[string]string {
 		headers["Authorization"] = fmt.Sprintf("${%s}", basicAuthHeaderVariable)
 	}
 	for _, header := range output.Otlp.Headers {
-		headers[header.Name] = fmt.Sprintf("${HEADER_%s}", MakeEnvVarCompliant(header.Name))
+		headers[header.Name] = fmt.Sprintf("${HEADER_%s}", envvar.MakeEnvVarCompliant(header.Name))
 	}
 	return headers
 }
@@ -347,12 +342,4 @@ func makeOtelCollectorConfig(output v1alpha1.TracePipelineOutput, isInsecureOutp
 		Extensions: extensionConfig,
 		Service:    serviceConfig,
 	}
-}
-
-func MakeEnvVarCompliant(input string) string {
-	result := input
-	result = strings.ToUpper(result)
-	result = strings.Replace(result, ".", "_", -1)
-	result = strings.Replace(result, "-", "_", -1)
-	return result
 }
