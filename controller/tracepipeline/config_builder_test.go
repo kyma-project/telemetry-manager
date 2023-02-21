@@ -262,8 +262,10 @@ func TestCollectorConfigMarshalling(t *testing.T) {
   opencensus: {}
   otlp:
     protocols:
-      grpc: {}
-      http: {}
+      grpc:
+        endpoint: ${MY_POD_IP}:4318
+      http:
+        endpoint: ${MY_POD_IP}:4317
 exporters:
   otlp:
     endpoint: ${OTLP_ENDPOINT}
