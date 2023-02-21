@@ -117,7 +117,7 @@ var (
 )
 
 const (
-	otelImage              = "eu.gcr.io/kyma-project/tpi/otel-collector:0.70.0-723b551a"
+	otelImage              = "eu.gcr.io/kyma-project/tpi/otel-collector:0.71.0-372fcb3b"
 	overrideConfigMapName  = "telemetry-override-config"
 	fluentBitImage         = "eu.gcr.io/kyma-project/tpi/fluent-bit:2.0.9-f89e8b78"
 	fluentBitExporterImage = "eu.gcr.io/kyma-project/directory-size-exporter:v20221020-e314a071"
