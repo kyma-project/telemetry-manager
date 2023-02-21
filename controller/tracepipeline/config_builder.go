@@ -154,8 +154,12 @@ func makeReceiverConfig() ReceiverConfig {
 		OpenCensus: map[string]any{},
 		OTLP: OTLP{
 			Protocols: map[string]any{
-				"http": map[string]any{},
-				"grpc": map[string]any{},
+				"http": map[string]any{
+					"endpoint": "${MY_POD_IP}:4317",
+				},
+				"grpc": map[string]any{
+					"endpoint": "${MY_POD_IP}:4318",
+				},
 			},
 		},
 	}
