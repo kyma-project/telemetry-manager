@@ -182,7 +182,7 @@ func TestMakeServiceConfig(t *testing.T) {
 	require.Contains(t, serviceConfig.Pipelines.Traces.Exporters, "otlp")
 	require.Contains(t, serviceConfig.Pipelines.Traces.Exporters, "logging")
 
-	require.Equal(t, "0.0.0.0:8888", serviceConfig.Telemetry.Metrics.Address)
+	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
 	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
 	require.Contains(t, serviceConfig.Extensions, "health_check")
 }
@@ -376,7 +376,7 @@ service:
       - logging
   telemetry:
     metrics:
-      address: 0.0.0.0:8888
+      address: ${MY_POD_IP}:8888
     logs:
       level: info
   extensions:
