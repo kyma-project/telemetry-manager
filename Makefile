@@ -76,6 +76,7 @@ vet: ## Run go vet against code.
 tidy: ## Check if there any dirty change for go mod tidy.
 	go mod tidy
 	git diff --exit-code go.mod
+	git diff --exit-code go.sum
 
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
