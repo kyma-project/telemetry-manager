@@ -79,17 +79,17 @@ tidy: ## Check if there any dirty change for go mod tidy.
 	git diff --exit-code go.sum
 
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
+test: manifests generate fmt vet tidy envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet ## Build manager binary.
+build: generate fmt vet tidy ## Build manager binary.
 	go build -o bin/manager main.go
 
 .PHONY: run
-run: gen-webhook-cert manifests generate fmt vet ## Run a controller from your host.
+run: gen-webhook-cert manifests generate fmt vet tidy ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
