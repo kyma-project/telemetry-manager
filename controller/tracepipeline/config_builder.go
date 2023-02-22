@@ -151,7 +151,9 @@ type OTELCollectorConfig struct {
 
 func makeReceiverConfig() ReceiverConfig {
 	return ReceiverConfig{
-		OpenCensus: map[string]any{},
+		OpenCensus: map[string]any{
+			"endpoint": "${MY_POD_IP}:55678",
+		},
 		OTLP: OTLP{
 			Protocols: map[string]any{
 				"http": map[string]any{
