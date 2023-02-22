@@ -160,9 +160,7 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 func TestMakeReceiverConfig(t *testing.T) {
 	receiverConfig := makeReceiverConfig()
 	protocols := receiverConfig.OTLP.Protocols
-	existing := protocols != nil
 
-	require.True(t, existing)
 	require.Contains(t, protocols, "http")
 	require.Contains(t, protocols, "grpc")
 }
