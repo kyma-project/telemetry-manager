@@ -17,12 +17,10 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"errors"
 	"flag"
-	"fmt"
-	v1 "k8s.io/api/admissionregistration/v1"
-	"k8s.io/client-go/util/cert"
+	"github.com/kyma-project/telemetry-manager/internal/setup"
+	"k8s.io/client-go/rest"
 	"net/http"
 	"os"
 	"path"
@@ -175,7 +173,7 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=apps,namespace=kyma-system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch
 
-//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;update;
+//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=create;get;update;
 
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
@@ -271,6 +269,24 @@ func main() {
 		}
 	}()
 
+	certificate, key, err := setup.GenerateCert(webhookServiceName, telemetryNamespace)
+	if err != nil {
+		setupLog.Error(err, "failed to generate certificate")
+		os.Exit(1)
+	}
+
+	err = os.WriteFile(path.Join(certDir, "tls.crt"), certificate, 0600)
+	if err != nil {
+		setupLog.Error(err, "failed to write tls.crt")
+		os.Exit(1)
+	}
+
+	err = os.WriteFile(path.Join(certDir, "tls.key"), key, 0600)
+	if err != nil {
+		setupLog.Error(err, "failed to write tls.key")
+		os.Exit(1)
+	}
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		SyncPeriod:             &syncPeriod,
 		Scheme:                 scheme,
@@ -283,11 +299,6 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "Failed to start manager")
-		os.Exit(1)
-	}
-
-	if err = patchValidatingWebhookConfigs(mgr.GetClient()); err != nil {
-		setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
 		os.Exit(1)
 	}
 
@@ -326,6 +337,15 @@ func main() {
 	if err := mgr.AddReadyzCheck("readyz", mgr.GetWebhookServer().StartedChecker()); err != nil {
 		setupLog.Error(err, "Failed to set up ready check")
 		os.Exit(1)
+	}
+
+	if webhookEnabled {
+		webhookConfig, err := createWebhookConfig(mgr.GetConfig(), certificate)
+		if err = setup.EnsureValidatingWebhookConfig(webhookConfig); err != nil {
+			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
+			os.Exit(1)
+		}
+		setupLog.Info("Updated ValidatingWebhookConfiguration")
 	}
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -368,8 +388,35 @@ func validateFlags() error {
 	return nil
 }
 
-func createLogPipelineReconciler(client client.Client) *logpipelinecontroller.Reconciler {
+func createWebhookConfig(config *rest.Config, certificate []byte) (*setup.WebhookConfig, error) {
+	// Create own client since manager might not be started while using
+	clientOptions := client.Options{
+		Scheme: scheme,
+	}
+	k8sClient, err := client.New(config, clientOptions)
+	if err != nil {
+		return nil, err
+	}
 
+	return &setup.WebhookConfig{
+		Client: k8sClient,
+		Name:   "validation.webhook.telemetry.kyma-project.io",
+		Service: types.NamespacedName{
+			Name:      "telemetry-operator-webhook",
+			Namespace: telemetryNamespace,
+		},
+		Certificate: certificate,
+		Timeout:     15,
+		Labels: map[string]string{
+			"control-plane":              "telemetry-operator",
+			"app.kubernetes.io/instance": "telemetry",
+			"app.kubernetes.io/name":     "operator",
+			"kyma-project.io/component":  "controller",
+		},
+	}, nil
+}
+
+func createLogPipelineReconciler(client client.Client) *logpipelinecontroller.Reconciler {
 	config := logpipelinecontroller.Config{
 		SectionsConfigMap: types.NamespacedName{Name: fluentBitSectionsConfigMap, Namespace: telemetryNamespace},
 		FilesConfigMap:    types.NamespacedName{Name: fluentBitFilesConfigMap, Namespace: telemetryNamespace},
@@ -464,58 +511,4 @@ func createPipelineDefaults() builder.PipelineDefaults {
 
 func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
-}
-
-func patchValidatingWebhookConfigs(client client.Client) error {
-	ctx := context.Background()
-
-	certificate, key, err := generateCert(webhookServiceName, telemetryNamespace)
-	if err != nil {
-		return fmt.Errorf("failed to generate certificate: %w", err)
-	}
-
-	err = os.WriteFile(path.Join(certDir, "tls.crt"), certificate, 0600)
-	if err != nil {
-		return fmt.Errorf("failed to write tls.crt: %w", err)
-	}
-
-	err = os.WriteFile(path.Join(certDir, "tls.key"), key, 0600)
-	if err != nil {
-		return fmt.Errorf("failed to write tls.key: %w", err)
-	}
-
-	// Certificates have to be generated even without patching the webhook to start the webserver
-	if !webhookEnabled {
-		return nil
-	}
-
-	var webhookConfig v1.ValidatingWebhookConfiguration
-	webhookKey := types.NamespacedName{
-		Name: webhookName,
-	}
-	err = client.Get(ctx, webhookKey, &webhookConfig)
-	if err != nil {
-		return fmt.Errorf("failed to fetch ValidatingWebhookConfiguration: %w", err)
-	}
-
-	for i := range webhookConfig.Webhooks {
-		webhookConfig.Webhooks[i].ClientConfig.CABundle = certificate
-	}
-
-	err = client.Update(ctx, &webhookConfig)
-	if err != nil {
-		return fmt.Errorf("failed to update ValidatingWebhookConfiguration: %w", err)
-	}
-
-	return nil
-}
-
-func generateCert(serviceName, namespace string) ([]byte, []byte, error) {
-	cn := fmt.Sprintf("%s.%s.svc", serviceName, namespace)
-	names := []string{
-		serviceName,
-		fmt.Sprintf("%s.%s", serviceName, namespace),
-		fmt.Sprintf("%s.cluster.local", cn),
-	}
-	return cert.GenerateSelfSignedCertKey(cn, nil, names)
 }
