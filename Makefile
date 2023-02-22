@@ -54,7 +54,9 @@ lint-manifests: controller-gen
 	hack/lint-manifests.sh $(PROJECT_DIR) $(CONTROLLER_GEN)
 
 lint: lint-manifests
-	hack/verify-lint.sh .
+	go version
+	golangci-lint version
+	GO111MODULE=on golangci-lint run
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.

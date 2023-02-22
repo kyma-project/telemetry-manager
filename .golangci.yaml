@@ -1,0 +1,27 @@
+run:
+  modules-download-mode: readonly
+issues:
+  exclude:
+    # Check this issue for more info: https://github.com/kyoh86/scopelint/issues/4
+    - Using the variable on range scope `tc` in function literal
+    - Using the variable on range scope `tt` in function literal
+linters:
+  disable-all: true
+  enable:
+    - deadcode
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unused
+    - varcheck
+    - revive
+    - gofmt
+    - misspell
+    - gochecknoinits
+    - unparam
+    - exportloopref
+    - gosec
