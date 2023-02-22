@@ -286,13 +286,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = patchValidatingWebhookConfigs(mgr.GetClient()); err != nil {
+		setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
+		os.Exit(1)
+	}
+
 	if enableLogging {
 		setupLog.Info("Starting with logging controllers")
-
-		if err = patchValidatingWebhookConfigs(mgr.GetClient()); err != nil {
-			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
-			os.Exit(1)
-		}
 
 		mgr.GetWebhookServer().Register("/validate-logpipeline", &k8sWebhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
 		mgr.GetWebhookServer().Register("/validate-logparser", &k8sWebhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
@@ -332,7 +332,6 @@ func main() {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
 	}
-
 }
 
 func validateFlags() error {
