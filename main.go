@@ -341,6 +341,11 @@ func main() {
 
 	if webhookEnabled {
 		webhookConfig, err := createWebhookConfig(mgr.GetConfig(), certificate)
+		if err != nil {
+			setupLog.Error(err, "Failed to create webhook config")
+			os.Exit(1)
+		}
+
 		if err = setup.EnsureValidatingWebhookConfig(webhookConfig); err != nil {
 			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
 			os.Exit(1)
