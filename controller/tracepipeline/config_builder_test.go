@@ -259,7 +259,8 @@ func TestFilterProcessor(t *testing.T) {
 
 func TestCollectorConfigMarshalling(t *testing.T) {
 	expected := `receivers:
-  opencensus: {}
+  opencensus:
+    endpoint: ${MY_POD_IP}:55678
   otlp:
     protocols:
       grpc:
@@ -360,7 +361,8 @@ processors:
         and (attributes["OperationName"] == "Egress") and (resource.attributes["service.name"]
         == "telemetry-fluent-bit.kyma-system")
 extensions:
-  health_check: {}
+  health_check:
+    endpoint: ${MY_POD_IP}:13133
 service:
   pipelines:
     traces:
