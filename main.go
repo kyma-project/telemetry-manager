@@ -17,10 +17,15 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
+	"fmt"
+	v1 "k8s.io/api/admissionregistration/v1"
+	"k8s.io/client-go/util/cert"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -115,6 +120,10 @@ var (
 	fluentBitExporterVersion           string
 	fluentBitConfigPrepperImageVersion string
 	fluentBitPriorityClassName         string
+
+	webhookName        string
+	webhookServiceName string
+	webhookEnabled     bool
 )
 
 const (
@@ -219,6 +228,10 @@ func main() {
 	flag.StringVar(&deniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
 	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
 
+	flag.BoolVar(&webhookEnabled, "validating-webhook-enabled", false, "Enable patching CA bindle for validating webhook")
+	flag.StringVar(&webhookServiceName, "validating-webhook-service-name", "telemetry-operator-webhook", "Common name of service")
+	flag.StringVar(&webhookName, "validating-webhook", "validation.webhook.telemetry.kyma-project.io", "Name of validating webhook config to set CA bundle")
+
 	flag.Parse()
 	if err := validateFlags(); err != nil {
 		setupLog.Error(err, "Invalid flag provided")
@@ -275,6 +288,12 @@ func main() {
 
 	if enableLogging {
 		setupLog.Info("Starting with logging controllers")
+
+		if err = patchValidatingWebhookConfigs(mgr.GetClient()); err != nil {
+			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
+			os.Exit(1)
+		}
+
 		mgr.GetWebhookServer().Register("/validate-logpipeline", &k8sWebhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
 		mgr.GetWebhookServer().Register("/validate-logparser", &k8sWebhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
 
@@ -446,4 +465,58 @@ func createPipelineDefaults() builder.PipelineDefaults {
 
 func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
+}
+
+func patchValidatingWebhookConfigs(client client.Client) error {
+	ctx := context.Background()
+
+	certificate, key, err := generateCert(webhookServiceName, telemetryNamespace)
+	if err != nil {
+		return fmt.Errorf("failed to generate certificate: %w", err)
+	}
+
+	err = os.WriteFile(path.Join(certDir, "tls.crt"), certificate, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to write tls.crt: %w", err)
+	}
+
+	err = os.WriteFile(path.Join(certDir, "tls.key"), key, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to write tls.key: %w", err)
+	}
+
+	// Certificates have to be generated even without patching the webhook to start the webserver
+	if !webhookEnabled {
+		return nil
+	}
+
+	var webhookConfig v1.ValidatingWebhookConfiguration
+	webhookKey := types.NamespacedName{
+		Name: webhookName,
+	}
+	err = client.Get(ctx, webhookKey, &webhookConfig)
+	if err != nil {
+		return fmt.Errorf("failed to fetch ValidatingWebhookConfiguration: %w", err)
+	}
+
+	for i := range webhookConfig.Webhooks {
+		webhookConfig.Webhooks[i].ClientConfig.CABundle = certificate
+	}
+
+	err = client.Update(ctx, &webhookConfig)
+	if err != nil {
+		return fmt.Errorf("failed to update ValidatingWebhookConfiguration: %w", err)
+	}
+
+	return nil
+}
+
+func generateCert(serviceName, namespace string) ([]byte, []byte, error) {
+	cn := fmt.Sprintf("%s.%s.svc", serviceName, namespace)
+	names := []string{
+		serviceName,
+		fmt.Sprintf("%s.%s", serviceName, namespace),
+		fmt.Sprintf("%s.cluster.local", cn),
+	}
+	return cert.GenerateSelfSignedCertKey(cn, nil, names)
 }
