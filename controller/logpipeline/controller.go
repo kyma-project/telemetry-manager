@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
+	"strconv"
 )
 
 type Config struct {
@@ -61,6 +62,7 @@ type Reconciler struct {
 	prober                  DaemonSetProber
 	allLogPipelines         prometheus.Gauge
 	unsupportedLogPipelines prometheus.Gauge
+	fsBufferLimit           prometheus.Gauge
 	syncer                  syncer
 	globalConfig            overrides.GlobalConfigHandler
 }
@@ -72,7 +74,8 @@ func NewReconciler(client client.Client, config Config, prober DaemonSetProber, 
 	r.prober = prober
 	r.allLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_all_logpipelines", Help: "Number of log pipelines."})
 	r.unsupportedLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_unsupported_logpipelines", Help: "Number of log pipelines with custom filters or outputs."})
-	metrics.Registry.MustRegister(r.allLogPipelines, r.unsupportedLogPipelines)
+	r.fsBufferLimit = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_fulentbit_fs_buffer_limit", Help: "Fluent Bit filesystem buffer limit per log pipeline."})
+	metrics.Registry.MustRegister(r.allLogPipelines, r.unsupportedLogPipelines, r.fsBufferLimit)
 	r.syncer = syncer{client, config}
 	r.globalConfig = handler
 
@@ -210,12 +213,18 @@ func (r *Reconciler) isLastPipelineMarkedForDeletion(ctx context.Context, pipeli
 
 func (r *Reconciler) updateMetrics(ctx context.Context) error {
 	var allPipelines telemetryv1alpha1.LogPipelineList
-	if err := r.List(ctx, &allPipelines); err != nil {
+	var err error
+	if err = r.List(ctx, &allPipelines); err != nil {
 		return err
 	}
 
 	r.allLogPipelines.Set(float64(count(&allPipelines, isNotMarkedForDeletion)))
 	r.unsupportedLogPipelines.Set(float64(count(&allPipelines, isUnsupported)))
+	var fsBufferLimit float64
+	if fsBufferLimit, err = strconv.ParseFloat(r.config.PipelineDefaults.FsBufferLimit, 64); err != nil {
+		return err
+	}
+	r.fsBufferLimit.Set(fsBufferLimit)
 
 	return nil
 }
