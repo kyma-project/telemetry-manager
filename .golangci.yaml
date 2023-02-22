@@ -9,16 +9,16 @@ linters:
   disable-all: true
   enable:
     - errcheck
+    - exportloopref
+    - gochecknoinits
+    - gofmt
+    - gosec
     - gosimple
     - govet
     - ineffassign
+    - misspell
+    - revive
     - staticcheck
     - typecheck
-    - unused
-    - revive
-    - gofmt
-    - misspell
-    - gochecknoinits
     - unparam
-    - exportloopref
-    - gosec
+    - unused
