@@ -168,7 +168,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				scanner := bufio.NewScanner(resp.Body)
 				for scanner.Scan() {
 					line := scanner.Text()
-					if strings.Contains(line, "telemetry_all_logpipelines") || strings.Contains(line, "telemetry_unsupported_logpipelines") || strings.Contains(line, "telemetry_fluentbit_fs_buffer_limit") {
+					if strings.Contains(line, "telemetry_all_logpipelines") || strings.Contains(line, "telemetry_unsupported_logpipelines") {
 						return true
 					}
 				}
