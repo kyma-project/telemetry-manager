@@ -1,7 +1,7 @@
 * @kyma-project/observability
 
 # All files and subdirectories in /docs
-/docs/ @mmitoraj @NHingerl @grego952 @IwonaLanger @nataliasitko
+/docs/ @kyma-project/technical-writers
 
 # All .md files
-*.md @mmitoraj @NHingerl @grego952 @IwonaLanger @nataliasitko
+*.md @kyma-project/technical-writers
