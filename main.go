@@ -20,7 +20,6 @@ import (
 	"errors"
 	"flag"
 	"github.com/kyma-project/telemetry-manager/internal/setup"
-	"k8s.io/client-go/rest"
 	"net/http"
 	"os"
 	"path"
@@ -119,7 +118,6 @@ var (
 	fluentBitConfigPrepperImageVersion string
 	fluentBitPriorityClassName         string
 
-	webhookName        string
 	webhookServiceName string
 	webhookEnabled     bool
 )
@@ -228,7 +226,6 @@ func main() {
 
 	flag.BoolVar(&webhookEnabled, "validating-webhook-enabled", false, "Enable patching CA bindle for validating webhook")
 	flag.StringVar(&webhookServiceName, "validating-webhook-service-name", "telemetry-operator-webhook", "Common name of service")
-	flag.StringVar(&webhookName, "validating-webhook", "validation.webhook.telemetry.kyma-project.io", "Name of validating webhook config to set CA bundle")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -340,13 +337,22 @@ func main() {
 	}
 
 	if webhookEnabled {
-		webhookConfig, err := createWebhookConfig(mgr.GetConfig(), certificate)
+		// Create own client since manager might not be started while using
+		clientOptions := client.Options{
+			Scheme: scheme,
+		}
+		k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
 		if err != nil {
-			setupLog.Error(err, "Failed to create webhook config")
+			setupLog.Error(err, "Failed to create client")
 			os.Exit(1)
 		}
 
-		if err = setup.EnsureValidatingWebhookConfig(webhookConfig); err != nil {
+		webhookService := types.NamespacedName{
+			Name:      webhookServiceName,
+			Namespace: telemetryNamespace,
+		}
+
+		if err = setup.EnsureValidatingWebhookConfig(k8sClient, webhookService, certificate); err != nil {
 			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
 			os.Exit(1)
 		}
@@ -391,34 +397,6 @@ func validateFlags() error {
 		return errors.New("--fluent-bit-storage-type has to be either filesystem or memory")
 	}
 	return nil
-}
-
-func createWebhookConfig(config *rest.Config, certificate []byte) (*setup.WebhookConfig, error) {
-	// Create own client since manager might not be started while using
-	clientOptions := client.Options{
-		Scheme: scheme,
-	}
-	k8sClient, err := client.New(config, clientOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	return &setup.WebhookConfig{
-		Client: k8sClient,
-		Name:   "validation.webhook.telemetry.kyma-project.io",
-		Service: types.NamespacedName{
-			Name:      "telemetry-operator-webhook",
-			Namespace: telemetryNamespace,
-		},
-		Certificate: certificate,
-		Timeout:     15,
-		Labels: map[string]string{
-			"control-plane":              "telemetry-operator",
-			"app.kubernetes.io/instance": "telemetry",
-			"app.kubernetes.io/name":     "operator",
-			"kyma-project.io/component":  "controller",
-		},
-	}, nil
 }
 
 func createLogPipelineReconciler(client client.Client) *logpipelinecontroller.Reconciler {

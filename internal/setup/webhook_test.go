@@ -11,49 +11,50 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 )
 
+var (
+	webhookService = types.NamespacedName{
+		Name:      "telemetry-operator-webhook",
+		Namespace: "kyma-system",
+	}
+	name   = "validation.webhook.telemetry.kyma-project.io"
+	labels = map[string]string{
+		"control-plane":              "telemetry-operator",
+		"app.kubernetes.io/instance": "telemetry",
+		"app.kubernetes.io/name":     "operator",
+		"kyma-project.io/component":  "controller",
+	}
+)
+
 func TestEnsureValidatingWebhookConfig(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
-	config := &WebhookConfig{
-		Client: client,
-		Name:   "validation.webhook.telemetry.kyma-project.io",
-		Service: types.NamespacedName{
-			Name:      "telemetry-operator-webhook",
-			Namespace: "kyma-system",
-		},
-		Certificate: []byte("123"),
-		Timeout:     15,
-		Labels: map[string]string{
-			"asdf": "123",
-		},
-	}
 
-	err := EnsureValidatingWebhookConfig(config)
+	err := EnsureValidatingWebhookConfig(client, webhookService, []byte("123"))
 	require.NoError(t, err)
 
 	var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 	key := types.NamespacedName{
-		Name: config.Name,
+		Name: name,
 	}
 
 	err = client.Get(context.Background(), key, &validatingWebhookConfiguration)
 	require.NoError(t, err)
 
-	require.Equal(t, config.Name, validatingWebhookConfiguration.Name)
-	require.Equal(t, config.Labels, validatingWebhookConfiguration.Labels)
+	require.Equal(t, name, validatingWebhookConfiguration.Name)
+	require.Equal(t, labels, validatingWebhookConfiguration.Labels)
 
 	require.Equal(t, 2, len(validatingWebhookConfiguration.Webhooks))
 
-	require.Equal(t, config.Timeout, *validatingWebhookConfiguration.Webhooks[0].TimeoutSeconds)
-	require.Equal(t, config.Timeout, *validatingWebhookConfiguration.Webhooks[1].TimeoutSeconds)
+	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[0].TimeoutSeconds)
+	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[1].TimeoutSeconds)
 
-	require.Equal(t, config.Certificate, validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
-	require.Equal(t, config.Certificate, validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	require.Equal(t, []byte("123"), validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
+	require.Equal(t, []byte("123"), validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
 
-	require.Equal(t, config.Service.Name, validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Name)
-	require.Equal(t, config.Service.Name, validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Name)
+	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Name)
+	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Name)
 
-	require.Equal(t, config.Service.Namespace, validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Namespace)
-	require.Equal(t, config.Service.Namespace, validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Namespace)
+	require.Equal(t, webhookService.Namespace, validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Namespace)
+	require.Equal(t, webhookService.Namespace, validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Namespace)
 
 	require.Equal(t, int32(443), *validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Port)
 	require.Equal(t, int32(443), *validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Port)
@@ -73,10 +74,6 @@ func TestEnsureValidatingWebhookConfig(t *testing.T) {
 }
 
 func TestUpdateWebhookCertificate(t *testing.T) {
-	name := "validation.webhook.telemetry.kyma-project.io"
-	namespace := "kyma-system"
-	serviceName := "telemetry-operator-webhook"
-	labels := map[string]string{"asdf": "123"}
 	logPipelinePath := "/validate-logpipeline"
 	logParserPath := "/validate-logparser"
 	failurePolicy := admissionregistrationv1.Fail
@@ -105,8 +102,8 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 				AdmissionReviewVersions: []string{"v1beta1", "v1"},
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      serviceName,
-						Namespace: namespace,
+						Name:      webhookService.Name,
+						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
 						Path:      &logPipelinePath,
 					},
@@ -133,8 +130,8 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 				AdmissionReviewVersions: []string{"v1beta1", "v1"},
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      serviceName,
-						Namespace: namespace,
+						Name:      webhookService.Name,
+						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
 						Path:      &logParserPath,
 					},
@@ -161,26 +158,13 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 	}
 	client := fake.NewClientBuilder().WithObjects(initialValidatingWebhookConfiguration).Build()
 	newCertificate := []byte("asdf")
-	config := &WebhookConfig{
-		Client: client,
-		Name:   "validation.webhook.telemetry.kyma-project.io",
-		Service: types.NamespacedName{
-			Name:      "telemetry-operator-webhook",
-			Namespace: "kyma-system",
-		},
-		Certificate: newCertificate,
-		Timeout:     15,
-		Labels: map[string]string{
-			"asdf": "123",
-		},
-	}
 
-	err := EnsureValidatingWebhookConfig(config)
+	err := EnsureValidatingWebhookConfig(client, webhookService, newCertificate)
 	require.NoError(t, err)
 
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 	key := types.NamespacedName{
-		Name: config.Name,
+		Name: name,
 	}
 
 	err = client.Get(context.Background(), key, &updatedValidatingWebhookConfiguration)

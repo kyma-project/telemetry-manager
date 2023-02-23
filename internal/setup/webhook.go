@@ -10,15 +10,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type WebhookConfig struct {
-	Client      client.Client
-	Name        string
-	Service     types.NamespacedName
-	Labels      map[string]string
-	Timeout     int32
-	Certificate []byte
-}
-
 func GenerateCert(serviceName, namespace string) ([]byte, []byte, error) {
 	cn := fmt.Sprintf("%s.%s.svc", serviceName, namespace)
 	names := []string{
@@ -29,8 +20,8 @@ func GenerateCert(serviceName, namespace string) ([]byte, []byte, error) {
 	return cert.GenerateSelfSignedCertKey(cn, nil, names)
 }
 
-func EnsureValidatingWebhookConfig(webhookConfig *WebhookConfig) error {
+func EnsureValidatingWebhookConfig(client client.Client, webhookService types.NamespacedName, certificate []byte) error {
 	ctx := context.Background()
-	validatingWebhookConfig := webhook.MakeValidatingWebhookConfig(webhookConfig.Name, webhookConfig.Service, webhookConfig.Labels, webhookConfig.Certificate, webhookConfig.Timeout)
-	return kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, webhookConfig.Client, &validatingWebhookConfig)
+	validatingWebhookConfig := webhook.MakeValidatingWebhookConfig(certificate, webhookService)
+	return kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, client, &validatingWebhookConfig)
 }

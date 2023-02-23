@@ -6,7 +6,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func MakeValidatingWebhookConfig(name string, service types.NamespacedName, labels map[string]string, certificate []byte, timeout int32) admissionregistrationv1.ValidatingWebhookConfiguration {
+func MakeValidatingWebhookConfig(certificate []byte, webhookService types.NamespacedName) admissionregistrationv1.ValidatingWebhookConfiguration {
+	webhookName := "validation.webhook.telemetry.kyma-project.io"
 	logPipelinePath := "/validate-logpipeline"
 	logParserPath := "/validate-logparser"
 	failurePolicy := admissionregistrationv1.Fail
@@ -20,11 +21,18 @@ func MakeValidatingWebhookConfig(name string, service types.NamespacedName, labe
 	apiVersions := []string{"v1alpha1"}
 	scope := admissionregistrationv1.AllScopes
 	servicePort := int32(443)
+	timeout := int32(15)
+	labels := map[string]string{
+		"control-plane":              "telemetry-operator",
+		"app.kubernetes.io/instance": "telemetry",
+		"app.kubernetes.io/name":     "operator",
+		"kyma-project.io/component":  "controller",
+	}
 
 	return admissionregistrationv1.ValidatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
+			Name:   webhookName,
 			Labels: labels,
 		},
 		Webhooks: []admissionregistrationv1.ValidatingWebhook{
@@ -32,8 +40,8 @@ func MakeValidatingWebhookConfig(name string, service types.NamespacedName, labe
 				AdmissionReviewVersions: []string{"v1beta1", "v1"},
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      service.Name,
-						Namespace: service.Namespace,
+						Name:      webhookService.Name,
+						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
 						Path:      &logPipelinePath,
 					},
@@ -60,8 +68,8 @@ func MakeValidatingWebhookConfig(name string, service types.NamespacedName, labe
 				AdmissionReviewVersions: []string{"v1beta1", "v1"},
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      service.Name,
-						Namespace: service.Namespace,
+						Name:      webhookService.Name,
+						Namespace: webhookService.Namespace,
 						Port:      &servicePort,
 						Path:      &logParserPath,
 					},
