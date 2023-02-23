@@ -58,6 +58,7 @@ rules:
   resources:
   - validatingwebhookconfigurations
   verbs:
+  - create
   - get
   - update
 - apiGroups:
