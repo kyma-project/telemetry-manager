@@ -119,7 +119,7 @@ var (
 	fluentBitPriorityClassName         string
 
 	webhookServiceName string
-	webhookEnabled     bool
+	enableWebhook      bool
 )
 
 const (
@@ -224,8 +224,8 @@ func main() {
 	flag.StringVar(&deniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
 	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
 
-	flag.BoolVar(&webhookEnabled, "validating-webhook-enabled", false, "Enable patching CA bindle for validating webhook")
-	flag.StringVar(&webhookServiceName, "validating-webhook-service-name", "telemetry-operator-webhook", "Common name of service")
+	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
+	flag.StringVar(&webhookServiceName, "validating-webhook-service-name", "telemetry-operator-webhook", "Validating webhook service name.")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -336,7 +336,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if webhookEnabled {
+	if enableWebhook {
 		// Create own client since manager might not be started while using
 		clientOptions := client.Options{
 			Scheme: scheme,
