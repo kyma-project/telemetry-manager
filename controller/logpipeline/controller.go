@@ -74,7 +74,7 @@ func NewReconciler(client client.Client, config Config, prober DaemonSetProber, 
 	r.prober = prober
 	r.allLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_all_logpipelines", Help: "Number of log pipelines."})
 	r.unsupportedLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_unsupported_logpipelines", Help: "Number of log pipelines with custom filters or outputs."})
-	r.fsBufferLimit = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_fulentbit_fs_buffer_limit", Help: "Fluent Bit filesystem buffer limit per log pipeline."})
+	r.fsBufferLimit = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_fluentbit_fs_buffer_limit", Help: "Fluent Bit filesystem buffer limit per log pipeline."})
 	metrics.Registry.MustRegister(r.allLogPipelines, r.unsupportedLogPipelines, r.fsBufferLimit)
 	r.syncer = syncer{client, config}
 	r.globalConfig = handler
