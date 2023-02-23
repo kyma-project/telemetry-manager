@@ -58,9 +58,13 @@ type OTLPReceiverConfig struct {
 	Protocols map[string]any `yaml:"protocols,omitempty"`
 }
 
+type OpenCensusReceiverConfig struct {
+	Endpoint string `yaml:"endpoint,omitempty"`
+}
+
 type ReceiverConfig struct {
-	OpenCensus map[string]any     `yaml:"opencensus"`
-	OTLP       OTLPReceiverConfig `yaml:"otlp"`
+	OpenCensus OpenCensusReceiverConfig `yaml:"opencensus"`
+	OTLP       OTLPReceiverConfig       `yaml:"otlp"`
 }
 
 type BatchProcessorConfig struct {
@@ -164,8 +168,8 @@ type OTELCollectorConfig struct {
 
 func makeReceiverConfig() ReceiverConfig {
 	return ReceiverConfig{
-		OpenCensus: map[string]any{
-			"endpoint": "${MY_POD_IP}:55678",
+		OpenCensus: OpenCensusReceiverConfig{
+			Endpoint: "${MY_POD_IP}:55678",
 		},
 		OTLP: OTLPReceiverConfig{
 			Protocols: map[string]any{
