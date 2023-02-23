@@ -19,6 +19,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -235,7 +236,15 @@ func main() {
 
 	if enablePprof {
 		go func() {
-			setupLog.Error(err, "Cannot start pprof server")
+			server := &http.Server{
+				Addr:              pprofAddr,
+				ReadHeaderTimeout: 10 * time.Second,
+			}
+
+			err = server.ListenAndServe()
+			if err != nil {
+				setupLog.Error(err, "Cannot start pprof server")
+			}
 		}()
 	}
 
