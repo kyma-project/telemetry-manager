@@ -24,13 +24,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	corev1 "k8s.io/api/core/v1"
 	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,16 +69,14 @@ type DeploymentProber interface {
 type Reconciler struct {
 	client.Client
 	config           Config
-	Scheme           *runtime.Scheme
 	prober           DeploymentProber
 	overridesHandler overrides.GlobalConfigHandler
 }
 
-func NewReconciler(client client.Client, config Config, prober DeploymentProber, scheme *runtime.Scheme, handler *overrides.Handler) *Reconciler {
+func NewReconciler(client client.Client, config Config, prober DeploymentProber, handler *overrides.Handler) *Reconciler {
 	var r Reconciler
 	r.Client = client
 	r.config = config
-	r.Scheme = scheme
 	r.prober = prober
 	r.overridesHandler = handler
 	return &r
@@ -129,12 +127,38 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
+	namespacedBaseName := types.NamespacedName{
+		Name:      r.config.BaseName,
+		Namespace: r.config.Namespace,
+	}
+	serviceAccount := commonresources.MakeServiceAccount(namespacedBaseName)
+	if err = controllerutil.SetControllerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
+		return err
+	}
+	if err = utils.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
+		return fmt.Errorf("failed to create otel collector service account: %w", err)
+	}
+	clusterRole := commonresources.MakeClusterRole(namespacedBaseName)
+	if err = controllerutil.SetControllerReference(pipeline, clusterRole, r.Scheme()); err != nil {
+		return err
+	}
+	if err = utils.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
+		return fmt.Errorf("failed to create otel collector cluster role: %w", err)
+	}
+	clusterRoleBinding := commonresources.MakeClusterRoleBinding(namespacedBaseName)
+	if err = controllerutil.SetControllerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
+		return err
+	}
+	if err = utils.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
+		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
+	}
+
 	var secretData map[string][]byte
 	if secretData, err = fetchSecretData(ctx, r, pipeline.Spec.Output.Otlp); err != nil {
 		return err
 	}
 	secret := makeSecret(r.config, secretData)
-	if err = controllerutil.SetControllerReference(pipeline, secret, r.Scheme); err != nil {
+	if err = controllerutil.SetControllerReference(pipeline, secret, r.Scheme()); err != nil {
 		return err
 	}
 	if err = utils.CreateOrUpdateSecret(ctx, r.Client, secret); err != nil {
@@ -145,7 +169,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	collectorConfig := makeOtelCollectorConfig(pipeline.Spec.Output, isInsecure)
 	configMap := makeConfigMap(r.config, collectorConfig)
-	if err = controllerutil.SetControllerReference(pipeline, configMap, r.Scheme); err != nil {
+	if err = controllerutil.SetControllerReference(pipeline, configMap, r.Scheme()); err != nil {
 		return err
 	}
 	if err = utils.CreateOrUpdateConfigMap(ctx, r.Client, configMap); err != nil {
@@ -154,7 +178,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
 	deployment := makeDeployment(r.config, configHash)
-	if err = controllerutil.SetControllerReference(pipeline, deployment, r.Scheme); err != nil {
+	if err = controllerutil.SetControllerReference(pipeline, deployment, r.Scheme()); err != nil {
 		return err
 	}
 	if err = utils.CreateOrUpdateDeployment(ctx, r.Client, deployment); err != nil {
@@ -162,7 +186,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	otlpService := makeOTLPService(r.config)
-	if err = controllerutil.SetControllerReference(pipeline, otlpService, r.Scheme); err != nil {
+	if err = controllerutil.SetControllerReference(pipeline, otlpService, r.Scheme()); err != nil {
 		return err
 	}
 	if err = utils.CreateOrUpdateService(ctx, r.Client, otlpService); err != nil {
@@ -170,7 +194,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	openCensusService := makeOpenCensusService(r.config)
-	if err = controllerutil.SetControllerReference(pipeline, openCensusService, r.Scheme); err != nil {
+	if err = controllerutil.SetControllerReference(pipeline, openCensusService, r.Scheme()); err != nil {
 		return err
 	}
 	if err = utils.CreateOrUpdateService(ctx, r.Client, openCensusService); err != nil {
@@ -178,7 +202,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	metricsService := makeMetricsService(r.config)
-	if err = controllerutil.SetControllerReference(pipeline, metricsService, r.Scheme); err != nil {
+	if err = controllerutil.SetControllerReference(pipeline, metricsService, r.Scheme()); err != nil {
 		return err
 	}
 	if err = utils.CreateOrUpdateService(ctx, r.Client, metricsService); err != nil {
@@ -218,7 +242,7 @@ func (r *Reconciler) createLock(ctx context.Context, name types.NamespacedName, 
 			Namespace: name.Namespace,
 		},
 	}
-	if err := controllerutil.SetControllerReference(owner, &lock, r.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(owner, &lock, r.Scheme()); err != nil {
 		return fmt.Errorf("failed to set owner reference: %v", err)
 	}
 	if err := r.Create(ctx, &lock); err != nil {
