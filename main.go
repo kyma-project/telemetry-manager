@@ -19,7 +19,10 @@ package main
 import (
 	"errors"
 	"flag"
+	"github.com/kyma-project/telemetry-manager/internal/setup"
+	"net/http"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -114,10 +117,13 @@ var (
 	fluentBitExporterVersion           string
 	fluentBitConfigPrepperImageVersion string
 	fluentBitPriorityClassName         string
+
+	webhookServiceName string
+	enableWebhook      bool
 )
 
 const (
-	otelImage              = "eu.gcr.io/kyma-project/tpi/otel-collector:0.70.0-723b551a"
+	otelImage              = "eu.gcr.io/kyma-project/tpi/otel-collector:0.71.0-372fcb3b"
 	overrideConfigMapName  = "telemetry-override-config"
 	fluentBitImage         = "eu.gcr.io/kyma-project/tpi/fluent-bit:2.0.9-f89e8b78"
 	fluentBitExporterImage = "eu.gcr.io/kyma-project/directory-size-exporter:v20221020-e314a071"
@@ -165,7 +171,7 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=apps,namespace=kyma-system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch
 
-//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;update;
+//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=create;get;update;
 
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
@@ -213,10 +219,13 @@ func main() {
 	flag.StringVar(&fluentBitMemoryRequest, "fluent-bit-memory-request", "256Mi", "Memory request for fluent-bit")
 	flag.StringVar(&fluentBitImageVersion, "fluent-bit-image", fluentBitImage, "Image for fluent-bit")
 	flag.StringVar(&fluentBitExporterVersion, "fluent-bit-exporter-image", fluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
-	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "kyma-system-priority", "Name of the priority class of fluent bit ")
+	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
 
 	flag.StringVar(&deniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
 	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
+
+	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
+	flag.StringVar(&webhookServiceName, "validating-webhook-service-name", "telemetry-operator-webhook", "Validating webhook service name.")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -235,7 +244,15 @@ func main() {
 
 	if enablePprof {
 		go func() {
-			setupLog.Error(err, "Cannot start pprof server")
+			server := &http.Server{
+				Addr:              pprofAddr,
+				ReadHeaderTimeout: 10 * time.Second,
+			}
+
+			err = server.ListenAndServe()
+			if err != nil {
+				setupLog.Error(err, "Cannot start pprof server")
+			}
 		}()
 	}
 
@@ -248,6 +265,24 @@ func main() {
 			setupLog.Error(err, "Failed to flush logger")
 		}
 	}()
+
+	certificate, key, err := setup.GenerateCert(webhookServiceName, telemetryNamespace)
+	if err != nil {
+		setupLog.Error(err, "failed to generate certificate")
+		os.Exit(1)
+	}
+
+	err = os.WriteFile(path.Join(certDir, "tls.crt"), certificate, 0600)
+	if err != nil {
+		setupLog.Error(err, "failed to write tls.crt")
+		os.Exit(1)
+	}
+
+	err = os.WriteFile(path.Join(certDir, "tls.key"), key, 0600)
+	if err != nil {
+		setupLog.Error(err, "failed to write tls.key")
+		os.Exit(1)
+	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		SyncPeriod:             &syncPeriod,
@@ -266,6 +301,7 @@ func main() {
 
 	if enableLogging {
 		setupLog.Info("Starting with logging controllers")
+
 		mgr.GetWebhookServer().Register("/validate-logpipeline", &k8sWebhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
 		mgr.GetWebhookServer().Register("/validate-logparser", &k8sWebhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
 
@@ -300,11 +336,33 @@ func main() {
 		os.Exit(1)
 	}
 
+	if enableWebhook {
+		// Create own client since manager might not be started while using
+		clientOptions := client.Options{
+			Scheme: scheme,
+		}
+		k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
+		if err != nil {
+			setupLog.Error(err, "Failed to create client")
+			os.Exit(1)
+		}
+
+		webhookService := types.NamespacedName{
+			Name:      webhookServiceName,
+			Namespace: telemetryNamespace,
+		}
+
+		if err = setup.EnsureValidatingWebhookConfig(k8sClient, webhookService, certificate); err != nil {
+			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
+			os.Exit(1)
+		}
+		setupLog.Info("Updated ValidatingWebhookConfiguration")
+	}
+
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
 	}
-
 }
 
 func validateFlags() error {
@@ -342,7 +400,6 @@ func validateFlags() error {
 }
 
 func createLogPipelineReconciler(client client.Client) *logpipelinecontroller.Reconciler {
-
 	config := logpipelinecontroller.Config{
 		SectionsConfigMap: types.NamespacedName{Name: fluentBitSectionsConfigMap, Namespace: telemetryNamespace},
 		FilesConfigMap:    types.NamespacedName{Name: fluentBitFilesConfigMap, Namespace: telemetryNamespace},
@@ -414,7 +471,7 @@ func createTracePipelineReconciler(client client.Client) *tracepipelinereconcile
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
-	return tracepipelinereconciler.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, scheme, overrides)
+	return tracepipelinereconciler.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overrides)
 }
 
 func createDryRunConfig() dryrun.Config {

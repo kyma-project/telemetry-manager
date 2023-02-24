@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	v1 "k8s.io/api/rbac/v1"
 	"strings"
 
@@ -170,6 +171,21 @@ func CreateOrUpdateService(ctx context.Context, c client.Client, desired *corev1
 
 	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 
+	return c.Update(ctx, desired)
+}
+
+func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.Client, desired *admissionregistrationv1.ValidatingWebhookConfiguration) error {
+	var existing admissionregistrationv1.ValidatingWebhookConfiguration
+	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+
+		return c.Create(ctx, desired)
+	}
+
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 	return c.Update(ctx, desired)
 }
 
