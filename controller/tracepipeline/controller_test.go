@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -79,6 +80,48 @@ var _ = Describe("Deploying a TracePipeline", func() {
 			Expect(k8sClient.Create(ctx, kymaSystemNamespace)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, secret)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, tracePipeline)).Should(Succeed())
+
+			Eventually(func() error {
+				var serviceAccount v1.ServiceAccount
+				if err := k8sClient.Get(ctx, types.NamespacedName{
+					Name:      "telemetry-trace-collector",
+					Namespace: "kyma-system",
+				}, &serviceAccount); err != nil {
+					return err
+				}
+				if err := validateOwnerReferences(serviceAccount.OwnerReferences); err != nil {
+					return err
+				}
+				return nil
+			}, timeout, interval).Should(BeNil())
+
+			Eventually(func() error {
+				var clusterRole rbacv1.ClusterRole
+				if err := k8sClient.Get(ctx, types.NamespacedName{
+					Name:      "telemetry-trace-collector",
+					Namespace: "kyma-system",
+				}, &clusterRole); err != nil {
+					return err
+				}
+				if err := validateOwnerReferences(clusterRole.OwnerReferences); err != nil {
+					return err
+				}
+				return nil
+			}, timeout, interval).Should(BeNil())
+
+			Eventually(func() error {
+				var clusterRoleBinding rbacv1.ClusterRoleBinding
+				if err := k8sClient.Get(ctx, types.NamespacedName{
+					Name:      "telemetry-trace-collector",
+					Namespace: "kyma-system",
+				}, &clusterRoleBinding); err != nil {
+					return err
+				}
+				if err := validateOwnerReferences(clusterRoleBinding.OwnerReferences); err != nil {
+					return err
+				}
+				return nil
+			}, timeout, interval).Should(BeNil())
 
 			Eventually(func() error {
 				var otelCollectorDeployment appsv1.Deployment

@@ -109,7 +109,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: k8sClient})
 
-	reconciler := NewReconciler(mgr.GetClient(), testConfig, &kubernetes.DeploymentProber{Client: k8sClient}, scheme.Scheme, overrides)
+	reconciler := NewReconciler(mgr.GetClient(), testConfig, &kubernetes.DeploymentProber{Client: k8sClient}, overrides)
 	err = reconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
