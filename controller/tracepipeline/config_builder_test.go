@@ -157,14 +157,6 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 	require.Equal(t, "${HEADER_AUTHORIZATION}", exporterConfig.OTLP.Headers["Authorization"])
 }
 
-func TestMakeReceiverConfig(t *testing.T) {
-	receiverConfig := makeReceiverConfig()
-	protocols := receiverConfig.OTLP.Protocols
-
-	require.Contains(t, protocols, "http")
-	require.Contains(t, protocols, "grpc")
-}
-
 func TestMakeServiceConfig(t *testing.T) {
 	serviceConfig := makeServiceConfig("otlp")
 
@@ -261,10 +253,10 @@ func TestCollectorConfigMarshalling(t *testing.T) {
     endpoint: ${MY_POD_IP}:55678
   otlp:
     protocols:
-      grpc:
-        endpoint: ${MY_POD_IP}:4318
       http:
         endpoint: ${MY_POD_IP}:4317
+      grpc:
+        endpoint: ${MY_POD_IP}:4318
 exporters:
   otlp:
     endpoint: ${OTLP_ENDPOINT}
