@@ -169,15 +169,15 @@ type OTELCollectorConfig struct {
 func makeReceiverConfig() ReceiverConfig {
 	return ReceiverConfig{
 		OpenCensus: OpenCensusReceiverConfig{
-			Endpoint: "${MY_POD_IP}:55678",
+			Endpoint: "0.0.0.0:55678",
 		},
 		OTLP: OTLPReceiverConfig{
 			Protocols: ReceiverProtocols{
 				HTTP: HTTPReceiverProtocol{
-					Endpoint: "${MY_POD_IP}:4317",
+					Endpoint: "0.0.0.0:4317",
 				},
 				GRPC: GRPCReceiverProtocol{
-					Endpoint: "${MY_POD_IP}:4318",
+					Endpoint: "0.0.0.0:4318",
 				},
 			},
 		},
@@ -340,7 +340,7 @@ func makeServiceConfig(outputType string) OTLPServiceConfig {
 		},
 		Telemetry: TelemetryConfig{
 			Metrics: MetricsConfig{
-				Address: "${MY_POD_IP}:8888",
+				Address: "0.0.0.0:8888",
 			},
 			Logs: LoggingConfig{
 				Level: "info",
@@ -353,7 +353,7 @@ func makeServiceConfig(outputType string) OTLPServiceConfig {
 func makeExtensionConfig() ExtensionsConfig {
 	return ExtensionsConfig{
 		HealthCheck: map[string]any{
-			"endpoint": "${MY_POD_IP}:13133",
+			"endpoint": "0.0.0.0:13133",
 		},
 	}
 }

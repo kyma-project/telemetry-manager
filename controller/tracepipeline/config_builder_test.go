@@ -172,7 +172,7 @@ func TestMakeServiceConfig(t *testing.T) {
 	require.Contains(t, serviceConfig.Pipelines.Traces.Exporters, "otlp")
 	require.Contains(t, serviceConfig.Pipelines.Traces.Exporters, "logging")
 
-	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
+	require.Equal(t, "0.0.0.0:8888", serviceConfig.Telemetry.Metrics.Address)
 	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
 	require.Contains(t, serviceConfig.Extensions, "health_check")
 }
@@ -250,13 +250,13 @@ func TestFilterProcessor(t *testing.T) {
 func TestCollectorConfigMarshalling(t *testing.T) {
 	expected := `receivers:
   opencensus:
-    endpoint: ${MY_POD_IP}:55678
+    endpoint: 0.0.0.0:55678
   otlp:
     protocols:
       http:
-        endpoint: ${MY_POD_IP}:4317
+        endpoint: 0.0.0.0:4317
       grpc:
-        endpoint: ${MY_POD_IP}:4318
+        endpoint: 0.0.0.0:4318
 exporters:
   otlp:
     endpoint: ${OTLP_ENDPOINT}
@@ -352,7 +352,7 @@ processors:
         == "telemetry-fluent-bit.kyma-system")
 extensions:
   health_check:
-    endpoint: ${MY_POD_IP}:13133
+    endpoint: 0.0.0.0:13133
 service:
   pipelines:
     traces:
@@ -370,7 +370,7 @@ service:
       - logging
   telemetry:
     metrics:
-      address: ${MY_POD_IP}:8888
+      address: 0.0.0.0:8888
     logs:
       level: info
   extensions:
