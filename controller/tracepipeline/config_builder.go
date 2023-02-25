@@ -55,7 +55,7 @@ type ReceiverProtocols struct {
 }
 
 type OTLPReceiverConfig struct {
-	Protocols map[string]any `yaml:"protocols,omitempty"`
+	Protocols ReceiverProtocols `yaml:"protocols,omitempty"`
 }
 
 type OpenCensusReceiverConfig struct {
@@ -172,12 +172,12 @@ func makeReceiverConfig() ReceiverConfig {
 			Endpoint: "${MY_POD_IP}:55678",
 		},
 		OTLP: OTLPReceiverConfig{
-			Protocols: map[string]any{
-				"http": map[string]any{
-					"endpoint": "${MY_POD_IP}:4317",
+			Protocols: ReceiverProtocols{
+				HTTP: HTTPReceiverProtocol{
+					Endpoint: "${MY_POD_IP}:4317",
 				},
-				"grpc": map[string]any{
-					"endpoint": "${MY_POD_IP}:4318",
+				GRPC: GRPCReceiverProtocol{
+					Endpoint: "${MY_POD_IP}:4318",
 				},
 			},
 		},
