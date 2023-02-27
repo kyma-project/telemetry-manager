@@ -28,10 +28,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"regexp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
+	"strconv"
+	"strings"
 )
 
 type Config struct {
@@ -44,6 +47,11 @@ type Config struct {
 	Overrides         overrides.Config
 	DaemonSetConfig   resources.DaemonSetConfig
 }
+
+const (
+	sizeGB = 1000000000
+	sizeMB = 1000000
+)
 
 //go:generate mockery --name DaemonSetProber --filename daemon_set_prober.go
 type DaemonSetProber interface {
@@ -61,6 +69,7 @@ type Reconciler struct {
 	prober                  DaemonSetProber
 	allLogPipelines         prometheus.Gauge
 	unsupportedLogPipelines prometheus.Gauge
+	fsBufferLimit           prometheus.Gauge
 	syncer                  syncer
 	globalConfig            overrides.GlobalConfigHandler
 }
@@ -72,7 +81,8 @@ func NewReconciler(client client.Client, config Config, prober DaemonSetProber, 
 	r.prober = prober
 	r.allLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_all_logpipelines", Help: "Number of log pipelines."})
 	r.unsupportedLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_unsupported_logpipelines", Help: "Number of log pipelines with custom filters or outputs."})
-	metrics.Registry.MustRegister(r.allLogPipelines, r.unsupportedLogPipelines)
+	r.fsBufferLimit = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_fluentbit_fs_buffer_limit", Help: "Fluent Bit filesystem buffer limit per log pipeline."})
+	metrics.Registry.MustRegister(r.allLogPipelines, r.unsupportedLogPipelines, r.fsBufferLimit)
 	r.syncer = syncer{client, config}
 	r.globalConfig = handler
 
@@ -210,14 +220,42 @@ func (r *Reconciler) isLastPipelineMarkedForDeletion(ctx context.Context, pipeli
 
 func (r *Reconciler) updateMetrics(ctx context.Context) error {
 	var allPipelines telemetryv1alpha1.LogPipelineList
-	if err := r.List(ctx, &allPipelines); err != nil {
+	var err error
+	if err = r.List(ctx, &allPipelines); err != nil {
 		return err
 	}
 
 	r.allLogPipelines.Set(float64(count(&allPipelines, isNotMarkedForDeletion)))
 	r.unsupportedLogPipelines.Set(float64(count(&allPipelines, isUnsupported)))
+	var fsBufferLimit float64
+	if fsBufferLimit, err = parseFsBufferLimit(r.config.PipelineDefaults.FsBufferLimit); err != nil {
+		return err
+	}
+	r.fsBufferLimit.Set(fsBufferLimit)
 
 	return nil
+}
+
+func parseFsBufferLimit(limit string) (float64, error) {
+	extractSize := regexp.MustCompile(`(GB|G|M|MB)$`)
+	size := extractSize.FindString(strings.ToUpper(limit))[0:1]
+	extractNumber := regexp.MustCompile(`^[0-9]+`)
+	var num float64
+	var err error
+	if num, err = strconv.ParseFloat(extractNumber.FindString(limit), 64); err != nil {
+		return 0, err
+	}
+
+	if num == 0 {
+		return 0, fmt.Errorf("size cannot be zero: %v", num)
+	}
+	if size == "G" {
+		return num * sizeGB, nil
+	}
+	if size == "M" {
+		return num * sizeMB, nil
+	}
+	return 0, fmt.Errorf("size: '%s' is not known", size)
 }
 
 type keepFunc func(*telemetryv1alpha1.LogPipeline) bool

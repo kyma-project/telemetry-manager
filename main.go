@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -395,6 +396,10 @@ func validateFlags() error {
 	}
 	if fluentBitStorageType != "filesystem" && fluentBitStorageType != "memory" {
 		return errors.New("--fluent-bit-storage-type has to be either filesystem or memory")
+	}
+	dirSizeRegex := regexp.MustCompile(`^([0-9]+)(GB|G|M|MB)$`)
+	if !dirSizeRegex.MatchString(fluentBitFsBufferLimit) {
+		return errors.New("--fluent-bit-filesystem-buffer-limit has to be of form 1GB or 1G or 1MB or 1MB")
 	}
 	return nil
 }

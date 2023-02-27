@@ -168,7 +168,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				scanner := bufio.NewScanner(resp.Body)
 				for scanner.Scan() {
 					line := scanner.Text()
-					if strings.Contains(line, "telemetry_all_logpipelines") || strings.Contains(line, "telemetry_unsupported_logpipelines") {
+					if strings.Contains(line, "telemetry_all_logpipelines") || strings.Contains(line, "telemetry_unsupported_logpipelines") || (strings.Contains(line, "telemetry_fluentbit_fs_buffer_limit")) {
 						return true
 					}
 				}
@@ -205,6 +205,21 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 
 				return *mf["telemetry_unsupported_logpipelines"].Metric[0].Gauge.Value
 			}, timeout, interval).Should(Equal(1.0))
+		})
+		It("Should have the telemetry_fluentbit_fs_buffer_limit metrics set to 1G", func() {
+			Eventually(func() float64 {
+				resp, err := http.Get("http://localhost:8080/metrics")
+				if err != nil {
+					return 0
+				}
+				var parser expfmt.TextParser
+				mf, err := parser.TextToMetricFamilies(resp.Body)
+				if err != nil {
+					return 0
+				}
+
+				return *mf["telemetry_fluentbit_fs_buffer_limit"].Metric[0].Gauge.Value
+			}, timeout, interval).Should(Equal(float64(1000000000)))
 		})
 		It("Should have fluent bit config section copied to the Fluent Bit configmap", func() {
 			// Fluent Bit config section should be copied to ConfigMap
