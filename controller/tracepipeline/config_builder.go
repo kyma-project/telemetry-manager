@@ -313,7 +313,7 @@ func makeServiceConfig(outputType string) OTLPServiceConfig {
 		},
 		Telemetry: TelemetryConfig{
 			Metrics: MetricsConfig{
-				Address: "0.0.0.0:8888",
+				Address: "${MY_POD_IP}:8888",
 			},
 			Logs: LoggingConfig{
 				Level: "info",
