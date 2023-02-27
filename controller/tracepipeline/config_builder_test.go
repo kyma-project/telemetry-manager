@@ -258,11 +258,14 @@ func TestFilterProcessor(t *testing.T) {
 
 func TestCollectorConfigMarshalling(t *testing.T) {
 	expected := `receivers:
-  opencensus: {}
+  opencensus:
+    endpoint: ${MY_POD_IP}:55678
   otlp:
     protocols:
-      grpc: {}
-      http: {}
+      grpc:
+        endpoint: ${MY_POD_IP}:4318
+      http:
+        endpoint: ${MY_POD_IP}:4317
 exporters:
   otlp:
     endpoint: ${OTLP_ENDPOINT}
