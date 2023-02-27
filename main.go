@@ -19,12 +19,13 @@ package main
 import (
 	"errors"
 	"flag"
-	"github.com/kyma-project/telemetry-manager/internal/setup"
 	"net/http"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/kyma-project/telemetry-manager/internal/setup"
 
 	"github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
 
@@ -123,7 +124,7 @@ var (
 )
 
 const (
-	otelImage              = "eu.gcr.io/kyma-project/tpi/otel-collector:0.71.0-372fcb3b"
+	otelImage              = "eu.gcr.io/kyma-project/tpi/otel-collector:PR-315"
 	overrideConfigMapName  = "telemetry-override-config"
 	fluentBitImage         = "eu.gcr.io/kyma-project/tpi/fluent-bit:2.0.9-f89e8b78"
 	fluentBitExporterImage = "eu.gcr.io/kyma-project/directory-size-exporter:v20221020-e314a071"
