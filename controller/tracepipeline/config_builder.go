@@ -152,12 +152,8 @@ func makeReceiverConfig() ReceiverConfig {
 		},
 		OTLP: map[string]any{
 			"protocols": map[string]any{
-				"http": map[string]any{
-					"endpoint": "${MY_POD_IP}:4317",
-				},
-				"grpc": map[string]any{
-					"endpoint": "${MY_POD_IP}:4318",
-				},
+				"http": map[string]any{},
+				"grpc": map[string]any{},
 			},
 		},
 	}

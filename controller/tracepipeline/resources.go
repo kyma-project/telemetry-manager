@@ -13,7 +13,7 @@ import (
 
 const (
 	basicAuthHeaderVariable = "BASIC_AUTH_HEADER"
-	otlpEndpointVariable    = "OTLP_ENDPOINT"
+	otlpEndpointVariable    = "MY_POD_IP"
 	configHashAnnotationKey = "checksum/config"
 	collectorUser           = 10001
 	collectorContainerName  = "collector"

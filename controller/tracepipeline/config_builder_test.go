@@ -262,13 +262,11 @@ func TestCollectorConfigMarshalling(t *testing.T) {
     endpoint: ${MY_POD_IP}:55678
   otlp:
     protocols:
-      grpc:
-        endpoint: ${MY_POD_IP}:4318
-      http:
-        endpoint: ${MY_POD_IP}:4317
+      grpc: {}
+      http: {}
 exporters:
   otlp:
-    endpoint: ${OTLP_ENDPOINT}
+    endpoint: ${MY_POD_IP}
     tls:
       insecure: true
     sending_queue:
