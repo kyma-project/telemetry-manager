@@ -324,7 +324,11 @@ func makeServiceConfig(outputType string) OTLPServiceConfig {
 }
 
 func makeExtensionConfig() ExtensionsConfig {
-	return ExtensionsConfig{HealthCheck: map[string]any{}}
+	return ExtensionsConfig{
+		HealthCheck: map[string]any{
+			"endpoint": "${MY_POD_IP}:13133",
+		},
+	}
 }
 
 func makeOtelCollectorConfig(output v1alpha1.TracePipelineOutput, isInsecureOutput bool) OTELCollectorConfig {

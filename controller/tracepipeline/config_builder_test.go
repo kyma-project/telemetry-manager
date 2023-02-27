@@ -181,7 +181,7 @@ func TestMakeServiceConfig(t *testing.T) {
 	require.Contains(t, serviceConfig.Pipelines.Traces.Exporters, "otlp")
 	require.Contains(t, serviceConfig.Pipelines.Traces.Exporters, "logging")
 
-	require.Equal(t, "0.0.0.0:8888", serviceConfig.Telemetry.Metrics.Address)
+	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
 	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
 	require.Contains(t, serviceConfig.Extensions, "health_check")
 }
@@ -357,7 +357,8 @@ processors:
         and (attributes["OperationName"] == "Egress") and (resource.attributes["service.name"]
         == "telemetry-fluent-bit.kyma-system")
 extensions:
-  health_check: {}
+  health_check:
+    endpoint: ${MY_POD_IP}:13133
 service:
   pipelines:
     traces:
@@ -375,7 +376,7 @@ service:
       - logging
   telemetry:
     metrics:
-      address: 0.0.0.0:8888
+      address: ${MY_POD_IP}:8888
     logs:
       level: info
   extensions:
