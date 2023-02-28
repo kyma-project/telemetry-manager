@@ -41,30 +41,22 @@ type ExporterConfig struct {
 	Logging  LoggingExporterConfig `yaml:"logging,omitempty"`
 }
 
-type HTTPReceiverProtocol struct {
-	Endpoint string `yaml:"endpoint,omitempty"`
-}
-
-type GRPCReceiverProtocol struct {
+type ReceiverEndpointConfig struct {
 	Endpoint string `yaml:"endpoint,omitempty"`
 }
 
 type ReceiverProtocols struct {
-	HTTP HTTPReceiverProtocol `yaml:"http,omitempty"`
-	GRPC GRPCReceiverProtocol `yaml:"grpc,omitempty"`
+	HTTP ReceiverEndpointConfig `yaml:"http,omitempty"`
+	GRPC ReceiverEndpointConfig `yaml:"grpc,omitempty"`
 }
 
 type OTLPReceiverConfig struct {
 	Protocols ReceiverProtocols `yaml:"protocols,omitempty"`
 }
 
-type OpenCensusReceiverConfig struct {
-	Endpoint string `yaml:"endpoint,omitempty"`
-}
-
 type ReceiverConfig struct {
-	OpenCensus OpenCensusReceiverConfig `yaml:"opencensus"`
-	OTLP       OTLPReceiverConfig       `yaml:"otlp"`
+	OpenCensus ReceiverEndpointConfig `yaml:"opencensus"`
+	OTLP       OTLPReceiverConfig     `yaml:"otlp"`
 }
 
 type BatchProcessorConfig struct {
@@ -168,15 +160,15 @@ type OTELCollectorConfig struct {
 
 func makeReceiverConfig() ReceiverConfig {
 	return ReceiverConfig{
-		OpenCensus: OpenCensusReceiverConfig{
+		OpenCensus: ReceiverEndpointConfig{
 			Endpoint: "${MY_POD_IP}:55678",
 		},
 		OTLP: OTLPReceiverConfig{
 			Protocols: ReceiverProtocols{
-				HTTP: HTTPReceiverProtocol{
+				HTTP: ReceiverEndpointConfig{
 					Endpoint: "${MY_POD_IP}:4318",
 				},
-				GRPC: GRPCReceiverProtocol{
+				GRPC: ReceiverEndpointConfig{
 					Endpoint: "${MY_POD_IP}:4317",
 				},
 			},
