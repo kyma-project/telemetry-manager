@@ -11,6 +11,7 @@ linters:
   enable:
     - errcheck
     - exportloopref
+    - ginkgolinter
     - gochecknoinits
     - gofmt
     - gosec
