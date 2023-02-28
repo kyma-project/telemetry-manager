@@ -129,13 +129,13 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			var logPipelineList telemetryv1alpha1.LogPipelineList
 			err := k8sClient.List(ctx, &logPipelineList)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(len(logPipelineList.Items)).Should(Equal(0))
+			Expect(logPipelineList.Items).Should(BeEmpty())
 		})
 		It("Should not have any fluent-bit daemon set", func() {
 			var fluentBitDaemonSetList appsv1.DaemonSetList
 			err := k8sClient.List(ctx, &fluentBitDaemonSetList)
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(len(fluentBitDaemonSetList.Items)).Should(Equal(0))
+			Expect(fluentBitDaemonSetList.Items).Should(BeEmpty())
 		})
 	})
 	Context("When creating a log pipeline", Ordered, func() {
