@@ -254,9 +254,9 @@ func TestCollectorConfigMarshalling(t *testing.T) {
   otlp:
     protocols:
       http:
-        endpoint: ${MY_POD_IP}:4317
-      grpc:
         endpoint: ${MY_POD_IP}:4318
+      grpc:
+        endpoint: ${MY_POD_IP}:4317
 exporters:
   otlp:
     endpoint: ${OTLP_ENDPOINT}

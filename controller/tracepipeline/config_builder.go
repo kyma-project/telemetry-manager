@@ -174,10 +174,10 @@ func makeReceiverConfig() ReceiverConfig {
 		OTLP: OTLPReceiverConfig{
 			Protocols: ReceiverProtocols{
 				HTTP: HTTPReceiverProtocol{
-					Endpoint: "${MY_POD_IP}:4317",
+					Endpoint: "${MY_POD_IP}:4318",
 				},
 				GRPC: GRPCReceiverProtocol{
-					Endpoint: "${MY_POD_IP}:4318",
+					Endpoint: "${MY_POD_IP}:4317",
 				},
 			},
 		},
