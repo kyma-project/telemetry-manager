@@ -10,7 +10,7 @@ require (
 	github.com/onsi/gomega v1.27.1
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/common v0.40.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	go.uber.org/zap v1.24.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
