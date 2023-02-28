@@ -157,15 +157,6 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 	require.Equal(t, "${HEADER_AUTHORIZATION}", exporterConfig.OTLP.Headers["Authorization"])
 }
 
-func TestMakeReceiverConfig(t *testing.T) {
-	receiverConfig := makeReceiverConfig()
-	protocols, existing := receiverConfig.OTLP["protocols"]
-
-	require.True(t, existing)
-	require.Contains(t, protocols, "http")
-	require.Contains(t, protocols, "grpc")
-}
-
 func TestMakeServiceConfig(t *testing.T) {
 	serviceConfig := makeServiceConfig("otlp")
 
@@ -181,7 +172,7 @@ func TestMakeServiceConfig(t *testing.T) {
 	require.Contains(t, serviceConfig.Pipelines.Traces.Exporters, "otlp")
 	require.Contains(t, serviceConfig.Pipelines.Traces.Exporters, "logging")
 
-	require.Equal(t, "0.0.0.0:8888", serviceConfig.Telemetry.Metrics.Address)
+	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
 	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
 	require.Contains(t, serviceConfig.Extensions, "health_check")
 }
@@ -258,11 +249,14 @@ func TestFilterProcessor(t *testing.T) {
 
 func TestCollectorConfigMarshalling(t *testing.T) {
 	expected := `receivers:
-  opencensus: {}
+  opencensus:
+    endpoint: ${MY_POD_IP}:55678
   otlp:
     protocols:
-      grpc: {}
-      http: {}
+      http:
+        endpoint: ${MY_POD_IP}:4318
+      grpc:
+        endpoint: ${MY_POD_IP}:4317
 exporters:
   otlp:
     endpoint: ${OTLP_ENDPOINT}
@@ -357,7 +351,8 @@ processors:
         and (attributes["OperationName"] == "Egress") and (resource.attributes["service.name"]
         == "telemetry-fluent-bit.kyma-system")
 extensions:
-  health_check: {}
+  health_check:
+    endpoint: ${MY_POD_IP}:13133
 service:
   pipelines:
     traces:
@@ -375,7 +370,7 @@ service:
       - logging
   telemetry:
     metrics:
-      address: 0.0.0.0:8888
+      address: ${MY_POD_IP}:8888
     logs:
       level: info
   extensions:

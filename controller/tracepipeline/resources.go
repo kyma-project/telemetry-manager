@@ -97,6 +97,17 @@ func makeDeployment(config Config, configHash string) *appsv1.Deployment {
 									},
 								},
 							},
+							Env: []corev1.EnvVar{
+								{
+									Name: "MY_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath:  "status.podIP",
+											APIVersion: "v1",
+										},
+									},
+								},
+							},
 							Resources: resources,
 							SecurityContext: &corev1.SecurityContext{
 								Privileged:               pointer.Bool(false),

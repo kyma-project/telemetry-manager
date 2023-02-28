@@ -41,9 +41,22 @@ type ExporterConfig struct {
 	Logging  LoggingExporterConfig `yaml:"logging,omitempty"`
 }
 
+type EndpointConfig struct {
+	Endpoint string `yaml:"endpoint,omitempty"`
+}
+
+type ReceiverProtocols struct {
+	HTTP EndpointConfig `yaml:"http,omitempty"`
+	GRPC EndpointConfig `yaml:"grpc,omitempty"`
+}
+
+type OTLPReceiverConfig struct {
+	Protocols ReceiverProtocols `yaml:"protocols,omitempty"`
+}
+
 type ReceiverConfig struct {
-	OpenCensus map[string]any `yaml:"opencensus"`
-	OTLP       map[string]any `yaml:"otlp"`
+	OpenCensus EndpointConfig     `yaml:"opencensus"`
+	OTLP       OTLPReceiverConfig `yaml:"otlp"`
 }
 
 type BatchProcessorConfig struct {
@@ -134,7 +147,7 @@ type OTLPServiceConfig struct {
 }
 
 type ExtensionsConfig struct {
-	HealthCheck map[string]any `yaml:"health_check"`
+	HealthCheck EndpointConfig `yaml:"health_check"`
 }
 
 type OTELCollectorConfig struct {
@@ -147,11 +160,17 @@ type OTELCollectorConfig struct {
 
 func makeReceiverConfig() ReceiverConfig {
 	return ReceiverConfig{
-		OpenCensus: map[string]any{},
-		OTLP: map[string]any{
-			"protocols": map[string]any{
-				"http": map[string]any{},
-				"grpc": map[string]any{},
+		OpenCensus: EndpointConfig{
+			Endpoint: "${MY_POD_IP}:55678",
+		},
+		OTLP: OTLPReceiverConfig{
+			Protocols: ReceiverProtocols{
+				HTTP: EndpointConfig{
+					Endpoint: "${MY_POD_IP}:4318",
+				},
+				GRPC: EndpointConfig{
+					Endpoint: "${MY_POD_IP}:4317",
+				},
 			},
 		},
 	}
@@ -313,7 +332,7 @@ func makeServiceConfig(outputType string) OTLPServiceConfig {
 		},
 		Telemetry: TelemetryConfig{
 			Metrics: MetricsConfig{
-				Address: "0.0.0.0:8888",
+				Address: "${MY_POD_IP}:8888",
 			},
 			Logs: LoggingConfig{
 				Level: "info",
@@ -324,7 +343,11 @@ func makeServiceConfig(outputType string) OTLPServiceConfig {
 }
 
 func makeExtensionConfig() ExtensionsConfig {
-	return ExtensionsConfig{HealthCheck: map[string]any{}}
+	return ExtensionsConfig{
+		HealthCheck: EndpointConfig{
+			Endpoint: "${MY_POD_IP}:13133",
+		},
+	}
 }
 
 func makeOtelCollectorConfig(output v1alpha1.TracePipelineOutput, isInsecureOutput bool) OTELCollectorConfig {
