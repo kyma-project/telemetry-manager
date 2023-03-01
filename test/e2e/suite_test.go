@@ -6,7 +6,6 @@ import (
 	"context"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	"k8s.io/client-go/kubernetes/scheme"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -31,10 +30,11 @@ func TestE2e(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	Expect(os.Setenv("USE_EXISTING_CLUSTER", "true")).To(Succeed())
-
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-	testEnv = &envtest.Environment{}
+	useExistingCluster := true
+	testEnv = &envtest.Environment{
+		UseExistingCluster: &useExistingCluster,
+	}
 
 	_, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
@@ -56,5 +56,4 @@ var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
-	Expect(os.Unsetenv("USE_EXISTING_CLUSTER")).To(Succeed())
 })
