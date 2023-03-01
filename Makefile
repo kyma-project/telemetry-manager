@@ -74,6 +74,13 @@ tidy: ## Check if there any dirty change for go mod tidy.
 test: manifests generate fmt vet tidy envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
+.PHONY: e2e-test
+e2e-test:
+	hack/provision-test-env.sh
+	go test -tags e2e ./test/e2e
+	k3d cluster delete kyma
+	k3d registry delete k3d-kyma-registry
+
 ##@ Build
 
 .PHONY: build

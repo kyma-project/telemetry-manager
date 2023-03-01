@@ -1,0 +1,60 @@
+//go:build e2e
+
+package e2e
+
+import (
+	"context"
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
+	"k8s.io/client-go/kubernetes/scheme"
+	"os"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"testing"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+var (
+	ctx       context.Context
+	cancel    context.CancelFunc
+	k8sClient client.Client
+	testEnv   *envtest.Environment
+)
+
+func TestE2e(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "E2e Suite")
+}
+
+var _ = BeforeSuite(func() {
+	Expect(os.Setenv("USE_EXISTING_CLUSTER", "true")).To(Succeed())
+
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	testEnv = &envtest.Environment{}
+
+	_, err := testEnv.Start()
+	Expect(err).NotTo(HaveOccurred())
+	ctx, cancel = context.WithCancel(context.TODO())
+
+	By("bootstrapping test environment")
+	err = telemetryv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = apiextensions.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	k8sClient, err = client.New(testEnv.Config, client.Options{Scheme: scheme.Scheme})
+	Expect(err).NotTo(HaveOccurred())
+	Expect(k8sClient).NotTo(BeNil())
+})
+
+var _ = AfterSuite(func() {
+	cancel()
+	By("tearing down the test environment")
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
+	Expect(os.Unsetenv("USE_EXISTING_CLUSTER")).To(Succeed())
+})
