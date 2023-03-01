@@ -14,7 +14,6 @@ webhooks:
       - v1beta1
       - v1
     clientConfig:
-      caBundle: Cg==
       service:
         name: telemetry-operator-webhook
         namespace: kyma-system
@@ -37,12 +36,11 @@ webhooks:
           - logpipelines
         scope: '*'
     sideEffects: None
-    timeoutSeconds: 30
+    timeoutSeconds: 15
   - admissionReviewVersions:
       - v1beta1
       - v1
     clientConfig:
-      caBundle: Cg==
       service:
         name: telemetry-operator-webhook
         namespace: kyma-system
@@ -65,4 +63,4 @@ webhooks:
           - logparsers
         scope: '*'
     sideEffects: None
-    timeoutSeconds: 30
+    timeoutSeconds: 15
