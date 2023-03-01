@@ -4,7 +4,6 @@ package e2e
 
 import (
 	"context"
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -42,8 +41,6 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	err = telemetryv1alpha1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = apiextensions.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	k8sClient, err = client.New(testEnv.Config, client.Options{Scheme: scheme.Scheme})
