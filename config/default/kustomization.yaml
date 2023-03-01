@@ -9,10 +9,14 @@ namespace: kyma-system
 namePrefix: telemetry-
 
 # Labels to add to all resources and selectors.
-#labels:
-#- includeSelectors: true
-#  pairs:
-#    someName: someValue
+labels:
+- includeSelectors: true
+  pairs:
+    app.kubernetes.io/component: telemetry
+    app.kubernetes.io/part-of: telemetry
+    app.kubernetes.io/name: telemetry-controller-manager
+    app.kubernetes.io/instance: telemetry-controller-manager
+    app.kubernetes.io/managed-by: kustomize
 
 resources:
 - ../crd

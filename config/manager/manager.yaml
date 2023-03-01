@@ -45,16 +45,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        - --sync-period=1h
         - --cert-dir=/tmp
-        - --telemetry-namespace=kyma-system
-        - --fluent-bit-cm-name=telemetry-fluent-bit
-        - --fluent-bit-sections-cm-name=telemetry-fluent-bit-sections
-        - --fluent-bit-parser-cm-name=telemetry-fluent-bit-parsers
-        - --fluent-bit-ds-name=telemetry-fluent-bit
-        - --fluent-bit-env-secret=telemetry-fluent-bit-env
-        - --fluent-bit-files-cm=telemetry-fluent-bit-files
-        - --fluent-bit-filesystem-buffer-limit=1G
         - --fluent-bit-cpu-limit=1
         - --fluent-bit-memory-limit=1Gi
         - --fluent-bit-cpu-request=100m
@@ -62,10 +53,6 @@ spec:
         - --fluent-bit-denied-filter-plugins=kubernetes,rewrite_tag,multiline
         - --fluent-bit-denied-output-plugins=
         - --fluent-bit-max-pipelines=5
-        - --fluent-bit-image=eu.gcr.io/kyma-project/tpi/fluent-bit:2.0.9-f89e8b78
-        - --fluent-bit-exporter-image=eu.gcr.io/kyma-project/directory-size-exporter:v20230117-64505a69
-        - --enable-tracing=true
-        - --trace-collector-image=eu.gcr.io/kyma-project/tpi/otel-collector:0.71.0-372fcb3b
         - --trace-collector-cpu-limit=1
         - --trace-collector-memory-limit=1Gi
         - --trace-collector-cpu-request=25m

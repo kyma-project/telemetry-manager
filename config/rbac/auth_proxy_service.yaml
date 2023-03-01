@@ -1,14 +1,19 @@
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    control-plane: controller-manager
   name: controller-manager-metrics-service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
   namespace: system
 spec:
   ports:
-  - name: https
-    port: 8443
-    targetPort: https
+  - name: http-metrics
+    port: 8080
+    targetPort: 8080
   selector:
     control-plane: controller-manager
+    app.kubernetes.io/name: deployment
+    app.kubernetes.io/instance: controller-manager
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/managed-by: kustomize

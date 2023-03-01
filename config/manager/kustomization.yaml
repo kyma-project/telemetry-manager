@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: eu.gcr.io/kyma-project/telemetry-manager
-  newTag: v20230224-2b8fad21
+  newTag: v20230228-5c25a280
