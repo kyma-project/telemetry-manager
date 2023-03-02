@@ -140,7 +140,7 @@ const (
 
 	fluentBitConfigMap         = "telemetry-fluent-bit"
 	fluentBitSectionsConfigMap = "telemetry-fluent-bit-sections"
-	fluentBitParsersConfigMap  = "telemetry-fluent-bit-parser"
+	fluentBitParsersConfigMap  = "telemetry-fluent-bit-parsers"
 	fluentBitDaemonSet         = "telemetry-fluent-bit"
 	fluentBitEnvSecret         = "telemetry-fluent-bit-env"
 	fluentBitFilesConfigMap    = "telemetry-fluent-bit-files"
