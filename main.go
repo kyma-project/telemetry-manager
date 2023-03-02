@@ -69,46 +69,46 @@ import (
 )
 
 var (
-	certDir                string
-	deniedFilterPlugins    string
-	deniedOutputPlugins    string
-	enableLeaderElection   bool
-	enableLogging          bool
-	enableTracing          bool
-	enablePprof            bool
-	logFormat              string
-	logLevel               string
-	metricsAddr            string
-	probeAddr              string
-	pprofAddr              string
-	scheme                 = runtime.NewScheme()
-	setupLog               = ctrl.Log.WithName("setup")
-	syncPeriod             time.Duration
-	telemetryNamespace     string
+	certDir              string
+	deniedFilterPlugins  string
+	deniedOutputPlugins  string
+	enableLeaderElection bool
+	enableLogging        bool
+	enableTracing        bool
+	//enablePprof          bool
+	logFormat string
+	logLevel  string
+	//metricsAddr            string
+	//probeAddr              string
+	//pprofAddr              string
+	scheme   = runtime.NewScheme()
+	setupLog = ctrl.Log.WithName("setup")
+	//syncPeriod             time.Duration
+	//telemetryNamespace     string
 	dynamicLoglevel        = zap.NewAtomicLevel()
 	configureLogLevelOnFly *logger.LogLevel
 
-	traceCollectorBaseName        string
-	traceCollectorOTLPServiceName string
-	traceCollectorImage           string
-	traceCollectorPriorityClass   string
-	traceCollectorCPULimit        string
-	traceCollectorMemoryLimit     string
-	traceCollectorCPURequest      string
-	traceCollectorMemoryRequest   string
+	//traceCollectorBaseName        string
+	//traceCollectorOTLPServiceName string
+	traceCollectorImage         string
+	traceCollectorPriorityClass string
+	traceCollectorCPULimit      string
+	traceCollectorMemoryLimit   string
+	traceCollectorCPURequest    string
+	traceCollectorMemoryRequest string
 
-	fluentBitEnvSecret                 string
-	fluentBitFilesConfigMap            string
-	fluentBitPath                      string
-	fluentBitPluginDirectory           string
-	fluentBitInputTag                  string
-	fluentBitMemoryBufferLimit         string
-	fluentBitStorageType               string
-	fluentBitFsBufferLimit             string
-	fluentBitConfigMap                 string
-	fluentBitSectionsConfigMap         string
-	fluentBitParsersConfigMap          string
-	fluentBitDaemonSet                 string
+	//fluentBitEnvSecret         string
+	//fluentBitFilesConfigMap    string
+	//fluentBitPath              string
+	//fluentBitPluginDirectory   string
+	//fluentBitInputTag          string
+	fluentBitMemoryBufferLimit string
+	//fluentBitStorageType       string
+	fluentBitFsBufferLimit string
+	//fluentBitConfigMap                 string
+	//fluentBitSectionsConfigMap         string
+	//fluentBitParsersConfigMap          string
+	//fluentBitDaemonSet                 string
 	fluentBitCPULimit                  string
 	fluentBitMemoryLimit               string
 	fluentBitCPURequest                string
@@ -119,15 +119,36 @@ var (
 	fluentBitConfigPrepperImageVersion string
 	fluentBitPriorityClassName         string
 
-	webhookServiceName string
-	enableWebhook      bool
+	//webhookServiceName string
+	enableWebhook bool
 )
 
 const (
+	metricsAddr = "8080"
+	probeAddr   = "8081"
+	pprofAddr   = "6060"
+
 	otelImage              = "eu.gcr.io/kyma-project/tpi/otel-collector:0.72.0-734399a6"
 	overrideConfigMapName  = "telemetry-override-config"
 	fluentBitImage         = "eu.gcr.io/kyma-project/tpi/fluent-bit:2.0.9-f89e8b78"
 	fluentBitExporterImage = "eu.gcr.io/kyma-project/directory-size-exporter:v20221020-e314a071"
+
+	telemetryNamespace = "kyma-system"
+
+	traceCollectorBaseName        = "telemetry-trace-collector"
+	traceCollectorOTLPServiceName = "trace-collector-otlp-service-name"
+
+	fluentBitConfigMap         = "telemetry-fluent-bit"
+	fluentBitSectionsConfigMap = "telemetry-fluent-bit-sections"
+	fluentBitParsersConfigMap  = "telemetry-fluent-bit-parser"
+	fluentBitDaemonSet         = "telemetry-fluent-bit"
+	fluentBitEnvSecret         = "telemetry-fluent-bit-env"
+	fluentBitFilesConfigMap    = "telemetry-fluent-bit-files"
+	fluentBitPath              = "fluent-bit/bin/fluent-bit"
+	fluentBitPluginDirectory   = "fluent-bit/lib"
+	fluentBitInputTag          = "tele"
+	fluentBitStorageType       = "filesystem"
+	webhookServiceName         = "telemetry-operator-webhook"
 )
 
 //nolint:gochecknoinits
@@ -178,11 +199,11 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 
 func main() {
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.StringVar(&pprofAddr, "pprof-bind-address", ":6060", "The address the pprof endpoint binds to.")
-	flag.DurationVar(&syncPeriod, "sync-period", 1*time.Hour, "minimum frequency at which watched resources are reconciled")
-	flag.BoolVar(&enablePprof, "enable-profiling", true, "Enable pprof profiling.")
+	//flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	//flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	//flag.StringVar(&pprofAddr, "pprof-bind-address", ":6060", "The address the pprof endpoint binds to.")
+	//flag.DurationVar(&syncPeriod, "sync-period", 1*time.Hour, "minimum frequency at which watched resources are reconciled")
+	//flag.BoolVar(&enablePprof, "enable-profiling", true, "Enable pprof profiling.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	flag.BoolVar(&enableLogging, "enable-logging", true, "Enable configurable logging.")
@@ -190,10 +211,10 @@ func main() {
 	flag.StringVar(&logFormat, "log-format", getEnvOrDefault("APP_LOG_FORMAT", "text"), "Log format (json or text)")
 	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
-	flag.StringVar(&telemetryNamespace, "telemetry-namespace", "kyma-system", "Telemetry namespace")
+	//flag.StringVar(&telemetryNamespace, "telemetry-namespace", "kyma-system", "Telemetry namespace")
 
-	flag.StringVar(&traceCollectorBaseName, "trace-collector-base-name", "telemetry-trace-collector", "Default name for tracing OpenTelemetry Collector Kubernetes resources")
-	flag.StringVar(&traceCollectorOTLPServiceName, "trace-collector-otlp-service-name", "telemetry-otlp-traces", "Default name for tracing OpenTelemetry Collector Kubernetes resources")
+	//flag.StringVar(&traceCollectorBaseName, "trace-collector-base-name", "telemetry-trace-collector", "Default name for tracing OpenTelemetry Collector Kubernetes resources")
+	//flag.StringVar(&traceCollectorOTLPServiceName, "trace-collector-otlp-service-name", "telemetry-otlp-traces", "Default name for tracing OpenTelemetry Collector Kubernetes resources")
 	flag.StringVar(&traceCollectorImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorCPULimit, "trace-collector-cpu-limit", "1", "CPU limit for tracing OpenTelemetry Collector")
@@ -201,17 +222,17 @@ func main() {
 	flag.StringVar(&traceCollectorCPURequest, "trace-collector-cpu-request", "25m", "CPU request for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorMemoryRequest, "trace-collector-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
 
-	flag.StringVar(&fluentBitConfigMap, "fluent-bit-cm-name", "telemetry-fluent-bit", "ConfigMap name of Fluent Bit")
-	flag.StringVar(&fluentBitSectionsConfigMap, "fluent-bit-sections-cm-name", "telemetry-fluent-bit-sections", "ConfigMap name of Fluent Bit Sections to be written by Fluent Bit controller")
-	flag.StringVar(&fluentBitParsersConfigMap, "fluent-bit-parser-cm-name", "telemetry-fluent-bit-parsers", "ConfigMap name of Fluent Bit Parsers to be written by Fluent Bit controller")
-	flag.StringVar(&fluentBitDaemonSet, "fluent-bit-ds-name", "telemetry-fluent-bit", "DaemonSet name to be managed by Fluent Bit controller")
-	flag.StringVar(&fluentBitEnvSecret, "fluent-bit-env-secret", "telemetry-fluent-bit-env", "Secret for environment variables")
-	flag.StringVar(&fluentBitFilesConfigMap, "fluent-bit-files-cm", "telemetry-fluent-bit-files", "ConfigMap for referenced files")
-	flag.StringVar(&fluentBitPath, "fluent-bit-path", "fluent-bit/bin/fluent-bit", "Fluent Bit binary path")
-	flag.StringVar(&fluentBitPluginDirectory, "fluent-bit-plugin-directory", "fluent-bit/lib", "Fluent Bit plugin directory")
-	flag.StringVar(&fluentBitInputTag, "fluent-bit-input-tag", "tele", "Fluent Bit base tag of the input to use")
+	//flag.StringVar(&fluentBitConfigMap, "fluent-bit-cm-name", "telemetry-fluent-bit", "ConfigMap name of Fluent Bit")
+	//flag.StringVar(&fluentBitSectionsConfigMap, "fluent-bit-sections-cm-name", "telemetry-fluent-bit-sections", "ConfigMap name of Fluent Bit Sections to be written by Fluent Bit controller")
+	//flag.StringVar(&fluentBitParsersConfigMap, "fluent-bit-parser-cm-name", "telemetry-fluent-bit-parsers", "ConfigMap name of Fluent Bit Parsers to be written by Fluent Bit controller")
+	//flag.StringVar(&fluentBitDaemonSet, "fluent-bit-ds-name", "telemetry-fluent-bit", "DaemonSet name to be managed by Fluent Bit controller")
+	//flag.StringVar(&fluentBitEnvSecret, "fluent-bit-env-secret", "telemetry-fluent-bit-env", "Secret for environment variables")
+	//flag.StringVar(&fluentBitFilesConfigMap, "fluent-bit-files-cm", "telemetry-fluent-bit-files", "ConfigMap for referenced files")
+	//flag.StringVar(&fluentBitPath, "fluent-bit-path", "fluent-bit/bin/fluent-bit", "Fluent Bit binary path")
+	//flag.StringVar(&fluentBitPluginDirectory, "fluent-bit-plugin-directory", "fluent-bit/lib", "Fluent Bit plugin directory")
+	//flag.StringVar(&fluentBitInputTag, "fluent-bit-input-tag", "tele", "Fluent Bit base tag of the input to use")
 	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
-	flag.StringVar(&fluentBitStorageType, "fluent-bit-storage-type", "filesystem", "Fluent Bit buffering mechanism (filesystem or memory)")
+	//flag.StringVar(&fluentBitStorageType, "fluent-bit-storage-type", "filesystem", "Fluent Bit buffering mechanism (filesystem or memory)")
 	flag.StringVar(&fluentBitFsBufferLimit, "fluent-bit-filesystem-buffer-limit", "1G", "Fluent Bit filesystem buffer limit per log pipeline")
 	flag.StringVar(&deniedFilterPlugins, "fluent-bit-denied-filter-plugins", "", "Comma separated list of denied filter plugins even if allowUnsupportedPlugins is enabled. If empty, all filter plugins are allowed.")
 	flag.StringVar(&fluentBitCPULimit, "fluent-bit-cpu-limit", "1", "CPU limit for tracing fluent-bit")
@@ -226,7 +247,7 @@ func main() {
 	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
 
 	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
-	flag.StringVar(&webhookServiceName, "validating-webhook-service-name", "telemetry-operator-webhook", "Validating webhook service name.")
+	//flag.StringVar(&webhookServiceName, "validating-webhook-service-name", "telemetry-operator-webhook", "Validating webhook service name.")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -243,19 +264,17 @@ func main() {
 
 	ctrLogger, err := logger.New(logFormat, logLevel, dynamicLoglevel)
 
-	if enablePprof {
-		go func() {
-			server := &http.Server{
-				Addr:              pprofAddr,
-				ReadHeaderTimeout: 10 * time.Second,
-			}
+	go func() {
+		server := &http.Server{
+			Addr:              pprofAddr,
+			ReadHeaderTimeout: 10 * time.Second,
+		}
 
-			err = server.ListenAndServe()
-			if err != nil {
-				setupLog.Error(err, "Cannot start pprof server")
-			}
-		}()
-	}
+		err = server.ListenAndServe()
+		if err != nil {
+			setupLog.Error(err, "Cannot start pprof server")
+		}
+	}()
 
 	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
 	if err != nil {
@@ -284,6 +303,7 @@ func main() {
 		setupLog.Error(err, "failed to write tls.key")
 		os.Exit(1)
 	}
+	syncPeriod := 1 * time.Hour
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		SyncPeriod:             &syncPeriod,
