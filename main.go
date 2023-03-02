@@ -181,7 +181,6 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 func main() {
 	flag.BoolVar(&enableLogging, "enable-logging", true, "Enable configurable logging.")
 	flag.BoolVar(&enableTracing, "enable-tracing", true, "Enable configurable tracing.")
-	flag.StringVar(&logFormat, "log-format", getEnvOrDefault("APP_LOG_FORMAT", "text"), "Log format (json or text)")
 	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 
@@ -221,6 +220,7 @@ func main() {
 	dynamicLoglevel.SetLevel(parsedLevel)
 	configureLogLevelOnFly = logger.NewLogReconfigurer(dynamicLoglevel)
 
+	logFormat = "json"
 	ctrLogger, err := logger.New(logFormat, logLevel, dynamicLoglevel)
 
 	go func() {
