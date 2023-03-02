@@ -69,27 +69,19 @@ import (
 )
 
 var (
-	certDir              string
-	deniedFilterPlugins  string
-	deniedOutputPlugins  string
-	enableLeaderElection bool
-	enableLogging        bool
-	enableTracing        bool
-	//enablePprof          bool
-	logFormat string
-	logLevel  string
-	//metricsAddr            string
-	//probeAddr              string
-	//pprofAddr              string
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
-	//syncPeriod             time.Duration
-	//telemetryNamespace     string
+	certDir                string
+	deniedFilterPlugins    string
+	deniedOutputPlugins    string
+	enableLeaderElection   bool
+	enableLogging          bool
+	enableTracing          bool
+	logFormat              string
+	logLevel               string
+	scheme                 = runtime.NewScheme()
+	setupLog               = ctrl.Log.WithName("setup")
 	dynamicLoglevel        = zap.NewAtomicLevel()
 	configureLogLevelOnFly *logger.LogLevel
 
-	//traceCollectorBaseName        string
-	//traceCollectorOTLPServiceName string
 	traceCollectorImage         string
 	traceCollectorPriorityClass string
 	traceCollectorCPULimit      string
@@ -97,18 +89,8 @@ var (
 	traceCollectorCPURequest    string
 	traceCollectorMemoryRequest string
 
-	//fluentBitEnvSecret         string
-	//fluentBitFilesConfigMap    string
-	//fluentBitPath              string
-	//fluentBitPluginDirectory   string
-	//fluentBitInputTag          string
-	fluentBitMemoryBufferLimit string
-	//fluentBitStorageType       string
-	fluentBitFsBufferLimit string
-	//fluentBitConfigMap                 string
-	//fluentBitSectionsConfigMap         string
-	//fluentBitParsersConfigMap          string
-	//fluentBitDaemonSet                 string
+	fluentBitMemoryBufferLimit         string
+	fluentBitFsBufferLimit             string
 	fluentBitCPULimit                  string
 	fluentBitMemoryLimit               string
 	fluentBitCPURequest                string
@@ -136,7 +118,7 @@ const (
 	telemetryNamespace = "kyma-system"
 
 	traceCollectorBaseName        = "telemetry-trace-collector"
-	traceCollectorOTLPServiceName = "trace-collector-otlp-service-name"
+	traceCollectorOTLPServiceName = "telemetry-otlp-traces"
 
 	fluentBitConfigMap         = "telemetry-fluent-bit"
 	fluentBitSectionsConfigMap = "telemetry-fluent-bit-sections"
@@ -199,11 +181,6 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 
 func main() {
-	//flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	//flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	//flag.StringVar(&pprofAddr, "pprof-bind-address", ":6060", "The address the pprof endpoint binds to.")
-	//flag.DurationVar(&syncPeriod, "sync-period", 1*time.Hour, "minimum frequency at which watched resources are reconciled")
-	//flag.BoolVar(&enablePprof, "enable-profiling", true, "Enable pprof profiling.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	flag.BoolVar(&enableLogging, "enable-logging", true, "Enable configurable logging.")
