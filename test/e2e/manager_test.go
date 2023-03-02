@@ -12,10 +12,13 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 )
 
 const (
 	systemNamespace = "kyma-system"
+	timeout         = time.Second * 10
+	interval        = time.Millisecond * 250
 )
 
 var _ = Describe("Telemetry-manager", func() {
@@ -55,7 +58,7 @@ var _ = Describe("Telemetry-manager", func() {
 				}
 
 				return true
-			}).Should(BeTrue())
+			}, timeout, interval).Should(BeTrue())
 		})
 
 		It("Should have a webhook service", func() {
@@ -67,16 +70,13 @@ var _ = Describe("Telemetry-manager", func() {
 			err := k8sClient.Get(ctx, key, &service)
 			Expect(err).NotTo(HaveOccurred())
 
-			Eventually(func() bool {
+			Eventually(func() []corev1.EndpointAddress {
 				var endpoints corev1.Endpoints
 				err := k8sClient.Get(ctx, key, &endpoints)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(endpoints.Subsets).NotTo(BeEmpty())
-				for _, subset := range endpoints.Subsets {
-					Expect(subset.Addresses).NotTo(BeEmpty())
-				}
-				return true
-			}).Should(BeTrue())
+				return endpoints.Subsets[0].Addresses
+			}, timeout, interval).ShouldNot(BeEmpty())
 		})
 
 		It("Should have a metrics service", func() {
@@ -91,16 +91,12 @@ var _ = Describe("Telemetry-manager", func() {
 			Expect(service.Annotations).Should(HaveKeyWithValue("prometheus.io/scrape", "true"))
 			Expect(service.Annotations).Should(HaveKeyWithValue("prometheus.io/port", "8080"))
 
-			Eventually(func() bool {
+			Eventually(func() []corev1.EndpointAddress {
 				var endpoints corev1.Endpoints
 				err := k8sClient.Get(ctx, key, &endpoints)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(endpoints.Subsets).NotTo(BeEmpty())
-				for _, subset := range endpoints.Subsets {
-					Expect(subset.Addresses).NotTo(BeEmpty())
-				}
-				return true
-			}).Should(BeTrue())
+				return endpoints.Subsets[0].Addresses
+			}, timeout, interval).ShouldNot(BeEmpty())
 		})
 
 		It("Should have a validatingwebhookconfiguration", func() {
@@ -111,7 +107,7 @@ var _ = Describe("Telemetry-manager", func() {
 
 			Eventually(func() error {
 				return k8sClient.Get(ctx, key, &webhookConfig)
-			}).Should(BeNil())
+			}, timeout, interval).Should(BeNil())
 
 			Expect(webhookConfig.Webhooks).Should(HaveLen(2))
 
