@@ -124,9 +124,9 @@ var (
 )
 
 const (
-	metricsAddr = "8080"
-	probeAddr   = "8081"
-	pprofAddr   = "6060"
+	metricsAddr = ":8080"
+	probeAddr   = ":8081"
+	pprofAddr   = ":6060"
 
 	otelImage              = "eu.gcr.io/kyma-project/tpi/otel-collector:0.72.0-734399a6"
 	overrideConfigMapName  = "telemetry-override-config"
