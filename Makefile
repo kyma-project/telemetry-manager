@@ -75,9 +75,9 @@ test: manifests generate fmt vet tidy envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 .PHONY: e2e-test
-e2e-test: ## Provision k3d cluster and run end-to-end tests.
-	hack/provision-test-env.sh
-	go test -tags e2e ./test/e2e
+e2e-test: ginkgo k3d ## Provision k3d cluster and run end-to-end tests.
+	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
+	$(GINKGO) run --tags e2e -v ./test/e2e
 	k3d cluster delete kyma
 	k3d registry delete k3d-kyma-registry
 
@@ -92,7 +92,7 @@ run: manifests generate fmt vet tidy ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
+docker-build: ## Build docker image with the manager.
 	docker build -t ${IMG} .
 
 .PHONY: docker-push
@@ -133,10 +133,13 @@ $(LOCALBIN):
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
+GINKGO ?= $(LOCALBIN)/ginkgo
+K3D ?= $(LOCALBIN)/k3d
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.0.0
 CONTROLLER_TOOLS_VERSION ?= v0.11.3
+K3D_VERSION ?= v5.4.7
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -153,3 +156,14 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+.PHONY: ginkgo
+ginkgo: $(GINKGO)
+$(GINKGO): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo@v2.8.4
+
+K3D_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh"
+.PHONY: k3d
+k3d: $(K3D)
+$(K3D): $(LOCALBIN)
+	curl -s $(K3D_INSTALL_SCRIPT) | USE_SUDO=false K3D_INSTALL_DIR=$(LOCALBIN) TAG=$(K3D_VERSION) bash
