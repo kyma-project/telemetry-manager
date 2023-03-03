@@ -2,9 +2,9 @@
 
 ## Overview
 
-To implement [Kyma's strategy](https://github.com/kyma-project/community/blob/main/concepts/observability-strategy/strategy.md) of moving from in-cluster observability backends to a Telemetry component that integrates with external backends, the telemetry manager is a Kubernetes operator that provides APIs for configurable logging, tracing, and monitoring.
+To implement [Kyma's strategy](https://github.com/kyma-project/community/blob/main/concepts/observability-strategy/strategy.md) of moving from in-cluster observability backends to a Telemetry component that integrates with external backends, Telemetry Manager is a Kubernetes operator that provides APIs for configurable logging, tracing, and monitoring.
 
-The telemetry manager has been bootstrapped with [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) 3.6.0. Additional APIs can also be [added by Kubebuilder](https://book.kubebuilder.io/cronjob-tutorial/new-api.html).
+Telemetry Manager has been bootstrapped with [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) 3.6.0. Additional APIs can also be [added by Kubebuilder](https://book.kubebuilder.io/cronjob-tutorial/new-api.html).
 
 ### Configurable Logging
 
@@ -43,7 +43,7 @@ For development, you can use the following commands:
 make test
 ```
 
-- Create a k3d cluster on Docker, deploy the telemetry-manager, and run integration tests
+- Create a k3d cluster on Docker, deploy Telemetry Manager, and run integration tests
 
 ```bash
 make e2e-test
@@ -83,7 +83,7 @@ make run
 
 ```bash
 export IMG=<my container repo>
-make docker-build 
+make docker-build
 make docker-push
 make deploy
 ```
@@ -121,15 +121,15 @@ The `global`, `tracing`, and `logging` fields are optional.
 1. Create an overriding `telemetry-override-config` ConfigMap.
 2. Perform debugging operations.
 3. Remove the created ConfigMap.
-4. To reset the debug actions, perform a restart of the telemetry operator.
+4. To reset the debug actions, perform a restart of Telemetry Manager.
    ```bash
-   kubectl rollout restart deployment -n kyma-system telemetry-operator
+   kubectl rollout restart deployment -n kyma-system telemetry-controller-manager
    ```
 
 **Caveats**
-If you change the pipeline CR when the reconciliation is paused, these changes will not be applied immediately but in a periodic reconciliation cycle of one hour. To reconcile earlier, restart the Telemetry operator.
+If you change the pipeline CR when the reconciliation is paused, these changes will not be applied immediately but in a periodic reconciliation cycle of one hour. To reconcile earlier, restart Telemetry Manager.
 
 ### Profiling
 
-The Telemetry operator has pprof-based profiling activated and exposed on port 6060. Use port-forwarding to access the pprof endpoint. You can find additional information in the Go [pprof package documentation](https://pkg.go.dev/net/http/pprof).
+Telemetry Manager has pprof-based profiling activated and exposed on port 6060. Use port-forwarding to access the pprof endpoint. You can find additional information in the Go [pprof package documentation](https://pkg.go.dev/net/http/pprof).
 
