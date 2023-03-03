@@ -49,7 +49,6 @@ var ctx context.Context
 var cancel context.CancelFunc
 
 var testConfig = Config{
-	BaseName:          "telemetry-trace-collector",
 	Namespace:         "kyma-system",
 	OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "kyma-system"},
 	Deployment: DeploymentConfig{
@@ -58,9 +57,6 @@ var testConfig = Config{
 		MemoryLimit:   resource.MustParse("1Gi"),
 		CPURequest:    resource.MustParse("150m"),
 		MemoryRequest: resource.MustParse("256Mi"),
-	},
-	Service: ServiceConfig{
-		OTLPServiceName: "telemetry-otlp-traces",
 	},
 }
 

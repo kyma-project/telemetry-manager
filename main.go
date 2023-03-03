@@ -103,11 +103,6 @@ var (
 )
 
 const (
-	metricsAddr = ":8080"
-	probeAddr   = ":8081"
-	pprofAddr   = ":6060"
-	logFormat   = "json"
-
 	otelImage              = "eu.gcr.io/kyma-project/tpi/otel-collector:0.72.0-734399a6"
 	overrideConfigMapName  = "telemetry-override-config"
 	fluentBitImage         = "eu.gcr.io/kyma-project/tpi/fluent-bit:2.0.9-f89e8b78"
@@ -115,8 +110,7 @@ const (
 
 	telemetryNamespace = "kyma-system"
 
-	traceCollectorBaseName        = "telemetry-trace-collector"
-	traceCollectorOTLPServiceName = "telemetry-otlp-traces"
+	traceCollectorBaseName = "telemetry-trace-collector"
 
 	fluentBitConfigMap         = "telemetry-fluent-bit"
 	fluentBitSectionsConfigMap = "telemetry-fluent-bit-sections"
@@ -220,11 +214,11 @@ func main() {
 	dynamicLoglevel.SetLevel(parsedLevel)
 	configureLogLevelOnFly = logger.NewLogReconfigurer(dynamicLoglevel)
 
-	ctrLogger, err := logger.New(logFormat, logLevel, dynamicLoglevel)
+	ctrLogger, err := logger.New("json", logLevel, dynamicLoglevel)
 
 	go func() {
 		server := &http.Server{
-			Addr:              pprofAddr,
+			Addr:              ":6060",
 			ReadHeaderTimeout: 10 * time.Second,
 		}
 
@@ -266,9 +260,9 @@ func main() {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		SyncPeriod:              &syncPeriod,
 		Scheme:                  scheme,
-		MetricsBindAddress:      metricsAddr,
+		MetricsBindAddress:      ":8080",
 		Port:                    9443,
-		HealthProbeBindAddress:  probeAddr,
+		HealthProbeBindAddress:  ":8081",
 		LeaderElection:          true,
 		LeaderElectionNamespace: telemetryNamespace,
 		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
@@ -367,9 +361,7 @@ func validateFlags() error {
 	if telemetryNamespace == "" {
 		return errors.New("--fluent-bit-ns flag is required")
 	}
-	if logFormat != "json" && logFormat != "text" {
-		return errors.New("--log-format has to be either json or text")
-	}
+
 	if logLevel != "debug" && logLevel != "info" && logLevel != "warn" && logLevel != "error" && logLevel != "fatal" {
 		return errors.New("--log-level has to be one of debug, info, warn, error, fatal")
 	}
@@ -384,7 +376,7 @@ func createLogPipelineReconciler(client client.Client) *logpipelinecontroller.Re
 		SectionsConfigMap: types.NamespacedName{Name: fluentBitSectionsConfigMap, Namespace: telemetryNamespace},
 		FilesConfigMap:    types.NamespacedName{Name: fluentBitFilesConfigMap, Namespace: telemetryNamespace},
 		EnvSecret:         types.NamespacedName{Name: fluentBitEnvSecret, Namespace: telemetryNamespace},
-		DaemonSet:         types.NamespacedName{Namespace: telemetryNamespace, Name: fluentBitDaemonSet},
+		DaemonSet:         types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
 		PipelineDefaults:  createPipelineDefaults(),
 		DaemonSetConfig: logpipeline.DaemonSetConfig{
@@ -406,7 +398,7 @@ func createLogPipelineReconciler(client client.Client) *logpipelinecontroller.Re
 func createLogParserReconciler(client client.Client) *logparsercontroller.Reconciler {
 	config := logparsercontroller.Config{
 		ParsersConfigMap: types.NamespacedName{Name: fluentBitParsersConfigMap, Namespace: telemetryNamespace},
-		DaemonSet:        types.NamespacedName{Namespace: telemetryNamespace, Name: fluentBitDaemonSet},
+		DaemonSet:        types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
@@ -435,7 +427,6 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 func createTracePipelineReconciler(client client.Client) *tracepipelinereconciler.Reconciler {
 	config := tracepipelinereconciler.Config{
 		Namespace: telemetryNamespace,
-		BaseName:  traceCollectorBaseName,
 		Deployment: tracepipelinereconciler.DeploymentConfig{
 			Image:             traceCollectorImage,
 			PriorityClassName: traceCollectorPriorityClass,
@@ -444,9 +435,7 @@ func createTracePipelineReconciler(client client.Client) *tracepipelinereconcile
 			CPURequest:        resource.MustParse(traceCollectorCPURequest),
 			MemoryRequest:     resource.MustParse(traceCollectorMemoryRequest),
 		},
-		Service: tracepipelinereconciler.ServiceConfig{
-			OTLPServiceName: traceCollectorOTLPServiceName,
-		},
+
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})

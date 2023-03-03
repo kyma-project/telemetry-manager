@@ -114,7 +114,7 @@ var _ = BeforeSuite(func() {
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:                 scheme.Scheme,
-		MetricsBindAddress:     "localhost:8080",
+		MetricsBindAddress:     "127.0.0.1:8080",
 		Port:                   9443,
 		Host:                   "localhost",
 		HealthProbeBindAddress: "localhost:8081",
