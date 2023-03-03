@@ -74,7 +74,6 @@ var (
 	deniedOutputPlugins    string
 	enableLogging          bool
 	enableTracing          bool
-	logFormat              string
 	logLevel               string
 	scheme                 = runtime.NewScheme()
 	setupLog               = ctrl.Log.WithName("setup")
@@ -107,6 +106,7 @@ const (
 	metricsAddr = ":8080"
 	probeAddr   = ":8081"
 	pprofAddr   = ":6060"
+	logFormat   = "json"
 
 	otelImage              = "eu.gcr.io/kyma-project/tpi/otel-collector:0.72.0-734399a6"
 	overrideConfigMapName  = "telemetry-override-config"
@@ -220,7 +220,6 @@ func main() {
 	dynamicLoglevel.SetLevel(parsedLevel)
 	configureLogLevelOnFly = logger.NewLogReconfigurer(dynamicLoglevel)
 
-	logFormat = "json"
 	ctrLogger, err := logger.New(logFormat, logLevel, dynamicLoglevel)
 
 	go func() {
@@ -265,14 +264,15 @@ func main() {
 	syncPeriod := 1 * time.Hour
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		SyncPeriod:             &syncPeriod,
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         true,
-		LeaderElectionID:       "cdd7ef0b.kyma-project.io",
-		CertDir:                certDir,
+		SyncPeriod:              &syncPeriod,
+		Scheme:                  scheme,
+		MetricsBindAddress:      metricsAddr,
+		Port:                    9443,
+		HealthProbeBindAddress:  probeAddr,
+		LeaderElection:          true,
+		LeaderElectionNamespace: telemetryNamespace,
+		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
+		CertDir:                 certDir,
 	})
 	if err != nil {
 		setupLog.Error(err, "Failed to start manager")
