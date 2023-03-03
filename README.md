@@ -2,25 +2,17 @@
 
 ## Overview
 
-To implement [Kyma's strategy](https://github.com/kyma-project/community/blob/main/concepts/observability-strategy/strategy.md) of moving from in-cluster observability backends to a Telemetry component that integrates with external backends, the telemetry operator provides APIs for configurable logging, tracing, and monitoring.
+To implement [Kyma's strategy](https://github.com/kyma-project/community/blob/main/concepts/observability-strategy/strategy.md) of moving from in-cluster observability backends to a Telemetry component that integrates with external backends, the telemetry manager is a Kubernetes operator that provides APIs for configurable logging, tracing, and monitoring.
 
-The telemetry operator has been bootstrapped with [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) 3.6.0. Additional APIs can also be [added by Kubebuilder](https://book.kubebuilder.io/cronjob-tutorial/new-api.html).
+The telemetry manager has been bootstrapped with [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) 3.6.0. Additional APIs can also be [added by Kubebuilder](https://book.kubebuilder.io/cronjob-tutorial/new-api.html).
 
 ### Configurable Logging
 
-The logging controllers generate a Fluent Bit configuration from one or more LogPipeline and LogParser custom resources. The controllers ensure that all Fluent Bit Pods run the current configuration by restarting Pods after the configuration has changed. See all [CRD attributes](apis/telemetry/v1alpha1/logpipeline_types.go) and some [examples](config/samples).
-
-For now, creating Fluent Bit Pods is out of scope of the operator. An existing Fluent Bit DaemonSet is expected.
-
-The generated ConfigMap (by default, `telemetry-fluent-bit-sections` in the `kyma-system` namespace) must be mounted to the Fluent Bit Pods and consumed by an `@INCLUDE` statement in an existing [configuration file](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/configuration-file). Fluent Bit parsers, file references, and environment variables are available in an additional ConfigMap or Secret.
-
-See the flags that configure all ConfigMaps, Secret and DaemonSet names in [main.go](main.go).
+The logging controllers generate a Fluent Bit DaemonSet and configuration from one or more LogPipeline and LogParser custom resources. The controllers ensure that all Fluent Bit Pods run the current configuration by restarting Pods after the configuration has changed. See all [CRD attributes](apis/telemetry/v1alpha1/logpipeline_types.go) and some [examples](config/samples).
 
 Further design decisions and test results are documented in [Dynamic Logging Backend Configuration](https://github.com/kyma-project/community/tree/main/concepts/observability-strategy/configurable-logging).
 
 ### Configurable Tracing
-
->**Configurable tracing is still in development and not active with the default Kyma settings.**
 
 The trace controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) deployment and related Kubernetes objects from a `TracePipeline` custom resource. The collector is configured to receive traces using the OTLP and OpenCensus protocols, and forwards the received traces to a configurable OTLP backend.
 
@@ -33,23 +25,37 @@ Configurable monitoring is not implemented yet. Future plans are documented in [
 ## Development
 
 ### Prerequisites
-- Install [kubebuilder 3.6.0](https://github.com/kubernetes-sigs/kubebuilder), which is the base framework for this controller.
-- Install [kustomize](https://github.com/kubernetes-sigs/kustomize) which lets you customize raw, template-free YAML files during local development.
-- Install [Golang 1.19](https://golang.org/dl/) or newer (for local execution).
+
+- Install [kubebuilder 3.6.0](https://github.com/kubernetes-sigs/kubebuilder), which is the base framework for this controller. Required to add new APIs.
+- Install [Golang 1.19](https://golang.org/dl/) or newer (for development and local execution).
 - Install [Docker](https://www.docker.com/get-started).
-- Install [OpenSSL](https://www.openssl.org/) to generate a webhook certificate for local execution.
+- Install [golangci-lint](https://golangci-lint.run).
+
+Other dependencies will be downloaded by the make targets to the `bin` sub-folder.
 
 ### Available Commands
 
 For development, you can use the following commands:
 
-- Run all tests and validation
+- Run unit tests
 
 ```bash
-make
+make test
 ```
 
-- Regenerate YAML manifests (CRDs and ClusterRole)
+- Create a k3d cluster on Docker, deploy the telemetry-manager, and run integration tests
+
+```bash
+make e2e-test
+```
+
+- Run golangci-lint
+
+```bash
+make lint
+```
+
+- Regenerate YAML manifests (CRDs and RBAC)
 
 ```bash
 make manifests
@@ -70,16 +76,22 @@ make uninstall
 - Run the operator locally (uses current kubeconfig context)
 
 ```bash
-kubectl -n kyma-system scale deployment telemetry-operator --replicas=0 # Scale down in-cluster telemetry-operator
 make run
 ```
 
-- Build container image and deploy to cluster in current kubeconfig context. Deploy telemetry chart first, as described before. Then run the following commands to deploy your own operator image.
+- Build container image and deploy to cluster in current kubeconfig context
 
 ```bash
-make docker-build IMG=<my container repo>
-make docker-push IMG=<my container repo>
-kubectl -n kyma-system set image deployment telemetry-operator manager=<my container repo>
+export IMG=<my container repo>
+make docker-build 
+make docker-push
+make deploy
+```
+
+- Clean up everything
+
+```bash
+make undeploy
 ```
 
 ## Troubleshooting
