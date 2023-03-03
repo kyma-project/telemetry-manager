@@ -78,8 +78,8 @@ test: manifests generate fmt vet tidy envtest ## Run tests.
 e2e-test: ginkgo k3d ## Provision k3d cluster and run end-to-end tests.
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
 	$(GINKGO) run --tags e2e -v ./test/e2e
-	k3d cluster delete kyma
-	k3d registry delete k3d-kyma-registry
+	$(K3D) cluster delete kyma
+	$(K3D) registry delete k3d-kyma-registry
 
 ##@ Build
 
