@@ -1,9 +1,9 @@
 #!/usr/bin/env sh
 
-kyma provision k3d --ci
+bin/k3d registry create kyma-registry --port 5001
+bin/k3d cluster create kyma --no-lb --registry-use kyma-registry:5001 --k3s-arg --disable=traefik@server:0 --image rancher/k3s:v$K8S_VERSION-k3s1
 
-REGISTRY_PORT=$(k3d registry list k3d-kyma-registry -ojson | jq '.[0].portMappings."5000/tcp"[0].HostPort')
-IMG=localhost:$REGISTRY_PORT/telemetry-manager:latest
+IMG=localhost:5001/telemetry-manager:latest
 export IMG
 
 make docker-build
