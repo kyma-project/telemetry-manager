@@ -166,4 +166,4 @@ K3D_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/k3d-io/k3d/main/install
 .PHONY: k3d
 k3d: $(K3D)
 $(K3D): $(LOCALBIN)
-	curl -s $(K3D_INSTALL_SCRIPT) | USE_SUDO=false K3D_INSTALL_DIR=$(LOCALBIN) TAG=$(K3D_VERSION) bash
+	curl -s $(K3D_INSTALL_SCRIPT) | PATH=$(PATH):$(LOCALBIN) USE_SUDO=false K3D_INSTALL_DIR=$(LOCALBIN) TAG=$(K3D_VERSION) bash
