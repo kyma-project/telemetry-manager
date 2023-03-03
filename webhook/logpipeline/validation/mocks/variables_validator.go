@@ -3,8 +3,6 @@
 package mocks
 
 import (
-	"context"
-
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/stretchr/testify/mock"
 )
@@ -15,12 +13,12 @@ type VariablesValidator struct {
 }
 
 // Validate provides a mock function with given fields: _a0, logPipeline, logPipelines
-func (_m *VariablesValidator) Validate(_a0 context.Context, logPipeline *v1alpha1.LogPipeline, logPipelines *v1alpha1.LogPipelineList) error {
-	ret := _m.Called(_a0, logPipeline, logPipelines)
+func (_m *VariablesValidator) Validate(logPipeline *v1alpha1.LogPipeline, logPipelines *v1alpha1.LogPipelineList) error {
+	ret := _m.Called(logPipeline, logPipelines)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.LogPipeline, *v1alpha1.LogPipelineList) error); ok {
-		r0 = rf(_a0, logPipeline, logPipelines)
+	if rf, ok := ret.Get(0).(func(*v1alpha1.LogPipeline, *v1alpha1.LogPipelineList) error); ok {
+		r0 = rf(logPipeline, logPipelines)
 	} else {
 		r0 = ret.Error(0)
 	}
