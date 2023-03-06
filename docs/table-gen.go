@@ -34,8 +34,8 @@ var (
 )
 
 func main() {
-	flag.StringVar(&CRDFilename, "crd-filename", "", "Full or relative path to the .yaml file containing crd")
-	flag.StringVar(&MDFilename, "md-filename", "", "Full or relative path to the .md file containing the file where we should insert table rows")
+	flag.StringVar(&CRDFilename, "crd-filename", "/Users/I572465/telemetry-manager/config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml", "Full or relative path to the .yaml file containing crd")
+	flag.StringVar(&MDFilename, "md-filename", "/Users/I572465/Go/src/github.com/kyma-project/kyma/docs/01-overview/main-areas/telemetry/telemetry-02-logs.md", "Full or relative path to the .md file containing the file where we should insert table rows")
 	flag.StringVar(&APIVersion, "api-version", "v1alpha1", "API version your operattor uses")
 	flag.Parse()
 
@@ -119,7 +119,6 @@ func (generator *FunctionSpecGenerator) generateDocFromCRD() string {
 		panic(err)
 	}
 
-	// why unmarshalling to CustomResource don't work?
 	var obj interface{}
 	if err := yaml.Unmarshal(input, &obj); err != nil {
 		panic(err)
@@ -128,14 +127,17 @@ func (generator *FunctionSpecGenerator) generateDocFromCRD() string {
 	docElements := map[string]string{}
 	versions := getElement(obj, "spec", "versions")
 
-	// move to another function to reduce 2inn
 	for _, version := range versions.([]interface{}) {
 		name := getElement(version, "name")
 		if name.(string) != APIVersion {
 			continue
 		}
+
 		functionSpec := getElement(version, "schema", "openAPIV3Schema", "properties", "spec")
 		mergeMaps(docElements, generator.generateElementDoc(functionSpec, "spec", true, ""))
+
+		functionStatus := getElement(version, "schema", "openAPIV3Schema", "properties", "status")
+		mergeMaps(docElements, generator.generateElementDoc(functionStatus, "status", true, ""))
 	}
 
 	mergeMaps(docElements, generator.elementsToKeep)
