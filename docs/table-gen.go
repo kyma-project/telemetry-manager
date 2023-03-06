@@ -44,6 +44,7 @@ func main() {
 	generator := CreateFunctionSpecGenerator(toKeep, toSkip)
 	doc := generator.generateDocFromCRD()
 	replaceDocInMD(doc)
+	print(doc)
 }
 
 func getElementsToKeep() map[string]string {
@@ -75,16 +76,11 @@ func getElementsToSkip() map[string]bool {
 	doc := string(inDoc)
 	reSkip := regexp.MustCompile(RESkipPattern)
 	toSkip := map[string]bool{}
-	for _, pair := range reSkip.FindAllStringSubmatch(doc, -1) {
-		paramName := pair[1]
-		toSkip[paramName] = false
-	}
+
+	pairsToParamsToSkip(toSkip, reSkip.FindAllStringSubmatch(doc, -1), false)
 
 	reSkipWithAncestors := regexp.MustCompile(RESkipWithAncestorsPattern)
-	for _, pair := range reSkipWithAncestors.FindAllStringSubmatch(doc, -1) {
-		paramName := pair[1]
-		toSkip[paramName] = true
-	}
+	pairsToParamsToSkip(toSkip, reSkipWithAncestors.FindAllStringSubmatch(doc, -1), true)
 
 	return toSkip
 }
@@ -132,20 +128,17 @@ func (generator *FunctionSpecGenerator) generateDocFromCRD() string {
 	docElements := map[string]string{}
 	versions := getElement(obj, "spec", "versions")
 
+	// move to another function to reduce 2inn
 	for _, version := range versions.([]interface{}) {
 		name := getElement(version, "name")
 		if name.(string) != APIVersion {
 			continue
 		}
 		functionSpec := getElement(version, "schema", "openAPIV3Schema", "properties", "spec")
-		for k, v := range generator.generateElementDoc(functionSpec, "spec", true, "") {
-			docElements[k] = v
-		}
+		mergeMaps(docElements, generator.generateElementDoc(functionSpec, "spec", true, ""))
 	}
 
-	for k, v := range generator.elementsToKeep {
-		docElements[k] = v
-	}
+	mergeMaps(docElements, generator.elementsToKeep)
 
 	var doc []string
 	for _, propName := range sortKeys(docElements) {
@@ -171,15 +164,11 @@ func (generator *FunctionSpecGenerator) generateElementDoc(obj interface{}, name
 	}
 	_, isRowToKeep := generator.elementsToKeep[fullName]
 	if !shouldBeSkipped && !isRowToKeep {
-		result[fullName] =
-			fmt.Sprintf("| **%s** | %s | %s |",
-				fullName, boolToRequiredLabel(required), normalizeDescription(description, name))
+		result[fullName] = generateTableRow(fullName, required, description, name)
 	}
 
 	if elementType == "object" {
-		for k, v := range generator.generateObjectDoc(element, name, parentPath) {
-			result[k] = v
-		}
+		mergeMaps(result, generator.generateObjectDoc(element, name, parentPath))
 	}
 	return result
 }
@@ -199,11 +188,14 @@ func (generator *FunctionSpecGenerator) generateObjectDoc(element map[string]int
 	propMap := properties.(map[string]interface{})
 	for _, propName := range sortKeys(propMap) {
 		propRequired := contains(requiredChildren, name)
-		for k, v := range generator.generateElementDoc(propMap[propName], propName, propRequired, parentPath+name+".") {
-			result[k] = v
-		}
+		mergeMaps(result, generator.generateElementDoc(propMap[propName], propName, propRequired, parentPath+name+"."))
 	}
 	return result
+}
+
+func generateTableRow(fullName string, required bool, description string, name string) string {
+	return fmt.Sprintf("| **%s** | %s | %s |",
+		fullName, boolToRequiredLabel(required), normalizeDescription(description, name))
 }
 
 func getElement(obj interface{}, path ...string) interface{} {
@@ -232,6 +224,13 @@ func normalizeDescription(description string, name string) any {
 	return description_trimmed
 }
 
+func pairsToParamsToSkip(toSkip map[string]bool, pairs [][]string, isToSkip bool) {
+	for _, pair := range pairs {
+		paramName := pair[1]
+		toSkip[paramName] = isToSkip
+	}
+}
+
 func sortKeys[T any](propMap map[string]T) []string {
 	var keys []string
 	for key := range propMap {
@@ -241,11 +240,17 @@ func sortKeys[T any](propMap map[string]T) []string {
 	return keys
 }
 
-func boolToRequiredLabel(b bool) string {
-	if b {
+func boolToRequiredLabel(isRequired bool) string {
+	if isRequired {
 		return "Yes"
 	}
 	return "No"
+}
+
+func mergeMaps(dest map[string]string, src map[string]string) {
+	for k, v := range src {
+		dest[k] = v
+	}
 }
 
 func contains(s []interface{}, e string) bool {
