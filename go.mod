@@ -6,7 +6,7 @@ require (
 	github.com/go-logr/zapr v1.2.3
 	github.com/google/uuid v1.3.0
 	github.com/kyma-project/kyma/common/logging v0.0.0-20221208072023-1c1502074930
-	github.com/onsi/ginkgo/v2 v2.8.4
+	github.com/onsi/ginkgo/v2 v2.9.0
 	github.com/onsi/gomega v1.27.2
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/common v0.41.0
