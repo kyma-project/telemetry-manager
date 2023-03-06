@@ -3,23 +3,21 @@ package kubernetes
 import (
 	"context"
 	"fmt"
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	v1 "k8s.io/api/rbac/v1"
 	"strings"
 
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreateOrUpdateClusterRoleBinding(ctx context.Context, c client.Client, desired *v1.ClusterRoleBinding) error {
-	var existing v1.ClusterRoleBinding
+func CreateOrUpdateClusterRoleBinding(ctx context.Context, c client.Client, desired *rbacv1.ClusterRoleBinding) error {
+	var existing rbacv1.ClusterRoleBinding
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -35,8 +33,8 @@ func CreateOrUpdateClusterRoleBinding(ctx context.Context, c client.Client, desi
 	return c.Update(ctx, desired)
 }
 
-func CreateOrUpdateClusterRole(ctx context.Context, c client.Client, desired *v1.ClusterRole) error {
-	var existing v1.ClusterRole
+func CreateOrUpdateClusterRole(ctx context.Context, c client.Client, desired *rbacv1.ClusterRole) error {
+	var existing rbacv1.ClusterRole
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -207,11 +205,11 @@ func DeleteFluentBit(ctx context.Context, c client.Client, name types.Namespaced
 		return fmt.Errorf("unable to delete service account %s: %v", name.Name, err)
 	}
 
-	if err := deleteResource(ctx, c, name, &v1.ClusterRoleBinding{}); err != nil {
+	if err := deleteResource(ctx, c, name, &rbacv1.ClusterRoleBinding{}); err != nil {
 		return fmt.Errorf("unable to delete cluster role binding %s: %v", name.Name, err)
 	}
 
-	if err := deleteResource(ctx, c, name, &v1.ClusterRole{}); err != nil {
+	if err := deleteResource(ctx, c, name, &rbacv1.ClusterRole{}); err != nil {
 		return fmt.Errorf("unable to delete cluster role %s: %v", name.Name, err)
 	}
 
@@ -226,10 +224,10 @@ func DeleteFluentBit(ctx context.Context, c client.Client, name types.Namespaced
 func deleteResource(ctx context.Context, c client.Client, name client.ObjectKey, obj client.Object) error {
 	err := c.Get(ctx, name, obj)
 	if err == nil {
-		if err = c.Delete(ctx, obj); err != nil && !errors.IsNotFound(err) {
+		if err = c.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
-	} else if !errors.IsNotFound(err) {
+	} else if !apierrors.IsNotFound(err) {
 		return err
 	}
 	return nil
@@ -279,7 +277,7 @@ func GetOrCreateConfigMap(ctx context.Context, c client.Client, name types.Names
 	if err == nil {
 		return cm, nil
 	}
-	if errors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		err = c.Create(ctx, &cm)
 		if err == nil {
 			return cm, nil
@@ -294,7 +292,7 @@ func GetOrCreateSecret(ctx context.Context, c client.Client, name types.Namespac
 	if err == nil {
 		return secret, nil
 	}
-	if errors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		err = c.Create(ctx, &secret)
 		if err == nil {
 			return secret, nil

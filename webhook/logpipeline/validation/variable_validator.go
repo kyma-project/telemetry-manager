@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"context"
 	"fmt"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -10,7 +9,7 @@ import (
 
 //go:generate mockery --name VariablesValidator --filename variables_validator.go
 type VariablesValidator interface {
-	Validate(context context.Context, logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error
+	Validate(logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error
 }
 
 type variablesValidator struct {
@@ -23,7 +22,7 @@ func NewVariablesValidator(client client.Client) VariablesValidator {
 	}
 }
 
-func (v *variablesValidator) Validate(context context.Context, logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error {
+func (v *variablesValidator) Validate(logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error {
 	if len(logPipeline.Spec.Variables) == 0 {
 		return nil
 	}
@@ -56,7 +55,7 @@ func validateMandatoryFieldsAreEmpty(vr telemetryv1alpha1.VariableRef) bool {
 func findConflictingVariables(logPipeLine *telemetryv1alpha1.LogPipeline, vr telemetryv1alpha1.VariableRef, existingPipelineName string) error {
 	for _, v := range logPipeLine.Spec.Variables {
 		if v.Name == vr.Name {
-			return fmt.Errorf("Variable name must be globally unique. Variable '%s' is used in pipeline '%s'", v.Name, existingPipelineName)
+			return fmt.Errorf("variable name must be globally unique: variable '%s' is used in pipeline '%s'", v.Name, existingPipelineName)
 		}
 	}
 	return nil
