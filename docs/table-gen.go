@@ -12,22 +12,20 @@ import (
 )
 
 type FunctionSpecGenerator struct {
-	elementsToKeep map[string]string
 	elementsToSkip map[string]bool
 }
 
 // how to deal with comment tag? +
 // what to do with required label? // there is a required label, detect it and extract info // if existing tool does not work, keep minimal, no need for required
 // which kind of elements should we include by default? +
-// how to start this script automatically?
+// how to start this script automatically? move to hack, do the prow job
+// add auto crd name comment insertion
 
-// try to remove keep-this tag if it is easy
+// try to remove keep-this tag if it is easy +
 
 const (
 	FunctionSpecIdentifier      = `FUNCTION-SPEC`
 	REFunctionSpecPattern       = `(?s)<!--\s*` + FunctionSpecIdentifier + `-START\s* -->.*<!--\s*` + FunctionSpecIdentifier + `-END\s*-->`
-	KeepThisIdentifier          = `KEEP-THIS`
-	REKeepThisPattern           = `[^\S\r\n]*[|]\s*\*{2}([^*]+)\*{2}.*<!--\s*` + KeepThisIdentifier + `\s*-->`
 	SkipIdentifier              = `SKIP-ELEMENT`
 	RESkipPattern               = `<!--\s*` + SkipIdentifier + `\s*([^\s]+)\s*-->`
 	SkipWithAncestorsIdentifier = `SKIP-WITH-ANCESTORS`
@@ -47,32 +45,11 @@ func main() {
 	flag.StringVar(&APIVersion, "api-version", "v1alpha1", "API version your operattor uses")
 	flag.Parse()
 
-	toKeep := getElementsToKeep()
 	toSkip := getElementsToSkip()
-	generator := CreateFunctionSpecGenerator(toKeep, toSkip)
+	generator := CreateFunctionSpecGenerator(toSkip)
 	doc := generator.generateDocFromCRD()
 	replaceDocInMD(doc)
 	print(doc)
-}
-
-func getElementsToKeep() map[string]string {
-	inDoc, err := os.ReadFile(MDFilename)
-	if err != nil {
-		panic(err)
-	}
-
-	reFunSpec := regexp.MustCompile(REFunctionSpecPattern)
-	funSpecPart := reFunSpec.FindString(string(inDoc))
-	reKeep := regexp.MustCompile(REKeepThisPattern)
-	rowsToKeep := reKeep.FindAllStringSubmatch(funSpecPart, -1)
-
-	toKeep := map[string]string{}
-	for _, pair := range rowsToKeep {
-		rowContent := pair[0]
-		paramName := pair[1]
-		toKeep[paramName] = rowContent
-	}
-	return toKeep
 }
 
 func getElementsToSkip() map[string]bool {
@@ -114,9 +91,8 @@ func replaceDocInMD(doc string) {
 	outFile.Write(outDoc)
 }
 
-func CreateFunctionSpecGenerator(toKeep map[string]string, toSkip map[string]bool) FunctionSpecGenerator {
+func CreateFunctionSpecGenerator(toSkip map[string]bool) FunctionSpecGenerator {
 	return FunctionSpecGenerator{
-		elementsToKeep: toKeep,
 		elementsToSkip: toSkip,
 	}
 }
@@ -148,8 +124,6 @@ func (generator *FunctionSpecGenerator) generateDocFromCRD() string {
 		mergeMaps(docElements, generator.generateElementDoc(functionStatus, "status", ""))
 	}
 
-	mergeMaps(docElements, generator.elementsToKeep)
-
 	var doc []string
 	for _, propName := range sortKeys(docElements) {
 		doc = append(doc, docElements[propName])
@@ -177,8 +151,8 @@ func (generator *FunctionSpecGenerator) generateElementDoc(obj interface{}, name
 	if shouldBeSkipped && skipWithAncestors {
 		return result
 	}
-	_, isRowToKeep := generator.elementsToKeep[fullName]
-	if !shouldBeSkipped && !isRowToKeep {
+
+	if !shouldBeSkipped {
 		result[fullName] = generateTableRow(fullName, description, name)
 	}
 
