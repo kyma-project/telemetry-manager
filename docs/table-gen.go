@@ -16,6 +16,13 @@ type FunctionSpecGenerator struct {
 	elementsToSkip map[string]bool
 }
 
+// how to deal with comment tag? +
+// what to do with required label? // there is a required label, detect it and extract info // if existing tool does not work, keep minimal, no need for required
+// which kind of elements should we include by default? +
+// how to start this script automatically?
+
+// try to remove keep-this tag if it is easy
+
 const (
 	FunctionSpecIdentifier      = `FUNCTION-SPEC`
 	REFunctionSpecPattern       = `(?s)<!--\s*` + FunctionSpecIdentifier + `-START\s* -->.*<!--\s*` + FunctionSpecIdentifier + `-END\s*-->`
@@ -34,6 +41,7 @@ var (
 )
 
 func main() {
+	//remove default value
 	flag.StringVar(&CRDFilename, "crd-filename", "/Users/I572465/telemetry-manager/config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml", "Full or relative path to the .yaml file containing crd")
 	flag.StringVar(&MDFilename, "md-filename", "/Users/I572465/Go/src/github.com/kyma-project/kyma/docs/01-overview/main-areas/telemetry/telemetry-02-logs.md", "Full or relative path to the .md file containing the file where we should insert table rows")
 	flag.StringVar(&APIVersion, "api-version", "v1alpha1", "API version your operattor uses")
@@ -134,10 +142,10 @@ func (generator *FunctionSpecGenerator) generateDocFromCRD() string {
 		}
 
 		functionSpec := getElement(version, "schema", "openAPIV3Schema", "properties", "spec")
-		mergeMaps(docElements, generator.generateElementDoc(functionSpec, "spec", true, ""))
+		mergeMaps(docElements, generator.generateElementDoc(functionSpec, "spec", ""))
 
 		functionStatus := getElement(version, "schema", "openAPIV3Schema", "properties", "status")
-		mergeMaps(docElements, generator.generateElementDoc(functionStatus, "status", true, ""))
+		mergeMaps(docElements, generator.generateElementDoc(functionStatus, "status", ""))
 	}
 
 	mergeMaps(docElements, generator.elementsToKeep)
@@ -147,10 +155,15 @@ func (generator *FunctionSpecGenerator) generateDocFromCRD() string {
 		doc = append(doc, docElements[propName])
 	}
 
+	doc = append([]string{
+		"| Parameter         | Description                                   |",
+		"| ---------------------------------------- | ---------|",
+	}, doc...)
+
 	return strings.Join(doc, "\n")
 }
 
-func (generator *FunctionSpecGenerator) generateElementDoc(obj interface{}, name string, required bool, parentPath string) map[string]string {
+func (generator *FunctionSpecGenerator) generateElementDoc(obj interface{}, name string, parentPath string) map[string]string {
 	result := map[string]string{}
 	element := obj.(map[string]interface{})
 	elementType := element["type"].(string)
@@ -166,7 +179,7 @@ func (generator *FunctionSpecGenerator) generateElementDoc(obj interface{}, name
 	}
 	_, isRowToKeep := generator.elementsToKeep[fullName]
 	if !shouldBeSkipped && !isRowToKeep {
-		result[fullName] = generateTableRow(fullName, required, description, name)
+		result[fullName] = generateTableRow(fullName, description, name)
 	}
 
 	if elementType == "object" {
@@ -182,22 +195,16 @@ func (generator *FunctionSpecGenerator) generateObjectDoc(element map[string]int
 		return result
 	}
 
-	var requiredChildren []interface{}
-	if rc := getElement(element, "required"); rc != nil {
-		requiredChildren = rc.([]interface{})
-	}
-
 	propMap := properties.(map[string]interface{})
 	for _, propName := range sortKeys(propMap) {
-		propRequired := contains(requiredChildren, name)
-		mergeMaps(result, generator.generateElementDoc(propMap[propName], propName, propRequired, parentPath+name+"."))
+		mergeMaps(result, generator.generateElementDoc(propMap[propName], propName, parentPath+name+"."))
 	}
 	return result
 }
 
-func generateTableRow(fullName string, required bool, description string, name string) string {
-	return fmt.Sprintf("| **%s** | %s | %s |",
-		fullName, boolToRequiredLabel(required), normalizeDescription(description, name))
+func generateTableRow(fullName string, description string, name string) string {
+	return fmt.Sprintf("| **%s** | %s |",
+		fullName, normalizeDescription(description, name))
 }
 
 func getElement(obj interface{}, path ...string) interface{} {
@@ -240,13 +247,6 @@ func sortKeys[T any](propMap map[string]T) []string {
 	}
 	sort.Strings(keys)
 	return keys
-}
-
-func boolToRequiredLabel(isRequired bool) string {
-	if isRequired {
-		return "Yes"
-	}
-	return "No"
 }
 
 func mergeMaps(dest map[string]string, src map[string]string) {
