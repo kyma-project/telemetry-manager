@@ -81,11 +81,11 @@ func (tps *TracePipelineStatus) SetCondition(cond TracePipelineCondition) {
 	if currentCond != nil {
 		cond.LastTransitionTime = currentCond.LastTransitionTime
 	}
-	newConditions := filterCondition(tps.Conditions, cond.Type)
+	newConditions := filterTracePipelineCondition(tps.Conditions, cond.Type)
 	tps.Conditions = append(newConditions, cond)
 }
 
-func filterCondition(conditions []TracePipelineCondition, condType TracePipelineConditionType) []TracePipelineCondition {
+func filterTracePipelineCondition(conditions []TracePipelineCondition, condType TracePipelineConditionType) []TracePipelineCondition {
 	var newConditions []TracePipelineCondition
 	for _, cond := range conditions {
 		if cond.Type == condType {

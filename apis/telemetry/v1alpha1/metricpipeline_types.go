@@ -55,9 +55,55 @@ type MetricPipelineStatus struct {
 	Conditions []MetricPipelineCondition `json:"conditions,omitempty"`
 }
 
+func NewMetricPipelineCondition(reason string, condType MetricPipelineConditionType) *MetricPipelineCondition {
+	return &MetricPipelineCondition{
+		LastTransitionTime: metav1.Now(),
+		Reason:             reason,
+		Type:               condType,
+	}
+}
+
+func (tps *MetricPipelineStatus) GetCondition(condType MetricPipelineConditionType) *MetricPipelineCondition {
+	for cond := range tps.Conditions {
+		if tps.Conditions[cond].Type == condType {
+			return &tps.Conditions[cond]
+		}
+	}
+	return nil
+}
+
+func (tps *MetricPipelineStatus) HasCondition(condition MetricPipelineConditionType) bool {
+	return tps.GetCondition(condition) != nil
+}
+
+func (tps *MetricPipelineStatus) SetCondition(cond MetricPipelineCondition) {
+	currentCond := tps.GetCondition(cond.Type)
+	if currentCond != nil && currentCond.Reason == cond.Reason {
+		return
+	}
+	if currentCond != nil {
+		cond.LastTransitionTime = currentCond.LastTransitionTime
+	}
+	newConditions := filterMetricPipelineCondition(tps.Conditions, cond.Type)
+	tps.Conditions = append(newConditions, cond)
+}
+
+func filterMetricPipelineCondition(conditions []MetricPipelineCondition, condType MetricPipelineConditionType) []MetricPipelineCondition {
+	var newConditions []MetricPipelineCondition
+	for _, cond := range conditions {
+		if cond.Type == condType {
+			continue
+		}
+		newConditions = append(newConditions, cond)
+	}
+	return newConditions
+}
+
 //+kubebuilder:object:root=true
 //+kubebuilder:resource:scope=Cluster
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.conditions[-1].type`
+//+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // MetricPipeline is the Schema for the metricpipelines API
 type MetricPipeline struct {

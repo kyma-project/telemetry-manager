@@ -22,13 +22,13 @@ const (
 func (r *MetricPipelineReconciler) updateStatus(ctx context.Context, pipelineName string, lockAcquired bool) error {
 	log := logf.FromContext(ctx)
 
-	var pipeline telemetryv1alpha1.TracePipeline
+	var pipeline telemetryv1alpha1.MetricPipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
 
-		return fmt.Errorf("failed to get TracePipeline: %v", err)
+		return fmt.Errorf("failed to get MetricPipeline: %v", err)
 	}
 
 	if pipeline.DeletionTimestamp != nil {
@@ -36,11 +36,11 @@ func (r *MetricPipelineReconciler) updateStatus(ctx context.Context, pipelineNam
 	}
 
 	if !lockAcquired {
-		pending := telemetryv1alpha1.NewTracePipelineCondition(reasonWaitingForLock, telemetryv1alpha1.TracePipelinePending)
+		pending := telemetryv1alpha1.NewMetricPipelineCondition(reasonWaitingForLock, telemetryv1alpha1.MetricPipelinePending)
 
-		if pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning) {
+		if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
 			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))
-			pipeline.Status.Conditions = []telemetryv1alpha1.TracePipelineCondition{}
+			pipeline.Status.Conditions = []telemetryv1alpha1.MetricPipelineCondition{}
 		}
 
 		return setCondition(ctx, r.Client, &pipeline, pending)
@@ -48,11 +48,11 @@ func (r *MetricPipelineReconciler) updateStatus(ctx context.Context, pipelineNam
 
 	secretsMissing := checkForMissingSecrets(ctx, r.Client, &pipeline)
 	if secretsMissing {
-		pending := telemetryv1alpha1.NewTracePipelineCondition(reasonReferencedSecretMissingReason, telemetryv1alpha1.TracePipelinePending)
+		pending := telemetryv1alpha1.NewMetricPipelineCondition(reasonReferencedSecretMissingReason, telemetryv1alpha1.MetricPipelinePending)
 
-		if pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning) {
+		if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
 			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))
-			pipeline.Status.Conditions = []telemetryv1alpha1.TracePipelineCondition{}
+			pipeline.Status.Conditions = []telemetryv1alpha1.MetricPipelineCondition{}
 		}
 
 		return setCondition(ctx, r.Client, &pipeline, pending)
@@ -64,25 +64,25 @@ func (r *MetricPipelineReconciler) updateStatus(ctx context.Context, pipelineNam
 	}
 
 	if openTelemetryReady {
-		if pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning) {
+		if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
 			return nil
 		}
 
-		running := telemetryv1alpha1.NewTracePipelineCondition(reasonTraceCollectorDeploymentReady, telemetryv1alpha1.TracePipelineRunning)
+		running := telemetryv1alpha1.NewMetricPipelineCondition(reasonTraceCollectorDeploymentReady, telemetryv1alpha1.MetricPipelineRunning)
 		return setCondition(ctx, r.Client, &pipeline, running)
 	}
 
-	pending := telemetryv1alpha1.NewTracePipelineCondition(reasonTraceCollectorDeploymentNotReady, telemetryv1alpha1.TracePipelinePending)
+	pending := telemetryv1alpha1.NewMetricPipelineCondition(reasonTraceCollectorDeploymentNotReady, telemetryv1alpha1.MetricPipelinePending)
 
-	if pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning) {
+	if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
 		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))
-		pipeline.Status.Conditions = []telemetryv1alpha1.TracePipelineCondition{}
+		pipeline.Status.Conditions = []telemetryv1alpha1.MetricPipelineCondition{}
 	}
 
 	return setCondition(ctx, r.Client, &pipeline, pending)
 }
 
-func setCondition(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.TracePipeline, condition *telemetryv1alpha1.TracePipelineCondition) error {
+func setCondition(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.MetricPipeline, condition *telemetryv1alpha1.MetricPipelineCondition) error {
 	log := logf.FromContext(ctx)
 
 	log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s", pipeline.Name, condition.Type))
@@ -90,12 +90,12 @@ func setCondition(ctx context.Context, client client.Client, pipeline *telemetry
 	pipeline.Status.SetCondition(*condition)
 
 	if err := client.Status().Update(ctx, pipeline); err != nil {
-		return fmt.Errorf("failed to update TracePipeline status to %s: %v", condition.Type, err)
+		return fmt.Errorf("failed to update MetricPipeline status to %s: %v", condition.Type, err)
 	}
 	return nil
 }
 
-func checkForMissingSecrets(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.TracePipeline) bool {
+func checkForMissingSecrets(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	secretRefFields := kubernetes.LookupSecretRefFields(pipeline.Spec.Output.Otlp, pipeline.Name)
 	for _, field := range secretRefFields {
 		hasKey := checkSecretHasKey(ctx, client, field.SecretKeyRef)

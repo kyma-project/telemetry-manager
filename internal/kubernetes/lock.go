@@ -27,7 +27,7 @@ func TryAcquireLock(ctx context.Context, client client.Client, lockName types.Na
 		}
 	}
 
-	return errors.New("lock is already acquired by another TracePipeline")
+	return errors.New("lock is already acquired by another resource")
 }
 
 func createLock(ctx context.Context, client client.Client, name types.NamespacedName, owner metav1.Object) error {
