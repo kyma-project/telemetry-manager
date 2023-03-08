@@ -77,6 +77,7 @@ type MetricPipelineList struct {
 	Items           []MetricPipeline `json:"items"`
 }
 
+//nolint:gochecknoinits
 func init() {
 	SchemeBuilder.Register(&MetricPipeline{}, &MetricPipelineList{})
 }
