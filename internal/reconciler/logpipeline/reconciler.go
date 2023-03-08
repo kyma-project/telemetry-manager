@@ -19,6 +19,7 @@ package logpipeline
 import (
 	"context"
 	"fmt"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
@@ -29,9 +30,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
@@ -63,10 +62,9 @@ type Reconciler struct {
 	allLogPipelines         prometheus.Gauge
 	unsupportedLogPipelines prometheus.Gauge
 	syncer                  syncer
-	globalConfig            overrides.GlobalConfigHandler
 }
 
-func NewReconciler(client client.Client, config Config, prober DaemonSetProber, handler *overrides.Handler) *Reconciler {
+func NewReconciler(client client.Client, config Config, prober DaemonSetProber) *Reconciler {
 	var r Reconciler
 	r.Client = client
 	r.config = config
@@ -75,42 +73,11 @@ func NewReconciler(client client.Client, config Config, prober DaemonSetProber, 
 	r.unsupportedLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_unsupported_logpipelines", Help: "Number of log pipelines with custom filters or outputs."})
 	metrics.Registry.MustRegister(r.allLogPipelines, r.unsupportedLogPipelines)
 	r.syncer = syncer{client, config}
-	r.globalConfig = handler
 
 	return &r
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := logf.FromContext(ctx)
-	log.V(1).Info("Reconciliation triggered")
-
-	overrideConfig, err := r.globalConfig.UpdateOverrideConfig(ctx, r.config.OverrideConfigMap)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if err := r.globalConfig.CheckGlobalConfig(overrideConfig.Global); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if overrideConfig.Logging.Paused {
-		log.V(1).Info("Skipping reconciliation of logpipeline as reconciliation is paused.")
-		return ctrl.Result{}, nil
-	}
-
-	if err := r.updateMetrics(ctx); err != nil {
-		log.Error(err, "Failed to get all LogPipelines while updating metrics")
-	}
-
-	var pipeline telemetryv1alpha1.LogPipeline
-	if err := r.Get(ctx, req.NamespacedName, &pipeline); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	return ctrl.Result{}, r.doReconcile(ctx, &pipeline)
-}
-
-func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (err error) {
+func (r *Reconciler) DoReconcile(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (err error) {
 	// defer the updating of status to ensure that the status is updated regardless of the outcome of the reconciliation
 	defer func() {
 		if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
@@ -209,7 +176,7 @@ func (r *Reconciler) isLastPipelineMarkedForDeletion(ctx context.Context, pipeli
 	return len(allPipelines.Items) == 1 && allPipelines.Items[0].Name == pipeline.Name, nil
 }
 
-func (r *Reconciler) updateMetrics(ctx context.Context) error {
+func (r *Reconciler) UpdateMetrics(ctx context.Context) error {
 	var allPipelines telemetryv1alpha1.LogPipelineList
 	if err := r.List(ctx, &allPipelines); err != nil {
 		return err

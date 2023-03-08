@@ -49,7 +49,7 @@ func appendOutputFieldIfHasSecretRef(fields []fieldDescriptor, pipelineName stri
 	return fields
 }
 
-func hasSecretRef(pipeline *telemetryv1alpha1.LogPipeline, secretName, secretNamespace string) bool {
+func HasSecretRef(pipeline *telemetryv1alpha1.LogPipeline, secretName, secretNamespace string) bool {
 	secretRefFields := lookupSecretRefFields(pipeline)
 	for _, field := range secretRefFields {
 		if field.secretKeyRef.Name == secretName && field.secretKeyRef.Namespace == secretNamespace {
