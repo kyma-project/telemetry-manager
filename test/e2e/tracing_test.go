@@ -12,32 +12,37 @@ import (
 )
 
 var _ = Describe("Tracing", func() {
-	Context("When creating a TracePipeline ", func() {
-		It("Should create successfully", func() {
-			tracePipeline := &telemetryv1alpha1.TracePipeline{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test",
-				},
-				Spec: telemetryv1alpha1.TracePipelineSpec{
-					Output: telemetryv1alpha1.TracePipelineOutput{
-						Otlp: &telemetryv1alpha1.OtlpOutput{
-							Endpoint: telemetryv1alpha1.ValueType{Value: "http://localhost"},
-						},
+	Context("When no TracePipeline exists", Ordered, func() {
+		tracePipeline := &telemetryv1alpha1.TracePipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test",
+			},
+			Spec: telemetryv1alpha1.TracePipelineSpec{
+				Output: telemetryv1alpha1.TracePipelineOutput{
+					Otlp: &telemetryv1alpha1.OtlpOutput{
+						Endpoint: telemetryv1alpha1.ValueType{Value: "http://localhost"},
 					},
 				},
-			}
+			},
+		}
 
+		It("Should successfully create a TracePipeline", func() {
 			Expect(k8sClient.Create(ctx, tracePipeline)).Should(Succeed())
 		})
-		It("Should have a trace collector deployment", func() {
+
+		It("Should have a trace collector Deployment", func() {
 			Eventually(func() error {
 				var deployment appsv1.Deployment
-				key := types.NamespacedName{
+				deploymentKey := types.NamespacedName{
 					Name:      "telemetry-trace-collector",
 					Namespace: systemNamespace,
 				}
-				return k8sClient.Get(ctx, key, &deployment)
-			}, timeout, interval).ShouldNot(HaveOccurred())
+				return k8sClient.Get(ctx, deploymentKey, &deployment)
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should successfully delete the TracePipeline", func() {
+			Expect(k8sClient.Delete(ctx, tracePipeline)).Should(Succeed())
 		})
 	})
 })

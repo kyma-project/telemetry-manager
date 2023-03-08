@@ -4,5 +4,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: eu.gcr.io/kyma-project/telemetry-manager
-  newTag: v20230301-d3eabc52
+  newName: k3d-kyma-registry:5000/telemetry-manager
+  newTag: latest
