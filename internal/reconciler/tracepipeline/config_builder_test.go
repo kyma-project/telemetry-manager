@@ -2,6 +2,7 @@ package tracepipeline
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/collector"
 	"testing"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -46,62 +47,9 @@ var (
 	}
 )
 
-func TestGetOutputTypeHttp(t *testing.T) {
-	httpOutput := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-			Protocol: "http",
-		},
-	}
-
-	require.Equal(t, "otlphttp", getOutputType(httpOutput))
-}
-
-func TestGetOutputTypeOtlp(t *testing.T) {
-	otlpOutput := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-			Protocol: "grpc",
-		},
-	}
-
-	require.Equal(t, "otlp", getOutputType(otlpOutput))
-}
-
-func TestGetOutputTypeDefault(t *testing.T) {
-	output := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-		},
-	}
-
-	require.Equal(t, "otlp", getOutputType(output))
-}
-
-func TestMakeExporterConfig(t *testing.T) {
-	output := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-		},
-	}
-
-	exporterConfig := makeExporterConfig(output, false)
-	require.NotNil(t, exporterConfig)
-
-	require.True(t, exporterConfig.OTLP.SendingQueue.Enabled)
-	require.Equal(t, 512, exporterConfig.OTLP.SendingQueue.QueueSize)
-
-	require.True(t, exporterConfig.OTLP.RetryOnFailure.Enabled)
-	require.Equal(t, "5s", exporterConfig.OTLP.RetryOnFailure.InitialInterval)
-	require.Equal(t, "30s", exporterConfig.OTLP.RetryOnFailure.MaxInterval)
-	require.Equal(t, "300s", exporterConfig.OTLP.RetryOnFailure.MaxElapsedTime)
-
-	require.Equal(t, "basic", exporterConfig.Logging.Verbosity)
-}
-
 func TestMakeCollectorConfigEndpoint(t *testing.T) {
 	collectorConfig := makeOtelCollectorConfig(tracePipeline, false)
-	expectedEndpoint := fmt.Sprintf("${%s}", otlpEndpointVariable)
+	expectedEndpoint := fmt.Sprintf("${%s}", collector.EndpointVariable)
 	require.Equal(t, expectedEndpoint, collectorConfig.Exporters.OTLP.Endpoint)
 }
 
@@ -132,29 +80,6 @@ func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
 	authHeader, existing := headers["Authorization"]
 	require.True(t, existing)
 	require.Equal(t, "${BASIC_AUTH_HEADER}", authHeader)
-}
-
-func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
-	headers := []v1alpha1.Header{
-		{
-			Name: "Authorization",
-			ValueType: v1alpha1.ValueType{
-				Value: "Bearer xyz",
-			},
-		},
-	}
-	output := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-			Headers:  headers,
-		},
-	}
-
-	exporterConfig := makeExporterConfig(output, false)
-	require.NotNil(t, exporterConfig)
-
-	require.Equal(t, 1, len(exporterConfig.OTLP.Headers))
-	require.Equal(t, "${HEADER_AUTHORIZATION}", exporterConfig.OTLP.Headers["Authorization"])
 }
 
 func TestMakeServiceConfig(t *testing.T) {

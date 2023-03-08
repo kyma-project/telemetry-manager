@@ -1,4 +1,4 @@
-package tracepipeline
+package collector
 
 import (
 	"github.com/kyma-project/telemetry-manager/internal/collector"

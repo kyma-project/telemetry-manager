@@ -18,6 +18,12 @@ limitations under the License.
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/logger"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
 	"testing"
 
@@ -34,9 +40,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/logger"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
@@ -54,6 +57,21 @@ var (
 	ctx       context.Context
 	cancel    context.CancelFunc
 )
+var testConfig = collectorresources.Config{
+	BaseName:          "telemetry-trace-collector",
+	Namespace:         "kyma-system",
+	OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "kyma-system"},
+	Deployment: collectorresources.DeploymentConfig{
+		Image:         "otel/opentelemetry-collector-contrib:0.60.0",
+		CPULimit:      resource.MustParse("1"),
+		MemoryLimit:   resource.MustParse("1Gi"),
+		CPURequest:    resource.MustParse("150m"),
+		MemoryRequest: resource.MustParse("256Mi"),
+	},
+	Service: collectorresources.ServiceConfig{
+		OTLPServiceName: "telemetry-otlp-traces",
+	},
+}
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)

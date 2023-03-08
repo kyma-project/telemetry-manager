@@ -14,17 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package tracepipeline
+package telemetry
 
 import (
 	"context"
 	"fmt"
-	"strings"
-
-	corev1 "k8s.io/api/core/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/collector"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -32,10 +26,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"strings"
 )
 
 //go:generate mockery --name DeploymentProber --filename deployment_prober.go
@@ -43,23 +40,33 @@ type DeploymentProber interface {
 	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
 }
 
-type Reconciler struct {
+// MetricPipelineReconciler reconciles a MetricPipeline object
+type MetricPipelineReconciler struct {
 	client.Client
 	config           collectorresources.Config
 	prober           DeploymentProber
 	overridesHandler overrides.GlobalConfigHandler
 }
 
-func NewReconciler(client client.Client, config collectorresources.Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
-	return &Reconciler{
-		Client:           client,
-		config:           config,
-		prober:           prober,
-		overridesHandler: overridesHandler,
-	}
+func NewReconciler(client client.Client, config collectorresources.Config, prober DeploymentProber, handler *overrides.Handler) *MetricPipelineReconciler {
+	var r MetricPipelineReconciler
+	r.Client = client
+	r.config = config
+	r.prober = prober
+	r.overridesHandler = handler
+	return &r
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+// Reconcile is part of the main kubernetes reconciliation loop which aims to
+// move the current state of the cluster closer to the desired state.
+// TODO(user): Modify the Reconcile function to compare the state specified by
+// the MetricPipeline object against the actual cluster state, and then
+// perform operations to make the cluster state reflect the state specified by
+// the user.
+//
+// For more details, check Reconcile and its Result here:
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
+func (r *MetricPipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := logf.FromContext(ctx)
 
 	log.V(1).Info("Reconciliation triggered")
@@ -72,20 +79,21 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := r.overridesHandler.CheckGlobalConfig(overrideConfig.Global); err != nil {
 		return ctrl.Result{}, err
 	}
-	if overrideConfig.Tracing.Paused {
-		log.V(1).Info("Skipping reconciliation of tracepipeline as reconciliation is paused")
+	if overrideConfig.Metrics.Paused {
+		log.V(1).Info("Skipping reconciliation of metricpipeline as reconciliation is paused")
 		return ctrl.Result{}, nil
 	}
 
-	var tracePipeline telemetryv1alpha1.TracePipeline
-	if err := r.Get(ctx, req.NamespacedName, &tracePipeline); err != nil {
+	var metricPipeline telemetryv1alpha1.MetricPipeline
+
+	if err := r.Get(ctx, req.NamespacedName, &metricPipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	return ctrl.Result{}, r.doReconcile(ctx, &tracePipeline)
+	return ctrl.Result{}, r.doReconcile(ctx, &metricPipeline)
 }
 
-func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
+func (r *MetricPipelineReconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
 	var err error
 	lockAcquired := true
 
@@ -100,7 +108,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}()
 
 	lockName := types.NamespacedName{
-		Name:      "telemetry-tracepipeline-lock",
+		Name:      "telemetry-metricpipeline-lock",
 		Namespace: r.config.Namespace,
 	}
 	if err = kubernetes.TryAcquireLock(ctx, r, lockName, pipeline); err != nil {
@@ -174,14 +182,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to create otel collector collector service: %w", err)
 	}
 
-	openCensusService := collectorresources.MakeOpenCensusService(r.config)
-	if err = controllerutil.SetControllerReference(pipeline, openCensusService, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateService(ctx, r.Client, openCensusService); err != nil {
-		return fmt.Errorf("failed to create otel collector open census service: %w", err)
-	}
-
 	metricsService := collectorresources.MakeMetricsService(r.config)
 	if err = controllerutil.SetControllerReference(pipeline, metricsService, r.Scheme()); err != nil {
 		return err
@@ -191,6 +191,13 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	return nil
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&telemetryv1alpha1.MetricPipeline{}).
+		Complete(r)
 }
 
 func isInsecureOutput(endpoint string) bool {

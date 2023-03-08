@@ -1,16 +1,40 @@
-package tracepipeline
+package collector
 
 import (
 	"github.com/kyma-project/telemetry-manager/internal/collector"
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 )
+
+type Config struct {
+	BaseName          string
+	Namespace         string
+	OverrideConfigMap types.NamespacedName
+
+	Deployment DeploymentConfig
+	Service    ServiceConfig
+	Overrides  overrides.Config
+}
+
+type DeploymentConfig struct {
+	Image             string
+	PriorityClassName string
+	CPULimit          resource.Quantity
+	MemoryLimit       resource.Quantity
+	CPURequest        resource.Quantity
+	MemoryRequest     resource.Quantity
+}
+
+type ServiceConfig struct {
+	OTLPServiceName string
+}
 
 const (
 	configHashAnnotationKey = "checksum/config"
@@ -26,13 +50,13 @@ var (
 	replicas = int32(1)
 )
 
-func makeDefaultLabels(config collectorresources.Config) map[string]string {
+func makeDefaultLabels(config Config) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name": config.BaseName,
 	}
 }
 
-func MakeConfigMap(config collectorresources.Config, collectorConfig collector.OTELCollectorConfig) *corev1.ConfigMap {
+func MakeConfigMap(config Config, collectorConfig collector.OTELCollectorConfig) *corev1.ConfigMap {
 	bytes, _ := yaml.Marshal(collectorConfig)
 	confYAML := string(bytes)
 
@@ -48,7 +72,7 @@ func MakeConfigMap(config collectorresources.Config, collectorConfig collector.O
 	}
 }
 
-func MakeSecret(config collectorresources.Config, secretData map[string][]byte) *corev1.Secret {
+func MakeSecret(config Config, secretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.BaseName,
@@ -59,7 +83,7 @@ func MakeSecret(config collectorresources.Config, secretData map[string][]byte) 
 	}
 }
 
-func MakeDeployment(config collectorresources.Config, configHash string) *appsv1.Deployment {
+func MakeDeployment(config Config, configHash string) *appsv1.Deployment {
 	labels := makeDefaultLabels(config)
 	optional := true
 	annotations := makePodAnnotations(configHash)
@@ -172,7 +196,7 @@ func makePodAnnotations(configHash string) map[string]string {
 	return annotations
 }
 
-func makeResourceRequirements(config collectorresources.Config) corev1.ResourceRequirements {
+func makeResourceRequirements(config Config) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Requests: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    config.Deployment.CPURequest,
@@ -185,7 +209,7 @@ func makeResourceRequirements(config collectorresources.Config) corev1.ResourceR
 	}
 }
 
-func MakeOTLPService(config collectorresources.Config) *corev1.Service {
+func MakeOTLPService(config Config) *corev1.Service {
 	labels := makeDefaultLabels(config)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -214,7 +238,7 @@ func MakeOTLPService(config collectorresources.Config) *corev1.Service {
 	}
 }
 
-func MakeMetricsService(config collectorresources.Config) *corev1.Service {
+func MakeMetricsService(config Config) *corev1.Service {
 	labels := makeDefaultLabels(config)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -241,7 +265,7 @@ func MakeMetricsService(config collectorresources.Config) *corev1.Service {
 	}
 }
 
-func MakeOpenCensusService(config collectorresources.Config) *corev1.Service {
+func MakeOpenCensusService(config Config) *corev1.Service {
 	labels := makeDefaultLabels(config)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
