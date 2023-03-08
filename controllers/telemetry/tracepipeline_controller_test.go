@@ -6,13 +6,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-project/telemetry-manager/internal/collector"
+	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
+
 	"gopkg.in/yaml.v3"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/require"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -27,10 +30,10 @@ import (
 )
 
 var (
-	testTracePipelineConfig = tracepipeline.Config{
+	testTracePipelineConfig = collectorresources.Config{
 		Namespace:         "kyma-system",
 		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "kyma-system"},
-		Deployment: tracepipeline.DeploymentConfig{
+		Deployment: collectorresources.DeploymentConfig{
 			Image:         "otel/opentelemetry-collector-contrib:0.73.0",
 			CPULimit:      resource.MustParse("1"),
 			MemoryLimit:   resource.MustParse("1Gi"),
@@ -265,7 +268,7 @@ func validateOwnerReferences(ownerRefernces []metav1.OwnerReference) error {
 }
 
 func validateCollectorConfig(configData string) error {
-	var config tracepipeline.OTELCollectorConfig
+	var config collector.OTELCollectorConfig
 	if err := yaml.Unmarshal([]byte(configData), &config); err != nil {
 		return err
 	}

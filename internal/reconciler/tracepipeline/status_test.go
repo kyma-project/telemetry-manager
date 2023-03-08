@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
+	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
+
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -14,6 +14,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 )
 
 func TestUpdateStatus(t *testing.T) {
@@ -41,7 +44,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-
+			config: collectorresources.Config{BaseName: "trace-collector"},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
@@ -74,6 +77,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
+			config: collectorresources.Config{BaseName: "trace-collector"},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
@@ -112,6 +116,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
+			config: collectorresources.Config{BaseName: "trace-collector"},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
@@ -158,6 +163,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
+			config: collectorresources.Config{BaseName: "trace-collector"},
 			prober: proberStub,
 		}
 
@@ -207,6 +213,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
+			config: collectorresources.Config{BaseName: "trace-collector"},
 			prober: proberStub,
 		}
 
@@ -240,6 +247,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
+			config: collectorresources.Config{BaseName: "trace-collector"},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, false)
@@ -272,6 +280,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
+			config: collectorresources.Config{BaseName: "trace-collector"},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, false)

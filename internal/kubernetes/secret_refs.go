@@ -1,4 +1,4 @@
-package tracepipeline
+package kubernetes
 
 import (
 	"context"
