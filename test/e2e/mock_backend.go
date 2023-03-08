@@ -142,12 +142,13 @@ service:
 				{
 					Name:       "export-http",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       8080,
+					Port:       80,
+					NodePort:   30080,
 					TargetPort: intstr.FromInt(80),
 				},
 			},
 			Selector: labels,
-			Type:     corev1.ServiceTypeLoadBalancer,
+			Type:     corev1.ServiceTypeNodePort,
 		},
 	}); err != nil {
 		return fmt.Errorf("failed to create service: %v", err)
