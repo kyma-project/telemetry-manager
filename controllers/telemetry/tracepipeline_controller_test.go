@@ -16,7 +16,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,7 +52,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 
 	When("creating TracePipeline", func() {
 		ctx := context.Background()
-		kymaSystemNamespace := &v1.Namespace{
+		kymaSystemNamespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "kyma-system",
 			},
@@ -62,7 +61,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 			"user":     []byte("secret-username"),
 			"password": []byte("secret-password"),
 		}
-		secret := &v1.Secret{
+		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "basic-auth-credentials",
 				Namespace: "default",
@@ -110,7 +109,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 			Expect(k8sClient.Create(ctx, tracePipeline)).Should(Succeed())
 
 			Eventually(func() error {
-				var serviceAccount v1.ServiceAccount
+				var serviceAccount corev1.ServiceAccount
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      "telemetry-trace-collector",
 					Namespace: "kyma-system",
@@ -172,7 +171,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 			}, timeout, interval).Should(BeNil())
 
 			Eventually(func() error {
-				var otelCollectorService v1.Service
+				var otelCollectorService corev1.Service
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      "telemetry-otlp-traces",
 					Namespace: "kyma-system",
@@ -186,7 +185,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 			}, timeout, interval).Should(BeNil())
 
 			Eventually(func() error {
-				var otelCollectorConfigMap v1.ConfigMap
+				var otelCollectorConfigMap corev1.ConfigMap
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      "telemetry-trace-collector",
 					Namespace: "kyma-system",
@@ -203,7 +202,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 			}, timeout, interval).Should(BeNil())
 
 			Eventually(func() error {
-				var otelCollectorSecret v1.Secret
+				var otelCollectorSecret corev1.Secret
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      "telemetry-trace-collector",
 					Namespace: "kyma-system",
