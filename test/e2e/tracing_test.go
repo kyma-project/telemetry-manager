@@ -45,6 +45,13 @@ var _ = Describe("Tracing", func() {
 			Expect(deployMockTraceReceiver(k8sClient)).Should(Succeed())
 		})
 
+		It("Should call the mock trace receiver web interface", func() {
+			Eventually(func() error {
+				_, err := getResponse("http://localhost:8080")
+				return err
+			}, timeout, interval).Should(Succeed())
+		})
+
 		It("Should successfully delete the TracePipeline", func() {
 			Expect(k8sClient.Delete(ctx, tracePipeline)).Should(Succeed())
 		})

@@ -4,13 +4,17 @@ package e2e
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 )
 
 func deployMockTraceReceiver(c client.Client) error {
@@ -155,4 +159,31 @@ service:
 	}
 
 	return nil
+}
+
+func getResponse(url string) ([]byte, error) {
+	if len(url) == 0 {
+		return nil, errors.New("invalid URL")
+	}
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	c := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	code := resp.StatusCode
+	body, err := io.ReadAll(resp.Body)
+	if err == nil && code != http.StatusOK {
+		return nil, fmt.Errorf(string(body))
+	}
+	if code != http.StatusOK {
+		return nil, fmt.Errorf("not ok: %v", http.StatusText(code))
+	}
+	return body, nil
 }
