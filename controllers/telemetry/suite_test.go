@@ -1,3 +1,5 @@
+package telemetry
+
 /*
 Copyright 2021.
 
@@ -13,7 +15,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package telemetry
 
 import (
 	"context"
@@ -101,19 +102,32 @@ var _ = BeforeSuite(func() {
 	client := mgr.GetClient()
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
-	logpipelineReconciler := logpipeline.NewReconciler(client, testLogPipelineConfig, &kubernetes.DaemonSetProber{Client: client})
-	logpipelineController := NewLogPipelineReconciler(client, logpipelineReconciler, testLogPipelineConfig, overrides)
+	logpipelineController := NewLogPipelineReconciler(
+		client,
+		logpipeline.NewReconciler(client, testLogPipelineConfig, &kubernetes.DaemonSetProber{Client: client}, overrides),
+		testLogPipelineConfig)
 	err = logpipelineController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
-	logparserReconciler := logparser.NewReconciler(client, testLogParserConfig, &kubernetes.DaemonSetProber{Client: client}, &kubernetes.DaemonSetAnnotator{Client: client})
-	logParserController := NewLogParserReconciler(client, logparserReconciler, testLogParserConfig, overrides)
-	err = logParserController.SetupWithManager(mgr)
+	logparserReconciler := NewLogParserReconciler(
+		client,
+		logparser.NewReconciler(
+			client,
+			testLogParserConfig,
+			&kubernetes.DaemonSetProber{Client: client},
+			&kubernetes.DaemonSetAnnotator{Client: client},
+			overrides,
+		),
+		testLogParserConfig,
+	)
+	err = logparserReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
-	tracepipelineReconciler := tracepipeline.NewReconciler(client, testTracePipelineConfig, &kubernetes.DaemonSetProber{Client: client})
-	tracepipelineController := NewTracePipelineReconciler(client, tracepipelineReconciler, testTracePipelineConfig, overrides)
-	err = tracepipelineController.SetupWithManager(mgr)
+	tracepipelineReconciler := NewTracePipelineReconciler(
+		client,
+		tracepipeline.NewReconciler(client, testTracePipelineConfig, &kubernetes.DeploymentProber{Client: client}, overrides),
+	)
+	err = tracepipelineReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {

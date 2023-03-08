@@ -22,12 +22,15 @@ import (
 	"fmt"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	corev1 "k8s.io/api/core/v1"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -72,15 +75,42 @@ type Reconciler struct {
 	overridesHandler overrides.GlobalConfigHandler
 }
 
-func NewReconciler(client client.Client, config Config, prober DeploymentProber) *Reconciler {
-	var r Reconciler
-	r.Client = client
-	r.config = config
-	r.prober = prober
-	return &r
+func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
+	return &Reconciler{
+		Client:           client,
+		config:           config,
+		prober:           prober,
+		overridesHandler: overridesHandler,
+	}
 }
 
-func (r *Reconciler) DoReconcile(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log := logf.FromContext(ctx)
+
+	log.V(1).Info("Reconciliation triggered")
+
+	overrideConfig, err := r.overridesHandler.UpdateOverrideConfig(ctx, r.config.OverrideConfigMap)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.overridesHandler.CheckGlobalConfig(overrideConfig.Global); err != nil {
+		return ctrl.Result{}, err
+	}
+	if overrideConfig.Tracing.Paused {
+		log.V(1).Info("Skipping reconciliation of tracepipeline as reconciliation is paused")
+		return ctrl.Result{}, nil
+	}
+
+	var tracePipeline telemetryv1alpha1.TracePipeline
+	if err := r.Get(ctx, req.NamespacedName, &tracePipeline); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	return ctrl.Result{}, r.doReconcile(ctx, &tracePipeline)
+}
+
+func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
 	var err error
 	lockAcquired := true
 

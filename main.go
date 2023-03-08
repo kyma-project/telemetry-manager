@@ -25,44 +25,38 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/telemetry-manager/internal/setup"
-
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"k8s.io/apimachinery/pkg/api/resource"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	logparserreconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	tracepipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/setup"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logparservalidation "github.com/kyma-project/telemetry-manager/webhook/logparser/validation"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 	logpipelinevalidation "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
-
 	//nolint:gosec
 	_ "net/http/pprof"
 
 	"github.com/go-logr/zapr"
-
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
@@ -421,9 +415,10 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
-	reconciler := logpipelinereconciler.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client})
-
-	return telemetrycontrollers.NewLogPipelineReconciler(client, reconciler, config, overrides)
+	return telemetrycontrollers.NewLogPipelineReconciler(
+		client,
+		logpipelinereconciler.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client}, overrides),
+		config)
 }
 
 func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogParserReconciler {
@@ -433,9 +428,17 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
-	reconciler := logparserreconciler.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client}, &kubernetes.DaemonSetAnnotator{Client: client})
-
-	return telemetrycontrollers.NewLogParserReconciler(client, reconciler, config, overrides)
+	return telemetrycontrollers.NewLogParserReconciler(
+		client,
+		logparserreconciler.NewReconciler(
+			client,
+			config,
+			&kubernetes.DaemonSetProber{Client: client},
+			&kubernetes.DaemonSetAnnotator{Client: client},
+			overrides,
+		),
+		config,
+	)
 }
 
 func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
@@ -476,9 +479,10 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
-	reconciler := tracepipelinereconciler.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client})
-
-	return telemetrycontrollers.NewTracePipelineReconciler(client, reconciler, config, overrides)
+	return telemetrycontrollers.NewTracePipelineReconciler(
+		client,
+		tracepipelinereconciler.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overrides),
+	)
 }
 
 func createDryRunConfig() dryrun.Config {

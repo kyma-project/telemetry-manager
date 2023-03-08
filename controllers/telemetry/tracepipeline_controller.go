@@ -1,3 +1,5 @@
+package telemetry
+
 /*
 Copyright 2021.
 
@@ -13,9 +15,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-package telemetry
-
 import (
 	"context"
 	"fmt"
@@ -26,17 +25,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
-	"github.com/kyma-project/telemetry-manager/internal/setup"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
+	"github.com/kyma-project/telemetry-manager/internal/setup"
 )
 
 // TracePipelineReconciler reconciles a TracePipeline object
@@ -44,44 +41,17 @@ type TracePipelineReconciler struct {
 	client.Client
 
 	reconciler *tracepipeline.Reconciler
-
-	config           tracepipeline.Config
-	overridesHandler *overrides.Handler
 }
 
-func NewTracePipelineReconciler(client client.Client, reconciler *tracepipeline.Reconciler, config tracepipeline.Config, handler *overrides.Handler) *TracePipelineReconciler {
+func NewTracePipelineReconciler(client client.Client, reconciler *tracepipeline.Reconciler) *TracePipelineReconciler {
 	return &TracePipelineReconciler{
-		Client:           client,
-		reconciler:       reconciler,
-		config:           config,
-		overridesHandler: handler,
+		Client:     client,
+		reconciler: reconciler,
 	}
 }
 
 func (r *TracePipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := logf.FromContext(ctx)
-
-	log.V(1).Info("Reconciliation triggered")
-
-	overrideConfig, err := r.overridesHandler.UpdateOverrideConfig(ctx, r.config.OverrideConfigMap)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if err := r.overridesHandler.CheckGlobalConfig(overrideConfig.Global); err != nil {
-		return ctrl.Result{}, err
-	}
-	if overrideConfig.Tracing.Paused {
-		log.V(1).Info("Skipping reconciliation of tracepipeline as reconciliation is paused")
-		return ctrl.Result{}, nil
-	}
-
-	var tracePipeline telemetryv1alpha1.TracePipeline
-	if err := r.Get(ctx, req.NamespacedName, &tracePipeline); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	return ctrl.Result{}, r.reconciler.DoReconcile(ctx, &tracePipeline)
+	return r.reconciler.Reconcile(ctx, req)
 }
 
 func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {

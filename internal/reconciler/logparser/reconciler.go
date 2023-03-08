@@ -20,13 +20,17 @@ import (
 	"context"
 	"fmt"
 
+	ctrl "sigs.k8s.io/controller-runtime"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 )
 
 const checksumAnnotationKey = "checksum/logparser-config"
@@ -50,23 +54,51 @@ type DaemonSetAnnotator interface {
 
 type Reconciler struct {
 	client.Client
-	config    Config
-	prober    DaemonSetProber
-	annotator DaemonSetAnnotator
-	syncer    syncer
+	config           Config
+	prober           DaemonSetProber
+	annotator        DaemonSetAnnotator
+	syncer           syncer
+	overridesHandler *overrides.Handler
 }
 
-func NewReconciler(client client.Client, config Config, prober DaemonSetProber, annotator DaemonSetAnnotator) *Reconciler {
+func NewReconciler(client client.Client, config Config, prober DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
-		Client:    client,
-		config:    config,
-		prober:    prober,
-		annotator: annotator,
-		syncer:    syncer{client, config},
+		Client:           client,
+		config:           config,
+		prober:           prober,
+		annotator:        annotator,
+		syncer:           syncer{client, config},
+		overridesHandler: overridesHandler,
 	}
 }
 
-func (r *Reconciler) DoReconcile(ctx context.Context, parser *telemetryv1alpha1.LogParser) (err error) {
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log := logf.FromContext(ctx)
+	log.V(1).Info("Reconciliation triggered")
+
+	overrideConfig, err := r.overridesHandler.UpdateOverrideConfig(ctx, r.config.OverrideConfigMap)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.overridesHandler.CheckGlobalConfig(overrideConfig.Global); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if overrideConfig.Logging.Paused {
+		log.V(1).Info("Skipping reconciliation of logparser as reconciliation is paused.")
+		return ctrl.Result{}, nil
+	}
+
+	var parser telemetryv1alpha1.LogParser
+	if err := r.Get(ctx, req.NamespacedName, &parser); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	return ctrl.Result{}, r.doReconcile(ctx, &parser)
+}
+
+func (r *Reconciler) doReconcile(ctx context.Context, parser *telemetryv1alpha1.LogParser) (err error) {
 	// defer the updating of status to ensure that the status is updated regardless of the outcome of the reconciliation
 	defer func() {
 		if statusErr := r.updateStatus(ctx, parser.Name); statusErr != nil {
