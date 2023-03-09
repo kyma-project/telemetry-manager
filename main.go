@@ -331,8 +331,8 @@ func main() {
 	}
 
 	if err = (&telemetrycontrollers.TelemetryManagerReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
 		EventRecorder: mgr.GetEventRecorderFor("telemetrymanager-operator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "TelemetryManager")

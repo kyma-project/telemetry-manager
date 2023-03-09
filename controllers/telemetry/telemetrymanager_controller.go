@@ -37,7 +37,6 @@ const (
 	fieldOwner      = "telemetrymanager.kyma-project.io/owner"
 )
 
-
 type TelemetryManagerReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -174,4 +173,3 @@ func (r *TelemetryManagerReconciler) serverSideApply(ctx context.Context, obj cl
 	obj.SetResourceVersion("")
 	return r.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner(fieldOwner))
 }
-
