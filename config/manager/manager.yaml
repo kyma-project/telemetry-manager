@@ -44,7 +44,6 @@ spec:
       - command:
         - /manager
         args:
-        - --leader-elect
         - --cert-dir=/tmp
         - --fluent-bit-cpu-limit=1
         - --fluent-bit-memory-limit=1Gi
