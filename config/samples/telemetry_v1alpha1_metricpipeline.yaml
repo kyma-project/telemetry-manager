@@ -1,3 +1,89 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: null
+  name: metric-receiver
+spec: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mock-metric-receiver
+  namespace: metric-receiver
+  labels:
+    app: mock-metric-receiver
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    exporters:
+      logging:
+        loglevel: debug
+    service:
+      pipelines:
+        metrics:
+          receivers:
+            - otlp
+          exporters:
+            - logging
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mock-metric-receiver
+  name: mock-metric-receiver
+  namespace: metric-receiver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mock-metric-receiver
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: mock-metric-receiver
+    spec:
+      volumes:
+        - name: collector-config
+          configMap:
+            name: mock-metric-receiver
+      securityContext:
+        fsGroup: 101
+      containers:
+        - image: otel/opentelemetry-collector-contrib:0.70.0
+          name: otel-collector
+          volumeMounts:
+            - name: collector-config
+              mountPath: /etc/collector
+          args:
+            - --config=/etc/collector/config.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mock-metric-receiver
+  name: mock-metric-receiver
+  namespace: metric-receiver
+spec:
+  ports:
+    - name: http-otlp
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: grpc-otlp
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+  selector:
+    app: mock-metric-receiver
+---
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
 metadata:
@@ -12,4 +98,4 @@ spec:
   output:
     otlp:
       endpoint:
-        value: http://metrics-backend:4317
+        value: http://mock-metric-receiver.metric-receiver:4317
