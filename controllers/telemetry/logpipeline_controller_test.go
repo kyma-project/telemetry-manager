@@ -1,20 +1,4 @@
-/*
-Copyright 2021.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
-package logpipeline
+package telemetry
 
 import (
 	"bufio"
@@ -24,15 +8,44 @@ import (
 	"strings"
 	"time"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/prometheus/common/expfmt"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+)
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+var (
+	testLogPipelineConfig = logpipelinereconciler.Config{
+		DaemonSet:         types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
+		SectionsConfigMap: types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
+		FilesConfigMap:    types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
+		EnvSecret:         types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
+		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "default"},
+		DaemonSetConfig: logpipelineresources.DaemonSetConfig{
+			FluentBitImage:              "my-fluent-bit-image",
+			FluentBitConfigPrepperImage: "my-fluent-bit-config-image",
+			ExporterImage:               "my-exporter-image",
+			PriorityClassName:           "my-priority-class",
+			CPULimit:                    resource.MustParse("1"),
+			MemoryLimit:                 resource.MustParse("500Mi"),
+			CPURequest:                  resource.MustParse(".1"),
+			MemoryRequest:               resource.MustParse("100Mi"),
+		},
+		PipelineDefaults: builder.PipelineDefaults{
+			InputTag:          "kube",
+			MemoryBufferLimit: "10M",
+			StorageType:       "filesystem",
+			FsBufferLimit:     "1G",
+		},
+	}
 )
 
 var _ = Describe("LogPipeline controller", Ordered, func() {
@@ -95,7 +108,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 	}
 	secretKeyRef := telemetryv1alpha1.SecretKeyRef{
 		Name:      "my-secret",
-		Namespace: testConfig.DaemonSet.Namespace,
+		Namespace: testLogPipelineConfig.DaemonSet.Namespace,
 		Key:       "key",
 	}
 	variableRefs := telemetryv1alpha1.VariableRef{
@@ -148,7 +161,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-secret",
-					Namespace: testConfig.DaemonSet.Namespace,
+					Namespace: testLogPipelineConfig.DaemonSet.Namespace,
 				},
 				StringData: map[string]string{
 					"key": "value",
@@ -211,8 +224,8 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			Eventually(func() string {
 				cmFileName := LogPipelineName + ".conf"
 				configMapLookupKey := types.NamespacedName{
-					Name:      testConfig.SectionsConfigMap.Name,
-					Namespace: testConfig.SectionsConfigMap.Namespace,
+					Name:      testLogPipelineConfig.SectionsConfigMap.Name,
+					Namespace: testLogPipelineConfig.SectionsConfigMap.Namespace,
 				}
 				var fluentBitCm corev1.ConfigMap
 				err := k8sClient.Get(ctx, configMapLookupKey, &fluentBitCm)
@@ -226,8 +239,8 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 		It("Should verify files have been copied into -files configmap", func() {
 			Eventually(func() string {
 				filesConfigMapLookupKey := types.NamespacedName{
-					Name:      testConfig.FilesConfigMap.Name,
-					Namespace: testConfig.FilesConfigMap.Namespace,
+					Name:      testLogPipelineConfig.FilesConfigMap.Name,
+					Namespace: testLogPipelineConfig.FilesConfigMap.Namespace,
 				}
 				var filesCm corev1.ConfigMap
 				err := k8sClient.Get(ctx, filesConfigMapLookupKey, &filesCm)
@@ -240,10 +253,10 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 
 		It("Should have created flunent-bit parsers configmap", func() {
 			Eventually(func() string {
-				parserCmName := fmt.Sprintf("%s-parsers", testConfig.DaemonSet.Name)
+				parserCmName := fmt.Sprintf("%s-parsers", testLogPipelineConfig.DaemonSet.Name)
 				parserConfigMapLookupKey := types.NamespacedName{
 					Name:      parserCmName,
-					Namespace: testConfig.FilesConfigMap.Namespace,
+					Namespace: testLogPipelineConfig.FilesConfigMap.Namespace,
 				}
 				var parserCm corev1.ConfigMap
 				err := k8sClient.Get(ctx, parserConfigMapLookupKey, &parserCm)
@@ -257,8 +270,8 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 		It("Should verify secret reference is copied into environment secret", func() {
 			Eventually(func() string {
 				envSecretLookupKey := types.NamespacedName{
-					Name:      testConfig.EnvSecret.Name,
-					Namespace: testConfig.EnvSecret.Namespace,
+					Name:      testLogPipelineConfig.EnvSecret.Name,
+					Namespace: testLogPipelineConfig.EnvSecret.Namespace,
 				}
 				var envSecret corev1.Secret
 				err := k8sClient.Get(ctx, envSecretLookupKey, &envSecret)
@@ -272,7 +285,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			Eventually(func() []string {
 				loggingConfigLookupKey := types.NamespacedName{
 					Name:      LogPipelineName,
-					Namespace: testConfig.DaemonSet.Namespace,
+					Namespace: testLogPipelineConfig.DaemonSet.Namespace,
 				}
 				var updatedLogPipeline telemetryv1alpha1.LogPipeline
 				err := k8sClient.Get(ctx, loggingConfigLookupKey, &updatedLogPipeline)
@@ -286,8 +299,8 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			Eventually(func() int {
 				var fluentBitDaemonSet appsv1.DaemonSet
 				err := k8sClient.Get(ctx, types.NamespacedName{
-					Name:      testConfig.DaemonSet.Name,
-					Namespace: testConfig.DaemonSet.Namespace,
+					Name:      testLogPipelineConfig.DaemonSet.Name,
+					Namespace: testLogPipelineConfig.DaemonSet.Namespace,
 				}, &fluentBitDaemonSet)
 				if err != nil {
 					return 0
@@ -300,8 +313,8 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			Eventually(func() bool {
 				var fluentBitDaemonSet appsv1.DaemonSet
 				err := k8sClient.Get(ctx, types.NamespacedName{
-					Name:      testConfig.DaemonSet.Name,
-					Namespace: testConfig.DaemonSet.Namespace,
+					Name:      testLogPipelineConfig.DaemonSet.Name,
+					Namespace: testLogPipelineConfig.DaemonSet.Namespace,
 				}, &fluentBitDaemonSet)
 				if err != nil {
 					return false

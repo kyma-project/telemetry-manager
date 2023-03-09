@@ -19,13 +19,7 @@ package logpipeline
 import (
 	"context"
 	"fmt"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	resources "github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
+
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,6 +27,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
+	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	resources "github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
 )
 
 type Config struct {
@@ -63,10 +65,10 @@ type Reconciler struct {
 	allLogPipelines         prometheus.Gauge
 	unsupportedLogPipelines prometheus.Gauge
 	syncer                  syncer
-	globalConfig            overrides.GlobalConfigHandler
+	overridesHandler        *overrides.Handler
 }
 
-func NewReconciler(client client.Client, config Config, prober DaemonSetProber, handler *overrides.Handler) *Reconciler {
+func NewReconciler(client client.Client, config Config, prober DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
 	var r Reconciler
 	r.Client = client
 	r.config = config
@@ -75,7 +77,7 @@ func NewReconciler(client client.Client, config Config, prober DaemonSetProber, 
 	r.unsupportedLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_unsupported_logpipelines", Help: "Number of log pipelines with custom filters or outputs."})
 	metrics.Registry.MustRegister(r.allLogPipelines, r.unsupportedLogPipelines)
 	r.syncer = syncer{client, config}
-	r.globalConfig = handler
+	r.overridesHandler = overridesHandler
 
 	return &r
 }
@@ -84,12 +86,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	log := logf.FromContext(ctx)
 	log.V(1).Info("Reconciliation triggered")
 
-	overrideConfig, err := r.globalConfig.UpdateOverrideConfig(ctx, r.config.OverrideConfigMap)
+	overrideConfig, err := r.overridesHandler.UpdateOverrideConfig(ctx, r.config.OverrideConfigMap)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.globalConfig.CheckGlobalConfig(overrideConfig.Global); err != nil {
+	if err := r.overridesHandler.CheckGlobalConfig(overrideConfig.Global); err != nil {
 		return ctrl.Result{}, err
 	}
 

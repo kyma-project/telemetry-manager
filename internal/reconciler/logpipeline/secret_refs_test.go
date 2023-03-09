@@ -212,10 +212,10 @@ func TestHasSecretRef(t *testing.T) {
 		},
 	}
 
-	require.True(t, hasSecretRef(&pipeline, "secret-1", "default"))
-	require.True(t, hasSecretRef(&pipeline, "secret-2", "default"))
-	require.True(t, hasSecretRef(&pipeline, "creds", "default"))
+	require.True(t, HasSecretRef(&pipeline, "secret-1", "default"))
+	require.True(t, HasSecretRef(&pipeline, "secret-2", "default"))
+	require.True(t, HasSecretRef(&pipeline, "creds", "default"))
 
-	require.False(t, hasSecretRef(&pipeline, "secret-1", "kube-system"))
-	require.False(t, hasSecretRef(&pipeline, "unknown", "default"))
+	require.False(t, HasSecretRef(&pipeline, "secret-1", "kube-system"))
+	require.False(t, HasSecretRef(&pipeline, "unknown", "default"))
 }

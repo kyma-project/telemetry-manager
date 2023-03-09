@@ -4,17 +4,46 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes/mocks"
+	resources "github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+)
+
+var (
+	testConfig = Config{
+		DaemonSet:         types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
+		SectionsConfigMap: types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
+		FilesConfigMap:    types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
+		EnvSecret:         types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
+		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "default"},
+		DaemonSetConfig: resources.DaemonSetConfig{
+			FluentBitImage:              "my-fluent-bit-image",
+			FluentBitConfigPrepperImage: "my-fluent-bit-config-image",
+			ExporterImage:               "my-exporter-image",
+			PriorityClassName:           "my-priority-class",
+			CPULimit:                    resource.MustParse("1"),
+			MemoryLimit:                 resource.MustParse("500Mi"),
+			CPURequest:                  resource.MustParse(".1"),
+			MemoryRequest:               resource.MustParse("100Mi"),
+		},
+		PipelineDefaults: builder.PipelineDefaults{
+			InputTag:          "kube",
+			MemoryBufferLimit: "10M",
+			StorageType:       "filesystem",
+			FsBufferLimit:     "1G",
+		},
+	}
 )
 
 func TestSyncSectionsConfigMap(t *testing.T) {

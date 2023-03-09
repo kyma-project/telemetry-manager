@@ -1,6 +1,7 @@
 package tracepipeline
 
 import (
+	"context"
 	"testing"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -33,7 +34,7 @@ func TestFetchSecretValue(t *testing.T) {
 		},
 	}
 
-	fetchedData, err := fetchSecretValue(ctx, client, value)
+	fetchedData, err := fetchSecretValue(context.TODO(), client, value)
 
 	require.Nil(t, err)
 	require.Equal(t, string(fetchedData), "myValue")
@@ -52,7 +53,7 @@ func TestFetchValueFromNonExistingSecret(t *testing.T) {
 		},
 	}
 
-	_, err := fetchSecretValue(ctx, client, value)
+	_, err := fetchSecretValue(context.TODO(), client, value)
 	require.Error(t, err)
 }
 
@@ -75,7 +76,7 @@ func TestFetchValueFromNonExistingKey(t *testing.T) {
 		},
 	}
 
-	_, err := fetchSecretValue(ctx, client, value)
+	_, err := fetchSecretValue(context.TODO(), client, value)
 	require.Error(t, err)
 }
 
@@ -110,7 +111,7 @@ func TestFetchFromCr(t *testing.T) {
 		},
 	}
 
-	data, err := fetchSecretData(ctx, client, pipeline.Spec.Output.Otlp)
+	data, err := fetchSecretData(context.TODO(), client, pipeline.Spec.Output.Otlp)
 	require.NoError(t, err)
 	require.Contains(t, data, otlpEndpointVariable)
 	require.Contains(t, data, "HEADER_AUTHORIZATION")
@@ -204,7 +205,7 @@ func TestFetchFromSecret(t *testing.T) {
 		},
 	}
 
-	data, err := fetchSecretData(ctx, client, pipeline.Spec.Output.Otlp)
+	data, err := fetchSecretData(context.TODO(), client, pipeline.Spec.Output.Otlp)
 	require.NoError(t, err)
 	require.Contains(t, data, otlpEndpointVariable)
 	require.Equal(t, string(data[otlpEndpointVariable]), "secret-endpoint")
@@ -271,7 +272,7 @@ func TestFetchFromSecretWithMissingKey(t *testing.T) {
 		},
 	}
 
-	_, err := fetchSecretData(ctx, client, pipeline.Spec.Output.Otlp)
+	_, err := fetchSecretData(context.TODO(), client, pipeline.Spec.Output.Otlp)
 	require.Error(t, err)
 }
 
@@ -298,6 +299,6 @@ func TestFetchSecretDataFromNonExistingSecret(t *testing.T) {
 		},
 	}
 
-	_, err := fetchSecretData(ctx, client, pipeline.Spec.Output.Otlp)
+	_, err := fetchSecretData(context.TODO(), client, pipeline.Spec.Output.Otlp)
 	require.Error(t, err)
 }
