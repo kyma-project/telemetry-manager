@@ -78,8 +78,8 @@ test: manifests generate fmt vet tidy envtest ## Run tests.
 e2e-test: ginkgo k3d ## Provision k3d cluster and run end-to-end tests.
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
 	$(GINKGO) run --tags e2e -v ./test/e2e
-	k3d cluster delete kyma
-	k3d registry delete k3d-kyma-registry
+	$(K3D) cluster delete kyma
+	$(K3D) registry delete k3d-kyma-registry
 
 ##@ Build
 
@@ -140,6 +140,7 @@ K3D ?= $(LOCALBIN)/k3d
 KUSTOMIZE_VERSION ?= v5.0.0
 CONTROLLER_TOOLS_VERSION ?= v0.11.3
 K3D_VERSION ?= v5.4.7
+GINKGO_VERSION ?= v2.9.0
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -160,10 +161,10 @@ $(ENVTEST): $(LOCALBIN)
 .PHONY: ginkgo
 ginkgo: $(GINKGO)
 $(GINKGO): $(LOCALBIN)
-	GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo@v2.8.4
+	GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
 
 K3D_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh"
 .PHONY: k3d
 k3d: $(K3D)
 $(K3D): $(LOCALBIN)
-	curl -s $(K3D_INSTALL_SCRIPT) | USE_SUDO=false K3D_INSTALL_DIR=$(LOCALBIN) TAG=$(K3D_VERSION) bash
+	curl -s $(K3D_INSTALL_SCRIPT) | PATH=$(PATH):$(LOCALBIN) USE_SUDO=false K3D_INSTALL_DIR=$(LOCALBIN) TAG=$(K3D_VERSION) bash

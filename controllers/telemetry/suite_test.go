@@ -1,9 +1,13 @@
+package telemetry
+
 /*
+Copyright 2021.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -11,32 +15,38 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package logparser
 
 import (
 	"context"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/logger"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	zapLog "go.uber.org/zap"
-	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
-	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	zapLog "go.uber.org/zap"
+
 	"k8s.io/client-go/kubernetes/scheme"
-	//+kubebuilder:scaffold:imports
+	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/logger"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
+	//+kubebuilder:scaffold:imports
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
+
+var cfg *rest.Config
 
 var (
 	k8sClient client.Client
@@ -45,18 +55,10 @@ var (
 	cancel    context.CancelFunc
 )
 
-var (
-	testParserConfig = Config{
-		ParsersConfigMap:  types.NamespacedName{Name: "test-telemetry-fluent-bit-parser", Namespace: "default"},
-		DaemonSet:         types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
-		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "default"},
-	}
-)
-
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "LogParser Controller Suite")
+	RunSpecs(t, "Controller Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -69,10 +71,11 @@ var _ = BeforeSuite(func() {
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: true,
+		ErrorIfCRDPathMissing: false,
 	}
 
-	cfg, err := testEnv.Start()
+	var err error
+	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
@@ -87,10 +90,10 @@ var _ = BeforeSuite(func() {
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:                 scheme.Scheme,
-		MetricsBindAddress:     "localhost:9080",
+		MetricsBindAddress:     "localhost:8080",
 		Port:                   19443,
 		Host:                   "localhost",
-		HealthProbeBindAddress: "localhost:9081",
+		HealthProbeBindAddress: "localhost:8081",
 		LeaderElection:         false,
 		LeaderElectionID:       "cdd7ef0a.kyma-project.io",
 	})
@@ -99,8 +102,32 @@ var _ = BeforeSuite(func() {
 	client := mgr.GetClient()
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
-	reconciler := NewReconciler(client, testParserConfig, &kubernetes.DaemonSetProber{Client: client}, &kubernetes.DaemonSetAnnotator{Client: client}, overrides)
-	err = reconciler.SetupWithManager(mgr)
+	logpipelineController := NewLogPipelineReconciler(
+		client,
+		logpipeline.NewReconciler(client, testLogPipelineConfig, &kubernetes.DaemonSetProber{Client: client}, overrides),
+		testLogPipelineConfig)
+	err = logpipelineController.SetupWithManager(mgr)
+	Expect(err).ToNot(HaveOccurred())
+
+	logparserReconciler := NewLogParserReconciler(
+		client,
+		logparser.NewReconciler(
+			client,
+			testLogParserConfig,
+			&kubernetes.DaemonSetProber{Client: client},
+			&kubernetes.DaemonSetAnnotator{Client: client},
+			overrides,
+		),
+		testLogParserConfig,
+	)
+	err = logparserReconciler.SetupWithManager(mgr)
+	Expect(err).ToNot(HaveOccurred())
+
+	tracepipelineReconciler := NewTracePipelineReconciler(
+		client,
+		tracepipeline.NewReconciler(client, testTracePipelineConfig, &kubernetes.DeploymentProber{Client: client}, overrides),
+	)
+	err = tracepipelineReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
@@ -108,6 +135,7 @@ var _ = BeforeSuite(func() {
 		err := mgr.Start(ctx)
 		Expect(err).ToNot(HaveOccurred())
 	}()
+
 })
 
 var _ = AfterSuite(func() {

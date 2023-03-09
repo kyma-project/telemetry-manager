@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"context"
 	"testing"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -60,7 +59,7 @@ func TestValidateSecretKeyRefs(t *testing.T) {
 	mockClient := &mocks.Client{}
 	varValidator := NewVariablesValidator(mockClient)
 
-	err := varValidator.Validate(context.TODO(), newLogPipeline, logPipelines)
+	err := varValidator.Validate(newLogPipeline, logPipelines)
 	require.Error(t, err)
 }
 
@@ -97,7 +96,7 @@ func TestVariableValidator(t *testing.T) {
 		Items: []telemetryv1alpha1.LogPipeline{*logPipeline},
 	}
 
-	err := varValidator.Validate(context.TODO(), logPipeline, logPipelines)
+	err := varValidator.Validate(logPipeline, logPipelines)
 	require.Error(t, err)
 	require.Equal(t, "mandatory field variable name or secretKeyRef name or secretKeyRef namespace or secretKeyRef key cannot be empty", err.Error())
 }

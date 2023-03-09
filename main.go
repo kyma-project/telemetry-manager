@@ -25,44 +25,38 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/telemetry-manager/internal/setup"
-
-	"github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
-
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"k8s.io/apimachinery/pkg/api/resource"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	logparsercontroller "github.com/kyma-project/telemetry-manager/controller/logparser"
-	logpipelinecontroller "github.com/kyma-project/telemetry-manager/controller/logpipeline"
-	tracepipelinereconciler "github.com/kyma-project/telemetry-manager/controller/tracepipeline"
+	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	logparserreconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
+	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	tracepipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
+	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/setup"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logparservalidation "github.com/kyma-project/telemetry-manager/webhook/logparser/validation"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 	logpipelinevalidation "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
-
 	//nolint:gosec
 	_ "net/http/pprof"
 
 	"github.com/go-logr/zapr"
-
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
@@ -358,15 +352,15 @@ func validateFlags() error {
 	return nil
 }
 
-func createLogPipelineReconciler(client client.Client) *logpipelinecontroller.Reconciler {
-	config := logpipelinecontroller.Config{
+func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.LogPipelineReconciler {
+	config := logpipelinereconciler.Config{
 		SectionsConfigMap: types.NamespacedName{Name: fluentBitSectionsConfigMap, Namespace: telemetryNamespace},
 		FilesConfigMap:    types.NamespacedName{Name: fluentBitFilesConfigMap, Namespace: telemetryNamespace},
 		EnvSecret:         types.NamespacedName{Name: fluentBitEnvSecret, Namespace: telemetryNamespace},
 		DaemonSet:         types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
 		PipelineDefaults:  createPipelineDefaults(),
-		DaemonSetConfig: logpipeline.DaemonSetConfig{
+		DaemonSetConfig: logpipelineresources.DaemonSetConfig{
 			FluentBitImage:              fluentBitImageVersion,
 			FluentBitConfigPrepperImage: fluentBitConfigPrepperImageVersion,
 			ExporterImage:               fluentBitExporterVersion,
@@ -379,17 +373,30 @@ func createLogPipelineReconciler(client client.Client) *logpipelinecontroller.Re
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
-	return logpipelinecontroller.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client}, overrides)
+	return telemetrycontrollers.NewLogPipelineReconciler(
+		client,
+		logpipelinereconciler.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client}, overrides),
+		config)
 }
 
-func createLogParserReconciler(client client.Client) *logparsercontroller.Reconciler {
-	config := logparsercontroller.Config{
+func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogParserReconciler {
+	config := logparserreconciler.Config{
 		ParsersConfigMap: types.NamespacedName{Name: fluentBitParsersConfigMap, Namespace: telemetryNamespace},
 		DaemonSet:        types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
-	return logparsercontroller.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client}, &kubernetes.DaemonSetAnnotator{Client: client}, overrides)
+	return telemetrycontrollers.NewLogParserReconciler(
+		client,
+		logparserreconciler.NewReconciler(
+			client,
+			config,
+			&kubernetes.DaemonSetProber{Client: client},
+			&kubernetes.DaemonSetAnnotator{Client: client},
+			overrides,
+		),
+		config,
+	)
 }
 
 func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
@@ -411,7 +418,7 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 		dryrun.NewDryRunner(client, createDryRunConfig()))
 }
 
-func createTracePipelineReconciler(client client.Client) *tracepipelinereconciler.Reconciler {
+func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.TracePipelineReconciler {
 	config := tracepipelinereconciler.Config{
 		Namespace: telemetryNamespace,
 		Deployment: tracepipelinereconciler.DeploymentConfig{
@@ -427,7 +434,10 @@ func createTracePipelineReconciler(client client.Client) *tracepipelinereconcile
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
-	return tracepipelinereconciler.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overrides)
+	return telemetrycontrollers.NewTracePipelineReconciler(
+		client,
+		tracepipelinereconciler.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overrides),
+	)
 }
 
 func createDryRunConfig() dryrun.Config {

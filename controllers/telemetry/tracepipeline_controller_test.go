@@ -1,20 +1,47 @@
-package tracepipeline
+package telemetry
 
 import (
 	"context"
 	"fmt"
+	"testing"
 	"time"
 
-	"gopkg.in/yaml.v2"
-	"k8s.io/apimachinery/pkg/types"
+	"gopkg.in/yaml.v3"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
+
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+)
+
+var (
+	testTracePipelineConfig = tracepipeline.Config{
+		BaseName:          "telemetry-trace-collector",
+		Namespace:         "kyma-system",
+		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "kyma-system"},
+		Deployment: tracepipeline.DeploymentConfig{
+			Image:         "otel/opentelemetry-collector-contrib:0.60.0",
+			CPULimit:      resource.MustParse("1"),
+			MemoryLimit:   resource.MustParse("1Gi"),
+			CPURequest:    resource.MustParse("150m"),
+			MemoryRequest: resource.MustParse("256Mi"),
+		},
+		Service: tracepipeline.ServiceConfig{
+			OTLPServiceName: "telemetry-otlp-traces",
+		},
+	}
 )
 
 var _ = Describe("Deploying a TracePipeline", func() {
@@ -25,7 +52,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 
 	When("creating TracePipeline", func() {
 		ctx := context.Background()
-		kymaSystemNamespace := &v1.Namespace{
+		kymaSystemNamespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "kyma-system",
 			},
@@ -34,7 +61,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 			"user":     []byte("secret-username"),
 			"password": []byte("secret-password"),
 		}
-		secret := &v1.Secret{
+		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "basic-auth-credentials",
 				Namespace: "default",
@@ -82,7 +109,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 			Expect(k8sClient.Create(ctx, tracePipeline)).Should(Succeed())
 
 			Eventually(func() error {
-				var serviceAccount v1.ServiceAccount
+				var serviceAccount corev1.ServiceAccount
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      "telemetry-trace-collector",
 					Namespace: "kyma-system",
@@ -144,7 +171,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 			}, timeout, interval).Should(BeNil())
 
 			Eventually(func() error {
-				var otelCollectorService v1.Service
+				var otelCollectorService corev1.Service
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      "telemetry-otlp-traces",
 					Namespace: "kyma-system",
@@ -158,7 +185,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 			}, timeout, interval).Should(BeNil())
 
 			Eventually(func() error {
-				var otelCollectorConfigMap v1.ConfigMap
+				var otelCollectorConfigMap corev1.ConfigMap
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      "telemetry-trace-collector",
 					Namespace: "kyma-system",
@@ -175,7 +202,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 			}, timeout, interval).Should(BeNil())
 
 			Eventually(func() error {
-				var otelCollectorSecret v1.Secret
+				var otelCollectorSecret corev1.Secret
 				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      "telemetry-trace-collector",
 					Namespace: "kyma-system",
@@ -242,7 +269,7 @@ func validateOwnerReferences(ownerRefernces []metav1.OwnerReference) error {
 }
 
 func validateCollectorConfig(configData string) error {
-	var config OTELCollectorConfig
+	var config tracepipeline.OTELCollectorConfig
 	if err := yaml.Unmarshal([]byte(configData), &config); err != nil {
 		return err
 	}
@@ -252,4 +279,79 @@ func validateCollectorConfig(configData string) error {
 	}
 
 	return nil
+}
+
+func TestMapSecret(t *testing.T) {
+	tests := []struct {
+		password         telemetryv1alpha1.ValueType
+		secret           corev1.Secret
+		summary          string
+		expectedRequests []reconcile.Request
+	}{
+		{
+			summary: "map secret referenced by pipeline",
+			password: telemetryv1alpha1.ValueType{
+				ValueFrom: &telemetryv1alpha1.ValueFromSource{
+					SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+						Name:      "basic-auth-credentials",
+						Namespace: "default",
+						Key:       "password",
+					},
+				},
+			},
+			secret: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic-auth-credentials",
+					Namespace: "default",
+				},
+			},
+			expectedRequests: []reconcile.Request{{NamespacedName: types.NamespacedName{Name: "dummy"}}},
+		},
+		{
+			summary: "map unused secret",
+			password: telemetryv1alpha1.ValueType{
+				Value: "qwerty",
+			},
+			secret: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic-auth-credentials",
+					Namespace: "default",
+				},
+			},
+			expectedRequests: []reconcile.Request{},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.summary, func(t *testing.T) {
+			tracePipeline := &telemetryv1alpha1.TracePipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "dummy",
+				},
+				Spec: telemetryv1alpha1.TracePipelineSpec{
+					Output: telemetryv1alpha1.TracePipelineOutput{
+						Otlp: &telemetryv1alpha1.OtlpOutput{
+							Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
+							Authentication: &telemetryv1alpha1.AuthenticationOptions{
+								Basic: &telemetryv1alpha1.BasicAuthOptions{
+									User:     telemetryv1alpha1.ValueType{Value: "admin"},
+									Password: tc.password,
+								},
+							},
+						},
+					},
+				},
+			}
+
+			scheme := runtime.NewScheme()
+			_ = clientgoscheme.AddToScheme(scheme)
+			_ = telemetryv1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tracePipeline).Build()
+			sut := TracePipelineReconciler{Client: fakeClient}
+
+			actualRequests := sut.mapSecret(&tc.secret)
+
+			require.ElementsMatch(t, tc.expectedRequests, actualRequests)
+		})
+	}
 }
