@@ -114,6 +114,7 @@ type TelemetryManagerList struct {
 	Items           []TelemetryManager `json:"items"`
 }
 
+//nolint:gochecknoinits
 func init() {
 	SchemeBuilder.Register(&TelemetryManager{}, &TelemetryManagerList{})
 }

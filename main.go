@@ -19,6 +19,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"k8s.io/client-go/tools/record"
 	"net/http"
 	"os"
 	"path"
@@ -125,6 +126,8 @@ var (
 
 	webhookServiceName string
 	enableWebhook      bool
+
+	enableTelemetryManager bool
 )
 
 const (
@@ -232,6 +235,8 @@ func main() {
 	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
 	flag.StringVar(&webhookServiceName, "validating-webhook-service-name", "telemetry-operator-webhook", "Validating webhook service name.")
 
+	flag.BoolVar(&enableTelemetryManager, "enable-telemetry-manager", true, "Enable telemetry manager.")
+
 	flag.Parse()
 	if err := validateFlags(); err != nil {
 		setupLog.Error(err, "Invalid flag provided")
@@ -330,13 +335,13 @@ func main() {
 		}
 	}
 
-	if err = (&telemetrycontrollers.TelemetryManagerReconciler{
-		Client:        mgr.GetClient(),
-		Scheme:        mgr.GetScheme(),
-		EventRecorder: mgr.GetEventRecorderFor("telemetrymanager-operator"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "TelemetryManager")
-		os.Exit(1)
+	if enableTelemetryManager {
+		setupLog.Info("Starting with telemetry mnager controller")
+		if err = createTelemetryManagerReconciler(mgr.GetClient(), mgr.GetScheme(), mgr.GetEventRecorderFor("telemetrymanager-operator"),
+		).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "TelemetryManager")
+			os.Exit(1)
+		}
 	}
 	//+kubebuilder:scaffold:builder
 
@@ -507,4 +512,8 @@ func createPipelineDefaults() builder.PipelineDefaults {
 
 func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
+}
+
+func createTelemetryManagerReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) *telemetrycontrollers.Reconciler {
+	return telemetrycontrollers.NewReconciler(client, scheme, eventRecorder)
 }
