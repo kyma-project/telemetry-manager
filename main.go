@@ -110,18 +110,11 @@ const (
 
 	telemetryNamespace = "kyma-system"
 
-	traceCollectorBaseName = "telemetry-trace-collector"
-
-	fluentBitConfigMap         = "telemetry-fluent-bit"
 	fluentBitSectionsConfigMap = "telemetry-fluent-bit-sections"
 	fluentBitParsersConfigMap  = "telemetry-fluent-bit-parsers"
 	fluentBitDaemonSet         = "telemetry-fluent-bit"
 	fluentBitEnvSecret         = "telemetry-fluent-bit-env"
 	fluentBitFilesConfigMap    = "telemetry-fluent-bit-files"
-	fluentBitPath              = "fluent-bit/bin/fluent-bit"
-	fluentBitPluginDirectory   = "fluent-bit/lib"
-	fluentBitInputTag          = "tele"
-	fluentBitStorageType       = "filesystem"
 	webhookServiceName         = "telemetry-operator-webhook"
 )
 
@@ -340,9 +333,6 @@ func main() {
 }
 
 func validateFlags() error {
-	if fluentBitConfigMap == "" {
-		return errors.New("--fluent-bit-cm-name flag is required")
-	}
 	if fluentBitSectionsConfigMap == "" {
 		return errors.New("--fluent-bit-sections-cm-name flag is required")
 	}
@@ -364,9 +354,6 @@ func validateFlags() error {
 
 	if logLevel != "debug" && logLevel != "info" && logLevel != "warn" && logLevel != "error" && logLevel != "fatal" {
 		return errors.New("--log-level has to be one of debug, info, warn, error, fatal")
-	}
-	if fluentBitStorageType != "filesystem" && fluentBitStorageType != "memory" {
-		return errors.New("--fluent-bit-storage-type has to be either filesystem or memory")
 	}
 	return nil
 }
@@ -445,18 +432,16 @@ func createTracePipelineReconciler(client client.Client) *tracepipelinereconcile
 
 func createDryRunConfig() dryrun.Config {
 	return dryrun.Config{
-		FluentBitBinPath:       fluentBitPath,
-		FluentBitPluginDir:     fluentBitPluginDirectory,
-		FluentBitConfigMapName: types.NamespacedName{Name: fluentBitConfigMap, Namespace: telemetryNamespace},
+		FluentBitConfigMapName: types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: telemetryNamespace},
 		PipelineDefaults:       createPipelineDefaults(),
 	}
 }
 
 func createPipelineDefaults() builder.PipelineDefaults {
 	return builder.PipelineDefaults{
-		InputTag:          fluentBitInputTag,
+		InputTag:          "tele",
 		MemoryBufferLimit: fluentBitMemoryBufferLimit,
-		StorageType:       fluentBitStorageType,
+		StorageType:       "filesystem",
 		FsBufferLimit:     fluentBitFsBufferLimit,
 	}
 }
