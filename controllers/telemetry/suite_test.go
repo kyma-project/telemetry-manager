@@ -23,13 +23,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
 	"testing"
 
@@ -63,21 +60,6 @@ var (
 	ctx       context.Context
 	cancel    context.CancelFunc
 )
-var testConfig = collectorresources.Config{
-	BaseName:          "telemetry-trace-collector",
-	Namespace:         "kyma-system",
-	OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "kyma-system"},
-	Deployment: collectorresources.DeploymentConfig{
-		Image:         "otel/opentelemetry-collector-contrib:0.60.0",
-		CPULimit:      resource.MustParse("1"),
-		MemoryLimit:   resource.MustParse("1Gi"),
-		CPURequest:    resource.MustParse("150m"),
-		MemoryRequest: resource.MustParse("256Mi"),
-	},
-	Service: collectorresources.ServiceConfig{
-		OTLPServiceName: "telemetry-otlp-traces",
-	},
-}
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
