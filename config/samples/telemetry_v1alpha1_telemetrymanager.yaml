@@ -1,0 +1,12 @@
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TelemetryManager
+metadata:
+  labels:
+    app.kubernetes.io/name: telemetrymanager
+    app.kubernetes.io/instance: telemetrymanager-sample
+    app.kubernetes.io/part-of: telemetry-operator
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: telemetry-operator
+  name: telemetrymanager-sample
+spec:
+

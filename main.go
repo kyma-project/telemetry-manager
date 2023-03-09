@@ -29,12 +29,14 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
 
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
+
 	"k8s.io/apimachinery/pkg/api/resource"
+
+	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -65,6 +67,8 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -326,6 +330,14 @@ func main() {
 		}
 	}
 
+	if err = (&telemetrycontrollers.TelemetryManagerReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		EventRecorder: mgr.GetEventRecorderFor("telemetrymanager-operator"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "TelemetryManager")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", mgr.GetWebhookServer().StartedChecker()); err != nil {
