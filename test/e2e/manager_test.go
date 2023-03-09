@@ -162,5 +162,14 @@ var _ = Describe("Telemetry-manager", func() {
 			err := k8sClient.Get(ctx, key, &crd)
 			Expect(err).NotTo(HaveOccurred())
 		})
+
+		It("Should have MetricPipelines CRD", func() {
+			var crd apiextensionsv1.CustomResourceDefinition
+			key := types.NamespacedName{
+				Name: "metricpipelines.telemetry.kyma-project.io",
+			}
+			err := k8sClient.Get(ctx, key, &crd)
+			Expect(err).NotTo(HaveOccurred())
+		})
 	})
 })
