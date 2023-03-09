@@ -1,4 +1,4 @@
-package telemetry
+package metricpipeline
 
 import (
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
