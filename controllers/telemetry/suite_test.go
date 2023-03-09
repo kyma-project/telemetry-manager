@@ -18,11 +18,17 @@ limitations under the License.
 
 import (
 	"context"
+	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/collector"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
+	"gopkg.in/yaml.v3"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
 	"testing"
@@ -120,6 +126,13 @@ var _ = BeforeSuite(func() {
 	client := mgr.GetClient()
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
+	kymaSystemNamespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kyma-system",
+		},
+	}
+	Expect(k8sClient.Create(ctx, kymaSystemNamespace)).Should(Succeed())
+
 	logpipelineController := NewLogPipelineReconciler(
 		client,
 		logpipeline.NewReconciler(client, testLogPipelineConfig, &kubernetes.DaemonSetProber{Client: client}, overrides),
@@ -148,6 +161,10 @@ var _ = BeforeSuite(func() {
 	err = tracepipelineReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
+	metricPipelineReconciler := NewMetricPipelineReconciler(client, testMetricPipelineConfig, &kubernetes.DeploymentProber{Client: client}, overrides)
+	err = metricPipelineReconciler.SetupWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred())
+
 	go func() {
 		defer GinkgoRecover()
 		err := mgr.Start(ctx)
@@ -162,3 +179,28 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
+
+func validatePodAnnotations(deployment appsv1.Deployment) error {
+	if value, found := deployment.Spec.Template.ObjectMeta.Annotations["sidecar.istio.io/inject"]; !found || value != "false" {
+		return fmt.Errorf("istio sidecar injection for otel collector not disabled")
+	}
+
+	if value, found := deployment.Spec.Template.ObjectMeta.Annotations["checksum/config"]; !found || value == "" {
+		return fmt.Errorf("configuration hash not found in pod annotations")
+	}
+
+	return nil
+}
+
+func validateCollectorConfig(configData string) error {
+	var config collector.OTELCollectorConfig
+	if err := yaml.Unmarshal([]byte(configData), &config); err != nil {
+		return err
+	}
+
+	if !config.Exporters.OTLP.TLS.Insecure {
+		return fmt.Errorf("Insecure flag not set")
+	}
+
+	return nil
+}

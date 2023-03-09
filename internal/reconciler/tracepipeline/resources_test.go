@@ -2,6 +2,7 @@ package tracepipeline
 
 import (
 	"github.com/kyma-project/telemetry-manager/internal/collector"
+	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -10,10 +11,10 @@ import (
 )
 
 var (
-	config = Config{
+	config = collectorresources.Config{
 		BaseName:  "collector",
 		Namespace: "kyma-system",
-		Service: ServiceConfig{
+		Service: collectorresources.ServiceConfig{
 			OTLPServiceName: "collector-traces",
 		},
 	}

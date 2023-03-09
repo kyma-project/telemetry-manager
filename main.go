@@ -483,10 +483,10 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 }
 
 func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.TracePipelineReconciler {
-	config := tracepipelinereconciler.Config{
+	config := collectorresources.Config{
 		Namespace: telemetryNamespace,
 		BaseName:  traceCollectorBaseName,
-		Deployment: tracepipelinereconciler.DeploymentConfig{
+		Deployment: collectorresources.DeploymentConfig{
 			Image:             traceCollectorImage,
 			PriorityClassName: traceCollectorPriorityClass,
 			CPULimit:          resource.MustParse(traceCollectorCPULimit),
@@ -494,7 +494,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 			CPURequest:        resource.MustParse(traceCollectorCPURequest),
 			MemoryRequest:     resource.MustParse(traceCollectorMemoryRequest),
 		},
-		Service: tracepipelinereconciler.ServiceConfig{
+		Service: collectorresources.ServiceConfig{
 			OTLPServiceName: traceCollectorOTLPServiceName,
 		},
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
@@ -526,7 +526,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
-	return telemetrycontrollers.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overrides)
+	return telemetrycontrollers.NewMetricPipelineReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overrides)
 }
 
 func createDryRunConfig() dryrun.Config {

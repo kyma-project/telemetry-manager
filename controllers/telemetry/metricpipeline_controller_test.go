@@ -3,10 +3,10 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/collector"
+	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"time"
 
-	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/types"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -18,6 +18,24 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var (
+	testMetricPipelineConfig = collectorresources.Config{
+		BaseName:          "telemetry-metric-gateway",
+		Namespace:         "kyma-system",
+		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "kyma-system"},
+		Deployment: collectorresources.DeploymentConfig{
+			Image:         "otel/opentelemetry-collector-contrib:0.60.0",
+			CPULimit:      resource.MustParse("1"),
+			MemoryLimit:   resource.MustParse("1Gi"),
+			CPURequest:    resource.MustParse("150m"),
+			MemoryRequest: resource.MustParse("256Mi"),
+		},
+		Service: collectorresources.ServiceConfig{
+			OTLPServiceName: "telemetry-otlp-metrics",
+		},
+	}
+)
+
 var _ = Describe("Deploying a MetricPipeline", func() {
 	const (
 		timeout  = time.Second * 100
@@ -26,18 +44,13 @@ var _ = Describe("Deploying a MetricPipeline", func() {
 
 	When("creating MetricPipeline", func() {
 		ctx := context.Background()
-		kymaSystemNamespace := &v1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "kyma-system",
-			},
-		}
 		data := map[string][]byte{
 			"user":     []byte("secret-username"),
 			"password": []byte("secret-password"),
 		}
 		secret := &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "basic-auth-credentials",
+				Name:      "basic-auth-credentials-metrics",
 				Namespace: "default",
 			},
 			Data: data,
@@ -55,7 +68,7 @@ var _ = Describe("Deploying a MetricPipeline", func() {
 								User: telemetryv1alpha1.ValueType{
 									ValueFrom: &telemetryv1alpha1.ValueFromSource{
 										SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-											Name:      "basic-auth-credentials",
+											Name:      "basic-auth-credentials-metrics",
 											Namespace: "default",
 											Key:       "user",
 										},
@@ -64,7 +77,7 @@ var _ = Describe("Deploying a MetricPipeline", func() {
 								Password: telemetryv1alpha1.ValueType{
 									ValueFrom: &telemetryv1alpha1.ValueFromSource{
 										SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-											Name:      "basic-auth-credentials",
+											Name:      "basic-auth-credentials-metrics",
 											Namespace: "default",
 											Key:       "password",
 										},
@@ -78,7 +91,6 @@ var _ = Describe("Deploying a MetricPipeline", func() {
 		}
 
 		It("creates OpenTelemetry Collector resources", func() {
-			Expect(k8sClient.Create(ctx, kymaSystemNamespace)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, secret)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, metricPipeline)).Should(Succeed())
 
@@ -90,7 +102,7 @@ var _ = Describe("Deploying a MetricPipeline", func() {
 				}, &serviceAccount); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(serviceAccount.OwnerReferences); err != nil {
+				if err := validateMetricsOwnerReferences(serviceAccount.OwnerReferences); err != nil {
 					return err
 				}
 				return nil
@@ -104,7 +116,7 @@ var _ = Describe("Deploying a MetricPipeline", func() {
 				}, &clusterRole); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(clusterRole.OwnerReferences); err != nil {
+				if err := validateMetricsOwnerReferences(clusterRole.OwnerReferences); err != nil {
 					return err
 				}
 				return nil
@@ -118,7 +130,7 @@ var _ = Describe("Deploying a MetricPipeline", func() {
 				}, &clusterRoleBinding); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(clusterRoleBinding.OwnerReferences); err != nil {
+				if err := validateMetricsOwnerReferences(clusterRoleBinding.OwnerReferences); err != nil {
 					return err
 				}
 				return nil
@@ -132,10 +144,10 @@ var _ = Describe("Deploying a MetricPipeline", func() {
 				}, &otelCollectorDeployment); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(otelCollectorDeployment.OwnerReferences); err != nil {
+				if err := validateMetricsOwnerReferences(otelCollectorDeployment.OwnerReferences); err != nil {
 					return err
 				}
-				if err := validateEnvironment(otelCollectorDeployment); err != nil {
+				if err := validateMetricsEnvironment(otelCollectorDeployment); err != nil {
 					return err
 				}
 				if err := validatePodAnnotations(otelCollectorDeployment); err != nil {
@@ -152,7 +164,7 @@ var _ = Describe("Deploying a MetricPipeline", func() {
 				}, &otelCollectorService); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(otelCollectorService.OwnerReferences); err != nil {
+				if err := validateMetricsOwnerReferences(otelCollectorService.OwnerReferences); err != nil {
 					return err
 				}
 				return nil
@@ -166,7 +178,7 @@ var _ = Describe("Deploying a MetricPipeline", func() {
 				}, &otelCollectorConfigMap); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(otelCollectorConfigMap.OwnerReferences); err != nil {
+				if err := validateMetricsOwnerReferences(otelCollectorConfigMap.OwnerReferences); err != nil {
 					return err
 				}
 				if err := validateCollectorConfig(otelCollectorConfigMap.Data["relay.conf"]); err != nil {
@@ -183,31 +195,18 @@ var _ = Describe("Deploying a MetricPipeline", func() {
 				}, &otelCollectorSecret); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(otelCollectorSecret.OwnerReferences); err != nil {
+				if err := validateMetricsOwnerReferences(otelCollectorSecret.OwnerReferences); err != nil {
 					return err
 				}
 				return nil
 			}, timeout, interval).Should(BeNil())
 
 			Expect(k8sClient.Delete(ctx, metricPipeline)).Should(Succeed())
-			Expect(k8sClient.Delete(ctx, kymaSystemNamespace)).Should(Succeed())
 		})
 	})
 })
 
-func validatePodAnnotations(deployment appsv1.Deployment) error {
-	if value, found := deployment.Spec.Template.ObjectMeta.Annotations["sidecar.istio.io/inject"]; !found || value != "false" {
-		return fmt.Errorf("istio sidecar injection for otel collector not disabled")
-	}
-
-	if value, found := deployment.Spec.Template.ObjectMeta.Annotations["checksum/config"]; !found || value == "" {
-		return fmt.Errorf("configuration hash not found in pod annotations")
-	}
-
-	return nil
-}
-
-func validateEnvironment(deployment appsv1.Deployment) error {
+func validateMetricsEnvironment(deployment appsv1.Deployment) error {
 	container := deployment.Spec.Template.Spec.Containers[0]
 	env := container.EnvFrom[0]
 
@@ -222,7 +221,7 @@ func validateEnvironment(deployment appsv1.Deployment) error {
 	return nil
 }
 
-func validateOwnerReferences(ownerRefernces []metav1.OwnerReference) error {
+func validateMetricsOwnerReferences(ownerRefernces []metav1.OwnerReference) error {
 	if len(ownerRefernces) != 1 {
 		return fmt.Errorf("unexpected number of owner references: %d", len(ownerRefernces))
 	}
@@ -239,18 +238,5 @@ func validateOwnerReferences(ownerRefernces []metav1.OwnerReference) error {
 	if !*ownerReference.BlockOwnerDeletion {
 		return fmt.Errorf("owner reference does not block owner deletion")
 	}
-	return nil
-}
-
-func validateCollectorConfig(configData string) error {
-	var config collector.OTELCollectorConfig
-	if err := yaml.Unmarshal([]byte(configData), &config); err != nil {
-		return err
-	}
-
-	if !config.Exporters.OTLP.TLS.Insecure {
-		return fmt.Errorf("Insecure flag not set")
-	}
-
 	return nil
 }

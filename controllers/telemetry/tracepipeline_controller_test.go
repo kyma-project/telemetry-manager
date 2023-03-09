@@ -3,12 +3,9 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/collector"
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
 	"testing"
 	"time"
-
-	"gopkg.in/yaml.v3"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
@@ -53,18 +50,13 @@ var _ = Describe("Deploying a TracePipeline", func() {
 
 	When("creating TracePipeline", func() {
 		ctx := context.Background()
-		kymaSystemNamespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "kyma-system",
-			},
-		}
 		data := map[string][]byte{
 			"user":     []byte("secret-username"),
 			"password": []byte("secret-password"),
 		}
 		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "basic-auth-credentials",
+				Name:      "basic-auth-credentials-tracing",
 				Namespace: "default",
 			},
 			Data: data,
@@ -82,7 +74,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 								User: telemetryv1alpha1.ValueType{
 									ValueFrom: &telemetryv1alpha1.ValueFromSource{
 										SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-											Name:      "basic-auth-credentials",
+											Name:      "basic-auth-credentials-tracing",
 											Namespace: "default",
 											Key:       "user",
 										},
@@ -91,7 +83,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 								Password: telemetryv1alpha1.ValueType{
 									ValueFrom: &telemetryv1alpha1.ValueFromSource{
 										SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-											Name:      "basic-auth-credentials",
+											Name:      "basic-auth-credentials-tracing",
 											Namespace: "default",
 											Key:       "password",
 										},
@@ -105,7 +97,6 @@ var _ = Describe("Deploying a TracePipeline", func() {
 		}
 
 		It("creates OpenTelemetry Collector resources", func() {
-			Expect(k8sClient.Create(ctx, kymaSystemNamespace)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, secret)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, tracePipeline)).Should(Succeed())
 
@@ -117,7 +108,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				}, &serviceAccount); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(serviceAccount.OwnerReferences); err != nil {
+				if err := validateTracingOwnerReferencs(serviceAccount.OwnerReferences); err != nil {
 					return err
 				}
 				return nil
@@ -131,7 +122,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				}, &clusterRole); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(clusterRole.OwnerReferences); err != nil {
+				if err := validateTracingOwnerReferencs(clusterRole.OwnerReferences); err != nil {
 					return err
 				}
 				return nil
@@ -145,7 +136,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				}, &clusterRoleBinding); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(clusterRoleBinding.OwnerReferences); err != nil {
+				if err := validateTracingOwnerReferencs(clusterRoleBinding.OwnerReferences); err != nil {
 					return err
 				}
 				return nil
@@ -159,10 +150,10 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				}, &otelCollectorDeployment); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(otelCollectorDeployment.OwnerReferences); err != nil {
+				if err := validateTracingOwnerReferencs(otelCollectorDeployment.OwnerReferences); err != nil {
 					return err
 				}
-				if err := validateEnvironment(otelCollectorDeployment); err != nil {
+				if err := validateTracingEnvironment(otelCollectorDeployment); err != nil {
 					return err
 				}
 				if err := validatePodAnnotations(otelCollectorDeployment); err != nil {
@@ -179,7 +170,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				}, &otelCollectorService); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(otelCollectorService.OwnerReferences); err != nil {
+				if err := validateTracingOwnerReferencs(otelCollectorService.OwnerReferences); err != nil {
 					return err
 				}
 				return nil
@@ -193,7 +184,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				}, &otelCollectorConfigMap); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(otelCollectorConfigMap.OwnerReferences); err != nil {
+				if err := validateTracingOwnerReferencs(otelCollectorConfigMap.OwnerReferences); err != nil {
 					return err
 				}
 				if err := validateCollectorConfig(otelCollectorConfigMap.Data["relay.conf"]); err != nil {
@@ -210,77 +201,16 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				}, &otelCollectorSecret); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(otelCollectorSecret.OwnerReferences); err != nil {
+				if err := validateTracingOwnerReferencs(otelCollectorSecret.OwnerReferences); err != nil {
 					return err
 				}
 				return nil
 			}, timeout, interval).Should(BeNil())
 
 			Expect(k8sClient.Delete(ctx, tracePipeline)).Should(Succeed())
-			Expect(k8sClient.Delete(ctx, kymaSystemNamespace)).Should(Succeed())
 		})
 	})
 })
-
-func validatePodAnnotations(deployment appsv1.Deployment) error {
-	if value, found := deployment.Spec.Template.ObjectMeta.Annotations["sidecar.istio.io/inject"]; !found || value != "false" {
-		return fmt.Errorf("istio sidecar injection for otel collector not disabled")
-	}
-
-	if value, found := deployment.Spec.Template.ObjectMeta.Annotations["checksum/config"]; !found || value == "" {
-		return fmt.Errorf("configuration hash not found in pod annotations")
-	}
-
-	return nil
-}
-
-func validateEnvironment(deployment appsv1.Deployment) error {
-	container := deployment.Spec.Template.Spec.Containers[0]
-	env := container.EnvFrom[0]
-
-	if env.SecretRef.LocalObjectReference.Name != "telemetry-trace-collector" {
-		return fmt.Errorf("unexpected secret name: %s", env.SecretRef.LocalObjectReference.Name)
-	}
-
-	if !*env.SecretRef.Optional {
-		return fmt.Errorf("secret reference for environment must be optional")
-	}
-
-	return nil
-}
-
-func validateOwnerReferences(ownerRefernces []metav1.OwnerReference) error {
-	if len(ownerRefernces) != 1 {
-		return fmt.Errorf("unexpected number of owner references: %d", len(ownerRefernces))
-	}
-	ownerReference := ownerRefernces[0]
-
-	if ownerReference.Kind != "TracePipeline" {
-		return fmt.Errorf("unexpected owner reference type: %s", ownerReference.Kind)
-	}
-
-	if ownerReference.Name != "dummy" {
-		return fmt.Errorf("unexpected owner reference name: %s", ownerReference.Kind)
-	}
-
-	if !*ownerReference.BlockOwnerDeletion {
-		return fmt.Errorf("owner reference does not block owner deletion")
-	}
-	return nil
-}
-
-func validateCollectorConfig(configData string) error {
-	var config collector.OTELCollectorConfig
-	if err := yaml.Unmarshal([]byte(configData), &config); err != nil {
-		return err
-	}
-
-	if !config.Exporters.OTLP.TLS.Insecure {
-		return fmt.Errorf("Insecure flag not set")
-	}
-
-	return nil
-}
 
 func TestMapSecret(t *testing.T) {
 	tests := []struct {
@@ -294,7 +224,7 @@ func TestMapSecret(t *testing.T) {
 			password: telemetryv1alpha1.ValueType{
 				ValueFrom: &telemetryv1alpha1.ValueFromSource{
 					SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-						Name:      "basic-auth-credentials",
+						Name:      "basic-auth-credentials-tracing",
 						Namespace: "default",
 						Key:       "password",
 					},
@@ -302,7 +232,7 @@ func TestMapSecret(t *testing.T) {
 			},
 			secret: corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "basic-auth-credentials",
+					Name:      "basic-auth-credentials-tracing",
 					Namespace: "default",
 				},
 			},
@@ -315,7 +245,7 @@ func TestMapSecret(t *testing.T) {
 			},
 			secret: corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "basic-auth-credentials",
+					Name:      "basic-auth-credentials-tracing",
 					Namespace: "default",
 				},
 			},
@@ -355,4 +285,39 @@ func TestMapSecret(t *testing.T) {
 			require.ElementsMatch(t, tc.expectedRequests, actualRequests)
 		})
 	}
+}
+
+func validateTracingEnvironment(deployment appsv1.Deployment) error {
+	container := deployment.Spec.Template.Spec.Containers[0]
+	env := container.EnvFrom[0]
+
+	if env.SecretRef.LocalObjectReference.Name != "telemetry-trace-collector" {
+		return fmt.Errorf("unexpected secret name: %s", env.SecretRef.LocalObjectReference.Name)
+	}
+
+	if !*env.SecretRef.Optional {
+		return fmt.Errorf("secret reference for environment must be optional")
+	}
+
+	return nil
+}
+
+func validateTracingOwnerReferencs(ownerRefernces []metav1.OwnerReference) error {
+	if len(ownerRefernces) != 1 {
+		return fmt.Errorf("unexpected number of owner references: %d", len(ownerRefernces))
+	}
+	ownerReference := ownerRefernces[0]
+
+	if ownerReference.Kind != "TracePipeline" {
+		return fmt.Errorf("unexpected owner reference type: %s", ownerReference.Kind)
+	}
+
+	if ownerReference.Name != "dummy" {
+		return fmt.Errorf("unexpected owner reference name: %s", ownerReference.Kind)
+	}
+
+	if !*ownerReference.BlockOwnerDeletion {
+		return fmt.Errorf("owner reference does not block owner deletion")
+	}
+	return nil
 }
