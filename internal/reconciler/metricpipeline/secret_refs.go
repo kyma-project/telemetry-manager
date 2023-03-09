@@ -1,4 +1,4 @@
-package tracepipeline
+package metricpipeline
 
 import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func ContainsAnyRefToSecret(pipeline *telemetryv1alpha1.TracePipeline, secret *corev1.Secret) bool {
+func ContainsAnyRefToSecret(pipeline *telemetryv1alpha1.MetricPipeline, secret *corev1.Secret) bool {
 	secretName := types.NamespacedName{Namespace: secret.Namespace, Name: secret.Name}
 	if pipeline.Spec.Output.Otlp.Endpoint.IsDefined() &&
 		referencesSecret(pipeline.Spec.Output.Otlp.Endpoint, secretName) {

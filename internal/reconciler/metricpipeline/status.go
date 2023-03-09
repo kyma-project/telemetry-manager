@@ -1,4 +1,4 @@
-package telemetry
+package metricpipeline
 
 import (
 	"context"
@@ -19,7 +19,7 @@ const (
 	reasonWaitingForLock                   = "WaitingForLock"
 )
 
-func (r *MetricPipelineReconciler) updateStatus(ctx context.Context, pipelineName string, lockAcquired bool) error {
+func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lockAcquired bool) error {
 	log := logf.FromContext(ctx)
 
 	var pipeline telemetryv1alpha1.MetricPipeline

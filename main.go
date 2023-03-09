@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
 
 	"go.uber.org/zap"
@@ -463,7 +464,9 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
-	return telemetrycontrollers.NewMetricPipelineReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overrides)
+	return telemetrycontrollers.NewMetricPipelineReconciler(
+		client,
+		metricpipeline.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overrides))
 }
 
 func createDryRunConfig() dryrun.Config {

@@ -23,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -143,7 +144,9 @@ var _ = BeforeSuite(func() {
 	err = tracepipelineReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
-	metricPipelineReconciler := NewMetricPipelineReconciler(client, testMetricPipelineConfig, &kubernetes.DeploymentProber{Client: client}, overrides)
+	metricPipelineReconciler := NewMetricPipelineReconciler(
+		client,
+		metricpipeline.NewReconciler(client, testMetricPipelineConfig, &kubernetes.DeploymentProber{Client: client}, overrides))
 	err = metricPipelineReconciler.SetupWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
