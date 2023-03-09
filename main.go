@@ -104,12 +104,8 @@ const (
 
 	telemetryNamespace = "kyma-system"
 
-	fluentBitSectionsConfigMap = "telemetry-fluent-bit-sections"
-	fluentBitParsersConfigMap  = "telemetry-fluent-bit-parsers"
-	fluentBitDaemonSet         = "telemetry-fluent-bit"
-	fluentBitEnvSecret         = "telemetry-fluent-bit-env"
-	fluentBitFilesConfigMap    = "telemetry-fluent-bit-files"
-	webhookServiceName         = "telemetry-operator-webhook"
+	fluentBitDaemonSet = "telemetry-fluent-bit"
+	webhookServiceName = "telemetry-operator-webhook"
 )
 
 //nolint:gochecknoinits
@@ -327,20 +323,8 @@ func main() {
 }
 
 func validateFlags() error {
-	if fluentBitSectionsConfigMap == "" {
-		return errors.New("--fluent-bit-sections-cm-name flag is required")
-	}
-	if fluentBitParsersConfigMap == "" {
-		return errors.New("--fluent-bit-parser-cm-name flag is required")
-	}
 	if fluentBitDaemonSet == "" {
 		return errors.New("--fluent-bit-ds-name flag is required")
-	}
-	if fluentBitEnvSecret == "" {
-		return errors.New("--fluent-bit-env-secret flag is required")
-	}
-	if fluentBitFilesConfigMap == "" {
-		return errors.New("--fluent-bit-files-cm flag is required")
 	}
 	if telemetryNamespace == "" {
 		return errors.New("--fluent-bit-ns flag is required")
@@ -354,9 +338,9 @@ func validateFlags() error {
 
 func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.LogPipelineReconciler {
 	config := logpipelinereconciler.Config{
-		SectionsConfigMap: types.NamespacedName{Name: fluentBitSectionsConfigMap, Namespace: telemetryNamespace},
-		FilesConfigMap:    types.NamespacedName{Name: fluentBitFilesConfigMap, Namespace: telemetryNamespace},
-		EnvSecret:         types.NamespacedName{Name: fluentBitEnvSecret, Namespace: telemetryNamespace},
+		SectionsConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
+		FilesConfigMap:    types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
+		EnvSecret:         types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: telemetryNamespace},
 		DaemonSet:         types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
 		PipelineDefaults:  createPipelineDefaults(),
@@ -381,7 +365,7 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 
 func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogParserReconciler {
 	config := logparserreconciler.Config{
-		ParsersConfigMap: types.NamespacedName{Name: fluentBitParsersConfigMap, Namespace: telemetryNamespace},
+		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
 		DaemonSet:        types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
