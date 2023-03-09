@@ -5,6 +5,21 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/collector"
 )
 
+func makeReceiverConfig() collector.ReceiverConfig {
+	return collector.ReceiverConfig{
+		OTLP: &collector.OTLPReceiverConfig{
+			Protocols: collector.ReceiverProtocols{
+				HTTP: collector.EndpointConfig{
+					Endpoint: "${MY_POD_IP}:4318",
+				},
+				GRPC: collector.EndpointConfig{
+					Endpoint: "${MY_POD_IP}:4317",
+				},
+			},
+		},
+	}
+}
+
 func makeProcessorsConfig() collector.ProcessorsConfig {
 	k8sAttributes := []string{
 		"k8s.pod.name",
@@ -73,21 +88,6 @@ func makeProcessorsConfig() collector.ProcessorsConfig {
 	}
 }
 
-func makeReceiverConfig() collector.ReceiverConfig {
-	return collector.ReceiverConfig{
-		OTLP: &collector.OTLPReceiverConfig{
-			Protocols: collector.ReceiverProtocols{
-				HTTP: collector.EndpointConfig{
-					Endpoint: "${MY_POD_IP}:4318",
-				},
-				GRPC: collector.EndpointConfig{
-					Endpoint: "${MY_POD_IP}:4317",
-				},
-			},
-		},
-	}
-}
-
 func makeServiceConfig(outputType string) collector.OTLPServiceConfig {
 	return collector.OTLPServiceConfig{
 		Pipelines: collector.PipelinesConfig{
@@ -119,8 +119,8 @@ func makeOtelCollectorConfig(output v1alpha1.MetricPipelineOutput, isInsecureOut
 
 	return collector.OTELCollectorConfig{
 		Exporters:  exporterConfig,
-		Processors: processorsConfig,
 		Receivers:  receiverConfig,
+		Processors: processorsConfig,
 		Service:    serviceConfig,
 		Extensions: extensionConfig,
 	}

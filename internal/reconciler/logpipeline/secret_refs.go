@@ -10,6 +10,17 @@ type fieldDescriptor struct {
 	secretKeyRef    telemetryv1alpha1.SecretKeyRef
 }
 
+func HasSecretRef(pipeline *telemetryv1alpha1.LogPipeline, secretName, secretNamespace string) bool {
+	secretRefFields := lookupSecretRefFields(pipeline)
+	for _, field := range secretRefFields {
+		if field.secretKeyRef.Name == secretName && field.secretKeyRef.Namespace == secretNamespace {
+			return true
+		}
+	}
+
+	return false
+}
+
 func lookupSecretRefFields(pipeline *telemetryv1alpha1.LogPipeline) []fieldDescriptor {
 	var result []fieldDescriptor
 
@@ -47,15 +58,4 @@ func appendOutputFieldIfHasSecretRef(fields []fieldDescriptor, pipelineName stri
 	}
 
 	return fields
-}
-
-func HasSecretRef(pipeline *telemetryv1alpha1.LogPipeline, secretName, secretNamespace string) bool {
-	secretRefFields := lookupSecretRefFields(pipeline)
-	for _, field := range secretRefFields {
-		if field.secretKeyRef.Name == secretName && field.secretKeyRef.Namespace == secretNamespace {
-			return true
-		}
-	}
-
-	return false
 }

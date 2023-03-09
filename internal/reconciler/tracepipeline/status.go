@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+
+	"github.com/kyma-project/telemetry-manager/internal/collector"
 )
 
 const (
@@ -48,7 +48,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 		return setCondition(ctx, r.Client, &pipeline, pending)
 	}
 
-	secretsMissing := checkForMissingSecrets(ctx, r.Client, &pipeline)
+	secretsMissing := collector.CheckForMissingSecrets(ctx, r.Client, pipeline.Name, pipeline.Spec.Output.Otlp)
 	if secretsMissing {
 		pending := telemetryv1alpha1.NewTracePipelineCondition(reasonReferencedSecretMissingReason, telemetryv1alpha1.TracePipelinePending)
 
@@ -95,32 +95,4 @@ func setCondition(ctx context.Context, client client.Client, pipeline *telemetry
 		return fmt.Errorf("failed to update TracePipeline status to %s: %v", condition.Type, err)
 	}
 	return nil
-}
-
-func checkForMissingSecrets(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.TracePipeline) bool {
-	secretRefFields := kubernetes.LookupSecretRefFields(pipeline.Spec.Output.Otlp, pipeline.Name)
-	for _, field := range secretRefFields {
-		hasKey := checkSecretHasKey(ctx, client, field.SecretKeyRef)
-		if !hasKey {
-			return true
-		}
-	}
-
-	return false
-}
-
-func checkSecretHasKey(ctx context.Context, client client.Client, from telemetryv1alpha1.SecretKeyRef) bool {
-	log := logf.FromContext(ctx)
-
-	var secret corev1.Secret
-	if err := client.Get(ctx, types.NamespacedName{Name: from.Name, Namespace: from.Namespace}, &secret); err != nil {
-		log.V(1).Info(fmt.Sprintf("Unable to get secret '%s' from namespace '%s'", from.Name, from.Namespace))
-		return false
-	}
-	if _, ok := secret.Data[from.Key]; !ok {
-		log.V(1).Info(fmt.Sprintf("Unable to find key '%s' in secret '%s'", from.Key, from.Name))
-		return false
-	}
-
-	return true
 }

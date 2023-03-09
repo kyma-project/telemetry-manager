@@ -1,4 +1,4 @@
-package tracepipeline
+package metricpipeline
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 )
 
 func TestUpdateStatus(t *testing.T) {
@@ -24,14 +24,14 @@ func TestUpdateStatus(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
-	t.Run("should add pending condition if trace collector deployment is not ready", func(t *testing.T) {
+	t.Run("should add pending condition if metric gateway deployment is not ready", func(t *testing.T) {
 		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.TracePipeline{
+		pipeline := &telemetryv1alpha1.MetricPipeline{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: pipelineName,
 			},
-			Spec: telemetryv1alpha1.TracePipelineSpec{
-				Output: telemetryv1alpha1.TracePipelineOutput{
+			Spec: telemetryv1alpha1.MetricPipelineSpec{
+				Output: telemetryv1alpha1.MetricPipelineOutput{
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
@@ -44,27 +44,27 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: collectorresources.Config{BaseName: "trace-collector"},
+			config: collectorresources.Config{BaseName: "metric-gateway"},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)
 
-		var updatedPipeline telemetryv1alpha1.TracePipeline
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonTraceCollectorDeploymentNotReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonMetricGatewayDeploymentNotReady)
 	})
 
-	t.Run("should add running condition if trace collector deployment is ready", func(t *testing.T) {
+	t.Run("should add running condition if metric gateway deployment is ready", func(t *testing.T) {
 		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.TracePipeline{
+		pipeline := &telemetryv1alpha1.MetricPipeline{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: pipelineName,
 			},
-			Spec: telemetryv1alpha1.TracePipelineSpec{
-				Output: telemetryv1alpha1.TracePipelineOutput{
+			Spec: telemetryv1alpha1.MetricPipelineSpec{
+				Output: telemetryv1alpha1.MetricPipelineOutput{
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
@@ -77,35 +77,35 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: collectorresources.Config{BaseName: "trace-collector"},
+			config: collectorresources.Config{BaseName: "metric-gateway"},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)
 
-		var updatedPipeline telemetryv1alpha1.TracePipeline
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelineRunning)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonTraceCollectorDeploymentReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelineRunning)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonMetricGatewayDeploymentReady)
 	})
 
-	t.Run("should reset conditions and add pending condition if trace collector deployment becomes not ready again", func(t *testing.T) {
+	t.Run("should reset conditions and add pending condition if metric gateway deployment becomes not ready again", func(t *testing.T) {
 		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.TracePipeline{
+		pipeline := &telemetryv1alpha1.MetricPipeline{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: pipelineName,
 			},
-			Spec: telemetryv1alpha1.TracePipelineSpec{
-				Output: telemetryv1alpha1.TracePipelineOutput{
+			Spec: telemetryv1alpha1.MetricPipelineSpec{
+				Output: telemetryv1alpha1.MetricPipelineOutput{
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
 				}},
-			Status: telemetryv1alpha1.TracePipelineStatus{
-				Conditions: []telemetryv1alpha1.TracePipelineCondition{
-					{Reason: reasonTraceCollectorDeploymentNotReady, Type: telemetryv1alpha1.TracePipelinePending},
-					{Reason: reasonTraceCollectorDeploymentReady, Type: telemetryv1alpha1.TracePipelineRunning},
+			Status: telemetryv1alpha1.MetricPipelineStatus{
+				Conditions: []telemetryv1alpha1.MetricPipelineCondition{
+					{Reason: reasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
+					{Reason: reasonMetricGatewayDeploymentReady, Type: telemetryv1alpha1.MetricPipelineRunning},
 				},
 			},
 		}
@@ -116,33 +116,27 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: collectorresources.Config{BaseName: "trace-collector"},
+			config: collectorresources.Config{BaseName: "metric-gateway"},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)
 
-		var updatedPipeline telemetryv1alpha1.TracePipeline
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonTraceCollectorDeploymentNotReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonMetricGatewayDeploymentNotReady)
 	})
 
 	t.Run("should reset conditions and add pending condition if some referenced secret does not exist anymore", func(t *testing.T) {
 		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.TracePipeline{
+		pipeline := &telemetryv1alpha1.MetricPipeline{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: pipelineName,
 			},
-			Status: telemetryv1alpha1.TracePipelineStatus{
-				Conditions: []telemetryv1alpha1.TracePipelineCondition{
-					{Reason: reasonTraceCollectorDeploymentNotReady, Type: telemetryv1alpha1.TracePipelinePending},
-					{Reason: reasonTraceCollectorDeploymentReady, Type: telemetryv1alpha1.TracePipelineRunning},
-				},
-			},
-			Spec: telemetryv1alpha1.TracePipelineSpec{
-				Output: telemetryv1alpha1.TracePipelineOutput{
+			Spec: telemetryv1alpha1.MetricPipelineSpec{
+				Output: telemetryv1alpha1.MetricPipelineOutput{
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{
 							ValueFrom: &telemetryv1alpha1.ValueFromSource{
@@ -155,6 +149,12 @@ func TestUpdateStatus(t *testing.T) {
 						},
 					},
 				}},
+			Status: telemetryv1alpha1.MetricPipelineStatus{
+				Conditions: []telemetryv1alpha1.MetricPipelineCondition{
+					{Reason: reasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
+					{Reason: reasonMetricGatewayDeploymentReady, Type: telemetryv1alpha1.MetricPipelineRunning},
+				},
+			},
 		}
 
 		proberStub := &mocks.DeploymentProber{}
@@ -163,28 +163,28 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: collectorresources.Config{BaseName: "trace-collector"},
+			config: collectorresources.Config{BaseName: "metric-gateway"},
 			prober: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)
 
-		var updatedPipeline telemetryv1alpha1.TracePipeline
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonReferencedSecretMissingReason)
 	})
 
-	t.Run("should add running condition if referenced secret exists and trace collector deployment is ready", func(t *testing.T) {
+	t.Run("should add running condition if referenced secret exists and metric gateway deployment is ready", func(t *testing.T) {
 		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.TracePipeline{
+		pipeline := &telemetryv1alpha1.MetricPipeline{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: pipelineName,
 			},
-			Spec: telemetryv1alpha1.TracePipelineSpec{
-				Output: telemetryv1alpha1.TracePipelineOutput{
+			Spec: telemetryv1alpha1.MetricPipelineSpec{
+				Output: telemetryv1alpha1.MetricPipelineOutput{
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{
 							ValueFrom: &telemetryv1alpha1.ValueFromSource{
@@ -213,28 +213,28 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: collectorresources.Config{BaseName: "trace-collector"},
+			config: collectorresources.Config{BaseName: "metric-gateway"},
 			prober: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)
 
-		var updatedPipeline telemetryv1alpha1.TracePipeline
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelineRunning)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonTraceCollectorDeploymentReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelineRunning)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonMetricGatewayDeploymentReady)
 	})
 
 	t.Run("should add pending condition if waiting for lock", func(t *testing.T) {
 		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.TracePipeline{
+		pipeline := &telemetryv1alpha1.MetricPipeline{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: pipelineName,
 			},
-			Spec: telemetryv1alpha1.TracePipelineSpec{
-				Output: telemetryv1alpha1.TracePipelineOutput{
+			Spec: telemetryv1alpha1.MetricPipelineSpec{
+				Output: telemetryv1alpha1.MetricPipelineOutput{
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
@@ -247,27 +247,27 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: collectorresources.Config{BaseName: "trace-collector"},
+			config: collectorresources.Config{BaseName: "metric-gateway"},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, false)
 		require.NoError(t, err)
 
-		var updatedPipeline telemetryv1alpha1.TracePipeline
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonWaitingForLock)
 	})
 
-	t.Run("should add pending condition if acquired lock but trace collector is not ready", func(t *testing.T) {
+	t.Run("should add pending condition if acquired lock but metric gateway is not ready", func(t *testing.T) {
 		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.TracePipeline{
+		pipeline := &telemetryv1alpha1.MetricPipeline{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: pipelineName,
 			},
-			Spec: telemetryv1alpha1.TracePipelineSpec{
-				Output: telemetryv1alpha1.TracePipelineOutput{
+			Spec: telemetryv1alpha1.MetricPipelineSpec{
+				Output: telemetryv1alpha1.MetricPipelineOutput{
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
@@ -280,7 +280,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: collectorresources.Config{BaseName: "trace-collector"},
+			config: collectorresources.Config{BaseName: "metric-gateway"},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, false)
@@ -288,10 +288,10 @@ func TestUpdateStatus(t *testing.T) {
 		err = sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)
 
-		var updatedPipeline telemetryv1alpha1.TracePipeline
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonTraceCollectorDeploymentNotReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonMetricGatewayDeploymentNotReady)
 	})
 }

@@ -3,19 +3,22 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"time"
+
+	"k8s.io/apimachinery/pkg/api/resource"
+
+	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
 
 	"k8s.io/apimachinery/pkg/types"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 var (
@@ -221,11 +224,11 @@ func validateMetricsEnvironment(deployment appsv1.Deployment) error {
 	return nil
 }
 
-func validateMetricsOwnerReferences(ownerRefernces []metav1.OwnerReference) error {
-	if len(ownerRefernces) != 1 {
-		return fmt.Errorf("unexpected number of owner references: %d", len(ownerRefernces))
+func validateMetricsOwnerReferences(ownerReferences []metav1.OwnerReference) error {
+	if len(ownerReferences) != 1 {
+		return fmt.Errorf("unexpected number of owner references: %d", len(ownerReferences))
 	}
-	ownerReference := ownerRefernces[0]
+	ownerReference := ownerReferences[0]
 
 	if ownerReference.Kind != "MetricPipeline" {
 		return fmt.Errorf("unexpected owner reference type: %s", ownerReference.Kind)

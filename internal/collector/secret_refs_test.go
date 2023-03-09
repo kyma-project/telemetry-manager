@@ -1,15 +1,15 @@
-package kubernetes
+package collector
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/internal/collector"
 	"testing"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 func TestFetchSecretValue(t *testing.T) {
@@ -114,10 +114,10 @@ func TestFetchFromCr(t *testing.T) {
 
 	data, err := FetchSecretData(context.TODO(), client, pipeline.Spec.Output.Otlp)
 	require.NoError(t, err)
-	require.Contains(t, data, collector.EndpointVariable)
+	require.Contains(t, data, EndpointVariable)
 	require.Contains(t, data, "HEADER_AUTHORIZATION")
 	require.Contains(t, data, "HEADER_TEST")
-	require.NotContains(t, data, collector.BasicAuthHeaderVariable)
+	require.NotContains(t, data, BasicAuthHeaderVariable)
 }
 
 func TestFetchFromSecret(t *testing.T) {
@@ -208,12 +208,12 @@ func TestFetchFromSecret(t *testing.T) {
 
 	data, err := FetchSecretData(context.TODO(), client, pipeline.Spec.Output.Otlp)
 	require.NoError(t, err)
-	require.Contains(t, data, collector.EndpointVariable)
-	require.Equal(t, string(data[collector.EndpointVariable]), "secret-endpoint")
-	require.Contains(t, data, collector.BasicAuthHeaderVariable)
+	require.Contains(t, data, EndpointVariable)
+	require.Equal(t, string(data[EndpointVariable]), "secret-endpoint")
+	require.Contains(t, data, BasicAuthHeaderVariable)
 	require.Contains(t, data, "HEADER_AUTHORIZATION")
 	require.Contains(t, data, "HEADER_TEST")
-	require.Equal(t, string(data[collector.BasicAuthHeaderVariable]), getBasicAuthHeader("secret-username", "secret-password"))
+	require.Equal(t, string(data[BasicAuthHeaderVariable]), getBasicAuthHeader("secret-username", "secret-password"))
 }
 
 func TestFetchFromSecretWithMissingKey(t *testing.T) {

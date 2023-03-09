@@ -2,12 +2,14 @@ package tracepipeline
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/collector"
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/collector"
+
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
+
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 var (

@@ -103,7 +103,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		Name:      "telemetry-tracepipeline-lock",
 		Namespace: r.config.Namespace,
 	}
-	if err = kubernetes.TryAcquireLock(ctx, r, lockName, pipeline); err != nil {
+	if err = kubernetes.TryAcquireLock(ctx, r.Client, lockName, pipeline); err != nil {
 		lockAcquired = false
 		return err
 	}
@@ -135,7 +135,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	var secretData map[string][]byte
-	if secretData, err = kubernetes.FetchSecretData(ctx, r, pipeline.Spec.Output.Otlp); err != nil {
+	if secretData, err = collector.FetchSecretData(ctx, r, pipeline.Spec.Output.Otlp); err != nil {
 		return err
 	}
 	secret := collectorresources.MakeSecret(r.config, secretData)

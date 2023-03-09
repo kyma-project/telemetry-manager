@@ -1,17 +1,19 @@
-package kubernetes
+package collector
 
 import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/collector"
+
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 type FieldDescriptor struct {
@@ -19,31 +21,31 @@ type FieldDescriptor struct {
 	SecretKeyRef    telemetryv1alpha1.SecretKeyRef
 }
 
-func FetchSecretData(ctx context.Context, c client.Reader, output *telemetryv1alpha1.OtlpOutput) (map[string][]byte, error) {
+func FetchSecretData(ctx context.Context, client client.Reader, output *telemetryv1alpha1.OtlpOutput) (map[string][]byte, error) {
 	secretData := map[string][]byte{}
 
 	if output.Authentication != nil && output.Authentication.Basic.IsDefined() {
-		username, err := fetchSecretValue(ctx, c, output.Authentication.Basic.User)
+		username, err := fetchSecretValue(ctx, client, output.Authentication.Basic.User)
 		if err != nil {
 			return nil, err
 		}
-		password, err := fetchSecretValue(ctx, c, output.Authentication.Basic.Password)
+		password, err := fetchSecretValue(ctx, client, output.Authentication.Basic.Password)
 		if err != nil {
 			return nil, err
 		}
 		basicAuthHeader := getBasicAuthHeader(string(username), string(password))
-		secretData[collector.BasicAuthHeaderVariable] = []byte(basicAuthHeader)
+		secretData[BasicAuthHeaderVariable] = []byte(basicAuthHeader)
 	}
 
-	endpoint, err := fetchSecretValue(ctx, c, output.Endpoint)
+	endpoint, err := fetchSecretValue(ctx, client, output.Endpoint)
 	if err != nil {
 		return nil, err
 	}
-	secretData[collector.EndpointVariable] = endpoint
+	secretData[EndpointVariable] = endpoint
 
 	for _, header := range output.Headers {
 		key := fmt.Sprintf("HEADER_%s", envvar.MakeEnvVarCompliant(header.Name))
-		value, err := fetchSecretValue(ctx, c, header.ValueType)
+		value, err := fetchSecretValue(ctx, client, header.ValueType)
 		if err != nil {
 			return nil, err
 		}
@@ -53,7 +55,7 @@ func FetchSecretData(ctx context.Context, c client.Reader, output *telemetryv1al
 	return secretData, nil
 }
 
-func fetchSecretValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
+func fetchSecretValue(ctx context.Context, client client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
 	if value.Value != "" {
 		return []byte(value.Value), nil
 	}
@@ -64,7 +66,7 @@ func fetchSecretValue(ctx context.Context, c client.Reader, value telemetryv1alp
 		}
 
 		var secret corev1.Secret
-		if err := c.Get(ctx, lookupKey, &secret); err != nil {
+		if err := client.Get(ctx, lookupKey, &secret); err != nil {
 			return nil, err
 		}
 
@@ -81,7 +83,19 @@ func getBasicAuthHeader(username string, password string) string {
 	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(username+":"+password)))
 }
 
-func LookupSecretRefFields(otlpOut *telemetryv1alpha1.OtlpOutput, name string) []FieldDescriptor {
+func CheckForMissingSecrets(ctx context.Context, client client.Client, pipelineName string, otlpOutput *telemetryv1alpha1.OtlpOutput) bool {
+	secretRefFields := lookupSecretRefFields(otlpOutput, pipelineName)
+	for _, field := range secretRefFields {
+		hasKey := checkSecretHasKey(ctx, client, field.SecretKeyRef)
+		if !hasKey {
+			return true
+		}
+	}
+
+	return false
+}
+
+func lookupSecretRefFields(otlpOut *telemetryv1alpha1.OtlpOutput, name string) []FieldDescriptor {
 	var result []FieldDescriptor
 
 	if otlpOut.Endpoint.ValueFrom != nil && otlpOut.Endpoint.ValueFrom.IsSecretKeyRef() {
@@ -115,23 +129,37 @@ func appendOutputFieldIfHasSecretRef(fields []FieldDescriptor, pipelineName stri
 	return fields
 }
 
-func ContainsAnyRefToSecret(pipeline *telemetryv1alpha1.TracePipeline, secret *corev1.Secret) bool {
-	secretName := types.NamespacedName{Namespace: secret.Namespace, Name: secret.Name}
-	if pipeline.Spec.Output.Otlp.Endpoint.IsDefined() &&
-		referencesSecret(pipeline.Spec.Output.Otlp.Endpoint, secretName) {
-		return true
-	}
+func checkSecretHasKey(ctx context.Context, client client.Client, from telemetryv1alpha1.SecretKeyRef) bool {
+	log := logf.FromContext(ctx)
 
-	if pipeline.Spec.Output.Otlp == nil ||
-		pipeline.Spec.Output.Otlp.Authentication == nil ||
-		pipeline.Spec.Output.Otlp.Authentication.Basic == nil ||
-		!pipeline.Spec.Output.Otlp.Authentication.Basic.IsDefined() {
+	var secret corev1.Secret
+	if err := client.Get(ctx, types.NamespacedName{Name: from.Name, Namespace: from.Namespace}, &secret); err != nil {
+		log.V(1).Info(fmt.Sprintf("Unable to get secret '%s' from namespace '%s'", from.Name, from.Namespace))
+		return false
+	}
+	if _, ok := secret.Data[from.Key]; !ok {
+		log.V(1).Info(fmt.Sprintf("Unable to find key '%s' in secret '%s'", from.Key, from.Name))
 		return false
 	}
 
-	auth := pipeline.Spec.Output.Otlp.Authentication.Basic
+	return true
+}
 
-	return referencesSecret(auth.User, secretName) || referencesSecret(auth.Password, secretName)
+func HasSecretRef(otlpOut *telemetryv1alpha1.OtlpOutput, secretName types.NamespacedName) bool {
+	if otlpOut.Endpoint.IsDefined() && referencesSecret(otlpOut.Endpoint, secretName) {
+		return true
+	}
+
+	if otlpOut == nil ||
+		otlpOut.Authentication == nil ||
+		otlpOut.Authentication.Basic == nil ||
+		!otlpOut.Authentication.Basic.IsDefined() {
+		return false
+	}
+
+	basicAuth := otlpOut.Authentication.Basic
+	return referencesSecret(basicAuth.User, secretName) || referencesSecret(basicAuth.Password, secretName)
+
 }
 
 func referencesSecret(valueType telemetryv1alpha1.ValueType, secretName types.NamespacedName) bool {

@@ -3,6 +3,15 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/collector"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -10,13 +19,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"strings"
 )
 
 //go:generate mockery --name DeploymentProber --filename deployment_prober.go
@@ -84,7 +86,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		Name:      "telemetry-metricpipeline-lock",
 		Namespace: r.config.Namespace,
 	}
-	if err = kubernetes.TryAcquireLock(ctx, r, lockName, pipeline); err != nil {
+	if err = kubernetes.TryAcquireLock(ctx, r.Client, lockName, pipeline); err != nil {
 		lockAcquired = false
 		return err
 	}
@@ -116,7 +118,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	var secretData map[string][]byte
-	if secretData, err = kubernetes.FetchSecretData(ctx, r, pipeline.Spec.Output.Otlp); err != nil {
+	if secretData, err = collector.FetchSecretData(ctx, r.Client, pipeline.Spec.Output.Otlp); err != nil {
 		return err
 	}
 	secret := collectorresources.MakeSecret(r.config, secretData)

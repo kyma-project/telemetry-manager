@@ -1,9 +1,11 @@
 package collector
 
 import (
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 func TestGetOutputTypeHttp(t *testing.T) {
@@ -70,4 +72,15 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 
 	require.Equal(t, 1, len(exporterConfig.OTLP.Headers))
 	require.Equal(t, "${HEADER_AUTHORIZATION}", exporterConfig.OTLP.Headers["Authorization"])
+}
+
+func TestMakeExtensionConfig(t *testing.T) {
+	expectedConfig := ExtensionsConfig{
+		HealthCheck: EndpointConfig{
+			Endpoint: "${MY_POD_IP}:13133",
+		},
+	}
+
+	actualConfig := MakeExtensionConfig()
+	require.Equal(t, expectedConfig, actualConfig)
 }

@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/collector"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -89,7 +90,7 @@ func (r *MetricPipelineReconciler) mapSecret(object client.Object) []reconcile.R
 	ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]
-		if metricpipeline.ContainsAnyRefToSecret(&pipeline, secret) {
+		if collector.HasSecretRef(pipeline.Spec.Output.Otlp, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}) {
 			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 			ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
 		}

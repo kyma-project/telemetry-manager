@@ -106,6 +106,12 @@ var (
 
 	metricGatewayBaseName        = "telemetry-metric-gateway"
 	metricGatewayOTLPServiceName = "telemetry-otlp-metrics"
+	metricGatewayImage           string
+	metricGatewayPriorityClass   string
+	metricGatewayCPULimit        string
+	metricGatewayMemoryLimit     string
+	metricGatewayCPURequest      string
+	metricGatewayMemoryRequest   string
 
 	enableWebhook bool
 )
@@ -186,6 +192,13 @@ func main() {
 	flag.StringVar(&traceCollectorMemoryLimit, "trace-collector-memory-limit", "1Gi", "Memory limit for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorCPURequest, "trace-collector-cpu-request", "25m", "CPU request for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorMemoryRequest, "trace-collector-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
+
+	flag.StringVar(&metricGatewayImage, "metric-gateway-image", otelImage, "Image for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayCPULimit, "metric-gateway-cpu-limit", "1", "CPU limit for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayMemoryLimit, "metric-gateway-memory-limit", "1Gi", "Memory limit for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayCPURequest, "metric-gateway-cpu-request", "25m", "CPU request for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayMemoryRequest, "metric-gateway-memory-request", "32Mi", "Memory request for metrics OpenTelemetry Collector")
 
 	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
 	flag.StringVar(&fluentBitFsBufferLimit, "fluent-bit-filesystem-buffer-limit", "1G", "Fluent Bit filesystem buffer limit per log pipeline")
@@ -376,11 +389,11 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 			MemoryRequest:               resource.MustParse(fluentBitMemoryRequest),
 		},
 	}
-	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
+	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
 	return telemetrycontrollers.NewLogPipelineReconciler(
 		client,
-		logpipelinereconciler.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client}, overrides),
+		logpipelinereconciler.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client}, overridesHandler),
 		config)
 }
 
@@ -389,7 +402,7 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
 		DaemonSet:        types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 	}
-	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
+	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
 	return telemetrycontrollers.NewLogParserReconciler(
 		client,
@@ -398,7 +411,7 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 			config,
 			&kubernetes.DaemonSetProber{Client: client},
 			&kubernetes.DaemonSetAnnotator{Client: client},
-			overrides,
+			overridesHandler,
 		),
 		config,
 	)
@@ -437,11 +450,11 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 		},
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
 	}
-	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
+	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
 	return telemetrycontrollers.NewTracePipelineReconciler(
 		client,
-		tracepipelinereconciler.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overrides),
+		tracepipelinereconciler.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overridesHandler),
 	)
 }
 
@@ -450,23 +463,23 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 		Namespace: telemetryNamespace,
 		BaseName:  metricGatewayBaseName,
 		Deployment: collectorresources.DeploymentConfig{
-			Image:             traceCollectorImage,
-			PriorityClassName: traceCollectorPriorityClass,
-			CPULimit:          resource.MustParse(traceCollectorCPULimit),
-			MemoryLimit:       resource.MustParse(traceCollectorMemoryLimit),
-			CPURequest:        resource.MustParse(traceCollectorCPURequest),
-			MemoryRequest:     resource.MustParse(traceCollectorMemoryRequest),
+			Image:             metricGatewayImage,
+			PriorityClassName: metricGatewayPriorityClass,
+			CPULimit:          resource.MustParse(metricGatewayCPULimit),
+			MemoryLimit:       resource.MustParse(metricGatewayMemoryLimit),
+			CPURequest:        resource.MustParse(metricGatewayCPURequest),
+			MemoryRequest:     resource.MustParse(metricGatewayMemoryRequest),
 		},
 		Service: collectorresources.ServiceConfig{
 			OTLPServiceName: metricGatewayOTLPServiceName,
 		},
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
 	}
-	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
+	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,
-		metricpipeline.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overrides))
+		metricpipeline.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overridesHandler))
 }
 
 func createDryRunConfig() dryrun.Config {
