@@ -58,7 +58,7 @@ type MetricPipelineReconciler struct {
 	overridesHandler overrides.GlobalConfigHandler
 }
 
-func NewReconciler(client client.Client, config collectorresources.Config, prober DeploymentProber, handler *overrides.Handler) *MetricPipelineReconciler {
+func NewMetricPipelineReconciler(client client.Client, config collectorresources.Config, prober DeploymentProber, handler *overrides.Handler) *MetricPipelineReconciler {
 	var r MetricPipelineReconciler
 	r.Client = client
 	r.config = config

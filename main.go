@@ -115,7 +115,8 @@ const (
 	fluentBitImage         = "eu.gcr.io/kyma-project/tpi/fluent-bit:2.0.9-a3475b24"
 	fluentBitExporterImage = "eu.gcr.io/kyma-project/directory-size-exporter:v20230308-ff6cf204"
 
-	telemetryNamespace = "kyma-system"
+	telemetryNamespace     = "kyma-system"
+	traceCollectorBaseName = "telemetry-trace-collector"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
@@ -424,7 +425,7 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.TracePipelineReconciler {
 	config := collectorresources.Config{
 		Namespace: telemetryNamespace,
-		BaseName:  metricGatewayBaseName,
+		BaseName:  traceCollectorBaseName,
 		Deployment: collectorresources.DeploymentConfig{
 			Image:             traceCollectorImage,
 			PriorityClassName: traceCollectorPriorityClass,
@@ -433,7 +434,6 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 			CPURequest:        resource.MustParse(traceCollectorCPURequest),
 			MemoryRequest:     resource.MustParse(traceCollectorMemoryRequest),
 		},
-
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
@@ -463,7 +463,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
-	return telemetrycontrollers.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overrides)
+	return telemetrycontrollers.NewMetricPipelineReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overrides)
 }
 
 func createDryRunConfig() dryrun.Config {
