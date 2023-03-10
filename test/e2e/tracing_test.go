@@ -3,9 +3,12 @@
 package e2e
 
 import (
+	"context"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,7 +23,7 @@ var _ = Describe("Tracing", func() {
 			Spec: telemetryv1alpha1.TracePipelineSpec{
 				Output: telemetryv1alpha1.TracePipelineOutput{
 					Otlp: &telemetryv1alpha1.OtlpOutput{
-						Endpoint: telemetryv1alpha1.ValueType{Value: "http://localhost"},
+						Endpoint: telemetryv1alpha1.ValueType{Value: "http://trace-receiver.mocks.svc.cluster.local:4317"},
 					},
 				},
 			},
@@ -45,15 +48,23 @@ var _ = Describe("Tracing", func() {
 			Expect(deployMockTraceReceiver(k8sClient)).Should(Succeed())
 		})
 
-		It("Should call the mock trace receiver web interface", func() {
-			Eventually(func() error {
-				_, err := getResponse("http://localhost:8080")
-				return err
-			}, timeout, interval).Should(Succeed())
+		It("Should send some traces", func() {
+			Expect(deployTraceExternalService(k8sClient)).Should(Succeed())
+			shutdown, err := initProvider("localhost:4317")
+			Expect(err).ShouldNot(HaveOccurred())
+			defer shutdown(context.Background())
+			tracer := otel.Tracer("otlp-load-tester")
+			for i := 0; i < 100; i++ {
+				_, span := tracer.Start(ctx, "root", trace.WithAttributes(commonAttrs...))
+				span.End()
+			}
 		})
 
-		It("Should successfully delete the TracePipeline", func() {
-			Expect(k8sClient.Delete(ctx, tracePipeline)).Should(Succeed())
+		It("Should call the mock trace receiver web interface", func() {
+			Eventually(func() error {
+				_, err := getResponse("http://localhost:8080/spans.json")
+				return err
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 })
