@@ -41,12 +41,10 @@ import (
 )
 
 type Config struct {
-	BaseName          string
 	Namespace         string
 	OverrideConfigMap types.NamespacedName
 
 	Deployment DeploymentConfig
-	Service    ServiceConfig
 	Overrides  overrides.Config
 }
 
@@ -57,10 +55,6 @@ type DeploymentConfig struct {
 	MemoryLimit       resource.Quantity
 	CPURequest        resource.Quantity
 	MemoryRequest     resource.Quantity
-}
-
-type ServiceConfig struct {
-	OTLPServiceName string
 }
 
 //go:generate mockery --name DeploymentProber --filename deployment_prober.go
@@ -130,7 +124,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	namespacedBaseName := types.NamespacedName{
-		Name:      r.config.BaseName,
+		Name:      traceCollectorName,
 		Namespace: r.config.Namespace,
 	}
 	serviceAccount := commonresources.MakeServiceAccount(namespacedBaseName)

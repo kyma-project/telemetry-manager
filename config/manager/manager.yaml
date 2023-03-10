@@ -44,15 +44,10 @@ spec:
       - command:
         - /manager
         args:
-        - --leader-elect
         - --cert-dir=/tmp
-        - --fluent-bit-cpu-limit=1
-        - --fluent-bit-memory-limit=1Gi
         - --fluent-bit-cpu-request=100m
         - --fluent-bit-memory-request=50Mi
         - --fluent-bit-denied-filter-plugins=kubernetes,rewrite_tag,multiline
-        - --fluent-bit-denied-output-plugins=
-        - --fluent-bit-max-pipelines=5
         - --trace-collector-cpu-limit=1
         - --trace-collector-memory-limit=1Gi
         - --trace-collector-cpu-request=25m

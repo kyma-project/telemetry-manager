@@ -22,9 +22,12 @@ func dryRunArgs() []string {
 	return []string{"--dry-run", "--quiet"}
 }
 
+const (
+	fluentBitPluginDirectory = "fluent-bit/lib"
+	fluentBitPath            = "fluent-bit/bin/fluent-bit"
+)
+
 type Config struct {
-	FluentBitBinPath       string
-	FluentBitPluginDir     string
 	FluentBitConfigMapName types.NamespacedName
 	PipelineDefaults       builder.PipelineDefaults
 }
@@ -77,12 +80,8 @@ func (d *DryRunner) RunPipeline(ctx context.Context, pipeline *telemetryv1alpha1
 }
 
 func (d *DryRunner) externalPluginArgs() ([]string, error) {
-	if d.config.FluentBitPluginDir == "" {
-		return nil, nil
-	}
-
 	var plugins []string
-	files, err := os.ReadDir(d.config.FluentBitPluginDir)
+	files, err := os.ReadDir(fluentBitPluginDirectory)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +90,7 @@ func (d *DryRunner) externalPluginArgs() ([]string, error) {
 		if f.IsDir() {
 			continue
 		}
-		plugins = append(plugins, filepath.Join(d.config.FluentBitPluginDir, f.Name()))
+		plugins = append(plugins, filepath.Join(fluentBitPluginDirectory, f.Name()))
 	}
 
 	var args []string
@@ -102,7 +101,7 @@ func (d *DryRunner) externalPluginArgs() ([]string, error) {
 }
 
 func (d *DryRunner) runCmd(ctx context.Context, args []string) error {
-	outBytes, err := d.commandRunner.run(ctx, d.config.FluentBitBinPath, args...)
+	outBytes, err := d.commandRunner.run(ctx, fluentBitPath, args...)
 	out := string(outBytes)
 	if err != nil {
 		if strings.Contains(out, "error") || strings.Contains(out, "Error") {

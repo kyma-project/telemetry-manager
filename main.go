@@ -66,43 +66,23 @@ var (
 	certDir                string
 	deniedFilterPlugins    string
 	deniedOutputPlugins    string
-	enableLeaderElection   bool
 	enableLogging          bool
 	enableTracing          bool
-	enablePprof            bool
-	logFormat              string
 	logLevel               string
-	metricsAddr            string
-	probeAddr              string
-	pprofAddr              string
 	scheme                 = runtime.NewScheme()
 	setupLog               = ctrl.Log.WithName("setup")
-	syncPeriod             time.Duration
-	telemetryNamespace     string
 	dynamicLoglevel        = zap.NewAtomicLevel()
 	configureLogLevelOnFly *logger.LogLevel
 
-	traceCollectorBaseName        string
-	traceCollectorOTLPServiceName string
-	traceCollectorImage           string
-	traceCollectorPriorityClass   string
-	traceCollectorCPULimit        string
-	traceCollectorMemoryLimit     string
-	traceCollectorCPURequest      string
-	traceCollectorMemoryRequest   string
+	traceCollectorImage         string
+	traceCollectorPriorityClass string
+	traceCollectorCPULimit      string
+	traceCollectorMemoryLimit   string
+	traceCollectorCPURequest    string
+	traceCollectorMemoryRequest string
 
-	fluentBitEnvSecret                 string
-	fluentBitFilesConfigMap            string
-	fluentBitPath                      string
-	fluentBitPluginDirectory           string
-	fluentBitInputTag                  string
 	fluentBitMemoryBufferLimit         string
-	fluentBitStorageType               string
 	fluentBitFsBufferLimit             string
-	fluentBitConfigMap                 string
-	fluentBitSectionsConfigMap         string
-	fluentBitParsersConfigMap          string
-	fluentBitDaemonSet                 string
 	fluentBitCPULimit                  string
 	fluentBitMemoryLimit               string
 	fluentBitCPURequest                string
@@ -113,8 +93,7 @@ var (
 	fluentBitConfigPrepperImageVersion string
 	fluentBitPriorityClassName         string
 
-	webhookServiceName string
-	enableWebhook      bool
+	enableWebhook bool
 )
 
 const (
@@ -122,6 +101,11 @@ const (
 	overrideConfigMapName  = "telemetry-override-config"
 	fluentBitImage         = "eu.gcr.io/kyma-project/tpi/fluent-bit:2.0.9-f89e8b78"
 	fluentBitExporterImage = "eu.gcr.io/kyma-project/directory-size-exporter:v20221020-e314a071"
+
+	telemetryNamespace = "kyma-system"
+
+	fluentBitDaemonSet = "telemetry-fluent-bit"
+	webhookServiceName = "telemetry-operator-webhook"
 )
 
 //nolint:gochecknoinits
@@ -172,22 +156,11 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 
 func main() {
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.StringVar(&pprofAddr, "pprof-bind-address", ":6060", "The address the pprof endpoint binds to.")
-	flag.DurationVar(&syncPeriod, "sync-period", 1*time.Hour, "minimum frequency at which watched resources are reconciled")
-	flag.BoolVar(&enablePprof, "enable-profiling", true, "Enable pprof profiling.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
-		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	flag.BoolVar(&enableLogging, "enable-logging", true, "Enable configurable logging.")
 	flag.BoolVar(&enableTracing, "enable-tracing", true, "Enable configurable tracing.")
-	flag.StringVar(&logFormat, "log-format", getEnvOrDefault("APP_LOG_FORMAT", "text"), "Log format (json or text)")
 	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
-	flag.StringVar(&telemetryNamespace, "telemetry-namespace", "kyma-system", "Telemetry namespace")
 
-	flag.StringVar(&traceCollectorBaseName, "trace-collector-base-name", "telemetry-trace-collector", "Default name for tracing OpenTelemetry Collector Kubernetes resources")
-	flag.StringVar(&traceCollectorOTLPServiceName, "trace-collector-otlp-service-name", "telemetry-otlp-traces", "Default name for tracing OpenTelemetry Collector Kubernetes resources")
 	flag.StringVar(&traceCollectorImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorCPULimit, "trace-collector-cpu-limit", "1", "CPU limit for tracing OpenTelemetry Collector")
@@ -195,17 +168,7 @@ func main() {
 	flag.StringVar(&traceCollectorCPURequest, "trace-collector-cpu-request", "25m", "CPU request for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorMemoryRequest, "trace-collector-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
 
-	flag.StringVar(&fluentBitConfigMap, "fluent-bit-cm-name", "telemetry-fluent-bit", "ConfigMap name of Fluent Bit")
-	flag.StringVar(&fluentBitSectionsConfigMap, "fluent-bit-sections-cm-name", "telemetry-fluent-bit-sections", "ConfigMap name of Fluent Bit Sections to be written by Fluent Bit controller")
-	flag.StringVar(&fluentBitParsersConfigMap, "fluent-bit-parser-cm-name", "telemetry-fluent-bit-parsers", "ConfigMap name of Fluent Bit Parsers to be written by Fluent Bit controller")
-	flag.StringVar(&fluentBitDaemonSet, "fluent-bit-ds-name", "telemetry-fluent-bit", "DaemonSet name to be managed by Fluent Bit controller")
-	flag.StringVar(&fluentBitEnvSecret, "fluent-bit-env-secret", "telemetry-fluent-bit-env", "Secret for environment variables")
-	flag.StringVar(&fluentBitFilesConfigMap, "fluent-bit-files-cm", "telemetry-fluent-bit-files", "ConfigMap for referenced files")
-	flag.StringVar(&fluentBitPath, "fluent-bit-path", "fluent-bit/bin/fluent-bit", "Fluent Bit binary path")
-	flag.StringVar(&fluentBitPluginDirectory, "fluent-bit-plugin-directory", "fluent-bit/lib", "Fluent Bit plugin directory")
-	flag.StringVar(&fluentBitInputTag, "fluent-bit-input-tag", "tele", "Fluent Bit base tag of the input to use")
 	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
-	flag.StringVar(&fluentBitStorageType, "fluent-bit-storage-type", "filesystem", "Fluent Bit buffering mechanism (filesystem or memory)")
 	flag.StringVar(&fluentBitFsBufferLimit, "fluent-bit-filesystem-buffer-limit", "1G", "Fluent Bit filesystem buffer limit per log pipeline")
 	flag.StringVar(&deniedFilterPlugins, "fluent-bit-denied-filter-plugins", "", "Comma separated list of denied filter plugins even if allowUnsupportedPlugins is enabled. If empty, all filter plugins are allowed.")
 	flag.StringVar(&fluentBitCPULimit, "fluent-bit-cpu-limit", "1", "CPU limit for tracing fluent-bit")
@@ -220,7 +183,6 @@ func main() {
 	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
 
 	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
-	flag.StringVar(&webhookServiceName, "validating-webhook-service-name", "telemetry-operator-webhook", "Validating webhook service name.")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -235,21 +197,19 @@ func main() {
 	dynamicLoglevel.SetLevel(parsedLevel)
 	configureLogLevelOnFly = logger.NewLogReconfigurer(dynamicLoglevel)
 
-	ctrLogger, err := logger.New(logFormat, logLevel, dynamicLoglevel)
+	ctrLogger, err := logger.New("json", logLevel, dynamicLoglevel)
 
-	if enablePprof {
-		go func() {
-			server := &http.Server{
-				Addr:              pprofAddr,
-				ReadHeaderTimeout: 10 * time.Second,
-			}
+	go func() {
+		server := &http.Server{
+			Addr:              ":6060",
+			ReadHeaderTimeout: 10 * time.Second,
+		}
 
-			err = server.ListenAndServe()
-			if err != nil {
-				setupLog.Error(err, "Cannot start pprof server")
-			}
-		}()
-	}
+		err = server.ListenAndServe()
+		if err != nil {
+			setupLog.Error(err, "Cannot start pprof server")
+		}
+	}()
 
 	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
 	if err != nil {
@@ -278,16 +238,18 @@ func main() {
 		setupLog.Error(err, "failed to write tls.key")
 		os.Exit(1)
 	}
+	syncPeriod := 1 * time.Hour
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		SyncPeriod:             &syncPeriod,
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "cdd7ef0b.kyma-project.io",
-		CertDir:                certDir,
+		SyncPeriod:              &syncPeriod,
+		Scheme:                  scheme,
+		MetricsBindAddress:      ":8080",
+		Port:                    9443,
+		HealthProbeBindAddress:  ":8081",
+		LeaderElection:          true,
+		LeaderElectionNamespace: telemetryNamespace,
+		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
+		CertDir:                 certDir,
 	})
 	if err != nil {
 		setupLog.Error(err, "Failed to start manager")
@@ -361,45 +323,19 @@ func main() {
 }
 
 func validateFlags() error {
-	if fluentBitConfigMap == "" {
-		return errors.New("--fluent-bit-cm-name flag is required")
-	}
-	if fluentBitSectionsConfigMap == "" {
-		return errors.New("--fluent-bit-sections-cm-name flag is required")
-	}
-	if fluentBitParsersConfigMap == "" {
-		return errors.New("--fluent-bit-parser-cm-name flag is required")
-	}
-	if fluentBitDaemonSet == "" {
-		return errors.New("--fluent-bit-ds-name flag is required")
-	}
-	if fluentBitEnvSecret == "" {
-		return errors.New("--fluent-bit-env-secret flag is required")
-	}
-	if fluentBitFilesConfigMap == "" {
-		return errors.New("--fluent-bit-files-cm flag is required")
-	}
-	if telemetryNamespace == "" {
-		return errors.New("--fluent-bit-ns flag is required")
-	}
-	if logFormat != "json" && logFormat != "text" {
-		return errors.New("--log-format has to be either json or text")
-	}
+
 	if logLevel != "debug" && logLevel != "info" && logLevel != "warn" && logLevel != "error" && logLevel != "fatal" {
 		return errors.New("--log-level has to be one of debug, info, warn, error, fatal")
-	}
-	if fluentBitStorageType != "filesystem" && fluentBitStorageType != "memory" {
-		return errors.New("--fluent-bit-storage-type has to be either filesystem or memory")
 	}
 	return nil
 }
 
 func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.LogPipelineReconciler {
 	config := logpipelinereconciler.Config{
-		SectionsConfigMap: types.NamespacedName{Name: fluentBitSectionsConfigMap, Namespace: telemetryNamespace},
-		FilesConfigMap:    types.NamespacedName{Name: fluentBitFilesConfigMap, Namespace: telemetryNamespace},
-		EnvSecret:         types.NamespacedName{Name: fluentBitEnvSecret, Namespace: telemetryNamespace},
-		DaemonSet:         types.NamespacedName{Namespace: telemetryNamespace, Name: fluentBitDaemonSet},
+		SectionsConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
+		FilesConfigMap:    types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
+		EnvSecret:         types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: telemetryNamespace},
+		DaemonSet:         types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
 		PipelineDefaults:  createPipelineDefaults(),
 		DaemonSetConfig: logpipelineresources.DaemonSetConfig{
@@ -423,8 +359,8 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 
 func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogParserReconciler {
 	config := logparserreconciler.Config{
-		ParsersConfigMap: types.NamespacedName{Name: fluentBitParsersConfigMap, Namespace: telemetryNamespace},
-		DaemonSet:        types.NamespacedName{Namespace: telemetryNamespace, Name: fluentBitDaemonSet},
+		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
+		DaemonSet:        types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
@@ -463,7 +399,6 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.TracePipelineReconciler {
 	config := tracepipelinereconciler.Config{
 		Namespace: telemetryNamespace,
-		BaseName:  traceCollectorBaseName,
 		Deployment: tracepipelinereconciler.DeploymentConfig{
 			Image:             traceCollectorImage,
 			PriorityClassName: traceCollectorPriorityClass,
@@ -472,9 +407,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 			CPURequest:        resource.MustParse(traceCollectorCPURequest),
 			MemoryRequest:     resource.MustParse(traceCollectorMemoryRequest),
 		},
-		Service: tracepipelinereconciler.ServiceConfig{
-			OTLPServiceName: traceCollectorOTLPServiceName,
-		},
+
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
 	}
 	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
@@ -487,18 +420,16 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 
 func createDryRunConfig() dryrun.Config {
 	return dryrun.Config{
-		FluentBitBinPath:       fluentBitPath,
-		FluentBitPluginDir:     fluentBitPluginDirectory,
-		FluentBitConfigMapName: types.NamespacedName{Name: fluentBitConfigMap, Namespace: telemetryNamespace},
+		FluentBitConfigMapName: types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: telemetryNamespace},
 		PipelineDefaults:       createPipelineDefaults(),
 	}
 }
 
 func createPipelineDefaults() builder.PipelineDefaults {
 	return builder.PipelineDefaults{
-		InputTag:          fluentBitInputTag,
+		InputTag:          "tele",
 		MemoryBufferLimit: fluentBitMemoryBufferLimit,
-		StorageType:       fluentBitStorageType,
+		StorageType:       "filesystem",
 		FsBufferLimit:     fluentBitFsBufferLimit,
 	}
 }
