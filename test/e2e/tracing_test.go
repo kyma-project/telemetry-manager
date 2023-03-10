@@ -60,11 +60,11 @@ var _ = Describe("Tracing", func() {
 			}
 		})
 
-		It("Should call the mock trace receiver web interface", func() {
-			Eventually(func() error {
-				_, err := getResponse("http://localhost:8080/spans.json")
-				return err
-			}, timeout, interval).Should(Succeed())
+		It("Should retrieve trace data", func() {
+			Eventually(func() (string, error) {
+				data, err := getResponse("http://localhost:8080/spans.json")
+				return string(data), err
+			}, timeout, interval).ShouldNot(BeEmpty())
 		})
 	})
 })

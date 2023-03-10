@@ -35,7 +35,7 @@ func deployTraceExternalService(c client.Client) error {
 	}
 	if err := c.Create(context.Background(), &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "trace-receiver",
+			Name:      "telemetry-otlp-traces-external",
 			Namespace: "kyma-system",
 			Labels:    labels,
 		},
