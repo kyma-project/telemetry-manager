@@ -19,15 +19,18 @@ package logparser
 import (
 	"context"
 	"fmt"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const checksumAnnotationKey = "checksum/logparser-config"
@@ -51,36 +54,34 @@ type DaemonSetAnnotator interface {
 
 type Reconciler struct {
 	client.Client
-	config       Config
-	prober       DaemonSetProber
-	annotator    DaemonSetAnnotator
-	syncer       syncer
-	globalConfig *overrides.Handler
+	config           Config
+	prober           DaemonSetProber
+	annotator        DaemonSetAnnotator
+	syncer           syncer
+	overridesHandler *overrides.Handler
 }
 
-func NewReconciler(client client.Client, config Config, prober DaemonSetProber, annotator DaemonSetAnnotator, handler *overrides.Handler) *Reconciler {
-	var r Reconciler
-
-	r.Client = client
-	r.config = config
-	r.prober = prober
-	r.annotator = annotator
-	r.syncer = syncer{client, config}
-	r.globalConfig = handler
-
-	return &r
+func NewReconciler(client client.Client, config Config, prober DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler) *Reconciler {
+	return &Reconciler{
+		Client:           client,
+		config:           config,
+		prober:           prober,
+		annotator:        annotator,
+		syncer:           syncer{client, config},
+		overridesHandler: overridesHandler,
+	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := logf.FromContext(ctx)
 	log.V(1).Info("Reconciliation triggered")
 
-	overrideConfig, err := r.globalConfig.UpdateOverrideConfig(ctx, r.config.OverrideConfigMap)
+	overrideConfig, err := r.overridesHandler.UpdateOverrideConfig(ctx, r.config.OverrideConfigMap)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.globalConfig.CheckGlobalConfig(overrideConfig.Global); err != nil {
+	if err := r.overridesHandler.CheckGlobalConfig(overrideConfig.Global); err != nil {
 		return ctrl.Result{}, err
 	}
 

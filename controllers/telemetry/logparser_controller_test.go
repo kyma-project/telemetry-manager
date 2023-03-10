@@ -13,30 +13,40 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package logparser
+package telemetry
 
 import (
+	"time"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"time"
+	"k8s.io/apimachinery/pkg/types"
 )
 
-const (
-	timeout      = time.Second * 10
-	interval     = time.Millisecond * 250
-	parserConfig = `
-    Format regex
-    Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$
-    Time_Key time
-    Time_Format %d/%b/%Y:%H:%M:%S %z
-    Types user:string pass:string
-`
+var (
+	testLogParserConfig = logparser.Config{
+		ParsersConfigMap:  types.NamespacedName{Name: "test-telemetry-fluent-bit-parser", Namespace: "default"},
+		DaemonSet:         types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
+		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "default"},
+	}
 )
 
 var _ = Describe("LogParser controller", Ordered, func() {
+	const (
+		timeout      = time.Second * 10
+		interval     = time.Millisecond * 250
+		parserConfig = `
+		Format regex
+		Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$
+		Time_Key time
+		Time_Format %d/%b/%Y:%H:%M:%S %z
+		Types user:string pass:string
+	`
+	)
 	var expectefParserCmData = `[PARSER]
     Name regex-parser
     Format regex
@@ -60,7 +70,7 @@ var _ = Describe("LogParser controller", Ordered, func() {
 		It("Should have configuration copied to parser configmap", func() {
 			Eventually(func() string {
 				var parserCm v1.ConfigMap
-				err := k8sClient.Get(ctx, testParserConfig.ParsersConfigMap, &parserCm)
+				err := k8sClient.Get(ctx, testLogParserConfig.ParsersConfigMap, &parserCm)
 				if err != nil {
 					return err.Error()
 				}
@@ -76,7 +86,7 @@ var _ = Describe("LogParser controller", Ordered, func() {
 		It("Should reset to empty fluent-bit parser configmap", func() {
 			Eventually(func() string {
 				var parserCm v1.ConfigMap
-				err := k8sClient.Get(ctx, testParserConfig.ParsersConfigMap, &parserCm)
+				err := k8sClient.Get(ctx, testLogParserConfig.ParsersConfigMap, &parserCm)
 				if err != nil {
 					return err.Error()
 				}

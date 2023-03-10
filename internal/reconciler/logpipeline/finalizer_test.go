@@ -24,7 +24,7 @@ func TestEnsureFinalizers(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = client.Get(ctx, types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = client.Get(context.TODO(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.True(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))
 		require.False(t, controllerutil.ContainsFinalizer(&updatedPipeline, filesFinalizer))
@@ -51,7 +51,7 @@ func TestEnsureFinalizers(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = client.Get(ctx, types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = client.Get(context.TODO(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.True(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))
 		require.True(t, controllerutil.ContainsFinalizer(&updatedPipeline, filesFinalizer))
@@ -77,7 +77,7 @@ func TestCleanupFinalizers(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = client.Get(ctx, types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = client.Get(context.TODO(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.False(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))
 	})
@@ -100,7 +100,7 @@ func TestCleanupFinalizers(t *testing.T) {
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.LogPipeline
-		_ = client.Get(ctx, types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+		_ = client.Get(context.TODO(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 		require.False(t, controllerutil.ContainsFinalizer(&updatedPipeline, sectionsFinalizer))
 		require.False(t, controllerutil.ContainsFinalizer(&updatedPipeline, filesFinalizer))
