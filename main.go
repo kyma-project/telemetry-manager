@@ -28,30 +28,20 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/setup"
 
-	"github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	logparserreconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	tracepipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
-	"github.com/kyma-project/telemetry-manager/internal/setup"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logparservalidation "github.com/kyma-project/telemetry-manager/webhook/logparser/validation"
