@@ -127,7 +127,7 @@ var (
 	webhookServiceName string
 	enableWebhook      bool
 
-	enableTelemetryManager bool
+	enableTelemetryManagerModule bool
 )
 
 const (
@@ -235,7 +235,7 @@ func main() {
 	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
 	flag.StringVar(&webhookServiceName, "validating-webhook-service-name", "telemetry-operator-webhook", "Validating webhook service name.")
 
-	flag.BoolVar(&enableTelemetryManager, "enable-telemetry-manager", true, "Enable telemetry manager.")
+	flag.BoolVar(&enableTelemetryManagerModule, "enable-telemetry-manager-module", true, "Enable telemetry manager.")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -335,7 +335,7 @@ func main() {
 		}
 	}
 
-	if enableTelemetryManager {
+	if enableTelemetryManagerModule {
 		setupLog.Info("Starting with telemetry mnager controller")
 		if err = createTelemetryManagerReconciler(mgr.GetClient(), mgr.GetScheme(), mgr.GetEventRecorderFor("telemetrymanager-operator")).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "TelemetryManager")
