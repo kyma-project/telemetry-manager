@@ -41,7 +41,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/setup"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
-	logparservalidation "github.com/kyma-project/telemetry-manager/webhook/logparser/validation"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 	logpipelinevalidation "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
 	//nolint:gosec
@@ -456,7 +455,7 @@ func createLogPipelineValidator(client client.Client) *logpipelinewebhook.Valida
 func createLogParserValidator(client client.Client) *logparserwebhook.ValidatingWebhookHandler {
 	return logparserwebhook.NewValidatingWebhookHandler(
 		client,
-		logparservalidation.NewParserValidator(),
+		//logparservalidation.NewParserValidator(),
 		dryrun.NewDryRunner(client, createDryRunConfig()))
 }
 

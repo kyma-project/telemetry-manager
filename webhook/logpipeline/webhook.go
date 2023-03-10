@@ -130,7 +130,7 @@ func (v *ValidatingWebhookHandler) validateLogPipeline(ctx context.Context, logP
 		return err
 	}
 
-	if err := v.inputValidator.Validate(&logPipeline.Spec.Input); err != nil {
+	if err := logPipeline.Validate(&logPipeline.Spec.Input); err != nil {
 		log.Error(err, "Failed to validate Fluent Bit input")
 		return err
 	}
