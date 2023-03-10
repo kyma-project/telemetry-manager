@@ -323,12 +323,6 @@ func main() {
 }
 
 func validateFlags() error {
-	if fluentBitDaemonSet == "" {
-		return errors.New("--fluent-bit-ds-name flag is required")
-	}
-	if telemetryNamespace == "" {
-		return errors.New("--fluent-bit-ns flag is required")
-	}
 
 	if logLevel != "debug" && logLevel != "info" && logLevel != "warn" && logLevel != "error" && logLevel != "fatal" {
 		return errors.New("--log-level has to be one of debug, info, warn, error, fatal")

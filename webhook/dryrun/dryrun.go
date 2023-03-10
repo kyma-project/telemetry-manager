@@ -80,10 +80,6 @@ func (d *DryRunner) RunPipeline(ctx context.Context, pipeline *telemetryv1alpha1
 }
 
 func (d *DryRunner) externalPluginArgs() ([]string, error) {
-	if fluentBitPluginDirectory == "" {
-		return nil, nil
-	}
-
 	var plugins []string
 	files, err := os.ReadDir(fluentBitPluginDirectory)
 	if err != nil {
