@@ -104,14 +104,12 @@ var (
 	fluentBitConfigPrepperImageVersion string
 	fluentBitPriorityClassName         string
 
-	metricGatewayBaseName        = "telemetry-metric-gateway"
-	metricGatewayOTLPServiceName = "telemetry-otlp-metrics"
-	metricGatewayImage           string
-	metricGatewayPriorityClass   string
-	metricGatewayCPULimit        string
-	metricGatewayMemoryLimit     string
-	metricGatewayCPURequest      string
-	metricGatewayMemoryRequest   string
+	metricGatewayImage         string
+	metricGatewayPriorityClass string
+	metricGatewayCPULimit      string
+	metricGatewayMemoryLimit   string
+	metricGatewayCPURequest    string
+	metricGatewayMemoryRequest string
 
 	enableWebhook bool
 )
@@ -122,8 +120,7 @@ const (
 	fluentBitImage         = "eu.gcr.io/kyma-project/tpi/fluent-bit:2.0.9-a3475b24"
 	fluentBitExporterImage = "eu.gcr.io/kyma-project/directory-size-exporter:v20230308-ff6cf204"
 
-	telemetryNamespace     = "kyma-system"
-	traceCollectorBaseName = "telemetry-trace-collector"
+	telemetryNamespace = "kyma-system"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
@@ -439,7 +436,7 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.TracePipelineReconciler {
 	config := collectorresources.Config{
 		Namespace: telemetryNamespace,
-		BaseName:  traceCollectorBaseName,
+		BaseName:  "telemetry-trace-collector",
 		Deployment: collectorresources.DeploymentConfig{
 			Image:             traceCollectorImage,
 			PriorityClassName: traceCollectorPriorityClass,
@@ -449,6 +446,9 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 			MemoryRequest:     resource.MustParse(traceCollectorMemoryRequest),
 		},
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
+		Service: collectorresources.ServiceConfig{
+			OTLPServiceName: "telemetry-otlp-traces",
+		},
 	}
 	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
@@ -461,7 +461,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.MetricPipelineReconciler {
 	config := collectorresources.Config{
 		Namespace: telemetryNamespace,
-		BaseName:  metricGatewayBaseName,
+		BaseName:  "telemetry-metric-gateway",
 		Deployment: collectorresources.DeploymentConfig{
 			Image:             metricGatewayImage,
 			PriorityClassName: metricGatewayPriorityClass,
@@ -471,10 +471,11 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 			MemoryRequest:     resource.MustParse(metricGatewayMemoryRequest),
 		},
 		Service: collectorresources.ServiceConfig{
-			OTLPServiceName: metricGatewayOTLPServiceName,
+			OTLPServiceName: "telemetry-otlp-metrics",
 		},
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
 	}
+
 	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(

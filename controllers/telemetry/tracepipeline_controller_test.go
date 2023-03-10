@@ -30,6 +30,7 @@ import (
 var (
 	testTracePipelineConfig = collectorresources.Config{
 		Namespace:         "kyma-system",
+		BaseName:          "telemetry-trace-collector",
 		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "kyma-system"},
 		Deployment: collectorresources.DeploymentConfig{
 			Image:         "otel/opentelemetry-collector-contrib:0.73.0",
@@ -38,6 +39,7 @@ var (
 			CPURequest:    resource.MustParse("150m"),
 			MemoryRequest: resource.MustParse("256Mi"),
 		},
+		Service: collectorresources.ServiceConfig{OTLPServiceName: "telemetry-otlp-traces"},
 	}
 )
 
