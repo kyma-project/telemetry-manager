@@ -19,6 +19,9 @@ limitations under the License.
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"testing"
+
 	"github.com/kyma-project/telemetry-manager/internal/collector"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
@@ -28,8 +31,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"path/filepath"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
