@@ -5,6 +5,7 @@ package e2e
 import (
 	"context"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	. "github.com/kyma-project/telemetry-manager/internal/otelmatchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/otel"
@@ -14,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
+	"net/http"
 )
 
 var _ = Describe("Tracing", func() {
@@ -43,6 +45,8 @@ var _ = Describe("Tracing", func() {
 			})
 		})
 
+		var spanIDs []string
+
 		It("Should send some traces", func() {
 			shutdown, err := initProvider("localhost:4317")
 			Expect(err).ShouldNot(HaveOccurred())
@@ -50,17 +54,18 @@ var _ = Describe("Tracing", func() {
 			tracer := otel.Tracer("otlp-load-tester")
 			for i := 0; i < 100; i++ {
 				_, span := tracer.Start(ctx, "root", trace.WithAttributes(commonAttrs...))
+				spanIDs = append(spanIDs, span.SpanContext().SpanID().String())
 				span.End()
 			}
 		})
 
-		It("Should retrieve trace data", func() {
-			Eventually(func(g Gomega) ([]Span, error) {
-				data, err := getResponse("http://localhost:8080/spans.json")
+		It("Should verify traces were sent to the backend", func() {
+			Eventually(func(g Gomega) {
+				resp, err := http.Get("http://localhost:8080/spans.json")
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(data).NotTo(BeEmpty())
-				return getSpans(data)
-			}, timeout, interval).Should(BeEmpty())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(HaveSpanIDs(spanIDs)))
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 })
