@@ -83,7 +83,7 @@ var _ = Describe("Tracing", func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ConsistOfSpansWithIDs(spanIDs),
-					ConsistOfSpansWithAttributes(commonAttributes))))
+					HaveEachAttributes(commonAttributes))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})

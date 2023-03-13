@@ -27,21 +27,21 @@ func ConsistOfSpansWithIDs(spanIDs []string) types.GomegaMatcher {
 	}, gomega.ConsistOf(spanIDs))
 }
 
-func ConsistOfSpansWithAttributes(attrs []attribute.KeyValue) types.GomegaMatcher {
+func HaveEachAttributes(attrs []attribute.KeyValue) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]map[string]string, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
-			return nil, fmt.Errorf("ConsistOfSpansWithAttributes rqquires a []byte, but got %T", actual)
+			return nil, fmt.Errorf("HaveEachAttributes rqquires a []byte, but got %T", actual)
 		}
 
 		spans, err := unmarshalOTLPJSONTraceData(actualBytes)
 		if err != nil {
-			return nil, fmt.Errorf("ConsistOfSpansWithAttributes requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("HaveEachAttributes requires a valid OTLP JSON document: %v", err)
 		}
 
 		var attrsAsMap []map[string]string
 		for _, span := range spans {
-			attrsAsMap = append(attrsAsMap, spanAttributesToMap(span.Attributes))
+			attrsAsMap = append(attrsAsMap, spanAttributgitci esToMap(span.Attributes))
 		}
 		return attrsAsMap, nil
 	}, gomega.HaveEach(gomega.Equal(attributesToMap(attrs))))
