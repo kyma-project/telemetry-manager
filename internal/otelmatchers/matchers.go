@@ -22,7 +22,6 @@ func HaveSpanIDs(spanIDs []string) types.GomegaMatcher {
 		for _, span := range spans {
 			spanIDs = append(spanIDs, span.SpanID)
 		}
-		gomega.MatchJSON()
 		return spanIDs, nil
 	}, gomega.ConsistOf(spanIDs))
 }
