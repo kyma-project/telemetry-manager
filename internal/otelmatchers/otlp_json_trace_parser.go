@@ -17,10 +17,10 @@ type ResourceSpans struct {
 }
 
 type Resource struct {
-	Attributes []Attributes `json:"attributes"`
+	Attributes []Attribute `json:"attributes"`
 }
 
-type Attributes struct {
+type Attribute struct {
 	Key   string `json:"key"`
 	Value Value  `json:"value"`
 }
@@ -34,14 +34,14 @@ type ScopeSpans struct {
 }
 
 type Span struct {
-	TraceID           string       `json:"traceId"`
-	SpanID            string       `json:"spanId"`
-	ParentSpanID      string       `json:"parentSpanId"`
-	Name              string       `json:"name"`
-	Kind              int          `json:"kind"`
-	StartTimeUnixNano string       `json:"startTimeUnixNano"`
-	EndTimeUnixNano   string       `json:"endTimeUnixNano"`
-	Attributes        []Attributes `json:"attributes"`
+	TraceID           string      `json:"traceId"`
+	SpanID            string      `json:"spanId"`
+	ParentSpanID      string      `json:"parentSpanId"`
+	Name              string      `json:"name"`
+	Kind              int         `json:"kind"`
+	StartTimeUnixNano string      `json:"startTimeUnixNano"`
+	EndTimeUnixNano   string      `json:"endTimeUnixNano"`
+	Attributes        []Attribute `json:"attributes"`
 }
 
 func unmarshalOTLPJSONTraceData(traceDataFile []byte) ([]Span, error) {

@@ -81,7 +81,9 @@ var _ = Describe("Tracing", func() {
 				resp, err := http.Get("http://localhost:8080/spans.json")
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(HaveSpanIDs(spanIDs)))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					ConsistOfSpansWithIDs(spanIDs),
+					ConsistOfSpansWithAttributes(commonAttributes))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
