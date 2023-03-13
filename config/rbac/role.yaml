@@ -164,6 +164,32 @@ rules:
 - apiGroups:
   - telemetry.kyma-project.io
   resources:
+  - telemetrymanagers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - telemetry.kyma-project.io
+  resources:
+  - telemetrymanagers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - telemetry.kyma-project.io
+  resources:
+  - telemetrymanagers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - telemetry.kyma-project.io
+  resources:
   - tracepipelines
   verbs:
   - create

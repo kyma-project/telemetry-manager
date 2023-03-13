@@ -130,6 +130,10 @@ var _ = BeforeSuite(func() {
 	err = tracepipelineReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
+	telemetryManagerReconciler := NewTelemetryManagerReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"))
+
+	err = telemetryManagerReconciler.SetupWithManager(mgr)
+	Expect(err).ToNot(HaveOccurred())
 	go func() {
 		defer GinkgoRecover()
 		err := mgr.Start(ctx)
