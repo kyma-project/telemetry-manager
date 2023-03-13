@@ -13,7 +13,7 @@ func HaveSpanIDs(spanIDs []string) types.GomegaMatcher {
 			return nil, fmt.Errorf("HaveSpanIDs expects a []byte, but got %T", actual)
 		}
 
-		spans, err := getSpans(actualBytes)
+		spans, err := parseFileExporterTraceOutput(actualBytes)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse span data %v", err)
 		}
