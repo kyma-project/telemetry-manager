@@ -93,9 +93,9 @@ func (s *TelemetryManagerStatus) WithInstallConditionStatus(status metav1.Condit
 	return s
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
 // TelemetryManager is the Schema for the telemetrymanagers API
 type TelemetryManager struct {
 	metav1.TypeMeta   `json:",inline"`

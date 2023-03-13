@@ -524,5 +524,5 @@ func parsePlugins(s string) []string {
 }
 
 func createTelemetryManagerReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) *telemetrycontrollers.Reconciler {
-	return telemetrycontrollers.NewReconciler(client, scheme, eventRecorder)
+	return telemetrycontrollers.NewTelemetryManagerReconciler(client, scheme, eventRecorder)
 }

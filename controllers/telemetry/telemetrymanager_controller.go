@@ -45,7 +45,7 @@ type Reconciler struct {
 	record.EventRecorder
 }
 
-func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) *Reconciler {
+func NewTelemetryManagerReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) *Reconciler {
 	var r Reconciler
 	r.Client = client
 	r.Scheme = scheme
