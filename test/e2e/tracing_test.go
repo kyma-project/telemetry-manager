@@ -4,22 +4,35 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	. "github.com/kyma-project/telemetry-manager/internal/otelmatchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	"net/http"
+	"time"
 )
 
 var _ = Describe("Tracing", func() {
 	Context("When no TracePipeline exists", Ordered, func() {
+		var spanIDs []string
+		var commonAttributes []attribute.KeyValue
+
 		BeforeAll(func() {
 			tracePipeline := makeTracePipeline()
 			externalOTLPTraceService := makeExternalOTLPTracesService()
@@ -45,7 +58,13 @@ var _ = Describe("Tracing", func() {
 			})
 		})
 
-		var spanIDs []string
+		BeforeEach(func() {
+			commonAttributes = []attribute.KeyValue{
+				attribute.String("attrA", "chocolate"),
+				attribute.String("attrB", "raspberry"),
+				attribute.String("attrC", "vanilla"),
+			}
+		})
 
 		It("Should send some traces", func() {
 			shutdown, err := initProvider("localhost:4317")
@@ -53,7 +72,7 @@ var _ = Describe("Tracing", func() {
 			defer shutdown(context.Background())
 			tracer := otel.Tracer("otlp-load-tester")
 			for i := 0; i < 100; i++ {
-				_, span := tracer.Start(ctx, "root", trace.WithAttributes(commonAttrs...))
+				_, span := tracer.Start(ctx, "root", trace.WithAttributes(commonAttributes...))
 				spanIDs = append(spanIDs, span.SpanContext().SpanID().String())
 				span.End()
 			}
@@ -256,4 +275,42 @@ func makeExternalMockBackendService() *corev1.Service {
 			Type:     corev1.ServiceTypeNodePort,
 		},
 	}
+}
+
+func initProvider(url string) (func(context.Context) error, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	res, err := resource.New(ctx,
+		resource.WithAttributes(
+			// the service name used to display traces in backends
+			semconv.ServiceNameKey.String("otel-load-generator"),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create resource: %w", err)
+	}
+
+	conn, err := grpc.DialContext(ctx, url, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gRPC connection to collector: %w", err)
+	}
+
+	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create trace exporter: %w", err)
+	}
+
+	// Register the trace exporter with a TracerProvider, using a batch
+	// span processor to aggregate spans before export.
+	bsp := sdktrace.NewBatchSpanProcessor(traceExporter, sdktrace.WithMaxExportBatchSize(512), sdktrace.WithMaxQueueSize(2048))
+	tracerProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithResource(res),
+		sdktrace.WithSpanProcessor(bsp),
+	)
+	otel.SetTracerProvider(tracerProvider)
+
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+	return tracerProvider.Shutdown, nil
 }
