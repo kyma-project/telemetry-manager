@@ -31,7 +31,7 @@ var (
 		Namespace:         "kyma-system",
 		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "kyma-system"},
 		Deployment: tracepipeline.DeploymentConfig{
-			Image:         "otel/opentelemetry-collector-contrib:0.60.0",
+			Image:         "otel/opentelemetry-collector-contrib:0.73.0",
 			CPULimit:      resource.MustParse("1"),
 			MemoryLimit:   resource.MustParse("1Gi"),
 			CPURequest:    resource.MustParse("150m"),
