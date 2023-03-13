@@ -41,7 +41,7 @@ func HaveEachAttributes(attrs []attribute.KeyValue) types.GomegaMatcher {
 
 		var attrsAsMap []map[string]string
 		for _, span := range spans {
-			attrsAsMap = append(attrsAsMap, spanAttributgitci esToMap(span.Attributes))
+			attrsAsMap = append(attrsAsMap, spanAttributesToMap(span.Attributes))
 		}
 		return attrsAsMap, nil
 	}, gomega.HaveEach(gomega.Equal(attributesToMap(attrs))))
