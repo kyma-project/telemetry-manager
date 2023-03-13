@@ -17,6 +17,7 @@ const (
 	configHashAnnotationKey = "checksum/config"
 	collectorUser           = 10001
 	collectorContainerName  = "collector"
+	traceCollectorName      = "telemetry-trace-collector"
 )
 
 var (
@@ -27,9 +28,9 @@ var (
 	replicas = int32(1)
 )
 
-func makeDefaultLabels(config Config) map[string]string {
+func makeDefaultLabels() map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/name": config.BaseName,
+		"app.kubernetes.io/name": traceCollectorName,
 	}
 }
 
@@ -39,9 +40,9 @@ func makeConfigMap(config Config, collectorConfig OTELCollectorConfig) *corev1.C
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.BaseName,
+			Name:      traceCollectorName,
 			Namespace: config.Namespace,
-			Labels:    makeDefaultLabels(config),
+			Labels:    makeDefaultLabels(),
 		},
 		Data: map[string]string{
 			configMapKey: confYAML,
@@ -52,22 +53,22 @@ func makeConfigMap(config Config, collectorConfig OTELCollectorConfig) *corev1.C
 func makeSecret(config Config, secretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.BaseName,
+			Name:      traceCollectorName,
 			Namespace: config.Namespace,
-			Labels:    makeDefaultLabels(config),
+			Labels:    makeDefaultLabels(),
 		},
 		Data: secretData,
 	}
 }
 
 func makeDeployment(config Config, configHash string) *appsv1.Deployment {
-	labels := makeDefaultLabels(config)
+	labels := makeDefaultLabels()
 	optional := true
 	annotations := makePodAnnotations(configHash)
 	resources := makeResourceRequirements(config)
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.BaseName,
+			Name:      traceCollectorName,
 			Namespace: config.Namespace,
 			Labels:    labels,
 		},
@@ -91,7 +92,7 @@ func makeDeployment(config Config, configHash string) *appsv1.Deployment {
 								{
 									SecretRef: &corev1.SecretEnvSource{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: config.BaseName,
+											Name: traceCollectorName,
 										},
 										Optional: &optional,
 									},
@@ -135,7 +136,7 @@ func makeDeployment(config Config, configHash string) *appsv1.Deployment {
 							},
 						},
 					},
-					ServiceAccountName: config.BaseName,
+					ServiceAccountName: traceCollectorName,
 					PriorityClassName:  config.Deployment.PriorityClassName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsUser:    pointer.Int64(collectorUser),
@@ -150,7 +151,7 @@ func makeDeployment(config Config, configHash string) *appsv1.Deployment {
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: config.BaseName,
+										Name: traceCollectorName,
 									},
 									Items: []corev1.KeyToPath{{Key: configMapKey, Path: configMapKey}},
 								},
@@ -187,10 +188,10 @@ func makeResourceRequirements(config Config) corev1.ResourceRequirements {
 }
 
 func makeOTLPService(config Config) *corev1.Service {
-	labels := makeDefaultLabels(config)
+	labels := makeDefaultLabels()
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.Service.OTLPServiceName,
+			Name:      "telemetry-otlp-traces",
 			Namespace: config.Namespace,
 			Labels:    labels,
 		},
@@ -216,10 +217,10 @@ func makeOTLPService(config Config) *corev1.Service {
 }
 
 func makeMetricsService(config Config) *corev1.Service {
-	labels := makeDefaultLabels(config)
+	labels := makeDefaultLabels()
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.BaseName + "-metrics",
+			Name:      traceCollectorName + "-metrics",
 			Namespace: config.Namespace,
 			Labels:    labels,
 			Annotations: map[string]string{
@@ -243,10 +244,10 @@ func makeMetricsService(config Config) *corev1.Service {
 }
 
 func makeOpenCensusService(config Config) *corev1.Service {
-	labels := makeDefaultLabels(config)
+	labels := makeDefaultLabels()
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.BaseName + "-internal",
+			Name:      traceCollectorName + "-internal",
 			Namespace: config.Namespace,
 			Labels:    labels,
 		},
