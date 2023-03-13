@@ -5,10 +5,6 @@ package e2e
 import (
 	"context"
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -27,43 +23,6 @@ var commonAttrs = []attribute.KeyValue{
 	attribute.String("attrA", "chocolate"),
 	attribute.String("attrB", "raspberry"),
 	attribute.String("attrC", "vanilla"),
-}
-
-func deployTraceExternalService(c client.Client) error {
-	labels := map[string]string{
-		"app.kubernetes.io/name": "telemetry-trace-collector",
-	}
-	if err := c.Create(context.Background(), &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "telemetry-otlp-traces-external",
-			Namespace: "kyma-system",
-			Labels:    labels,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Name:       "grpc-otlp",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       4317,
-					TargetPort: intstr.FromInt(4317),
-					NodePort:   30017,
-				},
-				{
-					Name:       "http-otlp",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       4318,
-					TargetPort: intstr.FromInt(4318),
-					NodePort:   30018,
-				},
-			},
-			Selector: labels,
-			Type:     corev1.ServiceTypeNodePort,
-		},
-	}); err != nil {
-		return fmt.Errorf("failed to create service: %v", err)
-	}
-
-	return nil
 }
 
 func initProvider(url string) (func(context.Context) error, error) {

@@ -3,6 +3,8 @@
 package e2e
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -44,22 +46,26 @@ type Span struct {
 	Attributes        []Attributes `json:"attributes"`
 }
 
-func getSpans(traceDataJSON []byte, traceID string) ([]Span, error) {
-	var traceData TraceData
-	if err := json.Unmarshal(traceDataJSON, &traceData); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal trace data json: %v", err)
-	}
+func getSpans(traceDataFile []byte) ([]Span, error) {
+	scanner := bufio.NewScanner(bytes.NewReader(traceDataFile))
+	for scanner.Scan() {
+		var traceData TraceData
+		if err := json.Unmarshal(scanner.Bytes(), &traceData); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal trace data json: %v", err)
+		}
 
-	var spans []Span
-	for _, resourceSpans := range traceData.ResourceSpans {
-		for _, scopeSpans := range resourceSpans.ScopeSpans {
-			for _, span := range scopeSpans.Spans {
-				if span.TraceID == traceID {
-					spans = append(spans, span)
-				}
+		var spans []Span
+		for _, resourceSpans := range traceData.ResourceSpans {
+			for _, scopeSpans := range resourceSpans.ScopeSpans {
+				spans = append(spans, scopeSpans.Spans...)
 			}
 		}
+
+		return spans, nil
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("failed to read trace data file: %v", err)
 	}
 
-	return spans, nil
+	return nil, nil
 }
