@@ -44,7 +44,7 @@ type Span struct {
 	Attributes        []Attributes `json:"attributes"`
 }
 
-func parseFileExporterTraceOutput(traceDataFile []byte) ([]Span, error) {
+func unmarshalOTLPJSONTraceData(traceDataFile []byte) ([]Span, error) {
 	var spans []Span
 
 	scanner := bufio.NewScanner(bytes.NewReader(traceDataFile))
