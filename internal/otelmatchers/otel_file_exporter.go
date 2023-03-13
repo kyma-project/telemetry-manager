@@ -45,6 +45,8 @@ type Span struct {
 }
 
 func getSpans(traceDataFile []byte) ([]Span, error) {
+	var spans []Span
+
 	scanner := bufio.NewScanner(bytes.NewReader(traceDataFile))
 	for scanner.Scan() {
 		var traceData TraceData
@@ -52,18 +54,16 @@ func getSpans(traceDataFile []byte) ([]Span, error) {
 			return nil, fmt.Errorf("failed to unmarshal trace data json: %v", err)
 		}
 
-		var spans []Span
 		for _, resourceSpans := range traceData.ResourceSpans {
 			for _, scopeSpans := range resourceSpans.ScopeSpans {
 				spans = append(spans, scopeSpans.Spans...)
 			}
 		}
 
-		return spans, nil
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("failed to read trace data file: %v", err)
 	}
 
-	return nil, nil
+	return spans, nil
 }
