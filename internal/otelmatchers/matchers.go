@@ -27,6 +27,26 @@ func ConsistOfSpansWithIDs(spanIDs []string) types.GomegaMatcher {
 	}, gomega.ConsistOf(spanIDs))
 }
 
+func EachHaveTraceID(traceID string) types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) ([]string, error) {
+		actualBytes, ok := actual.([]byte)
+		if !ok {
+			return nil, fmt.Errorf("ConsistOfSpansWithIDs rqquires a []byte, but got %T", actual)
+		}
+
+		spans, err := unmarshalOTLPJSONTraceData(actualBytes)
+		if err != nil {
+			return nil, fmt.Errorf("ConsistOfSpansWithIDs requires a valid OTLP JSON document: %v", err)
+		}
+
+		var traceIDs []string
+		for _, span := range spans {
+			traceIDs = append(traceIDs, span.TraceID)
+		}
+		return traceIDs, nil
+	}, gomega.HaveEach(traceID))
+}
+
 func EachHaveAttributes(attrs []attribute.KeyValue) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]map[string]string, error) {
 		actualBytes, ok := actual.([]byte)

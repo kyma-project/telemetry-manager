@@ -29,6 +29,7 @@ import (
 var _ = Describe("Tracing", func() {
 	Context("When no TracePipeline exists", Ordered, func() {
 		var spanIDs []string
+		var traceID string
 		var commonAttributes []attribute.KeyValue
 
 		BeforeAll(func() {
@@ -69,8 +70,13 @@ var _ = Describe("Tracing", func() {
 			Expect(err).ShouldNot(HaveOccurred())
 			defer shutdown(context.Background())
 			tracer := otel.Tracer("otlp-load-tester")
+
+			rootCtx, rootSpan := tracer.Start(ctx, "root", trace.WithAttributes(commonAttributes...))
+			spanIDs = append(spanIDs, rootSpan.SpanContext().SpanID().String())
+			traceID = rootSpan.SpanContext().TraceID().String()
+			rootSpan.End()
 			for i := 0; i < 100; i++ {
-				_, span := tracer.Start(ctx, "root", trace.WithAttributes(commonAttributes...))
+				_, span := tracer.Start(rootCtx, "non-root", trace.WithAttributes(commonAttributes...))
 				spanIDs = append(spanIDs, span.SpanContext().SpanID().String())
 				span.End()
 			}
@@ -83,7 +89,8 @@ var _ = Describe("Tracing", func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ConsistOfSpansWithIDs(spanIDs),
-					EachHaveAttributes(commonAttributes))))
+					EachHaveAttributes(commonAttributes),
+					EachHaveTraceID(traceID))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
