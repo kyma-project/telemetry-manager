@@ -8,10 +8,6 @@ import (
 	"strings"
 	"time"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
-	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/prometheus/common/expfmt"
@@ -20,6 +16,11 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
 var (

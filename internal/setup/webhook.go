@@ -3,6 +3,7 @@ package setup
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/resources/webhook"
 	"k8s.io/apimachinery/pkg/types"

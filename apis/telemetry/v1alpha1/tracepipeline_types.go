@@ -32,46 +32,6 @@ type TracePipelineOutput struct {
 	Otlp *OtlpOutput `json:"otlp"`
 }
 
-type Header struct {
-	// Defines the header name
-	Name string `json:"name"`
-	// Defines the header value
-	ValueType `json:",inline"`
-}
-
-type OtlpOutput struct {
-	// Defines the OTLP protocol (http or grpc).
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:default:=grpc
-	// +kubebuilder:validation:Enum=grpc;http
-	Protocol string `json:"protocol,omitempty"`
-	// Defines the host and port (<host>:<port>) of an OTLP endpoint.
-	// +kubebuilder:validation:Required
-	Endpoint ValueType `json:"endpoint"`
-	// Defines authentication options for the OTLP output
-	Authentication *AuthenticationOptions `json:"authentication,omitempty"`
-	// Custom headers to be added to outgoing HTTP or GRPC requests
-	Headers []Header `json:"headers,omitempty"`
-}
-
-type AuthenticationOptions struct {
-	// Contains credentials for HTTP basic auth
-	Basic *BasicAuthOptions `json:"basic,omitempty"`
-}
-
-type BasicAuthOptions struct {
-	// Contains the basic auth username or a secret reference
-	// +kubebuilder:validation:Required
-	User ValueType `json:"user"`
-	// Contains the basic auth password or a secret reference
-	// +kubebuilder:validation:Required
-	Password ValueType `json:"password"`
-}
-
-func (b *BasicAuthOptions) IsDefined() bool {
-	return b.User.IsDefined() && b.Password.IsDefined()
-}
-
 type TracePipelineConditionType string
 
 // These are the valid statuses of TracePipeline.
@@ -121,11 +81,11 @@ func (tps *TracePipelineStatus) SetCondition(cond TracePipelineCondition) {
 	if currentCond != nil {
 		cond.LastTransitionTime = currentCond.LastTransitionTime
 	}
-	newConditions := filterCondition(tps.Conditions, cond.Type)
+	newConditions := filterTracePipelineCondition(tps.Conditions, cond.Type)
 	tps.Conditions = append(newConditions, cond)
 }
 
-func filterCondition(conditions []TracePipelineCondition, condType TracePipelineConditionType) []TracePipelineCondition {
+func filterTracePipelineCondition(conditions []TracePipelineCondition, condType TracePipelineConditionType) []TracePipelineCondition {
 	var newConditions []TracePipelineCondition
 	for _, cond := range conditions {
 		if cond.Type == condType {

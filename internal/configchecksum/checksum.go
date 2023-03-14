@@ -4,8 +4,9 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"hash"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sort"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	corev1 "k8s.io/api/core/v1"
 )

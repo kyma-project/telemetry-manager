@@ -32,6 +32,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/setup"
 )
 
@@ -85,7 +86,7 @@ func (r *LogPipelineReconciler) mapSecret(object client.Object) []reconcile.Requ
 	ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]
-		if logpipeline.HasSecretRef(&pipeline, secret.Name, secret.Namespace) {
+		if secretref.ReferencesSecret(secret.Name, secret.Namespace, &pipeline) {
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}}
 			requests = append(requests, request)
 			ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))

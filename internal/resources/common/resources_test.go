@@ -1,10 +1,11 @@
 package common
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"testing"
 )
 
 func TestMakeServiceAccount(t *testing.T) {

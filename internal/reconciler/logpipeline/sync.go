@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-
+	"github.com/kyma-project/telemetry-manager/internal/field"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type syncer struct {
@@ -124,8 +126,8 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 			continue
 		}
 
-		for _, field := range lookupSecretRefFields(&logPipelines.Items[i]) {
-			if copyErr := s.copySecretData(ctx, field.secretKeyRef, field.targetSecretKey, newSecret.Data); copyErr != nil {
+		for _, field := range logPipelines.Items[i].GetSecretRefs() {
+			if copyErr := s.copySecretData(ctx, field.SecretKeyRef, field.TargetSecretKey, newSecret.Data); copyErr != nil {
 				return fmt.Errorf("unable to copy secret data: %w", copyErr)
 			}
 		}
@@ -142,9 +144,12 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 	return nil
 }
 
-func (s *syncer) copySecretData(ctx context.Context, sourceRef telemetryv1alpha1.SecretKeyRef, targetKey string, target map[string][]byte) error {
+func (s *syncer) copySecretData(ctx context.Context, sourceRef field.SecretKeyRef, targetKey string, target map[string][]byte) error {
 	var source corev1.Secret
-	if err := s.Get(ctx, sourceRef.NamespacedName(), &source); err != nil {
+	if err := s.Get(ctx, types.NamespacedName{
+		Namespace: sourceRef.Namespace,
+		Name:      sourceRef.Name,
+	}, &source); err != nil {
 		return fmt.Errorf("unable to read secret '%s' from namespace '%s': %w", sourceRef.Name, sourceRef.Namespace, err)
 	}
 

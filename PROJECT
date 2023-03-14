@@ -41,4 +41,13 @@ resources:
   kind: TracePipeline
   path: github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: kyma-project.io
+  group: telemetry
+  kind: MetricPipeline
+  path: github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1
+  version: v1alpha1
 version: "3"

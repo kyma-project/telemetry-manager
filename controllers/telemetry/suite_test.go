@@ -18,8 +18,20 @@ limitations under the License.
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"testing"
+
+	"gopkg.in/yaml.v3"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/logger"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -34,9 +46,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/logger"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
@@ -100,11 +109,18 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	client := mgr.GetClient()
-	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
+	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
+
+	kymaSystemNamespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kyma-system",
+		},
+	}
+	Expect(k8sClient.Create(ctx, kymaSystemNamespace)).Should(Succeed())
 
 	logpipelineController := NewLogPipelineReconciler(
 		client,
-		logpipeline.NewReconciler(client, testLogPipelineConfig, &kubernetes.DaemonSetProber{Client: client}, overrides),
+		logpipeline.NewReconciler(client, testLogPipelineConfig, &kubernetes.DaemonSetProber{Client: client}, overridesHandler),
 		testLogPipelineConfig)
 	err = logpipelineController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
@@ -116,7 +132,7 @@ var _ = BeforeSuite(func() {
 			testLogParserConfig,
 			&kubernetes.DaemonSetProber{Client: client},
 			&kubernetes.DaemonSetAnnotator{Client: client},
-			overrides,
+			overridesHandler,
 		),
 		testLogParserConfig,
 	)
@@ -125,10 +141,16 @@ var _ = BeforeSuite(func() {
 
 	tracepipelineReconciler := NewTracePipelineReconciler(
 		client,
-		tracepipeline.NewReconciler(client, testTracePipelineConfig, &kubernetes.DeploymentProber{Client: client}, overrides),
+		tracepipeline.NewReconciler(client, testTracePipelineConfig, &kubernetes.DeploymentProber{Client: client}, overridesHandler),
 	)
 	err = tracepipelineReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
+
+	metricPipelineReconciler := NewMetricPipelineReconciler(
+		client,
+		metricpipeline.NewReconciler(client, testMetricPipelineConfig, &kubernetes.DeploymentProber{Client: client}, overridesHandler))
+	err = metricPipelineReconciler.SetupWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred())
 
 	go func() {
 		defer GinkgoRecover()
@@ -144,3 +166,28 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
+
+func validatePodAnnotations(deployment appsv1.Deployment) error {
+	if value, found := deployment.Spec.Template.ObjectMeta.Annotations["sidecar.istio.io/inject"]; !found || value != "false" {
+		return fmt.Errorf("istio sidecar injection for otel collector not disabled")
+	}
+
+	if value, found := deployment.Spec.Template.ObjectMeta.Annotations["checksum/config"]; !found || value == "" {
+		return fmt.Errorf("configuration hash not found in pod annotations")
+	}
+
+	return nil
+}
+
+func validateCollectorConfig(configData string) error {
+	var config config.Config
+	if err := yaml.Unmarshal([]byte(configData), &config); err != nil {
+		return err
+	}
+
+	if !config.Exporters.OTLP.TLS.Insecure {
+		return fmt.Errorf("insecure flag not set")
+	}
+
+	return nil
+}

@@ -6,7 +6,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes/mocks"
-	resources "github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
+	resources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

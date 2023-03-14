@@ -1,13 +1,14 @@
-package logpipeline
+package fluentbit
 
 import (
+	"reflect"
+	"strconv"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
-	"strconv"
-	"testing"
 )
 
 func TestMakeDaemonSet(t *testing.T) {
@@ -51,6 +52,12 @@ func TestMakeDaemonSet(t *testing.T) {
 	podSecurityContext := daemonSet.Spec.Template.Spec.SecurityContext
 	require.NotNil(t, podSecurityContext, "pod security context must be defined")
 	require.False(t, *podSecurityContext.RunAsNonRoot, "must not run as non-root")
+
+	resources := daemonSet.Spec.Template.Spec.Containers[0].Resources
+	require.Equal(t, ds.CPURequest, *resources.Requests.Cpu(), "cpu requests should be defined")
+	require.Equal(t, ds.MemoryRequest, *resources.Requests.Memory(), "memory requests should be defined")
+	require.Equal(t, ds.CPULimit, *resources.Limits.Cpu(), "cpu limit should be defined")
+	require.Equal(t, ds.MemoryLimit, *resources.Limits.Memory(), "memory limit should be defined")
 
 	containerSecurityContext := daemonSet.Spec.Template.Spec.Containers[0].SecurityContext
 	require.NotNil(t, containerSecurityContext, "container security context must be defined")

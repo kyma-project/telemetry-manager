@@ -1,86 +1,18 @@
-package tracepipeline
+package secretref
 
 import (
 	"context"
 	"testing"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-func TestFetchSecretValue(t *testing.T) {
-	data := map[string][]byte{
-		"myKey": []byte("myValue"),
-	}
-	secret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-secret",
-			Namespace: "default",
-		},
-		Data: data,
-	}
-	client := fake.NewClientBuilder().WithObjects(&secret).Build()
-
-	value := telemetryv1alpha1.ValueType{
-		ValueFrom: &telemetryv1alpha1.ValueFromSource{
-			SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-				Name:      "my-secret",
-				Namespace: "default",
-				Key:       "myKey",
-			},
-		},
-	}
-
-	fetchedData, err := fetchSecretValue(context.TODO(), client, value)
-
-	require.Nil(t, err)
-	require.Equal(t, string(fetchedData), "myValue")
-}
-
-func TestFetchValueFromNonExistingSecret(t *testing.T) {
-	client := fake.NewClientBuilder().Build()
-
-	value := telemetryv1alpha1.ValueType{
-		ValueFrom: &telemetryv1alpha1.ValueFromSource{
-			SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-				Name:      "my-secret",
-				Namespace: "default",
-				Key:       "myKey",
-			},
-		},
-	}
-
-	_, err := fetchSecretValue(context.TODO(), client, value)
-	require.Error(t, err)
-}
-
-func TestFetchValueFromNonExistingKey(t *testing.T) {
-	secret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-secret",
-			Namespace: "default",
-		},
-	}
-	client := fake.NewClientBuilder().WithObjects(&secret).Build()
-
-	value := telemetryv1alpha1.ValueType{
-		ValueFrom: &telemetryv1alpha1.ValueFromSource{
-			SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-				Name:      "my-secret",
-				Namespace: "default",
-				Key:       "myKey",
-			},
-		},
-	}
-
-	_, err := fetchSecretValue(context.TODO(), client, value)
-	require.Error(t, err)
-}
-
-func TestFetchFromCr(t *testing.T) {
+func TestFetchDataForOtlpOutputFromCr(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
 	pipeline := telemetryv1alpha1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
@@ -111,15 +43,15 @@ func TestFetchFromCr(t *testing.T) {
 		},
 	}
 
-	data, err := fetchSecretData(context.TODO(), client, pipeline.Spec.Output.Otlp)
+	data, err := FetchDataForOtlpOutput(context.TODO(), client, pipeline.Spec.Output.Otlp)
 	require.NoError(t, err)
-	require.Contains(t, data, otlpEndpointVariable)
+	require.Contains(t, data, OtlpEndpointVariable)
 	require.Contains(t, data, "HEADER_AUTHORIZATION")
 	require.Contains(t, data, "HEADER_TEST")
-	require.NotContains(t, data, basicAuthHeaderVariable)
+	require.NotContains(t, data, BasicAuthHeaderVariable)
 }
 
-func TestFetchFromSecret(t *testing.T) {
+func TestFetchDataForOtlpOutputFromSecret(t *testing.T) {
 	data := map[string][]byte{
 		"user":     []byte("secret-username"),
 		"password": []byte("secret-password"),
@@ -205,17 +137,17 @@ func TestFetchFromSecret(t *testing.T) {
 		},
 	}
 
-	data, err := fetchSecretData(context.TODO(), client, pipeline.Spec.Output.Otlp)
+	data, err := FetchDataForOtlpOutput(context.TODO(), client, pipeline.Spec.Output.Otlp)
 	require.NoError(t, err)
-	require.Contains(t, data, otlpEndpointVariable)
-	require.Equal(t, string(data[otlpEndpointVariable]), "secret-endpoint")
-	require.Contains(t, data, basicAuthHeaderVariable)
+	require.Contains(t, data, OtlpEndpointVariable)
+	require.Equal(t, string(data[OtlpEndpointVariable]), "secret-endpoint")
+	require.Contains(t, data, BasicAuthHeaderVariable)
 	require.Contains(t, data, "HEADER_AUTHORIZATION")
 	require.Contains(t, data, "HEADER_TEST")
-	require.Equal(t, string(data[basicAuthHeaderVariable]), getBasicAuthHeader("secret-username", "secret-password"))
+	require.Equal(t, string(data[BasicAuthHeaderVariable]), getBasicAuthHeader("secret-username", "secret-password"))
 }
 
-func TestFetchFromSecretWithMissingKey(t *testing.T) {
+func TestFetchDataForOtlpOutputFromSecretWithMissingKey(t *testing.T) {
 	data := map[string][]byte{
 		"user":     []byte("secret-username"),
 		"password": []byte("secret-password"),
@@ -272,11 +204,11 @@ func TestFetchFromSecretWithMissingKey(t *testing.T) {
 		},
 	}
 
-	_, err := fetchSecretData(context.TODO(), client, pipeline.Spec.Output.Otlp)
+	_, err := FetchDataForOtlpOutput(context.TODO(), client, pipeline.Spec.Output.Otlp)
 	require.Error(t, err)
 }
 
-func TestFetchSecretDataFromNonExistingSecret(t *testing.T) {
+func TestFetchDataForOtlpOutputSecretDataFromNonExistingSecret(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
 	pipeline := telemetryv1alpha1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
@@ -299,6 +231,6 @@ func TestFetchSecretDataFromNonExistingSecret(t *testing.T) {
 		},
 	}
 
-	_, err := fetchSecretData(context.TODO(), client, pipeline.Spec.Output.Otlp)
+	_, err := FetchDataForOtlpOutput(context.TODO(), client, pipeline.Spec.Output.Otlp)
 	require.Error(t, err)
 }

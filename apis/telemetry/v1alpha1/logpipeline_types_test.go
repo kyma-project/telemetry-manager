@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGetCondition(t *testing.T) {
+func TestLogPipelineGetCondition(t *testing.T) {
 	exampleStatus := LogPipelineStatus{Conditions: []LogPipelineCondition{{Type: LogPipelinePending}}}
 
 	tests := []struct {
@@ -43,7 +43,7 @@ func TestGetCondition(t *testing.T) {
 	}
 }
 
-func TestSetCondition(t *testing.T) {
+func TestLogPipelineSetCondition(t *testing.T) {
 	condPending := LogPipelineCondition{Type: LogPipelinePending, Reason: "ForSomeReason"}
 	condRunning := LogPipelineCondition{Type: LogPipelineRunning, Reason: "ForSomeOtherReason"}
 	condRunningOtherReason := LogPipelineCondition{Type: LogPipelineRunning, Reason: "BecauseItIs"}
@@ -99,7 +99,7 @@ func TestSetCondition(t *testing.T) {
 	}
 }
 
-func TestOutput(t *testing.T) {
+func TestLogPipelineOutput(t *testing.T) {
 	tests := []struct {
 		name           string
 		given          Output
@@ -156,7 +156,7 @@ func TestOutput(t *testing.T) {
 	}
 }
 
-func TestContainsCustomPluginWithCustomFilter(t *testing.T) {
+func TestLogPipelineContainsCustomPluginWithCustomFilter(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
 			Filters: []Filter{
@@ -171,7 +171,7 @@ func TestContainsCustomPluginWithCustomFilter(t *testing.T) {
 	require.True(t, result)
 }
 
-func TestContainsCustomPluginWithCustomOutput(t *testing.T) {
+func TestLogPipelineContainsCustomPluginWithCustomOutput(t *testing.T) {
 	logPipeline := &LogPipeline{
 		Spec: LogPipelineSpec{
 			Output: Output{
@@ -185,7 +185,7 @@ func TestContainsCustomPluginWithCustomOutput(t *testing.T) {
 	require.True(t, result)
 }
 
-func TestContainsCustomPluginWithoutAny(t *testing.T) {
+func TestLogPipelineContainsCustomPluginWithoutAny(t *testing.T) {
 	logPipeline := &LogPipeline{Spec: LogPipelineSpec{}}
 
 	result := logPipeline.ContainsCustomPlugin()
