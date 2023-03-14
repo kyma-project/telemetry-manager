@@ -23,6 +23,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -96,6 +97,8 @@ var (
 	fluentBitPriorityClassName         string
 
 	enableWebhook bool
+
+	mutex sync.Mutex
 )
 
 const (
@@ -202,12 +205,14 @@ func main() {
 	ctrLogger, err := logger.New("json", logLevel, dynamicLoglevel)
 
 	go func() {
+		mutex.Lock()
 		server := &http.Server{
 			Addr:              ":6060",
 			ReadHeaderTimeout: 10 * time.Second,
 		}
+		mutex.Unlock()
 
-		err = server.ListenAndServe()
+		err := server.ListenAndServe()
 		if err != nil {
 			setupLog.Error(err, "Cannot start pprof server")
 		}
