@@ -90,7 +90,7 @@ func (r *MetricPipelineReconciler) mapSecret(object client.Object) []reconcile.R
 	ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]
-		if secretref.MetricPipelineReferencesSecret(secret.Name, secret.Namespace, &pipeline) {
+		if secretref.ReferencesSecret(secret.Name, secret.Namespace, &pipeline) {
 			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 			ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
 		}

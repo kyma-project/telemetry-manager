@@ -63,7 +63,7 @@ func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName st
 	}
 
 	log := logf.FromContext(ctx)
-	referencesNonExistentSecret := secretref.LogPipelineReferencesNonExistentSecret(ctx, r.Client, &pipeline)
+	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, &pipeline)
 	if referencesNonExistentSecret {
 		pending := telemetryv1alpha1.NewLogPipelineCondition(reasonReferencedSecretMissing, telemetryv1alpha1.LogPipelinePending)
 

@@ -3,6 +3,7 @@ package secretref
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/field"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -10,24 +11,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
-
-type FieldDescriptor struct {
-	TargetSecretKey string
-	SecretKeyRef    telemetryv1alpha1.SecretKeyRef
-}
-
-func appendIfSecretRef(fields []FieldDescriptor, pipelineName string, valueType telemetryv1alpha1.ValueType) []FieldDescriptor {
-	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.IsSecretKeyRef() {
-		fields = append(fields, FieldDescriptor{
-			TargetSecretKey: envvar.GenerateName(pipelineName, *valueType.ValueFrom.SecretKeyRef),
-			SecretKeyRef:    *valueType.ValueFrom.SecretKeyRef,
-		})
-	}
-
-	return fields
-}
 
 func fetchSecretValue(ctx context.Context, client client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
 	if value.Value != "" {
@@ -53,7 +37,7 @@ func fetchSecretValue(ctx context.Context, client client.Reader, value telemetry
 	return nil, fmt.Errorf("either value or secretReference have to be defined")
 }
 
-func checkIfSecretHasKey(ctx context.Context, client client.Reader, from telemetryv1alpha1.SecretKeyRef) bool {
+func checkIfSecretHasKey(ctx context.Context, client client.Reader, from field.SecretKeyRef) bool {
 	log := logf.FromContext(ctx)
 
 	var secret corev1.Secret
