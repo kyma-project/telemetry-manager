@@ -156,6 +156,7 @@ var _ = Describe("Deploying a MetricPipeline", func() {
 				if err := validatePodAnnotations(otelCollectorDeployment); err != nil {
 					return err
 				}
+
 				return nil
 			}, timeout, interval).Should(BeNil())
 
