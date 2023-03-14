@@ -76,7 +76,13 @@ func validateLokiOutput(lokiOutput *telemetryv1alpha1.LokiOutput) error {
 }
 
 func validateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput) error {
-	if httpOutput.Host.Value != "" && !validHostname(httpOutput.Host.Value) {
+	isValidHostname, err := validHostname(httpOutput.Host.Value)
+
+	if err != nil {
+		return fmt.Errorf("error validating hostname: %v", err)
+	}
+
+	if httpOutput.Host.Value != "" && !isValidHostname {
 		return fmt.Errorf("invalid hostname '%s'", httpOutput.Host.Value)
 	}
 	if httpOutput.URI != "" && !strings.HasPrefix(httpOutput.URI, "/") {
@@ -103,10 +109,10 @@ func validURL(host string) bool {
 	return true
 }
 
-func validHostname(host string) bool {
+func validHostname(host string) (bool, error) {
 	host = strings.Trim(host, " ")
-	re, _ := regexp.Compile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
-	return re.MatchString(host)
+	re, err := regexp.Compile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
+	return re.MatchString(host), err
 }
 
 func (v *outputValidator) validateCustomOutput(content string) error {

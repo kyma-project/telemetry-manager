@@ -19,6 +19,7 @@ limitations under the License.
 import (
 	"context"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -53,6 +54,7 @@ var (
 	testEnv   *envtest.Environment
 	ctx       context.Context
 	cancel    context.CancelFunc
+	mutex     sync.Mutex
 )
 
 func TestAPIs(t *testing.T) {
@@ -132,7 +134,9 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		defer GinkgoRecover()
+		mutex.Lock()
 		err := mgr.Start(ctx)
+		mutex.Unlock()
 		Expect(err).ToNot(HaveOccurred())
 	}()
 

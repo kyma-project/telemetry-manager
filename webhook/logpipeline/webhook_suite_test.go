@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -59,6 +60,7 @@ var (
 	outputValidatorMock       *validationmocks.OutputValidator
 	fileValidatorMock         *validationmocks.FilesValidator
 	dryRunnerMock             *mocks.DryRunner
+	mutex                     sync.Mutex
 )
 
 func TestAPIs(t *testing.T) {
@@ -125,7 +127,9 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		defer GinkgoRecover()
-		err = mgr.Start(ctx)
+		mutex.Lock()
+		err := mgr.Start(ctx)
+		mutex.Unlock()
 		Expect(err).NotTo(HaveOccurred())
 	}()
 
