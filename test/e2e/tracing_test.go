@@ -5,6 +5,9 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	. "github.com/kyma-project/telemetry-manager/internal/otelmatchers"
 	. "github.com/onsi/ginkgo/v2"
@@ -20,14 +23,15 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
-	"net/http"
-	"time"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Tracing", func() {
-	Context("When no TracePipeline exists", Ordered, func() {
+	Context("When a tracepipeline exists", Ordered, func() {
 		var spanIDs []string
 		var traceID string
 		var commonAttributes []attribute.KeyValue
@@ -65,7 +69,31 @@ var _ = Describe("Tracing", func() {
 			}
 		})
 
-		It("Should send some traces", func() {
+		It("Should have a running trace collector deployment", func() {
+			Eventually(func(g Gomega) bool {
+				var deployment appsv1.Deployment
+				key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: systemNamespace}
+				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
+
+				listOptions := client.ListOptions{
+					LabelSelector: labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels),
+					Namespace:     systemNamespace,
+				}
+				var pods corev1.PodList
+				Expect(k8sClient.List(ctx, &pods, &listOptions)).To(Succeed())
+				for _, pod := range pods.Items {
+					for _, containerStatus := range pod.Status.ContainerStatuses {
+						if containerStatus.State.Running == nil {
+							return false
+						}
+					}
+				}
+
+				return true
+			}, timeout, interval).Should(BeTrue())
+		})
+
+		It("Should be able to send traces to the OTLP endpoint", func() {
 			shutdown, err := initProvider("localhost:4317")
 			Expect(err).ShouldNot(HaveOccurred())
 			defer shutdown(context.Background())
