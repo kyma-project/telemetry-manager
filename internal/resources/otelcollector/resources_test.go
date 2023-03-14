@@ -3,6 +3,8 @@ package otelcollector
 import (
 	"testing"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
 
 	corev1 "k8s.io/api/core/v1"
@@ -16,6 +18,12 @@ var (
 		Namespace: "kyma-system",
 		Service: ServiceConfig{
 			OTLPServiceName: "collector-traces",
+		},
+		Deployment: DeploymentConfig{
+			CPULimit:      resource.MustParse(".25"),
+			MemoryLimit:   resource.MustParse("400Mi"),
+			CPURequest:    resource.MustParse(".1"),
+			MemoryRequest: resource.MustParse("100Mi"),
 		},
 	}
 )
@@ -50,6 +58,12 @@ func TestMakeDeployment(t *testing.T) {
 	}
 	require.Equal(t, deployment.Spec.Template.ObjectMeta.Annotations[configHashAnnotationKey], "123")
 	require.NotEmpty(t, deployment.Spec.Template.Spec.Containers[0].EnvFrom)
+
+	resources := deployment.Spec.Template.Spec.Containers[0].Resources
+	require.Equal(t, config.Deployment.CPURequest, *resources.Requests.Cpu(), "cpu requests should be defined")
+	require.Equal(t, config.Deployment.MemoryRequest, *resources.Requests.Memory(), "memory requests should be defined")
+	require.Equal(t, config.Deployment.CPULimit, *resources.Limits.Cpu(), "cpu limit should be defined")
+	require.Equal(t, config.Deployment.MemoryLimit, *resources.Limits.Memory(), "memory limit should be defined")
 
 	require.NotNil(t, deployment.Spec.Template.Spec.Containers[0].LivenessProbe, "liveness probe must be defined")
 	require.NotNil(t, deployment.Spec.Template.Spec.Containers[0].ReadinessProbe, "readiness probe must be defined")
