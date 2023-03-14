@@ -7,10 +7,13 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
+
 	corev1 "k8s.io/api/core/v1"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 type syncer struct {
@@ -124,8 +127,8 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 			continue
 		}
 
-		for _, field := range lookupSecretRefFields(&logPipelines.Items[i]) {
-			if copyErr := s.copySecretData(ctx, field.secretKeyRef, field.targetSecretKey, newSecret.Data); copyErr != nil {
+		for _, field := range secretref.GetRefsInLogPipeline(&logPipelines.Items[i]) {
+			if copyErr := s.copySecretData(ctx, field.SecretKeyRef, field.TargetSecretKey, newSecret.Data); copyErr != nil {
 				return fmt.Errorf("unable to copy secret data: %w", copyErr)
 			}
 		}

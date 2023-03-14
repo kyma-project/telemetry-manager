@@ -7,7 +7,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
+	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 
 	"k8s.io/apimachinery/pkg/types"
 

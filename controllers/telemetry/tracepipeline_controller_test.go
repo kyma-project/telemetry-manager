@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
+	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

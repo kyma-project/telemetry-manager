@@ -27,9 +27,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kyma-project/telemetry-manager/internal/collector"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 
@@ -180,7 +180,7 @@ func validatePodAnnotations(deployment appsv1.Deployment) error {
 }
 
 func validateCollectorConfig(configData string) error {
-	var config collector.OTELCollectorConfig
+	var config config.Config
 	if err := yaml.Unmarshal([]byte(configData), &config); err != nil {
 		return err
 	}

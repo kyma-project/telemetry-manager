@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
+	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

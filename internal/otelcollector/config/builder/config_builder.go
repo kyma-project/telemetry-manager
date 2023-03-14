@@ -1,9 +1,10 @@
-package collector
+package builder
 
 import (
 	"fmt"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
@@ -30,20 +31,20 @@ func makeHeaders(output *v1alpha1.OtlpOutput) map[string]string {
 	return headers
 }
 
-func MakeExporterConfig(output *v1alpha1.OtlpOutput, insecureOutput bool) ExporterConfig {
+func MakeExporterConfig(output *v1alpha1.OtlpOutput, insecureOutput bool) config.ExporterConfig {
 	outputType := GetOutputType(output)
 	headers := makeHeaders(output)
-	otlpExporterConfig := OTLPExporterConfig{
+	otlpExporterConfig := config.OTLPExporterConfig{
 		Endpoint: fmt.Sprintf("${%s}", EndpointVariable),
 		Headers:  headers,
-		TLS: TLSConfig{
+		TLS: config.TLSConfig{
 			Insecure: insecureOutput,
 		},
-		SendingQueue: SendingQueueConfig{
+		SendingQueue: config.SendingQueueConfig{
 			Enabled:   true,
 			QueueSize: 512,
 		},
-		RetryOnFailure: RetryOnFailureConfig{
+		RetryOnFailure: config.RetryOnFailureConfig{
 			Enabled:         true,
 			InitialInterval: "5s",
 			MaxInterval:     "30s",
@@ -51,25 +52,25 @@ func MakeExporterConfig(output *v1alpha1.OtlpOutput, insecureOutput bool) Export
 		},
 	}
 
-	loggingExporter := LoggingExporterConfig{
+	loggingExporter := config.LoggingExporterConfig{
 		Verbosity: "basic",
 	}
 
 	if outputType == "otlphttp" {
-		return ExporterConfig{
+		return config.ExporterConfig{
 			OTLPHTTP: otlpExporterConfig,
 			Logging:  loggingExporter,
 		}
 	}
-	return ExporterConfig{
+	return config.ExporterConfig{
 		OTLP:    otlpExporterConfig,
 		Logging: loggingExporter,
 	}
 }
 
-func MakeExtensionConfig() ExtensionsConfig {
-	return ExtensionsConfig{
-		HealthCheck: EndpointConfig{
+func MakeExtensionConfig() config.ExtensionsConfig {
+	return config.ExtensionsConfig{
+		HealthCheck: config.EndpointConfig{
 			Endpoint: "${MY_POD_IP}:13133",
 		},
 	}

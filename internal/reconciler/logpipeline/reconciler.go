@@ -34,7 +34,7 @@ import (
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	resources "github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
+	resources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
 type Config struct {

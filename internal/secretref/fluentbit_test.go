@@ -1,18 +1,19 @@
-package logpipeline
+package secretref
 
 import (
 	"testing"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-func TestLookupSecretRefFields(t *testing.T) {
+func TestGetRefsInLogPipeline(t *testing.T) {
 	tests := []struct {
 		name     string
 		given    telemetryv1alpha1.LogPipeline
-		expected []fieldDescriptor
+		expected []FieldDescriptor
 	}{
 		{
 			name: "only variables",
@@ -35,14 +36,14 @@ func TestLookupSecretRefFields(t *testing.T) {
 				},
 			},
 
-			expected: []fieldDescriptor{
+			expected: []FieldDescriptor{
 				{
-					secretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "secret-1", Key: "password"},
-					targetSecretKey: "password-1",
+					SecretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "secret-1", Key: "password"},
+					TargetSecretKey: "password-1",
 				},
 				{
-					secretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "secret-2", Key: "password"},
-					targetSecretKey: "password-2",
+					SecretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "secret-2", Key: "password"},
+					TargetSecretKey: "password-2",
 				},
 			},
 		},
@@ -80,18 +81,18 @@ func TestLookupSecretRefFields(t *testing.T) {
 					},
 				},
 			},
-			expected: []fieldDescriptor{
+			expected: []FieldDescriptor{
 				{
-					secretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "creds", Namespace: "default", Key: "host"},
-					targetSecretKey: "CLS_DEFAULT_CREDS_HOST",
+					SecretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "creds", Namespace: "default", Key: "host"},
+					TargetSecretKey: "CLS_DEFAULT_CREDS_HOST",
 				},
 				{
-					secretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "creds", Namespace: "default", Key: "user"},
-					targetSecretKey: "CLS_DEFAULT_CREDS_USER",
+					SecretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "creds", Namespace: "default", Key: "user"},
+					TargetSecretKey: "CLS_DEFAULT_CREDS_USER",
 				},
 				{
-					secretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "creds", Namespace: "default", Key: "password"},
-					targetSecretKey: "CLS_DEFAULT_CREDS_PASSWORD",
+					SecretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "creds", Namespace: "default", Key: "password"},
+					TargetSecretKey: "CLS_DEFAULT_CREDS_PASSWORD",
 				},
 			},
 		},
@@ -115,10 +116,10 @@ func TestLookupSecretRefFields(t *testing.T) {
 					},
 				},
 			},
-			expected: []fieldDescriptor{
+			expected: []FieldDescriptor{
 				{
-					secretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "creds", Namespace: "default", Key: "url"},
-					targetSecretKey: "LOKI_DEFAULT_CREDS_URL",
+					SecretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "creds", Namespace: "default", Key: "url"},
+					TargetSecretKey: "LOKI_DEFAULT_CREDS_URL",
 				},
 			},
 		},
@@ -156,18 +157,18 @@ func TestLookupSecretRefFields(t *testing.T) {
 					},
 				},
 			},
-			expected: []fieldDescriptor{
+			expected: []FieldDescriptor{
 				{
-					secretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "creds", Namespace: "default", Key: "url"},
-					targetSecretKey: "LOKI_DEFAULT_CREDS_URL",
+					SecretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "creds", Namespace: "default", Key: "url"},
+					TargetSecretKey: "LOKI_DEFAULT_CREDS_URL",
 				},
 				{
-					secretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "secret-1", Key: "password"},
-					targetSecretKey: "password-1",
+					SecretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "secret-1", Key: "password"},
+					TargetSecretKey: "password-1",
 				},
 				{
-					secretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "secret-2", Key: "password"},
-					targetSecretKey: "password-2",
+					SecretKeyRef:    telemetryv1alpha1.SecretKeyRef{Name: "secret-2", Key: "password"},
+					TargetSecretKey: "password-2",
 				},
 			},
 		},
@@ -175,13 +176,13 @@ func TestLookupSecretRefFields(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual := lookupSecretRefFields(&test.given)
+			actual := GetRefsInLogPipeline(&test.given)
 			require.ElementsMatch(t, test.expected, actual)
 		})
 	}
 }
 
-func TestHasSecretRef(t *testing.T) {
+func TestLogPipelineReferencesSecret(t *testing.T) {
 	pipeline := telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.Output{
@@ -212,10 +213,10 @@ func TestHasSecretRef(t *testing.T) {
 		},
 	}
 
-	require.True(t, HasSecretRef(&pipeline, "secret-1", "default"))
-	require.True(t, HasSecretRef(&pipeline, "secret-2", "default"))
-	require.True(t, HasSecretRef(&pipeline, "creds", "default"))
+	require.True(t, LogPipelineReferencesSecret("secret-1", "default", &pipeline))
+	require.True(t, LogPipelineReferencesSecret("secret-2", "default", &pipeline))
+	require.True(t, LogPipelineReferencesSecret("creds", "default", &pipeline))
 
-	require.False(t, HasSecretRef(&pipeline, "secret-1", "kube-system"))
-	require.False(t, HasSecretRef(&pipeline, "unknown", "default"))
+	require.False(t, LogPipelineReferencesSecret("secret-1", "kube-system", &pipeline))
+	require.False(t, LogPipelineReferencesSecret("unknown", "default", &pipeline))
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/internal/collector"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
@@ -51,7 +51,7 @@ var (
 
 func TestMakeCollectorConfigEndpoint(t *testing.T) {
 	collectorConfig := makeOtelCollectorConfig(tracePipeline, false)
-	expectedEndpoint := fmt.Sprintf("${%s}", collector.EndpointVariable)
+	expectedEndpoint := fmt.Sprintf("${%s}", builder.EndpointVariable)
 	require.Equal(t, expectedEndpoint, collectorConfig.Exporters.OTLP.Endpoint)
 }
 

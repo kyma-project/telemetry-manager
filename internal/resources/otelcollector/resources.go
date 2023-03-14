@@ -1,4 +1,4 @@
-package collector
+package otelcollector
 
 import (
 	"gopkg.in/yaml.v3"
@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 
-	"github.com/kyma-project/telemetry-manager/internal/collector"
+	collectorconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 )
 
@@ -57,7 +57,7 @@ func makeDefaultLabels(config Config) map[string]string {
 	}
 }
 
-func MakeConfigMap(config Config, collectorConfig collector.OTELCollectorConfig) *corev1.ConfigMap {
+func MakeConfigMap(config Config, collectorConfig collectorconfig.Config) *corev1.ConfigMap {
 	bytes, _ := yaml.Marshal(collectorConfig)
 	confYAML := string(bytes)
 

@@ -1,4 +1,4 @@
-package collector
+package builder
 
 import (
 	"testing"
@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 func TestGetOutputTypeHttp(t *testing.T) {
@@ -75,8 +76,8 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 }
 
 func TestMakeExtensionConfig(t *testing.T) {
-	expectedConfig := ExtensionsConfig{
-		HealthCheck: EndpointConfig{
+	expectedConfig := config.ExtensionsConfig{
+		HealthCheck: config.EndpointConfig{
 			Endpoint: "${MY_POD_IP}:13133",
 		},
 	}

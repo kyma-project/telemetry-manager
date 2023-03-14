@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
+	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -48,7 +48,7 @@ import (
 	logparserreconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	tracepipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
-	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
+	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logparservalidation "github.com/kyma-project/telemetry-manager/webhook/logparser/validation"

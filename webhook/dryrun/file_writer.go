@@ -5,8 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	resources "github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
 	"k8s.io/apimachinery/pkg/api/errors"
+
+	resources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 

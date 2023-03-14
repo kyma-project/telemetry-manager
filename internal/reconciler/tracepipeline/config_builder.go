@@ -1,22 +1,23 @@
 package tracepipeline
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/collector"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-func makeReceiverConfig() collector.ReceiverConfig {
-	return collector.ReceiverConfig{
-		OpenCensus: &collector.EndpointConfig{
+func makeReceiverConfig() config.ReceiverConfig {
+	return config.ReceiverConfig{
+		OpenCensus: &config.EndpointConfig{
 			Endpoint: "${MY_POD_IP}:55678",
 		},
-		OTLP: &collector.OTLPReceiverConfig{
-			Protocols: collector.ReceiverProtocols{
-				HTTP: collector.EndpointConfig{
+		OTLP: &config.OTLPReceiverConfig{
+			Protocols: config.ReceiverProtocols{
+				HTTP: config.EndpointConfig{
 					Endpoint: "${MY_POD_IP}:4318",
 				},
-				GRPC: collector.EndpointConfig{
+				GRPC: config.EndpointConfig{
 					Endpoint: "${MY_POD_IP}:4317",
 				},
 			},
@@ -24,7 +25,7 @@ func makeReceiverConfig() collector.ReceiverConfig {
 	}
 }
 
-func makeProcessorsConfig() collector.ProcessorsConfig {
+func makeProcessorsConfig() config.ProcessorsConfig {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -36,9 +37,9 @@ func makeProcessorsConfig() collector.ProcessorsConfig {
 		"k8s.job.name",
 	}
 
-	podAssociations := []collector.PodAssociations{
+	podAssociations := []config.PodAssociations{
 		{
-			Sources: []collector.PodAssociation{
+			Sources: []config.PodAssociation{
 				{
 					From: "resource_attribute",
 					Name: "k8s.pod.ip",
@@ -46,7 +47,7 @@ func makeProcessorsConfig() collector.ProcessorsConfig {
 			},
 		},
 		{
-			Sources: []collector.PodAssociation{
+			Sources: []config.PodAssociation{
 				{
 					From: "resource_attribute",
 					Name: "k8s.pod.uid",
@@ -54,34 +55,34 @@ func makeProcessorsConfig() collector.ProcessorsConfig {
 			},
 		},
 		{
-			Sources: []collector.PodAssociation{
+			Sources: []config.PodAssociation{
 				{
 					From: "connection",
 				},
 			},
 		},
 	}
-	return collector.ProcessorsConfig{
-		Batch: &collector.BatchProcessorConfig{
+	return config.ProcessorsConfig{
+		Batch: &config.BatchProcessorConfig{
 			SendBatchSize:    512,
 			Timeout:          "10s",
 			SendBatchMaxSize: 512,
 		},
-		MemoryLimiter: &collector.MemoryLimiterConfig{
+		MemoryLimiter: &config.MemoryLimiterConfig{
 			CheckInterval:        "1s",
 			LimitPercentage:      75,
 			SpikeLimitPercentage: 10,
 		},
-		K8sAttributes: &collector.K8sAttributesProcessorConfig{
+		K8sAttributes: &config.K8sAttributesProcessorConfig{
 			AuthType:    "serviceAccount",
 			Passthrough: false,
-			Extract: collector.ExtractK8sMetadataConfig{
+			Extract: config.ExtractK8sMetadataConfig{
 				Metadata: k8sAttributes,
 			},
 			PodAssociation: podAssociations,
 		},
-		Resource: &collector.ResourceProcessorConfig{
-			Attributes: []collector.AttributeAction{
+		Resource: &config.ResourceProcessorConfig{
+			Attributes: []config.AttributeAction{
 				{
 					Action: "insert",
 					Key:    "k8s.cluster.name",
@@ -89,8 +90,8 @@ func makeProcessorsConfig() collector.ProcessorsConfig {
 				},
 			},
 		},
-		Filter: &collector.FilterProcessorConfig{
-			Traces: collector.TraceConfig{
+		Filter: &config.FilterProcessorConfig{
+			Traces: config.TraceConfig{
 				Span: makeSpanFilterConfig(),
 			},
 		},
@@ -114,20 +115,20 @@ func makeSpanFilterConfig() []string {
 	}
 }
 
-func makeServiceConfig(outputType string) collector.OTLPServiceConfig {
-	return collector.OTLPServiceConfig{
-		Pipelines: collector.PipelinesConfig{
-			Traces: &collector.PipelineConfig{
+func makeServiceConfig(outputType string) config.OTLPServiceConfig {
+	return config.OTLPServiceConfig{
+		Pipelines: config.PipelinesConfig{
+			Traces: &config.PipelineConfig{
 				Receivers:  []string{"opencensus", "otlp"},
 				Processors: []string{"memory_limiter", "k8sattributes", "filter", "resource", "batch"},
 				Exporters:  []string{outputType, "logging"},
 			},
 		},
-		Telemetry: collector.TelemetryConfig{
-			Metrics: collector.MetricsConfig{
+		Telemetry: config.TelemetryConfig{
+			Metrics: config.MetricsConfig{
 				Address: "${MY_POD_IP}:8888",
 			},
-			Logs: collector.LoggingConfig{
+			Logs: config.LoggingConfig{
 				Level: "info",
 			},
 		},
@@ -135,15 +136,15 @@ func makeServiceConfig(outputType string) collector.OTLPServiceConfig {
 	}
 }
 
-func makeOtelCollectorConfig(output v1alpha1.TracePipelineOutput, isInsecureOutput bool) collector.OTELCollectorConfig {
-	exporterConfig := collector.MakeExporterConfig(output.Otlp, isInsecureOutput)
-	outputType := collector.GetOutputType(output.Otlp)
+func makeOtelCollectorConfig(output v1alpha1.TracePipelineOutput, isInsecureOutput bool) config.Config {
+	exporterConfig := builder.MakeExporterConfig(output.Otlp, isInsecureOutput)
+	outputType := builder.GetOutputType(output.Otlp)
 	processorsConfig := makeProcessorsConfig()
 	receiverConfig := makeReceiverConfig()
 	serviceConfig := makeServiceConfig(outputType)
-	extensionConfig := collector.MakeExtensionConfig()
+	extensionConfig := builder.MakeExtensionConfig()
 
-	return collector.OTELCollectorConfig{
+	return config.Config{
 		Receivers:  receiverConfig,
 		Exporters:  exporterConfig,
 		Processors: processorsConfig,

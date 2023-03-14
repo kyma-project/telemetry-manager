@@ -26,12 +26,13 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/collector"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/collector"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -135,7 +136,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	var secretData map[string][]byte
-	if secretData, err = collector.FetchSecretData(ctx, r, pipeline.Spec.Output.Otlp); err != nil {
+	if secretData, err = secretref.FetchDataForOtlpOutput(ctx, r, pipeline.Spec.Output.Otlp); err != nil {
 		return err
 	}
 	secret := collectorresources.MakeSecret(r.config, secretData)
@@ -145,7 +146,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = kubernetes.CreateOrUpdateSecret(ctx, r.Client, secret); err != nil {
 		return err
 	}
-	endpoint := string(secretData[collector.EndpointVariable])
+	endpoint := string(secretData[builder.EndpointVariable])
 	isInsecure := isInsecureOutput(endpoint)
 
 	collectorConfig := makeOtelCollectorConfig(pipeline.Spec.Output, isInsecure)

@@ -1,4 +1,4 @@
-package collector
+package config
 
 type TLSConfig struct {
 	Insecure bool `yaml:"insecure"`
@@ -144,7 +144,7 @@ type ExtensionsConfig struct {
 	HealthCheck EndpointConfig `yaml:"health_check"`
 }
 
-type OTELCollectorConfig struct {
+type Config struct {
 	Receivers  ReceiverConfig    `yaml:"receivers"`
 	Exporters  ExporterConfig    `yaml:"exporters"`
 	Processors ProcessorsConfig  `yaml:"processors"`

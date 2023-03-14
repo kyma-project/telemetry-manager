@@ -10,8 +10,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-
-	"github.com/kyma-project/telemetry-manager/internal/collector"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
 const (
@@ -48,8 +47,8 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 		return setCondition(ctx, r.Client, &pipeline, pending)
 	}
 
-	secretsMissing := collector.CheckForMissingSecrets(ctx, r.Client, pipeline.Name, pipeline.Spec.Output.Otlp)
-	if secretsMissing {
+	referencesNonExistentSecret := secretref.TracePipelineReferencesNonExistentSecret(ctx, r.Client, &pipeline)
+	if referencesNonExistentSecret {
 		pending := telemetryv1alpha1.NewTracePipelineCondition(reasonReferencedSecretMissingReason, telemetryv1alpha1.TracePipelinePending)
 
 		if pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning) {
