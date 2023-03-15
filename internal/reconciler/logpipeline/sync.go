@@ -4,12 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/field"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -126,10 +123,13 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 			continue
 		}
 
-		for _, field := range logPipelines.Items[i].GetSecretRefs() {
-			if copyErr := s.copySecretData(ctx, field.SecretKeyRef, field.TargetSecretKey, newSecret.Data); copyErr != nil {
-				return fmt.Errorf("unable to copy secret data: %w", copyErr)
-			}
+		refSecretData, copyErr := secretref.FetchReferencedSecretData(ctx, s.Client, &logPipelines.Items[i])
+		if copyErr != nil {
+			return fmt.Errorf("unable to copy secret data: %w", copyErr)
+		}
+
+		for k, v := range refSecretData {
+			newSecret.Data[k] = v
 		}
 	}
 
@@ -142,26 +142,6 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 		return fmt.Errorf("unable to update env secret: %w", err)
 	}
 	return nil
-}
-
-func (s *syncer) copySecretData(ctx context.Context, sourceRef field.SecretKeyRef, targetKey string, target map[string][]byte) error {
-	var source corev1.Secret
-	if err := s.Get(ctx, types.NamespacedName{
-		Namespace: sourceRef.Namespace,
-		Name:      sourceRef.Name,
-	}, &source); err != nil {
-		return fmt.Errorf("unable to read secret '%s' from namespace '%s': %w", sourceRef.Name, sourceRef.Namespace, err)
-	}
-
-	if val, found := source.Data[sourceRef.Key]; found {
-		target[targetKey] = val
-		return nil
-	}
-
-	return fmt.Errorf("unable to find key '%s' in secret '%s' from namespace '%s'",
-		sourceRef.Key,
-		sourceRef.Name,
-		sourceRef.Namespace)
 }
 
 func secretDataEqual(oldSecret, newSecret map[string][]byte) bool {

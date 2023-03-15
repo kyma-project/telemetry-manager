@@ -2,6 +2,7 @@ package metricpipeline
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -119,9 +120,14 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	var secretData map[string][]byte
-	if secretData, err = secretref.FetchDataForOtlpOutput(ctx, r.Client, pipeline.Spec.Output.Otlp); err != nil {
+	if secretData, err = secretref.FetchReferencedSecretData(ctx, r.Client, pipeline); err != nil {
 		return err
 	}
+
+	basicAuthUser := resolveValue(pipeline.Spec.Output.Otlp.Authentication.Basic.User, secretData, "")
+	basicAuthPassword := resolveValue(pipeline.Spec.Output.Otlp.Authentication.Basic.Password, secretData, "")
+	secretData["BLA"] = getBasicAuthHeader(basicAuthUser, basicAuthPassword)
+
 	secret := collectorresources.MakeSecret(r.config, secretData)
 	if err = controllerutil.SetControllerReference(pipeline, secret, r.Scheme()); err != nil {
 		return err
@@ -171,4 +177,18 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 func isInsecureOutput(endpoint string) bool {
 	return len(strings.TrimSpace(endpoint)) > 0 && strings.HasPrefix(endpoint, "http://")
+}
+
+func getBasicAuthHeader(username string, password string) string {
+	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(username+":"+password)))
+}
+
+func resolveValue(value telemetryv1alpha1.ValueType, envVar string) string {
+	if value.Value != "" {
+		return value.Value
+	}
+	if value.ValueFrom != nil && value.ValueFrom.IsSecretKeyRef() {
+		return fmt.Sprintf("${%s}", envVar)
+	}
+	return ""
 }

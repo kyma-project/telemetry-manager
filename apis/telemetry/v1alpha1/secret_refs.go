@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+const (
+	BasicAuthHeaderVariable = "BASIC_AUTH_HEADER"
+	OtlpEndpointVariable    = "OTLP_ENDPOINT"
+)
+
 func (lp *LogPipeline) GetSecretRefs() []field.Descriptor {
 	var fields []field.Descriptor
 
@@ -49,7 +54,6 @@ func getRefsInOtlpOutput(otlpOut *OtlpOutput, pipelineName string) []field.Descr
 	var result []field.Descriptor
 
 	if otlpOut.Endpoint.ValueFrom != nil && otlpOut.Endpoint.ValueFrom.IsSecretKeyRef() {
-
 		result = append(result, field.Descriptor{
 			TargetSecretKey: otlpOut.Endpoint.ValueFrom.SecretKeyRef.Name,
 			SecretKeyRef: field.SecretKeyRef{

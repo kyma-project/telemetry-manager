@@ -3,39 +3,34 @@ package builder
 import (
 	"fmt"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
-const (
-	BasicAuthHeaderVariable = "BASIC_AUTH_HEADER"
-	EndpointVariable        = "OTLP_ENDPOINT"
-)
-
-func GetOutputType(output *v1alpha1.OtlpOutput) string {
+func GetOutputType(output *telemetryv1alpha1.OtlpOutput) string {
 	if output.Protocol == "http" {
 		return "otlphttp"
 	}
 	return "otlp"
 }
 
-func makeHeaders(output *v1alpha1.OtlpOutput) map[string]string {
+func makeHeaders(output *telemetryv1alpha1.OtlpOutput) map[string]string {
 	headers := make(map[string]string)
 	if output.Authentication != nil && output.Authentication.Basic.IsDefined() {
-		headers["Authorization"] = fmt.Sprintf("${%s}", BasicAuthHeaderVariable)
+		headers["Authorization"] = "${BASIC_AUTH_HEADER}"
 	}
 	for _, header := range output.Headers {
-		headers[header.Name] = fmt.Sprintf("${HEADER_%s}", envvar.MakeEnvVarCompliant(header.Name))
+		headers[header.Name] = resolveValue(header.ValueType, fmt.Sprintf("${HEADER_%s}", envvar.MakeEnvVarCompliant(header.Name)))
 	}
 	return headers
 }
 
-func MakeExporterConfig(output *v1alpha1.OtlpOutput, insecureOutput bool) config.ExporterConfig {
+func MakeExporterConfig(output *telemetryv1alpha1.OtlpOutput, insecureOutput bool) config.ExporterConfig {
 	outputType := GetOutputType(output)
 	headers := makeHeaders(output)
 	otlpExporterConfig := config.OTLPExporterConfig{
-		Endpoint: fmt.Sprintf("${%s}", EndpointVariable),
+		Endpoint: resolveValue(output.Endpoint, "OTLP_ENDPOINT"),
 		Headers:  headers,
 		TLS: config.TLSConfig{
 			Insecure: insecureOutput,
@@ -74,4 +69,14 @@ func MakeExtensionConfig() config.ExtensionsConfig {
 			Endpoint: "${MY_POD_IP}:13133",
 		},
 	}
+}
+
+func resolveValue(value telemetryv1alpha1.ValueType, envVar string) string {
+	if value.Value != "" {
+		return value.Value
+	}
+	if value.ValueFrom != nil && value.ValueFrom.IsSecretKeyRef() {
+		return fmt.Sprintf("${%s}", envVar)
+	}
+	return ""
 }

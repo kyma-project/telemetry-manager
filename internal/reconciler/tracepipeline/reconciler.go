@@ -136,7 +136,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	var secretData map[string][]byte
-	if secretData, err = secretref.FetchDataForOtlpOutput(ctx, r, pipeline.Spec.Output.Otlp); err != nil {
+	if secretData, err = secretref.FetchReferencedSecretData(ctx, r, pipeline.Spec.Output.Otlp); err != nil {
 		return err
 	}
 	secret := collectorresources.MakeSecret(r.config, secretData)
