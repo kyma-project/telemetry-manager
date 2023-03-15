@@ -292,8 +292,8 @@ func main() {
 
 	if enableTelemetryManagerModule {
 		setupLog.Info("Starting with telemetry mnager controller")
-		if err = createTelemetryManagerReconciler(mgr.GetClient(), mgr.GetScheme(), mgr.GetEventRecorderFor("telemetrymanager-operator")).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "TelemetryManager")
+		if err = createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), mgr.GetEventRecorderFor("telemetry-operator")).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
 			os.Exit(1)
 		}
 	}
@@ -453,6 +453,6 @@ func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
 }
 
-func createTelemetryManagerReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) *telemetrycontrollers.Reconciler {
-	return telemetrycontrollers.NewTelemetryManagerReconciler(client, scheme, eventRecorder)
+func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) *telemetrycontrollers.Reconciler {
+	return telemetrycontrollers.NewTelemetryReconciler(client, scheme, eventRecorder)
 }

@@ -1,31 +1,27 @@
-# permissions for end users to edit telemetrymanagers.
+# permissions for end users to view telemetries.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: telemetrymanager-editor-role
+    app.kubernetes.io/instance: telemetry-viewer-role
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: telemetry-operator
     app.kubernetes.io/part-of: telemetry-operator
     app.kubernetes.io/managed-by: kustomize
-  name: telemetrymanager-editor-role
+  name: telemetry-viewer-role
 rules:
 - apiGroups:
   - telemetry.kyma-project.io
   resources:
-  - telemetrymanagers
+  - telemetries
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - telemetry.kyma-project.io
   resources:
-  - telemetrymanagers/status
+  - telemetries/status
   verbs:
   - get

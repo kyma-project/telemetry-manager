@@ -50,14 +50,14 @@ const (
 	StateDeleting State = "Deleting"
 )
 
-// TelemetryManagerSpec defines the desired state of TelemetryManager
-type TelemetryManagerSpec struct {
+// TelemetrySpec defines the desired state of Telemetry
+type TelemetrySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// TelemetryManagerStatus defines the observed state of TelemetryManager
-type TelemetryManagerStatus struct {
+// TelemetryStatus defines the observed state of Telemetry
+type TelemetryStatus struct {
 	Status `json:",inline"`
 
 	// Conditions contain a set of conditionals to determine the State of Status.
@@ -67,12 +67,12 @@ type TelemetryManagerStatus struct {
 	// add other fields to status subresource here
 }
 
-func (s *TelemetryManagerStatus) WithState(state State) *TelemetryManagerStatus {
+func (s *TelemetryStatus) WithState(state State) *TelemetryStatus {
 	s.State = state
 	return s
 }
 
-func (s *TelemetryManagerStatus) WithInstallConditionStatus(status metav1.ConditionStatus, objGeneration int64) *TelemetryManagerStatus {
+func (s *TelemetryStatus) WithInstallConditionStatus(status metav1.ConditionStatus, objGeneration int64) *TelemetryStatus {
 	if s.Conditions == nil {
 		s.Conditions = make([]metav1.Condition, 0, 1)
 	}
@@ -96,27 +96,30 @@ func (s *TelemetryManagerStatus) WithInstallConditionStatus(status metav1.Condit
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
-// TelemetryManager is the Schema for the telemetrymanagers API
-type TelemetryManager struct {
+// +kubebuilder:printcolumn:name="generation",type="integer",JSONPath=".metadata.generation"
+// +kubebuilder:printcolumn:name="age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="state",type="string",JSONPath=".status.state"
+// Telemetry is the Schema for the telemetries API
+type Telemetry struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   TelemetryManagerSpec   `json:"spec,omitempty"`
-	Status TelemetryManagerStatus `json:"status,omitempty"`
+	Spec   TelemetrySpec   `json:"spec,omitempty"`
+	Status TelemetryStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// TelemetryManagerList contains a list of TelemetryManager
-type TelemetryManagerList struct {
+// TelemetryList contains a list of Telemetry
+type TelemetryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []TelemetryManager `json:"items"`
+	Items           []Telemetry `json:"items"`
 }
 
 //nolint:gochecknoinits
 func init() {
-	SchemeBuilder.Register(&TelemetryManager{}, &TelemetryManagerList{})
+	SchemeBuilder.Register(&Telemetry{}, &TelemetryList{})
 }
 
 // +k8s:deepcopy-gen=true

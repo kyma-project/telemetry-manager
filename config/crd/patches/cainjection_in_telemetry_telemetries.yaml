@@ -4,4 +4,4 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: CERTIFICATE_NAMESPACE/CERTIFICATE_NAME
-  name: telemetrymanagers.telemetry.kyma-project.io
+  name: telemetries.telemetry.kyma-project.io

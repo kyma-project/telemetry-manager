@@ -12,47 +12,47 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Deploying a TelemetryManager", func() {
+var _ = Describe("Deploying a Telemetry", func() {
 	const (
 		timeout  = time.Second * 100
 		interval = time.Millisecond * 250
 	)
 
-	When("creating TelemetryManager", func() {
+	When("creating Telemetry", func() {
 		ctx := context.Background()
 
-		telemetryManager := &telemetryv1alpha1.TelemetryManager{
+		telemetryDummy := &telemetryv1alpha1.Telemetry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "dummy",
 			},
 		}
 
-		It("creates TelemetryManager resource", func() {
-			Expect(k8sClient.Create(ctx, telemetryManager)).Should(Succeed())
+		It("creates telemetry resource", func() {
+			Expect(k8sClient.Create(ctx, telemetryDummy)).Should(Succeed())
 
 			Eventually(func() error {
-				telemetryManagerLookupKey := types.NamespacedName{
+				telemetryLookupKey := types.NamespacedName{
 					Name: "dummy",
 				}
-				var telemetryManager telemetryv1alpha1.TelemetryManager
-				err := k8sClient.Get(ctx, telemetryManagerLookupKey, &telemetryManager)
+				var telemetryObj telemetryv1alpha1.Telemetry
+				err := k8sClient.Get(ctx, telemetryLookupKey, &telemetryObj)
 				if err != nil {
 					return err
 				}
 
-				if err := validateStatus(telemetryManager.Status); err != nil {
+				if err := validateStatus(telemetryObj.Status); err != nil {
 					return err
 				}
 
 				return nil
 			}, timeout, interval).Should(BeNil())
 
-			Expect(k8sClient.Delete(ctx, telemetryManager)).Should(Succeed())
+			Expect(k8sClient.Delete(ctx, telemetryDummy)).Should(Succeed())
 		})
 	})
 })
 
-func validateStatus(status telemetryv1alpha1.TelemetryManagerStatus) error {
+func validateStatus(status telemetryv1alpha1.TelemetryStatus) error {
 	if status.State != telemetryv1alpha1.StateReady {
 		return fmt.Errorf("unexpected state: %s", status.State)
 	}

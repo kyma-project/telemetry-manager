@@ -5,20 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
-  name: telemetrymanagers.telemetry.kyma-project.io
+  name: telemetries.telemetry.kyma-project.io
 spec:
   group: telemetry.kyma-project.io
   names:
-    kind: TelemetryManager
-    listKind: TelemetryManagerList
-    plural: telemetrymanagers
-    singular: telemetrymanager
+    kind: Telemetry
+    listKind: TelemetryList
+    plural: telemetries
+    singular: telemetry
   scope: Cluster
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: TelemetryManager is the Schema for the telemetrymanagers API
+        description: Telemetry is the Schema for the telemetries API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,10 +33,10 @@ spec:
           metadata:
             type: object
           spec:
-            description: TelemetryManagerSpec defines the desired state of TelemetryManager
+            description: TelemetrySpec defines the desired state of Telemetry
             type: object
           status:
-            description: TelemetryManagerStatus defines the observed state of TelemetryManager
+            description: TelemetryStatus defines the observed state of Telemetry
             properties:
               conditions:
                 description: Conditions contain a set of conditionals to determine
