@@ -43,35 +43,34 @@ const (
 // +kubebuilder:webhook:path=/validate-logpipeline,mutating=false,failurePolicy=fail,sideEffects=None,groups=telemetry.kyma-project.io,resources=logpipelines,verbs=create;update,versions=v1alpha1,name=vlogpipeline.kb.io,admissionReviewVersions=v1
 type ValidatingWebhookHandler struct {
 	client.Client
-	inputValidator        validation.InputValidator
-	variablesValidator    validation.VariablesValidator
-	filterValidator       validation.FilterValidator
+	//inputValidator        validation.InputValidator
+	variablesValidator validation.VariablesValidator
+	//filterValidator       validation.FilterValidator
 	maxPipelinesValidator validation.MaxPipelinesValidator
-	outputValidator       validation.OutputValidator
-	fileValidator         validation.FilesValidator
-	decoder               *admission.Decoder
-	dryRunner             DryRunner
+	//outputValidator       validation.OutputValidator
+	fileValidator               validation.FilesValidator
+	decoder                     *admission.Decoder
+	dryRunner                   DryRunner
+	logPipelineValidationConfig *telemetryv1alpha1.LogPipelineValidationConfig
 }
 
 func NewValidatingWebhookHandler(
 	client client.Client,
-	inputValidator validation.InputValidator,
 	variablesValidator validation.VariablesValidator,
-	filterValidator validation.FilterValidator,
+	//filterValidator validation.FilterValidator,
 	maxPipelinesValidator validation.MaxPipelinesValidator,
-	outputValidator validation.OutputValidator,
 	fileValidator validation.FilesValidator,
 	dryRunner DryRunner,
+	logPipelineValidationConfig *telemetryv1alpha1.LogPipelineValidationConfig,
 ) *ValidatingWebhookHandler {
 	return &ValidatingWebhookHandler{
-		Client:                client,
-		inputValidator:        inputValidator,
-		variablesValidator:    variablesValidator,
-		filterValidator:       filterValidator,
-		maxPipelinesValidator: maxPipelinesValidator,
-		outputValidator:       outputValidator,
-		fileValidator:         fileValidator,
-		dryRunner:             dryRunner,
+		Client:             client,
+		variablesValidator: variablesValidator,
+		//filterValidator:             filterValidator,
+		maxPipelinesValidator:       maxPipelinesValidator,
+		fileValidator:               fileValidator,
+		dryRunner:                   dryRunner,
+		logPipelineValidationConfig: logPipelineValidationConfig,
 	}
 }
 
@@ -130,23 +129,23 @@ func (v *ValidatingWebhookHandler) validateLogPipeline(ctx context.Context, logP
 		return err
 	}
 
-	if err := logPipeline.Validate(&logPipeline.Spec.Input); err != nil {
+	if err := logPipeline.ValidateInput(); err != nil {
 		log.Error(err, "Failed to validate Fluent Bit input")
+		return err
+	}
+
+	if err := logPipeline.ValidateOutput(v.logPipelineValidationConfig.DeniedOutPutPlugins); err != nil {
+		log.Error(err, "Failed to validate Fluent Bit output")
+		return err
+	}
+
+	if err := logPipeline.ValidateFilters(v.logPipelineValidationConfig.DeniedFilterPlugins); err != nil {
+		log.Error(err, "Failed to validate Fluent Bit output")
 		return err
 	}
 
 	if err := v.variablesValidator.Validate(logPipeline, &logPipelines); err != nil {
 		log.Error(err, "Failed to validate variables")
-		return err
-	}
-
-	if err := v.filterValidator.Validate(logPipeline); err != nil {
-		log.Error(err, "Failed to validate plugins")
-		return err
-	}
-
-	if err := v.outputValidator.Validate(logPipeline); err != nil {
-		log.Error(err, "Failed to validate Fluent Bit output")
 		return err
 	}
 

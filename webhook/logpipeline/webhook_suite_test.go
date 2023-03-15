@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/mocks"
 	validationmocks "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation/mocks"
 
@@ -52,11 +53,8 @@ var (
 	testEnv                   *envtest.Environment
 	ctx                       context.Context
 	cancel                    context.CancelFunc
-	inputValidatorMock        *validationmocks.InputValidator
 	variableValidatorMock     *validationmocks.VariablesValidator
-	pluginValidatorMock       *validationmocks.PluginValidator
 	maxPipelinesValidatorMock *validationmocks.MaxPipelinesValidator
-	outputValidatorMock       *validationmocks.OutputValidator
 	fileValidatorMock         *validationmocks.FilesValidator
 	dryRunnerMock             *mocks.DryRunner
 )
@@ -106,15 +104,13 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	inputValidatorMock = &validationmocks.InputValidator{}
 	variableValidatorMock = &validationmocks.VariablesValidator{}
 	dryRunnerMock = &mocks.DryRunner{}
-	pluginValidatorMock = &validationmocks.PluginValidator{}
 	maxPipelinesValidatorMock = &validationmocks.MaxPipelinesValidator{}
-	outputValidatorMock = &validationmocks.OutputValidator{}
 	fileValidatorMock = &validationmocks.FilesValidator{}
+	validationConfig := &telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: []string{"lua", "stdout"}, DeniedFilterPlugins: []string{"stdout"}}
 
-	logPipelineValidator := NewValidatingWebhookHandler(mgr.GetClient(), inputValidatorMock, variableValidatorMock, pluginValidatorMock, maxPipelinesValidatorMock, outputValidatorMock, fileValidatorMock, dryRunnerMock)
+	logPipelineValidator := NewValidatingWebhookHandler(mgr.GetClient(), variableValidatorMock, maxPipelinesValidatorMock, fileValidatorMock, dryRunnerMock, validationConfig)
 
 	By("registering LogPipeline webhook")
 	mgr.GetWebhookServer().Register(

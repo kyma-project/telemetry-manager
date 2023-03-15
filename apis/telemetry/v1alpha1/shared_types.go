@@ -32,3 +32,8 @@ type SecretKeyRef struct {
 func (skr *SecretKeyRef) NamespacedName() types.NamespacedName {
 	return types.NamespacedName{Name: skr.Name, Namespace: skr.Namespace}
 }
+
+type LogPipelineValidationConfig struct {
+	DeniedOutPutPlugins []string
+	DeniedFilterPlugins []string
+}
