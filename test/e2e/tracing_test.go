@@ -93,6 +93,14 @@ var _ = Describe("Tracing", func() {
 			}, timeout, interval).Should(BeTrue())
 		})
 
+		It("Should be able to get trace collector metrics endpoint", func() {
+			Eventually(func(g Gomega) {
+				resp, err := http.Get("http://localhost:8888/metrics/")
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+			}, timeout, interval).Should(Succeed())
+		})
+
 		It("Should be able to send traces to the OTLP endpoint", func() {
 			shutdown, err := initProvider("localhost:4317")
 			Expect(err).ShouldNot(HaveOccurred())
@@ -164,6 +172,13 @@ func makeExternalOTLPTracesService() *corev1.Service {
 					Port:       4318,
 					TargetPort: intstr.FromInt(4318),
 					NodePort:   30018,
+				},
+				{
+					Name:       "http-metrics",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       8888,
+					TargetPort: intstr.FromInt(8888),
+					NodePort:   30088,
 				},
 			},
 			Selector: labels,
