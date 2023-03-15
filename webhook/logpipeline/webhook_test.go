@@ -116,7 +116,6 @@ var _ = Describe("LogPipeline webhook", Ordered, func() {
 
 			variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
 			outputErr := errors.New("output plugin 'stdout' is forbidden")
-			dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
 
 			logPipeline := getLogPipeline()
 			logPipeline.Spec.Output = invalidOutput
@@ -133,9 +132,6 @@ var _ = Describe("LogPipeline webhook", Ordered, func() {
 		It("Should reject LogPipeline when exceeding pipeline limit", func() {
 			maxPipelinesErr := errors.New("too many pipelines")
 			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(maxPipelinesErr).Times(1)
-			variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-
-			dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
 
 			logPipeline := getLogPipeline()
 			err := k8sClient.Create(ctx, logPipeline)
