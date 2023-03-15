@@ -7,64 +7,64 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-func ConsistOfSpansWithIDs(spanIDs []string) types.GomegaMatcher {
+func ConsistOfSpansWithIDs(expectedSpanIDs []string) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]string, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
 			return nil, fmt.Errorf("ConsistOfSpansWithIDs rqquires a []byte, but got %T", actual)
 		}
 
-		spans, err := unmarshalOTLPJSONTraceData(actualBytes)
+		actualSpans, err := unmarshalOTLPJSONTraceData(actualBytes)
 		if err != nil {
 			return nil, fmt.Errorf("ConsistOfSpansWithIDs requires a valid OTLP JSON document: %v", err)
 		}
 
-		var spanIDs []string
-		for _, span := range spans {
-			spanIDs = append(spanIDs, span.SpanID)
+		var actualSpanIDs []string
+		for _, span := range actualSpans {
+			actualSpanIDs = append(actualSpanIDs, span.SpanID)
 		}
-		return spanIDs, nil
-	}, gomega.ConsistOf(spanIDs))
+		return actualSpanIDs, nil
+	}, gomega.ConsistOf(expectedSpanIDs))
 }
 
-func EachHaveTraceID(traceID string) types.GomegaMatcher {
+func EachHaveTraceID(expectedTraceID string) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]string, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
 			return nil, fmt.Errorf("ConsistOfSpansWithIDs rqquires a []byte, but got %T", actual)
 		}
 
-		spans, err := unmarshalOTLPJSONTraceData(actualBytes)
+		actualSpans, err := unmarshalOTLPJSONTraceData(actualBytes)
 		if err != nil {
 			return nil, fmt.Errorf("ConsistOfSpansWithIDs requires a valid OTLP JSON document: %v", err)
 		}
 
-		var traceIDs []string
-		for _, span := range spans {
-			traceIDs = append(traceIDs, span.TraceID)
+		var actualTraceIDs []string
+		for _, span := range actualSpans {
+			actualTraceIDs = append(actualTraceIDs, span.TraceID)
 		}
-		return traceIDs, nil
-	}, gomega.HaveEach(traceID))
+		return actualTraceIDs, nil
+	}, gomega.HaveEach(expectedTraceID))
 }
 
-func EachHaveAttributes(attrs []attribute.KeyValue) types.GomegaMatcher {
+func EachHaveAttributes(expectedAttrs []attribute.KeyValue) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]map[string]string, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
 			return nil, fmt.Errorf("EachHaveAttributes rqquires a []byte, but got %T", actual)
 		}
 
-		spans, err := unmarshalOTLPJSONTraceData(actualBytes)
+		actualSpans, err := unmarshalOTLPJSONTraceData(actualBytes)
 		if err != nil {
 			return nil, fmt.Errorf("EachHaveAttributes requires a valid OTLP JSON document: %v", err)
 		}
 
-		var attrsAsMap []map[string]string
-		for _, span := range spans {
-			attrsAsMap = append(attrsAsMap, spanAttributesToMap(span.Attributes))
+		var actualAttrs []map[string]string
+		for _, span := range actualSpans {
+			actualAttrs = append(actualAttrs, spanAttributesToMap(span.Attributes))
 		}
-		return attrsAsMap, nil
-	}, gomega.HaveEach(gomega.Equal(attributesToMap(attrs))))
+		return actualAttrs, nil
+	}, gomega.HaveEach(gomega.Equal(attributesToMap(expectedAttrs))))
 }
 
 func spanAttributesToMap(attrs []Attribute) map[string]string {
