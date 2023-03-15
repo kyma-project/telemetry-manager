@@ -95,7 +95,7 @@ var _ = Describe("Tracing", func() {
 
 		It("Should be able to get trace collector metrics endpoint", func() {
 			Eventually(func(g Gomega) {
-				resp, err := http.Get("http://localhost:8888/metrics/")
+				resp, err := http.Get("http://localhost:8888/metrics")
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 			}, timeout, interval).Should(Succeed())
