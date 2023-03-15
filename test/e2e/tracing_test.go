@@ -112,7 +112,7 @@ var _ = Describe("Tracing", func() {
 
 		It("Should verify traces were sent to the backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := http.Get("http://localhost:8080/spans.json")
+				resp, err := http.Get("http://localhost:9090/spans.json")
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -302,7 +302,7 @@ func makeExternalMockBackendService() *corev1.Service {
 					Name:       "export-http",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       80,
-					NodePort:   30080,
+					NodePort:   3090,
 					TargetPort: intstr.FromInt(80),
 				},
 			},
