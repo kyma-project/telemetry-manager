@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-func (lp *LogPipeline) ValidateFilters(deniedFilterPlugins []string) error {
-	for _, filterPlugin := range lp.Spec.Filters {
+func (l *LogPipeline) ValidateFilters(deniedFilterPlugins []string) error {
+	for _, filterPlugin := range l.Spec.Filters {
 		if err := validateCustomFilter(filterPlugin.Custom, deniedFilterPlugins); err != nil {
 			return err
 		}

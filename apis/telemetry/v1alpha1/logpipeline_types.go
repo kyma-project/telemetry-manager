@@ -122,6 +122,10 @@ type Output struct {
 	Loki *LokiOutput `json:"grafana-loki,omitempty"`
 }
 
+func (i *Input) IsDefined() bool {
+	return i != nil
+}
+
 func (o *Output) IsCustomDefined() bool {
 	return o.Custom != ""
 }

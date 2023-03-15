@@ -2,9 +2,9 @@ package v1alpha1
 
 import "fmt"
 
-func (lp *LogPipeline) ValidateInput() error {
-	input := lp.Spec.Input
-	if &input == nil {
+func (l *LogPipeline) ValidateInput() error {
+	input := l.Spec.Input
+	if !input.IsDefined() {
 		return nil
 	}
 

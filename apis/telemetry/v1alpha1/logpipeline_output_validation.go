@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-func (lp *LogPipeline) ValidateOutput(deniedOutputPlugins []string) error {
-	output := lp.Spec.Output
+func (l *LogPipeline) ValidateOutput(deniedOutputPlugins []string) error {
+	output := l.Spec.Output
 	if err := checkSingleOutputPlugin(output); err != nil {
 		return err
 	}

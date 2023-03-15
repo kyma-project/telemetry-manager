@@ -135,7 +135,7 @@ func (v *ValidatingWebhookHandler) validateLogPipeline(ctx context.Context, logP
 	}
 
 	if err := logPipeline.ValidateFilters(v.logPipelineValidationConfig.DeniedFilterPlugins); err != nil {
-		log.Error(err, "Failed to validate Fluent Bit output")
+		log.Error(err, "Failed to validate Fluent Bit filter")
 		return err
 	}
 
