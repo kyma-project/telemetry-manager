@@ -302,7 +302,7 @@ func makeExternalMockBackendService() *corev1.Service {
 					Name:       "export-http",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       80,
-					NodePort:   3090,
+					NodePort:   30090,
 					TargetPort: intstr.FromInt(80),
 				},
 			},
