@@ -10,11 +10,7 @@ import (
 
 var (
 	config = Config{
-		BaseName:  "collector",
 		Namespace: "kyma-system",
-		Service: ServiceConfig{
-			OTLPServiceName: "otlp-traces",
-		},
 	}
 )
 
@@ -26,7 +22,7 @@ func TestMakeSecret(t *testing.T) {
 	secret := makeSecret(config, secretData)
 
 	require.NotNil(t, secret)
-	require.Equal(t, secret.Name, config.BaseName)
+	require.Equal(t, secret.Name, "telemetry-trace-collector")
 	require.Equal(t, secret.Namespace, config.Namespace)
 
 	require.Equal(t, "otlpEndpoint", string(secret.Data[otlpEndpointVariable]), "Secret must contain Otlp endpoint")
@@ -35,10 +31,10 @@ func TestMakeSecret(t *testing.T) {
 
 func TestMakeDeployment(t *testing.T) {
 	deployment := makeDeployment(config, "123")
-	labels := makeDefaultLabels(config)
+	labels := makeDefaultLabels()
 
 	require.NotNil(t, deployment)
-	require.Equal(t, deployment.Name, config.BaseName)
+	require.Equal(t, deployment.Name, "telemetry-trace-collector")
 	require.Equal(t, deployment.Namespace, config.Namespace)
 	require.Equal(t, *deployment.Spec.Replicas, int32(1))
 	require.Equal(t, deployment.Spec.Selector.MatchLabels, labels)
@@ -68,10 +64,10 @@ func TestMakeDeployment(t *testing.T) {
 
 func TestMakeOTLPService(t *testing.T) {
 	service := makeOTLPService(config)
-	labels := makeDefaultLabels(config)
+	labels := makeDefaultLabels()
 
 	require.NotNil(t, service)
-	require.Equal(t, service.Name, config.Service.OTLPServiceName)
+	require.Equal(t, service.Name, "telemetry-otlp-traces")
 	require.Equal(t, service.Namespace, config.Namespace)
 	require.Equal(t, service.Spec.Selector, labels)
 	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
@@ -81,10 +77,10 @@ func TestMakeOTLPService(t *testing.T) {
 
 func TestMakeMetricsService(t *testing.T) {
 	service := makeMetricsService(config)
-	labels := makeDefaultLabels(config)
+	labels := makeDefaultLabels()
 
 	require.NotNil(t, service)
-	require.Equal(t, service.Name, config.BaseName+"-metrics")
+	require.Equal(t, service.Name, "telemetry-trace-collector-metrics")
 	require.Equal(t, service.Namespace, config.Namespace)
 	require.Equal(t, service.Spec.Selector, labels)
 	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
@@ -96,10 +92,10 @@ func TestMakeMetricsService(t *testing.T) {
 
 func TestMakeOpenCensusService(t *testing.T) {
 	service := makeOpenCensusService(config)
-	labels := makeDefaultLabels(config)
+	labels := makeDefaultLabels()
 
 	require.NotNil(t, service)
-	require.Equal(t, service.Name, config.BaseName+"-internal")
+	require.Equal(t, service.Name, "telemetry-trace-collector-internal")
 	require.Equal(t, service.Namespace, config.Namespace)
 	require.Equal(t, service.Spec.Selector, labels)
 	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)

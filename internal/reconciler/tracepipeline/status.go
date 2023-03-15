@@ -57,7 +57,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 		return setCondition(ctx, r.Client, &pipeline, pending)
 	}
 
-	openTelemetryReady, err := r.prober.IsReady(ctx, types.NamespacedName{Name: r.config.BaseName, Namespace: r.config.Namespace})
+	openTelemetryReady, err := r.prober.IsReady(ctx, types.NamespacedName{Name: traceCollectorName, Namespace: r.config.Namespace})
 	if err != nil {
 		return err
 	}
