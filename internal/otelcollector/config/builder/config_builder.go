@@ -20,8 +20,9 @@ func makeHeaders(output *telemetryv1alpha1.OtlpOutput) map[string]string {
 	if output.Authentication != nil && output.Authentication.Basic.IsDefined() {
 		headers["Authorization"] = "${BASIC_AUTH_HEADER}"
 	}
+
 	for _, header := range output.Headers {
-		headers[header.Name] = resolveValue(header.ValueType, fmt.Sprintf("${HEADER_%s}", envvar.MakeEnvVarCompliant(header.Name)))
+		headers[header.Name] = fmt.Sprintf("${HEADER_%s}", envvar.MakeEnvVarCompliant(header.Name))
 	}
 	return headers
 }
@@ -30,7 +31,7 @@ func MakeExporterConfig(output *telemetryv1alpha1.OtlpOutput, insecureOutput boo
 	outputType := GetOutputType(output)
 	headers := makeHeaders(output)
 	otlpExporterConfig := config.OTLPExporterConfig{
-		Endpoint: resolveValue(output.Endpoint, "OTLP_ENDPOINT"),
+		Endpoint: fmt.Sprintf("${%s}", "OTLP_ENDPOINT"),
 		Headers:  headers,
 		TLS: config.TLSConfig{
 			Insecure: insecureOutput,
@@ -69,14 +70,4 @@ func MakeExtensionConfig() config.ExtensionsConfig {
 			Endpoint: "${MY_POD_IP}:13133",
 		},
 	}
-}
-
-func resolveValue(value telemetryv1alpha1.ValueType, envVar string) string {
-	if value.Value != "" {
-		return value.Value
-	}
-	if value.ValueFrom != nil && value.ValueFrom.IsSecretKeyRef() {
-		return fmt.Sprintf("${%s}", envVar)
-	}
-	return ""
 }

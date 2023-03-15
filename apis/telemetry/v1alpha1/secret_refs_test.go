@@ -1,10 +1,12 @@
 package v1alpha1
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/field"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
+
+	"github.com/kyma-project/telemetry-manager/internal/field"
 )
 
 func TestLogPipeline_GetSecretRefs(t *testing.T) {
@@ -212,7 +214,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 			},
 		},
 		{
-			name:         "basic auth and",
+			name:         "basic auth and header",
 			pipelineName: "test-pipeline",
 			given: OtlpOutput{
 				Authentication: &AuthenticationOptions{
@@ -284,7 +286,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			sut := TracePipeline{Spec: TracePipelineSpec{Output: TracePipelineOutput{Otlp: &test.given}}}
+			sut := TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: TracePipelineSpec{Output: TracePipelineOutput{Otlp: &test.given}}}
 			actual := sut.GetSecretRefs()
 			require.ElementsMatch(t, test.expected, actual)
 		})
@@ -395,7 +397,7 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			sut := MetricPipeline{Spec: MetricPipelineSpec{Output: MetricPipelineOutput{Otlp: &test.given}}}
+			sut := MetricPipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: MetricPipelineSpec{Output: MetricPipelineOutput{Otlp: &test.given}}}
 			actual := sut.GetSecretRefs()
 			require.ElementsMatch(t, test.expected, actual)
 		})

@@ -1,14 +1,8 @@
 package v1alpha1
 
 import (
-	"fmt"
 	"github.com/kyma-project/telemetry-manager/internal/field"
-	"strings"
-)
-
-const (
-	BasicAuthHeaderVariable = "BASIC_AUTH_HEADER"
-	OtlpEndpointVariable    = "OTLP_ENDPOINT"
+	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
 func (lp *LogPipeline) GetSecretRefs() []field.Descriptor {
@@ -78,8 +72,9 @@ func getRefsInOtlpOutput(otlpOut *OtlpOutput, pipelineName string) []field.Descr
 
 func appendIfSecretRef(fields []field.Descriptor, pipelineName string, valueType ValueType) []field.Descriptor {
 	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.IsSecretKeyRef() {
+		secretKeyRef := *valueType.ValueFrom.SecretKeyRef
 		fields = append(fields, field.Descriptor{
-			TargetSecretKey: formatTargetKey(pipelineName, *valueType.ValueFrom.SecretKeyRef),
+			TargetSecretKey: envvar.FormatEnvVarName(pipelineName, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key),
 			SecretKeyRef: field.SecretKeyRef{
 				Name:      valueType.ValueFrom.SecretKeyRef.Name,
 				Namespace: valueType.ValueFrom.SecretKeyRef.Namespace,
@@ -89,17 +84,4 @@ func appendIfSecretRef(fields []field.Descriptor, pipelineName string, valueType
 	}
 
 	return fields
-}
-
-func formatTargetKey(prefix string, secretKeyRef SecretKeyRef) string {
-	result := fmt.Sprintf("%s_%s_%s_%s", prefix, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key)
-	return makeEnvVarCompliant(result)
-}
-
-func makeEnvVarCompliant(input string) string {
-	result := input
-	result = strings.ToUpper(result)
-	result = strings.Replace(result, ".", "_", -1)
-	result = strings.Replace(result, "-", "_", -1)
-	return result
 }

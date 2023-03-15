@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
@@ -123,9 +125,9 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 			continue
 		}
 
-		refSecretData, copyErr := secretref.FetchReferencedSecretData(ctx, s.Client, &logPipelines.Items[i])
-		if copyErr != nil {
-			return fmt.Errorf("unable to copy secret data: %w", copyErr)
+		refSecretData, refErr := secretref.FetchReferencedSecretData(ctx, s.Client, &logPipelines.Items[i])
+		if refErr != nil {
+			return fmt.Errorf("unable to fetch referenced secret data: %w", refErr)
 		}
 
 		for k, v := range refSecretData {

@@ -5,8 +5,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
-
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/stretchr/testify/require"
@@ -30,8 +28,8 @@ var (
 
 func TestMakeSecret(t *testing.T) {
 	secretData := map[string][]byte{
-		builder.BasicAuthHeaderVariable: []byte("basicAuthHeader"),
-		builder.EndpointVariable:        []byte("otlpEndpoint"),
+		"BASIC_AUTH_HEADER": []byte("basicAuthHeader"),
+		"OTLP_ENDPOINT":     []byte("otlpEndpoint"),
 	}
 	secret := MakeSecret(config, secretData)
 
@@ -39,8 +37,8 @@ func TestMakeSecret(t *testing.T) {
 	require.Equal(t, secret.Name, config.BaseName)
 	require.Equal(t, secret.Namespace, config.Namespace)
 
-	require.Equal(t, "otlpEndpoint", string(secret.Data[builder.EndpointVariable]), "Secret must contain Otlp endpoint")
-	require.Equal(t, "basicAuthHeader", string(secret.Data[builder.BasicAuthHeaderVariable]), "Secret must contain basic auth header")
+	require.Equal(t, "otlpEndpoint", string(secret.Data["OTLP_ENDPOINT"]), "Secret must contain Otlp endpoint")
+	require.Equal(t, "basicAuthHeader", string(secret.Data["BASIC_AUTH_HEADER"]), "Secret must contain basic auth header")
 }
 
 func TestMakeDeployment(t *testing.T) {
