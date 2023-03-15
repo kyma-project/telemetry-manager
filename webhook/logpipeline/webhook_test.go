@@ -45,6 +45,31 @@ func getLogPipeline() *telemetryv1alpha1.LogPipeline {
 	return logPipeline
 }
 
+// getLogPipeline creates a standard LopPipeline
+func getLokiPipeline() *telemetryv1alpha1.LogPipeline {
+	logPipeline := &telemetryv1alpha1.LogPipeline{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "telemetry.kyma-project.io/v1alpha1",
+			Kind:       "LogPipeline",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testLogPipeline.Name,
+			Namespace: testLogPipeline.Namespace,
+		},
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			Output: telemetryv1alpha1.Output{Loki: &telemetryv1alpha1.LokiOutput{
+				URL: telemetryv1alpha1.ValueType{
+					Value: "http://foo.bar",
+				},
+				Labels:     map[string]string{"job": "telemetry-fluent-bit"},
+				RemoveKeys: []string{"kubernetes", "stream"},
+			}},
+		},
+	}
+
+	return logPipeline
+}
+
 var invalidOutput = telemetryv1alpha1.Output{
 	Custom: "Name   stdout\n",
 }
@@ -69,7 +94,7 @@ var _ = Describe("LogPipeline webhook", Ordered, func() {
 			fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
 			dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
 
-			logPipeline := getLogPipeline()
+			logPipeline := getLokiPipeline()
 			err := k8sClient.Create(ctx, logPipeline)
 
 			Expect(err).NotTo(HaveOccurred())

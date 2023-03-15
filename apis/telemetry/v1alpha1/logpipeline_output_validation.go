@@ -50,7 +50,7 @@ func validateLokiOutput(lokiOutput *LokiOutput) error {
 	if !lokiOutput.URL.IsDefined() && (len(lokiOutput.Labels) != 0 || len(lokiOutput.RemoveKeys) != 0) {
 		return fmt.Errorf("loki output needs to have a URL configured")
 	}
-	if !secretRefOrValueIsPresent(lokiOutput.URL) {
+	if secretRefAndValueIsPresent(lokiOutput.URL) {
 		return fmt.Errorf("loki output URL needs to have either value or secret key reference")
 	}
 	return nil
@@ -67,13 +67,13 @@ func validateHTTPOutput(httpOutput *HTTPOutput) error {
 	if !httpOutput.Host.IsDefined() && (httpOutput.User.IsDefined() || httpOutput.Password.IsDefined() || httpOutput.URI != "" || httpOutput.Port != "" || httpOutput.Compress != "" || httpOutput.TLSConfig.Disabled || httpOutput.TLSConfig.SkipCertificateValidation) {
 		return fmt.Errorf("http output needs to have a host configured")
 	}
-	if !secretRefOrValueIsPresent(httpOutput.Host) {
+	if secretRefAndValueIsPresent(httpOutput.Host) {
 		return fmt.Errorf("http output host needs to have either value or secret key reference")
 	}
-	if !secretRefOrValueIsPresent(httpOutput.User) {
+	if secretRefAndValueIsPresent(httpOutput.User) {
 		return fmt.Errorf("http output user needs to have either value or secret key reference")
 	}
-	if !secretRefOrValueIsPresent(httpOutput.Password) {
+	if secretRefAndValueIsPresent(httpOutput.Password) {
 		return fmt.Errorf("http output password needs to have either value or secret key reference")
 	}
 	return nil
@@ -133,9 +133,6 @@ func validateCustomOutput(deniedOutputPlugin []string, content string) error {
 	return nil
 }
 
-func secretRefOrValueIsPresent(v ValueType) bool {
-	if v.Value != "" && v.ValueFrom.IsSecretKeyRef() {
-		return false
-	}
-	return true
+func secretRefAndValueIsPresent(v ValueType) bool {
+	return v.Value != "" && v.ValueFrom != nil
 }

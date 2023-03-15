@@ -1,6 +1,8 @@
 package v1alpha1
 
-import "k8s.io/apimachinery/pkg/types"
+import (
+	"k8s.io/apimachinery/pkg/types"
+)
 
 type ValueType struct {
 	Value     string           `json:"value,omitempty"`

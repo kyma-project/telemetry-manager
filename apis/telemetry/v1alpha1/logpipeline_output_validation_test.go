@@ -106,6 +106,52 @@ func TestValidateCustomOutputsContainsNoName(t *testing.T) {
 	require.Contains(t, err.Error(), "configuration section does not have name attribute")
 }
 
+func TestBothValueAndValueFromPresent(t *testing.T) {
+	logPipeline := &LogPipeline{
+		Spec: LogPipelineSpec{
+			Output: Output{
+				HTTP: &HTTPOutput{
+					Host: ValueType{
+						Value: "localhost",
+						ValueFrom: &ValueFromSource{
+							SecretKeyRef: &SecretKeyRef{
+								Name:      "foo",
+								Namespace: "foo-ns",
+								Key:       "foo-key",
+							},
+						},
+					},
+				},
+			},
+		}}
+	vc := getLogPipelineValidationConfig()
+	err := logPipeline.ValidateOutput(vc.DeniedOutPutPlugins)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "http output host needs to have either value or secret key reference")
+}
+
+func TestValueFromSecretKeyRef(t *testing.T) {
+	logPipeline := &LogPipeline{
+		Spec: LogPipelineSpec{
+			Output: Output{
+				HTTP: &HTTPOutput{
+					Host: ValueType{
+						ValueFrom: &ValueFromSource{
+							SecretKeyRef: &SecretKeyRef{
+								Name:      "foo",
+								Namespace: "foo-ns",
+								Key:       "foo-key",
+							},
+						},
+					},
+				},
+			},
+		}}
+	vc := getLogPipelineValidationConfig()
+	err := logPipeline.ValidateOutput(vc.DeniedOutPutPlugins)
+	require.NoError(t, err)
+}
+
 func getLogPipelineValidationConfig() LogPipelineValidationConfig {
 	return LogPipelineValidationConfig{DeniedOutPutPlugins: []string{"lua", "multiline"}, DeniedFilterPlugins: []string{"lua", "multiline"}}
 }
