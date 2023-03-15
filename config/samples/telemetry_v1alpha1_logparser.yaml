@@ -4,7 +4,6 @@ metadata:
   name: my-regex-parser
 spec:
   parser: |
-    Name foo
     Format regex
     Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$
     Time_Key time
