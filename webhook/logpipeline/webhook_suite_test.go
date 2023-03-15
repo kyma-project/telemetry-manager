@@ -19,6 +19,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net"
 	"path/filepath"
 	"testing"
@@ -151,3 +153,57 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
+
+func createResources() error {
+	cmFluentBit := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fluentBitConfigMapName,
+			Namespace: controllerNamespace,
+		},
+		Data: map[string]string{
+			"fluent-bit.conf": `@INCLUDE dynamic/*.conf
+[SERVICE]
+    Daemon Off
+    Flush 1
+    Parsers_File custom_parsers.conf
+    Parsers_File dynamic-parsers/parsers.conf
+
+[INPUT]
+    Name tail
+    Path /var/log/containers/*.log
+    multiline.parser docker, cri
+    Tag kube.*
+    Mem_Buf_Limit 5MB
+    Skip_Long_Lines On
+    storage.type  filesystem
+`,
+		},
+	}
+	err := k8sClient.Create(ctx, &cmFluentBit)
+	if err != nil {
+		return err
+	}
+	cmFile := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fluentBitFileConfigMapName,
+			Namespace: controllerNamespace,
+		},
+		Data: map[string]string{
+			"labelmap.json": `
+kubernetes:
+  namespace_name: namespace
+  labels:
+    app: app
+    "app.kubernetes.io/component": component
+    "app.kubernetes.io/name": app
+    "serverless.kyma-project.io/function-name": function
+     host: node
+  container_name: container
+  pod_name: pod
+stream: stream`,
+		},
+	}
+	err = k8sClient.Create(ctx, &cmFile)
+
+	return err
+}

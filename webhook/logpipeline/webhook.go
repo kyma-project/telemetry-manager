@@ -43,11 +43,8 @@ const (
 // +kubebuilder:webhook:path=/validate-logpipeline,mutating=false,failurePolicy=fail,sideEffects=None,groups=telemetry.kyma-project.io,resources=logpipelines,verbs=create;update,versions=v1alpha1,name=vlogpipeline.kb.io,admissionReviewVersions=v1
 type ValidatingWebhookHandler struct {
 	client.Client
-	//inputValidator        validation.InputValidator
-	variablesValidator validation.VariablesValidator
-	//filterValidator       validation.FilterValidator
-	maxPipelinesValidator validation.MaxPipelinesValidator
-	//outputValidator       validation.OutputValidator
+	variablesValidator          validation.VariablesValidator
+	maxPipelinesValidator       validation.MaxPipelinesValidator
 	fileValidator               validation.FilesValidator
 	decoder                     *admission.Decoder
 	dryRunner                   DryRunner
@@ -57,16 +54,14 @@ type ValidatingWebhookHandler struct {
 func NewValidatingWebhookHandler(
 	client client.Client,
 	variablesValidator validation.VariablesValidator,
-	//filterValidator validation.FilterValidator,
 	maxPipelinesValidator validation.MaxPipelinesValidator,
 	fileValidator validation.FilesValidator,
 	dryRunner DryRunner,
 	logPipelineValidationConfig *telemetryv1alpha1.LogPipelineValidationConfig,
 ) *ValidatingWebhookHandler {
 	return &ValidatingWebhookHandler{
-		Client:             client,
-		variablesValidator: variablesValidator,
-		//filterValidator:             filterValidator,
+		Client:                      client,
+		variablesValidator:          variablesValidator,
 		maxPipelinesValidator:       maxPipelinesValidator,
 		fileValidator:               fileValidator,
 		dryRunner:                   dryRunner,

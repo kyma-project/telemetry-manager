@@ -5,7 +5,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,60 +16,6 @@ import (
 var testLogPipeline = types.NamespacedName{
 	Name:      "log-pipeline",
 	Namespace: controllerNamespace,
-}
-
-func createResources() error {
-	cmFluentBit := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fluentBitConfigMapName,
-			Namespace: controllerNamespace,
-		},
-		Data: map[string]string{
-			"fluent-bit.conf": `@INCLUDE dynamic/*.conf
-[SERVICE]
-    Daemon Off
-    Flush 1
-    Parsers_File custom_parsers.conf
-    Parsers_File dynamic-parsers/parsers.conf
-
-[INPUT]
-    Name tail
-    Path /var/log/containers/*.log
-    multiline.parser docker, cri
-    Tag kube.*
-    Mem_Buf_Limit 5MB
-    Skip_Long_Lines On
-    storage.type  filesystem
-`,
-		},
-	}
-	err := k8sClient.Create(ctx, &cmFluentBit)
-	if err != nil {
-		return err
-	}
-	cmFile := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fluentBitFileConfigMapName,
-			Namespace: controllerNamespace,
-		},
-		Data: map[string]string{
-			"labelmap.json": `
-kubernetes:
-  namespace_name: namespace
-  labels:
-    app: app
-    "app.kubernetes.io/component": component
-    "app.kubernetes.io/name": app
-    "serverless.kyma-project.io/function-name": function
-     host: node
-  container_name: container
-  pod_name: pod
-stream: stream`,
-		},
-	}
-	err = k8sClient.Create(ctx, &cmFile)
-
-	return err
 }
 
 // getLogPipeline creates a standard LopPipeline
@@ -118,58 +63,58 @@ var _ = Describe("LogPipeline webhook", Ordered, func() {
 			}
 		})
 
-		//It("Should accept valid LogPipeline", func() {
-		//	variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-		//	maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-		//	fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-		//	dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
-		//
-		//	logPipeline := getLogPipeline()
-		//	err := k8sClient.Create(ctx, logPipeline)
-		//
-		//	Expect(err).NotTo(HaveOccurred())
-		//})
-		//
-		//It("Should reject LogPipeline with invalid indenation in yaml", func() {
-		//	variableValidatorMock.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
-		//	maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-		//	fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-		//
-		//	configErr := errors.New("Error in line 4: Invalid indentation level")
-		//	dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(configErr).Times(1)
-		//
-		//	logPipeline := getLogPipeline()
-		//	err := k8sClient.Create(ctx, logPipeline)
-		//
-		//	Expect(err).To(HaveOccurred())
-		//	var status apierrors.APIStatus
-		//	errors.As(err, &status)
-		//
-		//	Expect(StatusReasonConfigurationError).To(Equal(string(status.Status().Reason)))
-		//	Expect(status.Status().Message).To(ContainSubstring(configErr.Error()))
-		//})
-		//
-		//It("Should reject LogPipeline with forbidden plugin", func() {
-		//	variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-		//	pluginErr := errors.New("filter plugin 'stdout' is forbidden")
-		//	maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-		//
-		//	logPipeline := getLogPipeline()
-		//	logPipeline.Spec.Filters = []telemetryv1alpha1.Filter{invalidFilter}
-		//	err := k8sClient.Create(ctx, logPipeline)
-		//
-		//	Expect(err).To(HaveOccurred())
-		//	var status apierrors.APIStatus
-		//	errors.As(err, &status)
-		//
-		//	Expect(StatusReasonConfigurationError).To(Equal(string(status.Status().Reason)))
-		//	Expect(status.Status().Message).To(ContainSubstring(pluginErr.Error()))
-		//})
-		//
+		It("Should accept valid LogPipeline", func() {
+			variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+			fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+			dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
+
+			logPipeline := getLogPipeline()
+			err := k8sClient.Create(ctx, logPipeline)
+
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should reject LogPipeline with invalid indentation in yaml", func() {
+			variableValidatorMock.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
+			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+			fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+
+			configErr := errors.New("Error in line 4: Invalid indentation level")
+			dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(configErr).Times(1)
+
+			logPipeline := getLogPipeline()
+			err := k8sClient.Create(ctx, logPipeline)
+
+			Expect(err).To(HaveOccurred())
+			var status apierrors.APIStatus
+			errors.As(err, &status)
+
+			Expect(StatusReasonConfigurationError).To(Equal(string(status.Status().Reason)))
+			Expect(status.Status().Message).To(ContainSubstring(configErr.Error()))
+		})
+
+		It("Should reject LogPipeline with forbidden plugin", func() {
+			variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+			pluginErr := errors.New("filter plugin 'stdout' is forbidden")
+			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+
+			logPipeline := getLogPipeline()
+			logPipeline.Spec.Filters = []telemetryv1alpha1.Filter{invalidFilter}
+			err := k8sClient.Create(ctx, logPipeline)
+
+			Expect(err).To(HaveOccurred())
+			var status apierrors.APIStatus
+			errors.As(err, &status)
+
+			Expect(StatusReasonConfigurationError).To(Equal(string(status.Status().Reason)))
+			Expect(status.Status().Message).To(ContainSubstring(pluginErr.Error()))
+		})
+
 		It("Should reject LogPipeline with invalid output", func() {
 			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+
 			variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-			fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
 			outputErr := errors.New("output plugin 'stdout' is forbidden")
 			dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
 
@@ -185,28 +130,28 @@ var _ = Describe("LogPipeline webhook", Ordered, func() {
 			Expect(status.Status().Message).To(ContainSubstring(outputErr.Error()))
 		})
 
-		//It("Should reject LogPipeline when exceeding pipeline limit", func() {
-		//	maxPipelinesErr := errors.New("too many pipelines")
-		//	maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(maxPipelinesErr).Times(1)
-		//	variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-		//	fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
-		//
-		//	dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
-		//
-		//	logPipeline := getLogPipeline()
-		//	err := k8sClient.Create(ctx, logPipeline)
-		//
-		//	Expect(err).To(HaveOccurred())
-		//	var status apierrors.APIStatus
-		//	errors.As(err, &status)
-		//
-		//	Expect(StatusReasonConfigurationError).To(Equal(string(status.Status().Reason)))
-		//	Expect(status.Status().Message).To(ContainSubstring(maxPipelinesErr.Error()))
-		//})
+		It("Should reject LogPipeline when exceeding pipeline limit", func() {
+			maxPipelinesErr := errors.New("too many pipelines")
+			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(maxPipelinesErr).Times(1)
+			variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+
+			dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
+
+			logPipeline := getLogPipeline()
+			err := k8sClient.Create(ctx, logPipeline)
+
+			Expect(err).To(HaveOccurred())
+			var status apierrors.APIStatus
+			errors.As(err, &status)
+
+			Expect(StatusReasonConfigurationError).To(Equal(string(status.Status().Reason)))
+			Expect(status.Status().Message).To(ContainSubstring(maxPipelinesErr.Error()))
+		})
 
 		It("Should reject LogPipeline when duplicate filename is used", func() {
 			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
 			variableValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
+
 			fileError := errors.New("duplicate file name: 1st-file")
 			fileValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(fileError).Times(1)
 			dryRunnerMock.On("RunPipeline", mock.Anything, mock.Anything).Return(nil).Times(1)
@@ -224,7 +169,7 @@ var _ = Describe("LogPipeline webhook", Ordered, func() {
 
 	})
 
-	Context("When updating LogPipeline", func() {
+	Context("When updating LogPipeline", Ordered, func() {
 		It("Should create valid LogPipeline", func() {
 			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
 			variableValidatorMock.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
