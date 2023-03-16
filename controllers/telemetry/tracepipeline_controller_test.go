@@ -3,7 +3,6 @@ package telemetry
 import (
 	"context"
 	"fmt"
-
 	"testing"
 	"time"
 
@@ -43,13 +42,13 @@ var (
 	}
 )
 
-var _ = Describe("Deploying a TracePipeline", func() {
+var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 	const (
 		timeout  = time.Second * 100
 		interval = time.Millisecond * 250
 	)
 
-	When("creating TracePipeline", func() {
+	BeforeAll(func() {
 		ctx := context.Background()
 		data := map[string][]byte{
 			"user":     []byte("secret-username"),
@@ -97,123 +96,176 @@ var _ = Describe("Deploying a TracePipeline", func() {
 			},
 		}
 
-		It("creates OpenTelemetry Collector resources", func() {
-			Expect(k8sClient.Create(ctx, secret)).Should(Succeed())
-			Expect(k8sClient.Create(ctx, tracePipeline)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, secret)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, tracePipeline)).Should(Succeed())
 
-			Eventually(func() error {
-				var serviceAccount corev1.ServiceAccount
-				if err := k8sClient.Get(ctx, types.NamespacedName{
-					Name:      "telemetry-trace-collector",
-					Namespace: "kyma-system",
-				}, &serviceAccount); err != nil {
-					return err
-				}
-				if err := validateTracingOwnerReferencs(serviceAccount.OwnerReferences); err != nil {
-					return err
-				}
-				return nil
-			}, timeout, interval).Should(BeNil())
-
-			Eventually(func() error {
-				var clusterRole rbacv1.ClusterRole
-				if err := k8sClient.Get(ctx, types.NamespacedName{
-					Name:      "telemetry-trace-collector",
-					Namespace: "kyma-system",
-				}, &clusterRole); err != nil {
-					return err
-				}
-				if err := validateTracingOwnerReferencs(clusterRole.OwnerReferences); err != nil {
-					return err
-				}
-				return nil
-			}, timeout, interval).Should(BeNil())
-
-			Eventually(func() error {
-				var clusterRoleBinding rbacv1.ClusterRoleBinding
-				if err := k8sClient.Get(ctx, types.NamespacedName{
-					Name:      "telemetry-trace-collector",
-					Namespace: "kyma-system",
-				}, &clusterRoleBinding); err != nil {
-					return err
-				}
-				if err := validateTracingOwnerReferencs(clusterRoleBinding.OwnerReferences); err != nil {
-					return err
-				}
-				return nil
-			}, timeout, interval).Should(BeNil())
-
-			Eventually(func() error {
-				var otelCollectorDeployment appsv1.Deployment
-				if err := k8sClient.Get(ctx, types.NamespacedName{
-					Name:      "telemetry-trace-collector",
-					Namespace: "kyma-system",
-				}, &otelCollectorDeployment); err != nil {
-					return err
-				}
-				if err := validateTracingOwnerReferencs(otelCollectorDeployment.OwnerReferences); err != nil {
-					return err
-				}
-				if err := validateTracingEnvironment(otelCollectorDeployment); err != nil {
-					return err
-				}
-				if err := validatePodAnnotations(otelCollectorDeployment); err != nil {
-					return err
-				}
-				return nil
-			}, timeout, interval).Should(BeNil())
-
-			Eventually(func() error {
-				var otelCollectorService corev1.Service
-				if err := k8sClient.Get(ctx, types.NamespacedName{
-					Name:      "telemetry-otlp-traces",
-					Namespace: "kyma-system",
-				}, &otelCollectorService); err != nil {
-					return err
-				}
-				if err := validateTracingOwnerReferencs(otelCollectorService.OwnerReferences); err != nil {
-					return err
-				}
-				return nil
-			}, timeout, interval).Should(BeNil())
-
-			Eventually(func() error {
-				var otelCollectorConfigMap corev1.ConfigMap
-				if err := k8sClient.Get(ctx, types.NamespacedName{
-					Name:      "telemetry-trace-collector",
-					Namespace: "kyma-system",
-				}, &otelCollectorConfigMap); err != nil {
-					return err
-				}
-				if err := validateTracingOwnerReferencs(otelCollectorConfigMap.OwnerReferences); err != nil {
-					return err
-				}
-				if err := validateCollectorConfig(otelCollectorConfigMap.Data["relay.conf"]); err != nil {
-					return err
-				}
-				return nil
-			}, timeout, interval).Should(BeNil())
-
-			Eventually(func() error {
-				var otelCollectorSecret corev1.Secret
-				if err := k8sClient.Get(ctx, types.NamespacedName{
-					Name:      "telemetry-trace-collector",
-					Namespace: "kyma-system",
-				}, &otelCollectorSecret); err != nil {
-					return err
-				}
-				if err := validateTracingOwnerReferencs(otelCollectorSecret.OwnerReferences); err != nil {
-					return err
-				}
-				return nil
-			}, timeout, interval).Should(BeNil())
-
+		DeferCleanup(func() {
 			Expect(k8sClient.Delete(ctx, tracePipeline)).Should(Succeed())
 		})
 	})
+
+	It("creates OpenTelemetry Collector resources", func() {
+		Eventually(func() error {
+			var serviceAccount corev1.ServiceAccount
+			if err := k8sClient.Get(ctx, types.NamespacedName{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			}, &serviceAccount); err != nil {
+				return err
+			}
+			if err := validateTracingOwnerReferences(serviceAccount.OwnerReferences); err != nil {
+				return err
+			}
+			return nil
+		}, timeout, interval).Should(BeNil())
+
+		Eventually(func() error {
+			var clusterRole rbacv1.ClusterRole
+			if err := k8sClient.Get(ctx, types.NamespacedName{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			}, &clusterRole); err != nil {
+				return err
+			}
+			if err := validateTracingOwnerReferences(clusterRole.OwnerReferences); err != nil {
+				return err
+			}
+			return nil
+		}, timeout, interval).Should(BeNil())
+
+		Eventually(func() error {
+			var clusterRoleBinding rbacv1.ClusterRoleBinding
+			if err := k8sClient.Get(ctx, types.NamespacedName{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			}, &clusterRoleBinding); err != nil {
+				return err
+			}
+			if err := validateTracingOwnerReferences(clusterRoleBinding.OwnerReferences); err != nil {
+				return err
+			}
+			return nil
+		}, timeout, interval).Should(BeNil())
+
+		Eventually(func() error {
+			var otelCollectorDeployment appsv1.Deployment
+			if err := k8sClient.Get(ctx, types.NamespacedName{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			}, &otelCollectorDeployment); err != nil {
+				return err
+			}
+			if err := validateTracingOwnerReferences(otelCollectorDeployment.OwnerReferences); err != nil {
+				return err
+			}
+			if err := validateTracingEnvironment(otelCollectorDeployment); err != nil {
+				return err
+			}
+			if err := validatePodAnnotations(otelCollectorDeployment); err != nil {
+				return err
+			}
+			return nil
+		}, timeout, interval).Should(BeNil())
+
+		Eventually(func() error {
+			var otelCollectorService corev1.Service
+			if err := k8sClient.Get(ctx, types.NamespacedName{
+				Name:      "telemetry-otlp-traces",
+				Namespace: "kyma-system",
+			}, &otelCollectorService); err != nil {
+				return err
+			}
+			if err := validateTracingOwnerReferences(otelCollectorService.OwnerReferences); err != nil {
+				return err
+			}
+			return nil
+		}, timeout, interval).Should(BeNil())
+
+		Eventually(func() error {
+			var otelCollectorConfigMap corev1.ConfigMap
+			if err := k8sClient.Get(ctx, types.NamespacedName{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			}, &otelCollectorConfigMap); err != nil {
+				return err
+			}
+			if err := validateTracingOwnerReferences(otelCollectorConfigMap.OwnerReferences); err != nil {
+				return err
+			}
+			if err := validateCollectorConfig(otelCollectorConfigMap.Data["relay.conf"]); err != nil {
+				return err
+			}
+			return nil
+		}, timeout, interval).Should(BeNil())
+
+		Eventually(func() error {
+			var otelCollectorSecret corev1.Secret
+			if err := k8sClient.Get(ctx, types.NamespacedName{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			}, &otelCollectorSecret); err != nil {
+				return err
+			}
+			if err := validateTracingOwnerReferences(otelCollectorSecret.OwnerReferences); err != nil {
+				return err
+			}
+			return nil
+		}, timeout, interval).Should(BeNil())
+
+		Eventually(func() error {
+			var otelCollectorSecret corev1.Secret
+			if err := k8sClient.Get(ctx, types.NamespacedName{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			}, &otelCollectorSecret); err != nil {
+				return err
+			}
+
+			if err := validateSecret(otelCollectorSecret, "secret-username", "secret-password"); err != nil {
+				return err
+			}
+			return nil
+		}, timeout, interval).Should(BeNil())
+
+	})
+
+	It("updates Trace Collector Secret when referenced secret changes", func() {
+		Eventually(func() error {
+			newData := map[string][]byte{
+				"user":     []byte("new-secret-username"),
+				"password": []byte("new-secret-password"),
+			}
+			secret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic-auth-credentials-tracing",
+					Namespace: "default",
+				},
+				Data: newData,
+			}
+
+			if err := k8sClient.Update(ctx, secret); err != nil {
+				return err
+			}
+
+			var otelCollectorSecret corev1.Secret
+			if err := k8sClient.Get(ctx, types.NamespacedName{
+				Name:      "telemetry-trace-collector",
+				Namespace: "kyma-system",
+			}, &otelCollectorSecret); err != nil {
+				return err
+			}
+
+			if err := validateSecret(otelCollectorSecret, "new-secret-username", "new-secret-password"); err != nil {
+				return err
+			}
+
+			return nil
+		}, timeout, interval).Should(BeNil())
+	})
+
 })
 
-func TestMapSecret(t *testing.T) {
+func TestTracePipeline_MapSecret(t *testing.T) {
 	tests := []struct {
 		password         telemetryv1alpha1.ValueType
 		secret           corev1.Secret
@@ -303,11 +355,11 @@ func validateTracingEnvironment(deployment appsv1.Deployment) error {
 	return nil
 }
 
-func validateTracingOwnerReferencs(ownerRefernces []metav1.OwnerReference) error {
-	if len(ownerRefernces) != 1 {
-		return fmt.Errorf("unexpected number of owner references: %d", len(ownerRefernces))
+func validateTracingOwnerReferences(ownerReferences []metav1.OwnerReference) error {
+	if len(ownerReferences) != 1 {
+		return fmt.Errorf("unexpected number of owner references: %d", len(ownerReferences))
 	}
-	ownerReference := ownerRefernces[0]
+	ownerReference := ownerReferences[0]
 
 	if ownerReference.Kind != "TracePipeline" {
 		return fmt.Errorf("unexpected owner reference type: %s", ownerReference.Kind)

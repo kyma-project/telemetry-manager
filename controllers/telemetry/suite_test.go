@@ -18,20 +18,13 @@ limitations under the License.
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"testing"
 
-	"gopkg.in/yaml.v3"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/logger"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -42,12 +35,14 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/logger"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	//+kubebuilder:scaffold:imports
 )
@@ -166,28 +161,3 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
-
-func validatePodAnnotations(deployment appsv1.Deployment) error {
-	if value, found := deployment.Spec.Template.ObjectMeta.Annotations["sidecar.istio.io/inject"]; !found || value != "false" {
-		return fmt.Errorf("istio sidecar injection for otel collector not disabled")
-	}
-
-	if value, found := deployment.Spec.Template.ObjectMeta.Annotations["checksum/config"]; !found || value == "" {
-		return fmt.Errorf("configuration hash not found in pod annotations")
-	}
-
-	return nil
-}
-
-func validateCollectorConfig(configData string) error {
-	var config config.Config
-	if err := yaml.Unmarshal([]byte(configData), &config); err != nil {
-		return err
-	}
-
-	if !config.Exporters.OTLP.TLS.Insecure {
-		return fmt.Errorf("insecure flag not set")
-	}
-
-	return nil
-}
