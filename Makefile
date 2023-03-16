@@ -140,7 +140,7 @@ K3D ?= $(LOCALBIN)/k3d
 KUSTOMIZE_VERSION ?= v5.0.0
 CONTROLLER_TOOLS_VERSION ?= v0.11.3
 K3D_VERSION ?= v5.4.7
-GINKGO_VERSION ?= v2.9.0
+GINKGO_VERSION ?= v2.9.1
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
