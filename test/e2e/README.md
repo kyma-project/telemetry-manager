@@ -11,7 +11,7 @@ Tracing tests deploy a `TracePipeline`, which ships traces to a mock backend. Th
 
 In order to send, receive, and analyze traces, the test must expose internal in-cluster services. Currently, it's done using `NodePort` services and k3d host port mapping. 
 This approach is very easy to implement. However, it has a few major drawbacks and must be rethought:
-* `NodePort` service exposure will only work on k3d and not on public cloud (Gardener)
+* `NodePort` service exposure will only work on k3d and not on public cloud (Gardener).
 * One has to always keep a mind map with port map in their head. For every new internal service, a few places in the code have to be updated
 
 #### Port Mapping
