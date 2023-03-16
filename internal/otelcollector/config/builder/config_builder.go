@@ -31,7 +31,7 @@ func MakeExporterConfig(output *telemetryv1alpha1.OtlpOutput, insecureOutput boo
 	outputType := GetOutputType(output)
 	headers := makeHeaders(output)
 	otlpExporterConfig := config.OTLPExporterConfig{
-		Endpoint: fmt.Sprintf("${%s}", "OTLP_ENDPOINT"),
+		Endpoint: resolveValue(output.Endpoint, fmt.Sprintf("${%s}", "OTLP_ENDPOINT")),
 		Headers:  headers,
 		TLS: config.TLSConfig{
 			Insecure: insecureOutput,
@@ -70,4 +70,11 @@ func MakeExtensionConfig() config.ExtensionsConfig {
 			Endpoint: "${MY_POD_IP}:13133",
 		},
 	}
+}
+
+func resolveValue(value telemetryv1alpha1.ValueType, envVar string) string {
+	if value.Value != "" {
+		return value.Value
+	}
+	return envVar
 }

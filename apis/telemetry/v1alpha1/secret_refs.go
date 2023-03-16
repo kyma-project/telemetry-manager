@@ -47,7 +47,7 @@ func getRefsInOtlpOutput(otlpOut *OtlpOutput, pipelineName string) []field.Descr
 
 	if otlpOut.Endpoint.ValueFrom != nil && otlpOut.Endpoint.ValueFrom.IsSecretKeyRef() {
 		result = append(result, field.Descriptor{
-			TargetSecretKey:       otlpOut.Endpoint.ValueFrom.SecretKeyRef.Name,
+			TargetSecretKey:       "OTLP_ENDPOINT",
 			SourceSecretName:      otlpOut.Endpoint.ValueFrom.SecretKeyRef.Name,
 			SourceSecretNamespace: otlpOut.Endpoint.ValueFrom.SecretKeyRef.Namespace,
 			SourceSecretKey:       otlpOut.Endpoint.ValueFrom.SecretKeyRef.Key,
@@ -59,6 +59,7 @@ func getRefsInOtlpOutput(otlpOut *OtlpOutput, pipelineName string) []field.Descr
 		result = appendIfSecretRef(result, pipelineName, otlpOut.Authentication.Basic.Password)
 	}
 
+	// TODO test header
 	for _, header := range otlpOut.Headers {
 		result = appendIfSecretRef(result, pipelineName, header.ValueType)
 	}

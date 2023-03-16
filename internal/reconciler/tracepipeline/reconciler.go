@@ -221,7 +221,7 @@ func appendAuthHeaderIfNeeded(secretData map[string][]byte, pipelineName string,
 			secretKeyRef := basicAuth.Password.ValueFrom.SecretKeyRef
 			basicAuthPassword = string(secretData[envvar.FormatEnvVarName(pipelineName, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key)])
 		}
-		secretData["Authorization"] = []byte(getBasicAuthHeader(basicAuthUser, basicAuthPassword))
+		secretData["BASIC_AUTH_HEADER"] = []byte(getBasicAuthHeader(basicAuthUser, basicAuthPassword))
 	}
 
 	return secretData
