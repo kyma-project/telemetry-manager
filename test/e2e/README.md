@@ -16,3 +16,8 @@ This approach is very easy to implement. However it has a few major drawbacks an
 
 #### Port Mapping
 
+| Service                        | Container Port | Service Port | Node Port | Host Port |
+|--------------------------------|----------------|--------------|-----------|-----------|
+ | Trace collector OTLP (grpc)    | 4317           | 4317         | 30017     | 4317      |
+ | Trace collector metrics (http) | 8888           | 8888         | 30088     | 8888      |    
+| Webservice (http)              | 80             | 80           | 30090     | 9090      | 
