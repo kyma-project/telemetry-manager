@@ -1,6 +1,8 @@
 package builder
 
 import (
+	"context"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -40,8 +42,10 @@ func TestMakeExporterConfig(t *testing.T) {
 		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	exporterConfig := MakeExporterConfig(output, false)
+	exporterConfig, envVars, err := MakeOTLPExporterConfig(context.Background(), fake.NewClientBuilder().Build(), output)
+	require.NoError(t, err)
 	require.NotNil(t, exporterConfig)
+	require.Nil(t, envVars)
 
 	require.True(t, exporterConfig.OTLP.SendingQueue.Enabled)
 	require.Equal(t, 512, exporterConfig.OTLP.SendingQueue.QueueSize)
@@ -68,8 +72,10 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 		Headers:  headers,
 	}
 
-	exporterConfig := MakeExporterConfig(output, false)
+	exporterConfig, envVars, err := MakeOTLPExporterConfig(context.Background(), fake.NewClientBuilder().Build(), output)
+	require.NoError(t, err)
 	require.NotNil(t, exporterConfig)
+	require.Nil(t, envVars)
 
 	require.Equal(t, 1, len(exporterConfig.OTLP.Headers))
 	require.Equal(t, "${HEADER_AUTHORIZATION}", exporterConfig.OTLP.Headers["Authorization"])

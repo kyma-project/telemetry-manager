@@ -1,13 +1,14 @@
 package metricpipeline
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
-
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
@@ -39,23 +40,31 @@ var (
 )
 
 func TestMakeCollectorConfigEndpoint(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(metricPipeline, false)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, metricPipeline)
+	require.NoError(t, err)
 	expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT")
 	require.Equal(t, expectedEndpoint, collectorConfig.Exporters.OTLP.Endpoint)
 }
 
 func TestMakeCollectorConfigSecure(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(metricPipeline, false)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, metricPipeline)
+	require.NoError(t, err)
 	require.False(t, collectorConfig.Exporters.OTLP.TLS.Insecure)
 }
 
 func TestMakeCollectorConfigInsecure(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(metricPipeline, true)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, metricPipeline)
+	require.NoError(t, err)
 	require.True(t, collectorConfig.Exporters.OTLP.TLS.Insecure)
 }
 
 func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(metricPipelineWithBasicAuth, false)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, metricPipelineWithBasicAuth)
+	require.NoError(t, err)
 	headers := collectorConfig.Exporters.OTLP.Headers
 
 	authHeader, existing := headers["Authorization"]
@@ -218,7 +227,10 @@ service:
   - health_check
 `
 
-	collectorConfig := makeOtelCollectorConfig(metricPipeline, true)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, metricPipeline)
+	require.NoError(t, err)
+
 	yamlBytes, err := yaml.Marshal(collectorConfig)
 
 	require.NoError(t, err)

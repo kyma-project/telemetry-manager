@@ -18,26 +18,19 @@ package tracepipeline
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
-	"strings"
-
-	corev1 "k8s.io/api/core/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
-
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 //go:generate mockery --name DeploymentProber --filename deployment_prober.go
@@ -136,13 +129,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
-	var secretData map[string][]byte
-	if secretData, err = secretref.FetchReferencedSecretData(ctx, r, pipeline); err != nil {
-		return err
+	collectorConfig, envVars, err := makeOtelCollectorConfig(ctx, r, pipeline.Spec.Output)
+	if err != nil {
+		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}
-	secretData = appendAuthHeaderIfNeeded(secretData, pipeline.Name, pipeline.Spec.Output.Otlp)
 
-	secret := collectorresources.MakeSecret(r.config, secretData)
+	secret := collectorresources.MakeSecret(r.config, envVars)
 	if err = controllerutil.SetControllerReference(pipeline, secret, r.Scheme()); err != nil {
 		return err
 	}
@@ -150,11 +142,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	endpoint := getEndpoint(secretData, pipeline.Spec.Output.Otlp)
-	isInsecure := isInsecureOutput(endpoint)
-
-	collectorConfig := makeOtelCollectorConfig(pipeline.Spec.Output, isInsecure)
-	configMap := collectorresources.MakeConfigMap(r.config, collectorConfig)
+	configMap := collectorresources.MakeConfigMap(r.config, *collectorConfig)
 	if err = controllerutil.SetControllerReference(pipeline, configMap, r.Scheme()); err != nil {
 		return err
 	}
@@ -196,46 +184,4 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	return nil
-}
-
-func isInsecureOutput(endpoint string) bool {
-	return len(strings.TrimSpace(endpoint)) > 0 && strings.HasPrefix(endpoint, "http://")
-}
-
-// TODO: move common otlp logic to dedicated package
-func appendAuthHeaderIfNeeded(secretData map[string][]byte, pipelineName string, output *telemetryv1alpha1.OtlpOutput) map[string][]byte {
-	if output.Authentication != nil && output.Authentication.Basic.IsDefined() {
-		basicAuth := output.Authentication.Basic
-		var basicAuthUser string
-		var basicAuthPassword string
-		if basicAuth.User.Value != "" {
-			basicAuthUser = basicAuth.User.Value
-		} else {
-			secretKeyRef := basicAuth.User.ValueFrom.SecretKeyRef
-			basicAuthUser = string(secretData[envvar.FormatEnvVarName(pipelineName, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key)])
-		}
-
-		if basicAuth.Password.Value != "" {
-			basicAuthPassword = basicAuth.Password.Value
-		} else {
-			secretKeyRef := basicAuth.Password.ValueFrom.SecretKeyRef
-			basicAuthPassword = string(secretData[envvar.FormatEnvVarName(pipelineName, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key)])
-		}
-		secretData["BASIC_AUTH_HEADER"] = []byte(getBasicAuthHeader(basicAuthUser, basicAuthPassword))
-	}
-
-	return secretData
-}
-
-func getEndpoint(secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput) string {
-	if output.Endpoint.Value != "" {
-		return output.Endpoint.Value
-	}
-
-	return string(secretData["OTLP_ENDPOINT"])
-
-}
-
-func getBasicAuthHeader(username string, password string) string {
-	return fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(username+":"+password)))
 }

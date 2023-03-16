@@ -1,81 +1,57 @@
 package v1alpha1
 
-import (
-	"github.com/kyma-project/telemetry-manager/internal/field"
-	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
-)
-
-func (lp *LogPipeline) GetSecretRefs() []field.Descriptor {
-	var fields []field.Descriptor
+func (lp *LogPipeline) GetSecretRefs() []SecretKeyRef {
+	var refs []SecretKeyRef
 
 	for _, v := range lp.Spec.Variables {
 		if !v.ValueFrom.IsSecretKeyRef() {
 			continue
 		}
 
-		fields = append(fields, field.Descriptor{
-			TargetSecretKey:       v.Name,
-			SourceSecretName:      v.ValueFrom.SecretKeyRef.Name,
-			SourceSecretNamespace: v.ValueFrom.SecretKeyRef.Namespace,
-			SourceSecretKey:       v.ValueFrom.SecretKeyRef.Key,
-		})
+		refs = append(refs, *v.ValueFrom.SecretKeyRef)
 	}
 
 	output := lp.Spec.Output
 	if output.IsHTTPDefined() {
-		fields = appendIfSecretRef(fields, lp.Name, output.HTTP.Host)
-		fields = appendIfSecretRef(fields, lp.Name, output.HTTP.User)
-		fields = appendIfSecretRef(fields, lp.Name, output.HTTP.Password)
+		refs = appendIfSecretRef(refs, output.HTTP.Host)
+		refs = appendIfSecretRef(refs, output.HTTP.User)
+		refs = appendIfSecretRef(refs, output.HTTP.Password)
 	}
 	if output.IsLokiDefined() {
-		fields = appendIfSecretRef(fields, lp.Name, output.Loki.URL)
+		refs = appendIfSecretRef(refs, output.Loki.URL)
 	}
 
-	return fields
+	return refs
 }
 
-func (tp *TracePipeline) GetSecretRefs() []field.Descriptor {
-	return getRefsInOtlpOutput(tp.Spec.Output.Otlp, tp.Name)
+func (tp *TracePipeline) GetSecretRefs() []SecretKeyRef {
+	return getRefsInOtlpOutput(tp.Spec.Output.Otlp)
 }
 
-func (mp *MetricPipeline) GetSecretRefs() []field.Descriptor {
-	return getRefsInOtlpOutput(mp.Spec.Output.Otlp, mp.Name)
+func (mp *MetricPipeline) GetSecretRefs() []SecretKeyRef {
+	return getRefsInOtlpOutput(mp.Spec.Output.Otlp)
 }
 
-func getRefsInOtlpOutput(otlpOut *OtlpOutput, pipelineName string) []field.Descriptor {
-	var result []field.Descriptor
+func getRefsInOtlpOutput(otlpOut *OtlpOutput) []SecretKeyRef {
+	var refs []SecretKeyRef
 
-	if otlpOut.Endpoint.ValueFrom != nil && otlpOut.Endpoint.ValueFrom.IsSecretKeyRef() {
-		result = append(result, field.Descriptor{
-			TargetSecretKey:       "OTLP_ENDPOINT",
-			SourceSecretName:      otlpOut.Endpoint.ValueFrom.SecretKeyRef.Name,
-			SourceSecretNamespace: otlpOut.Endpoint.ValueFrom.SecretKeyRef.Namespace,
-			SourceSecretKey:       otlpOut.Endpoint.ValueFrom.SecretKeyRef.Key,
-		})
-	}
+	refs = appendIfSecretRef(refs, otlpOut.Endpoint)
 
 	if otlpOut.Authentication != nil && otlpOut.Authentication.Basic.IsDefined() {
-		result = appendIfSecretRef(result, pipelineName, otlpOut.Authentication.Basic.User)
-		result = appendIfSecretRef(result, pipelineName, otlpOut.Authentication.Basic.Password)
+		refs = appendIfSecretRef(refs, otlpOut.Authentication.Basic.User)
+		refs = appendIfSecretRef(refs, otlpOut.Authentication.Basic.Password)
 	}
 
-	// TODO test header
 	for _, header := range otlpOut.Headers {
-		result = appendIfSecretRef(result, pipelineName, header.ValueType)
+		refs = appendIfSecretRef(refs, header.ValueType)
 	}
 
-	return result
+	return refs
 }
 
-func appendIfSecretRef(fields []field.Descriptor, pipelineName string, valueType ValueType) []field.Descriptor {
+func appendIfSecretRef(secretKeyRefs []SecretKeyRef, valueType ValueType) []SecretKeyRef {
 	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.IsSecretKeyRef() {
-		secretKeyRef := *valueType.ValueFrom.SecretKeyRef
-		fields = append(fields, field.Descriptor{
-			TargetSecretKey:       envvar.FormatEnvVarName(pipelineName, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key),
-			SourceSecretName:      valueType.ValueFrom.SecretKeyRef.Name,
-			SourceSecretNamespace: valueType.ValueFrom.SecretKeyRef.Namespace,
-			SourceSecretKey:       valueType.ValueFrom.SecretKeyRef.Key,
-		})
+		secretKeyRefs = append(secretKeyRefs, *valueType.ValueFrom.SecretKeyRef)
 	}
-	return fields
+	return secretKeyRefs
 }

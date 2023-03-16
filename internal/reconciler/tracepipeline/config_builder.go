@@ -1,11 +1,35 @@
 package tracepipeline
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
+	"context"
+	"fmt"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	configbuilder "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func makeOtelCollectorConfig(ctx context.Context, c client.Reader, output v1alpha1.TracePipelineOutput) (*config.Config, configbuilder.EnvVars, error) {
+	exporterConfig, envVars, err := configbuilder.MakeOTLPExporterConfig(ctx, c, output.Otlp)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to make exporter config: %v", err)
+	}
+
+	outputType := configbuilder.GetOutputType(output.Otlp)
+	receiverConfig := makeReceiverConfig()
+	processorsConfig := makeProcessorsConfig()
+	serviceConfig := makeServiceConfig(outputType)
+	extensionConfig := configbuilder.MakeExtensionConfig()
+
+	return &config.Config{
+		Exporters:  *exporterConfig,
+		Receivers:  receiverConfig,
+		Processors: processorsConfig,
+		Service:    serviceConfig,
+		Extensions: extensionConfig,
+	}, envVars, nil
+}
 
 func makeReceiverConfig() config.ReceiverConfig {
 	return config.ReceiverConfig{
@@ -133,22 +157,5 @@ func makeServiceConfig(outputType string) config.OTLPServiceConfig {
 			},
 		},
 		Extensions: []string{"health_check"},
-	}
-}
-
-func makeOtelCollectorConfig(output v1alpha1.TracePipelineOutput, isInsecureOutput bool) config.Config {
-	exporterConfig := builder.MakeExporterConfig(output.Otlp, isInsecureOutput)
-	outputType := builder.GetOutputType(output.Otlp)
-	processorsConfig := makeProcessorsConfig()
-	receiverConfig := makeReceiverConfig()
-	serviceConfig := makeServiceConfig(outputType)
-	extensionConfig := builder.MakeExtensionConfig()
-
-	return config.Config{
-		Receivers:  receiverConfig,
-		Exporters:  exporterConfig,
-		Processors: processorsConfig,
-		Extensions: extensionConfig,
-		Service:    serviceConfig,
 	}
 }

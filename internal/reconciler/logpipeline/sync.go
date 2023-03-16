@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
+	corev1 "k8s.io/api/core/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
-
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 type syncer struct {
@@ -125,13 +125,11 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 			continue
 		}
 
-		refSecretData, refErr := secretref.FetchReferencedSecretData(ctx, s.Client, &logPipelines.Items[i])
-		if refErr != nil {
-			return fmt.Errorf("unable to fetch referenced secret data: %w", refErr)
-		}
-
-		for k, v := range refSecretData {
-			newSecret.Data[k] = v
+		for _, ref := range logPipelines.Items[i].GetSecretRefs() {
+			targetKey := envvar.FormatEnvVarName(logPipelines.Items[i].Name, ref.Namespace, ref.Name, ref.Key)
+			if copyErr := s.copySecretData(ctx, ref, targetKey, newSecret.Data); copyErr != nil {
+				return fmt.Errorf("unable to copy secret data: %w", copyErr)
+			}
 		}
 	}
 
@@ -144,6 +142,23 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 		return fmt.Errorf("unable to update env secret: %w", err)
 	}
 	return nil
+}
+
+func (s *syncer) copySecretData(ctx context.Context, sourceRef telemetryv1alpha1.SecretKeyRef, targetKey string, target map[string][]byte) error {
+	var source corev1.Secret
+	if err := s.Get(ctx, sourceRef.NamespacedName(), &source); err != nil {
+		return fmt.Errorf("unable to read secret '%s' from namespace '%s': %w", sourceRef.Name, sourceRef.Namespace, err)
+	}
+
+	if val, found := source.Data[sourceRef.Key]; found {
+		target[targetKey] = val
+		return nil
+	}
+
+	return fmt.Errorf("unable to find key '%s' in secret '%s' from namespace '%s'",
+		sourceRef.Key,
+		sourceRef.Name,
+		sourceRef.Namespace)
 }
 
 func secretDataEqual(oldSecret, newSecret map[string][]byte) bool {

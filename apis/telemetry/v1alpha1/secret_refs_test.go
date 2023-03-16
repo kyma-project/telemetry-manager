@@ -5,15 +5,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/kyma-project/telemetry-manager/internal/field"
 )
 
 func TestLogPipeline_GetSecretRefs(t *testing.T) {
 	tests := []struct {
 		name     string
 		given    LogPipeline
-		expected []field.Descriptor
+		expected []SecretKeyRef
 	}{
 		{
 			name: "only variables",
@@ -36,17 +34,9 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 				},
 			},
 
-			expected: []field.Descriptor{
-				{
-					SourceSecretName: "secret-1",
-					SourceSecretKey:  "password",
-					TargetSecretKey:  "password-1",
-				},
-				{
-					SourceSecretName: "secret-2",
-					SourceSecretKey:  "password",
-					TargetSecretKey:  "password-2",
-				},
+			expected: []SecretKeyRef{
+				{Name: "secret-1", Key: "password"},
+				{Name: "secret-2", Key: "password"},
 			},
 		},
 		{
@@ -83,25 +73,10 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 					},
 				},
 			},
-			expected: []field.Descriptor{
-				{
-					SourceSecretName:      "creds",
-					SourceSecretNamespace: "default",
-					SourceSecretKey:       "host",
-					TargetSecretKey:       "CLS_DEFAULT_CREDS_HOST",
-				},
-				{
-					SourceSecretName:      "creds",
-					SourceSecretNamespace: "default",
-					SourceSecretKey:       "user",
-					TargetSecretKey:       "CLS_DEFAULT_CREDS_USER",
-				},
-				{
-					SourceSecretName:      "creds",
-					SourceSecretNamespace: "default",
-					SourceSecretKey:       "password",
-					TargetSecretKey:       "CLS_DEFAULT_CREDS_PASSWORD",
-				},
+			expected: []SecretKeyRef{
+				{Name: "creds", Namespace: "default", Key: "host"},
+				{Name: "creds", Namespace: "default", Key: "user"},
+				{Name: "creds", Namespace: "default", Key: "password"},
 			},
 		},
 		{
@@ -124,13 +99,8 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 					},
 				},
 			},
-			expected: []field.Descriptor{
-				{
-					SourceSecretName:      "creds",
-					SourceSecretNamespace: "default",
-					SourceSecretKey:       "url",
-					TargetSecretKey:       "LOKI_DEFAULT_CREDS_URL",
-				},
+			expected: []SecretKeyRef{
+				{Name: "creds", Namespace: "default", Key: "url"},
 			},
 		},
 		{
@@ -167,24 +137,10 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 					},
 				},
 			},
-			expected: []field.Descriptor{
-				{
-					TargetSecretKey:       "LOKI_DEFAULT_CREDS_URL",
-					SourceSecretName:      "creds",
-					SourceSecretNamespace: "default",
-					SourceSecretKey:       "url",
-				},
-				{
-					TargetSecretKey:  "password-1",
-					SourceSecretName: "secret-1",
-					SourceSecretKey:  "password",
-				},
-
-				{
-					SourceSecretName: "secret-2",
-					SourceSecretKey:  "password",
-					TargetSecretKey:  "password-2",
-				},
+			expected: []SecretKeyRef{
+				{Name: "creds", Namespace: "default", Key: "url"},
+				{Name: "secret-1", Key: "password"},
+				{Name: "secret-2", Key: "password"},
 			},
 		},
 	}
@@ -202,7 +158,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 		name         string
 		given        OtlpOutput
 		pipelineName string
-		expected     []field.Descriptor
+		expected     []SecretKeyRef
 	}{
 		{
 			name:         "only endpoint",
@@ -218,12 +174,8 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 				},
 			},
 
-			expected: []field.Descriptor{
-				{
-					TargetSecretKey:  "secret-1",
-					SourceSecretName: "secret-1",
-					SourceSecretKey:  "endpoint",
-				},
+			expected: []SecretKeyRef{
+				{Name: "secret-1", Key: "endpoint"},
 			},
 		},
 		{
@@ -268,25 +220,10 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 				},
 			},
 
-			expected: []field.Descriptor{
-				{
-					TargetSecretKey:       "TEST_PIPELINE_DEFAULT_SECRET_1_USER",
-					SourceSecretNamespace: "default",
-					SourceSecretName:      "secret-1",
-					SourceSecretKey:       "user",
-				},
-				{
-					TargetSecretKey:       "TEST_PIPELINE_DEFAULT_SECRET_2_PASSWORD",
-					SourceSecretNamespace: "default",
-					SourceSecretName:      "secret-2",
-					SourceSecretKey:       "password",
-				},
-				{
-					TargetSecretKey:       "TEST_PIPELINE_DEFAULT_SECRET_3_MYHEADER",
-					SourceSecretNamespace: "default",
-					SourceSecretName:      "secret-3",
-					SourceSecretKey:       "myheader",
-				},
+			expected: []SecretKeyRef{
+				{Name: "secret-1", Namespace: "default", Key: "user"},
+				{Name: "secret-2", Namespace: "default", Key: "password"},
+				{Name: "secret-3", Namespace: "default", Key: "myheader"},
 			},
 		},
 	}
@@ -305,7 +242,7 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 		name         string
 		given        OtlpOutput
 		pipelineName string
-		expected     []field.Descriptor
+		expected     []SecretKeyRef
 	}{
 		{
 			name:         "only endpoint",
@@ -321,12 +258,8 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 				},
 			},
 
-			expected: []field.Descriptor{
-				{
-					TargetSecretKey:  "secret-1",
-					SourceSecretName: "secret-1",
-					SourceSecretKey:  "endpoint",
-				},
+			expected: []SecretKeyRef{
+				{Name: "secret-1", Key: "endpoint"},
 			},
 		},
 		{
@@ -371,25 +304,10 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 				},
 			},
 
-			expected: []field.Descriptor{
-				{
-					TargetSecretKey:       "TEST_PIPELINE_DEFAULT_SECRET_1_USER",
-					SourceSecretNamespace: "default",
-					SourceSecretName:      "secret-1",
-					SourceSecretKey:       "user",
-				},
-				{
-					TargetSecretKey:       "TEST_PIPELINE_DEFAULT_SECRET_2_PASSWORD",
-					SourceSecretNamespace: "default",
-					SourceSecretName:      "secret-2",
-					SourceSecretKey:       "password",
-				},
-				{
-					TargetSecretKey:       "TEST_PIPELINE_DEFAULT_SECRET_3_MYHEADER",
-					SourceSecretNamespace: "default",
-					SourceSecretName:      "secret-3",
-					SourceSecretKey:       "myheader",
-				},
+			expected: []SecretKeyRef{
+				{Name: "secret-1", Namespace: "default", Key: "user"},
+				{Name: "secret-2", Namespace: "default", Key: "password"},
+				{Name: "secret-3", Namespace: "default", Key: "myheader"},
 			},
 		},
 	}
