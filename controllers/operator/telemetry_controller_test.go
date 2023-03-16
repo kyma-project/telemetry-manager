@@ -14,7 +14,7 @@ import (
 
 var _ = Describe("Deploying a Telemetry", func() {
 	const (
-		timeout  = time.Second * 100
+		timeout  = time.Second * 10
 		interval = time.Millisecond * 250
 	)
 
@@ -53,7 +53,6 @@ var _ = Describe("Deploying a Telemetry", func() {
 })
 
 func validateStatus(status operatorv1alpha1.TelemetryStatus) error {
-	fmt.Print(status.State)
 	if status.State != operatorv1alpha1.StateReady {
 		return fmt.Errorf("unexpected state: %s", status.State)
 	}
