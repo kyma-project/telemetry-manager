@@ -44,6 +44,7 @@ import (
 	logparservalidation "github.com/kyma-project/telemetry-manager/webhook/logparser/validation"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 	logpipelinevalidation "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
+
 	//nolint:gosec
 	_ "net/http/pprof"
 
@@ -54,6 +55,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -97,10 +99,10 @@ var (
 )
 
 const (
-	otelImage              = "eu.gcr.io/kyma-project/tpi/otel-collector:0.72.0-734399a6"
+	otelImage              = "eu.gcr.io/kyma-project/tpi/otel-collector:0.73.0-a3475b24"
 	overrideConfigMapName  = "telemetry-override-config"
-	fluentBitImage         = "eu.gcr.io/kyma-project/tpi/fluent-bit:2.0.9-f89e8b78"
-	fluentBitExporterImage = "eu.gcr.io/kyma-project/directory-size-exporter:v20221020-e314a071"
+	fluentBitImage         = "eu.gcr.io/kyma-project/tpi/fluent-bit:2.0.9-a3475b24"
+	fluentBitExporterImage = "eu.gcr.io/kyma-project/directory-size-exporter:v20230308-ff6cf204"
 
 	telemetryNamespace = "kyma-system"
 
