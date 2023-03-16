@@ -19,6 +19,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"net/http"
 	"os"
 	"path"
@@ -462,6 +463,6 @@ func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
 }
 
-func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) *operatorcontrollers.Reconciler {
-	return operatorcontrollers.NewTelemetryReconciler(client, scheme, eventRecorder)
+func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) *operatorcontrollers.TelemetryReconciler {
+	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder))
 }

@@ -18,6 +18,7 @@ package operator
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
@@ -88,7 +89,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	client := mgr.GetClient()
-	telemetryReconciler := NewTelemetryReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"))
+	telemetryReconciler := telemetry.NewReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"))
 	err = telemetryReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
