@@ -20,34 +20,16 @@ data:
         protocols:
           grpc: {}
           http: {}
-      prometheus:
-        config:
-          scrape_configs:
-            # scrape collector itself
-            - job_name: mock-metric-receiver
-              scrape_interval: 5s
-              static_configs:
-                - targets:
-                    - localhost:8888
     exporters:
       logging:
-        verbosity: normal
-      otlp:
-        endpoint: telemetry-otlp-metrics.kyma-system.svc.cluster.local:4317
-        tls:
-          insecure: true
+        loglevel: debug
     service:
       pipelines:
         metrics:
           receivers:
             - otlp
-            - prometheus
           exporters:
             - logging
-            - otlp
-      telemetry:
-        metrics:
-          address: :8888
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -116,10 +98,4 @@ spec:
   output:
     otlp:
       endpoint:
-        value: ingest-metrics-otlp-sf-a7ac93be-d8bd-43d1-b85a-dcf3bf46c470.cls-01.cloud.logs.services.sap.hana.ondemand.com:443
-      authentication:
-        basic:
-          password:
-            value: "XLAYeWcJdJsjxQNcrVKCDSS"
-          user:
-            value: "JHHYQVlmLm"
+        value: http://mock-metric-receiver.metric-receiver:4317
