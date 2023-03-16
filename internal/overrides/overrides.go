@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/kyma-project/telemetry-manager/internal/logger"
 )
 
 type LogLevelChanger interface {

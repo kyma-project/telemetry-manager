@@ -43,18 +43,14 @@ func TestReferencesNonExistentSecret_Success(t *testing.T) {
 	getter := mockGetter{
 		refs: []field.Descriptor{
 			{
-				SecretKeyRef: field.SecretKeyRef{
-					Name:      "my-secret1",
-					Namespace: "default",
-					Key:       "myKey1",
-				},
+				SourceSecretName:      "my-secret1",
+				SourceSecretNamespace: "default",
+				SourceSecretKey:       "myKey1",
 			},
 			{
-				SecretKeyRef: field.SecretKeyRef{
-					Name:      "my-secret2",
-					Namespace: "default",
-					Key:       "myKey2",
-				},
+				SourceSecretName:      "my-secret2",
+				SourceSecretNamespace: "default",
+				SourceSecretKey:       "myKey2",
 			},
 		},
 	}
@@ -79,18 +75,14 @@ func TestReferencesNonExistentSecret_SecretNotPresent(t *testing.T) {
 	getter := mockGetter{
 		refs: []field.Descriptor{
 			{
-				SecretKeyRef: field.SecretKeyRef{
-					Name:      "my-secret1",
-					Namespace: "default",
-					Key:       "myKey1",
-				},
+				SourceSecretName:      "my-secret1",
+				SourceSecretNamespace: "default",
+				SourceSecretKey:       "myKey1",
 			},
 			{
-				SecretKeyRef: field.SecretKeyRef{
-					Name:      "my-secret2",
-					Namespace: "default",
-					Key:       "myKey2",
-				},
+				SourceSecretName:      "my-secret2",
+				SourceSecretNamespace: "default",
+				SourceSecretKey:       "myKey2",
 			},
 		},
 	}
@@ -115,11 +107,9 @@ func TestReferencesNonExistentSecret_KeyNotPresent(t *testing.T) {
 	getter := mockGetter{
 		refs: []field.Descriptor{
 			{
-				SecretKeyRef: field.SecretKeyRef{
-					Name:      "my-secret1",
-					Namespace: "default",
-					Key:       "wrongKey",
-				},
+				SourceSecretName:      "my-secret1",
+				SourceSecretNamespace: "default",
+				SourceSecretKey:       "wrongKey",
 			},
 		},
 	}
@@ -134,11 +124,9 @@ func TestReferencesSecret_Success(t *testing.T) {
 	getter := mockGetter{
 		refs: []field.Descriptor{
 			{
-				SecretKeyRef: field.SecretKeyRef{
-					Name:      "my-secret1",
-					Namespace: "default",
-					Key:       "myKey",
-				},
+				SourceSecretName:      "my-secret1",
+				SourceSecretNamespace: "default",
+				SourceSecretKey:       "myKey",
 			},
 		},
 	}
@@ -151,11 +139,9 @@ func TestReferencesSecret_WrongName(t *testing.T) {
 	getter := mockGetter{
 		refs: []field.Descriptor{
 			{
-				SecretKeyRef: field.SecretKeyRef{
-					Name:      "my-secret1",
-					Namespace: "default",
-					Key:       "myKey",
-				},
+				SourceSecretName:      "my-secret1",
+				SourceSecretNamespace: "default",
+				SourceSecretKey:       "myKey",
 			},
 		},
 	}
@@ -168,11 +154,10 @@ func TestReferencesSecret_WrongNamespace(t *testing.T) {
 	getter := mockGetter{
 		refs: []field.Descriptor{
 			{
-				SecretKeyRef: field.SecretKeyRef{
-					Name:      "my-secret1",
-					Namespace: "default",
-					Key:       "myKey",
-				},
+
+				SourceSecretName:      "my-secret1",
+				SourceSecretNamespace: "default",
+				SourceSecretKey:       "myKey",
 			},
 		},
 	}
@@ -215,20 +200,16 @@ func TestFetchReferencedSecretData_Success(t *testing.T) {
 	getter := mockGetter{
 		refs: []field.Descriptor{
 			{
-				TargetSecretKey: "myKey1",
-				SecretKeyRef: field.SecretKeyRef{
-					Name:      "my-secret1",
-					Namespace: "default",
-					Key:       "myKey1",
-				},
+				TargetSecretKey:       "myKey1",
+				SourceSecretName:      "my-secret1",
+				SourceSecretNamespace: "default",
+				SourceSecretKey:       "myKey1",
 			},
 			{
-				TargetSecretKey: "myKey2",
-				SecretKeyRef: field.SecretKeyRef{
-					Name:      "my-secret2",
-					Namespace: "default",
-					Key:       "myKey2",
-				},
+				TargetSecretKey:       "myKey2",
+				SourceSecretName:      "my-secret2",
+				SourceSecretNamespace: "default",
+				SourceSecretKey:       "myKey2",
 			},
 		},
 	}
@@ -247,12 +228,10 @@ func TestFetchReferencedSecretData_SecretDoesNotExist(t *testing.T) {
 	getter := mockGetter{
 		refs: []field.Descriptor{
 			{
-				TargetSecretKey: "my-secret1",
-				SecretKeyRef: field.SecretKeyRef{
-					Name:      "my-secret1",
-					Namespace: "default",
-					Key:       "myKey1",
-				},
+				TargetSecretKey:       "my-secret1",
+				SourceSecretName:      "my-secret1",
+				SourceSecretNamespace: "default",
+				SourceSecretKey:       "myKey1",
 			},
 		},
 	}
@@ -278,12 +257,10 @@ func TestFetchReferencedSecretData_SecretKeyDoesNotExist(t *testing.T) {
 	getter := mockGetter{
 		refs: []field.Descriptor{
 			{
-				TargetSecretKey: "my-secret1",
-				SecretKeyRef: field.SecretKeyRef{
-					Name:      "my-secret1",
-					Namespace: "default",
-					Key:       "wrong-key",
-				},
+				TargetSecretKey:       "my-secret1",
+				SourceSecretName:      "my-secret1",
+				SourceSecretNamespace: "default",
+				SourceSecretKey:       "wrong-key",
 			},
 		},
 	}
@@ -292,188 +269,3 @@ func TestFetchReferencedSecretData_SecretKeyDoesNotExist(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, fetchedData)
 }
-
-//
-//func TestFetchDataForOtlpOutputFromSecret(t *testing.T) {
-//	data := map[string][]byte{
-//		"user":     []byte("secret-username"),
-//		"password": []byte("secret-password"),
-//		"endpoint": []byte("secret-endpoint"),
-//		"token":    []byte("Bearer 123"),
-//		"test":     []byte("123"),
-//	}
-//	secret := corev1.Secret{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "my-secret",
-//			Namespace: "default",
-//		},
-//		Data: data,
-//	}
-//	client := fake.NewClientBuilder().WithObjects(&secret).Build()
-//
-//	pipeline := telemetryv1alpha1.TracePipeline{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name: "pipeline",
-//		},
-//		Spec: telemetryv1alpha1.TracePipelineSpec{
-//			Output: telemetryv1alpha1.TracePipelineOutput{
-//				Otlp: &telemetryv1alpha1.OtlpOutput{
-//					Endpoint: telemetryv1alpha1.ValueType{
-//						ValueFrom: &telemetryv1alpha1.ValueFromSource{
-//							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-//								Name:      "my-secret",
-//								Namespace: "default",
-//								Key:       "endpoint",
-//							},
-//						},
-//					},
-//					Authentication: &telemetryv1alpha1.AuthenticationOptions{
-//						Basic: &telemetryv1alpha1.BasicAuthOptions{
-//							User: telemetryv1alpha1.ValueType{
-//								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-//									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-//										Name:      "my-secret",
-//										Namespace: "default",
-//										Key:       "user",
-//									},
-//								},
-//							},
-//							Password: telemetryv1alpha1.ValueType{
-//								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-//									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-//										Name:      "my-secret",
-//										Namespace: "default",
-//										Key:       "password",
-//									},
-//								},
-//							},
-//						},
-//					},
-//					Headers: []telemetryv1alpha1.Header{
-//						{
-//							Name: "Authorization",
-//							ValueType: telemetryv1alpha1.ValueType{
-//								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-//									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-//										Name:      "my-secret",
-//										Namespace: "default",
-//										Key:       "token",
-//									},
-//								},
-//							},
-//						},
-//						{
-//							Name: "Test",
-//							ValueType: telemetryv1alpha1.ValueType{
-//								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-//									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-//										Name:      "my-secret",
-//										Namespace: "default",
-//										Key:       "test",
-//									},
-//								},
-//							},
-//						},
-//					},
-//				},
-//			},
-//		},
-//	}
-//
-//	data, err := FetchReferencedSecretData(context.TODO(), client, pipeline.Spec.Output.Otlp)
-//	require.NoError(t, err)
-//	require.Contains(t, data, OtlpEndpointVariable)
-//	require.Equal(t, string(data[OtlpEndpointVariable]), "secret-endpoint")
-//	require.Contains(t, data, BasicAuthHeaderVariable)
-//	require.Contains(t, data, "HEADER_AUTHORIZATION")
-//	require.Contains(t, data, "HEADER_TEST")
-//	require.Equal(t, string(data[BasicAuthHeaderVariable]), getBasicAuthHeader("secret-username", "secret-password"))
-//}
-//
-//func TestFetchDataForOtlpOutputFromSecretWithMissingKey(t *testing.T) {
-//	data := map[string][]byte{
-//		"user":     []byte("secret-username"),
-//		"password": []byte("secret-password"),
-//	}
-//	secret := corev1.Secret{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "my-secret",
-//			Namespace: "default",
-//		},
-//		Data: data,
-//	}
-//	client := fake.NewClientBuilder().WithObjects(&secret).Build()
-//
-//	pipeline := telemetryv1alpha1.TracePipeline{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name: "pipeline",
-//		},
-//		Spec: telemetryv1alpha1.TracePipelineSpec{
-//			Output: telemetryv1alpha1.TracePipelineOutput{
-//				Otlp: &telemetryv1alpha1.OtlpOutput{
-//					Endpoint: telemetryv1alpha1.ValueType{
-//						ValueFrom: &telemetryv1alpha1.ValueFromSource{
-//							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-//								Name:      "my-secret",
-//								Namespace: "default",
-//								Key:       "endpoint",
-//							},
-//						},
-//					},
-//					Authentication: &telemetryv1alpha1.AuthenticationOptions{
-//						Basic: &telemetryv1alpha1.BasicAuthOptions{
-//							User: telemetryv1alpha1.ValueType{
-//								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-//									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-//										Name:      "my-secret",
-//										Namespace: "default",
-//										Key:       "user",
-//									},
-//								},
-//							},
-//							Password: telemetryv1alpha1.ValueType{
-//								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-//									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-//										Name:      "my-secret",
-//										Namespace: "default",
-//										Key:       "password",
-//									},
-//								},
-//							},
-//						},
-//					},
-//				},
-//			},
-//		},
-//	}
-//
-//	_, err := FetchReferencedSecretData(context.TODO(), client, pipeline.Spec.Output.Otlp)
-//	require.Error(t, err)
-//}
-//
-//func TestFetchDataForOtlpOutputSecretDataFromNonExistingSecret(t *testing.T) {
-//	client := fake.NewClientBuilder().Build()
-//	pipeline := telemetryv1alpha1.TracePipeline{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name: "pipeline",
-//		},
-//		Spec: telemetryv1alpha1.TracePipelineSpec{
-//			Output: telemetryv1alpha1.TracePipelineOutput{
-//				Otlp: &telemetryv1alpha1.OtlpOutput{
-//					Endpoint: telemetryv1alpha1.ValueType{
-//						ValueFrom: &telemetryv1alpha1.ValueFromSource{
-//							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-//								Name:      "my-secret",
-//								Namespace: "default",
-//								Key:       "myKey",
-//							},
-//						},
-//					},
-//				},
-//			},
-//		},
-//	}
-//
-//	_, err := FetchReferencedSecretData(context.TODO(), client, pipeline.Spec.Output.Otlp)
-//	require.Error(t, err)
-//}

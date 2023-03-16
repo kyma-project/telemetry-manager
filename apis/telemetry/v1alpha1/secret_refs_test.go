@@ -38,12 +38,14 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 
 			expected: []field.Descriptor{
 				{
-					SecretKeyRef:    field.SecretKeyRef{Name: "secret-1", Key: "password"},
-					TargetSecretKey: "password-1",
+					SourceSecretName: "secret-1",
+					SourceSecretKey:  "password",
+					TargetSecretKey:  "password-1",
 				},
 				{
-					SecretKeyRef:    field.SecretKeyRef{Name: "secret-2", Key: "password"},
-					TargetSecretKey: "password-2",
+					SourceSecretName: "secret-2",
+					SourceSecretKey:  "password",
+					TargetSecretKey:  "password-2",
 				},
 			},
 		},
@@ -83,16 +85,22 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 			},
 			expected: []field.Descriptor{
 				{
-					SecretKeyRef:    field.SecretKeyRef{Name: "creds", Namespace: "default", Key: "host"},
-					TargetSecretKey: "CLS_DEFAULT_CREDS_HOST",
+					SourceSecretName:      "creds",
+					SourceSecretNamespace: "default",
+					SourceSecretKey:       "host",
+					TargetSecretKey:       "CLS_DEFAULT_CREDS_HOST",
 				},
 				{
-					SecretKeyRef:    field.SecretKeyRef{Name: "creds", Namespace: "default", Key: "user"},
-					TargetSecretKey: "CLS_DEFAULT_CREDS_USER",
+					SourceSecretName:      "creds",
+					SourceSecretNamespace: "default",
+					SourceSecretKey:       "user",
+					TargetSecretKey:       "CLS_DEFAULT_CREDS_USER",
 				},
 				{
-					SecretKeyRef:    field.SecretKeyRef{Name: "creds", Namespace: "default", Key: "password"},
-					TargetSecretKey: "CLS_DEFAULT_CREDS_PASSWORD",
+					SourceSecretName:      "creds",
+					SourceSecretNamespace: "default",
+					SourceSecretKey:       "password",
+					TargetSecretKey:       "CLS_DEFAULT_CREDS_PASSWORD",
 				},
 			},
 		},
@@ -118,8 +126,10 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 			},
 			expected: []field.Descriptor{
 				{
-					SecretKeyRef:    field.SecretKeyRef{Name: "creds", Namespace: "default", Key: "url"},
-					TargetSecretKey: "LOKI_DEFAULT_CREDS_URL",
+					SourceSecretName:      "creds",
+					SourceSecretNamespace: "default",
+					SourceSecretKey:       "url",
+					TargetSecretKey:       "LOKI_DEFAULT_CREDS_URL",
 				},
 			},
 		},
@@ -159,16 +169,21 @@ func TestLogPipeline_GetSecretRefs(t *testing.T) {
 			},
 			expected: []field.Descriptor{
 				{
-					SecretKeyRef:    field.SecretKeyRef{Name: "creds", Namespace: "default", Key: "url"},
-					TargetSecretKey: "LOKI_DEFAULT_CREDS_URL",
+					TargetSecretKey:       "LOKI_DEFAULT_CREDS_URL",
+					SourceSecretName:      "creds",
+					SourceSecretNamespace: "default",
+					SourceSecretKey:       "url",
 				},
 				{
-					SecretKeyRef:    field.SecretKeyRef{Name: "secret-1", Key: "password"},
-					TargetSecretKey: "password-1",
+					TargetSecretKey:  "password-1",
+					SourceSecretName: "secret-1",
+					SourceSecretKey:  "password",
 				},
+
 				{
-					SecretKeyRef:    field.SecretKeyRef{Name: "secret-2", Key: "password"},
-					TargetSecretKey: "password-2",
+					SourceSecretName: "secret-2",
+					SourceSecretKey:  "password",
+					TargetSecretKey:  "password-2",
 				},
 			},
 		},
@@ -205,11 +220,9 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 
 			expected: []field.Descriptor{
 				{
-					TargetSecretKey: "secret-1",
-					SecretKeyRef: field.SecretKeyRef{
-						Name: "secret-1",
-						Key:  "endpoint",
-					},
+					TargetSecretKey:  "secret-1",
+					SourceSecretName: "secret-1",
+					SourceSecretKey:  "endpoint",
 				},
 			},
 		},
@@ -257,28 +270,22 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 
 			expected: []field.Descriptor{
 				{
-					TargetSecretKey: "TEST_PIPELINE_DEFAULT_SECRET_1_USER",
-					SecretKeyRef: field.SecretKeyRef{
-						Namespace: "default",
-						Name:      "secret-1",
-						Key:       "user",
-					},
+					TargetSecretKey:       "TEST_PIPELINE_DEFAULT_SECRET_1_USER",
+					SourceSecretNamespace: "default",
+					SourceSecretName:      "secret-1",
+					SourceSecretKey:       "user",
 				},
 				{
-					TargetSecretKey: "TEST_PIPELINE_DEFAULT_SECRET_2_PASSWORD",
-					SecretKeyRef: field.SecretKeyRef{
-						Namespace: "default",
-						Name:      "secret-2",
-						Key:       "password",
-					},
+					TargetSecretKey:       "TEST_PIPELINE_DEFAULT_SECRET_2_PASSWORD",
+					SourceSecretNamespace: "default",
+					SourceSecretName:      "secret-2",
+					SourceSecretKey:       "password",
 				},
 				{
-					TargetSecretKey: "TEST_PIPELINE_DEFAULT_SECRET_3_MYHEADER",
-					SecretKeyRef: field.SecretKeyRef{
-						Namespace: "default",
-						Name:      "secret-3",
-						Key:       "myheader",
-					},
+					TargetSecretKey:       "TEST_PIPELINE_DEFAULT_SECRET_3_MYHEADER",
+					SourceSecretNamespace: "default",
+					SourceSecretName:      "secret-3",
+					SourceSecretKey:       "myheader",
 				},
 			},
 		},
@@ -316,11 +323,9 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 
 			expected: []field.Descriptor{
 				{
-					TargetSecretKey: "secret-1",
-					SecretKeyRef: field.SecretKeyRef{
-						Name: "secret-1",
-						Key:  "endpoint",
-					},
+					TargetSecretKey:  "secret-1",
+					SourceSecretName: "secret-1",
+					SourceSecretKey:  "endpoint",
 				},
 			},
 		},
@@ -368,28 +373,22 @@ func TestMetricPipeline_GetSecretRefs(t *testing.T) {
 
 			expected: []field.Descriptor{
 				{
-					TargetSecretKey: "TEST_PIPELINE_DEFAULT_SECRET_1_USER",
-					SecretKeyRef: field.SecretKeyRef{
-						Namespace: "default",
-						Name:      "secret-1",
-						Key:       "user",
-					},
+					TargetSecretKey:       "TEST_PIPELINE_DEFAULT_SECRET_1_USER",
+					SourceSecretNamespace: "default",
+					SourceSecretName:      "secret-1",
+					SourceSecretKey:       "user",
 				},
 				{
-					TargetSecretKey: "TEST_PIPELINE_DEFAULT_SECRET_2_PASSWORD",
-					SecretKeyRef: field.SecretKeyRef{
-						Namespace: "default",
-						Name:      "secret-2",
-						Key:       "password",
-					},
+					TargetSecretKey:       "TEST_PIPELINE_DEFAULT_SECRET_2_PASSWORD",
+					SourceSecretNamespace: "default",
+					SourceSecretName:      "secret-2",
+					SourceSecretKey:       "password",
 				},
 				{
-					TargetSecretKey: "TEST_PIPELINE_DEFAULT_SECRET_3_MYHEADER",
-					SecretKeyRef: field.SecretKeyRef{
-						Namespace: "default",
-						Name:      "secret-3",
-						Key:       "myheader",
-					},
+					TargetSecretKey:       "TEST_PIPELINE_DEFAULT_SECRET_3_MYHEADER",
+					SourceSecretNamespace: "default",
+					SourceSecretName:      "secret-3",
+					SourceSecretKey:       "myheader",
 				},
 			},
 		},

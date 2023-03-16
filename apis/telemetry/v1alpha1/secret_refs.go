@@ -14,12 +14,10 @@ func (lp *LogPipeline) GetSecretRefs() []field.Descriptor {
 		}
 
 		fields = append(fields, field.Descriptor{
-			TargetSecretKey: v.Name,
-			SecretKeyRef: field.SecretKeyRef{
-				Name:      v.ValueFrom.SecretKeyRef.Name,
-				Namespace: v.ValueFrom.SecretKeyRef.Namespace,
-				Key:       v.ValueFrom.SecretKeyRef.Key,
-			},
+			TargetSecretKey:       v.Name,
+			SourceSecretName:      v.ValueFrom.SecretKeyRef.Name,
+			SourceSecretNamespace: v.ValueFrom.SecretKeyRef.Namespace,
+			SourceSecretKey:       v.ValueFrom.SecretKeyRef.Key,
 		})
 	}
 
@@ -49,12 +47,10 @@ func getRefsInOtlpOutput(otlpOut *OtlpOutput, pipelineName string) []field.Descr
 
 	if otlpOut.Endpoint.ValueFrom != nil && otlpOut.Endpoint.ValueFrom.IsSecretKeyRef() {
 		result = append(result, field.Descriptor{
-			TargetSecretKey: otlpOut.Endpoint.ValueFrom.SecretKeyRef.Name,
-			SecretKeyRef: field.SecretKeyRef{
-				Name:      otlpOut.Endpoint.ValueFrom.SecretKeyRef.Name,
-				Namespace: otlpOut.Endpoint.ValueFrom.SecretKeyRef.Namespace,
-				Key:       otlpOut.Endpoint.ValueFrom.SecretKeyRef.Key,
-			},
+			TargetSecretKey:       otlpOut.Endpoint.ValueFrom.SecretKeyRef.Name,
+			SourceSecretName:      otlpOut.Endpoint.ValueFrom.SecretKeyRef.Name,
+			SourceSecretNamespace: otlpOut.Endpoint.ValueFrom.SecretKeyRef.Namespace,
+			SourceSecretKey:       otlpOut.Endpoint.ValueFrom.SecretKeyRef.Key,
 		})
 	}
 
@@ -74,14 +70,11 @@ func appendIfSecretRef(fields []field.Descriptor, pipelineName string, valueType
 	if valueType.Value == "" && valueType.ValueFrom != nil && valueType.ValueFrom.IsSecretKeyRef() {
 		secretKeyRef := *valueType.ValueFrom.SecretKeyRef
 		fields = append(fields, field.Descriptor{
-			TargetSecretKey: envvar.FormatEnvVarName(pipelineName, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key),
-			SecretKeyRef: field.SecretKeyRef{
-				Name:      valueType.ValueFrom.SecretKeyRef.Name,
-				Namespace: valueType.ValueFrom.SecretKeyRef.Namespace,
-				Key:       valueType.ValueFrom.SecretKeyRef.Key,
-			},
+			TargetSecretKey:       envvar.FormatEnvVarName(pipelineName, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key),
+			SourceSecretName:      valueType.ValueFrom.SecretKeyRef.Name,
+			SourceSecretNamespace: valueType.ValueFrom.SecretKeyRef.Namespace,
+			SourceSecretKey:       valueType.ValueFrom.SecretKeyRef.Key,
 		})
 	}
-
 	return fields
 }

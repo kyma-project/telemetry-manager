@@ -19,7 +19,7 @@ type Getter interface {
 func ReferencesNonExistentSecret(ctx context.Context, client client.Reader, getter Getter) bool {
 	refs := getter.GetSecretRefs()
 	for _, ref := range refs {
-		hasKey := checkIfSecretHasKey(ctx, client, ref.SecretKeyRef)
+		hasKey := checkIfSecretHasKey(ctx, client, ref)
 		if !hasKey {
 			return true
 		}
@@ -31,7 +31,7 @@ func ReferencesNonExistentSecret(ctx context.Context, client client.Reader, gett
 func ReferencesSecret(secretName, secretNamespace string, getter Getter) bool {
 	refs := getter.GetSecretRefs()
 	for _, ref := range refs {
-		if ref.SecretKeyRef.Name == secretName && ref.SecretKeyRef.Namespace == secretNamespace {
+		if ref.SourceSecretName == secretName && ref.SourceSecretNamespace == secretNamespace {
 			return true
 		}
 	}
@@ -44,7 +44,7 @@ func FetchReferencedSecretData(ctx context.Context, client client.Reader, getter
 
 	refs := getter.GetSecretRefs()
 	for _, ref := range refs {
-		secretValue, err := fetchSecretValue(ctx, client, ref.SecretKeyRef)
+		secretValue, err := fetchSecretValue(ctx, client, ref)
 		if err != nil {
 			return nil, err
 		}
@@ -53,28 +53,28 @@ func FetchReferencedSecretData(ctx context.Context, client client.Reader, getter
 	return secretData, nil
 }
 
-func fetchSecretValue(ctx context.Context, client client.Reader, from field.SecretKeyRef) ([]byte, error) {
+func fetchSecretValue(ctx context.Context, client client.Reader, ref field.Descriptor) ([]byte, error) {
 	var secret corev1.Secret
-	if err := client.Get(ctx, types.NamespacedName{Name: from.Name, Namespace: from.Namespace}, &secret); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Name: ref.SourceSecretName, Namespace: ref.SourceSecretNamespace}, &secret); err != nil {
 		return nil, err
 	}
 
-	if secretValue, found := secret.Data[from.Key]; found {
+	if secretValue, found := secret.Data[ref.SourceSecretKey]; found {
 		return secretValue, nil
 	}
 	return nil, fmt.Errorf("referenced key not found in Secret")
 }
 
-func checkIfSecretHasKey(ctx context.Context, client client.Reader, from field.SecretKeyRef) bool {
+func checkIfSecretHasKey(ctx context.Context, client client.Reader, ref field.Descriptor) bool {
 	log := logf.FromContext(ctx)
 
 	var secret corev1.Secret
-	if err := client.Get(ctx, types.NamespacedName{Name: from.Name, Namespace: from.Namespace}, &secret); err != nil {
-		log.V(1).Info(fmt.Sprintf("Unable to get secret '%s' from namespace '%s'", from.Name, from.Namespace))
+	if err := client.Get(ctx, types.NamespacedName{Name: ref.SourceSecretName, Namespace: ref.SourceSecretNamespace}, &secret); err != nil {
+		log.V(1).Info(fmt.Sprintf("Unable to get secret '%s' from namespace '%s'", ref.SourceSecretName, ref.SourceSecretNamespace))
 		return false
 	}
-	if _, ok := secret.Data[from.Key]; !ok {
-		log.V(1).Info(fmt.Sprintf("Unable to find key '%s' in secret '%s'", from.Key, from.Name))
+	if _, ok := secret.Data[ref.SourceSecretKey]; !ok {
+		log.V(1).Info(fmt.Sprintf("Unable to find key '%s' in secret '%s'", ref.SourceSecretKey, ref.SourceSecretName))
 		return false
 	}
 

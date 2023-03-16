@@ -39,11 +39,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 )
 
-//go:generate mockery --name DeploymentProber --filename deployment_prober.go
-type DeploymentProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
-}
-
 // MetricPipelineReconciler reconciles a MetricPipeline object
 type MetricPipelineReconciler struct {
 	client.Client
