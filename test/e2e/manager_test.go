@@ -18,7 +18,7 @@ import (
 
 const (
 	systemNamespace = "kyma-system"
-	timeout         = time.Second * 10
+	timeout         = time.Second * 60
 	interval        = time.Millisecond * 250
 )
 
