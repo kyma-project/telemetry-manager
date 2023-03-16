@@ -31,12 +31,12 @@ func EachHaveTraceID(expectedTraceID string) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]string, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
-			return nil, fmt.Errorf("ConsistOfSpansWithIDs rqquires a []byte, but got %T", actual)
+			return nil, fmt.Errorf("EachHaveTraceID rqquires a []byte, but got %T", actual)
 		}
 
 		actualSpans, err := unmarshalOTLPJSONTraceData(actualBytes)
 		if err != nil {
-			return nil, fmt.Errorf("ConsistOfSpansWithIDs requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("EachHaveTraceID requires a valid OTLP JSON document: %v", err)
 		}
 
 		var actualTraceIDs []string
