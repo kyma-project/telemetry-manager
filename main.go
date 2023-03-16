@@ -19,26 +19,31 @@ package main
 import (
 	"errors"
 	"flag"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"net/http"
 	"os"
 	"path"
 	"strings"
 	"time"
 
+	"k8s.io/client-go/tools/record"
+
+	"github.com/kyma-project/telemetry-manager/internal/setup"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+
+	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/logger"
 	logparserreconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	tracepipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/logpipeline"
-	"github.com/kyma-project/telemetry-manager/internal/setup"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logparservalidation "github.com/kyma-project/telemetry-manager/webhook/logparser/validation"
@@ -61,6 +66,10 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	operatorcontrollers "github.com/kyma-project/telemetry-manager/controllers/operator"
+	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -95,7 +104,8 @@ var (
 	fluentBitConfigPrepperImageVersion string
 	fluentBitPriorityClassName         string
 
-	enableWebhook bool
+	enableTelemetryManagerModule bool
+	enableWebhook                bool
 )
 
 const (
@@ -115,6 +125,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -133,6 +144,9 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=logparsers/finalizers,verbs=update
 //+kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=tracepipelines,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=tracepipelines/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries/finalizers,verbs=update
 
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;
 //+kubebuilder:rbac:groups="",namespace=kyma-system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
@@ -185,6 +199,8 @@ func main() {
 	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
 
 	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
+
+	flag.BoolVar(&enableTelemetryManagerModule, "enable-telemetry-manager-module", true, "Enable telemetry manager.")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -284,6 +300,13 @@ func main() {
 		}
 	}
 
+	if enableTelemetryManagerModule {
+		setupLog.Info("Starting with telemetry manager controller")
+		if err = createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), mgr.GetEventRecorderFor("telemetry-operator")).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
+			os.Exit(1)
+		}
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", mgr.GetWebhookServer().StartedChecker()); err != nil {
@@ -438,4 +461,8 @@ func createPipelineDefaults() builder.PipelineDefaults {
 
 func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
+}
+
+func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) *operatorcontrollers.TelemetryReconciler {
+	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder))
 }
