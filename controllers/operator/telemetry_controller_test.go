@@ -46,7 +46,6 @@ var _ = Describe("Deploying a Telemetry", func() {
 
 				return nil
 			}, timeout, interval).Should(BeNil())
-
 			Expect(k8sClient.Delete(ctx, telemetryTestObj)).Should(Succeed())
 		})
 	})
