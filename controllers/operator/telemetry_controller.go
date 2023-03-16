@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package telemetry
+package operator
 
 import (
 	"context"
 	"fmt"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -62,7 +62,7 @@ func NewTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventR
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	objectInstance := telemetryv1alpha1.Telemetry{}
+	objectInstance := operatorv1alpha1.Telemetry{}
 
 	if err := r.Client.Get(ctx, req.NamespacedName, &objectInstance); err != nil {
 		logger.Info(req.NamespacedName.String() + " got deleted!")
@@ -73,9 +73,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	status := getStatusFromTelemetry(&objectInstance)
 
 	if !objectInstance.GetDeletionTimestamp().IsZero() &&
-		status.State != telemetryv1alpha1.StateDeleting {
+		status.State != operatorv1alpha1.StateDeleting {
 		// if the status is not yet set to deleting, also update the status
-		return ctrl.Result{}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(telemetryv1alpha1.StateDeleting))
+		return ctrl.Result{}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(operatorv1alpha1.StateDeleting))
 	}
 
 	// add finalizer if not present
@@ -86,13 +86,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	switch status.State {
 	case "":
 		return ctrl.Result{}, r.HandleInitialState(ctx, &objectInstance)
-	case telemetryv1alpha1.StateProcessing:
+	case operatorv1alpha1.StateProcessing:
 		return ctrl.Result{Requeue: true}, r.HandleProcessingState(ctx, &objectInstance)
-	case telemetryv1alpha1.StateDeleting:
+	case operatorv1alpha1.StateDeleting:
 		return ctrl.Result{Requeue: true}, r.HandleDeletingState(ctx, &objectInstance)
-	case telemetryv1alpha1.StateError:
+	case operatorv1alpha1.StateError:
 		return ctrl.Result{Requeue: true}, r.HandleErrorState(ctx, &objectInstance)
-	case telemetryv1alpha1.StateReady:
+	case operatorv1alpha1.StateReady:
 		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleReadyState(ctx, &objectInstance)
 	}
 
@@ -100,42 +100,42 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 // HandleReadyState checks for the consistency of reconciled resource, by verifying the underlying resources.
-func (r *Reconciler) HandleReadyState(ctx context.Context, objectInstance *telemetryv1alpha1.Telemetry) error {
+func (r *Reconciler) HandleReadyState(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry) error {
 
 	return nil
 }
 
 // HandleErrorState handles error recovery for the reconciled resource.
-func (r *Reconciler) HandleErrorState(ctx context.Context, objectInstance *telemetryv1alpha1.Telemetry) error {
+func (r *Reconciler) HandleErrorState(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry) error {
 	status := getStatusFromTelemetry(objectInstance)
 
 	// set eventual state to Ready - if no errors were found
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(telemetryv1alpha1.StateReady).
+		WithState(operatorv1alpha1.StateReady).
 		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
 }
 
 // HandleInitialState bootstraps state handling for the reconciled resource.
-func (r *Reconciler) HandleInitialState(ctx context.Context, objectInstance *telemetryv1alpha1.Telemetry) error {
+func (r *Reconciler) HandleInitialState(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry) error {
 	status := getStatusFromTelemetry(objectInstance)
 
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(telemetryv1alpha1.StateProcessing).
+		WithState(operatorv1alpha1.StateProcessing).
 		WithInstallConditionStatus(metav1.ConditionUnknown, objectInstance.GetGeneration()))
 }
 
 // HandleProcessingState processes the reconciled resource by processing the underlying resources.
 // Based on the processing either a success or failure state is set on the reconciled resource.
-func (r *Reconciler) HandleProcessingState(ctx context.Context, objectInstance *telemetryv1alpha1.Telemetry) error {
+func (r *Reconciler) HandleProcessingState(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry) error {
 	status := getStatusFromTelemetry(objectInstance)
 
 	// set eventual state to Ready - if no errors were found
 	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(telemetryv1alpha1.StateReady).
+		WithState(operatorv1alpha1.StateReady).
 		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
 }
 
-func (r *Reconciler) HandleDeletingState(ctx context.Context, objectInstance *telemetryv1alpha1.Telemetry) error {
+func (r *Reconciler) HandleDeletingState(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry) error {
 	r.Event(objectInstance, "Normal", "Deleting", "resource deleting")
 
 	// if resources are ready to be deleted, remove finalizer
@@ -148,16 +148,16 @@ func (r *Reconciler) HandleDeletingState(ctx context.Context, objectInstance *te
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&telemetryv1alpha1.Telemetry{}).
+		For(&operatorv1alpha1.Telemetry{}).
 		Complete(r)
 }
 
-func getStatusFromTelemetry(objectInstance *telemetryv1alpha1.Telemetry) telemetryv1alpha1.TelemetryStatus {
+func getStatusFromTelemetry(objectInstance *operatorv1alpha1.Telemetry) operatorv1alpha1.TelemetryStatus {
 	return objectInstance.Status
 }
 
-func (r *Reconciler) setStatusForObjectInstance(ctx context.Context, objectInstance *telemetryv1alpha1.Telemetry,
-	status *telemetryv1alpha1.TelemetryStatus,
+func (r *Reconciler) setStatusForObjectInstance(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry,
+	status *operatorv1alpha1.TelemetryStatus,
 ) error {
 	objectInstance.Status = *status
 

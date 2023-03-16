@@ -12,7 +12,7 @@ metadata:
   name: telemetry-viewer-role
 rules:
 - apiGroups:
-  - telemetry.kyma-project.io
+  - operator.kyma-project.io
   resources:
   - telemetries
   verbs:
@@ -20,7 +20,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - telemetry.kyma-project.io
+  - operator.kyma-project.io
   resources:
   - telemetries/status
   verbs:

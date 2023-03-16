@@ -1,5 +1,3 @@
-package telemetry
-
 /*
 Copyright 2021.
 
@@ -7,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-	http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,30 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+package operator
+
 import (
-	"context"
 	"path/filepath"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	zapLog "go.uber.org/zap"
 
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/logger"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -47,13 +39,8 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var cfg *rest.Config
-
-var (
-	k8sClient client.Client
-	testEnv   *envtest.Environment
-	ctx       context.Context
-	cancel    context.CancelFunc
-)
+var k8sClient client.Client
+var testEnv *envtest.Environment
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -63,23 +50,20 @@ func TestAPIs(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-	dynamicLoglevel := zapLog.NewAtomicLevel()
-	configureLogLevelOnFly := logger.NewLogReconfigurer(dynamicLoglevel)
-
-	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: false,
+		ErrorIfCRDPathMissing: true,
 	}
 
 	var err error
+	// cfg is defined in this file globally.
 	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = telemetryv1alpha1.AddToScheme(scheme.Scheme)
+	err = operatorv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
@@ -90,56 +74,25 @@ var _ = BeforeSuite(func() {
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:                 scheme.Scheme,
-		MetricsBindAddress:     "localhost:8080",
+		MetricsBindAddress:     "localhost:8085",
 		Port:                   19443,
 		Host:                   "localhost",
-		HealthProbeBindAddress: "localhost:8081",
+		HealthProbeBindAddress: "localhost:8084",
 		LeaderElection:         false,
 		LeaderElectionID:       "cdd7ef0a.kyma-project.io",
 	})
 	Expect(err).ToNot(HaveOccurred())
 
 	client := mgr.GetClient()
-	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
-	logpipelineController := NewLogPipelineReconciler(
-		client,
-		logpipeline.NewReconciler(client, testLogPipelineConfig, &kubernetes.DaemonSetProber{Client: client}, overrides),
-		testLogPipelineConfig)
-	err = logpipelineController.SetupWithManager(mgr)
+	telemetryReconciler := NewTelemetryReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"))
+
+	err = telemetryReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
-
-	logparserReconciler := NewLogParserReconciler(
-		client,
-		logparser.NewReconciler(
-			client,
-			testLogParserConfig,
-			&kubernetes.DaemonSetProber{Client: client},
-			&kubernetes.DaemonSetAnnotator{Client: client},
-			overrides,
-		),
-		testLogParserConfig,
-	)
-	err = logparserReconciler.SetupWithManager(mgr)
-	Expect(err).ToNot(HaveOccurred())
-
-	tracepipelineReconciler := NewTracePipelineReconciler(
-		client,
-		tracepipeline.NewReconciler(client, testTracePipelineConfig, &kubernetes.DeploymentProber{Client: client}, overrides),
-	)
-	err = tracepipelineReconciler.SetupWithManager(mgr)
-	Expect(err).ToNot(HaveOccurred())
-
-	go func() {
-		defer GinkgoRecover()
-		err := mgr.Start(ctx)
-		Expect(err).ToNot(HaveOccurred())
-	}()
 
 })
 
 var _ = AfterSuite(func() {
-	cancel()
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())

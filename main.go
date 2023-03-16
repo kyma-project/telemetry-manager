@@ -19,12 +19,13 @@ package main
 import (
 	"errors"
 	"flag"
-	"k8s.io/client-go/tools/record"
 	"net/http"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	"k8s.io/client-go/tools/record"
 
 	"github.com/kyma-project/telemetry-manager/internal/setup"
 
@@ -47,6 +48,7 @@ import (
 	logparservalidation "github.com/kyma-project/telemetry-manager/webhook/logparser/validation"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 	logpipelinevalidation "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
+
 	//nolint:gosec
 	_ "net/http/pprof"
 
@@ -57,12 +59,15 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	operatorcontrollers "github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	//+kubebuilder:scaffold:imports
 )
@@ -119,6 +124,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -137,6 +143,9 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=logparsers/finalizers,verbs=update
 //+kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=tracepipelines,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=tracepipelines/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries/finalizers,verbs=update
 
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;
 //+kubebuilder:rbac:groups="",namespace=kyma-system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
@@ -291,7 +300,7 @@ func main() {
 	}
 
 	if enableTelemetryManagerModule {
-		setupLog.Info("Starting with telemetry mnager controller")
+		setupLog.Info("Starting with telemetry manager controller")
 		if err = createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), mgr.GetEventRecorderFor("telemetry-operator")).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
 			os.Exit(1)
@@ -453,6 +462,6 @@ func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
 }
 
-func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) *telemetrycontrollers.Reconciler {
-	return telemetrycontrollers.NewTelemetryReconciler(client, scheme, eventRecorder)
+func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) *operatorcontrollers.Reconciler {
+	return operatorcontrollers.NewTelemetryReconciler(client, scheme, eventRecorder)
 }

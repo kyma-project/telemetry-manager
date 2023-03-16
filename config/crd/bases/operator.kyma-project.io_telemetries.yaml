@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
-  name: telemetries.telemetry.kyma-project.io
+  name: telemetries.operator.kyma-project.io
 spec:
-  group: telemetry.kyma-project.io
+  group: operator.kyma-project.io
   names:
     kind: Telemetry
     listKind: TelemetryList
@@ -15,7 +15,17 @@ spec:
     singular: telemetry
   scope: Cluster
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.generation
+      name: generation
+      type: integer
+    - jsonPath: .metadata.creationTimestamp
+      name: age
+      type: date
+    - jsonPath: .status.state
+      name: state
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Telemetry is the Schema for the telemetries API
