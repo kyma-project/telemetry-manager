@@ -1,12 +1,15 @@
 package tracepipeline
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 var (
@@ -14,6 +17,14 @@ var (
 		Otlp: &v1alpha1.OtlpOutput{
 			Endpoint: v1alpha1.ValueType{
 				Value: "localhost",
+			},
+		},
+	}
+
+	tracePipelineInsecure = v1alpha1.TracePipelineOutput{
+		Otlp: &v1alpha1.OtlpOutput{
+			Endpoint: v1alpha1.ValueType{
+				Value: "http://localhost",
 			},
 		},
 	}
@@ -46,115 +57,44 @@ var (
 	}
 )
 
-func TestGetOutputTypeHttp(t *testing.T) {
-	httpOutput := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-			Protocol: "http",
-		},
-	}
-
-	require.Equal(t, "otlphttp", getOutputType(httpOutput))
-}
-
-func TestGetOutputTypeOtlp(t *testing.T) {
-	otlpOutput := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-			Protocol: "grpc",
-		},
-	}
-
-	require.Equal(t, "otlp", getOutputType(otlpOutput))
-}
-
-func TestGetOutputTypeDefault(t *testing.T) {
-	output := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-		},
-	}
-
-	require.Equal(t, "otlp", getOutputType(output))
-}
-
-func TestMakeExporterConfig(t *testing.T) {
-	output := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-		},
-	}
-
-	exporterConfig := makeExporterConfig(output, false)
-	require.NotNil(t, exporterConfig)
-
-	require.True(t, exporterConfig.OTLP.SendingQueue.Enabled)
-	require.Equal(t, 512, exporterConfig.OTLP.SendingQueue.QueueSize)
-
-	require.True(t, exporterConfig.OTLP.RetryOnFailure.Enabled)
-	require.Equal(t, "5s", exporterConfig.OTLP.RetryOnFailure.InitialInterval)
-	require.Equal(t, "30s", exporterConfig.OTLP.RetryOnFailure.MaxInterval)
-	require.Equal(t, "300s", exporterConfig.OTLP.RetryOnFailure.MaxElapsedTime)
-
-	require.Equal(t, "basic", exporterConfig.Logging.Verbosity)
-}
-
 func TestMakeCollectorConfigEndpoint(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipeline, false)
-	expectedEndpoint := fmt.Sprintf("${%s}", otlpEndpointVariable)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
+	require.NoError(t, err)
+	expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT")
 	require.Equal(t, expectedEndpoint, collectorConfig.Exporters.OTLP.Endpoint)
 }
 
 func TestMakeCollectorConfigSecure(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipeline, false)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
+	require.NoError(t, err)
 	require.False(t, collectorConfig.Exporters.OTLP.TLS.Insecure)
 }
 
 func TestMakeCollectorConfigSecureHttp(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipelineHTTP, false)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineHTTP)
+	require.NoError(t, err)
 	require.False(t, collectorConfig.Exporters.OTLPHTTP.TLS.Insecure)
 }
 
 func TestMakeCollectorConfigInsecure(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipeline, true)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineInsecure)
+	require.NoError(t, err)
 	require.True(t, collectorConfig.Exporters.OTLP.TLS.Insecure)
 }
 
-func TestMakeCollectorConfigInsecureHttp(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipelineHTTP, true)
-	require.True(t, collectorConfig.Exporters.OTLPHTTP.TLS.Insecure)
-}
-
 func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipelineWithBasicAuth, false)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineWithBasicAuth)
+	require.NoError(t, err)
 	headers := collectorConfig.Exporters.OTLP.Headers
 
 	authHeader, existing := headers["Authorization"]
 	require.True(t, existing)
 	require.Equal(t, "${BASIC_AUTH_HEADER}", authHeader)
-}
-
-func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
-	headers := []v1alpha1.Header{
-		{
-			Name: "Authorization",
-			ValueType: v1alpha1.ValueType{
-				Value: "Bearer xyz",
-			},
-		},
-	}
-	output := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-			Headers:  headers,
-		},
-	}
-
-	exporterConfig := makeExporterConfig(output, false)
-	require.NotNil(t, exporterConfig)
-
-	require.Equal(t, 1, len(exporterConfig.OTLP.Headers))
-	require.Equal(t, "${HEADER_AUTHORIZATION}", exporterConfig.OTLP.Headers["Authorization"])
 }
 
 func TestMakeServiceConfig(t *testing.T) {
@@ -260,8 +200,6 @@ func TestCollectorConfigMarshalling(t *testing.T) {
 exporters:
   otlp:
     endpoint: ${OTLP_ENDPOINT}
-    tls:
-      insecure: true
     sending_queue:
       enabled: true
       queue_size: 512
@@ -377,7 +315,9 @@ service:
   - health_check
 `
 
-	collectorConfig := makeOtelCollectorConfig(tracePipeline, true)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
+	require.NoError(t, err)
 	yamlBytes, err := yaml.Marshal(collectorConfig)
 
 	require.NoError(t, err)
