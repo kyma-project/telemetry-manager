@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 var (
@@ -16,6 +17,14 @@ var (
 		Otlp: &v1alpha1.OtlpOutput{
 			Endpoint: v1alpha1.ValueType{
 				Value: "localhost",
+			},
+		},
+	}
+
+	metricPipelineInsecure = v1alpha1.MetricPipelineOutput{
+		Otlp: &v1alpha1.OtlpOutput{
+			Endpoint: v1alpha1.ValueType{
+				Value: "http://localhost",
 			},
 		},
 	}
@@ -56,7 +65,7 @@ func TestMakeCollectorConfigSecure(t *testing.T) {
 
 func TestMakeCollectorConfigInsecure(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, metricPipeline)
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, metricPipelineInsecure)
 	require.NoError(t, err)
 	require.True(t, collectorConfig.Exporters.OTLP.TLS.Insecure)
 }
@@ -154,8 +163,6 @@ func TestCollectorConfigMarshalling(t *testing.T) {
 exporters:
   otlp:
     endpoint: ${OTLP_ENDPOINT}
-    tls:
-      insecure: true
     sending_queue:
       enabled: true
       queue_size: 512

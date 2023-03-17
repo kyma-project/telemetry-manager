@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
+
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -131,6 +133,14 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 				return fmt.Errorf("unable to copy secret data: %w", copyErr)
 			}
 		}
+
+		for _, ref := range logPipelines.Items[i].Spec.Variables {
+			if ref.ValueFrom.IsSecretKeyRef() {
+				if copyErr := s.copySecretData(ctx, *ref.ValueFrom.SecretKeyRef, ref.Name, newSecret.Data); copyErr != nil {
+					return fmt.Errorf("unable to copy secret data: %w", copyErr)
+				}
+			}
+		}
 	}
 
 	changed := secretDataEqual(oldSecret.Data, newSecret.Data)
@@ -142,6 +152,10 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 		return fmt.Errorf("unable to update env secret: %w", err)
 	}
 	return nil
+}
+
+func contains() {
+
 }
 
 func (s *syncer) copySecretData(ctx context.Context, sourceRef telemetryv1alpha1.SecretKeyRef, targetKey string, target map[string][]byte) error {
