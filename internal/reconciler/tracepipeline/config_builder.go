@@ -1,174 +1,47 @@
 package tracepipeline
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	configbuilder "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type TLSConfig struct {
-	Insecure bool `yaml:"insecure"`
+func makeOtelCollectorConfig(ctx context.Context, c client.Reader, output v1alpha1.TracePipelineOutput) (*config.Config, configbuilder.EnvVars, error) {
+	exporterConfig, envVars, err := configbuilder.MakeOTLPExporterConfig(ctx, c, output.Otlp)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to make exporter config: %v", err)
+	}
+
+	outputType := configbuilder.GetOutputType(output.Otlp)
+	receiverConfig := makeReceiverConfig()
+	processorsConfig := makeProcessorsConfig()
+	serviceConfig := makeServiceConfig(outputType)
+	extensionConfig := configbuilder.MakeExtensionConfig()
+
+	return &config.Config{
+		Exporters:  *exporterConfig,
+		Receivers:  receiverConfig,
+		Processors: processorsConfig,
+		Service:    serviceConfig,
+		Extensions: extensionConfig,
+	}, envVars, nil
 }
 
-type SendingQueueConfig struct {
-	Enabled   bool `yaml:"enabled"`
-	QueueSize int  `yaml:"queue_size"`
-}
-
-type RetryOnFailureConfig struct {
-	Enabled         bool   `yaml:"enabled"`
-	InitialInterval string `yaml:"initial_interval"`
-	MaxInterval     string `yaml:"max_interval"`
-	MaxElapsedTime  string `yaml:"max_elapsed_time"`
-}
-
-type OTLPExporterConfig struct {
-	Endpoint       string               `yaml:"endpoint,omitempty"`
-	Headers        map[string]string    `yaml:"headers,omitempty"`
-	TLS            TLSConfig            `yaml:"tls,omitempty"`
-	SendingQueue   SendingQueueConfig   `yaml:"sending_queue,omitempty"`
-	RetryOnFailure RetryOnFailureConfig `yaml:"retry_on_failure,omitempty"`
-}
-
-type LoggingExporterConfig struct {
-	Verbosity string `yaml:"verbosity"`
-}
-
-type ExporterConfig struct {
-	OTLP     OTLPExporterConfig    `yaml:"otlp,omitempty"`
-	OTLPHTTP OTLPExporterConfig    `yaml:"otlphttp,omitempty"`
-	Logging  LoggingExporterConfig `yaml:"logging,omitempty"`
-}
-
-type EndpointConfig struct {
-	Endpoint string `yaml:"endpoint,omitempty"`
-}
-
-type ReceiverProtocols struct {
-	HTTP EndpointConfig `yaml:"http,omitempty"`
-	GRPC EndpointConfig `yaml:"grpc,omitempty"`
-}
-
-type OTLPReceiverConfig struct {
-	Protocols ReceiverProtocols `yaml:"protocols,omitempty"`
-}
-
-type ReceiverConfig struct {
-	OpenCensus EndpointConfig     `yaml:"opencensus"`
-	OTLP       OTLPReceiverConfig `yaml:"otlp"`
-}
-
-type BatchProcessorConfig struct {
-	SendBatchSize    int    `yaml:"send_batch_size"`
-	Timeout          string `yaml:"timeout"`
-	SendBatchMaxSize int    `yaml:"send_batch_max_size"`
-}
-
-type MemoryLimiterConfig struct {
-	CheckInterval        string `yaml:"check_interval"`
-	LimitPercentage      int    `yaml:"limit_percentage"`
-	SpikeLimitPercentage int    `yaml:"spike_limit_percentage"`
-}
-
-type ExtractK8sMetadataConfig struct {
-	Metadata []string `yaml:"metadata"`
-}
-
-type PodAssociation struct {
-	From string `yaml:"from"`
-	Name string `yaml:"name,omitempty"`
-}
-
-type PodAssociations struct {
-	Sources []PodAssociation `yaml:"sources"`
-}
-
-type K8sAttributesProcessorConfig struct {
-	AuthType       string                   `yaml:"auth_type"`
-	Passthrough    bool                     `yaml:"passthrough"`
-	Extract        ExtractK8sMetadataConfig `yaml:"extract"`
-	PodAssociation []PodAssociations        `yaml:"pod_association"`
-}
-
-type AttributeAction struct {
-	Action string `yaml:"action"`
-	Key    string `yaml:"key"`
-	Value  string `yaml:"value"`
-}
-
-type ResourceProcessorConfig struct {
-	Attributes []AttributeAction `yaml:"attributes"`
-}
-
-type ProcessorsConfig struct {
-	Batch         BatchProcessorConfig         `yaml:"batch,omitempty"`
-	MemoryLimiter MemoryLimiterConfig          `yaml:"memory_limiter,omitempty"`
-	K8sAttributes K8sAttributesProcessorConfig `yaml:"k8sattributes,omitempty"`
-	Resource      ResourceProcessorConfig      `yaml:"resource,omitempty"`
-	Filter        FilterProcessorConfig        `yaml:"filter,omitempty"`
-}
-
-type FilterProcessorConfig struct {
-	Traces TraceConfig `yaml:"traces,omitempty"`
-}
-
-type TraceConfig struct {
-	Span []string `yaml:"span"`
-}
-
-type PipelineConfig struct {
-	Receivers  []string `yaml:"receivers"`
-	Processors []string `yaml:"processors"`
-	Exporters  []string `yaml:"exporters"`
-}
-
-type PipelinesConfig struct {
-	Traces PipelineConfig `yaml:"traces"`
-}
-
-type MetricsConfig struct {
-	Address string `yaml:"address"`
-}
-
-type LoggingConfig struct {
-	Level string `yaml:"level"`
-}
-
-type TelemetryConfig struct {
-	Metrics MetricsConfig `yaml:"metrics"`
-	Logs    LoggingConfig `yaml:"logs"`
-}
-
-type OTLPServiceConfig struct {
-	Pipelines  PipelinesConfig `yaml:"pipelines,omitempty"`
-	Telemetry  TelemetryConfig `yaml:"telemetry,omitempty"`
-	Extensions []string        `yaml:"extensions,omitempty"`
-}
-
-type ExtensionsConfig struct {
-	HealthCheck EndpointConfig `yaml:"health_check"`
-}
-
-type OTELCollectorConfig struct {
-	Receivers  ReceiverConfig    `yaml:"receivers"`
-	Exporters  ExporterConfig    `yaml:"exporters"`
-	Processors ProcessorsConfig  `yaml:"processors"`
-	Extensions ExtensionsConfig  `yaml:"extensions"`
-	Service    OTLPServiceConfig `yaml:"service"`
-}
-
-func makeReceiverConfig() ReceiverConfig {
-	return ReceiverConfig{
-		OpenCensus: EndpointConfig{
+func makeReceiverConfig() config.ReceiverConfig {
+	return config.ReceiverConfig{
+		OpenCensus: &config.EndpointConfig{
 			Endpoint: "${MY_POD_IP}:55678",
 		},
-		OTLP: OTLPReceiverConfig{
-			Protocols: ReceiverProtocols{
-				HTTP: EndpointConfig{
+		OTLP: &config.OTLPReceiverConfig{
+			Protocols: config.ReceiverProtocols{
+				HTTP: config.EndpointConfig{
 					Endpoint: "${MY_POD_IP}:4318",
 				},
-				GRPC: EndpointConfig{
+				GRPC: config.EndpointConfig{
 					Endpoint: "${MY_POD_IP}:4317",
 				},
 			},
@@ -176,62 +49,7 @@ func makeReceiverConfig() ReceiverConfig {
 	}
 }
 
-func getOutputType(output v1alpha1.TracePipelineOutput) string {
-	if output.Otlp.Protocol == "http" {
-		return "otlphttp"
-	}
-	return "otlp"
-}
-
-func makeHeaders(output v1alpha1.TracePipelineOutput) map[string]string {
-	headers := make(map[string]string)
-	if output.Otlp.Authentication != nil && output.Otlp.Authentication.Basic.IsDefined() {
-		headers["Authorization"] = fmt.Sprintf("${%s}", basicAuthHeaderVariable)
-	}
-	for _, header := range output.Otlp.Headers {
-		headers[header.Name] = fmt.Sprintf("${HEADER_%s}", envvar.MakeEnvVarCompliant(header.Name))
-	}
-	return headers
-}
-
-func makeExporterConfig(output v1alpha1.TracePipelineOutput, insecureOutput bool) ExporterConfig {
-	outputType := getOutputType(output)
-	headers := makeHeaders(output)
-	otlpExporterConfig := OTLPExporterConfig{
-		Endpoint: fmt.Sprintf("${%s}", otlpEndpointVariable),
-		Headers:  headers,
-		TLS: TLSConfig{
-			Insecure: insecureOutput,
-		},
-		SendingQueue: SendingQueueConfig{
-			Enabled:   true,
-			QueueSize: 512,
-		},
-		RetryOnFailure: RetryOnFailureConfig{
-			Enabled:         true,
-			InitialInterval: "5s",
-			MaxInterval:     "30s",
-			MaxElapsedTime:  "300s",
-		},
-	}
-
-	loggingExporter := LoggingExporterConfig{
-		Verbosity: "basic",
-	}
-
-	if outputType == "otlphttp" {
-		return ExporterConfig{
-			OTLPHTTP: otlpExporterConfig,
-			Logging:  loggingExporter,
-		}
-	}
-	return ExporterConfig{
-		OTLP:    otlpExporterConfig,
-		Logging: loggingExporter,
-	}
-}
-
-func makeProcessorsConfig() ProcessorsConfig {
+func makeProcessorsConfig() config.ProcessorsConfig {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -243,9 +61,9 @@ func makeProcessorsConfig() ProcessorsConfig {
 		"k8s.job.name",
 	}
 
-	podAssociations := []PodAssociations{
+	podAssociations := []config.PodAssociations{
 		{
-			Sources: []PodAssociation{
+			Sources: []config.PodAssociation{
 				{
 					From: "resource_attribute",
 					Name: "k8s.pod.ip",
@@ -253,7 +71,7 @@ func makeProcessorsConfig() ProcessorsConfig {
 			},
 		},
 		{
-			Sources: []PodAssociation{
+			Sources: []config.PodAssociation{
 				{
 					From: "resource_attribute",
 					Name: "k8s.pod.uid",
@@ -261,34 +79,34 @@ func makeProcessorsConfig() ProcessorsConfig {
 			},
 		},
 		{
-			Sources: []PodAssociation{
+			Sources: []config.PodAssociation{
 				{
 					From: "connection",
 				},
 			},
 		},
 	}
-	return ProcessorsConfig{
-		Batch: BatchProcessorConfig{
+	return config.ProcessorsConfig{
+		Batch: &config.BatchProcessorConfig{
 			SendBatchSize:    512,
 			Timeout:          "10s",
 			SendBatchMaxSize: 512,
 		},
-		MemoryLimiter: MemoryLimiterConfig{
+		MemoryLimiter: &config.MemoryLimiterConfig{
 			CheckInterval:        "1s",
 			LimitPercentage:      75,
 			SpikeLimitPercentage: 10,
 		},
-		K8sAttributes: K8sAttributesProcessorConfig{
+		K8sAttributes: &config.K8sAttributesProcessorConfig{
 			AuthType:    "serviceAccount",
 			Passthrough: false,
-			Extract: ExtractK8sMetadataConfig{
+			Extract: config.ExtractK8sMetadataConfig{
 				Metadata: k8sAttributes,
 			},
 			PodAssociation: podAssociations,
 		},
-		Resource: ResourceProcessorConfig{
-			Attributes: []AttributeAction{
+		Resource: &config.ResourceProcessorConfig{
+			Attributes: []config.AttributeAction{
 				{
 					Action: "insert",
 					Key:    "k8s.cluster.name",
@@ -296,8 +114,8 @@ func makeProcessorsConfig() ProcessorsConfig {
 				},
 			},
 		},
-		Filter: FilterProcessorConfig{
-			Traces: TraceConfig{
+		Filter: &config.FilterProcessorConfig{
+			Traces: config.TraceConfig{
 				Span: makeSpanFilterConfig(),
 			},
 		},
@@ -321,48 +139,23 @@ func makeSpanFilterConfig() []string {
 	}
 }
 
-func makeServiceConfig(outputType string) OTLPServiceConfig {
-	return OTLPServiceConfig{
-		Pipelines: PipelinesConfig{
-			Traces: PipelineConfig{
+func makeServiceConfig(outputType string) config.OTLPServiceConfig {
+	return config.OTLPServiceConfig{
+		Pipelines: config.PipelinesConfig{
+			Traces: &config.PipelineConfig{
 				Receivers:  []string{"opencensus", "otlp"},
 				Processors: []string{"memory_limiter", "k8sattributes", "filter", "resource", "batch"},
 				Exporters:  []string{outputType, "logging"},
 			},
 		},
-		Telemetry: TelemetryConfig{
-			Metrics: MetricsConfig{
+		Telemetry: config.TelemetryConfig{
+			Metrics: config.MetricsConfig{
 				Address: "${MY_POD_IP}:8888",
 			},
-			Logs: LoggingConfig{
+			Logs: config.LoggingConfig{
 				Level: "info",
 			},
 		},
 		Extensions: []string{"health_check"},
-	}
-}
-
-func makeExtensionConfig() ExtensionsConfig {
-	return ExtensionsConfig{
-		HealthCheck: EndpointConfig{
-			Endpoint: "${MY_POD_IP}:13133",
-		},
-	}
-}
-
-func makeOtelCollectorConfig(output v1alpha1.TracePipelineOutput, isInsecureOutput bool) OTELCollectorConfig {
-	exporterConfig := makeExporterConfig(output, isInsecureOutput)
-	outputType := getOutputType(output)
-	processorsConfig := makeProcessorsConfig()
-	receiverConfig := makeReceiverConfig()
-	serviceConfig := makeServiceConfig(outputType)
-	extensionConfig := makeExtensionConfig()
-
-	return OTELCollectorConfig{
-		Receivers:  receiverConfig,
-		Exporters:  exporterConfig,
-		Processors: processorsConfig,
-		Extensions: extensionConfig,
-		Service:    serviceConfig,
 	}
 }

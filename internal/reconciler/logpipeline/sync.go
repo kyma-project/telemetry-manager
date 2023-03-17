@@ -5,12 +5,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	corev1 "k8s.io/api/core/v1"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 )
 
 type syncer struct {
@@ -124,9 +127,18 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 			continue
 		}
 
-		for _, field := range lookupSecretRefFields(&logPipelines.Items[i]) {
-			if copyErr := s.copySecretData(ctx, field.secretKeyRef, field.targetSecretKey, newSecret.Data); copyErr != nil {
+		for _, ref := range logPipelines.Items[i].GetSecretRefs() {
+			targetKey := envvar.FormatEnvVarName(logPipelines.Items[i].Name, ref.Namespace, ref.Name, ref.Key)
+			if copyErr := s.copySecretData(ctx, ref, targetKey, newSecret.Data); copyErr != nil {
 				return fmt.Errorf("unable to copy secret data: %w", copyErr)
+			}
+		}
+
+		for _, ref := range logPipelines.Items[i].Spec.Variables {
+			if ref.ValueFrom.IsSecretKeyRef() {
+				if copyErr := s.copySecretData(ctx, *ref.ValueFrom.SecretKeyRef, ref.Name, newSecret.Data); copyErr != nil {
+					return fmt.Errorf("unable to copy secret data: %w", copyErr)
+				}
 			}
 		}
 	}
