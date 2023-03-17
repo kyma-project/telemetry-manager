@@ -8,21 +8,21 @@ import (
 	"strings"
 )
 
-func (l *LogPipeline) Validate(vc *LogPipelineValidationConfig) error {
-	if err := l.validateOutput(vc.DeniedOutPutPlugins); err != nil {
+func (lp *LogPipeline) Validate(vc *LogPipelineValidationConfig) error {
+	if err := lp.validateOutput(vc.DeniedOutPutPlugins); err != nil {
 		return err
 	}
-	if err := l.validateFilters(vc.DeniedFilterPlugins); err != nil {
+	if err := lp.validateFilters(vc.DeniedFilterPlugins); err != nil {
 		return err
 	}
-	if err := l.validateInput(); err != nil {
+	if err := lp.validateInput(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (l *LogPipeline) validateOutput(deniedOutputPlugins []string) error {
-	output := l.Spec.Output
+func (lp *LogPipeline) validateOutput(deniedOutputPlugins []string) error {
+	output := lp.Spec.Output
 	if err := checkSingleOutputPlugin(output); err != nil {
 		return err
 	}
@@ -150,8 +150,8 @@ func secretRefAndValueIsPresent(v ValueType) bool {
 	return v.Value != "" && v.ValueFrom != nil
 }
 
-func (l *LogPipeline) validateFilters(deniedFilterPlugins []string) error {
-	for _, filterPlugin := range l.Spec.Filters {
+func (lp *LogPipeline) validateFilters(deniedFilterPlugins []string) error {
+	for _, filterPlugin := range lp.Spec.Filters {
 		if err := validateCustomFilter(filterPlugin.Custom, deniedFilterPlugins); err != nil {
 			return err
 		}
@@ -188,8 +188,8 @@ func validateCustomFilter(content string, deniedFilterPlugins []string) error {
 	return nil
 }
 
-func (l *LogPipeline) validateInput() error {
-	input := l.Spec.Input
+func (lp *LogPipeline) validateInput() error {
+	input := lp.Spec.Input
 	if !input.IsDefined() {
 		return nil
 	}
