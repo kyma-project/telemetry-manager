@@ -1,0 +1,27 @@
+# permissions for end users to view telemetries.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: telemetry-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: telemetry-operator
+    app.kubernetes.io/part-of: telemetry-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: telemetry-viewer-role
+rules:
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - telemetries
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - telemetries/status
+  verbs:
+  - get

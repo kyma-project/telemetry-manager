@@ -167,13 +167,6 @@ func makeExternalOTLPTracesService() *corev1.Service {
 					NodePort:   30017,
 				},
 				{
-					Name:       "http-otlp",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       4318,
-					TargetPort: intstr.FromInt(4318),
-					NodePort:   30018,
-				},
-				{
 					Name:       "http-metrics",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       8888,
@@ -314,7 +307,7 @@ func makeExternalMockBackendService() *corev1.Service {
 					TargetPort: intstr.FromInt(4318),
 				},
 				{
-					Name:       "export-http",
+					Name:       "http-web",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       80,
 					NodePort:   30090,
