@@ -154,10 +154,6 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 	return nil
 }
 
-func contains() {
-
-}
-
 func (s *syncer) copySecretData(ctx context.Context, sourceRef telemetryv1alpha1.SecretKeyRef, targetKey string, target map[string][]byte) error {
 	var source corev1.Secret
 	if err := s.Get(ctx, sourceRef.NamespacedName(), &source); err != nil {
