@@ -255,13 +255,13 @@ type LogPipeline struct {
 }
 
 // ContainsCustomPlugin returns true if the pipeline contains any custom filters or outputs
-func (lp *LogPipeline) ContainsCustomPlugin() bool {
-	for _, filter := range lp.Spec.Filters {
+func (l *LogPipeline) ContainsCustomPlugin() bool {
+	for _, filter := range l.Spec.Filters {
 		if filter.Custom != "" {
 			return true
 		}
 	}
-	return lp.Spec.Output.IsCustomDefined()
+	return l.Spec.Output.IsCustomDefined()
 }
 
 // +kubebuilder:object:root=true
