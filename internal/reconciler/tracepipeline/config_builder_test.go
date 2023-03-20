@@ -292,9 +292,7 @@ service:
 	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
 	require.NoError(t, err)
 	yamlBytes, err := yaml.Marshal(collectorConfig)
-
-	a := string(yamlBytes)
-	fmt.Println(a)
+	
 	require.NoError(t, err)
 	require.Equal(t, expected, string(yamlBytes))
 }
