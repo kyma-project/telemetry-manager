@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -154,84 +154,84 @@ func TestK8sAttributesProcessor(t *testing.T) {
 
 func TestCollectorConfigMarshalling(t *testing.T) {
 	expected := `receivers:
-  otlp:
-    protocols:
-      http:
-        endpoint: ${MY_POD_IP}:4318
-      grpc:
-        endpoint: ${MY_POD_IP}:4317
+    otlp:
+        protocols:
+            http:
+                endpoint: ${MY_POD_IP}:4318
+            grpc:
+                endpoint: ${MY_POD_IP}:4317
 exporters:
-  otlp:
-    endpoint: ${OTLP_ENDPOINT}
-    sending_queue:
-      enabled: true
-      queue_size: 512
-    retry_on_failure:
-      enabled: true
-      initial_interval: 5s
-      max_interval: 30s
-      max_elapsed_time: 300s
-  logging:
-    verbosity: basic
+    otlp:
+        endpoint: ${OTLP_ENDPOINT}
+        sending_queue:
+            enabled: true
+            queue_size: 512
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    logging:
+        verbosity: basic
 processors:
-  batch:
-    send_batch_size: 512
-    timeout: 10s
-    send_batch_max_size: 512
-  memory_limiter:
-    check_interval: 1s
-    limit_percentage: 75
-    spike_limit_percentage: 10
-  k8sattributes:
-    auth_type: serviceAccount
-    passthrough: false
-    extract:
-      metadata:
-      - k8s.pod.name
-      - k8s.node.name
-      - k8s.namespace.name
-      - k8s.deployment.name
-      - k8s.statefulset.name
-      - k8s.daemonset.name
-      - k8s.cronjob.name
-      - k8s.job.name
-    pod_association:
-    - sources:
-      - from: resource_attribute
-        name: k8s.pod.ip
-    - sources:
-      - from: resource_attribute
-        name: k8s.pod.uid
-    - sources:
-      - from: connection
-  resource:
-    attributes:
-    - action: insert
-      key: k8s.cluster.name
-      value: ${KUBERNETES_SERVICE_HOST}
+    batch:
+        send_batch_size: 512
+        timeout: 10s
+        send_batch_max_size: 512
+    memory_limiter:
+        check_interval: 1s
+        limit_percentage: 75
+        spike_limit_percentage: 10
+    k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        extract:
+            metadata:
+                - k8s.pod.name
+                - k8s.node.name
+                - k8s.namespace.name
+                - k8s.deployment.name
+                - k8s.statefulset.name
+                - k8s.daemonset.name
+                - k8s.cronjob.name
+                - k8s.job.name
+        pod_association:
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.ip
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.uid
+            - sources:
+                - from: connection
+    resource:
+        attributes:
+            - action: insert
+              key: k8s.cluster.name
+              value: ${KUBERNETES_SERVICE_HOST}
 extensions:
-  health_check:
-    endpoint: ${MY_POD_IP}:13133
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
 service:
-  pipelines:
-    metrics:
-      receivers:
-      - otlp
-      processors:
-      - memory_limiter
-      - k8sattributes
-      - resource
-      - batch
-      exporters:
-      - otlp
-      - logging
-  telemetry:
-    metrics:
-      address: ${MY_POD_IP}:8888
-    logs:
-      level: info
-  extensions:
-  - health_check
+    pipelines:
+        metrics:
+            receivers:
+                - otlp
+            processors:
+                - memory_limiter
+                - k8sattributes
+                - resource
+                - batch
+            exporters:
+                - otlp
+                - logging
+    telemetry:
+        metrics:
+            address: ${MY_POD_IP}:8888
+        logs:
+            level: info
+    extensions:
+        - health_check
 `
 
 	fakeClient := fake.NewClientBuilder().Build()
@@ -239,7 +239,6 @@ service:
 	require.NoError(t, err)
 
 	yamlBytes, err := yaml.Marshal(collectorConfig)
-
 	require.NoError(t, err)
 	require.Equal(t, expected, string(yamlBytes))
 }
