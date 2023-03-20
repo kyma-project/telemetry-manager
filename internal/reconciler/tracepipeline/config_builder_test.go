@@ -291,7 +291,7 @@ service:
 	fakeClient := fake.NewClientBuilder().Build()
 	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
 	require.NoError(t, err)
-	
+
 	yamlBytes, err := yaml.Marshal(collectorConfig)
 	require.NoError(t, err)
 	require.Equal(t, expected, string(yamlBytes))
