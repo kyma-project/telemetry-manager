@@ -20,7 +20,9 @@ See [Dynamic Trace Backend Configuration](https://github.com/kyma-project/commun
 
 ### Configurable Monitoring
 
-Configurable monitoring is not implemented yet. Future plans are documented in [Dynamic Monitoring Backend Configuration](https://github.com/kyma-project/community/tree/main/concepts/observability-strategy/configurable-monitoring).
+The metric controller creates an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) and related Kubernetes objects from a `MetricPipeline` custom resource. The collector is deployed as a [Gateway](https://opentelemetry.io/docs/collector/deployment/#gateway). The controller is configured to receive metrics in the OTLP protocol and forward them to a configurable OTLP backend.
+
+See [Dynamic Monitoring Backend Configuration](https://github.com/kyma-project/community/tree/main/concepts/observability-strategy/configurable-monitoring) for further information.
 
 ## Development
 
@@ -49,7 +51,7 @@ make test
 make e2e-test
 ```
 
-- Run golangci-lint
+- Run `golangci-lint` and lint manifests
 
 ```bash
 make lint
@@ -97,8 +99,10 @@ make undeploy
 ## Troubleshooting
 
 ### Enable pausing reconciliations
+
 You must pause reconciliations to be able to debug the pipelines and, for example, try out a different pipeline configuration or a different OTel configuration. To pause reconciliations, create a `telemetry-override-config` in the `kyma-system` Namespace.
 Here is an example of such a ConfigMap:
+
 ```yaml
 apiVersion: v1
 kind: ConfigMap
@@ -113,15 +117,19 @@ data:
       paused: true
     logging:
       paused: true
+    metrics:
+      paused: true
 ```
-The `global`, `tracing`, and `logging` fields are optional.
 
+The `global`, `tracing`, `logging` and `metrics` fields are optional.
 
 #### Debugging steps
+
 1. Create an overriding `telemetry-override-config` ConfigMap.
 2. Perform debugging operations.
 3. Remove the created ConfigMap.
 4. To reset the debug actions, perform a restart of Telemetry Manager.
+
    ```bash
    kubectl rollout restart deployment -n kyma-system telemetry-controller-manager
    ```
@@ -132,4 +140,3 @@ If you change the pipeline CR when the reconciliation is paused, these changes w
 ### Profiling
 
 Telemetry Manager has pprof-based profiling activated and exposed on port 6060. Use port-forwarding to access the pprof endpoint. You can find additional information in the Go [pprof package documentation](https://pkg.go.dev/net/http/pprof).
-
