@@ -226,7 +226,7 @@ var _ = Describe("LogPipeline webhook", Ordered, func() {
 		It("Should reject new update of previously created LogPipeline", func() {
 			maxPipelinesValidatorMock.On("Validate", mock.Anything, mock.Anything).Return(nil).Times(1)
 			variableValidatorMock.On("Validate", mock.Anything, mock.Anything, mock.Anything).Return(nil).Times(1)
-			outputErr := errors.New("configuration section does not have name attribute")
+			outputErr := errors.New("configuration section must have name attribute")
 
 			var logPipeline telemetryv1alpha1.LogPipeline
 			err := k8sClient.Get(ctx, testLogPipeline, &logPipeline)

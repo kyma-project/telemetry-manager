@@ -14,7 +14,7 @@ func (lp *LogParser) Validate() error {
 		return err
 	}
 	if section.ContainsKey("name") {
-		return fmt.Errorf("log parser '%s' connot have name defined in parser section", lp.Name)
+		return fmt.Errorf("log parser '%s' cannot have name defined in parser section", lp.Name)
 	}
 	return nil
 }

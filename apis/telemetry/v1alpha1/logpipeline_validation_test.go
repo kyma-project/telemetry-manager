@@ -103,7 +103,7 @@ func TestValidateCustomOutputsContainsNoName(t *testing.T) {
 	err := logPipeline.validateOutput(vc.DeniedOutPutPlugins)
 
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "configuration section does not have name attribute")
+	require.Contains(t, err.Error(), "configuration section must have name attribute")
 }
 
 func TestBothValueAndValueFromPresent(t *testing.T) {
@@ -127,7 +127,7 @@ func TestBothValueAndValueFromPresent(t *testing.T) {
 	vc := getLogPipelineValidationConfig()
 	err := logPipeline.validateOutput(vc.DeniedOutPutPlugins)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "http output host needs to have either value or secret key reference")
+	require.Contains(t, err.Error(), "http output host must have either a value or secret key reference")
 }
 
 func TestValueFromSecretKeyRef(t *testing.T) {
@@ -186,7 +186,7 @@ func TestValidateCustomFiltersContainsNoName(t *testing.T) {
 	vc := getLogPipelineValidationConfig()
 	err := logPipeline.validateFilters(vc.DeniedFilterPlugins)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "configuration section does not have name attribute")
+	require.Contains(t, err.Error(), "configuration section must have name attribute")
 }
 
 func TestValidateCustomFiltersContainsMatch(t *testing.T) {

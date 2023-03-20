@@ -61,10 +61,10 @@ func validateLokiOutput(lokiOutput *LokiOutput) error {
 		return fmt.Errorf("invalid hostname '%s'", lokiOutput.URL.Value)
 	}
 	if !lokiOutput.URL.IsDefined() && (len(lokiOutput.Labels) != 0 || len(lokiOutput.RemoveKeys) != 0) {
-		return fmt.Errorf("loki output needs to have a URL configured")
+		return fmt.Errorf("loki output must have a URL configured")
 	}
 	if secretRefAndValueIsPresent(lokiOutput.URL) {
-		return fmt.Errorf("loki output URL needs to have either value or secret key reference")
+		return fmt.Errorf("loki output URL must have either a value or secret key reference")
 	}
 	return nil
 
@@ -75,19 +75,19 @@ func validateHTTPOutput(httpOutput *HTTPOutput) error {
 		return fmt.Errorf("invalid hostname '%s'", httpOutput.Host.Value)
 	}
 	if httpOutput.URI != "" && !strings.HasPrefix(httpOutput.URI, "/") {
-		return fmt.Errorf("uri has to start with /")
+		return fmt.Errorf("uri must start with /")
 	}
 	if !httpOutput.Host.IsDefined() && (httpOutput.User.IsDefined() || httpOutput.Password.IsDefined() || httpOutput.URI != "" || httpOutput.Port != "" || httpOutput.Compress != "" || httpOutput.TLSConfig.Disabled || httpOutput.TLSConfig.SkipCertificateValidation) {
-		return fmt.Errorf("http output needs to have a host configured")
+		return fmt.Errorf("http output must have a host configured")
 	}
 	if secretRefAndValueIsPresent(httpOutput.Host) {
-		return fmt.Errorf("http output host needs to have either value or secret key reference")
+		return fmt.Errorf("http output host must have either a value or secret key reference")
 	}
 	if secretRefAndValueIsPresent(httpOutput.User) {
-		return fmt.Errorf("http output user needs to have either value or secret key reference")
+		return fmt.Errorf("http output user must have either a value or secret key reference")
 	}
 	if secretRefAndValueIsPresent(httpOutput.Password) {
-		return fmt.Errorf("http output password needs to have either value or secret key reference")
+		return fmt.Errorf("http output password must have either a value or secret key reference")
 	}
 	return nil
 }
@@ -124,7 +124,7 @@ func validateCustomOutput(deniedOutputPlugin []string, content string) error {
 	}
 
 	if !section.ContainsKey("name") {
-		return fmt.Errorf("configuration section does not have name attribute")
+		return fmt.Errorf("configuration section must have name attribute")
 	}
 
 	pluginName := section.GetByKey("name").Value
@@ -170,7 +170,7 @@ func validateCustomFilter(content string, deniedFilterPlugins []string) error {
 	}
 
 	if !section.ContainsKey("name") {
-		return fmt.Errorf("configuration section does not have name attribute")
+		return fmt.Errorf("configuration section must have name attribute")
 	}
 
 	pluginName := section.GetByKey("name").Value
@@ -196,14 +196,14 @@ func (lp *LogPipeline) validateInput() error {
 
 	var containers = input.Application.Containers
 	if len(containers.Include) > 0 && len(containers.Exclude) > 0 {
-		return fmt.Errorf("invalid log pipeline definition: can not define both 'input.application.containers.include' and 'input.application.containers.exclude'")
+		return fmt.Errorf("invalid log pipeline definition: Cannot define both 'input.application.containers.include' and 'input.application.containers.exclude'")
 	}
 
 	var namespaces = input.Application.Namespaces
 	if (len(namespaces.Include) > 0 && len(namespaces.Exclude) > 0) ||
 		(len(namespaces.Include) > 0 && namespaces.System) ||
 		(len(namespaces.Exclude) > 0 && namespaces.System) {
-		return fmt.Errorf("invalid log pipeline definition: can only define one of 'input.application.namespaces' selectors: 'include', 'exclude', 'system'")
+		return fmt.Errorf("invalid log pipeline definition: Can only define one 'input.application.namespaces' selector - either 'include', 'exclude', or 'system'")
 	}
 
 	return nil
