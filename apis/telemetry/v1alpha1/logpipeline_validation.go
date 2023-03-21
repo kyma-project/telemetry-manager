@@ -48,10 +48,10 @@ func (lp *LogPipeline) validateOutput(deniedOutputPlugins []string) error {
 
 func checkSingleOutputPlugin(output Output) error {
 	if !output.IsAnyDefined() {
-		return fmt.Errorf("no output is defined, you must define one output")
+		return fmt.Errorf("no output plugin is defined, you must define one output plugin")
 	}
 	if !output.IsSingleDefined() {
-		return fmt.Errorf("multiple output plugins are defined, you must define only one output")
+		return fmt.Errorf("multiple output plugins are defined, you must define only one output plugin")
 	}
 	return nil
 }
@@ -136,11 +136,11 @@ func validateCustomOutput(deniedOutputPlugin []string, content string) error {
 	}
 
 	if section.ContainsKey("match") {
-		return fmt.Errorf("plugin '%s' contains match condition. Match conditions are forbidden", pluginName)
+		return fmt.Errorf("output plugin '%s' contains match condition. Match conditions are forbidden", pluginName)
 	}
 
 	if section.ContainsKey("storage.total_limit_size") {
-		return fmt.Errorf("plugin '%s' contains forbidden configuration key 'storage.total_limit_size'", pluginName)
+		return fmt.Errorf("output plugin '%s' contains forbidden configuration key 'storage.total_limit_size'", pluginName)
 	}
 
 	return nil
@@ -182,7 +182,7 @@ func validateCustomFilter(content string, deniedFilterPlugins []string) error {
 	}
 
 	if section.ContainsKey("match") {
-		return fmt.Errorf("plugin '%s' contains match condition. Match conditions are forbidden", pluginName)
+		return fmt.Errorf("filter plugin '%s' contains match condition. Match conditions are forbidden", pluginName)
 	}
 
 	return nil

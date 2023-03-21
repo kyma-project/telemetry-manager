@@ -16,7 +16,7 @@ func TestContainsNoOutputPlugins(t *testing.T) {
 	result := logPipeline.validateOutput(vc.DeniedOutPutPlugins)
 
 	require.Error(t, result)
-	require.Contains(t, result.Error(), "no output is defined, you must define one output")
+	require.Contains(t, result.Error(), "no output plugin is defined, you must define one output plugin")
 }
 
 func TestContainsMultipleOutputPlugins(t *testing.T) {
