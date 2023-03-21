@@ -293,12 +293,12 @@ func main() {
 		NewCache: cache.BuilderWithOptions(cache.Options{
 			SelectorsByObject: cache.SelectorsByObject{
 				&corev1.Secret{}:         {},
-				&appsv1.Deployment{}:     {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})},
-				&appsv1.ReplicaSet{}:     {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})},
-				&appsv1.DaemonSet{}:      {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})},
-				&corev1.ConfigMap{}:      {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})},
-				&corev1.ServiceAccount{}: {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})},
-				&corev1.Service{}:        {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})},
+				&appsv1.Deployment{}:     {Field: setNamespaceFieldSelector()},
+				&appsv1.ReplicaSet{}:     {Field: setNamespaceFieldSelector()},
+				&appsv1.DaemonSet{}:      {Field: setNamespaceFieldSelector()},
+				&corev1.ConfigMap{}:      {Field: setNamespaceFieldSelector()},
+				&corev1.ServiceAccount{}: {Field: setNamespaceFieldSelector()},
+				&corev1.Service{}:        {Field: setNamespaceFieldSelector()},
 			},
 		}),
 	})
@@ -386,6 +386,10 @@ func main() {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
 	}
+}
+
+func setNamespaceFieldSelector() fields.Selector {
+	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
 }
 
 func validateFlags() error {
