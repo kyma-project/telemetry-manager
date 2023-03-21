@@ -167,23 +167,18 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries/finalizers,verbs=update
 
-////+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;
 //+kubebuilder:rbac:groups="",namespace=kyma-system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-////+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",namespace=kyma-system,resources=services,verbs=get;list;watch;create;update;patch;delete
 
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",namespace=kyma-system,resources=secrets,verbs=create;update;patch;delete
-////+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",namespace=kyma-system,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;
 
-////+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;
 //+kubebuilder:rbac:groups=apps,namespace=kyma-system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-////+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=apps,namespace=kyma-system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
-////+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,namespace=kyma-system,resources=replicasets,verbs=get;list;watch
 
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=create;get;update;
 
@@ -298,12 +293,12 @@ func main() {
 		NewCache: cache.BuilderWithOptions(cache.Options{
 			SelectorsByObject: cache.SelectorsByObject{
 				&corev1.Secret{}:         {},
-				&appsv1.Deployment{}:     {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": "kyma-system"})},
-				&appsv1.ReplicaSet{}:     {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": "kyma-system"})},
-				&appsv1.DaemonSet{}:      {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": "kyma-system"})},
-				&corev1.ConfigMap{}:      {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": "kyma-system"})},
-				&corev1.ServiceAccount{}: {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": "kyma-system"})},
-				&corev1.Service{}:        {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": "kyma-system"})},
+				&appsv1.Deployment{}:     {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})},
+				&appsv1.ReplicaSet{}:     {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})},
+				&appsv1.DaemonSet{}:      {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})},
+				&corev1.ConfigMap{}:      {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})},
+				&corev1.ServiceAccount{}: {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})},
+				&corev1.Service{}:        {Field: fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})},
 			},
 		}),
 	})

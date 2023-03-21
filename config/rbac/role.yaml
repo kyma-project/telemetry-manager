@@ -8,14 +8,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - namespaces
   verbs:
   - get
@@ -38,22 +30,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - ""
-  resources:
-  - serviceaccounts
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - admissionregistration.k8s.io
   resources:
   - validatingwebhookconfigurations
@@ -61,30 +37,6 @@ rules:
   - create
   - get
   - update
-- apiGroups:
-  - apps
-  resources:
-  - daemonsets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - replicasets
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - operator.kyma-project.io
   resources:
@@ -309,4 +261,12 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+  - list
   - watch
