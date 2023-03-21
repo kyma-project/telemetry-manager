@@ -137,34 +137,44 @@ GINKGO ?= $(LOCALBIN)/ginkgo
 K3D ?= $(LOCALBIN)/k3d
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v5.0.0
+KUSTOMIZE_VERSION ?= v5.0.1
 CONTROLLER_TOOLS_VERSION ?= v0.11.3
 K3D_VERSION ?= v5.4.7
 GINKGO_VERSION ?= v2.9.1
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
-kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
+kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
 $(KUSTOMIZE): $(LOCALBIN)
-	curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN)
+	@if test -x $(KUSTOMIZE) && ! $(KUSTOMIZE) version | grep -q $(KUSTOMIZE_VERSION); then \
+		echo "$(KUSTOMIZE) version is not expected $(KUSTOMIZE_VERSION). Removing it before installing."; \
+		rm -rf $(KUSTOMIZE); \
+	fi
+	test -s $(KUSTOMIZE) || { curl -Ss $(KUSTOMIZE_INSTALL_SCRIPT) --output install_kustomize.sh && bash install_kustomize.sh $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); rm install_kustomize.sh; }
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
 $(CONTROLLER_GEN): $(LOCALBIN)
+	test -s $(CONTROLLER_GEN) && $(CONTROLLER_GEN) --version | grep -q $(CONTROLLER_TOOLS_VERSION) || \
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	test -s $(ENVTEST) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 .PHONY: ginkgo
-ginkgo: $(GINKGO)
+ginkgo: $(GINKGO) ## Download ginkgo locally if necessary.
 $(GINKGO): $(LOCALBIN)
+	test -s $(GINKGO) && $(GINKGO) version | grep -q $(GINKGO_VERSION) || \
 	GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
 
 K3D_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh"
 .PHONY: k3d
-k3d: $(K3D)
+k3d: $(K3D) ## Download k3d locally if necessary. If wrong version is installed, it will be removed before downloading.
 $(K3D): $(LOCALBIN)
-	curl -s $(K3D_INSTALL_SCRIPT) | PATH=$(PATH):$(LOCALBIN) USE_SUDO=false K3D_INSTALL_DIR=$(LOCALBIN) TAG=$(K3D_VERSION) bash
+	@if test -x $(K3D) && ! $(K3D) version | grep -q $(K3D_VERSION); then \
+		echo "$(K3D) version is not as expected '$(K3D_VERSION)'. Removing it before installing."; \
+		rm -rf $(K3D); \
+	fi
+	test -s $(K3D) || curl -s $(K3D_INSTALL_SCRIPT) | PATH="$(PATH):$(LOCALBIN)" USE_SUDO=false K3D_INSTALL_DIR=$(LOCALBIN) TAG=$(K3D_VERSION) bash
