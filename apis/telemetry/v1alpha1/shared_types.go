@@ -1,6 +1,8 @@
 package v1alpha1
 
-import "k8s.io/apimachinery/pkg/types"
+import (
+	"k8s.io/apimachinery/pkg/types"
+)
 
 type ValueType struct {
 	Value     string           `json:"value,omitempty"`
@@ -33,6 +35,10 @@ func (skr *SecretKeyRef) NamespacedName() types.NamespacedName {
 	return types.NamespacedName{Name: skr.Name, Namespace: skr.Namespace}
 }
 
+type LogPipelineValidationConfig struct {
+	DeniedOutPutPlugins []string
+	DeniedFilterPlugins []string
+}
 type Header struct {
 	// Defines the header name
 	Name string `json:"name"`

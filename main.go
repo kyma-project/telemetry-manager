@@ -55,7 +55,6 @@ import (
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
-	logparservalidation "github.com/kyma-project/telemetry-manager/webhook/logparser/validation"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 	logpipelinevalidation "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
 
@@ -434,21 +433,19 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 }
 
 func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
+
 	return logpipelinewebhook.NewValidatingWebhookHandler(
 		client,
-		logpipelinevalidation.NewInputValidator(),
 		logpipelinevalidation.NewVariablesValidator(client),
-		logpipelinevalidation.NewFilterValidator(parsePlugins(deniedFilterPlugins)...),
 		logpipelinevalidation.NewMaxPipelinesValidator(maxLogPipelines),
-		logpipelinevalidation.NewOutputValidator(parsePlugins(deniedOutputPlugins)...),
 		logpipelinevalidation.NewFilesValidator(),
-		dryrun.NewDryRunner(client, createDryRunConfig()))
+		dryrun.NewDryRunner(client, createDryRunConfig()),
+		&telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: parsePlugins(deniedOutputPlugins), DeniedFilterPlugins: parsePlugins(deniedFilterPlugins)})
 }
 
 func createLogParserValidator(client client.Client) *logparserwebhook.ValidatingWebhookHandler {
 	return logparserwebhook.NewValidatingWebhookHandler(
 		client,
-		logparservalidation.NewParserValidator(),
 		dryrun.NewDryRunner(client, createDryRunConfig()))
 }
 

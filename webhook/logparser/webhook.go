@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/webhook/logparser/validation"
 	"github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 )
 
@@ -39,16 +38,14 @@ type DryRunner interface {
 // +kubebuilder:webhook:path=/validate-logparser,mutating=false,failurePolicy=fail,sideEffects=None,groups=telemetry.kyma-project.io,resources=logparsers,verbs=create;update,versions=v1alpha1,name=vlogparser.kb.io,admissionReviewVersions=v1
 type ValidatingWebhookHandler struct {
 	client.Client
-	parserValidator validation.ParserValidator
-	dryRunner       DryRunner
-	decoder         *admission.Decoder
+	dryRunner DryRunner
+	decoder   *admission.Decoder
 }
 
-func NewValidatingWebhookHandler(client client.Client, parserValidator validation.ParserValidator, dryRunner DryRunner) *ValidatingWebhookHandler {
+func NewValidatingWebhookHandler(client client.Client, dryRunner DryRunner) *ValidatingWebhookHandler {
 	return &ValidatingWebhookHandler{
-		Client:          client,
-		parserValidator: parserValidator,
-		dryRunner:       dryRunner,
+		Client:    client,
+		dryRunner: dryRunner,
 	}
 }
 
@@ -79,7 +76,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 
 func (v *ValidatingWebhookHandler) validateLogParser(ctx context.Context, logParser *telemetryv1alpha1.LogParser) error {
 	log := logf.FromContext(ctx)
-	err := v.parserValidator.Validate(logParser)
+	err := logParser.Validate()
 	if err != nil {
 		return err
 	}
