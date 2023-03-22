@@ -19,9 +19,13 @@ package main
 import (
 	"errors"
 	"flag"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"net/http"
 	"os"
 	"path"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"strings"
 	"time"
 
@@ -162,23 +166,18 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries/finalizers,verbs=update
 
-//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;
 //+kubebuilder:rbac:groups="",namespace=kyma-system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",namespace=kyma-system,resources=services,verbs=get;list;watch;create;update;patch;delete
 
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",namespace=kyma-system,resources=secrets,verbs=create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",namespace=kyma-system,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;
 
-//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;
 //+kubebuilder:rbac:groups=apps,namespace=kyma-system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=apps,namespace=kyma-system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,namespace=kyma-system,resources=replicasets,verbs=get;list;watch
 
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=create;get;update;
 
@@ -290,7 +289,9 @@ func main() {
 		LeaderElectionNamespace: telemetryNamespace,
 		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
 		CertDir:                 certDir,
+		NewCache:                setupFilteredCache(),
 	})
+
 	if err != nil {
 		setupLog.Error(err, "Failed to start manager")
 		os.Exit(1)
@@ -375,6 +376,27 @@ func main() {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
 	}
+}
+
+// setupFilteredCache creates filtered cache for the given resources. The controller handles various resource that are namespace scoped, and additionally
+// it handles resources that are cluster scoped (secrets used in pipelines, clusterroles etc). In order to restrict the rights of the controller such that
+// it can only fetch resources from a given namespace only we create a filtered cache.
+
+func setupFilteredCache() cache.NewCacheFunc {
+	return cache.BuilderWithOptions(cache.Options{
+		SelectorsByObject: cache.SelectorsByObject{
+			&appsv1.Deployment{}:     {Field: setNamespaceFieldSelector()},
+			&appsv1.ReplicaSet{}:     {Field: setNamespaceFieldSelector()},
+			&appsv1.DaemonSet{}:      {Field: setNamespaceFieldSelector()},
+			&corev1.ConfigMap{}:      {Field: setNamespaceFieldSelector()},
+			&corev1.ServiceAccount{}: {Field: setNamespaceFieldSelector()},
+			&corev1.Service{}:        {Field: setNamespaceFieldSelector()},
+		},
+	})
+}
+
+func setNamespaceFieldSelector() fields.Selector {
+	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
 }
 
 func validateFlags() error {
