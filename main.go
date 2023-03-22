@@ -290,18 +290,9 @@ func main() {
 		LeaderElectionNamespace: telemetryNamespace,
 		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
 		CertDir:                 certDir,
-		NewCache: cache.BuilderWithOptions(cache.Options{
-			SelectorsByObject: cache.SelectorsByObject{
-				&corev1.Secret{}:         {},
-				&appsv1.Deployment{}:     {Field: setNamespaceFieldSelector()},
-				&appsv1.ReplicaSet{}:     {Field: setNamespaceFieldSelector()},
-				&appsv1.DaemonSet{}:      {Field: setNamespaceFieldSelector()},
-				&corev1.ConfigMap{}:      {Field: setNamespaceFieldSelector()},
-				&corev1.ServiceAccount{}: {Field: setNamespaceFieldSelector()},
-				&corev1.Service{}:        {Field: setNamespaceFieldSelector()},
-			},
-		}),
+		NewCache:                setupFilteredCache(),
 	})
+
 	if err != nil {
 		setupLog.Error(err, "Failed to start manager")
 		os.Exit(1)
@@ -386,6 +377,23 @@ func main() {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
 	}
+}
+
+// setupFilteredCache creates filtered cache for the given resources. The controller handles various resource that are namespace scoped, and additionally
+// it handles resources that are cluster scoped (secrets used in pipelines, clusterroles etc). In order to restrict the rights of the controller such that
+// it can only fetch resources from a given namespace only we create a filtered cache.
+
+func setupFilteredCache() cache.NewCacheFunc {
+	return cache.BuilderWithOptions(cache.Options{
+		SelectorsByObject: cache.SelectorsByObject{
+			&appsv1.Deployment{}:     {Field: setNamespaceFieldSelector()},
+			&appsv1.ReplicaSet{}:     {Field: setNamespaceFieldSelector()},
+			&appsv1.DaemonSet{}:      {Field: setNamespaceFieldSelector()},
+			&corev1.ConfigMap{}:      {Field: setNamespaceFieldSelector()},
+			&corev1.ServiceAccount{}: {Field: setNamespaceFieldSelector()},
+			&corev1.Service{}:        {Field: setNamespaceFieldSelector()},
+		},
+	})
 }
 
 func setNamespaceFieldSelector() fields.Selector {
