@@ -26,6 +26,8 @@ spec:
       app: mockserver
   template:
     metadata:
+      annotations:
+        fluentbit.io/exclude: "True"
       labels:
         app: mockserver
       name: mockserver
