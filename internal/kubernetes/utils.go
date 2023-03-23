@@ -252,23 +252,23 @@ func mergeChecksumAnnotations(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
 	new.SetAnnotations(mergeMapsByPrefix(new.Annotations, old.Annotations, "checksum/"))
 }
 
-func mergeMapsByPrefix(new map[string]string, old map[string]string, prefix string) map[string]string {
-	if old == nil {
-		old = make(map[string]string)
+func mergeMapsByPrefix(newMap map[string]string, oldMap map[string]string, prefix string) map[string]string {
+	if oldMap == nil {
+		oldMap = make(map[string]string)
 	}
 
-	if new == nil {
-		new = make(map[string]string)
+	if newMap == nil {
+		newMap = make(map[string]string)
 	}
 
-	for k, v := range old {
-		_, hasValue := new[k]
+	for k, v := range oldMap {
+		_, hasValue := newMap[k]
 		if strings.HasPrefix(k, prefix) && !hasValue {
-			new[k] = v
+			newMap[k] = v
 		}
 	}
 
-	return new
+	return newMap
 }
 
 func GetOrCreateConfigMap(ctx context.Context, c client.Client, name types.NamespacedName) (corev1.ConfigMap, error) {

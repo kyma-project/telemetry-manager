@@ -116,10 +116,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			}, &serviceAccount); err != nil {
 				return err
 			}
-			if err := validateMetricsOwnerReferences(serviceAccount.OwnerReferences); err != nil {
-				return err
-			}
-			return nil
+			return validateMetricsOwnerReferences(serviceAccount.OwnerReferences)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -130,10 +127,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			}, &clusterRole); err != nil {
 				return err
 			}
-			if err := validateMetricsOwnerReferences(clusterRole.OwnerReferences); err != nil {
-				return err
-			}
-			return nil
+			return validateMetricsOwnerReferences(clusterRole.OwnerReferences)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -144,10 +138,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			}, &clusterRoleBinding); err != nil {
 				return err
 			}
-			if err := validateMetricsOwnerReferences(clusterRoleBinding.OwnerReferences); err != nil {
-				return err
-			}
-			return nil
+			return validateMetricsOwnerReferences(clusterRoleBinding.OwnerReferences)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -164,11 +155,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			if err := validateMetricsEnvironment(otelCollectorDeployment); err != nil {
 				return err
 			}
-			if err := validatePodAnnotations(otelCollectorDeployment); err != nil {
-				return err
-			}
-
-			return nil
+			return validatePodAnnotations(otelCollectorDeployment)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -179,10 +166,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			}, &otelCollectorService); err != nil {
 				return err
 			}
-			if err := validateMetricsOwnerReferences(otelCollectorService.OwnerReferences); err != nil {
-				return err
-			}
-			return nil
+			return validateMetricsOwnerReferences(otelCollectorService.OwnerReferences)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -196,10 +180,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			if err := validateMetricsOwnerReferences(otelCollectorConfigMap.OwnerReferences); err != nil {
 				return err
 			}
-			if err := validateCollectorConfig(otelCollectorConfigMap.Data["relay.conf"]); err != nil {
-				return err
-			}
-			return nil
+			return validateCollectorConfig(otelCollectorConfigMap.Data["relay.conf"])
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -210,10 +191,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			}, &otelCollectorSecret); err != nil {
 				return err
 			}
-			if err := validateMetricsOwnerReferences(otelCollectorSecret.OwnerReferences); err != nil {
-				return err
-			}
-			return nil
+			return validateMetricsOwnerReferences(otelCollectorSecret.OwnerReferences)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -225,10 +203,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 				return err
 			}
 
-			if err := validateSecret(otelCollectorSecret, "secret-username", "secret-password"); err != nil {
-				return err
-			}
-			return nil
+			return validateSecret(otelCollectorSecret, "secret-username", "secret-password")
 		}, timeout, interval).Should(BeNil())
 	})
 
@@ -258,11 +233,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 				return err
 			}
 
-			if err := validateSecret(otelCollectorSecret, "new-secret-username", "new-secret-password"); err != nil {
-				return err
-			}
-
-			return nil
+			return validateSecret(otelCollectorSecret, "new-secret-username", "new-secret-password")
 		}, timeout, interval).Should(BeNil())
 	})
 

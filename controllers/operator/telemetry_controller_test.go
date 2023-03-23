@@ -40,11 +40,7 @@ var _ = Describe("Deploying a Telemetry", func() {
 					return err
 				}
 
-				if err := validateStatus(telemetryTestInstance.Status); err != nil {
-					return err
-				}
-
-				return nil
+				return validateStatus(telemetryTestInstance.Status)
 			}, timeout, interval).Should(BeNil())
 			Expect(k8sClient.Delete(ctx, telemetryTestObj)).Should(Succeed())
 		})

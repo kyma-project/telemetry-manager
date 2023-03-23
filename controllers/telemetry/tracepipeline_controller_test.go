@@ -113,10 +113,7 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 			}, &serviceAccount); err != nil {
 				return err
 			}
-			if err := validateTracingOwnerReferences(serviceAccount.OwnerReferences); err != nil {
-				return err
-			}
-			return nil
+			return validateTracingOwnerReferences(serviceAccount.OwnerReferences)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -127,10 +124,7 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 			}, &clusterRole); err != nil {
 				return err
 			}
-			if err := validateTracingOwnerReferences(clusterRole.OwnerReferences); err != nil {
-				return err
-			}
-			return nil
+			return validateTracingOwnerReferences(clusterRole.OwnerReferences)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -141,10 +135,7 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 			}, &clusterRoleBinding); err != nil {
 				return err
 			}
-			if err := validateTracingOwnerReferences(clusterRoleBinding.OwnerReferences); err != nil {
-				return err
-			}
-			return nil
+			return validateTracingOwnerReferences(clusterRoleBinding.OwnerReferences)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -161,10 +152,7 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 			if err := validateTracingEnvironment(otelCollectorDeployment); err != nil {
 				return err
 			}
-			if err := validatePodAnnotations(otelCollectorDeployment); err != nil {
-				return err
-			}
-			return nil
+			return validatePodAnnotations(otelCollectorDeployment)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -175,10 +163,7 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 			}, &otelCollectorService); err != nil {
 				return err
 			}
-			if err := validateTracingOwnerReferences(otelCollectorService.OwnerReferences); err != nil {
-				return err
-			}
-			return nil
+			return validateTracingOwnerReferences(otelCollectorService.OwnerReferences)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -192,10 +177,7 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 			if err := validateTracingOwnerReferences(otelCollectorConfigMap.OwnerReferences); err != nil {
 				return err
 			}
-			if err := validateCollectorConfig(otelCollectorConfigMap.Data["relay.conf"]); err != nil {
-				return err
-			}
-			return nil
+			return validateCollectorConfig(otelCollectorConfigMap.Data["relay.conf"])
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -206,10 +188,7 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 			}, &otelCollectorSecret); err != nil {
 				return err
 			}
-			if err := validateTracingOwnerReferences(otelCollectorSecret.OwnerReferences); err != nil {
-				return err
-			}
-			return nil
+			return validateTracingOwnerReferences(otelCollectorSecret.OwnerReferences)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -221,10 +200,7 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 				return err
 			}
 
-			if err := validateSecret(otelCollectorSecret, "secret-username", "secret-password"); err != nil {
-				return err
-			}
-			return nil
+			return validateSecret(otelCollectorSecret, "secret-username", "secret-password")
 		}, timeout, interval).Should(BeNil())
 
 	})
@@ -255,11 +231,7 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 				return err
 			}
 
-			if err := validateSecret(otelCollectorSecret, "new-secret-username", "new-secret-password"); err != nil {
-				return err
-			}
-
-			return nil
+			return validateSecret(otelCollectorSecret, "new-secret-username", "new-secret-password")
 		}, timeout, interval).Should(BeNil())
 	})
 

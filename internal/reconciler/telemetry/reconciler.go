@@ -78,8 +78,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 // HandleReadyState checks for the consistency of reconciled resource, by verifying the underlying resources.
-func (r *Reconciler) HandleReadyState(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry) error {
-
+func (r *Reconciler) HandleReadyState(_ context.Context, _ *operatorv1alpha1.Telemetry) error {
 	return nil
 }
 
