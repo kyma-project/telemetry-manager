@@ -89,10 +89,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				}, &serviceAccount); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(serviceAccount.OwnerReferences); err != nil {
-					return err
-				}
-				return nil
+				return validateOwnerReferences(serviceAccount.OwnerReferences)
 			}, timeout, interval).Should(BeNil())
 
 			Eventually(func() error {
@@ -103,10 +100,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				}, &clusterRole); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(clusterRole.OwnerReferences); err != nil {
-					return err
-				}
-				return nil
+				return validateOwnerReferences(clusterRole.OwnerReferences)
 			}, timeout, interval).Should(BeNil())
 
 			Eventually(func() error {
@@ -117,10 +111,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				}, &clusterRoleBinding); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(clusterRoleBinding.OwnerReferences); err != nil {
-					return err
-				}
-				return nil
+				return validateOwnerReferences(clusterRoleBinding.OwnerReferences)
 			}, timeout, interval).Should(BeNil())
 
 			Eventually(func() error {
@@ -137,10 +128,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				if err := validateEnvironment(otelCollectorDeployment); err != nil {
 					return err
 				}
-				if err := validatePodAnnotations(otelCollectorDeployment); err != nil {
-					return err
-				}
-				return nil
+				return validatePodAnnotations(otelCollectorDeployment)
 			}, timeout, interval).Should(BeNil())
 
 			Eventually(func() error {
@@ -151,10 +139,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				}, &otelCollectorService); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(otelCollectorService.OwnerReferences); err != nil {
-					return err
-				}
-				return nil
+				return validateOwnerReferences(otelCollectorService.OwnerReferences)
 			}, timeout, interval).Should(BeNil())
 
 			Eventually(func() error {
@@ -168,10 +153,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				if err := validateOwnerReferences(otelCollectorConfigMap.OwnerReferences); err != nil {
 					return err
 				}
-				if err := validateCollectorConfig(otelCollectorConfigMap.Data["relay.conf"]); err != nil {
-					return err
-				}
-				return nil
+				return validateCollectorConfig(otelCollectorConfigMap.Data["relay.conf"])
 			}, timeout, interval).Should(BeNil())
 
 			Eventually(func() error {
@@ -182,10 +164,7 @@ var _ = Describe("Deploying a TracePipeline", func() {
 				}, &otelCollectorSecret); err != nil {
 					return err
 				}
-				if err := validateOwnerReferences(otelCollectorSecret.OwnerReferences); err != nil {
-					return err
-				}
-				return nil
+				return validateOwnerReferences(otelCollectorSecret.OwnerReferences)
 			}, timeout, interval).Should(BeNil())
 
 			Expect(k8sClient.Delete(ctx, tracePipeline)).Should(Succeed())
