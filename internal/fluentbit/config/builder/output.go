@@ -52,6 +52,7 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit 
 	sb.AddConfigParam("match", fmt.Sprintf("%s.*", name))
 	sb.AddConfigParam("alias", fmt.Sprintf("%s-http", name))
 	sb.AddConfigParam("storage.total_limit_size", fsBufferLimit)
+	sb.AddConfigParam("retry_limit", "no_limits")
 	sb.AddIfNotEmpty("uri", httpOutput.URI)
 	sb.AddIfNotEmpty("compress", httpOutput.Compress)
 	sb.AddIfNotEmptyOrDefault("port", httpOutput.Port, "443")
