@@ -15,10 +15,7 @@ func (lp *LogPipeline) Validate(vc *LogPipelineValidationConfig) error {
 	if err := lp.validateFilters(vc.DeniedFilterPlugins); err != nil {
 		return err
 	}
-	if err := lp.validateInput(); err != nil {
-		return err
-	}
-	return nil
+	return lp.validateInput()
 }
 
 func (lp *LogPipeline) validateOutput(deniedOutputPlugins []string) error {
@@ -39,11 +36,7 @@ func (lp *LogPipeline) validateOutput(deniedOutputPlugins []string) error {
 		}
 	}
 
-	if err := validateCustomOutput(deniedOutputPlugins, output.Custom); err != nil {
-		return err
-	}
-
-	return nil
+	return validateCustomOutput(deniedOutputPlugins, output.Custom)
 }
 
 func checkSingleOutputPlugin(output Output) error {
