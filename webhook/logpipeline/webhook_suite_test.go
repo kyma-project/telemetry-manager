@@ -133,10 +133,7 @@ var _ = BeforeSuite(func() {
 		if err != nil {
 			return err
 		}
-		if err := conn.Close(); err != nil {
-			return err
-		}
-		return nil
+		return conn.Close()
 	}).Should(Succeed())
 
 	By("creating the necessary resources")
