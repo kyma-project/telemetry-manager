@@ -37,6 +37,7 @@ var _ = Describe("Tracing", func() {
 		var commonAttributes []attribute.KeyValue
 
 		BeforeAll(func() {
+			tracePipelineSecret := makeTracePipelineSecret()
 			tracePipeline := makeTracePipeline()
 			externalOTLPTraceService := makeExternalOTLPTracesService()
 			mocksNamespace := makeMocksNamespace()
@@ -48,12 +49,14 @@ var _ = Describe("Tracing", func() {
 			Expect(k8sClient.Create(ctx, mockBackendCm)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, mockBackendDeployment)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, externalMockBackendService)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, tracePipelineSecret)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, tracePipeline)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, externalOTLPTraceService)).Should(Succeed())
 
 			DeferCleanup(func() {
 				Expect(k8sClient.Delete(ctx, externalOTLPTraceService)).Should(Succeed())
 				Expect(k8sClient.Delete(ctx, tracePipeline)).Should(Succeed())
+				Expect(k8sClient.Delete(ctx, tracePipelineSecret)).Should(Succeed())
 				Expect(k8sClient.Delete(ctx, externalMockBackendService)).Should(Succeed())
 				Expect(k8sClient.Delete(ctx, mockBackendDeployment)).Should(Succeed())
 				Expect(k8sClient.Delete(ctx, mockBackendCm)).Should(Succeed())
@@ -132,6 +135,16 @@ var _ = Describe("Tracing", func() {
 	})
 })
 
+func makeTracePipelineSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "trace-rcv-hostname",
+			Namespace: "default",
+		},
+		Type:       "opaque",
+		StringData: map[string]string{"trace-host": "http://trace-receiver.mocks.svc.cluster.local:4317"},
+	}
+}
 func makeTracePipeline() *telemetryv1alpha1.TracePipeline {
 	return &telemetryv1alpha1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
@@ -140,7 +153,15 @@ func makeTracePipeline() *telemetryv1alpha1.TracePipeline {
 		Spec: telemetryv1alpha1.TracePipelineSpec{
 			Output: telemetryv1alpha1.TracePipelineOutput{
 				Otlp: &telemetryv1alpha1.OtlpOutput{
-					Endpoint: telemetryv1alpha1.ValueType{Value: "http://trace-receiver.mocks.svc.cluster.local:4317"},
+					Endpoint: telemetryv1alpha1.ValueType{
+						ValueFrom: &telemetryv1alpha1.ValueFromSource{
+							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+								Name:      "trace-rcv-hostname",
+								Namespace: "default",
+								Key:       "trace-host",
+							},
+						},
+					},
 				},
 			},
 		},
