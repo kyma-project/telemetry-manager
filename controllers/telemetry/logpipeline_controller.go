@@ -68,7 +68,7 @@ func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&source.Kind{Type: &appsv1.DaemonSet{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapDaemonSet),
-			builder.WithPredicates(setup.OnlyUpdate()),
+			builder.WithPredicates(setup.DeleteOrUpdate()),
 		).
 		Complete(r)
 }
