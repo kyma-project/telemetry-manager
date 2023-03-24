@@ -74,6 +74,10 @@ tidy: ## Check if there any dirty change for go mod tidy.
 test: manifests generate fmt vet tidy envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
+.PHONE: e2e-test
+e2e-test:
+	@echo "Nothing to test on release-2.12 branch"
+
 ##@ Build
 
 .PHONY: build
