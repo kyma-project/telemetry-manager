@@ -23,7 +23,7 @@ func NewVariablesValidator(client client.Client) VariablesValidator {
 	}
 }
 
-func (v *variablesValidator) Validate(context context.Context, logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error {
+func (v *variablesValidator) Validate(_ context.Context, logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error {
 	if len(logPipeline.Spec.Variables) == 0 {
 		return nil
 	}
