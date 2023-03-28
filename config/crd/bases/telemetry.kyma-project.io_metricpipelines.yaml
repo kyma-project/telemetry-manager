@@ -63,10 +63,10 @@ spec:
                                   valueFrom:
                                     properties:
                                       secretKeyRef:
-                                        description: '''Reference to a key in a Secret.
+                                        description: Reference to a key in a Secret.
                                           You must provide `name` and `namespace`
                                           of the Secret, as well as the name of the
-                                          `key`.'''
+                                          `key`.
                                         properties:
                                           key:
                                             type: string
@@ -86,10 +86,10 @@ spec:
                                   valueFrom:
                                     properties:
                                       secretKeyRef:
-                                        description: '''Reference to a key in a Secret.
+                                        description: Reference to a key in a Secret.
                                           You must provide `name` and `namespace`
                                           of the Secret, as well as the name of the
-                                          `key`.'''
+                                          `key`.
                                         properties:
                                           key:
                                             type: string
@@ -114,9 +114,9 @@ spec:
                           valueFrom:
                             properties:
                               secretKeyRef:
-                                description: '''Reference to a key in a Secret. You
-                                  must provide `name` and `namespace` of the Secret,
-                                  as well as the name of the `key`.'''
+                                description: Reference to a key in a Secret. You must
+                                  provide `name` and `namespace` of the Secret, as
+                                  well as the name of the `key`.
                                 properties:
                                   key:
                                     type: string
@@ -140,9 +140,9 @@ spec:
                             valueFrom:
                               properties:
                                 secretKeyRef:
-                                  description: '''Reference to a key in a Secret.
-                                    You must provide `name` and `namespace` of the
-                                    Secret, as well as the name of the `key`.'''
+                                  description: Reference to a key in a Secret. You
+                                    must provide `name` and `namespace` of the Secret,
+                                    as well as the name of the `key`.
                                   properties:
                                     key:
                                       type: string

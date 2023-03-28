@@ -93,12 +93,12 @@ spec:
                             type: array
                         type: object
                       dropLabels:
-                        description: '''Defines whether to drop all Kubernetes labels.
-                          The default is `false`.'''
+                        description: Defines whether to drop all Kubernetes labels.
+                          The default is `false`.
                         type: boolean
                       keepAnnotations:
-                        description: '''Defines whether to keep all Kubernetes annotations.
-                          The default is `false`.'''
+                        description: Defines whether to keep all Kubernetes annotations.
+                          The default is `false`.
                         type: boolean
                       namespaces:
                         description: Describes whether application logs from specific
@@ -118,16 +118,16 @@ spec:
                               type: string
                             type: array
                           system:
-                            description: '''Set to `true` if collecting from all Namespaces
+                            description: Set to `true` if collecting from all Namespaces
                               must also include the system Namespaces like kube-system,
-                              istio-system, and kyma-system.'''
+                              istio-system, and kyma-system.
                             type: boolean
                         type: object
                     type: object
                 type: object
               output:
-                description: '''[Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs)
-                  where you want to push the logs. Only one output can be specified.'''
+                description: '[Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs)
+                  where you want to push the logs. Only one output can be specified.'
                 properties:
                   custom:
                     description: 'Defines a custom output in the Fluent Bit syntax.
@@ -135,14 +135,14 @@ spec:
                       in unsupported mode.'
                     type: string
                   grafana-loki:
-                    description: '''Configures an output to the Kyma-internal Loki
-                      instance. [Fluent Bit grafana-loki output](https://grafana.com/docs/loki/v2.2.x/clients/fluentbit/).
+                    description: Configures an output to the Kyma-internal Loki instance.
+                      [Fluent Bit grafana-loki output](https://grafana.com/docs/loki/v2.2.x/clients/fluentbit/).
                       **Note:** This output is considered legacy and is only provided
                       for backward compatibility with the [deprecated](https://kyma-project.io/blog/2022/11/2/loki-deprecation/)
                       in-cluster Loki instance. It might not be compatible with the
                       latest Loki versions. For integration with a custom Loki installation
                       use the `custom` output with the name `loki` instead, see also
-                      [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).'''
+                      [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).
                     properties:
                       labels:
                         additionalProperties:
@@ -162,9 +162,9 @@ spec:
                           valueFrom:
                             properties:
                               secretKeyRef:
-                                description: '''Reference to a key in a Secret. You
-                                  must provide `name` and `namespace` of the Secret,
-                                  as well as the name of the `key`.'''
+                                description: Reference to a key in a Secret. You must
+                                  provide `name` and `namespace` of the Secret, as
+                                  well as the name of the `key`.
                                 properties:
                                   key:
                                     type: string
@@ -184,14 +184,13 @@ spec:
                         description: Defines the compression algorithm to use.
                         type: string
                       dedot:
-                        description: '''Enables de-dotting of Kubernetes labels and
-                          annotations for compatibility with ElasticSearch based backends.
-                          Dots (.) will be replaced by underscores (_). Default is
-                          `false`.'''
+                        description: Enables de-dotting of Kubernetes labels and annotations
+                          for compatibility with ElasticSearch based backends. Dots
+                          (.) will be replaced by underscores (_). Default is `false`.
                         type: boolean
                       format:
-                        description: '''Data format to be used in the HTTP request
-                          body. Default is `json`.'''
+                        description: Data format to be used in the HTTP request body.
+                          Default is `json`.
                         type: string
                       host:
                         description: Defines the host of the HTTP receiver.
@@ -201,9 +200,9 @@ spec:
                           valueFrom:
                             properties:
                               secretKeyRef:
-                                description: '''Reference to a key in a Secret. You
-                                  must provide `name` and `namespace` of the Secret,
-                                  as well as the name of the `key`.'''
+                                description: Reference to a key in a Secret. You must
+                                  provide `name` and `namespace` of the Secret, as
+                                  well as the name of the `key`.
                                 properties:
                                   key:
                                     type: string
@@ -222,9 +221,9 @@ spec:
                           valueFrom:
                             properties:
                               secretKeyRef:
-                                description: '''Reference to a key in a Secret. You
-                                  must provide `name` and `namespace` of the Secret,
-                                  as well as the name of the `key`.'''
+                                description: Reference to a key in a Secret. You must
+                                  provide `name` and `namespace` of the Secret, as
+                                  well as the name of the `key`.
                                 properties:
                                   key:
                                     type: string
@@ -243,12 +242,12 @@ spec:
                         description: TLS Configuration of the HTTP target server.
                         properties:
                           disabled:
-                            description: '''Indicates if TLS is disabled or enabled.
-                              Default is `false`.'''
+                            description: Indicates if TLS is disabled or enabled.
+                              Default is `false`.
                             type: boolean
                           skipCertificateValidation:
-                            description: '''If `true`, the validation of certificates
-                              is skipped. Default is `false`.'''
+                            description: If `true`, the validation of certificates
+                              is skipped. Default is `false`.
                             type: boolean
                         type: object
                       uri:
@@ -263,9 +262,9 @@ spec:
                           valueFrom:
                             properties:
                               secretKeyRef:
-                                description: '''Reference to a key in a Secret. You
-                                  must provide `name` and `namespace` of the Secret,
-                                  as well as the name of the `key`.'''
+                                description: Reference to a key in a Secret. You must
+                                  provide `name` and `namespace` of the Secret, as
+                                  well as the name of the `key`.
                                 properties:
                                   key:
                                     type: string
@@ -279,10 +278,10 @@ spec:
                     type: object
                 type: object
               variables:
-                description: '''A list of mappings from Kubernetes Secret keys to
-                  environment variables. Mapped keys are mounted as environment variables,
-                  so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables)
-                  in the sections.'''
+                description: A list of mappings from Kubernetes Secret keys to environment
+                  variables. Mapped keys are mounted as environment variables, so
+                  that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables)
+                  in the sections.
                 items:
                   description: References a Kubernetes secret that should be provided
                     as environment variable to Fluent Bit
@@ -293,9 +292,9 @@ spec:
                     valueFrom:
                       properties:
                         secretKeyRef:
-                          description: '''Reference to a key in a Secret. You must
-                            provide `name` and `namespace` of the Secret, as well
-                            as the name of the `key`.'''
+                          description: Reference to a key in a Secret. You must provide
+                            `name` and `namespace` of the Secret, as well as the name
+                            of the `key`.
                           properties:
                             key:
                               type: string
@@ -327,15 +326,15 @@ spec:
                         the pipeline.
                       type: string
                     type:
-                      description: '''The possible transition types are:<br>- `Running`:
+                      description: 'The possible transition types are:<br>- `Running`:
                         The instance is ready and usable.<br>- `Pending`: The pipeline
-                        is being activated.'''
+                        is being activated.'
                       type: string
                   type: object
                 type: array
               unsupportedMode:
-                description: '''Is active when the LogPipeline uses a `custom` output
-                  or filter; see [unsupported mode](./../../01-overview/main-areas/telemetry/telemetry-02-logs.md#unsupported-mode#unsupported-mode).'''
+                description: Is active when the LogPipeline uses a `custom` output
+                  or filter; see [unsupported mode](./../../01-overview/main-areas/telemetry/telemetry-02-logs.md#unsupported-mode#unsupported-mode).
                 type: boolean
             type: object
         type: object
