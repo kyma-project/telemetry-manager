@@ -5,17 +5,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-
-	resources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	resources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
 //go:generate mockery --name fileWriter --filename file_writer.go

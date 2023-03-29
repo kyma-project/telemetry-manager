@@ -9,13 +9,12 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-
 	"github.com/google/uuid"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 )
 
 func dryRunArgs() []string {

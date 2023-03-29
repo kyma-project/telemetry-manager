@@ -2,10 +2,11 @@ package v1alpha1
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 )
 
 var (
