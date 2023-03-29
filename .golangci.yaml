@@ -43,3 +43,11 @@ issues:
     - path: _test\.go
       linters:
         - errcheck
+    - path: _test\.go
+      text: "shadow: declaration of \"ctx\" shadows declaration at line ([\\d]+)"
+      linters:
+        - govet
+    - path: .go
+      text: "shadow: declaration of \"err\" shadows declaration at line ([\\d]+)"
+      linters:
+        - govet

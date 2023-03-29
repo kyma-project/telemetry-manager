@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+var (
+	hostRegExp = regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
+)
+
 func (lp *LogPipeline) Validate(vc *LogPipelineValidationConfig) error {
 	if err := lp.validateOutput(vc.DeniedOutPutPlugins); err != nil {
 		return err
@@ -102,8 +106,7 @@ func validURL(host string) bool {
 
 func validHostname(host string) bool {
 	host = strings.Trim(host, " ")
-	re, _ := regexp.Compile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
-	return re.MatchString(host)
+	return hostRegExp.MatchString(host)
 }
 
 func validateCustomOutput(deniedOutputPlugin []string, content string) error {
