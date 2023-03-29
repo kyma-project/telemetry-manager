@@ -6,9 +6,11 @@ linters:
   enable:
     - errcheck
     - exportloopref
+    - gci
     - ginkgolinter
     - gochecknoinits
     - gofmt
+    - goimports
     - gosec
     - gosimple
     - govet
@@ -30,6 +32,18 @@ linters-settings:
       - io.Copy(*bytes.Buffer)
       - io.Copy(os.Stdout)
       - gopkg.in/yaml.v3.Marshal
+
+  gci:
+    sections:
+      - standard                                             # Standard packages.
+      - default                                              # Imports that could not be matched to another section type.
+      - prefix(github.com/kyma-project/telemetry-manager)    # Imports with the specified Prefix.
+      - blank                                                # Blank imports
+      - dot                                                  # Dot imports
+    custom-order: true
+
+  goimports:
+    local-prefixes: github.com/kyma-project/telemetry-manager
 
   govet:
     check-shadowing: true
