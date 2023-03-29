@@ -35,7 +35,7 @@ func TestDaemonSetProber(t *testing.T) {
 			t.Parallel()
 
 			daemonSet := &appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "kyma-system", Generation: tc.desiredGeneration},
+				ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system", Generation: tc.desiredGeneration},
 				Status: appsv1.DaemonSetStatus{
 					DesiredNumberScheduled: tc.desiredScheduled,
 					NumberReady:            tc.numberReady,
@@ -47,7 +47,7 @@ func TestDaemonSetProber(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithObjects(daemonSet).Build()
 
 			sut := DaemonSetProber{fakeClient}
-			ready, err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "kyma-system"})
+			ready, err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 
 			require.NoError(t, err)
 			require.Equal(t, tc.expected, ready)
@@ -57,18 +57,18 @@ func TestDaemonSetProber(t *testing.T) {
 
 func TestSetAnnotation(t *testing.T) {
 	daemonSet := &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "kyma-system"},
+		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system"},
 	}
 
 	fakeClient := fake.NewClientBuilder().WithObjects(daemonSet).Build()
 
 	sut := DaemonSetAnnotator{fakeClient}
 
-	err := sut.SetAnnotation(context.Background(), types.NamespacedName{Name: "foo", Namespace: "kyma-system"}, "foo", "bar")
+	err := sut.SetAnnotation(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"}, "foo", "bar")
 	require.NoError(t, err)
 
 	var updatedDaemonSet appsv1.DaemonSet
-	_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: "foo", Namespace: "kyma-system"}, &updatedDaemonSet)
+	_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"}, &updatedDaemonSet)
 	require.Len(t, updatedDaemonSet.Spec.Template.Annotations, 1)
 	require.Contains(t, updatedDaemonSet.Spec.Template.Annotations, "foo")
 	require.Equal(t, updatedDaemonSet.Spec.Template.Annotations["foo"], "bar")

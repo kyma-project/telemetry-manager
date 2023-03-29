@@ -12,7 +12,7 @@ import (
 )
 
 func TestMakeDaemonSet(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"}
+	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 	checksum := "foo"
 	ds := DaemonSetConfig{
 		FluentBitImage:              "foo-fluenbit",
@@ -70,7 +70,7 @@ func TestMakeDaemonSet(t *testing.T) {
 }
 
 func TestMakeMetricsService(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"}
+	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 	service := MakeMetricsService(name)
 
 	require.NotNil(t, service)
@@ -90,7 +90,7 @@ func TestMakeMetricsService(t *testing.T) {
 }
 
 func TestMakeExporterMetricsService(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"}
+	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 	service := MakeExporterMetricsService(name)
 
 	require.NotNil(t, service)
@@ -109,7 +109,7 @@ func TestMakeExporterMetricsService(t *testing.T) {
 }
 
 func TestMakeConfigMap(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"}
+	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 	cm := MakeConfigMap(name)
 
 	require.NotNil(t, cm)
@@ -121,7 +121,7 @@ func TestMakeConfigMap(t *testing.T) {
 }
 
 func TestMakeLuaConfigMap(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"}
+	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 	cm := MakeLuaConfigMap(name)
 
 	require.NotNil(t, cm)

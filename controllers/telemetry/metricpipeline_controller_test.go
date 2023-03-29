@@ -30,8 +30,8 @@ import (
 var (
 	testMetricPipelineConfig = collectorresources.Config{
 		BaseName:          "telemetry-metric-gateway",
-		Namespace:         "kyma-system",
-		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "kyma-system"},
+		Namespace:         "telemetry-system",
+		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "telemetry-system"},
 		Deployment: collectorresources.DeploymentConfig{
 			Image:         "otel/opentelemetry-collector-contrib:0.60.0",
 			CPULimit:      resource.MustParse("1"),
@@ -112,7 +112,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			var serviceAccount corev1.ServiceAccount
 			if err := k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "telemetry-metric-gateway",
-				Namespace: "kyma-system",
+				Namespace: "telemetry-system",
 			}, &serviceAccount); err != nil {
 				return err
 			}
@@ -123,7 +123,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			var clusterRole rbacv1.ClusterRole
 			if err := k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "telemetry-metric-gateway",
-				Namespace: "kyma-system",
+				Namespace: "telemetry-system",
 			}, &clusterRole); err != nil {
 				return err
 			}
@@ -134,7 +134,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			var clusterRoleBinding rbacv1.ClusterRoleBinding
 			if err := k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "telemetry-metric-gateway",
-				Namespace: "kyma-system",
+				Namespace: "telemetry-system",
 			}, &clusterRoleBinding); err != nil {
 				return err
 			}
@@ -145,7 +145,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			var otelCollectorDeployment appsv1.Deployment
 			if err := k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "telemetry-metric-gateway",
-				Namespace: "kyma-system",
+				Namespace: "telemetry-system",
 			}, &otelCollectorDeployment); err != nil {
 				return err
 			}
@@ -162,7 +162,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			var otelCollectorService corev1.Service
 			if err := k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "telemetry-otlp-metrics",
-				Namespace: "kyma-system",
+				Namespace: "telemetry-system",
 			}, &otelCollectorService); err != nil {
 				return err
 			}
@@ -173,7 +173,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			var otelCollectorConfigMap corev1.ConfigMap
 			if err := k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "telemetry-metric-gateway",
-				Namespace: "kyma-system",
+				Namespace: "telemetry-system",
 			}, &otelCollectorConfigMap); err != nil {
 				return err
 			}
@@ -187,7 +187,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			var otelCollectorSecret corev1.Secret
 			if err := k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "telemetry-metric-gateway",
-				Namespace: "kyma-system",
+				Namespace: "telemetry-system",
 			}, &otelCollectorSecret); err != nil {
 				return err
 			}
@@ -198,7 +198,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			var otelCollectorSecret corev1.Secret
 			if err := k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "telemetry-metric-gateway",
-				Namespace: "kyma-system",
+				Namespace: "telemetry-system",
 			}, &otelCollectorSecret); err != nil {
 				return err
 			}
@@ -228,7 +228,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			var otelCollectorSecret corev1.Secret
 			if err := k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "telemetry-metric-gateway",
-				Namespace: "kyma-system",
+				Namespace: "telemetry-system",
 			}, &otelCollectorSecret); err != nil {
 				return err
 			}

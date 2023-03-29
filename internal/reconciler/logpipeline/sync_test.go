@@ -47,7 +47,7 @@ var (
 )
 
 func TestSyncSectionsConfigMap(t *testing.T) {
-	sectionsCmName := types.NamespacedName{Name: "sections", Namespace: "kyma-system"}
+	sectionsCmName := types.NamespacedName{Name: "sections", Namespace: "telemetry-system"}
 	fakeClient := fake.NewClientBuilder().WithObjects(
 		&corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
@@ -159,7 +159,7 @@ alias foo`,
 }
 
 func TestSyncFilesConfigMap(t *testing.T) {
-	filesCmName := types.NamespacedName{Name: "files", Namespace: "kyma-system"}
+	filesCmName := types.NamespacedName{Name: "files", Namespace: "telemetry-system"}
 	fakeClient := fake.NewClientBuilder().WithObjects(
 		&corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
@@ -315,7 +315,7 @@ func TestSyncReferencedSecrets(t *testing.T) {
 		}
 		fakeClient := fake.NewClientBuilder().WithObjects(&credsSecret).Build()
 
-		envSecretName := types.NamespacedName{Name: "env", Namespace: "kyma-system"}
+		envSecretName := types.NamespacedName{Name: "env", Namespace: "telemetry-system"}
 		sut := syncer{fakeClient, Config{EnvSecret: envSecretName}}
 		err := sut.syncReferencedSecrets(context.Background(), &allPipelines)
 		require.NoError(t, err)
@@ -337,7 +337,7 @@ func TestSyncReferencedSecrets(t *testing.T) {
 		}
 		fakeClient := fake.NewClientBuilder().WithObjects(&passwordSecret).Build()
 
-		envSecretName := types.NamespacedName{Name: "env", Namespace: "kyma-system"}
+		envSecretName := types.NamespacedName{Name: "env", Namespace: "telemetry-system"}
 		sut := syncer{fakeClient, Config{EnvSecret: envSecretName}}
 		err := sut.syncReferencedSecrets(context.Background(), &allPipelines)
 		require.NoError(t, err)
@@ -366,7 +366,7 @@ func TestSyncReferencedSecrets(t *testing.T) {
 		}
 		fakeClient := fake.NewClientBuilder().WithObjects(&passwordSecret).Build()
 
-		envSecretName := types.NamespacedName{Name: "env", Namespace: "kyma-system"}
+		envSecretName := types.NamespacedName{Name: "env", Namespace: "telemetry-system"}
 		sut := syncer{fakeClient, Config{EnvSecret: envSecretName}}
 		err := sut.syncReferencedSecrets(context.Background(), &allPipelines)
 		require.NoError(t, err)

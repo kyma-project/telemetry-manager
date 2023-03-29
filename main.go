@@ -19,15 +19,16 @@ package main
 import (
 	"errors"
 	"flag"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"net/http"
 	"os"
 	"path"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"strings"
 	"time"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	"k8s.io/client-go/tools/record"
 
@@ -91,6 +92,7 @@ var (
 	setupLog               = ctrl.Log.WithName("setup")
 	dynamicLoglevel        = zap.NewAtomicLevel()
 	configureLogLevelOnFly *logger.LogLevel
+	telemetryNamespace     string
 
 	traceCollectorImage         string
 	traceCollectorPriorityClass string
@@ -128,8 +130,6 @@ const (
 	fluentBitImage         = "eu.gcr.io/kyma-project/tpi/fluent-bit:2.0.10-050eef31"
 	fluentBitExporterImage = "eu.gcr.io/kyma-project/directory-size-exporter:v20230308-ff6cf204"
 
-	telemetryNamespace = "kyma-system"
-
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
 )
@@ -166,18 +166,18 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries/finalizers,verbs=update
 
-//+kubebuilder:rbac:groups="",namespace=kyma-system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",namespace=kyma-system,resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",namespace=system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",namespace=system,resources=services,verbs=get;list;watch;create;update;patch;delete
 
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
-//+kubebuilder:rbac:groups="",namespace=kyma-system,resources=secrets,verbs=create;update;patch;delete
-//+kubebuilder:rbac:groups="",namespace=kyma-system,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",namespace=system,resources=secrets,verbs=create;update;patch;delete
+//+kubebuilder:rbac:groups="",namespace=system,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;
 
-//+kubebuilder:rbac:groups=apps,namespace=kyma-system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,namespace=kyma-system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,namespace=kyma-system,resources=replicasets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,namespace=system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,namespace=system,resources=replicasets,verbs=get;list;watch
 
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=create;get;update;
 
@@ -190,6 +190,7 @@ func main() {
 	flag.BoolVar(&enableMetrics, "enable-metrics", true, "Enable configurable metrics.")
 	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
+	flag.StringVar(&telemetryNamespace, "manager-namespace", "", "Namespace of the manager")
 
 	flag.StringVar(&traceCollectorImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
