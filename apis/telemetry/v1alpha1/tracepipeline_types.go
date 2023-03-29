@@ -124,7 +124,7 @@ type TracePipelineList struct {
 	Items           []TracePipeline `json:"items"`
 }
 
-//nolint:gochecknoinits
+//nolint:gochecknoinits // SchemeBuilder's registration is required.
 func init() {
 	SchemeBuilder.Register(&TracePipeline{}, &TracePipelineList{})
 }

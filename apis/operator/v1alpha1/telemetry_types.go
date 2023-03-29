@@ -117,7 +117,7 @@ type TelemetryList struct {
 	Items           []Telemetry `json:"items"`
 }
 
-//nolint:gochecknoinits
+//nolint:gochecknoinits // SchemeBuilder's registration is required.
 func init() {
 	SchemeBuilder.Register(&Telemetry{}, &TelemetryList{})
 }
