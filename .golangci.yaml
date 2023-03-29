@@ -1,11 +1,6 @@
 run:
   modules-download-mode: readonly
   timeout: 10m
-issues:
-  exclude:
-    # Check this issue for more info: https://github.com/kyoh86/scopelint/issues/4
-    - Using the variable on range scope `tc` in function literal
-    - Using the variable on range scope `tt` in function literal
 linters:
   disable-all: true
   enable:
@@ -25,3 +20,26 @@ linters:
     - typecheck
     - unparam
     - unused
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true    # Reports type assertions: `a := b.(SomeStruct)`.
+    check-blank: true              # Report assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.
+    exclude-functions:             # List of functions to exclude from checking.
+      - io/ioutil.ReadFile
+      - io.Copy(*bytes.Buffer)
+      - io.Copy(os.Stdout)
+      - gopkg.in/yaml.v3.Marshal
+
+  govet:
+    check-shadowing: true
+
+issues:
+  exclude:
+    # Check this issue for more info: https://github.com/kyoh86/scopelint/issues/4
+    - Using the variable on range scope `tc` in function literal
+    - Using the variable on range scope `tt` in function literal
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
