@@ -33,7 +33,7 @@ func TestDeploymentProber_IsReady(t *testing.T) {
 			matchLabels["test.deployment.name"] = "test-deployment"
 
 			deployment := &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "kyma-system"},
+				ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system"},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &tc.desiredScheduled,
 					Selector: &metav1.LabelSelector{MatchLabels: matchLabels},
@@ -46,7 +46,7 @@ func TestDeploymentProber_IsReady(t *testing.T) {
 			rs := &appsv1.ReplicaSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:            "foo",
-					Namespace:       "kyma-system",
+					Namespace:       "telemetry-system",
 					Labels:          deployment.Spec.Selector.MatchLabels,
 					OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(deployment, deployment.GroupVersionKind())},
 				},
@@ -71,7 +71,7 @@ func TestDeploymentProber_IsReady(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithObjects(deployment).WithLists(rsList).Build()
 
 			sut := DeploymentProber{fakeClient}
-			ready, err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "kyma-system"})
+			ready, err := sut.IsReady(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 
 			require.NoError(t, err)
 			require.Equal(t, tc.expected, ready)

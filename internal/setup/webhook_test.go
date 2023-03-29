@@ -15,7 +15,7 @@ import (
 var (
 	webhookService = types.NamespacedName{
 		Name:      "telemetry-operator-webhook",
-		Namespace: "kyma-system",
+		Namespace: "telemetry-system",
 	}
 	name   = "validation.webhook.telemetry.kyma-project.io"
 	labels = map[string]string{

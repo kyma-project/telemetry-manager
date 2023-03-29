@@ -108,7 +108,7 @@ var _ = BeforeSuite(func() {
 
 	kymaSystemNamespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "kyma-system",
+			Name: "telemetry-system",
 		},
 	}
 	Expect(k8sClient.Create(ctx, kymaSystemNamespace)).Should(Succeed())

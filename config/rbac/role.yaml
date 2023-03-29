@@ -191,7 +191,7 @@ kind: Role
 metadata:
   creationTimestamp: null
   name: manager-role
-  namespace: kyma-system
+  namespace: system
 rules:
 - apiGroups:
   - ""

@@ -13,7 +13,7 @@ import (
 var (
 	config = Config{
 		BaseName:  "collector",
-		Namespace: "kyma-system",
+		Namespace: "telemetry-system",
 		Service: ServiceConfig{
 			OTLPServiceName: "collector-traces",
 		},

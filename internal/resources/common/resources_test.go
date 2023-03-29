@@ -9,7 +9,7 @@ import (
 )
 
 func TestMakeServiceAccount(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"}
+	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 	svcAcc := MakeServiceAccount(name)
 
 	require.NotNil(t, svcAcc)
@@ -18,7 +18,7 @@ func TestMakeServiceAccount(t *testing.T) {
 }
 
 func TestMakeClusterRole(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"}
+	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 	clusterRole := MakeClusterRole(name)
 	expectedRules := []v1.PolicyRule{{Verbs: []string{"get", "list", "watch"}, APIGroups: []string{""}, Resources: []string{"namespaces", "pods"}}}
 
@@ -28,7 +28,7 @@ func TestMakeClusterRole(t *testing.T) {
 }
 
 func TestMakeClusterRoleBinding(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"}
+	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 	clusterRoleBinding := MakeClusterRoleBinding(name)
 	svcAcc := MakeServiceAccount(name)
 	clusterRole := MakeClusterRole(name)

@@ -100,7 +100,7 @@ make undeploy
 
 ### Enable pausing reconciliations
 
-You must pause reconciliations to be able to debug the pipelines and, for example, try out a different pipeline configuration or a different OTel configuration. To pause reconciliations, create a `telemetry-override-config` in the `kyma-system` Namespace.
+You must pause reconciliations to be able to debug the pipelines and, for example, try out a different pipeline configuration or a different OTel configuration. To pause reconciliations, create a `telemetry-override-config` in the operators Namespace.
 Here is an example of such a ConfigMap:
 
 ```yaml
@@ -108,7 +108,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: telemetry-override-config
-  namespace: kyma-system
 data:
   override-config: |
     global:
@@ -131,7 +130,7 @@ The `global`, `tracing`, `logging` and `metrics` fields are optional.
 4. To reset the debug actions, perform a restart of Telemetry Manager.
 
    ```bash
-   kubectl rollout restart deployment -n kyma-system telemetry-controller-manager
+   kubectl rollout restart deployment telemetry-controller-manager
    ```
 
 **Caveats**
