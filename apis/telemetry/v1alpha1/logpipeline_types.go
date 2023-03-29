@@ -25,7 +25,7 @@ type LogPipelineSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Definition where to collect logs, including selector mechanisms.
+	// Defines where to collect logs, including selector mechanisms.
 	Input   Input    `json:"input,omitempty"`
 	Filters []Filter `json:"filters,omitempty"`
 	// [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified.
@@ -103,7 +103,7 @@ type HTTPOutput struct {
 	Compress string `json:"compress,omitempty"`
 	// Data format to be used in the HTTP request body. Default is `json`.
 	Format string `json:"format,omitempty"`
-	// TLS Configuration of the HTTP target server.
+	// Configures TLS for the HTTP target server.
 	TLSConfig TLSConfig `json:"tls,omitempty"`
 	// Enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_). Default is `false`.
 	Dedot bool `json:"dedot,omitempty"`

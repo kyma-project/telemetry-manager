@@ -5,6 +5,7 @@ import (
 )
 
 type ValueType struct {
+	// Value that can contain references to Secret values.
 	Value     string           `json:"value,omitempty"`
 	ValueFrom *ValueFromSource `json:"valueFrom,omitempty"`
 }
@@ -18,7 +19,7 @@ func (v *ValueType) IsDefined() bool {
 }
 
 type ValueFromSource struct {
-	// Reference to a key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
+	// Refers to a key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
 	SecretKeyRef *SecretKeyRef `json:"secretKeyRef,omitempty"`
 }
 
@@ -63,15 +64,15 @@ type OtlpOutput struct {
 }
 
 type AuthenticationOptions struct {
-	// Contains credentials for HTTP basic auth
+	// Activates `Basic` authentication for the destination providing relevant Secrets.
 	Basic *BasicAuthOptions `json:"basic,omitempty"`
 }
 
 type BasicAuthOptions struct {
-	// Contains the basic auth username or a secret reference.
+	// Contains the basic auth username or a Secret reference.
 	// +kubebuilder:validation:Required
 	User ValueType `json:"user"`
-	// Contains the basic auth password or a secret reference.
+	// Contains the basic auth password or a Secret reference.
 	// +kubebuilder:validation:Required
 	Password ValueType `json:"password"`
 }
