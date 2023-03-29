@@ -43,10 +43,14 @@ spec:
             description: Defines the desired state of TracePipeline
             properties:
               output:
-                description: Configures the trace receiver of a TracePipeline.
+                description: Defines a destination for shipping trace data. Only one
+                  can be defined per pipeline.
                 properties:
                   otlp:
-                    description: Defines an output using the OpenTelmetry protocol.
+                    description: Configures the underlying Otel Collector with an
+                      [OTLP exporter](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md).
+                      If you switch `protocol`to `http`, an [OTLP HTTP exporter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter)
+                      is used.
                     properties:
                       authentication:
                         description: Defines authentication options for the OTLP output
@@ -133,7 +137,7 @@ spec:
                         items:
                           properties:
                             name:
-                              description: Defines the header name
+                              description: Defines the header name.
                               type: string
                             value:
                               type: string
@@ -158,7 +162,8 @@ spec:
                         type: array
                       protocol:
                         default: grpc
-                        description: Defines the OTLP protocol (http or grpc).
+                        description: Defines the OTLP protocol (http or grpc). Default
+                          is GRPC.
                         enum:
                         - grpc
                         - http
@@ -178,15 +183,22 @@ spec:
             properties:
               conditions:
                 items:
-                  description: Contains details for the current condition of this
-                    TracePipeline
+                  description: An array of conditions describing the status of the
+                    pipeline.
                   properties:
                     lastTransitionTime:
+                      description: An array of conditions describing the status of
+                        the pipeline.
                       format: date-time
                       type: string
                     reason:
+                      description: An array of conditions describing the status of
+                        the pipeline.
                       type: string
                     type:
+                      description: '''The possible transition types are:<br>- `Running`:
+                        The instance is ready and usable.<br>- `Pending`: The pipeline
+                        is being activated.'''
                       type: string
                   type: object
                 type: array

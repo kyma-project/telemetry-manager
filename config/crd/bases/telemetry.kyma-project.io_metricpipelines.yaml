@@ -133,7 +133,7 @@ spec:
                         items:
                           properties:
                             name:
-                              description: Defines the header name
+                              description: Defines the header name.
                               type: string
                             value:
                               type: string
@@ -158,7 +158,8 @@ spec:
                         type: array
                       protocol:
                         default: grpc
-                        description: Defines the OTLP protocol (http or grpc).
+                        description: Defines the OTLP protocol (http or grpc). Default
+                          is GRPC.
                         enum:
                         - grpc
                         - http

@@ -41,14 +41,14 @@ type LogPipelineValidationConfig struct {
 	DeniedFilterPlugins []string
 }
 type Header struct {
-	// Defines the header name
+	// Defines the header name.
 	Name string `json:"name"`
-	// Defines the header value
+	// Defines the header value.
 	ValueType `json:",inline"`
 }
 
 type OtlpOutput struct {
-	// Defines the OTLP protocol (http or grpc).
+	// Defines the OTLP protocol (http or grpc). Default is GRPC.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:default:=grpc
 	// +kubebuilder:validation:Enum=grpc;http
