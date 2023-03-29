@@ -66,7 +66,7 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	//nolint:gosec
+	//nolint:gosec // pprof package is required for performance analysis.
 	_ "net/http/pprof"
 )
 
@@ -124,7 +124,7 @@ const (
 	webhookServiceName = "telemetry-operator-webhook"
 )
 
-//nolint:gochecknoinits
+//nolint:gochecknoinits // Runtime's scheme addition is required.
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 

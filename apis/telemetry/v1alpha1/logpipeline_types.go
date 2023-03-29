@@ -272,7 +272,7 @@ type LogPipelineList struct {
 	Items           []LogPipeline `json:"items"`
 }
 
-//nolint:gochecknoinits
+//nolint:gochecknoinits // SchemeBuilder's registration is required.
 func init() {
 	SchemeBuilder.Register(&LogPipeline{}, &LogPipelineList{})
 }
