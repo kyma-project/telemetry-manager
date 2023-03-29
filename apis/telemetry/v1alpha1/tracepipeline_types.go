@@ -46,7 +46,7 @@ type TracePipelineCondition struct {
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 	// An array of conditions describing the status of the pipeline.
 	Reason string `json:"reason,omitempty"`
-	// 'The possible transition types are:<br>- `Running`: The instance is ready and usable.<br>- `Pending`: The pipeline is being activated.'
+	// The possible transition types are:<br>- `Running`: The instance is ready and usable.<br>- `Pending`: The pipeline is being activated.
 	Type TracePipelineConditionType `json:"type,omitempty"`
 }
 

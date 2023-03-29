@@ -58,7 +58,7 @@ type OtlpOutput struct {
 	Endpoint ValueType `json:"endpoint"`
 	// Defines authentication options for the OTLP output
 	Authentication *AuthenticationOptions `json:"authentication,omitempty"`
-	// Custom headers to be added to outgoing HTTP or GRPC requests
+	// Defines custom headers to be added to outgoing HTTP or GRPC requests.
 	Headers []Header `json:"headers,omitempty"`
 }
 
@@ -68,10 +68,10 @@ type AuthenticationOptions struct {
 }
 
 type BasicAuthOptions struct {
-	// Contains the basic auth username or a secret reference
+	// Contains the basic auth username or a secret reference.
 	// +kubebuilder:validation:Required
 	User ValueType `json:"user"`
-	// Contains the basic auth password or a secret reference
+	// Contains the basic auth password or a secret reference.
 	// +kubebuilder:validation:Required
 	Password ValueType `json:"password"`
 }

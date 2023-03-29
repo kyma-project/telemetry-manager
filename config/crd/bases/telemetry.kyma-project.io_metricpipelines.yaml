@@ -56,7 +56,7 @@ spec:
                             properties:
                               password:
                                 description: Contains the basic auth password or a
-                                  secret reference
+                                  secret reference.
                                 properties:
                                   value:
                                     type: string
@@ -79,7 +79,7 @@ spec:
                                 type: object
                               user:
                                 description: Contains the basic auth username or a
-                                  secret reference
+                                  secret reference.
                                 properties:
                                   value:
                                     type: string
@@ -128,8 +128,8 @@ spec:
                             type: object
                         type: object
                       headers:
-                        description: Custom headers to be added to outgoing HTTP or
-                          GRPC requests
+                        description: Defines custom headers to be added to outgoing
+                          HTTP or GRPC requests.
                         items:
                           properties:
                             name:

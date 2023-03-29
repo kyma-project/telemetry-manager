@@ -60,7 +60,7 @@ spec:
                             properties:
                               password:
                                 description: Contains the basic auth password or a
-                                  secret reference
+                                  secret reference.
                                 properties:
                                   value:
                                     type: string
@@ -83,7 +83,7 @@ spec:
                                 type: object
                               user:
                                 description: Contains the basic auth username or a
-                                  secret reference
+                                  secret reference.
                                 properties:
                                   value:
                                     type: string
@@ -132,8 +132,8 @@ spec:
                             type: object
                         type: object
                       headers:
-                        description: Custom headers to be added to outgoing HTTP or
-                          GRPC requests
+                        description: Defines custom headers to be added to outgoing
+                          HTTP or GRPC requests.
                         items:
                           properties:
                             name:
@@ -196,9 +196,9 @@ spec:
                         the pipeline.
                       type: string
                     type:
-                      description: '''The possible transition types are:<br>- `Running`:
+                      description: 'The possible transition types are:<br>- `Running`:
                         The instance is ready and usable.<br>- `Pending`: The pipeline
-                        is being activated.'''
+                        is being activated.'
                       type: string
                   type: object
                 type: array
