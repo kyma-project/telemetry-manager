@@ -70,7 +70,6 @@ func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *TracePipelineReconciler) mapSecret(object client.Object) []reconcile.Request {
-	secret := object.(*corev1.Secret)
 	var pipelines telemetryv1alpha1.TracePipelineList
 	var requests []reconcile.Request
 	err := r.List(context.Background(), &pipelines)
@@ -79,6 +78,10 @@ func (r *TracePipelineReconciler) mapSecret(object client.Object) []reconcile.Re
 		return requests
 	}
 
+	secret, ok := object.(*corev1.Secret)
+	if !ok {
+		return requests
+	}
 	ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]

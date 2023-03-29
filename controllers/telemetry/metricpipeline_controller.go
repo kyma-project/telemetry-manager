@@ -73,7 +73,6 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *MetricPipelineReconciler) mapSecret(object client.Object) []reconcile.Request {
-	secret := object.(*corev1.Secret)
 	var pipelines telemetryv1alpha1.MetricPipelineList
 	var requests []reconcile.Request
 	err := r.List(context.Background(), &pipelines)
@@ -82,6 +81,10 @@ func (r *MetricPipelineReconciler) mapSecret(object client.Object) []reconcile.R
 		return requests
 	}
 
+	secret, ok := object.(*corev1.Secret)
+	if !ok {
+		return requests
+	}
 	ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]
