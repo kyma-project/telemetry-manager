@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"net"
 	"path/filepath"
-	"sync"
 	"testing"
 	"time"
 
@@ -59,7 +58,6 @@ var (
 	maxPipelinesValidatorMock *validationmocks.MaxPipelinesValidator
 	fileValidatorMock         *validationmocks.FilesValidator
 	dryRunnerMock             *mocks.DryRunner
-	mutex                     sync.Mutex
 )
 
 func TestAPIs(t *testing.T) {
