@@ -5,6 +5,7 @@ import (
 )
 
 type ValueType struct {
+	// Value that can contain references to Secret values.
 	Value     string           `json:"value,omitempty"`
 	ValueFrom *ValueFromSource `json:"valueFrom,omitempty"`
 }
@@ -18,6 +19,7 @@ func (v *ValueType) IsDefined() bool {
 }
 
 type ValueFromSource struct {
+	// Refers to a key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
 	SecretKeyRef *SecretKeyRef `json:"secretKeyRef,omitempty"`
 }
 
@@ -40,14 +42,14 @@ type LogPipelineValidationConfig struct {
 	DeniedFilterPlugins []string
 }
 type Header struct {
-	// Defines the header name
+	// Defines the header name.
 	Name string `json:"name"`
-	// Defines the header value
+	// Defines the header value.
 	ValueType `json:",inline"`
 }
 
 type OtlpOutput struct {
-	// Defines the OTLP protocol (http or grpc).
+	// Defines the OTLP protocol (http or grpc). Default is GRPC.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:default:=grpc
 	// +kubebuilder:validation:Enum=grpc;http
@@ -57,20 +59,20 @@ type OtlpOutput struct {
 	Endpoint ValueType `json:"endpoint"`
 	// Defines authentication options for the OTLP output
 	Authentication *AuthenticationOptions `json:"authentication,omitempty"`
-	// Custom headers to be added to outgoing HTTP or GRPC requests
+	// Defines custom headers to be added to outgoing HTTP or GRPC requests.
 	Headers []Header `json:"headers,omitempty"`
 }
 
 type AuthenticationOptions struct {
-	// Contains credentials for HTTP basic auth
+	// Activates `Basic` authentication for the destination providing relevant Secrets.
 	Basic *BasicAuthOptions `json:"basic,omitempty"`
 }
 
 type BasicAuthOptions struct {
-	// Contains the basic auth username or a secret reference
+	// Contains the basic auth username or a Secret reference.
 	// +kubebuilder:validation:Required
 	User ValueType `json:"user"`
-	// Contains the basic auth password or a secret reference
+	// Contains the basic auth password or a Secret reference.
 	// +kubebuilder:validation:Required
 	Password ValueType `json:"password"`
 }
