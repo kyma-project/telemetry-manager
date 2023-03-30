@@ -25,12 +25,13 @@ type LogPipelineSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Describes a log input for a LogPipeline.
+	// Defines where to collect logs, including selector mechanisms.
 	Input   Input    `json:"input,omitempty"`
 	Filters []Filter `json:"filters,omitempty"`
-	// Describes a Fluent Bit output configuration section.
-	Output    Output        `json:"output,omitempty"`
-	Files     []FileMount   `json:"files,omitempty"`
+	// [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified.
+	Output Output      `json:"output,omitempty"`
+	Files  []FileMount `json:"files,omitempty"`
+	// A list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the sections.
 	Variables []VariableRef `json:"variables,omitempty"`
 }
 
@@ -46,9 +47,9 @@ type ApplicationInput struct {
 	Namespaces InputNamespaces `json:"namespaces,omitempty"`
 	// Describes whether application logs from specific containers are selected. The options are mutually exclusive.
 	Containers InputContainers `json:"containers,omitempty"`
-	// Defines whether to keep all Kubernetes annotations. The default is false.
+	// Defines whether to keep all Kubernetes annotations. The default is `false`.
 	KeepAnnotations bool `json:"keepAnnotations,omitempty"`
-	// Defines whether to drop all Kubernetes labels. The default is false.
+	// Defines whether to drop all Kubernetes labels. The default is `false`.
 	DropLabels bool `json:"dropLabels,omitempty"`
 }
 
@@ -58,7 +59,7 @@ type InputNamespaces struct {
 	Include []string `json:"include,omitempty"`
 	// Exclude the container logs of the specified Namespace names.
 	Exclude []string `json:"exclude,omitempty"`
-	// Describes to include the container logs of the system Namespaces like kube-system, istio-system, and kyma-system.
+	// Set to `true` if collecting from all Namespaces must also include the system Namespaces like kube-system, istio-system, and kyma-system.
 	System bool `json:"system,omitempty"`
 }
 
@@ -78,9 +79,12 @@ type Filter struct {
 
 // LokiOutput configures an output to the Kyma-internal Loki instance.
 type LokiOutput struct {
-	URL        ValueType         `json:"url,omitempty"`
-	Labels     map[string]string `json:"labels,omitempty"`
-	RemoveKeys []string          `json:"removeKeys,omitempty"`
+	// Grafana Loki URL.
+	URL ValueType `json:"url,omitempty"`
+	// Labels to set for each log record.
+	Labels map[string]string `json:"labels,omitempty"`
+	// Attributes to be removed from a log record.
+	RemoveKeys []string `json:"removeKeys,omitempty"`
 }
 
 // HTTPOutput configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
@@ -97,18 +101,18 @@ type HTTPOutput struct {
 	Port string `json:"port,omitempty"`
 	// Defines the compression algorithm to use.
 	Compress string `json:"compress,omitempty"`
-	// Defines the log encoding to be used. Default is json.
+	// Data format to be used in the HTTP request body. Default is `json`.
 	Format string `json:"format,omitempty"`
-	// Defines TLS settings for the HTTP connection.
+	// Configures TLS for the HTTP target server.
 	TLSConfig TLSConfig `json:"tls,omitempty"`
-	// Enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_).
+	// Enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_). Default is `false`.
 	Dedot bool `json:"dedot,omitempty"`
 }
 
 type TLSConfig struct {
-	// Disable TLS.
+	// Indicates if TLS is disabled or enabled. Default is `false`.
 	Disabled bool `json:"disabled,omitempty"`
-	// Disable TLS certificate validation.
+	// If `true`, the validation of certificates is skipped. Default is `false`.
 	SkipCertificateValidation bool `json:"skipCertificateValidation,omitempty"`
 }
 
@@ -118,7 +122,7 @@ type Output struct {
 	Custom string `json:"custom,omitempty"`
 	// Configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
 	HTTP *HTTPOutput `json:"http,omitempty"`
-	// Configures an output to the Kyma-internal Loki instance. Note: This output is considered legacy and is only provided for backwards compatibility with the in-cluster Loki instance. It might not be compatible with latest Loki versions. For integration with a Loki-based system, use the `custom` output with name `loki` instead.
+	// Configures an output to the Kyma-internal Loki instance. [Fluent Bit grafana-loki output](https://grafana.com/docs/loki/v2.2.x/clients/fluentbit/). **Note:** This output is considered legacy and is only provided for backward compatibility with the [deprecated](https://kyma-project.io/blog/2022/11/2/loki-deprecation/) in-cluster Loki instance. It might not be compatible with the latest Loki versions. For integration with a custom Loki installation use the `custom` output with the name `loki` instead, see also [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).
 	Loki *LokiOutput `json:"grafana-loki,omitempty"`
 }
 
@@ -168,6 +172,7 @@ type FileMount struct {
 
 // References a Kubernetes secret that should be provided as environment variable to Fluent Bit
 type VariableRef struct {
+	// Name of the variable to map.
 	Name      string          `json:"name,omitempty"`
 	ValueFrom ValueFromSource `json:"valueFrom,omitempty"`
 }
@@ -182,15 +187,20 @@ const (
 
 // LogPipelineCondition contains details for the current condition of this LogPipeline
 type LogPipelineCondition struct {
-	LastTransitionTime metav1.Time              `json:"lastTransitionTime,omitempty"`
-	Reason             string                   `json:"reason,omitempty"`
-	Type               LogPipelineConditionType `json:"type,omitempty"`
+	// An array of conditions describing the status of the pipeline.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	//  An array of conditions describing the status of the pipeline.
+	Reason string `json:"reason,omitempty"`
+	// The possible transition types are:<br>- `Running`: The instance is ready and usable.<br>- `Pending`: The pipeline is being activated.
+	Type LogPipelineConditionType `json:"type,omitempty"`
 }
 
 // LogPipelineStatus shows the observed state of the LogPipeline
 type LogPipelineStatus struct {
-	Conditions      []LogPipelineCondition `json:"conditions,omitempty"`
-	UnsupportedMode bool                   `json:"unsupportedMode,omitempty"`
+	// An array of conditions describing the status of the pipeline.
+	Conditions []LogPipelineCondition `json:"conditions,omitempty"`
+	// Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](./../../01-overview/main-areas/telemetry/telemetry-02-logs.md#unsupported-mode#unsupported-mode).
+	UnsupportedMode bool `json:"unsupportedMode,omitempty"`
 }
 
 func NewLogPipelineCondition(reason string, condType LogPipelineConditionType) *LogPipelineCondition {

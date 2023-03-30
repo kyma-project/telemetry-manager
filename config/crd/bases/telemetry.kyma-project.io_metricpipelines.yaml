@@ -52,17 +52,24 @@ spec:
                         description: Defines authentication options for the OTLP output
                         properties:
                           basic:
-                            description: Contains credentials for HTTP basic auth
+                            description: Activates `Basic` authentication for the
+                              destination providing relevant Secrets.
                             properties:
                               password:
                                 description: Contains the basic auth password or a
-                                  secret reference
+                                  Secret reference.
                                 properties:
                                   value:
+                                    description: Value that can contain references
+                                      to Secret values.
                                     type: string
                                   valueFrom:
                                     properties:
                                       secretKeyRef:
+                                        description: Refers to a key in a Secret.
+                                          You must provide `name` and `namespace`
+                                          of the Secret, as well as the name of the
+                                          `key`.
                                         properties:
                                           key:
                                             type: string
@@ -75,13 +82,19 @@ spec:
                                 type: object
                               user:
                                 description: Contains the basic auth username or a
-                                  secret reference
+                                  Secret reference.
                                 properties:
                                   value:
+                                    description: Value that can contain references
+                                      to Secret values.
                                     type: string
                                   valueFrom:
                                     properties:
                                       secretKeyRef:
+                                        description: Refers to a key in a Secret.
+                                          You must provide `name` and `namespace`
+                                          of the Secret, as well as the name of the
+                                          `key`.
                                         properties:
                                           key:
                                             type: string
@@ -102,10 +115,15 @@ spec:
                           an OTLP endpoint.
                         properties:
                           value:
+                            description: Value that can contain references to Secret
+                              values.
                             type: string
                           valueFrom:
                             properties:
                               secretKeyRef:
+                                description: Refers to a key in a Secret. You must
+                                  provide `name` and `namespace` of the Secret, as
+                                  well as the name of the `key`.
                                 properties:
                                   key:
                                     type: string
@@ -117,18 +135,23 @@ spec:
                             type: object
                         type: object
                       headers:
-                        description: Custom headers to be added to outgoing HTTP or
-                          GRPC requests
+                        description: Defines custom headers to be added to outgoing
+                          HTTP or GRPC requests.
                         items:
                           properties:
                             name:
-                              description: Defines the header name
+                              description: Defines the header name.
                               type: string
                             value:
+                              description: Value that can contain references to Secret
+                                values.
                               type: string
                             valueFrom:
                               properties:
                                 secretKeyRef:
+                                  description: Refers to a key in a Secret. You must
+                                    provide `name` and `namespace` of the Secret,
+                                    as well as the name of the `key`.
                                   properties:
                                     key:
                                       type: string
@@ -144,7 +167,8 @@ spec:
                         type: array
                       protocol:
                         default: grpc
-                        description: Defines the OTLP protocol (http or grpc).
+                        description: Defines the OTLP protocol (http or grpc). Default
+                          is GRPC.
                         enum:
                         - grpc
                         - http

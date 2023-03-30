@@ -25,7 +25,7 @@ type LogParserSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Configures a user defined Fluent Bit parser to be applied to the logs.
+	// [Fluent Bit Parsers](https://docs.fluentbit.io/manual/pipeline/parsers). The parser specified here has no effect until it is referenced by a [Pod annotation](https://docs.fluentbit.io/manual/pipeline/filters/kubernetes#kubernetes-annotations) on your workload or by a [Parser Filter](https://docs.fluentbit.io/manual/pipeline/filters/parser) defined in a pipeline's filters section.
 	Parser string `json:"parser,omitempty"`
 }
 
@@ -62,15 +62,18 @@ const (
 	LogParserRunning LogParserConditionType = "Running"
 )
 
-// LogParserCondition contains details for the current condition of this LogParser
 type LogParserCondition struct {
-	LastTransitionTime metav1.Time            `json:"lastTransitionTime,omitempty"`
-	Reason             string                 `json:"reason,omitempty"`
-	Type               LogParserConditionType `json:"type,omitempty"`
+	// An array of conditions describing the status of the parser.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	// An array of conditions describing the status of the parser.
+	Reason string `json:"reason,omitempty"`
+	// The possible transition types are:<br>- `Running`: The parser is ready and usable.<br>- `Pending`: The parser is being activated.
+	Type LogParserConditionType `json:"type,omitempty"`
 }
 
 // LogParserStatus shows the observed state of the LogParser.
 type LogParserStatus struct {
+	// An array of conditions describing the status of the parser.
 	Conditions []LogParserCondition `json:"conditions,omitempty"`
 }
 

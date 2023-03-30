@@ -22,13 +22,13 @@ import (
 
 // TracePipelineSpec defines the desired state of TracePipeline
 type TracePipelineSpec struct {
-	// Configures the trace receiver of a TracePipeline.
+	// Defines a destination for shipping trace data. Only one can be defined per pipeline.
 	Output TracePipelineOutput `json:"output"`
 }
 
 // TracePipelineOutput defines the output configuration section.
 type TracePipelineOutput struct {
-	// Defines an output using the OpenTelmetry protocol.
+	// Configures the underlying Otel Collector with an [OTLP exporter](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md). If you switch `protocol`to `http`, an [OTLP HTTP exporter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter) is used.
 	Otlp *OtlpOutput `json:"otlp"`
 }
 
@@ -40,11 +40,14 @@ const (
 	TracePipelineRunning TracePipelineConditionType = "Running"
 )
 
-// Contains details for the current condition of this TracePipeline
+// An array of conditions describing the status of the pipeline.
 type TracePipelineCondition struct {
-	LastTransitionTime metav1.Time                `json:"lastTransitionTime,omitempty"`
-	Reason             string                     `json:"reason,omitempty"`
-	Type               TracePipelineConditionType `json:"type,omitempty"`
+	// An array of conditions describing the status of the pipeline.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	// An array of conditions describing the status of the pipeline.
+	Reason string `json:"reason,omitempty"`
+	// The possible transition types are:<br>- `Running`: The instance is ready and usable.<br>- `Pending`: The pipeline is being activated.
+	Type TracePipelineConditionType `json:"type,omitempty"`
 }
 
 // Defines the observed state of TracePipeline
