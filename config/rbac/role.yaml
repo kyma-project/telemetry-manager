@@ -86,6 +86,32 @@ rules:
   - list
   - watch
 - apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - telemetries
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - telemetries/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - telemetries/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
@@ -157,6 +183,32 @@ rules:
   - telemetry.kyma-project.io
   resources:
   - logpipelines/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - telemetry.kyma-project.io
+  resources:
+  - metricpipelines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - telemetry.kyma-project.io
+  resources:
+  - metricpipelines/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - telemetry.kyma-project.io
+  resources:
+  - metricpipelines/status
   verbs:
   - get
   - patch

@@ -3,6 +3,8 @@
 package e2e
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -12,12 +14,11 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 const (
 	systemNamespace = "kyma-system"
-	timeout         = time.Second * 10
+	timeout         = time.Second * 60
 	interval        = time.Millisecond * 250
 )
 
@@ -158,6 +159,15 @@ var _ = Describe("Telemetry-manager", func() {
 			var crd apiextensionsv1.CustomResourceDefinition
 			key := types.NamespacedName{
 				Name: "tracepipelines.telemetry.kyma-project.io",
+			}
+			err := k8sClient.Get(ctx, key, &crd)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should have MetricPipelines CRD", func() {
+			var crd apiextensionsv1.CustomResourceDefinition
+			key := types.NamespacedName{
+				Name: "metricpipelines.telemetry.kyma-project.io",
 			}
 			err := k8sClient.Get(ctx, key, &crd)
 			Expect(err).NotTo(HaveOccurred())

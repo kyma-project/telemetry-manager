@@ -22,6 +22,11 @@ import (
 	"sync"
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	zapLog "go.uber.org/zap"
@@ -31,8 +36,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
@@ -40,6 +43,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	//+kubebuilder:scaffold:imports
 )
@@ -102,11 +106,18 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	client := mgr.GetClient()
-	overrides := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
+	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
+
+	kymaSystemNamespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kyma-system",
+		},
+	}
+	Expect(k8sClient.Create(ctx, kymaSystemNamespace)).Should(Succeed())
 
 	logpipelineController := NewLogPipelineReconciler(
 		client,
-		logpipeline.NewReconciler(client, testLogPipelineConfig, &kubernetes.DaemonSetProber{Client: client}, overrides),
+		logpipeline.NewReconciler(client, testLogPipelineConfig, &kubernetes.DaemonSetProber{Client: client}, overridesHandler),
 		testLogPipelineConfig)
 	err = logpipelineController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
@@ -118,7 +129,7 @@ var _ = BeforeSuite(func() {
 			testLogParserConfig,
 			&kubernetes.DaemonSetProber{Client: client},
 			&kubernetes.DaemonSetAnnotator{Client: client},
-			overrides,
+			overridesHandler,
 		),
 		testLogParserConfig,
 	)
@@ -127,10 +138,16 @@ var _ = BeforeSuite(func() {
 
 	tracepipelineReconciler := NewTracePipelineReconciler(
 		client,
-		tracepipeline.NewReconciler(client, testTracePipelineConfig, &kubernetes.DeploymentProber{Client: client}, overrides),
+		tracepipeline.NewReconciler(client, testTracePipelineConfig, &kubernetes.DeploymentProber{Client: client}, overridesHandler),
 	)
 	err = tracepipelineReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
+
+	metricPipelineReconciler := NewMetricPipelineReconciler(
+		client,
+		metricpipeline.NewReconciler(client, testMetricPipelineConfig, &kubernetes.DeploymentProber{Client: client}, overridesHandler))
+	err = metricPipelineReconciler.SetupWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred())
 
 	go func() {
 		defer GinkgoRecover()

@@ -4,15 +4,17 @@ package e2e
 
 import (
 	"context"
-	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 var (
@@ -40,7 +42,9 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 
-	k8sClient, err = client.New(testEnv.Config, client.Options{Scheme: scheme.Scheme})
+	scheme := scheme.Scheme
+	Expect(telemetryv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
+	k8sClient, err = client.New(testEnv.Config, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 })

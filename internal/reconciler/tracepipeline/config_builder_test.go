@@ -1,12 +1,15 @@
 package tracepipeline
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 var (
@@ -14,6 +17,14 @@ var (
 		Otlp: &v1alpha1.OtlpOutput{
 			Endpoint: v1alpha1.ValueType{
 				Value: "localhost",
+			},
+		},
+	}
+
+	tracePipelineInsecure = v1alpha1.TracePipelineOutput{
+		Otlp: &v1alpha1.OtlpOutput{
+			Endpoint: v1alpha1.ValueType{
+				Value: "http://localhost",
 			},
 		},
 	}
@@ -46,115 +57,44 @@ var (
 	}
 )
 
-func TestGetOutputTypeHttp(t *testing.T) {
-	httpOutput := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-			Protocol: "http",
-		},
-	}
-
-	require.Equal(t, "otlphttp", getOutputType(httpOutput))
-}
-
-func TestGetOutputTypeOtlp(t *testing.T) {
-	otlpOutput := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-			Protocol: "grpc",
-		},
-	}
-
-	require.Equal(t, "otlp", getOutputType(otlpOutput))
-}
-
-func TestGetOutputTypeDefault(t *testing.T) {
-	output := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-		},
-	}
-
-	require.Equal(t, "otlp", getOutputType(output))
-}
-
-func TestMakeExporterConfig(t *testing.T) {
-	output := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-		},
-	}
-
-	exporterConfig := makeExporterConfig(output, false)
-	require.NotNil(t, exporterConfig)
-
-	require.True(t, exporterConfig.OTLP.SendingQueue.Enabled)
-	require.Equal(t, 512, exporterConfig.OTLP.SendingQueue.QueueSize)
-
-	require.True(t, exporterConfig.OTLP.RetryOnFailure.Enabled)
-	require.Equal(t, "5s", exporterConfig.OTLP.RetryOnFailure.InitialInterval)
-	require.Equal(t, "30s", exporterConfig.OTLP.RetryOnFailure.MaxInterval)
-	require.Equal(t, "300s", exporterConfig.OTLP.RetryOnFailure.MaxElapsedTime)
-
-	require.Equal(t, "basic", exporterConfig.Logging.Verbosity)
-}
-
 func TestMakeCollectorConfigEndpoint(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipeline, false)
-	expectedEndpoint := fmt.Sprintf("${%s}", otlpEndpointVariable)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
+	require.NoError(t, err)
+	expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT")
 	require.Equal(t, expectedEndpoint, collectorConfig.Exporters.OTLP.Endpoint)
 }
 
 func TestMakeCollectorConfigSecure(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipeline, false)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
+	require.NoError(t, err)
 	require.False(t, collectorConfig.Exporters.OTLP.TLS.Insecure)
 }
 
 func TestMakeCollectorConfigSecureHttp(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipelineHTTP, false)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineHTTP)
+	require.NoError(t, err)
 	require.False(t, collectorConfig.Exporters.OTLPHTTP.TLS.Insecure)
 }
 
 func TestMakeCollectorConfigInsecure(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipeline, true)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineInsecure)
+	require.NoError(t, err)
 	require.True(t, collectorConfig.Exporters.OTLP.TLS.Insecure)
 }
 
-func TestMakeCollectorConfigInsecureHttp(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipelineHTTP, true)
-	require.True(t, collectorConfig.Exporters.OTLPHTTP.TLS.Insecure)
-}
-
 func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
-	collectorConfig := makeOtelCollectorConfig(tracePipelineWithBasicAuth, false)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineWithBasicAuth)
+	require.NoError(t, err)
 	headers := collectorConfig.Exporters.OTLP.Headers
 
 	authHeader, existing := headers["Authorization"]
 	require.True(t, existing)
 	require.Equal(t, "${BASIC_AUTH_HEADER}", authHeader)
-}
-
-func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
-	headers := []v1alpha1.Header{
-		{
-			Name: "Authorization",
-			ValueType: v1alpha1.ValueType{
-				Value: "Bearer xyz",
-			},
-		},
-	}
-	output := v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
-			Headers:  headers,
-		},
-	}
-
-	exporterConfig := makeExporterConfig(output, false)
-	require.NotNil(t, exporterConfig)
-
-	require.Equal(t, 1, len(exporterConfig.OTLP.Headers))
-	require.Equal(t, "${HEADER_AUTHORIZATION}", exporterConfig.OTLP.Headers["Authorization"])
 }
 
 func TestMakeServiceConfig(t *testing.T) {
@@ -249,137 +189,110 @@ func TestFilterProcessor(t *testing.T) {
 
 func TestCollectorConfigMarshalling(t *testing.T) {
 	expected := `receivers:
-  opencensus:
-    endpoint: ${MY_POD_IP}:55678
-  otlp:
-    protocols:
-      http:
-        endpoint: ${MY_POD_IP}:4318
-      grpc:
-        endpoint: ${MY_POD_IP}:4317
+    opencensus:
+        endpoint: ${MY_POD_IP}:55678
+    otlp:
+        protocols:
+            http:
+                endpoint: ${MY_POD_IP}:4318
+            grpc:
+                endpoint: ${MY_POD_IP}:4317
 exporters:
-  otlp:
-    endpoint: ${OTLP_ENDPOINT}
-    tls:
-      insecure: true
-    sending_queue:
-      enabled: true
-      queue_size: 512
-    retry_on_failure:
-      enabled: true
-      initial_interval: 5s
-      max_interval: 30s
-      max_elapsed_time: 300s
-  logging:
-    verbosity: basic
+    otlp:
+        endpoint: ${OTLP_ENDPOINT}
+        sending_queue:
+            enabled: true
+            queue_size: 512
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
+    logging:
+        verbosity: basic
 processors:
-  batch:
-    send_batch_size: 512
-    timeout: 10s
-    send_batch_max_size: 512
-  memory_limiter:
-    check_interval: 1s
-    limit_percentage: 75
-    spike_limit_percentage: 10
-  k8sattributes:
-    auth_type: serviceAccount
-    passthrough: false
-    extract:
-      metadata:
-      - k8s.pod.name
-      - k8s.node.name
-      - k8s.namespace.name
-      - k8s.deployment.name
-      - k8s.statefulset.name
-      - k8s.daemonset.name
-      - k8s.cronjob.name
-      - k8s.job.name
-    pod_association:
-    - sources:
-      - from: resource_attribute
-        name: k8s.pod.ip
-    - sources:
-      - from: resource_attribute
-        name: k8s.pod.uid
-    - sources:
-      - from: connection
-  resource:
-    attributes:
-    - action: insert
-      key: k8s.cluster.name
-      value: ${KUBERNETES_SERVICE_HOST}
-  filter:
-    traces:
-      span:
-      - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy")
-        and (attributes["OperationName"] == "Ingress") and (resource.attributes["service.name"]
-        == "jaeger.kyma-system")
-      - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy")
-        and (attributes["OperationName"] == "Egress") and (resource.attributes["service.name"]
-        == "grafana.kyma-system")
-      - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy")
-        and (attributes["OperationName"] == "Ingress") and (resource.attributes["service.name"]
-        == "jaeger.kyma-system")
-      - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy")
-        and (attributes["OperationName"] == "Ingress") and (resource.attributes["service.name"]
-        == "grafana.kyma-system")
-      - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy")
-        and (attributes["OperationName"] == "Ingress") and (resource.attributes["service.name"]
-        == "loki.kyma-system")
-      - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy")
-        and (attributes["OperationName"] == "Ingress") and (IsMatch(attributes["http.url"],
-        ".+/metrics") == true) and (resource.attributes["k8s.namespace.name"] == "kyma-system")
-      - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy")
-        and (attributes["OperationName"] == "Ingress") and (IsMatch(attributes["http.url"],
-        ".+/healthz(/.*)?") == true) and (resource.attributes["k8s.namespace.name"]
-        == "kyma-system")
-      - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy")
-        and (attributes["OperationName"] == "Ingress") and (attributes["user_agent"]
-        == "vm_promscrape")
-      - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy")
-        and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"],
-        "http(s)?:\\/\\/telemetry-otlp-traces\\.kyma-system(\\..*)?:(4318|4317).*")
-        == true)
-      - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy")
-        and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"],
-        "http(s)?:\\/\\/telemetry-trace-collector-internal\\.kyma-system(\\..*)?:(55678).*")
-        == true)
-      - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy")
-        and (attributes["OperationName"] == "Ingress") and (resource.attributes["service.name"]
-        == "loki.kyma-system")
-      - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy")
-        and (attributes["OperationName"] == "Egress") and (resource.attributes["service.name"]
-        == "telemetry-fluent-bit.kyma-system")
+    batch:
+        send_batch_size: 512
+        timeout: 10s
+        send_batch_max_size: 512
+    memory_limiter:
+        check_interval: 1s
+        limit_percentage: 75
+        spike_limit_percentage: 10
+    k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        extract:
+            metadata:
+                - k8s.pod.name
+                - k8s.node.name
+                - k8s.namespace.name
+                - k8s.deployment.name
+                - k8s.statefulset.name
+                - k8s.daemonset.name
+                - k8s.cronjob.name
+                - k8s.job.name
+        pod_association:
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.ip
+            - sources:
+                - from: resource_attribute
+                  name: k8s.pod.uid
+            - sources:
+                - from: connection
+    resource:
+        attributes:
+            - action: insert
+              key: k8s.cluster.name
+              value: ${KUBERNETES_SERVICE_HOST}
+    filter:
+        traces:
+            span:
+                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (resource.attributes["service.name"] == "jaeger.kyma-system")
+                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (resource.attributes["service.name"] == "grafana.kyma-system")
+                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (resource.attributes["service.name"] == "jaeger.kyma-system")
+                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (resource.attributes["service.name"] == "grafana.kyma-system")
+                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (resource.attributes["service.name"] == "loki.kyma-system")
+                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (IsMatch(attributes["http.url"], ".+/metrics") == true) and (resource.attributes["k8s.namespace.name"] == "kyma-system")
+                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (IsMatch(attributes["http.url"], ".+/healthz(/.*)?") == true) and (resource.attributes["k8s.namespace.name"] == "kyma-system")
+                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (attributes["user_agent"] == "vm_promscrape")
+                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-otlp-traces\\.kyma-system(\\..*)?:(4318|4317).*") == true)
+                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-trace-collector-internal\\.kyma-system(\\..*)?:(55678).*") == true)
+                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (resource.attributes["service.name"] == "loki.kyma-system")
+                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (resource.attributes["service.name"] == "telemetry-fluent-bit.kyma-system")
 extensions:
-  health_check:
-    endpoint: ${MY_POD_IP}:13133
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
 service:
-  pipelines:
-    traces:
-      receivers:
-      - opencensus
-      - otlp
-      processors:
-      - memory_limiter
-      - k8sattributes
-      - filter
-      - resource
-      - batch
-      exporters:
-      - otlp
-      - logging
-  telemetry:
-    metrics:
-      address: ${MY_POD_IP}:8888
-    logs:
-      level: info
-  extensions:
-  - health_check
+    pipelines:
+        traces:
+            receivers:
+                - opencensus
+                - otlp
+            processors:
+                - memory_limiter
+                - k8sattributes
+                - filter
+                - resource
+                - batch
+            exporters:
+                - otlp
+                - logging
+    telemetry:
+        metrics:
+            address: ${MY_POD_IP}:8888
+        logs:
+            level: info
+    extensions:
+        - health_check
 `
 
-	collectorConfig := makeOtelCollectorConfig(tracePipeline, true)
-	yamlBytes, err := yaml.Marshal(collectorConfig)
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
+	require.NoError(t, err)
 
+	yamlBytes, err := yaml.Marshal(collectorConfig)
 	require.NoError(t, err)
 	require.Equal(t, expected, string(yamlBytes))
 }

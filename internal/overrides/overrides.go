@@ -3,10 +3,12 @@ package overrides
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/logger"
+
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/kyma-project/telemetry-manager/internal/logger"
 )
 
 type LogLevelChanger interface {
@@ -27,6 +29,7 @@ type ConfigMapProber interface {
 type Config struct {
 	Tracing TracingConfig `yaml:"tracing,omitempty"`
 	Logging LoggingConfig `yaml:"logging,omitempty"`
+	Metrics MetricConfig  `yaml:"metrics,omitempty"`
 	Global  GlobalConfig  `yaml:"global,omitempty"`
 }
 
@@ -35,6 +38,10 @@ type TracingConfig struct {
 }
 
 type LoggingConfig struct {
+	Paused bool `yaml:"paused,omitempty"`
+}
+
+type MetricConfig struct {
 	Paused bool `yaml:"paused,omitempty"`
 }
 

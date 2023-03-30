@@ -19,12 +19,15 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net"
 	"path/filepath"
 	"sync"
 	"testing"
 	"time"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/mocks"
 	validationmocks "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation/mocks"
 
@@ -38,8 +41,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 const (
@@ -53,11 +54,8 @@ var (
 	testEnv                   *envtest.Environment
 	ctx                       context.Context
 	cancel                    context.CancelFunc
-	inputValidatorMock        *validationmocks.InputValidator
 	variableValidatorMock     *validationmocks.VariablesValidator
-	pluginValidatorMock       *validationmocks.PluginValidator
 	maxPipelinesValidatorMock *validationmocks.MaxPipelinesValidator
-	outputValidatorMock       *validationmocks.OutputValidator
 	fileValidatorMock         *validationmocks.FilesValidator
 	dryRunnerMock             *mocks.DryRunner
 	mutex                     sync.Mutex
@@ -86,7 +84,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = v1alpha1.AddToScheme(scheme.Scheme)
+	err = telemetryv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
@@ -108,15 +106,13 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	inputValidatorMock = &validationmocks.InputValidator{}
 	variableValidatorMock = &validationmocks.VariablesValidator{}
 	dryRunnerMock = &mocks.DryRunner{}
-	pluginValidatorMock = &validationmocks.PluginValidator{}
 	maxPipelinesValidatorMock = &validationmocks.MaxPipelinesValidator{}
-	outputValidatorMock = &validationmocks.OutputValidator{}
 	fileValidatorMock = &validationmocks.FilesValidator{}
+	validationConfig := &telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: []string{"lua", "stdout"}, DeniedFilterPlugins: []string{"stdout"}}
 
-	logPipelineValidator := NewValidatingWebhookHandler(mgr.GetClient(), inputValidatorMock, variableValidatorMock, pluginValidatorMock, maxPipelinesValidatorMock, outputValidatorMock, fileValidatorMock, dryRunnerMock)
+	logPipelineValidator := NewValidatingWebhookHandler(mgr.GetClient(), variableValidatorMock, maxPipelinesValidatorMock, fileValidatorMock, dryRunnerMock, validationConfig)
 
 	By("registering LogPipeline webhook")
 	mgr.GetWebhookServer().Register(
@@ -159,3 +155,57 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
+
+func createResources() error {
+	cmFluentBit := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fluentBitConfigMapName,
+			Namespace: controllerNamespace,
+		},
+		Data: map[string]string{
+			"fluent-bit.conf": `@INCLUDE dynamic/*.conf
+[SERVICE]
+    Daemon Off
+    Flush 1
+    Parsers_File custom_parsers.conf
+    Parsers_File dynamic-parsers/parsers.conf
+
+[INPUT]
+    Name tail
+    Path /var/log/containers/*.log
+    multiline.parser docker, cri
+    Tag kube.*
+    Mem_Buf_Limit 5MB
+    Skip_Long_Lines On
+    storage.type  filesystem
+`,
+		},
+	}
+	err := k8sClient.Create(ctx, &cmFluentBit)
+	if err != nil {
+		return err
+	}
+	cmFile := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fluentBitFileConfigMapName,
+			Namespace: controllerNamespace,
+		},
+		Data: map[string]string{
+			"labelmap.json": `
+kubernetes:
+  namespace_name: namespace
+  labels:
+    app: app
+    "app.kubernetes.io/component": component
+    "app.kubernetes.io/name": app
+    "serverless.kyma-project.io/function-name": function
+     host: node
+  container_name: container
+  pod_name: pod
+stream: stream`,
+		},
+	}
+	err = k8sClient.Create(ctx, &cmFile)
+
+	return err
+}

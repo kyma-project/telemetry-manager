@@ -122,6 +122,10 @@ type Output struct {
 	Loki *LokiOutput `json:"grafana-loki,omitempty"`
 }
 
+func (i *Input) IsDefined() bool {
+	return i != nil
+}
+
 func (o *Output) IsCustomDefined() bool {
 	return o.Custom != ""
 }
@@ -251,13 +255,13 @@ type LogPipeline struct {
 }
 
 // ContainsCustomPlugin returns true if the pipeline contains any custom filters or outputs
-func (l *LogPipeline) ContainsCustomPlugin() bool {
-	for _, filter := range l.Spec.Filters {
+func (lp *LogPipeline) ContainsCustomPlugin() bool {
+	for _, filter := range lp.Spec.Filters {
 		if filter.Custom != "" {
 			return true
 		}
 	}
-	return l.Spec.Output.IsCustomDefined()
+	return lp.Spec.Output.IsCustomDefined()
 }
 
 // +kubebuilder:object:root=true

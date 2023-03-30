@@ -3,12 +3,10 @@ package envvar
 import (
 	"fmt"
 	"strings"
-
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-func GenerateName(prefix string, secretKeyRef v1alpha1.SecretKeyRef) string {
-	result := fmt.Sprintf("%s_%s_%s_%s", prefix, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key)
+func FormatEnvVarName(prefix, namespace, name, key string) string {
+	result := fmt.Sprintf("%s_%s_%s_%s", prefix, namespace, name, key)
 	return MakeEnvVarCompliant(result)
 }
 
