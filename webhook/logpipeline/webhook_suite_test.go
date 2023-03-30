@@ -19,13 +19,14 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net"
 	"path/filepath"
 	"sync"
 	"testing"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/mocks"
@@ -123,9 +124,7 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		defer GinkgoRecover()
-		mutex.Lock()
 		err := mgr.Start(ctx)
-		mutex.Unlock()
 		Expect(err).NotTo(HaveOccurred())
 	}()
 

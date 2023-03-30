@@ -242,16 +242,16 @@ func main() {
 	ctrLogger, err := logger.New("json", logLevel, dynamicLoglevel)
 
 	go func() {
-		mutex.Lock()
 		server := &http.Server{
 			Addr:              ":6060",
 			ReadHeaderTimeout: 10 * time.Second,
 		}
-		mutex.Unlock()
 
 		err := server.ListenAndServe()
 		if err != nil {
+			mutex.Lock()
 			setupLog.Error(err, "Cannot start pprof server")
+			mutex.Unlock()
 		}
 	}()
 
