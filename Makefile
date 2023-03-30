@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= eu.gcr.io/kyma-project/telemetry-manager:v20230324-b998a5e9
+IMG ?= eu.gcr.io/kyma-project/telemetry-manager:v20230329-e1d53cad
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.1
 
