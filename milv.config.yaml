@@ -1,3 +1,4 @@
+external-links-to-ignore: ["localhost"]
 timeout: 60
 request-repeats: 5
 files:
