@@ -7,7 +7,7 @@
         
         > **NOTE:** The following sub-steps assume that you have created a k3d cluster using the Kyma CLI with `kyma provision k3d`. This command creates a k3d registry which is exposed on port `5001`.
         
-        1. Create the Telemetry module, bundle it as an OCI image and push it to the local k3d registry:
+        1. Create the `telemetry` module, bundle it as an OCI image and push it to the local k3d registry:
             ```shell
             kyma alpha create module --name kyma-project.io/module/telemetry --version 0.0.1 --channel alpha --default-cr ./config/samples/operator_v1alpha1_telemetry.yaml --registry localhost:5001 --insecure
             ```
