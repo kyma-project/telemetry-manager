@@ -75,7 +75,7 @@ func validateHTTPOutput(httpOutput *HTTPOutput) error {
 	isValidHostname, err := validHostname(httpOutput.Host.Value)
 
 	if err != nil {
-		return fmt.Errorf("error validating hostname: %v", err)
+		return fmt.Errorf("error validating hostname: %w", err)
 	}
 
 	if httpOutput.Host.Value != "" && !isValidHostname {
