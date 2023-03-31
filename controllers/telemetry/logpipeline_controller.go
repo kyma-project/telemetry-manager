@@ -18,6 +18,7 @@ limitations under the License.
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -35,6 +36,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/setup"
 )
+
+var errIncorrectSecretObject = errors.New("incorrect secret object")
 
 // LogPipelineReconciler reconciles a LogPipeline object
 type LogPipelineReconciler struct {
@@ -84,6 +87,7 @@ func (r *LogPipelineReconciler) mapSecret(object client.Object) []reconcile.Requ
 
 	secret, ok := object.(*corev1.Secret)
 	if !ok {
+		ctrl.Log.V(1).Error(errIncorrectSecretObject, fmt.Sprintf("Secret object of incompatible type: %+v", object))
 		return requests
 	}
 	ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
@@ -102,6 +106,7 @@ func (r *LogPipelineReconciler) mapDaemonSet(object client.Object) []reconcile.R
 	var requests []reconcile.Request
 	daemonSet, ok := object.(*appsv1.DaemonSet)
 	if !ok {
+		ctrl.Log.V(1).Error(errIncorrectSecretObject, fmt.Sprintf("Secret object of incompatible type: %+v", object))
 		return requests
 	}
 
