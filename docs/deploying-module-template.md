@@ -1,7 +1,7 @@
 # Deploying `ModuleTemplate` with the Lifecycle Manager
 
 
-1. Bundle the `telemetry` module as an OCI image and pusht it to a registry. You can push the OCI image either to a local k3d registry or to a remote registry.
+1. Bundle the `telemetry` module as an OCI image and push it to a registry. You can push the OCI image either to a local k3d registry or to a remote registry.
     
     *   Using a local k3d registry:
         
