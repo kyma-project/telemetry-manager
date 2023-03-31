@@ -17,29 +17,10 @@
 
     *   Using a remote registry:
         
-        > **NOTE** The following example uses the Google Container Registry (GCR) as remote registry. The following sub-steps assume that you are a member of the Google Cloud Platform (GCP) project called `sap-kyma-huskies-dev`.
-
-        1. To create OAuth2 access tokens, ensure [here](https://console.cloud.google.com/iam-admin/iam?project=sap-kyma-huskies-dev) that you are assigned the `Service Account Token Creator` role.
-
-        2. Authorize `gcloud` to access the Cloud Platform with Google user credentials:
-            ```shell
-            gcloud auth login
-            ```
-        
-        3. Set the `project` property to `sap-kyma-huskies-dev`:
-            ```shell
-            gcloud config set project sap-kyma-huskies-dev
-            ```
-        
-        4. Set an environment variable (`GCR_TOKEN`) with the access token for the Service Account called `telemetry-module-sa`:
-             ```shell
-            export GCR_TOKEN=$(gcloud auth print-access-token --impersonate-service-account telemetry-module-sa@sap-kyma-huskies-dev.iam.gserviceaccount.com)
-            ```
-
-        5. Create the Telemetry module, bundle it as an OCI image and push it to the GCR registry:
-             ```shell
-            kyma alpha create module --name kyma-project.io/module/telemetry --version 0.0.1 --channel alpha --default-cr ./config/samples/operator_v1alpha1_telemetry.yaml --registry https://europe-west3-docker.pkg.dev/sap-kyma-huskies-dev/telemetry-module --credentials oauth2accesstoken:$GCR_TOKEN
-            ```           
+        ```shell
+        kyma alpha create module --name kyma-project.io/module/telemetry --version 0.0.1 --channel alpha --default-cr ./config/samples/operator_v1alpha1_telemetry.yaml --registry MODULE_REGISTRY --credentials USER:PASSWORD
+        ``` 
+          
 
 2. Deploy the [Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager/tree/main) to the cluster:
 
