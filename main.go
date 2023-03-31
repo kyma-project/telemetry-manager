@@ -69,6 +69,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	//nolint:gosec // pprof package is required for performance analysis.
 	_ "net/http/pprof"
+	//nolint:gci // Mandatory kubebuilder scaffolding.
 	//+kubebuilder:scaffold:imports
 )
 
