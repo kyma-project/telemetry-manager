@@ -121,7 +121,7 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		defer GinkgoRecover()
-		err = mgr.Start(ctx)
+		err := mgr.Start(ctx)
 		Expect(err).NotTo(HaveOccurred())
 	}()
 

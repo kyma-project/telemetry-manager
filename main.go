@@ -23,6 +23,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-logr/zapr"
@@ -112,6 +113,7 @@ var (
 
 	enableTelemetryManagerModule bool
 	enableWebhook                bool
+	mutex                        sync.Mutex
 )
 
 const (
@@ -235,9 +237,11 @@ func main() {
 			ReadHeaderTimeout: 10 * time.Second,
 		}
 
-		err = server.ListenAndServe()
+		err := server.ListenAndServe()
 		if err != nil {
+			mutex.Lock()
 			setupLog.Error(err, "Cannot start pprof server")
+			mutex.Unlock()
 		}
 	}()
 
