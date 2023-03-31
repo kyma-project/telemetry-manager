@@ -2,10 +2,11 @@ package v1alpha1
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 )
 
 func (lp *LogPipeline) Validate(vc *LogPipelineValidationConfig) error {
@@ -64,7 +65,13 @@ func validateLokiOutput(lokiOutput *LokiOutput) error {
 }
 
 func validateHTTPOutput(httpOutput *HTTPOutput) error {
-	if httpOutput.Host.Value != "" && !validHostname(httpOutput.Host.Value) {
+	isValidHostname, err := validHostname(httpOutput.Host.Value)
+
+	if err != nil {
+		return fmt.Errorf("error validating hostname: %w", err)
+	}
+
+	if httpOutput.Host.Value != "" && !isValidHostname {
 		return fmt.Errorf("invalid hostname '%s'", httpOutput.Host.Value)
 	}
 	if httpOutput.URI != "" && !strings.HasPrefix(httpOutput.URI, "/") {
@@ -100,10 +107,10 @@ func validURL(host string) bool {
 	return true
 }
 
-func validHostname(host string) bool {
+func validHostname(host string) (bool, error) {
 	host = strings.Trim(host, " ")
-	re, _ := regexp.Compile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
-	return re.MatchString(host)
+	re, err := regexp.Compile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
+	return re.MatchString(host), err
 }
 
 func validateCustomOutput(deniedOutputPlugin []string, content string) error {
