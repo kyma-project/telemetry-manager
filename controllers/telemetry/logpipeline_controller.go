@@ -37,7 +37,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/setup"
 )
 
-var errIncorrectSecretObject = errors.New("incorrect secret object")
+var (
+	errIncorrectSecretObject    = errors.New("incorrect secret object")
+	errIncorrectDaemonSetObject = errors.New("incorrect daemon set object")
+)
 
 // LogPipelineReconciler reconciles a LogPipeline object
 type LogPipelineReconciler struct {
@@ -106,7 +109,7 @@ func (r *LogPipelineReconciler) mapDaemonSet(object client.Object) []reconcile.R
 	var requests []reconcile.Request
 	daemonSet, ok := object.(*appsv1.DaemonSet)
 	if !ok {
-		ctrl.Log.V(1).Error(errIncorrectSecretObject, fmt.Sprintf("Secret object of incompatible type: %+v", object))
+		ctrl.Log.V(1).Error(errIncorrectDaemonSetObject, fmt.Sprintf("DaemonSet object of incompatible type: %+v", object))
 		return requests
 	}
 
