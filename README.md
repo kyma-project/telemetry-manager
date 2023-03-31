@@ -96,6 +96,9 @@ make deploy
 make undeploy
 ```
 
+### Deploying `ModuleTemplate` with the Lifecycle Manager
+Check the documentation [here](./docs/deploying_module_template.md).
+
 ## Troubleshooting
 
 ### Enable pausing reconciliations
