@@ -4,7 +4,7 @@ We use [golangci-lint](https://golangci-lint.run) with fine-grained configuratio
 
 ## Linters in action
 
-Below is the list of linters configured and integrated as a CI stage through a [ProwJob](https://github.com/kyma-project/test-infra/blob/main/prow/jobs/kyma/components/kyma-components-static-checks.yaml#L6).
+The following linters are configured and integrated as a CI stage through a [ProwJob](https://github.com/kyma-project/test-infra/blob/main/prow/jobs/kyma/components/kyma-components-static-checks.yaml#L6).
 
 | Linter                                                                                                                                                            | Description                                                      | Suppress                           |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------| ---------------------------------------------------------------- | ---------------------------------- |
@@ -18,7 +18,7 @@ Below is the list of linters configured and integrated as a CI stage through a [
 | [`errchkjson`](https://github.com/breml/errchkjson) [⛭](https://golangci-lint.run/usage/linters/#errchkjson)                                                      | checks types passed to the json encoding functions               | [inline //nolint](#inline-nolint) |
 | `exportloopref`                                                                                                                                                   | finds exporting pointers for loop variables                      | [inline //nolint](#inline-nolint) |
 | [`gci`](https://github.com/daixiang0/gci) [⛭](https://golangci-lint.run/usage/linters/#gci)                                                                       | checks import order and ensures it is always deterministic       | [inline //nolint](#inline-nolint) |
-| [`ginkgolinter`](https://github.com/nunnatsa/ginkgolinter) [⛭](https://golangci-lint.run/usage/linters/#ginkgolinter)                                             | enforces standards of using ginkgo and gomega                    | [inline //nolint](#inline-nolint) |
+| [`ginkgolinter`](https://github.com/nunnatsa/ginkgolinter) [⛭](https://golangci-lint.run/usage/linters/#ginkgolinter)                                             | enforces standards of using Ginkgo and Gomega                    | [inline //nolint](#inline-nolint) |
 | [`gocheckcompilerdirectives`](https://github.com/leighmcculloch/gocheckcompilerdirectives)                                                                        | checks go compiler directive comments                            | [inline //nolint](#inline-nolint) |
 | `gochecknoinits`                                                                                                                                                  | checks that no init functions are present                        | [inline //nolint](#inline-nolint) |
 | [`gofmt`](https://pkg.go.dev/cmd/gofmt) [⛭](https://golangci-lint.run/usage/linters/#gofmt)                                                                       | checks whether code was [gofmt](https://pkg.go.dev/cmd/gofmt) ed |                                    |
@@ -52,7 +52,6 @@ Below is the list of linters irrelevant for Huskies team.
 | `interfacer`       | deprecated                                                           |
 | `maligned`         | superseded by `govet`                                                |
 | `nosnakecase`      | superseded by `revive`                                               |
-| `promlinter`       | `github.com/prometheus/client_golang/prometheus` package is not used |
 | `rowserrcheck`     | `database/sql` package is not used                                   |  
 | `sqlclosecheck`    | `database/sql` package is not used                                   |  
 | `scopelint`        | superseded by `exportloopref`                                        |
@@ -68,12 +67,12 @@ Some linters produce false-positive warnings, so there is a way to suppress them
 To suppress a linting warning for a particular line of code, use nolint instruction `//no-lint:{LINTER} // {COMMENT}.` _LINTER_ and _COMMENT_ are two mandatory placeholders with the linter to be suppressed and a reason for the suppression.
 
 
-Preceding inline nolint comments for the code blocks will suppress linting warnings for the whole block. The example below will suppress the linter for the entire file:
+Preceding inline nolint comments for the code blocks suppress linting warnings for the whole block. The following example suppresses the linter for the entire file:
 ```go
 //nolint:errcheck // The error check should be suppressied for the module.
 package config
 
-// The rest of the file will not be linter by errcheck.
+// The rest of the file will not be linted by errcheck.
 ```
 
 ### Lining exclusions
