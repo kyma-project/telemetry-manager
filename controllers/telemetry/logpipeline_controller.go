@@ -84,7 +84,7 @@ func (r *LogPipelineReconciler) mapSecret(object client.Object) []reconcile.Requ
 
 	secret, ok := object.(*corev1.Secret)
 	if !ok {
-		ctrl.Log.V(1).Error(errIncorrectSecretObject, fmt.Sprintf("Secret object of incompatible type: %+v", object))
+		ctrl.Log.V(1).Error(errIncorrectSecretObject, "Secret object of incompatible type")
 		return requests
 	}
 	ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
@@ -103,7 +103,7 @@ func (r *LogPipelineReconciler) mapDaemonSet(object client.Object) []reconcile.R
 	var requests []reconcile.Request
 	daemonSet, ok := object.(*appsv1.DaemonSet)
 	if !ok {
-		ctrl.Log.V(1).Error(errIncorrectDaemonSetObject, fmt.Sprintf("DaemonSet object of incompatible type: %+v", object))
+		ctrl.Log.V(1).Error(errIncorrectDaemonSetObject, "DaemonSet object of incompatible type")
 		return requests
 	}
 
