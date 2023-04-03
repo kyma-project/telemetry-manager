@@ -78,6 +78,7 @@ func (r *TracePipelineReconciler) mapSecret(object client.Object) []reconcile.Re
 
 	secret, ok := object.(*corev1.Secret)
 	if !ok {
+		ctrl.Log.V(1).Error(errIncorrectSecretObject, fmt.Sprintf("Secret object of incompatible type: %+v", object))
 		return requests
 	}
 	ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
