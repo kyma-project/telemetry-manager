@@ -1,27 +1,114 @@
 run:
   modules-download-mode: readonly
   timeout: 10m
-issues:
-  exclude:
-    # Check this issue for more info: https://github.com/kyoh86/scopelint/issues/4
-    - Using the variable on range scope `tc` in function literal
-    - Using the variable on range scope `tt` in function literal
 linters:
   disable-all: true
   enable:
+    - asasalint
+    - asciicheck
+    - bodyclose
+    - dogsled
+    - dupl
+    - dupword
     - errcheck
+    - errchkjson
     - exportloopref
+    - gci
     - ginkgolinter
+    - gocheckcompilerdirectives
     - gochecknoinits
     - gofmt
+    - goimports
     - gosec
     - gosimple
     - govet
     - ineffassign
+    - loggercheck
     - misspell
+    - misspell
+    - nilnil
+    - nolintlint
     - revive
     - staticcheck
     - stylecheck
     - typecheck
     - unparam
     - unused
+
+linters-settings:
+  dupl:
+    threshold: 100                 # Tokens count to trigger error.
+
+  errcheck:
+    check-type-assertions: true    # Reports type assertions: `a := b.(SomeStruct)`.
+    check-blank: true              # Report assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.
+    exclude-functions:             # List of functions to exclude from checking.
+      - io/ioutil.ReadFile
+      - io.Copy(*bytes.Buffer)
+      - io.Copy(os.Stdout)
+      - gopkg.in/yaml.v3.Marshal
+
+  errchkjson:
+    check-error-free-encoding: true
+    report-no-exported: true
+
+  gci:
+    sections:
+      - standard                                             # Standard packages.
+      - default                                              # Imports that could not be matched to another section type.
+      - prefix(github.com/kyma-project/telemetry-manager)    # Imports with the specified Prefix.
+      - blank                                                # Blank imports
+      - dot                                                  # Dot imports
+    custom-order: true
+
+  goimports:
+    local-prefixes: github.com/kyma-project/telemetry-manager
+
+  govet:
+    check-shadowing: true
+
+  loggercheck:
+    klog: true                   # Allows checking for the k8s.io/klog/v2.
+    zap: true                    # Allows checking for the go.uber.org/zap.
+    kitlog: false                # Prohibits checking for the github.com/go-kit/log.
+    logr: false                  # Prohibits checking for the github.com/go-logr/logr.
+    require-string-key: true     # Require all logging keys to be inlined constant strings.
+    no-printf-like: true
+
+  misspell:
+    locale: US
+
+  nolintlint:
+    allow-unused: true
+    require-explanation: true
+    require-specific: true
+
+issues:
+  exclude:
+    # Check this issue for more info: https://github.com/kyoh86/scopelint/issues/4
+    - Using the variable on range scope `tc` in function literal
+    - Using the variable on range scope `tt` in function literal
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+    - path: _test\.go
+      text: "shadow: declaration of \"ctx\" shadows declaration at line ([\\d]+)"
+      linters:
+        - govet
+    - path: .go
+      text: "shadow: declaration of \"err\" shadows declaration at line ([\\d]+)"
+      linters:
+        - govet
+    - linters: [ dupl ]
+      path: apis/telemetry/v1alpha1/(logparsers|metricpipeline|tracepipeline)_types_test.go
+    - linters: [ dupl ]
+      path: apis/telemetry/v1alpha1/secret_refs_test.go
+    - linters: [ dupl ]
+      path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller(_test)?.go
+    - linters: [ dupl ]
+      path: internal/reconciler/(logpipeline|metricpipeline|tracepipeline)/status_test.go
+    - linters: [ dupl ]
+      path: internal/kubernetes/utils(_test)?.go
+    - linters: [ dupl ]
+      path: internal/fluentbit/config/validation_test.go

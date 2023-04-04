@@ -384,6 +384,7 @@ func MakeDynamicParserConfigmap(name types.NamespacedName) *corev1.ConfigMap {
 }
 
 func MakeLuaConfigMap(name types.NamespacedName) *corev1.ConfigMap {
+	//nolint:dupword // Ignore lua syntax code duplications.
 	luaFilter := `
 function kubernetes_map_keys(tag, timestamp, record)
   if record.kubernetes == nil then

@@ -5,8 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 )
 
 func mustLoadManifest[T runtime.Object](scheme *runtime.Scheme, filepath string) T {

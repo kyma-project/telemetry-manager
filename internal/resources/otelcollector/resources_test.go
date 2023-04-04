@@ -3,11 +3,9 @@ package otelcollector
 import (
 	"testing"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 var (
