@@ -98,7 +98,7 @@ func getAllSpans(traces []ptrace.Traces) []ptrace.Span {
 func unmarshalOTLPJSONTraces(buf []byte) ([]ptrace.Traces, error) {
 	var results []ptrace.Traces
 
-	tracesUnmarshaler := &ptrace.JSONUnmarshaler{}
+	var tracesUnmarshaler ptrace.JSONUnmarshaler
 	scanner := bufio.NewScanner(bytes.NewReader(buf))
 	for scanner.Scan() {
 		td, err := tracesUnmarshaler.UnmarshalTraces(scanner.Bytes())
