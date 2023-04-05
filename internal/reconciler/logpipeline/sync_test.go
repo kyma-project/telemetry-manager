@@ -4,10 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes/mocks"
-	resources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -18,6 +14,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/kubernetes/mocks"
+	resources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
 var (

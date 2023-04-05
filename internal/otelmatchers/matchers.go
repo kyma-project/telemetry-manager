@@ -2,6 +2,7 @@ package otelmatchers
 
 import (
 	"fmt"
+
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/otel/attribute"

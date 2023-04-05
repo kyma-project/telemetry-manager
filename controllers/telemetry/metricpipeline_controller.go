@@ -24,19 +24,16 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
-
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"github.com/kyma-project/telemetry-manager/internal/setup"
-
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/setup"
 )
 
 // MetricPipelineReconciler reconciles a MetricPipeline object
@@ -73,7 +70,6 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *MetricPipelineReconciler) mapSecret(object client.Object) []reconcile.Request {
-	secret := object.(*corev1.Secret)
 	var pipelines telemetryv1alpha1.MetricPipelineList
 	var requests []reconcile.Request
 	err := r.List(context.Background(), &pipelines)
@@ -82,6 +78,11 @@ func (r *MetricPipelineReconciler) mapSecret(object client.Object) []reconcile.R
 		return requests
 	}
 
+	secret, ok := object.(*corev1.Secret)
+	if !ok {
+		ctrl.Log.V(1).Error(errIncorrectSecretObject, "Secret object of incompatible type")
+		return requests
+	}
 	ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]

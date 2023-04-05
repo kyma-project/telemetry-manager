@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	configbuilder "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func makeOtelCollectorConfig(ctx context.Context, c client.Reader, output v1alpha1.TracePipelineOutput) (*config.Config, configbuilder.EnvVars, error) {

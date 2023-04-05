@@ -3,6 +3,7 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -149,6 +150,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 	if err = kubernetes.CreateOrUpdateService(ctx, r.Client, otlpService); err != nil {
+		//nolint:dupword // otel collector collector service is a real name.
 		return fmt.Errorf("failed to create otel collector collector service: %w", err)
 	}
 

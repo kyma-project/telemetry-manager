@@ -20,18 +20,19 @@ import (
 	"context"
 	"fmt"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
+	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
 //go:generate mockery --name DeploymentProber --filename deployment_prober.go
@@ -165,6 +166,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 	if err = kubernetes.CreateOrUpdateService(ctx, r.Client, otlpService); err != nil {
+		//nolint:dupword // otel collector collector service is a real name.
 		return fmt.Errorf("failed to create otel collector collector service: %w", err)
 	}
 

@@ -2,7 +2,6 @@ package kubernetes
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -185,52 +184,6 @@ func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.
 
 	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 	return c.Update(ctx, desired)
-}
-
-func DeleteFluentBit(ctx context.Context, c client.Client, name types.NamespacedName) error {
-
-	if err := deleteResource(ctx, c, name, &appsv1.DaemonSet{}); err != nil {
-		return fmt.Errorf("unable to delete daemonset %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &corev1.Service{}); err != nil {
-		return fmt.Errorf("unable to delete service %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &corev1.ConfigMap{}); err != nil {
-		return fmt.Errorf("unable to delete configmap %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &corev1.ServiceAccount{}); err != nil {
-		return fmt.Errorf("unable to delete service account %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &rbacv1.ClusterRoleBinding{}); err != nil {
-		return fmt.Errorf("unable to delete cluster role binding %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &rbacv1.ClusterRole{}); err != nil {
-		return fmt.Errorf("unable to delete cluster role %s: %v", name.Name, err)
-	}
-
-	name.Name = fmt.Sprintf("%s-luascripts", name.Name)
-	if err := deleteResource(ctx, c, name, &corev1.ConfigMap{}); err != nil {
-		return fmt.Errorf("unable to delete configmap %s: %v", name.Name, err)
-	}
-
-	return nil
-}
-
-func deleteResource(ctx context.Context, c client.Client, name client.ObjectKey, obj client.Object) error {
-	err := c.Get(ctx, name, obj)
-	if err == nil {
-		if err = c.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
-			return err
-		}
-	} else if !apierrors.IsNotFound(err) {
-		return err
-	}
-	return nil
 }
 
 func mergeMetadata(new *metav1.ObjectMeta, old metav1.ObjectMeta) {

@@ -20,17 +20,15 @@ import (
 	"context"
 	"fmt"
 
-	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 )
 
 const checksumAnnotationKey = "checksum/logparser-config"

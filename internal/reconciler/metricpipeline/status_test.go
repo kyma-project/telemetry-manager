@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -17,6 +15,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
+	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
 func TestUpdateStatus(t *testing.T) {
