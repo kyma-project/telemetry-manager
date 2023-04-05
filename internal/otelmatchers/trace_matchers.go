@@ -15,7 +15,7 @@ func ConsistOfSpansWithIDs(expectedSpanIDs []pcommon.SpanID) types.GomegaMatcher
 	return gomega.WithTransform(func(actual interface{}) ([]pcommon.SpanID, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
-			return nil, fmt.Errorf("ConsistOfSpansWithIDs rqquires a []byte, but got %T", actual)
+			return nil, fmt.Errorf("ConsistOfSpansWithIDs requires a []byte, but got %T", actual)
 		}
 
 		actualTraces, err := unmarshalOTLPJSONTraces(actualBytes)
@@ -37,7 +37,7 @@ func EachHaveTraceID(expectedTraceID pcommon.TraceID) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]pcommon.TraceID, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
-			return nil, fmt.Errorf("EachHaveTraceID rqquires a []byte, but got %T", actual)
+			return nil, fmt.Errorf("EachHaveTraceID requires a []byte, but got %T", actual)
 		}
 
 		actualTraces, err := unmarshalOTLPJSONTraces(actualBytes)
@@ -59,7 +59,7 @@ func EachHaveAttributes(expectedAttrs pcommon.Map) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]map[string]any, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
-			return nil, fmt.Errorf("EachHaveAttributes rqquires a []byte, but got %T", actual)
+			return nil, fmt.Errorf("EachHaveAttributes requires a []byte, but got %T", actual)
 		}
 
 		actualTraces, err := unmarshalOTLPJSONTraces(actualBytes)
