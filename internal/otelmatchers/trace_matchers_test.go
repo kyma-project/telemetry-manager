@@ -4,9 +4,10 @@ import (
 	"os"
 	"testing"
 
+	"go.opentelemetry.io/collector/pdata/pcommon"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go.opentelemetry.io/collector/pdata/pcommon"
 )
 
 func TestCustomMatcher(t *testing.T) {
@@ -29,6 +30,13 @@ var _ = Describe("ConsistOfSpansWithIDs", func() {
 
 		It("should fail", func() {
 			Expect(fileBytes).ShouldNot(ConsistOfSpansWithIDs(expectedSpansWithIDs))
+		})
+	})
+
+	Context("with input of invalid type", func() {
+		It("should error", func() {
+			_, err := ConsistOfSpansWithIDs(expectedSpansWithIDs).Match(struct{}{})
+			Expect(err).Should(HaveOccurred())
 		})
 	})
 
@@ -99,6 +107,13 @@ var _ = Describe("ConsistOfSpansWithTraceID", func() {
 		})
 	})
 
+	Context("with input of invalid type", func() {
+		It("should error", func() {
+			_, err := ConsistOfSpansWithTraceID(expectedTraceID).Match(struct{}{})
+			Expect(err).Should(HaveOccurred())
+		})
+	})
+
 	Context("with no spans having the trace ID", func() {
 		BeforeEach(func() {
 			var err error
@@ -165,6 +180,13 @@ var _ = Describe("ConsistOfSpansWithAttributes", func() {
 
 		It("should error", func() {
 			_, err := ConsistOfSpansWithAttributes(expectedAttrs).Match(fileBytes)
+			Expect(err).Should(HaveOccurred())
+		})
+	})
+
+	Context("with input of invalid type", func() {
+		It("should error", func() {
+			_, err := ConsistOfSpansWithAttributes(expectedAttrs).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
 		})
 	})
