@@ -4,22 +4,16 @@ package e2e
 
 import (
 	"context"
-	"fmt"
+	crand "crypto/rand"
+	"encoding/binary"
+	"math/rand"
 	"net/http"
 	"time"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	. "github.com/kyma-project/telemetry-manager/internal/otelmatchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/propagation"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/ptrace"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,14 +22,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/testbed"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	. "github.com/kyma-project/telemetry-manager/internal/otelmatchers"
 )
 
 var _ = Describe("Tracing", func() {
 	Context("When a tracepipeline exists", Ordered, func() {
-		var spanIDs []string
-		var traceID string
-		var commonAttributes []attribute.KeyValue
-
 		BeforeAll(func() {
 			tracePipelineSecret := makeTracePipelineSecret()
 			tracePipeline := makeTracePipeline()
@@ -62,14 +57,6 @@ var _ = Describe("Tracing", func() {
 				Expect(k8sClient.Delete(ctx, mockBackendCm)).Should(Succeed())
 				Expect(k8sClient.Delete(ctx, mocksNamespace)).Should(Succeed())
 			})
-		})
-
-		BeforeEach(func() {
-			commonAttributes = []attribute.KeyValue{
-				attribute.String("attrA", "chocolate"),
-				attribute.String("attrB", "raspberry"),
-				attribute.String("attrC", "vanilla"),
-			}
 		})
 
 		It("Should have a running trace collector deployment", func() {
@@ -104,32 +91,30 @@ var _ = Describe("Tracing", func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should be able to send traces to the OTLP endpoint", func() {
-			shutdown, err := initProvider("localhost:4317")
-			Expect(err).ShouldNot(HaveOccurred())
-			defer shutdown(context.Background())
-			tracer := otel.Tracer("otlp-load-tester")
-
-			rootCtx, rootSpan := tracer.Start(ctx, "root", trace.WithAttributes(commonAttributes...))
-			spanIDs = append(spanIDs, rootSpan.SpanContext().SpanID().String())
-			traceID = rootSpan.SpanContext().TraceID().String()
-			rootSpan.End()
+		It("Should verify end-to-end trace delivery", func() {
+			traceID := newTraceID()
+			var spanIDs []pcommon.SpanID
 			for i := 0; i < 100; i++ {
-				_, span := tracer.Start(rootCtx, "non-root", trace.WithAttributes(commonAttributes...))
-				spanIDs = append(spanIDs, span.SpanContext().SpanID().String())
-				span.End()
+				spanIDs = append(spanIDs, newSpanID())
 			}
-		})
+			attrs := pcommon.NewMap()
+			attrs.PutStr("attrA", "chocolate")
+			attrs.PutStr("attrB", "raspberry")
+			attrs.PutStr("attrC", "vanilla")
 
-		It("Should verify traces were sent to the backend", func() {
+			traces := makeTraces(traceID, spanIDs, attrs)
+
+			sendTraces(context.Background(), traces, "localhost", 4317)
+
+			attrs.PutBool("bool", true)
 			Eventually(func(g Gomega) {
 				resp, err := http.Get("http://localhost:9090/spans.json")
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ConsistOfSpansWithIDs(spanIDs),
-					EachHaveAttributes(commonAttributes),
-					EachHaveTraceID(traceID))))
+					EachHaveTraceID(traceID),
+					EachHaveAttributes(attrs))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
@@ -341,27 +326,47 @@ func makeExternalMockBackendService() *corev1.Service {
 	}
 }
 
-func initProvider(otlpEndpointURL string) (func(context.Context) error, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func newSpanID() pcommon.SpanID {
+	var rngSeed int64
+	_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
+	randSource := rand.New(rand.NewSource(rngSeed))
+	sid := pcommon.SpanID{}
+	_, _ = randSource.Read(sid[:])
+	return sid
+}
 
-	conn, err := grpc.DialContext(ctx, otlpEndpointURL, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
-	if err != nil {
-		return nil, fmt.Errorf("failed to create gRPC connection: %w", err)
+func newTraceID() pcommon.TraceID {
+	var rngSeed int64
+	_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
+	randSource := rand.New(rand.NewSource(rngSeed))
+	tid := pcommon.TraceID{}
+	_, _ = randSource.Read(tid[:])
+	return tid
+}
+
+func makeTraces(traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attributes pcommon.Map) ptrace.Traces {
+	traces := ptrace.NewTraces()
+
+	spans := traces.ResourceSpans().
+		AppendEmpty().
+		ScopeSpans().
+		AppendEmpty().
+		Spans()
+
+	for _, spanID := range spanIDs {
+		span := spans.AppendEmpty()
+		span.SetStartTimestamp(pcommon.NewTimestampFromTime(time.Now()))
+		span.SetSpanID(spanID)
+		span.SetTraceID(traceID)
+		attributes.CopyTo(span.Attributes())
 	}
 
-	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create trace exporter: %w", err)
-	}
+	return traces
+}
 
-	bsp := sdktrace.NewBatchSpanProcessor(traceExporter, sdktrace.WithMaxExportBatchSize(512), sdktrace.WithMaxQueueSize(2048))
-	tracerProvider := sdktrace.NewTracerProvider(
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		sdktrace.WithSpanProcessor(bsp),
-	)
-	otel.SetTracerProvider(tracerProvider)
-
-	otel.SetTextMapPropagator(propagation.TraceContext{})
-	return tracerProvider.Shutdown, nil
+func sendTraces(ctx context.Context, traces ptrace.Traces, host string, port int) {
+	sender := testbed.NewOTLPTraceDataSender(host, port)
+	Expect(sender.Start()).Should(Succeed())
+	Expect(sender.ConsumeTraces(ctx, traces)).Should(Succeed())
+	sender.Flush()
 }
