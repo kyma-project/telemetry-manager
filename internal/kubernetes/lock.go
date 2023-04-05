@@ -13,13 +13,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func TryAcquireLock(ctx context.Context, client client.Client, lockName types.NamespacedName, owner metav1.Object) error {
+var errLogInUse = errors.New("lock is already acquired by other resources")
+
+type ResourceCountLock struct {
+	client    client.Client
+	lockName  types.NamespacedName
+	maxOwners int
+}
+
+func NewResourceCountLock(client client.Client, lockName types.NamespacedName, maxOwners int) *ResourceCountLock {
+	return &ResourceCountLock{
+		client:    client,
+		lockName:  lockName,
+		maxOwners: maxOwners,
+	}
+}
+
+func (l *ResourceCountLock) TryAcquireLock(ctx context.Context, owner metav1.Object) error {
 	var lock corev1.ConfigMap
-	if err := client.Get(ctx, lockName, &lock); err != nil {
+	if err := l.client.Get(ctx, l.lockName, &lock); err != nil {
 		if apierrors.IsNotFound(err) {
-			return createLock(ctx, client, lockName, owner)
+			return l.createLock(ctx, owner)
 		}
-		return fmt.Errorf("failed to get lock: %v", err)
+		return fmt.Errorf("failed to get lock: %w", err)
 	}
 
 	for _, ref := range lock.GetOwnerReferences() {
@@ -28,21 +44,32 @@ func TryAcquireLock(ctx context.Context, client client.Client, lockName types.Na
 		}
 	}
 
-	return errors.New("lock is already acquired by another resource")
+	if l.maxOwners == 0 || len(lock.GetOwnerReferences()) < l.maxOwners {
+		if err := controllerutil.SetOwnerReference(owner, &lock, l.client.Scheme()); err != nil {
+			return fmt.Errorf("failed to set owner reference: %w", err)
+		}
+		if err := l.client.Update(ctx, &lock); err != nil {
+			return fmt.Errorf("failed to update lock: %w", err)
+		}
+
+		return nil
+	}
+
+	return errLogInUse
 }
 
-func createLock(ctx context.Context, client client.Client, name types.NamespacedName, owner metav1.Object) error {
+func (l *ResourceCountLock) createLock(ctx context.Context, owner metav1.Object) error {
 	lock := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
+			Name:      l.lockName.Name,
+			Namespace: l.lockName.Namespace,
 		},
 	}
-	if err := controllerutil.SetControllerReference(owner, &lock, client.Scheme()); err != nil {
-		return fmt.Errorf("failed to set owner reference: %v", err)
+	if err := controllerutil.SetOwnerReference(owner, &lock, l.client.Scheme()); err != nil {
+		return fmt.Errorf("failed to set owner reference: %w", err)
 	}
-	if err := client.Create(ctx, &lock); err != nil {
-		return fmt.Errorf("failed to create lock: %v", err)
+	if err := l.client.Create(ctx, &lock); err != nil {
+		return fmt.Errorf("failed to create lock: %w", err)
 	}
 	return nil
 }

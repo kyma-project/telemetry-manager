@@ -19,9 +19,10 @@ type Config struct {
 	Namespace         string
 	OverrideConfigMap types.NamespacedName
 
-	Deployment DeploymentConfig
-	Service    ServiceConfig
-	Overrides  overrides.Config
+	Deployment   DeploymentConfig
+	Service      ServiceConfig
+	Overrides    overrides.Config
+	MaxPipelines int
 }
 
 type DeploymentConfig struct {
