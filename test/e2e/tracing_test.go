@@ -106,7 +106,6 @@ var _ = Describe("Tracing", func() {
 
 			sendTraces(context.Background(), traces, "localhost", 4317)
 
-			attrs.PutBool("bool", true)
 			Eventually(func(g Gomega) {
 				resp, err := http.Get("http://localhost:9090/spans.json")
 				g.Expect(err).NotTo(HaveOccurred())
