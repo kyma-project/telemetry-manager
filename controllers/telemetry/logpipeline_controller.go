@@ -22,6 +22,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -60,15 +61,17 @@ func (r *LogPipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&telemetryv1alpha1.LogPipeline{}).
+		Owns(&corev1.Secret{}).
+		Owns(&appsv1.DaemonSet{}).
+		Owns(&corev1.Service{}).
+		Owns(&corev1.ConfigMap{}).
+		Owns(&corev1.ServiceAccount{}).
+		Owns(&rbacv1.ClusterRole{}).
+		Owns(&rbacv1.ClusterRoleBinding{}).
 		Watches(
 			&source.Kind{Type: &corev1.Secret{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
 			builder.WithPredicates(setup.CreateOrUpdate()),
-		).
-		Watches(
-			&source.Kind{Type: &appsv1.DaemonSet{}},
-			handler.EnqueueRequestsFromMapFunc(r.mapDaemonSet),
-			builder.WithPredicates(setup.DeleteOrUpdate()),
 		).
 		Complete(r)
 }
@@ -92,26 +95,5 @@ func (r *LogPipelineReconciler) mapSecret(object client.Object) []reconcile.Requ
 			ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
 		}
 	}
-	return requests
-}
-
-func (r *LogPipelineReconciler) mapDaemonSet(object client.Object) []reconcile.Request {
-	daemonSet := object.(*appsv1.DaemonSet)
-
-	var requests []reconcile.Request
-	if daemonSet.Name != r.config.DaemonSet.Name || daemonSet.Namespace != r.config.DaemonSet.Namespace {
-		return requests
-	}
-
-	var allPipelines telemetryv1alpha1.LogPipelineList
-	if err := r.List(context.Background(), &allPipelines); err != nil {
-		ctrl.Log.Error(err, "DaemonSet UpdateEvent: fetching LogPipelineList failed!", err.Error())
-		return requests
-	}
-
-	for _, pipeline := range allPipelines.Items {
-		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-	}
-	ctrl.Log.V(1).Info(fmt.Sprintf("DaemonSet changed event handling done: Created %d new reconciliation requests.\n", len(requests)))
 	return requests
 }

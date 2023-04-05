@@ -192,7 +192,7 @@ func main() {
 	flag.BoolVar(&enableMetrics, "enable-metrics", true, "Enable configurable metrics.")
 	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
-	flag.StringVar(&telemetryNamespace, "manager-namespace", "", "Namespace of the manager")
+	flag.StringVar(&telemetryNamespace, "manager-namespace", "kyma-system", "Namespace of the manager")
 
 	flag.StringVar(&traceCollectorImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")

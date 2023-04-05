@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
@@ -150,49 +151,75 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.NamespacedName, pipeline *telemetryv1alpha1.LogPipeline, checksum string) error {
-	shouldDeleteFluentBit, err := r.isLastPipelineMarkedForDeletion(ctx, pipeline)
-	if err != nil {
-		return fmt.Errorf("failed to check if LogPipeline is last marked for deletion: %v", err)
-	}
-
-	if shouldDeleteFluentBit {
-		return utils.DeleteFluentBit(ctx, r, name)
-	}
-
 	serviceAccount := commonresources.MakeServiceAccount(name)
-	if err = utils.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
+	if err := controllerutil.SetControllerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create fluent bit service account: %w", err)
 	}
+
 	clusterRole := commonresources.MakeClusterRole(name)
-	if err = utils.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
+	if err := controllerutil.SetControllerReference(pipeline, clusterRole, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
 		return fmt.Errorf("failed to create fluent bit cluster role: %w", err)
 	}
+
 	clusterRoleBinding := commonresources.MakeClusterRoleBinding(name)
-	if err = utils.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
+	if err := controllerutil.SetControllerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
 		return fmt.Errorf("failed to create fluent bit cluster role Binding: %w", err)
 	}
+
 	daemonSet := resources.MakeDaemonSet(name, checksum, r.config.DaemonSetConfig)
-	if err = utils.CreateOrUpdateDaemonSet(ctx, r, daemonSet); err != nil {
+	if err := controllerutil.SetControllerReference(pipeline, daemonSet, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateDaemonSet(ctx, r, daemonSet); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit daemonset: %w", err)
 	}
+
 	exporterMetricsService := resources.MakeExporterMetricsService(name)
-	if err = utils.CreateOrUpdateService(ctx, r, exporterMetricsService); err != nil {
+	if err := controllerutil.SetControllerReference(pipeline, exporterMetricsService, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateService(ctx, r, exporterMetricsService); err != nil {
 		return fmt.Errorf("failed to reconcile exporter metrics service: %w", err)
 	}
+
 	metricsService := resources.MakeMetricsService(name)
-	if err = utils.CreateOrUpdateService(ctx, r, metricsService); err != nil {
+	if err := controllerutil.SetControllerReference(pipeline, metricsService, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateService(ctx, r, metricsService); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
+
 	cm := resources.MakeConfigMap(name)
-	if err = utils.CreateOrUpdateConfigMap(ctx, r, cm); err != nil {
+	if err := controllerutil.SetControllerReference(pipeline, cm, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateConfigMap(ctx, r, cm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit configmap: %w", err)
 	}
+
 	luaCm := resources.MakeLuaConfigMap(name)
-	if err = utils.CreateOrUpdateConfigMap(ctx, r, luaCm); err != nil {
+	if err := controllerutil.SetControllerReference(pipeline, luaCm, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateConfigMap(ctx, r, luaCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit lua configmap: %w", err)
 	}
+
 	parsersCm := resources.MakeDynamicParserConfigmap(name)
-	if err = utils.CreateIfNotExistsConfigMap(ctx, r, parsersCm); err != nil {
+	if err := controllerutil.SetControllerReference(pipeline, parsersCm, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateIfNotExistsConfigMap(ctx, r, parsersCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit parser configmap: %w", err)
 	}
 	return nil

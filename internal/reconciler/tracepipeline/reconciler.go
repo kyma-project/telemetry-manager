@@ -19,6 +19,7 @@ package tracepipeline
 import (
 	"context"
 	"fmt"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"

@@ -62,6 +62,7 @@ func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.Service{}).
+		Owns(&corev1.ServiceAccount{}).
 		Watches(
 			&source.Kind{Type: &corev1.Secret{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecret),

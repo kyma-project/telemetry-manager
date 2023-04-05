@@ -236,6 +236,7 @@ func deleteResource(ctx context.Context, c client.Client, name client.ObjectKey,
 func mergeMetadata(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
 	new.ResourceVersion = old.ResourceVersion
 
+	new.SetOwnerReferences(new.OwnerReferences)
 	new.SetLabels(mergeMaps(new.Labels, old.Labels))
 	new.SetAnnotations(mergeMaps(new.Annotations, old.Annotations))
 }
