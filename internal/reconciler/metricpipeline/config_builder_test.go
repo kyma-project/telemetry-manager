@@ -120,8 +120,8 @@ func TestMemoryLimiterProcessor(t *testing.T) {
 func TestBatchProcessor(t *testing.T) {
 	processors := makeProcessorsConfig()
 
-	require.Equal(t, 512, processors.Batch.SendBatchSize)
-	require.Equal(t, 512, processors.Batch.SendBatchMaxSize)
+	require.Equal(t, 1024, processors.Batch.SendBatchSize)
+	require.Equal(t, 0, processors.Batch.SendBatchMaxSize)
 	require.Equal(t, "10s", processors.Batch.Timeout)
 }
 
@@ -175,9 +175,9 @@ exporters:
         verbosity: basic
 processors:
     batch:
-        send_batch_size: 512
+        send_batch_size: 1024
         timeout: 10s
-        send_batch_max_size: 512
+        send_batch_max_size: 0
     memory_limiter:
         check_interval: 1s
         limit_percentage: 75
