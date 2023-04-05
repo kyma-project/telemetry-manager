@@ -77,7 +77,6 @@ func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *LogPipelineReconciler) mapSecret(object client.Object) []reconcile.Request {
-	secret := object.(*corev1.Secret)
 	var pipelines telemetryv1alpha1.LogPipelineList
 	var requests []reconcile.Request
 	err := r.List(context.Background(), &pipelines)
@@ -86,6 +85,11 @@ func (r *LogPipelineReconciler) mapSecret(object client.Object) []reconcile.Requ
 		return requests
 	}
 
+	secret, ok := object.(*corev1.Secret)
+	if !ok {
+		ctrl.Log.V(1).Error(errIncorrectSecretObject, "Secret object of incompatible type")
+		return requests
+	}
 	ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]
@@ -97,3 +101,4 @@ func (r *LogPipelineReconciler) mapSecret(object client.Object) []reconcile.Requ
 	}
 	return requests
 }
+

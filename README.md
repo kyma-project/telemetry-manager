@@ -57,6 +57,12 @@ make e2e-test
 make lint
 ```
 
+- Autofix all automatically-fixable linter complaints
+
+```bash
+make lint-autofix
+```
+
 - Regenerate YAML manifests (CRDs and RBAC)
 
 ```bash

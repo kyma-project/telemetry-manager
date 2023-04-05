@@ -6,14 +6,12 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-
-	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
 type syncer struct {

@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	configbuilder "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func makeOtelCollectorConfig(ctx context.Context, c client.Reader, output v1alpha1.MetricPipelineOutput) (*config.Config, configbuilder.EnvVars, error) {
@@ -85,9 +86,9 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 	}
 	return config.ProcessorsConfig{
 		Batch: &config.BatchProcessorConfig{
-			SendBatchSize:    512,
+			SendBatchSize:    1024,
 			Timeout:          "10s",
-			SendBatchMaxSize: 512,
+			SendBatchMaxSize: 1024,
 		},
 		MemoryLimiter: &config.MemoryLimiterConfig{
 			CheckInterval:        "1s",

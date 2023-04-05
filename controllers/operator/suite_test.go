@@ -18,22 +18,23 @@ package operator
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"path/filepath"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	//nolint:gci // Mandatory kubebuilder imports scaffolding.
 	//+kubebuilder:scaffold:imports
 )
 
