@@ -88,7 +88,7 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 		Batch: &config.BatchProcessorConfig{
 			SendBatchSize:    1024,
 			Timeout:          "10s",
-			SendBatchMaxSize: 0,
+			SendBatchMaxSize: 1024,
 		},
 		MemoryLimiter: &config.MemoryLimiterConfig{
 			CheckInterval:        "1s",
