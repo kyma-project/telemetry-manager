@@ -325,21 +325,24 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				return found
 			}, timeout, interval).Should(BeTrue())
 		})
+		It("Should have the expected owner references", func() {
+			Eventually(func() error {
+				var fluentBitDaemonSet appsv1.DaemonSet
+				if err := k8sClient.Get(ctx, types.NamespacedName{
+					Name:      testLogPipelineConfig.DaemonSet.Name,
+					Namespace: testLogPipelineConfig.DaemonSet.Namespace,
+				}, &fluentBitDaemonSet); err != nil {
+					return err
+				}
+				return validateLoggingOwnerReferences(fluentBitDaemonSet.OwnerReferences)
+			}, timeout, interval).Should(BeNil())
+		})
 	})
 
 	Context("When deleting the log pipeline", Ordered, func() {
 
 		BeforeAll(func() {
 			Expect(k8sClient.Delete(ctx, logPipeline)).Should(Succeed())
-		})
-
-		It("Should have no fluent bit daemon set", func() {
-			Eventually(func() int {
-				var fluentBitDaemonSetList appsv1.DaemonSetList
-				err := k8sClient.List(ctx, &fluentBitDaemonSetList)
-				Expect(err).ShouldNot(HaveOccurred())
-				return len(fluentBitDaemonSetList.Items)
-			}, timeout, interval).Should(Equal(0))
 		})
 
 		It("Should reset the telemetry_all_logpipelines metric", func() {
@@ -375,3 +378,23 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 		})
 	})
 })
+
+func validateLoggingOwnerReferences(ownerReferences []metav1.OwnerReference) error {
+	if len(ownerReferences) != 1 {
+		return fmt.Errorf("unexpected number of owner references: %d", len(ownerReferences))
+	}
+	ownerReference := ownerReferences[0]
+
+	if ownerReference.Kind != "LogPipeline" {
+		return fmt.Errorf("unexpected owner reference type: %s", ownerReference.Kind)
+	}
+
+	if ownerReference.Name != "log-pipeline" {
+		return fmt.Errorf("unexpected owner reference name: %s", ownerReference.Kind)
+	}
+
+	if !*ownerReference.BlockOwnerDeletion {
+		return fmt.Errorf("owner reference does not block owner deletion")
+	}
+	return nil
+}
