@@ -36,7 +36,7 @@ var _ = Describe("ConsistOfSpansWithIDs", func() {
 	Context("with no matching span IDs", func() {
 		BeforeEach(func() {
 			var err error
-			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_ids_no_match.jsonl")
+			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_ids/no_match.jsonl")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -48,7 +48,7 @@ var _ = Describe("ConsistOfSpansWithIDs", func() {
 	Context("with partially matching span IDs", func() {
 		BeforeEach(func() {
 			var err error
-			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_ids_partial_match.jsonl")
+			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_ids/partial_match.jsonl")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -60,7 +60,7 @@ var _ = Describe("ConsistOfSpansWithIDs", func() {
 	Context("with fully matching span IDs", func() {
 		BeforeEach(func() {
 			var err error
-			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_ids_full_match.jsonl")
+			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_ids/full_match.jsonl")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -76,6 +76,73 @@ var _ = Describe("ConsistOfSpansWithIDs", func() {
 
 		It("should error", func() {
 			_, err := ConsistOfSpansWithIDs(expectedSpansWithIDs).Match(fileBytes)
+			Expect(err).Should(HaveOccurred())
+		})
+	})
+})
+
+var _ = Describe("ConsistOfSpansWithTraceID", func() {
+	var fileBytes []byte
+	var expectedTraceID pcommon.TraceID
+
+	BeforeEach(func() {
+		expectedTraceID = [16]byte{1}
+	})
+
+	Context("with nil input", func() {
+		BeforeEach(func() {
+			fileBytes = nil
+		})
+
+		It("should error", func() {
+			_, err := ConsistOfSpansWithTraceID(expectedTraceID).Match(fileBytes)
+			Expect(err).Should(HaveOccurred())
+		})
+	})
+
+	Context("with no matching span IDs", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_trace_id/no_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail", func() {
+			Expect(fileBytes).ShouldNot(ConsistOfSpansWithTraceID(expectedTraceID))
+		})
+	})
+
+	Context("with partially matching span IDs", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_trace_id/partial_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail", func() {
+			Expect(fileBytes).ShouldNot(ConsistOfSpansWithTraceID(expectedTraceID))
+		})
+	})
+
+	Context("with fully matching span IDs", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_trace_id/full_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should succeed", func() {
+			Expect(fileBytes).Should(ConsistOfSpansWithTraceID(expectedTraceID))
+		})
+	})
+
+	Context("with invalid input", func() {
+		BeforeEach(func() {
+			fileBytes = []byte{1, 2, 3}
+		})
+
+		It("should error", func() {
+			_, err := ConsistOfSpansWithTraceID(expectedTraceID).Match(fileBytes)
 			Expect(err).Should(HaveOccurred())
 		})
 	})
