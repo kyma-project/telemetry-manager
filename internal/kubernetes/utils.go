@@ -200,7 +200,19 @@ func mergeSlices(newSlice []metav1.OwnerReference, oldSlice []metav1.OwnerRefere
 	mergedSlice = append(mergedSlice, oldSlice...)
 	mergedSlice = append(mergedSlice, newSlice...)
 	mergedSlice = removeSimilarUIDs(mergedSlice)
+	if !hasController(mergedSlice) && len(mergedSlice) > 0 {
+		mergedSlice[0].Controller = func() *bool { b := true; return &b }()
+	}
 	return mergedSlice
+}
+
+func hasController(references []metav1.OwnerReference) bool {
+	for _, reference := range references {
+		if reference.Controller == func() *bool { b := true; return &b }() {
+			return true
+		}
+	}
+	return false
 }
 
 func restrictControllers(references []metav1.OwnerReference) []metav1.OwnerReference {
