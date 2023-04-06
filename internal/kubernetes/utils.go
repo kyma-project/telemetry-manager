@@ -189,9 +189,16 @@ func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.
 func mergeMetadata(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
 	new.ResourceVersion = old.ResourceVersion
 
-	new.SetOwnerReferences(new.OwnerReferences)
+	new.SetOwnerReferences(mergeSlices(new.OwnerReferences, old.OwnerReferences))
 	new.SetLabels(mergeMaps(new.Labels, old.Labels))
 	new.SetAnnotations(mergeMaps(new.Annotations, old.Annotations))
+}
+
+func mergeSlices(newSlice []metav1.OwnerReference, oldSlice []metav1.OwnerReference) []metav1.OwnerReference {
+	mergedSlice := make([]metav1.OwnerReference, 0, len(oldSlice)+len(newSlice))
+	mergedSlice = append(mergedSlice, oldSlice...)
+	mergedSlice = append(mergedSlice, newSlice...)
+	return mergedSlice
 }
 
 func mergeMaps(new map[string]string, old map[string]string) map[string]string {

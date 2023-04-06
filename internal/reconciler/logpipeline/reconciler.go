@@ -25,6 +25,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -155,7 +157,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.NamespacedName, pipeline *telemetryv1alpha1.LogPipeline, checksum string) error {
 	serviceAccount := commonresources.MakeServiceAccount(name)
-	if err := controllerutil.SetControllerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
+	if err := setOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
@@ -163,7 +165,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	clusterRole := commonresources.MakeClusterRole(name)
-	if err := controllerutil.SetControllerReference(pipeline, clusterRole, r.Scheme()); err != nil {
+	if err := setOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
@@ -171,7 +173,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	clusterRoleBinding := commonresources.MakeClusterRoleBinding(name)
-	if err := controllerutil.SetControllerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
+	if err := setOwnerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
@@ -179,7 +181,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	daemonSet := resources.MakeDaemonSet(name, checksum, r.config.DaemonSetConfig)
-	if err := controllerutil.SetControllerReference(pipeline, daemonSet, r.Scheme()); err != nil {
+	if err := setOwnerReference(pipeline, daemonSet, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateDaemonSet(ctx, r, daemonSet); err != nil {
@@ -187,7 +189,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	exporterMetricsService := resources.MakeExporterMetricsService(name)
-	if err := controllerutil.SetControllerReference(pipeline, exporterMetricsService, r.Scheme()); err != nil {
+	if err := setOwnerReference(pipeline, exporterMetricsService, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateService(ctx, r, exporterMetricsService); err != nil {
@@ -195,7 +197,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	metricsService := resources.MakeMetricsService(name)
-	if err := controllerutil.SetControllerReference(pipeline, metricsService, r.Scheme()); err != nil {
+	if err := setOwnerReference(pipeline, metricsService, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateService(ctx, r, metricsService); err != nil {
@@ -203,7 +205,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	cm := resources.MakeConfigMap(name)
-	if err := controllerutil.SetControllerReference(pipeline, cm, r.Scheme()); err != nil {
+	if err := setOwnerReference(pipeline, cm, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateConfigMap(ctx, r, cm); err != nil {
@@ -211,7 +213,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	luaCm := resources.MakeLuaConfigMap(name)
-	if err := controllerutil.SetControllerReference(pipeline, luaCm, r.Scheme()); err != nil {
+	if err := setOwnerReference(pipeline, luaCm, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateConfigMap(ctx, r, luaCm); err != nil {
@@ -219,13 +221,21 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	parsersCm := resources.MakeDynamicParserConfigmap(name)
-	if err := controllerutil.SetControllerReference(pipeline, parsersCm, r.Scheme()); err != nil {
+	if err := setOwnerReference(pipeline, parsersCm, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateIfNotExistsConfigMap(ctx, r, parsersCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit parser configmap: %w", err)
 	}
 	return nil
+}
+
+func setOwnerReference(owner, object metav1.Object, scheme *runtime.Scheme) error {
+	err := controllerutil.SetControllerReference(owner, object, scheme)
+	if err != nil {
+		err = controllerutil.SetOwnerReference(owner, object, scheme)
+	}
+	return err
 }
 
 func deleteFluentBit(ctx context.Context, c client.Client, name types.NamespacedName) error {
