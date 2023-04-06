@@ -24,19 +24,24 @@ var _ = Describe("ConsistOfSpansWithIDs", func() {
 	})
 
 	Context("with nil input", func() {
-		BeforeEach(func() {
-			fileBytes = nil
-		})
-
-		It("should fail", func() {
-			Expect(fileBytes).ShouldNot(ConsistOfSpansWithIDs(expectedSpansWithIDs))
+		It("should error", func() {
+			success, err := ConsistOfSpansWithIDs(expectedSpansWithIDs).Match(nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
 		})
 	})
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			_, err := ConsistOfSpansWithIDs(expectedSpansWithIDs).Match(struct{}{})
+			success, err := ConsistOfSpansWithIDs(expectedSpansWithIDs).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should fail", func() {
+			Expect([]byte{}).ShouldNot(ConsistOfSpansWithIDs(expectedSpansWithIDs))
 		})
 	})
 
@@ -82,8 +87,9 @@ var _ = Describe("ConsistOfSpansWithIDs", func() {
 		})
 
 		It("should error", func() {
-			_, err := ConsistOfSpansWithIDs(expectedSpansWithIDs).Match(fileBytes)
+			success, err := ConsistOfSpansWithIDs(expectedSpansWithIDs).Match(fileBytes)
 			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
 		})
 	})
 })
@@ -97,20 +103,26 @@ var _ = Describe("ConsistOfSpansWithTraceID", func() {
 	})
 
 	Context("with nil input", func() {
-		BeforeEach(func() {
-			fileBytes = nil
-		})
-
 		It("should error", func() {
-			_, err := ConsistOfSpansWithTraceID(expectedTraceID).Match(fileBytes)
+			success, err := ConsistOfSpansWithTraceID(expectedTraceID).Match(nil)
 			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
 		})
 	})
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			_, err := ConsistOfSpansWithTraceID(expectedTraceID).Match(struct{}{})
+			success, err := ConsistOfSpansWithTraceID(expectedTraceID).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should error", func() {
+			success, err := ConsistOfSpansWithTraceID(expectedTraceID).Match([]byte{})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
 		})
 	})
 
@@ -156,8 +168,9 @@ var _ = Describe("ConsistOfSpansWithTraceID", func() {
 		})
 
 		It("should error", func() {
-			_, err := ConsistOfSpansWithTraceID(expectedTraceID).Match(fileBytes)
+			success, err := ConsistOfSpansWithTraceID(expectedTraceID).Match(fileBytes)
 			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
 		})
 	})
 })
@@ -174,20 +187,26 @@ var _ = Describe("ConsistOfSpansWithAttributes", func() {
 	})
 
 	Context("with nil input", func() {
-		BeforeEach(func() {
-			fileBytes = nil
-		})
-
 		It("should error", func() {
-			_, err := ConsistOfSpansWithAttributes(expectedAttrs).Match(fileBytes)
+			success, err := ConsistOfSpansWithAttributes(expectedAttrs).Match(fileBytes)
 			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
 		})
 	})
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			_, err := ConsistOfSpansWithAttributes(expectedAttrs).Match(struct{}{})
+			success, err := ConsistOfSpansWithAttributes(expectedAttrs).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should error", func() {
+			success, err := ConsistOfSpansWithAttributes(expectedAttrs).Match([]byte{})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
 		})
 	})
 
@@ -233,8 +252,9 @@ var _ = Describe("ConsistOfSpansWithAttributes", func() {
 		})
 
 		It("should error", func() {
-			_, err := ConsistOfSpansWithAttributes(expectedAttrs).Match(fileBytes)
+			success, err := ConsistOfSpansWithAttributes(expectedAttrs).Match(fileBytes)
 			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
 		})
 	})
 })
