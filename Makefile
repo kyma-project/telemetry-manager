@@ -285,9 +285,8 @@ endef
 KYMA_FILE_NAME ?=  $(shell ./hack/get_kyma_file_name.sh ${OS_TYPE} ${OS_ARCH})
 KYMA_STABILITY ?= unstable
 
-.PHONY: kyma
-kyma: $(KYMA) ## Download kyma locally if necessary.
-$(KYMA): $(LOCALBIN)
+kyma: $(LOCALBIN) $(KYMA) ## Download kyma locally if necessary.
+$(KYMA):
 	$(if $(KYMA_FILE_NAME),,$(call os_error, ${OS_TYPE}, ${OS_ARCH}))
-	test -s $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILE_NAME)
+	test -f $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILE_NAME)
 	chmod 0100 $(KYMA)
