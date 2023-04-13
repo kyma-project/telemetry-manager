@@ -191,6 +191,29 @@ func mergeMetadata(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
 
 	new.SetLabels(mergeMaps(new.Labels, old.Labels))
 	new.SetAnnotations(mergeMaps(new.Annotations, old.Annotations))
+	new.SetOwnerReferences(mergeOwnerReferences(new.OwnerReferences, old.OwnerReferences))
+}
+
+// merges two owner references slices. Since only one owner can have the controller flag, we assume that the newOwners slice contains the actual controller and clear the flag on all owners in oldOwners.
+func mergeOwnerReferences(newOwners []metav1.OwnerReference, oldOwners []metav1.OwnerReference) []metav1.OwnerReference {
+	merged := newOwners
+	notOwner := false
+
+	for _, o := range oldOwners {
+		found := false
+		for _, n := range newOwners {
+			if n.UID == o.UID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			o.Controller = &notOwner
+			merged = append(merged, o)
+		}
+	}
+
+	return merged
 }
 
 func mergeMaps(new map[string]string, old map[string]string) map[string]string {
