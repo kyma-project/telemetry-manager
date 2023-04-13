@@ -1,8 +1,19 @@
-
 # Image URL to use all building/pushing image targets
 IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20230421-c40cd7f7
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.1
+
+MODULE_NAME ?= telemetry
+MODULE_VERSION ?= 0.0.1
+CLUSTER_NAME ?= kyma
+REGISTRY_PORT ?= 5001
+REGISTRY_NAME ?= ${CLUSTER_NAME}-registry
+MODULE_CHANNEL ?= beta
+MODULE_REGISTRY ?= localhost:${REGISTRY_PORT}
+# Operating system architecture
+OS_ARCH ?= $(shell uname -m)
+# Operating system type
+OS_TYPE ?= $(shell uname)
 
 PROJECT_DIR ?= $(shell pwd)
 
@@ -102,7 +113,10 @@ docker-build: ## Build docker image with the manager.
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
-##@ Deployment
+.PHONY: manager-image
+manager-image: docker-build docker-push ## Build and push manager image
+
+##@ Deployment without lifecycle-manager
 
 ifndef ignore-not-found
   ignore-not-found = false
@@ -125,6 +139,87 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
+##@ Deployment with lifecycle-manager
+
+# Credentials used for authenticating into the module registry
+# see `kyma alpha mod create --help for more info`
+
+# This will change the flags of the `kyma alpha module create` command in case we spot credentials
+# Otherwise we will assume http-based local registries without authentication (e.g. for k3d)
+ifneq (,$(PROW_JOB_ID))
+GCP_ACCESS_TOKEN=$(shell gcloud auth application-default print-access-token)
+MODULE_CREATION_FLAGS=--registry $(MODULE_REGISTRY) --module-archive-version-overwrite -c oauth2accesstoken:$(GCP_ACCESS_TOKEN)
+else ifeq (,$(MODULE_CREDENTIALS))
+MODULE_CREATION_FLAGS=--registry $(MODULE_REGISTRY) --module-archive-version-overwrite --insecure
+else
+MODULE_CREATION_FLAGS=--registry $(MODULE_REGISTRY) --module-archive-version-overwrite -c $(MODULE_CREDENTIALS)
+endif
+
+.PHONY: run-with-lm-using-local-images
+run-with-lm-using-local-images: ## Create a k3d cluster and deploy module with the lifecycle-manager. Manager image and module OCI image are pushed to local k3d registry
+run-with-lm-using-local-images: \
+	create-k3d \
+	local-manager-image \
+	create-local-module \
+	fix-module-template \
+	deploy-kyma \
+	deploy-module-template \
+	enable-module \
+	verify-telemetry \
+	verify-kyma \
+
+# -C ${PROJECT_DIR}
+#IMG=localhost:${REGISTRY_PORT}/telemetry-manager-dev-local
+
+.PHONY: create-k3d
+create-k3d: kyma ## Create a k3d cluster using Kyma cli .
+	$(KYMA) provision k3d --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} --ci
+
+.PHONY: local-manager-image ## Build and push manager image to local k3d registry
+local-manager-image:
+	@make manager-image \
+		IMG=localhost:${REGISTRY_PORT}/${MODULE_NAME}-manager
+
+.PHONY: create-local-module
+create-local-module: 
+	@make create-module \
+		IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/${MODULE_NAME}-manager \
+		MODULE_REGISTRY=localhost:${REGISTRY_PORT}
+
+.PHONY: create-module
+create-module: kyma kustomize ## Build the module and push it to a registry defined in MODULE_REGISTRY.
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KYMA) alpha create module --name kyma-project.io/module/${MODULE_NAME} --version $(MODULE_VERSION) --channel=${MODULE_CHANNEL} --default-cr ./config/samples/operator_v1alpha1_telemetry.yaml $(MODULE_CREATION_FLAGS)
+
+.PHONY: fix-module-template
+fix-module-template: ## Create template-k3d.yaml based on template.yaml with right URLs.
+	@cat template.yaml \
+	| sed -e 's/${REGISTRY_PORT}/5000/g' \
+		  -e 's/localhost/k3d-${REGISTRY_NAME}.localhost/g' \
+		> template-k3d.yaml
+
+.PHONY: deploy-kyma
+deploy-kyma: kyma ## Deploy kyma which includes the deployment of the lifecycle-manager.
+	$(KYMA) alpha deploy \
+		--ci \
+		--force-conflicts
+
+.PHONY: deploy-module-template
+deploy-module-template: ## Deploy the ModuleTemplate in the cluster.
+	kubectl apply -f template-k3d.yaml
+
+.PHONY: enable-module
+enable-module: kyma ## Enable the module.
+	$(KYMA) alpha enable module ${MODULE_NAME} --channel ${MODULE_CHANNEL}
+
+.PHONY: verify-telemetry
+verify-telemetry: ## Wait for Telemetry CR to be in Ready state.
+	@hack/verify_telemetry_status.sh
+
+.PHONY: verify-kyma
+verify-kyma: ## Wait for Kyma CR to be in Ready state.
+	@hack/verify_kyma_status.sh
+
 ##@ Build Dependencies
 
 ## Location to install dependencies to
@@ -138,6 +233,7 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 GINKGO ?= $(LOCALBIN)/ginkgo
 K3D ?= $(LOCALBIN)/k3d
+KYMA ?= $(LOCALBIN)/kyma-$(KYMA_STABILITY)
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.0.1
@@ -181,3 +277,17 @@ $(K3D): $(LOCALBIN)
 		rm -rf $(K3D); \
 	fi
 	test -s $(K3D) || curl -s $(K3D_INSTALL_SCRIPT) | PATH="$(PATH):$(LOCALBIN)" USE_SUDO=false K3D_INSTALL_DIR=$(LOCALBIN) TAG=$(K3D_VERSION) bash
+
+define os_error
+$(error Error: unsuported platform OS_TYPE:$1, OS_ARCH:$2; to mitigate this problem set variable KYMA with absolute path to kyma-cli binary compatible with your operating system and architecture)
+endef
+
+KYMA_FILE_NAME ?=  $(shell ./hack/get_kyma_file_name.sh ${OS_TYPE} ${OS_ARCH}) #kyma-darwin
+KYMA_STABILITY ?= unstable
+
+.PHONY: kyma
+kyma: $(KYMA) ## Download kyma locally if necessary.
+$(KYMA): $(LOCALBIN)
+	$(if $(KYMA_FILE_NAME),,$(call os_error, ${OS_TYPE}, ${OS_ARCH}))
+	test -s $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILE_NAME)
+	chmod 0100 $(KYMA)

@@ -148,3 +148,13 @@ If you change the pipeline CR when the reconciliation is paused, these changes w
 ### Profiling
 
 Telemetry Manager has pprof-based profiling activated and exposed on port 6060. Use port-forwarding to access the pprof endpoint. You can find additional information in the Go [pprof package documentation](https://pkg.go.dev/net/http/pprof).
+
+### MackBook M1 users
+
+Some parts of the scripts may not work because Kyma CLI is not released for Apple Silicon users. To fix it install [Kyma CLI manually](https://github.com/kyma-project/cli#installation) and export the path to it.
+
+   ```bash
+   export KYMA=$(which kyma)
+   ```
+
+The example error may look like this: `Error: unsupported platform OS_TYPE: Darwin, OS_ARCH: arm64; to mitigate this problem set variable KYMA with the absolute path to kyma-cli binary compatible with your operating system and architecture. Stop.`
