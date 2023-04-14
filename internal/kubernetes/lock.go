@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var errLogInUse = errors.New("lock is already acquired by other resources")
+var errLockInUse = errors.New("lock is already acquired by other resources")
 
 type ResourceCountLock struct {
 	client    client.Client
@@ -55,7 +55,7 @@ func (l *ResourceCountLock) TryAcquireLock(ctx context.Context, owner metav1.Obj
 		return nil
 	}
 
-	return errLogInUse
+	return errLockInUse
 }
 
 func (l *ResourceCountLock) createLock(ctx context.Context, owner metav1.Object) error {

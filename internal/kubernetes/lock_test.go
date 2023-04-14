@@ -47,5 +47,5 @@ func TestTryAcquireLock(t *testing.T) {
 	require.NoError(t, err)
 
 	err = l.TryAcquireLock(ctx, owner3)
-	require.Equal(t, errLogInUse, err)
+	require.Equal(t, errLockInUse, err)
 }
