@@ -155,9 +155,9 @@ else
 MODULE_CREATION_FLAGS=--registry $(MODULE_REGISTRY) --module-archive-version-overwrite -c $(MODULE_CREDENTIALS)
 endif
 
-.PHONY: run-with-lm-using-local-images
-run-with-lm-using-local-images: ## Create a k3d cluster and deploy module with the lifecycle-manager. Manager image and module OCI image are pushed to local k3d registry
-run-with-lm-using-local-images: \
+.PHONY: run-with-lm
+run-with-lm: ## Create a k3d cluster and deploy module with the lifecycle-manager. Manager image and module OCI image are pushed to local k3d registry
+run-with-lm: \
 	create-k3d \
 	local-manager-image \
 	create-local-module \
@@ -168,8 +168,11 @@ run-with-lm-using-local-images: \
 	verify-telemetry \
 	verify-kyma \
 
-# -C ${PROJECT_DIR}
-#IMG=localhost:${REGISTRY_PORT}/telemetry-manager-dev-local
+.PHONY: release
+release: ## Push manager image to prod regeistry, create module with its OCI image pushed to prod registry and create a github release entry
+release: \
+	manager-image \
+	create-module \
 
 .PHONY: create-k3d
 create-k3d: kyma ## Create a k3d cluster using Kyma cli .
