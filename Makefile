@@ -8,7 +8,7 @@ MODULE_VERSION ?= 0.0.1
 CLUSTER_NAME ?= kyma
 REGISTRY_PORT ?= 5001
 REGISTRY_NAME ?= ${CLUSTER_NAME}-registry
-MODULE_CHANNEL ?= beta
+MODULE_CHANNEL ?= fast
 MODULE_REGISTRY ?= localhost:${REGISTRY_PORT}
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
