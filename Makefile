@@ -171,7 +171,6 @@ run-with-lm: \
 .PHONY: release
 release: ## Push manager image to prod regeistry, create module with its OCI image pushed to prod registry and create a github release entry
 release: \
-	manager-image \
 	create-module \
 
 .PHONY: create-k3d
