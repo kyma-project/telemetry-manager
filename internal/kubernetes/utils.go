@@ -189,8 +189,6 @@ func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.
 func mergeMetadata(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
 	new.ResourceVersion = old.ResourceVersion
 
-	new.OwnerReferences = restrictControllers(new.OwnerReferences)
-	new.SetOwnerReferences(mergeSlices(new.OwnerReferences, old.OwnerReferences))
 	new.SetLabels(mergeMaps(new.Labels, old.Labels))
 	new.SetAnnotations(mergeMaps(new.Annotations, old.Annotations))
 	new.SetOwnerReferences(mergeOwnerReferences(new.OwnerReferences, old.OwnerReferences))
@@ -216,47 +214,6 @@ func mergeOwnerReferences(newOwners []metav1.OwnerReference, oldOwners []metav1.
 	}
 
 	return merged
-}
-
-func mergeSlices(newSlice []metav1.OwnerReference, oldSlice []metav1.OwnerReference) []metav1.OwnerReference {
-	mergedSlice := make([]metav1.OwnerReference, 0, len(oldSlice)+len(newSlice))
-	mergedSlice = append(mergedSlice, oldSlice...)
-	mergedSlice = append(mergedSlice, newSlice...)
-	mergedSlice = removeSimilarUIDs(mergedSlice)
-	if !hasController(mergedSlice) && len(mergedSlice) > 0 {
-		mergedSlice[0].Controller = func() *bool { b := true; return &b }()
-	}
-	return mergedSlice
-}
-
-func hasController(references []metav1.OwnerReference) bool {
-	for _, reference := range references {
-		if reference.Controller == func() *bool { b := true; return &b }() {
-			return true
-		}
-	}
-	return false
-}
-
-func restrictControllers(references []metav1.OwnerReference) []metav1.OwnerReference {
-	for i := 0; i < len(references); i++ {
-		references[i].Controller = func() *bool { b := false; return &b }()
-	}
-	return references
-}
-
-func removeSimilarUIDs(references []metav1.OwnerReference) []metav1.OwnerReference {
-	uniqueUIDs := make(map[types.UID]bool)
-	uniqueReferences := make([]metav1.OwnerReference, 0)
-
-	for _, reference := range references {
-		if !uniqueUIDs[reference.UID] {
-			uniqueUIDs[reference.UID] = true
-			uniqueReferences = append(uniqueReferences, reference)
-		}
-	}
-
-	return uniqueReferences
 }
 
 func mergeMaps(new map[string]string, old map[string]string) map[string]string {

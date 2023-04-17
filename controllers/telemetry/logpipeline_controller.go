@@ -61,13 +61,36 @@ func (r *LogPipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&telemetryv1alpha1.LogPipeline{}).
-		Owns(&corev1.Secret{}).
-		Owns(&appsv1.DaemonSet{}).
-		Owns(&corev1.Service{}).
-		Owns(&corev1.ConfigMap{}).
-		Owns(&corev1.ServiceAccount{}).
-		Owns(&rbacv1.ClusterRole{}).
-		Owns(&rbacv1.ClusterRoleBinding{}).
+		Watches(
+			&source.Kind{Type: &appsv1.DaemonSet{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &corev1.Service{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &corev1.ConfigMap{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &corev1.ServiceAccount{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &rbacv1.ClusterRole{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &rbacv1.ClusterRoleBinding{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
+				IsController: false}).
 		Watches(
 			&source.Kind{Type: &corev1.Secret{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
@@ -101,4 +124,3 @@ func (r *LogPipelineReconciler) mapSecret(object client.Object) []reconcile.Requ
 	}
 	return requests
 }
-
