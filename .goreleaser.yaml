@@ -14,11 +14,8 @@ archives:
     - goos: windows
       format: zip
 changelog:
+  use: github
   sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
 release:
   extra_files:
     - glob: template.yaml
