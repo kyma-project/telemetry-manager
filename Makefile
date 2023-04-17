@@ -169,9 +169,9 @@ run-with-lm: \
 	verify-kyma \
 
 .PHONY: release
-release: ## Push manager image to prod regeistry, create module with its OCI image pushed to prod registry and create a github release entry
+release: ## Create module with its OCI image pushed to prod registry and create a github release entry
 release: \
-	create-module \
+	curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash -s --
 
 .PHONY: create-k3d
 create-k3d: kyma ## Create a k3d cluster using Kyma cli .
@@ -242,6 +242,7 @@ KUSTOMIZE_VERSION ?= v5.0.1
 CONTROLLER_TOOLS_VERSION ?= v0.11.3
 K3D_VERSION ?= v5.4.7
 GINKGO_VERSION ?= v2.9.2
+GORELEASER_VERSION ?= v1.17.1
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
