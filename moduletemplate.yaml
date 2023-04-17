@@ -1,0 +1,62 @@
+apiVersion: operator.kyma-project.io/v1beta1
+kind: ModuleTemplate
+metadata:
+  name: moduletemplate-telemetry
+  namespace: kcp-system
+  labels:
+    "operator.kyma-project.io/managed-by": "lifecycle-manager"
+    "operator.kyma-project.io/controller-name": "manifest"
+    "operator.kyma-project.io/module-name": "telemetry"
+spec:
+  target: control-plane
+  channel: fast
+  data:
+    apiVersion: operator.kyma-project.io/v1alpha1
+    kind: Telemetry
+    metadata:
+      labels:
+        app.kubernetes.io/name: telemetry
+        app.kubernetes.io/instance: telemetry-default
+        app.kubernetes.io/part-of: telemetry-operator
+        app.kubernetes.io/managed-by: kustomize
+        app.kubernetes.io/created-by: telemetry-operator
+      name: telemetry-default
+  descriptor:
+    component:
+      componentReferences: []
+      name: kyma-project.io/module/telemetry
+      provider: internal
+      repositoryContexts:
+      - baseUrl: http://k3d-kyma-registry.localhost:5000
+        componentNameMapping: urlPath
+        type: ociRegistry
+      resources:
+      - access:
+          digest: sha256:81404011cef020b050cb2b2e39fd5cb91669adf1ee28857089db484e47d2887f
+          type: localOciBlob
+        name: config
+        relation: local
+        type: yaml
+        version: v0.0.1
+      - access:
+          digest: sha256:69bcc9c828fab4ce6270bb0bb95bfd9008036861cee683ba12e02994526abf29
+          type: localOciBlob
+        name: telemetry
+        relation: local
+        type: helm-chart
+        version: v0.0.1
+      sources:
+      - access:
+          commit: fb58093d081345116d54cc18d6d5294cf18bfbc2
+          repoUrl: github.com/kyma-project/telemetry-manager
+          type: gitHub
+        labels:
+        - name: git.kyma-project.io/ref
+          value: refs/heads/automate_module_deployment
+          version: v1
+        name: module-sources
+        type: git
+        version: v0.0.1
+      version: v0.0.1
+    meta:
+      schemaVersion: v2
