@@ -171,7 +171,7 @@ run-with-lm: \
 .PHONY: release
 release: ## Create module with its OCI image pushed to prod registry and create a github release entry
 release: \
-	curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash -s --
+	create-github-release
 
 .PHONY: create-k3d
 create-k3d: kyma ## Create a k3d cluster using Kyma cli .
@@ -221,6 +221,10 @@ verify-telemetry: ## Wait for Telemetry CR to be in Ready state.
 .PHONY: verify-kyma
 verify-kyma: ## Wait for Kyma CR to be in Ready state.
 	@hack/verify_kyma_status.sh
+
+.PHONY: create-github-release
+create-github-release: ## Create github release entry using goreleaser
+	@curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash -s --
 
 ##@ Build Dependencies
 
