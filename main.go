@@ -87,6 +87,10 @@ var (
 	configureLogLevelOnFly *logger.LogLevel
 	telemetryNamespace     string
 
+	maxLogPipelines    int
+	maxTracePipelines  int
+	maxMetricPipelines int
+
 	traceCollectorImage         string
 	traceCollectorPriorityClass string
 	traceCollectorCPULimit      string
@@ -100,7 +104,6 @@ var (
 	fluentBitMemoryLimit               string
 	fluentBitCPURequest                string
 	fluentBitMemoryRequest             string
-	maxLogPipelines                    int
 	fluentBitImageVersion              string
 	fluentBitExporterVersion           string
 	fluentBitConfigPrepperImageVersion string
@@ -119,10 +122,10 @@ var (
 )
 
 const (
-	otelImage              = "eu.gcr.io/kyma-project/tpi/otel-collector:0.73.0-a3475b24"
+	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.74.0-acb36420"
 	overrideConfigMapName  = "telemetry-override-config"
-	fluentBitImage         = "eu.gcr.io/kyma-project/tpi/fluent-bit:2.0.10-050eef31"
-	fluentBitExporterImage = "eu.gcr.io/kyma-project/directory-size-exporter:v20230308-ff6cf204"
+	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.0.10-050eef31"
+	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20230308-ff6cf204"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
@@ -192,6 +195,7 @@ func main() {
 	flag.StringVar(&traceCollectorMemoryLimit, "trace-collector-memory-limit", "1Gi", "Memory limit for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorCPURequest, "trace-collector-cpu-request", "25m", "CPU request for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorMemoryRequest, "trace-collector-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
+	flag.IntVar(&maxTracePipelines, "trace-collector-pipelines", 1, "Maximum number of TracePipelines to be created. If 0, no limit is applied.")
 
 	flag.StringVar(&metricGatewayImage, "metric-gateway-image", otelImage, "Image for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
@@ -199,6 +203,7 @@ func main() {
 	flag.StringVar(&metricGatewayMemoryLimit, "metric-gateway-memory-limit", "1Gi", "Memory limit for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayCPURequest, "metric-gateway-cpu-request", "25m", "CPU request for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayMemoryRequest, "metric-gateway-memory-request", "32Mi", "Memory request for metrics OpenTelemetry Collector")
+	flag.IntVar(&maxMetricPipelines, "metric-gateway-pipelines", 1, "Maximum number of MetricPipelines to be created. If 0, no limit is applied.")
 
 	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
 	flag.StringVar(&fluentBitFsBufferLimit, "fluent-bit-filesystem-buffer-limit", "1G", "Fluent Bit filesystem buffer limit per log pipeline")
@@ -484,6 +489,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 		Service: collectorresources.ServiceConfig{
 			OTLPServiceName: "telemetry-otlp-traces",
 		},
+		MaxPipelines: maxTracePipelines,
 	}
 	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
@@ -509,6 +515,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 			OTLPServiceName: "telemetry-otlp-metrics",
 		},
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
+		MaxPipelines:      maxMetricPipelines,
 	}
 
 	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})

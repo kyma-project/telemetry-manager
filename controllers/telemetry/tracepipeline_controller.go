@@ -54,13 +54,29 @@ func (r *TracePipelineReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 }
 
 func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// We use `Watches` instead of `Owns` to trigger a reconciliation also when owned objects without the controller flag are changed.
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&telemetryv1alpha1.TracePipeline{}).
-		Owns(&corev1.ConfigMap{}).
-		Owns(&appsv1.Deployment{}).
-		Owns(&corev1.Secret{}).
-		Owns(&corev1.Service{}).
-		Owns(&corev1.ServiceAccount{}).
+		Watches(
+			&source.Kind{Type: &corev1.ConfigMap{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.TracePipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &appsv1.Deployment{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.TracePipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &corev1.Secret{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.TracePipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &corev1.Service{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.TracePipeline{},
+				IsController: false}).
 		Watches(
 			&source.Kind{Type: &corev1.Secret{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecret),

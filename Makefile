@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= eu.gcr.io/kyma-project/telemetry-manager:v20230329-e1d53cad
+IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20230329-e1d53cad
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.1
 
@@ -143,7 +143,7 @@ K3D ?= $(LOCALBIN)/k3d
 KUSTOMIZE_VERSION ?= v5.0.1
 CONTROLLER_TOOLS_VERSION ?= v0.11.3
 K3D_VERSION ?= v5.4.7
-GINKGO_VERSION ?= v2.9.1
+GINKGO_VERSION ?= v2.9.2
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize

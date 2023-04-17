@@ -161,3 +161,42 @@ func TestMergeChecksumAnnotations(t *testing.T) {
 	require.Equal(t, desired.Annotations["checksum/3"], "3")
 	require.Equal(t, desired.Annotations["checksum/4"], "4")
 }
+
+func TestMergeOwnerReference(t *testing.T) {
+	oldOwners := []metav1.OwnerReference{
+		{
+			APIVersion: "apps/v1",
+			Kind:       "Deployment",
+			Name:       "old-deployment-1",
+			UID:        "old-deployment-uid-1",
+			Controller: &[]bool{true}[0],
+		},
+		{
+			APIVersion: "apps/v1",
+			Kind:       "Deployment",
+			Name:       "old-deployment-2",
+			UID:        "old-deployment-uid-2",
+			Controller: &[]bool{false}[0],
+		},
+	}
+	newOwners := []metav1.OwnerReference{
+		{
+			APIVersion: "apps/v1",
+			Kind:       "Deployment",
+			Name:       "new-deployment-1",
+			UID:        "new-deployment-uid-1",
+			Controller: &[]bool{true}[0],
+		},
+	}
+
+	merged := mergeOwnerReferences(newOwners, oldOwners)
+	require.Equal(t, 3, len(merged))
+
+	numControllers := 0
+	for _, owner := range merged {
+		if *owner.Controller {
+			numControllers++
+		}
+	}
+	require.Equal(t, 1, numControllers)
+}

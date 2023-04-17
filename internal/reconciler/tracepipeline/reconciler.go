@@ -100,7 +100,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		Name:      "telemetry-tracepipeline-lock",
 		Namespace: r.config.Namespace,
 	}
-	if err = kubernetes.TryAcquireLock(ctx, r.Client, lockName, pipeline); err != nil {
+	lock := kubernetes.NewResourceCountLock(r.Client, lockName, r.config.MaxPipelines)
+	if err = lock.TryAcquireLock(ctx, pipeline); err != nil {
 		lockAcquired = false
 		return err
 	}
