@@ -171,8 +171,8 @@ run-with-lm: \
 .PHONY: release
 release: ## Create module with its OCI image pushed to prod registry and create a github release entry
 release: \
-	create-module
-# create-github-release
+	create-github-release	
+# create-module
 
 .PHONY: create-k3d
 create-k3d: kyma ## Create a k3d cluster using Kyma cli .
@@ -225,7 +225,8 @@ verify-kyma: ## Wait for Kyma CR to be in Ready state.
 
 .PHONY: create-github-release
 create-github-release: ## Create github release entry using goreleaser
-	@curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash -s --
+	@git remote add origin git@github.com:kyma-project/telemetry-manager.git
+	@curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash
 
 ##@ Build Dependencies
 
