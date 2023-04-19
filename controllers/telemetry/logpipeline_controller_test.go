@@ -100,6 +100,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
     name                     stdout
     match                    log-pipeline.*
     alias                    log-pipeline-stdout
+    retry_limit              no_limits
     storage.total_limit_size 1G`
 
 	var expectedSecret = make(map[string][]byte)

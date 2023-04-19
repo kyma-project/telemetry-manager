@@ -42,6 +42,7 @@ func generateCustomOutput(output *telemetryv1alpha1.Output, fsBufferLimit string
 	}
 	sb.AddConfigParam("match", fmt.Sprintf("%s.*", name))
 	sb.AddConfigParam("storage.total_limit_size", fsBufferLimit)
+	sb.AddConfigParam("retry_limit", "no_limits")
 	return sb.Build()
 }
 

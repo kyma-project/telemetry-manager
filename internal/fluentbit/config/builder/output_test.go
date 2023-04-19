@@ -13,6 +13,7 @@ func TestCreateOutputSectionWithCustomOutput(t *testing.T) {
     name                     null
     match                    foo.*
     alias                    foo-null
+    retry_limit              no_limits
     storage.total_limit_size 1G
 
 `
