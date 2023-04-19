@@ -225,8 +225,9 @@ verify-kyma: ## Wait for Kyma CR to be in Ready state.
 
 .PHONY: create-github-release
 create-github-release: ## Create github release entry using goreleaser
-	@git remote add origin git@github.com:kyma-project/telemetry-manager.git
-	@curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash
+	git remote add origin git@github.com:kyma-project/telemetry-manager.git
+	git log
+	curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash
 
 ##@ Build Dependencies
 
