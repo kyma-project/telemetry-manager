@@ -171,7 +171,7 @@ run-with-lm: \
 .PHONY: release
 release: ## Create module with its OCI image pushed to prod registry and create a github release entry
 release: \
-	create-module
+	create-module \
 	create-github-release
 
 .PHONY: create-k3d
