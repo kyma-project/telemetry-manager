@@ -184,6 +184,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     name                     stdout
     match                    foo.*
     alias                    foo-stdout
+    retry_limit              no_limits
     storage.total_limit_size 1G
 
 `
