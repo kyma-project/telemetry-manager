@@ -171,8 +171,10 @@ run-with-lm: \
 .PHONY: release
 release: ## Create module with its OCI image pushed to prod registry and create a github release entry
 release: \
-	create-module \
+	@git reset --hard \
 	create-github-release
+
+#create-module
 
 .PHONY: create-k3d
 create-k3d: kyma ## Create a k3d cluster using Kyma cli .
