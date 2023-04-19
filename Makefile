@@ -172,7 +172,6 @@ run-with-lm: \
 release: ## Create module with its OCI image pushed to prod registry and create a github release entry
 release: \
 	create-module \
-	clean-git-state \
 	create-github-release
 
 .PHONY: create-k3d
@@ -224,13 +223,10 @@ verify-telemetry: ## Wait for Telemetry CR to be in Ready state.
 verify-kyma: ## Wait for Kyma CR to be in Ready state.
 	@hack/verify_kyma_status.sh
 
-.PHONY: clean-git-state
-clean-git-state: ## Reset to the last committed state
-	@git reset --hard 
-
 .PHONY: create-github-release
 create-github-release: ## Create github release entry using goreleaser
 	git remote add origin git@github.com:kyma-project/telemetry-manager.git
+	git reset --hard 
 	git log
 	curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash
 
