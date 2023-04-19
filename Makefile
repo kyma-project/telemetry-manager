@@ -170,10 +170,10 @@ run-with-lm: \
 
 .PHONY: release
 release: ## Create module with its OCI image pushed to prod registry and create a github release entry
-release: \
-	@git reset --hard \
-	create-github-release
+release: 
+	git reset --hard
 
+#create-github-release
 #create-module
 
 .PHONY: create-k3d
