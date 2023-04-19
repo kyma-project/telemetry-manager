@@ -298,7 +298,7 @@ $(error Error: unsuported platform OS_TYPE:$1, OS_ARCH:$2; to mitigate this prob
 endef
 
 KYMA_FILE_NAME ?=  $(shell ./hack/get_kyma_file_name.sh ${OS_TYPE} ${OS_ARCH})
-KYMA_STABILITY ?= unstable
+KYMA_STABILITY ?= stable
 
 kyma: $(LOCALBIN) $(KYMA) ## Download kyma locally if necessary.
 $(KYMA):
