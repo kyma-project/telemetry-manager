@@ -54,7 +54,7 @@ func MakeTraces(traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attributes pc
 	return traces
 }
 
-func MakeDataSender(otlpPushURL string) (testbed.TraceDataSender, error) {
+func NewDataSender(otlpPushURL string) (testbed.TraceDataSender, error) {
 	typedURL, err := url.Parse(otlpPushURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse url: %v", err)

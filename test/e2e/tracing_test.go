@@ -159,7 +159,7 @@ func makeK8sObjects(portRegistry testkit.PortRegistry) []client.Object {
 }
 
 func sendTraces(ctx context.Context, traces ptrace.Traces, otlpPushURL string) {
-	sender, err := kittraces.MakeDataSender(otlpPushURL)
+	sender, err := kittraces.NewDataSender(otlpPushURL)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(sender.Start()).Should(Succeed())
 	Expect(sender.ConsumeTraces(ctx, traces)).Should(Succeed())
