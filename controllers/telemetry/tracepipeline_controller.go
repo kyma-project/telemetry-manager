@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/setup"
@@ -59,24 +60,24 @@ func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&telemetryv1alpha1.TracePipeline{}).
 		Watches(
 			&source.Kind{Type: &corev1.ConfigMap{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.TracePipeline{},
-				IsController: false}).
+			utils.EnqueueRequestForOwnerFuncs(ctrl.Log),
+			builder.WithPredicates(setup.DeleteOrUpdate()),
+		).
 		Watches(
 			&source.Kind{Type: &appsv1.Deployment{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.TracePipeline{},
-				IsController: false}).
+			utils.EnqueueRequestForOwnerFuncs(ctrl.Log),
+			builder.WithPredicates(setup.DeleteOrUpdate()),
+		).
 		Watches(
 			&source.Kind{Type: &corev1.Secret{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.TracePipeline{},
-				IsController: false}).
+			utils.EnqueueRequestForOwnerFuncs(ctrl.Log),
+			builder.WithPredicates(setup.DeleteOrUpdate()),
+		).
 		Watches(
 			&source.Kind{Type: &corev1.Service{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.TracePipeline{},
-				IsController: false}).
+			utils.EnqueueRequestForOwnerFuncs(ctrl.Log),
+			builder.WithPredicates(setup.DeleteOrUpdate()),
+		).
 		Watches(
 			&source.Kind{Type: &corev1.Secret{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
