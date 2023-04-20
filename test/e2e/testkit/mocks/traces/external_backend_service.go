@@ -26,12 +26,12 @@ func NewExternalBackendService(name, namespace string) *ExternalBackendService {
 }
 
 func (s *ExternalBackendService) WithPort(name string, port int32) *ExternalBackendService {
-	s.PortRegistry.AddPort(name, port)
+	s.PortRegistry.AddServicePort(name, port)
 	return s
 }
 
 func (s *ExternalBackendService) WithPortMapping(name string, port, nodePort int32) *ExternalBackendService {
-	s.PortRegistry.AddPortMapping(name, port, nodePort)
+	s.PortRegistry.AddPortMapping(name, port, nodePort, 0)
 	return s
 }
 
@@ -43,8 +43,8 @@ func (s *ExternalBackendService) K8sObject(labelOpts ...testkit.OptFunc) *corev1
 		ports = append(ports, corev1.ServicePort{
 			Name:       name,
 			Protocol:   corev1.ProtocolTCP,
-			Port:       mapping.Port,
-			TargetPort: intstr.FromInt(int(mapping.Port)),
+			Port:       mapping.ServicePort,
+			TargetPort: intstr.FromInt(int(mapping.ServicePort)),
 			NodePort:   mapping.NodePort,
 		})
 	}
