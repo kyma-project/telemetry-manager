@@ -13,25 +13,29 @@ import (
 
 type EnvVars map[string][]byte
 
-func GetOutputType(output *telemetryv1alpha1.OtlpOutput) string {
+func GetOutputAlias(output *telemetryv1alpha1.OtlpOutput, pipelineName string) string {
+	var outputType string
 	if output.Protocol == "http" {
-		return "otlphttp"
+		outputType = "otlphttp"
+	} else {
+		outputType = "otlp"
 	}
-	return "otlp"
+
+	return fmt.Sprintf("%s/%s", outputType, pipelineName)
 }
 
-func MakeOTLPExporterConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput) (*config.ExporterConfig, EnvVars, error) {
+func MakeOTLPExporterConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string]any, EnvVars, error) {
 	envVars, err := makeEnvVars(ctx, c, otlpOutput)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
 	}
 
-	config := makeExporterConfig(otlpOutput, envVars)
-	return &config, envVars, nil
+	config := makeExporterConfig(otlpOutput, pipelineName, envVars)
+	return config, envVars, nil
 }
 
-func makeExporterConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, secretData map[string][]byte) config.ExporterConfig {
-	outputType := GetOutputType(otlpOutput)
+func makeExporterConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte) map[string]any {
+	outputAlias := GetOutputAlias(otlpOutput, pipelineName)
 	headers := makeHeaders(otlpOutput)
 	otlpExporterConfig := config.OTLPExporterConfig{
 		Endpoint: fmt.Sprintf("${%s}", otlpEndpointVariable),
@@ -55,15 +59,9 @@ func makeExporterConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, secretData map
 		Verbosity: "basic",
 	}
 
-	if outputType == "otlphttp" {
-		return config.ExporterConfig{
-			OTLPHTTP: otlpExporterConfig,
-			Logging:  loggingExporter,
-		}
-	}
-	return config.ExporterConfig{
-		OTLP:    otlpExporterConfig,
-		Logging: loggingExporter,
+	return map[string]any{
+		outputAlias: otlpExporterConfig,
+		"logging":   loggingExporter,
 	}
 }
 

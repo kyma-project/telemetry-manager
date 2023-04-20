@@ -11,20 +11,21 @@ import (
 	configbuilder "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
 )
 
-func makeOtelCollectorConfig(ctx context.Context, c client.Reader, output v1alpha1.TracePipelineOutput) (*config.Config, configbuilder.EnvVars, error) {
-	exporterConfig, envVars, err := configbuilder.MakeOTLPExporterConfig(ctx, c, output.Otlp)
+func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipeline *v1alpha1.TracePipeline) (*config.Config, configbuilder.EnvVars, error) {
+	output := pipeline.Spec.Output
+	exporterConfig, envVars, err := configbuilder.MakeOTLPExporterConfig(ctx, c, output.Otlp, pipeline.Name)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make exporter config: %v", err)
 	}
 
-	outputType := configbuilder.GetOutputType(output.Otlp)
+	outputAlias := configbuilder.GetOutputAlias(output.Otlp, pipeline.Name)
 	receiverConfig := makeReceiverConfig()
 	processorsConfig := makeProcessorsConfig()
-	serviceConfig := makeServiceConfig(outputType)
+	serviceConfig := makeServiceConfig(outputAlias)
 	extensionConfig := configbuilder.MakeExtensionConfig()
 
 	return &config.Config{
-		Exporters:  *exporterConfig,
+		Exporters:  exporterConfig,
 		Receivers:  receiverConfig,
 		Processors: processorsConfig,
 		Service:    serviceConfig,
@@ -140,15 +141,16 @@ func makeSpanFilterConfig() []string {
 	}
 }
 
-func makeServiceConfig(outputType string) config.OTLPServiceConfig {
-	return config.OTLPServiceConfig{
-		Pipelines: config.PipelinesConfig{
-			Traces: &config.PipelineConfig{
-				Receivers:  []string{"opencensus", "otlp"},
-				Processors: []string{"memory_limiter", "k8sattributes", "filter", "resource", "batch"},
-				Exporters:  []string{outputType, "logging"},
-			},
+func makeServiceConfig(outputAlias string) config.OTLPServiceConfig {
+	pipelines := map[string]config.PipelineConfig{
+		"traces": {
+			Receivers:  []string{"opencensus", "otlp"},
+			Processors: []string{"memory_limiter", "k8sattributes", "filter", "resource", "batch"},
+			Exporters:  []string{outputAlias, "logging"},
 		},
+	}
+	return config.OTLPServiceConfig{
+		Pipelines: pipelines,
 		Telemetry: config.TelemetryConfig{
 			Metrics: config.MetricsConfig{
 				Address: "${MY_POD_IP}:8888",

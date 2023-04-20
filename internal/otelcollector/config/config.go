@@ -28,12 +28,6 @@ type LoggingExporterConfig struct {
 	Verbosity string `yaml:"verbosity"`
 }
 
-type ExporterConfig struct {
-	OTLP     OTLPExporterConfig    `yaml:"otlp,omitempty"`
-	OTLPHTTP OTLPExporterConfig    `yaml:"otlphttp,omitempty"`
-	Logging  LoggingExporterConfig `yaml:"logging,omitempty"`
-}
-
 type EndpointConfig struct {
 	Endpoint string `yaml:"endpoint,omitempty"`
 }
@@ -116,11 +110,6 @@ type PipelineConfig struct {
 	Exporters  []string `yaml:"exporters"`
 }
 
-type PipelinesConfig struct {
-	Traces  *PipelineConfig `yaml:"traces,omitempty"`
-	Metrics *PipelineConfig `yaml:"metrics,omitempty"`
-}
-
 type MetricsConfig struct {
 	Address string `yaml:"address"`
 }
@@ -135,9 +124,9 @@ type TelemetryConfig struct {
 }
 
 type OTLPServiceConfig struct {
-	Pipelines  PipelinesConfig `yaml:"pipelines,omitempty"`
-	Telemetry  TelemetryConfig `yaml:"telemetry,omitempty"`
-	Extensions []string        `yaml:"extensions,omitempty"`
+	Pipelines  map[string]PipelineConfig `yaml:"pipelines,omitempty"`
+	Telemetry  TelemetryConfig           `yaml:"telemetry,omitempty"`
+	Extensions []string                  `yaml:"extensions,omitempty"`
 }
 
 type ExtensionsConfig struct {
@@ -146,7 +135,7 @@ type ExtensionsConfig struct {
 
 type Config struct {
 	Receivers  ReceiverConfig    `yaml:"receivers"`
-	Exporters  ExporterConfig    `yaml:"exporters"`
+	Exporters  map[string]any    `yaml:"exporters"`
 	Processors ProcessorsConfig  `yaml:"processors"`
 	Extensions ExtensionsConfig  `yaml:"extensions"`
 	Service    OTLPServiceConfig `yaml:"service"`
