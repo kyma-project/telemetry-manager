@@ -17,7 +17,7 @@ func TestGetOutputTypeHttp(t *testing.T) {
 		Protocol: "http",
 	}
 
-	require.Equal(t, "otlphttp/test", GetOutputAlias(output, "test"))
+	require.Equal(t, "otlphttp/test", getOTLPOutputAlias(output, "test"))
 }
 
 func TestGetOutputTypeOtlp(t *testing.T) {
@@ -26,7 +26,7 @@ func TestGetOutputTypeOtlp(t *testing.T) {
 		Protocol: "grpc",
 	}
 
-	require.Equal(t, "otlp/test", GetOutputAlias(output, "test"))
+	require.Equal(t, "otlp/test", getOTLPOutputAlias(output, "test"))
 }
 
 func TestGetOutputTypeDefault(t *testing.T) {
@@ -34,7 +34,7 @@ func TestGetOutputTypeDefault(t *testing.T) {
 		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	require.Equal(t, "otlp/test", GetOutputAlias(output, "test"))
+	require.Equal(t, "otlp/test", getOTLPOutputAlias(output, "test"))
 }
 
 func TestMakeExporterConfig(t *testing.T) {
@@ -62,8 +62,8 @@ func TestMakeExporterConfig(t *testing.T) {
 	require.Equal(t, "30s", otlpExporterConfig.RetryOnFailure.MaxInterval)
 	require.Equal(t, "300s", otlpExporterConfig.RetryOnFailure.MaxElapsedTime)
 
-	require.Contains(t, exporterConfig, "logging")
-	loggingExporterConfig := exporterConfig["logging"].(config.LoggingExporterConfig)
+	require.Contains(t, exporterConfig, "logging/test")
+	loggingExporterConfig := exporterConfig["logging/test"].(config.LoggingExporterConfig)
 
 	require.Equal(t, "basic", loggingExporterConfig.Verbosity)
 }

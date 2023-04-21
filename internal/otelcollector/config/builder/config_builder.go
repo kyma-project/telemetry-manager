@@ -13,7 +13,7 @@ import (
 
 type EnvVars map[string][]byte
 
-func GetOutputAlias(output *telemetryv1alpha1.OtlpOutput, pipelineName string) string {
+func getOTLPOutputAlias(output *telemetryv1alpha1.OtlpOutput, pipelineName string) string {
 	var outputType string
 	if output.Protocol == "http" {
 		outputType = "otlphttp"
@@ -22,6 +22,18 @@ func GetOutputAlias(output *telemetryv1alpha1.OtlpOutput, pipelineName string) s
 	}
 
 	return fmt.Sprintf("%s/%s", outputType, pipelineName)
+}
+
+func getLoggingOutputAlias(pipelineName string) string {
+	return fmt.Sprintf("logging/%s", pipelineName)
+}
+
+func GetExporterAliases(exporters map[string]any) []string {
+	var aliases []string
+	for alias := range exporters {
+		aliases = append(aliases, alias)
+	}
+	return aliases
 }
 
 func MakeOTLPExporterConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string]any, EnvVars, error) {
@@ -35,7 +47,8 @@ func MakeOTLPExporterConfig(ctx context.Context, c client.Reader, otlpOutput *te
 }
 
 func makeExporterConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte) map[string]any {
-	outputAlias := GetOutputAlias(otlpOutput, pipelineName)
+	otlpOutputAlias := getOTLPOutputAlias(otlpOutput, pipelineName)
+	loggingOutputAlias := getLoggingOutputAlias(pipelineName)
 	headers := makeHeaders(otlpOutput)
 	otlpExporterConfig := config.OTLPExporterConfig{
 		Endpoint: fmt.Sprintf("${%s}", otlpEndpointVariable),
@@ -60,8 +73,8 @@ func makeExporterConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName s
 	}
 
 	return map[string]any{
-		outputAlias: otlpExporterConfig,
-		"logging":   loggingExporter,
+		otlpOutputAlias:    otlpExporterConfig,
+		loggingOutputAlias: loggingExporter,
 	}
 }
 

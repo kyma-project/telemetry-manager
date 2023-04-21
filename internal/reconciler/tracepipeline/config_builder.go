@@ -18,10 +18,10 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipeline *v1a
 		return nil, nil, fmt.Errorf("failed to make exporter config: %v", err)
 	}
 
-	outputAlias := configbuilder.GetOutputAlias(output.Otlp, pipeline.Name)
+	outputAliases := configbuilder.GetExporterAliases(exporterConfig)
 	receiverConfig := makeReceiverConfig()
 	processorsConfig := makeProcessorsConfig()
-	serviceConfig := makeServiceConfig(outputAlias)
+	serviceConfig := makeServiceConfig(outputAliases)
 	extensionConfig := configbuilder.MakeExtensionConfig()
 
 	return &config.Config{
@@ -141,12 +141,12 @@ func makeSpanFilterConfig() []string {
 	}
 }
 
-func makeServiceConfig(outputAlias string) config.OTLPServiceConfig {
+func makeServiceConfig(outputAliases []string) config.OTLPServiceConfig {
 	pipelines := map[string]config.PipelineConfig{
 		"traces": {
 			Receivers:  []string{"opencensus", "otlp"},
 			Processors: []string{"memory_limiter", "k8sattributes", "filter", "resource", "batch"},
-			Exporters:  []string{outputAlias, "logging"},
+			Exporters:  outputAliases,
 		},
 	}
 	return config.OTLPServiceConfig{

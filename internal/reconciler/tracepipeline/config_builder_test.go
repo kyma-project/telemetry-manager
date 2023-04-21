@@ -138,7 +138,7 @@ func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
 }
 
 func TestMakeServiceConfig(t *testing.T) {
-	serviceConfig := makeServiceConfig("otlp/test")
+	serviceConfig := makeServiceConfig([]string{"otlp/test", "logging/test"})
 
 	require.Contains(t, serviceConfig.Pipelines, "traces")
 	require.Contains(t, serviceConfig.Pipelines["traces"].Receivers, "otlp")
@@ -151,7 +151,7 @@ func TestMakeServiceConfig(t *testing.T) {
 	require.Equal(t, serviceConfig.Pipelines["traces"].Processors[4], "batch")
 
 	require.Contains(t, serviceConfig.Pipelines["traces"].Exporters, "otlp/test")
-	require.Contains(t, serviceConfig.Pipelines["traces"].Exporters, "logging")
+	require.Contains(t, serviceConfig.Pipelines["traces"].Exporters, "logging/test")
 
 	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
 	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
@@ -239,7 +239,7 @@ func TestCollectorConfigMarshalling(t *testing.T) {
             grpc:
                 endpoint: ${MY_POD_IP}:4317
 exporters:
-    logging:
+    logging/test:
         verbosity: basic
     otlp/test:
         endpoint: ${OTLP_ENDPOINT}
@@ -319,7 +319,7 @@ service:
                 - batch
             exporters:
                 - otlp/test
-                - logging
+                - logging/test
     telemetry:
         metrics:
             address: ${MY_POD_IP}:8888
