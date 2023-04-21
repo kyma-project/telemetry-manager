@@ -11,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 var (
@@ -78,7 +77,7 @@ func TestMakeCollectorConfigEndpoint(t *testing.T) {
 	expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT")
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
-	actualExporterConfig := collectorConfig.Exporters["otlp/test"].(config.OTLPExporterConfig)
+	actualExporterConfig := collectorConfig.Exporters["otlp/test"]
 	require.Equal(t, expectedEndpoint, actualExporterConfig.Endpoint)
 }
 
@@ -88,7 +87,7 @@ func TestMakeCollectorConfigSecure(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	actualExporterConfig := collectorConfig.Exporters["otlp/test"].(config.OTLPExporterConfig)
+	actualExporterConfig := collectorConfig.Exporters["otlp/test"]
 	require.False(t, actualExporterConfig.TLS.Insecure)
 }
 
@@ -98,7 +97,7 @@ func TestMakeCollectorConfigInsecure(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	actualExporterConfig := collectorConfig.Exporters["otlp/test"].(config.OTLPExporterConfig)
+	actualExporterConfig := collectorConfig.Exporters["otlp/test"]
 	require.True(t, actualExporterConfig.TLS.Insecure)
 }
 
@@ -108,7 +107,7 @@ func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	actualExporterConfig := collectorConfig.Exporters["otlp/test"].(config.OTLPExporterConfig)
+	actualExporterConfig := collectorConfig.Exporters["otlp/test"]
 	headers := actualExporterConfig.Headers
 
 	authHeader, existing := headers["Authorization"]

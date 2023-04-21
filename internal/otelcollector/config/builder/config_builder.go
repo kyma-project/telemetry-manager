@@ -29,7 +29,7 @@ func getLoggingOutputAlias(pipelineName string) string {
 	return fmt.Sprintf("logging/%s", pipelineName)
 }
 
-func GetExporterAliases(exporters map[string]any) []string {
+func GetExporterAliases(exporters map[string]config.ExporterConfig) []string {
 	var aliases []string
 	for alias := range exporters {
 		aliases = append(aliases, alias)
@@ -40,7 +40,7 @@ func GetExporterAliases(exporters map[string]any) []string {
 	return aliases
 }
 
-func MakeOTLPExporterConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string]any, EnvVars, error) {
+func MakeOTLPExporterConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string]config.ExporterConfig, EnvVars, error) {
 	envVars, err := makeEnvVars(ctx, c, otlpOutput)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
@@ -50,7 +50,7 @@ func MakeOTLPExporterConfig(ctx context.Context, c client.Reader, otlpOutput *te
 	return config, envVars, nil
 }
 
-func makeExporterConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte) map[string]any {
+func makeExporterConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte) map[string]config.ExporterConfig {
 	otlpOutputAlias := getOTLPOutputAlias(otlpOutput, pipelineName)
 	loggingOutputAlias := getLoggingOutputAlias(pipelineName)
 	headers := makeHeaders(otlpOutput)
@@ -76,9 +76,9 @@ func makeExporterConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName s
 		Verbosity: "basic",
 	}
 
-	return map[string]any{
-		otlpOutputAlias:    otlpExporterConfig,
-		loggingOutputAlias: loggingExporter,
+	return map[string]config.ExporterConfig{
+		otlpOutputAlias:    {OTLPExporterConfig: &otlpExporterConfig},
+		loggingOutputAlias: {LoggingExporterConfig: &loggingExporter},
 	}
 }
 

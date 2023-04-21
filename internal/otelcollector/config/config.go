@@ -16,6 +16,11 @@ type RetryOnFailureConfig struct {
 	MaxElapsedTime  string `yaml:"max_elapsed_time"`
 }
 
+type ExporterConfig struct {
+	*OTLPExporterConfig    `yaml:",inline,omitempty"`
+	*LoggingExporterConfig `yaml:",inline,omitempty"`
+}
+
 type OTLPExporterConfig struct {
 	Endpoint       string               `yaml:"endpoint,omitempty"`
 	Headers        map[string]string    `yaml:"headers,omitempty"`
@@ -134,9 +139,9 @@ type ExtensionsConfig struct {
 }
 
 type Config struct {
-	Receivers  ReceiverConfig    `yaml:"receivers"`
-	Exporters  map[string]any    `yaml:"exporters"`
-	Processors ProcessorsConfig  `yaml:"processors"`
-	Extensions ExtensionsConfig  `yaml:"extensions"`
-	Service    OTLPServiceConfig `yaml:"service"`
+	Receivers  ReceiverConfig            `yaml:"receivers"`
+	Exporters  map[string]ExporterConfig `yaml:"exporters"`
+	Processors ProcessorsConfig          `yaml:"processors"`
+	Extensions ExtensionsConfig          `yaml:"extensions"`
+	Service    OTLPServiceConfig         `yaml:"service"`
 }

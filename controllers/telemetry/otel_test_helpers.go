@@ -36,17 +36,7 @@ func validateCollectorConfig(configData string) error {
 		return fmt.Errorf("otlp exporter not found")
 	}
 
-	tlsConfig, found := otlpExporterConfig.(map[string]any)["tls"]
-	if !found {
-		return fmt.Errorf("tls config not found")
-	}
-
-	insecure, found := tlsConfig.(map[string]any)["insecure"]
-	if !found {
-		return fmt.Errorf("insecure flag not found")
-	}
-
-	if !insecure.(bool) {
+	if !otlpExporterConfig.TLS.Insecure {
 		return fmt.Errorf("insecure flag not set")
 	}
 

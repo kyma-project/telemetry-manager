@@ -11,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 var (
@@ -93,7 +92,7 @@ func TestMakeCollectorConfigEndpoint(t *testing.T) {
 	require.NoError(t, err)
 	expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT")
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	otlpExporterConfig := collectorConfig.Exporters["otlp/test"].(config.OTLPExporterConfig)
+	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
 	require.Equal(t, expectedEndpoint, otlpExporterConfig.Endpoint)
 }
 
@@ -102,7 +101,7 @@ func TestMakeCollectorConfigSecure(t *testing.T) {
 	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
 	require.NoError(t, err)
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	otlpExporterConfig := collectorConfig.Exporters["otlp/test"].(config.OTLPExporterConfig)
+	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
 	require.False(t, otlpExporterConfig.TLS.Insecure)
 }
 
@@ -111,7 +110,7 @@ func TestMakeCollectorConfigSecureHttp(t *testing.T) {
 	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineHTTP)
 	require.NoError(t, err)
 	require.Contains(t, collectorConfig.Exporters, "otlphttp/test")
-	otlpExporterConfig := collectorConfig.Exporters["otlphttp/test"].(config.OTLPExporterConfig)
+	otlpExporterConfig := collectorConfig.Exporters["otlphttp/test"]
 	require.False(t, otlpExporterConfig.TLS.Insecure)
 }
 
@@ -120,7 +119,7 @@ func TestMakeCollectorConfigInsecure(t *testing.T) {
 	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineInsecure)
 	require.NoError(t, err)
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	otlpExporterConfig := collectorConfig.Exporters["otlp/test"].(config.OTLPExporterConfig)
+	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
 	require.True(t, otlpExporterConfig.TLS.Insecure)
 }
 
@@ -129,7 +128,7 @@ func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
 	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineWithBasicAuth)
 	require.NoError(t, err)
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	otlpExporterConfig := collectorConfig.Exporters["otlp/test"].(config.OTLPExporterConfig)
+	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
 	headers := otlpExporterConfig.Headers
 
 	authHeader, existing := headers["Authorization"]
