@@ -4,8 +4,8 @@ changelog:
   sort: asc
 release:
   extra_files:
-    - glob: moduletemplate.yaml
-    - glob: telemetry-manager.yaml
+    - glob: template.yaml
+    - glob: ./charts/telemetry/templates/rendered.yaml
 builds:
   -
     skip: true
