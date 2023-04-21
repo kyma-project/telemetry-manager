@@ -141,8 +141,18 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 ##@ Deployment with lifecycle-manager
 
+# Credentials used for authenticating into the module registry
+# see `kyma alpha mod create --help for more info`
+
+# This will change the flags of the `kyma alpha module create` command in case we spot credentials
+# Otherwise we will assume http-based local registries without authentication (e.g. for k3d)
 ifneq (,$(PROW_JOB_ID))
-	GCP_ACCESS_TOKEN=$(shell gcloud auth application-default print-access-token)
+GCP_ACCESS_TOKEN=$(shell gcloud auth application-default print-access-token)
+MODULE_CREATION_FLAGS=--registry $(MODULE_REGISTRY) --module-archive-version-overwrite -c oauth2accesstoken:$(GCP_ACCESS_TOKEN)
+else ifeq (,$(MODULE_CREDENTIALS))
+MODULE_CREATION_FLAGS=--registry $(MODULE_REGISTRY) --module-archive-version-overwrite --insecure
+else
+MODULE_CREATION_FLAGS=--registry $(MODULE_REGISTRY) --module-archive-version-overwrite -c $(MODULE_CREDENTIALS)
 endif
 
 .PHONY: run-with-lm
@@ -161,7 +171,7 @@ run-with-lm: \
 .PHONY: release
 release: ## Create module with its OCI image pushed to prod registry and create a github release entry
 release: \
-	create-remote-module \
+	create-module \
 	create-github-release
 
 .PHONY: create-k3d
@@ -177,18 +187,12 @@ local-manager-image:
 create-local-module: 
 	@make create-module \
 		IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/${MODULE_NAME}-manager \
-		MODULE_REGISTRY=localhost:${REGISTRY_PORT} \
-		MODULE_CREDENTIALS_FLAG=--insecure
-
-.PHONY: create-remote-module
-create-remote-module: 
-	@make create-module \
-		MODULE_CREDENTIALS_FLAG=-c oauth2accesstoken:$(GCP_ACCESS_TOKEN)
+		MODULE_REGISTRY=localhost:${REGISTRY_PORT}
 
 .PHONY: create-module
 create-module: kyma kustomize ## Build the module and push it to a registry defined in MODULE_REGISTRY.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KYMA) alpha create module --name kyma-project.io/module/${MODULE_NAME} --version $(MODULE_VERSION) --channel=${MODULE_CHANNEL} --default-cr ./config/samples/operator_v1alpha1_telemetry.yaml --registry $(MODULE_REGISTRY) $(MODULE_CREDENTIALS_FLAG)
+	$(KYMA) alpha create module --name kyma-project.io/module/${MODULE_NAME} --version $(MODULE_VERSION) --channel=${MODULE_CHANNEL} --default-cr ./config/samples/operator_v1alpha1_telemetry.yaml $(MODULE_CREATION_FLAGS)
 
 .PHONY: fix-module-template
 fix-module-template: ## Create template-k3d.yaml based on template.yaml with right URLs.
