@@ -259,8 +259,8 @@ service:
                 - resource
                 - batch
             exporters:
-                - otlp/test
                 - logging/test
+                - otlp/test
     telemetry:
         metrics:
             address: ${MY_POD_IP}:8888

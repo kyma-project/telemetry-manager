@@ -3,6 +3,7 @@ package builder
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,6 +34,9 @@ func GetExporterAliases(exporters map[string]any) []string {
 	for alias := range exporters {
 		aliases = append(aliases, alias)
 	}
+
+	// Sort to ensure deterministic order
+	sort.Strings(aliases)
 	return aliases
 }
 
