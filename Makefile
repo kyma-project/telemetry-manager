@@ -160,8 +160,7 @@ run-with-lm: ## Create a k3d cluster and deploy module with the lifecycle-manage
 run-with-lm: \
 	create-k3d \
 	local-manager-image \
-	create-local-module \
-	fix-module-template \
+	create-dev-module \
 	deploy-kyma \
 	deploy-module-template \
 	enable-module \
@@ -183,23 +182,16 @@ local-manager-image:
 	@make manager-image \
 		IMG=localhost:${REGISTRY_PORT}/${MODULE_NAME}-manager
 
-.PHONY: create-local-module
-create-local-module: 
+.PHONY: create-dev-module
+create-dev-module: 
 	@make create-module \
 		IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/${MODULE_NAME}-manager \
-		MODULE_REGISTRY=localhost:${REGISTRY_PORT}
+		MODULE_REGISTRY=europe-docker.pkg.dev/kyma-project/dev/unsigned
 
 .PHONY: create-module
 create-module: kyma kustomize ## Build the module and push it to a registry defined in MODULE_REGISTRY.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KYMA) alpha create module --name kyma-project.io/module/${MODULE_NAME} --version $(MODULE_VERSION) --channel=${MODULE_CHANNEL} --default-cr ./config/samples/operator_v1alpha1_telemetry.yaml $(MODULE_CREATION_FLAGS)
-
-.PHONY: fix-module-template
-fix-module-template: ## Create template-k3d.yaml based on template.yaml with right URLs.
-	@cat template.yaml \
-	| sed -e 's/${REGISTRY_PORT}/5000/g' \
-		  -e 's/localhost/k3d-${REGISTRY_NAME}.localhost/g' \
-		> template-k3d.yaml
 
 .PHONY: deploy-kyma
 deploy-kyma: kyma ## Deploy kyma which includes the deployment of the lifecycle-manager.
@@ -209,7 +201,7 @@ deploy-kyma: kyma ## Deploy kyma which includes the deployment of the lifecycle-
 
 .PHONY: deploy-module-template
 deploy-module-template: ## Deploy the ModuleTemplate in the cluster.
-	kubectl apply -f template-k3d.yaml
+	kubectl apply -f template.yaml
 
 .PHONY: enable-module
 enable-module: kyma ## Enable the module.
