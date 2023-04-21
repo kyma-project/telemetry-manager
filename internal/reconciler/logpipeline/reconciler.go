@@ -21,10 +21,7 @@ import (
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -226,64 +223,6 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 		return fmt.Errorf("failed to reconcile fluent bit parser configmap: %w", err)
 	}
 	return nil
-}
-
-func deleteFluentBit(ctx context.Context, c client.Client, name types.NamespacedName) error {
-	if err := deleteResource(ctx, c, name, &appsv1.DaemonSet{}); err != nil {
-		return fmt.Errorf("unable to delete daemonset %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &corev1.Service{}); err != nil {
-		return fmt.Errorf("unable to delete service %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &corev1.ConfigMap{}); err != nil {
-		return fmt.Errorf("unable to delete configmap %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &corev1.ServiceAccount{}); err != nil {
-		return fmt.Errorf("unable to delete service account %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &rbacv1.ClusterRoleBinding{}); err != nil {
-		return fmt.Errorf("unable to delete cluster role binding %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &rbacv1.ClusterRole{}); err != nil {
-		return fmt.Errorf("unable to delete cluster role %s: %v", name.Name, err)
-	}
-
-	name.Name = fmt.Sprintf("%s-luascripts", name.Name)
-	if err := deleteResource(ctx, c, name, &corev1.ConfigMap{}); err != nil {
-		return fmt.Errorf("unable to delete configmap %s: %v", name.Name, err)
-	}
-
-	return nil
-}
-
-func deleteResource(ctx context.Context, c client.Client, name client.ObjectKey, obj client.Object) error {
-	err := c.Get(ctx, name, obj)
-	if err == nil {
-		if err = c.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
-			return err
-		}
-	} else if !apierrors.IsNotFound(err) {
-		return err
-	}
-	return nil
-}
-
-func (r *Reconciler) isLastPipelineMarkedForDeletion(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (bool, error) {
-	if isNotMarkedForDeletion(pipeline) {
-		return false, nil
-	}
-
-	var allPipelines telemetryv1alpha1.LogPipelineList
-	if err := r.List(ctx, &allPipelines); err != nil {
-		return false, fmt.Errorf("failed to list LogPipelines: %v", err)
-	}
-
-	return len(allPipelines.Items) == 1 && allPipelines.Items[0].Name == pipeline.Name, nil
 }
 
 func (r *Reconciler) updateMetrics(ctx context.Context) error {
