@@ -26,7 +26,7 @@ func NewTracesService(name, namespace string) *TracesService {
 }
 
 func (s *TracesService) WithPortMapping(name string, port, nodePort int32) *TracesService {
-	s.PortRegistry.AddPortMapping(name, port, nodePort)
+	s.PortRegistry.AddPortMapping(name, port, nodePort, 0)
 	return s
 }
 
@@ -38,8 +38,8 @@ func (s *TracesService) K8sObject(labelOpts ...testkit.OptFunc) *corev1.Service 
 		ports = append(ports, corev1.ServicePort{
 			Name:       name,
 			Protocol:   corev1.ProtocolTCP,
-			Port:       mapping.Port,
-			TargetPort: intstr.FromInt(int(mapping.Port)),
+			Port:       mapping.ServicePort,
+			TargetPort: intstr.FromInt(int(mapping.ServicePort)),
 			NodePort:   mapping.NodePort,
 		})
 	}
