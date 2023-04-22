@@ -5,7 +5,7 @@ changelog:
 release:
   extra_files:
     - glob: template.yaml
-    - glob: ./charts/telemetry/templates/rendered.yaml
+    - glob: ./manifests/telemetry/rendered.yaml
 builds:
   -
     skip: true
