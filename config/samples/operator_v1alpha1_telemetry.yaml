@@ -3,8 +3,8 @@ kind: Telemetry
 metadata:
   labels:
     app.kubernetes.io/name: telemetry
-    app.kubernetes.io/instance: telemetry-default
+    app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: telemetry-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: telemetry-operator
-  name: telemetry-default
+  name: default
