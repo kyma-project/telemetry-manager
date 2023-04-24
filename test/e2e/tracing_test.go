@@ -21,7 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	kittrace "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/trace"
-	kitmocks "github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
+	mockstraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks/traces"
 	kittraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/traces"
 )
 
@@ -136,9 +136,9 @@ func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry) []client.Objec
 	)
 
 	mocksNamespace := kitk8s.NewNamespace(mocksNamespaceName)
-	mockBackendConfigMap := kitmocks.NewBackendConfigMap(mockBackendConfigMapName, mocksNamespaceName)
-	mockBackendDeployment := kitmocks.NewBackendDeployment(mockBackendName, mocksNamespaceName, mockBackendConfigMapName)
-	externalMockBackendService := kitmocks.NewExternalBackendService(mockBackendName, mocksNamespaceName).
+	mockBackendConfigMap := mockstraces.NewBackendConfigMap(mockBackendConfigMapName, mocksNamespaceName)
+	mockBackendDeployment := mockstraces.NewBackendDeployment(mockBackendName, mocksNamespaceName, mockBackendConfigMapName)
+	externalMockBackendService := mockstraces.NewExternalBackendService(mockBackendName, mocksNamespaceName).
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-otlp", httpOTLPPort).
 		WithPortMapping("http-web", httpWebPort, httpWebNodePort)

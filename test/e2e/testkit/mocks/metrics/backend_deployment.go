@@ -1,6 +1,6 @@
 //go:build e2e
 
-package mocks
+package traces
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	replicas       = 1
-	containerImage = "otel/opentelemetry-collector-contrib:0.70.0"
-	nginxImage     = "nginx:1.23.3"
+	replicas           = 1
+	otelCollectorImage = "otel/opentelemetry-collector-contrib:0.75.0"
+	nginxImage         = "nginx:1.23.3"
 )
 
 type BackendDeployment struct {
@@ -52,7 +52,7 @@ func (d *BackendDeployment) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Depl
 					Containers: []corev1.Container{
 						{
 							Name:  "otel-collector",
-							Image: containerImage,
+							Image: otelCollectorImage,
 							Args:  []string{"--config=/etc/collector/config.yaml"},
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser: pointer.Int64(101),

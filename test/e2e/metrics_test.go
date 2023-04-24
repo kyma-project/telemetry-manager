@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
-	kitmocks "github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
+	mocksmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks/metrics"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
 )
 
@@ -38,7 +38,7 @@ var _ = Describe("Metrics", func() {
 
 			otlpPushURL = fmt.Sprintf("grpc://localhost:%d", portRegistry.HostPort("grpc-otlp"))
 			//metricsURL                  = fmt.Sprintf("http://localhost:%d/metrics", portRegistry.HostPort("http-metrics"))
-			mockBackendMetricsExportURL = fmt.Sprintf("http://localhost:%d/otlp-data.json", portRegistry.HostPort("http-web"))
+			mockBackendMetricsExportURL = fmt.Sprintf("http://localhost:%d/otlp-data.jsonl", portRegistry.HostPort("http-web"))
 		)
 
 		BeforeAll(func() {
@@ -112,9 +112,9 @@ func makeMetricsTestK8sObjects(portRegistry testkit.PortRegistry) []client.Objec
 	)
 
 	mocksNamespace := kitk8s.NewNamespace(mocksNamespaceName)
-	mockBackendConfigMap := kitmocks.NewBackendConfigMap(mockBackendConfigMapName, mocksNamespaceName)
-	mockBackendDeployment := kitmocks.NewBackendDeployment(mockBackendName, mocksNamespaceName, mockBackendConfigMapName)
-	mockBackendExternalService := kitmocks.NewExternalBackendService(mockBackendName, mocksNamespaceName).
+	mockBackendConfigMap := mocksmetrics.NewBackendConfigMap(mockBackendConfigMapName, mocksNamespaceName)
+	mockBackendDeployment := mocksmetrics.NewBackendDeployment(mockBackendName, mocksNamespaceName, mockBackendConfigMapName)
+	mockBackendExternalService := mocksmetrics.NewExternalBackendService(mockBackendName, mocksNamespaceName).
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-otlp", httpOTLPPort).
 		WithPortMapping("http-web", httpWebPort, httpWebNodePort)
