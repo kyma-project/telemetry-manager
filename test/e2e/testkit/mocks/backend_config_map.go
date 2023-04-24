@@ -1,6 +1,6 @@
 //go:build e2e
 
-package traces
+package mocks
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -33,10 +33,13 @@ func (cm *BackendConfigMap) K8sObject() *corev1.ConfigMap {
       http: {}
 exporters:
   file:
-    path: /traces/spans.json
+    path: /traces/otlp-data.jsonl
   logging:
     loglevel: debug
 service:
+  telemetry:
+    logs:
+      level: "debug"
   pipelines:
     traces:
       receivers:

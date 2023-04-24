@@ -1,6 +1,6 @@
 //go:build e2e
 
-package traces
+package mocks
 
 import (
 	corev1 "k8s.io/api/core/v1"

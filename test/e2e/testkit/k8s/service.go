@@ -1,6 +1,6 @@
 //go:build e2e
 
-package otlp
+package k8s
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -8,7 +8,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 )
 
 type TracesService struct {
@@ -17,7 +16,7 @@ type TracesService struct {
 	testkit.PortRegistry
 }
 
-func NewTracesService(name, namespace string) *TracesService {
+func NewService(name, namespace string) *TracesService {
 	return &TracesService{
 		name:         name,
 		namespace:    namespace,
@@ -31,7 +30,7 @@ func (s *TracesService) WithPortMapping(name string, port, nodePort int32) *Trac
 }
 
 func (s *TracesService) K8sObject(labelOpts ...testkit.OptFunc) *corev1.Service {
-	labels := k8s.ProcessLabelOptions(labelOpts...)
+	labels := ProcessLabelOptions(labelOpts...)
 
 	ports := make([]corev1.ServicePort, 0)
 	for name, mapping := range s.PortRegistry.Ports {
