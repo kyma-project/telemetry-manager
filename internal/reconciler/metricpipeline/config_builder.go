@@ -11,20 +11,21 @@ import (
 	configbuilder "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
 )
 
-func makeOtelCollectorConfig(ctx context.Context, c client.Reader, output v1alpha1.MetricPipelineOutput) (*config.Config, configbuilder.EnvVars, error) {
-	exporterConfig, envVars, err := configbuilder.MakeOTLPExporterConfig(ctx, c, output.Otlp)
+func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipeline *v1alpha1.MetricPipeline) (*config.Config, configbuilder.EnvVars, error) {
+	output := pipeline.Spec.Output
+	exporterConfig, envVars, err := configbuilder.MakeOTLPExportersConfig(ctx, c, output.Otlp, pipeline.Name)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make exporter config: %v", err)
 	}
 
-	outputType := configbuilder.GetOutputType(output.Otlp)
-	receiverConfig := makeReceiverConfig()
+	outputAliases := configbuilder.GetExporterAliases(exporterConfig)
+	receiverConfig := makeReceiversConfig()
 	processorsConfig := makeProcessorsConfig()
-	serviceConfig := makeServiceConfig(outputType)
-	extensionConfig := configbuilder.MakeExtensionConfig()
+	serviceConfig := makeServiceConfig(outputAliases)
+	extensionConfig := configbuilder.MakeExtensionsConfig()
 
 	return &config.Config{
-		Exporters:  *exporterConfig,
+		Exporters:  exporterConfig,
 		Receivers:  receiverConfig,
 		Processors: processorsConfig,
 		Service:    serviceConfig,
@@ -32,8 +33,8 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, output v1alph
 	}, envVars, nil
 }
 
-func makeReceiverConfig() config.ReceiverConfig {
-	return config.ReceiverConfig{
+func makeReceiversConfig() config.ReceiversConfig {
+	return config.ReceiversConfig{
 		OTLP: &config.OTLPReceiverConfig{
 			Protocols: config.ReceiverProtocols{
 				HTTP: config.EndpointConfig{
@@ -115,15 +116,16 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 	}
 }
 
-func makeServiceConfig(outputType string) config.OTLPServiceConfig {
-	return config.OTLPServiceConfig{
-		Pipelines: config.PipelinesConfig{
-			Metrics: &config.PipelineConfig{
-				Receivers:  []string{"otlp"},
-				Processors: []string{"memory_limiter", "k8sattributes", "resource", "batch"},
-				Exporters:  []string{outputType, "logging"},
-			},
+func makeServiceConfig(outputAliases []string) config.ServiceConfig {
+	pipelines := map[string]config.PipelineConfig{
+		"metrics": {
+			Receivers:  []string{"otlp"},
+			Processors: []string{"memory_limiter", "k8sattributes", "resource", "batch"},
+			Exporters:  outputAliases,
 		},
+	}
+	return config.ServiceConfig{
+		Pipelines: pipelines,
 		Telemetry: config.TelemetryConfig{
 			Metrics: config.MetricsConfig{
 				Address: "${MY_POD_IP}:8888",

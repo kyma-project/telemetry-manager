@@ -3,6 +3,7 @@ package builder
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -13,25 +14,45 @@ import (
 
 type EnvVars map[string][]byte
 
-func GetOutputType(output *telemetryv1alpha1.OtlpOutput) string {
+func getOTLPOutputAlias(output *telemetryv1alpha1.OtlpOutput, pipelineName string) string {
+	var outputType string
 	if output.Protocol == "http" {
-		return "otlphttp"
+		outputType = "otlphttp"
+	} else {
+		outputType = "otlp"
 	}
-	return "otlp"
+
+	return fmt.Sprintf("%s/%s", outputType, pipelineName)
 }
 
-func MakeOTLPExporterConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput) (*config.ExporterConfig, EnvVars, error) {
+func getLoggingOutputAlias(pipelineName string) string {
+	return fmt.Sprintf("logging/%s", pipelineName)
+}
+
+func GetExporterAliases(exporters config.ExportersConfig) []string {
+	var aliases []string
+	for alias := range exporters {
+		aliases = append(aliases, alias)
+	}
+
+	// Sort to ensure deterministic order
+	sort.Strings(aliases)
+	return aliases
+}
+
+func MakeOTLPExportersConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string) (config.ExportersConfig, EnvVars, error) {
 	envVars, err := makeEnvVars(ctx, c, otlpOutput)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
 	}
 
-	config := makeExporterConfig(otlpOutput, envVars)
-	return &config, envVars, nil
+	exportersConfig := makeExportersConfig(otlpOutput, pipelineName, envVars)
+	return exportersConfig, envVars, nil
 }
 
-func makeExporterConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, secretData map[string][]byte) config.ExporterConfig {
-	outputType := GetOutputType(otlpOutput)
+func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte) config.ExportersConfig {
+	otlpOutputAlias := getOTLPOutputAlias(otlpOutput, pipelineName)
+	loggingOutputAlias := getLoggingOutputAlias(pipelineName)
 	headers := makeHeaders(otlpOutput)
 	otlpExporterConfig := config.OTLPExporterConfig{
 		Endpoint: fmt.Sprintf("${%s}", otlpEndpointVariable),
@@ -55,15 +76,9 @@ func makeExporterConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, secretData map
 		Verbosity: "basic",
 	}
 
-	if outputType == "otlphttp" {
-		return config.ExporterConfig{
-			OTLPHTTP: otlpExporterConfig,
-			Logging:  loggingExporter,
-		}
-	}
-	return config.ExporterConfig{
-		OTLP:    otlpExporterConfig,
-		Logging: loggingExporter,
+	return config.ExportersConfig{
+		otlpOutputAlias:    {OTLPExporterConfig: &otlpExporterConfig},
+		loggingOutputAlias: {LoggingExporterConfig: &loggingExporter},
 	}
 }
 
@@ -83,7 +98,7 @@ func isInsecureOutput(endpoint string) bool {
 	return len(strings.TrimSpace(endpoint)) > 0 && strings.HasPrefix(endpoint, "http://")
 }
 
-func MakeExtensionConfig() config.ExtensionsConfig {
+func MakeExtensionsConfig() config.ExtensionsConfig {
 	return config.ExtensionsConfig{
 		HealthCheck: config.EndpointConfig{
 			Endpoint: "${MY_POD_IP}:13133",

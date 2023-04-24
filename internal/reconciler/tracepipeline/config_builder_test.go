@@ -7,49 +7,78 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 var (
-	tracePipeline = v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{
-				Value: "localhost",
-			},
+	tracePipeline = &v1alpha1.TracePipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
 		},
-	}
-
-	tracePipelineInsecure = v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{
-				Value: "http://localhost",
-			},
-		},
-	}
-
-	tracePipelineHTTP = v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Protocol: "http",
-			Endpoint: v1alpha1.ValueType{
-				Value: "localhost",
-			},
-		},
-	}
-
-	tracePipelineWithBasicAuth = v1alpha1.TracePipelineOutput{
-		Otlp: &v1alpha1.OtlpOutput{
-			Endpoint: v1alpha1.ValueType{
-				Value: "localhost",
-			},
-			Authentication: &v1alpha1.AuthenticationOptions{
-				Basic: &v1alpha1.BasicAuthOptions{
-					User: v1alpha1.ValueType{
-						Value: "user",
+		Spec: v1alpha1.TracePipelineSpec{
+			Output: v1alpha1.TracePipelineOutput{
+				Otlp: &v1alpha1.OtlpOutput{
+					Endpoint: v1alpha1.ValueType{
+						Value: "localhost",
 					},
-					Password: v1alpha1.ValueType{
-						Value: "password",
+				},
+			},
+		},
+	}
+
+	tracePipelineInsecure = &v1alpha1.TracePipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
+		},
+		Spec: v1alpha1.TracePipelineSpec{
+			Output: v1alpha1.TracePipelineOutput{
+				Otlp: &v1alpha1.OtlpOutput{
+					Endpoint: v1alpha1.ValueType{
+						Value: "http://localhost",
+					},
+				},
+			},
+		},
+	}
+
+	tracePipelineHTTP = &v1alpha1.TracePipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
+		},
+		Spec: v1alpha1.TracePipelineSpec{
+			Output: v1alpha1.TracePipelineOutput{
+				Otlp: &v1alpha1.OtlpOutput{
+					Protocol: "http",
+					Endpoint: v1alpha1.ValueType{
+						Value: "localhost",
+					},
+				},
+			},
+		},
+	}
+
+	tracePipelineWithBasicAuth = &v1alpha1.TracePipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
+		},
+		Spec: v1alpha1.TracePipelineSpec{
+			Output: v1alpha1.TracePipelineOutput{
+				Otlp: &v1alpha1.OtlpOutput{
+					Endpoint: v1alpha1.ValueType{
+						Value: "localhost",
+					},
+					Authentication: &v1alpha1.AuthenticationOptions{
+						Basic: &v1alpha1.BasicAuthOptions{
+							User: v1alpha1.ValueType{
+								Value: "user",
+							},
+							Password: v1alpha1.ValueType{
+								Value: "password",
+							},
+						},
 					},
 				},
 			},
@@ -62,35 +91,45 @@ func TestMakeCollectorConfigEndpoint(t *testing.T) {
 	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
 	require.NoError(t, err)
 	expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT")
-	require.Equal(t, expectedEndpoint, collectorConfig.Exporters.OTLP.Endpoint)
+	require.Contains(t, collectorConfig.Exporters, "otlp/test")
+	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
+	require.Equal(t, expectedEndpoint, otlpExporterConfig.Endpoint)
 }
 
 func TestMakeCollectorConfigSecure(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
 	require.NoError(t, err)
-	require.False(t, collectorConfig.Exporters.OTLP.TLS.Insecure)
+	require.Contains(t, collectorConfig.Exporters, "otlp/test")
+	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
+	require.False(t, otlpExporterConfig.TLS.Insecure)
 }
 
 func TestMakeCollectorConfigSecureHttp(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineHTTP)
 	require.NoError(t, err)
-	require.False(t, collectorConfig.Exporters.OTLPHTTP.TLS.Insecure)
+	require.Contains(t, collectorConfig.Exporters, "otlphttp/test")
+	otlpExporterConfig := collectorConfig.Exporters["otlphttp/test"]
+	require.False(t, otlpExporterConfig.TLS.Insecure)
 }
 
 func TestMakeCollectorConfigInsecure(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineInsecure)
 	require.NoError(t, err)
-	require.True(t, collectorConfig.Exporters.OTLP.TLS.Insecure)
+	require.Contains(t, collectorConfig.Exporters, "otlp/test")
+	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
+	require.True(t, otlpExporterConfig.TLS.Insecure)
 }
 
 func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineWithBasicAuth)
 	require.NoError(t, err)
-	headers := collectorConfig.Exporters.OTLP.Headers
+	require.Contains(t, collectorConfig.Exporters, "otlp/test")
+	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
+	headers := otlpExporterConfig.Headers
 
 	authHeader, existing := headers["Authorization"]
 	require.True(t, existing)
@@ -98,19 +137,20 @@ func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
 }
 
 func TestMakeServiceConfig(t *testing.T) {
-	serviceConfig := makeServiceConfig("otlp")
+	serviceConfig := makeServiceConfig([]string{"otlp/test", "logging/test"})
 
-	require.Contains(t, serviceConfig.Pipelines.Traces.Receivers, "otlp")
-	require.Contains(t, serviceConfig.Pipelines.Traces.Receivers, "opencensus")
+	require.Contains(t, serviceConfig.Pipelines, "traces")
+	require.Contains(t, serviceConfig.Pipelines["traces"].Receivers, "otlp")
+	require.Contains(t, serviceConfig.Pipelines["traces"].Receivers, "opencensus")
 
-	require.Equal(t, serviceConfig.Pipelines.Traces.Processors[0], "memory_limiter")
-	require.Equal(t, serviceConfig.Pipelines.Traces.Processors[1], "k8sattributes")
-	require.Equal(t, serviceConfig.Pipelines.Traces.Processors[2], "filter")
-	require.Equal(t, serviceConfig.Pipelines.Traces.Processors[3], "resource")
-	require.Equal(t, serviceConfig.Pipelines.Traces.Processors[4], "batch")
+	require.Equal(t, serviceConfig.Pipelines["traces"].Processors[0], "memory_limiter")
+	require.Equal(t, serviceConfig.Pipelines["traces"].Processors[1], "k8sattributes")
+	require.Equal(t, serviceConfig.Pipelines["traces"].Processors[2], "filter")
+	require.Equal(t, serviceConfig.Pipelines["traces"].Processors[3], "resource")
+	require.Equal(t, serviceConfig.Pipelines["traces"].Processors[4], "batch")
 
-	require.Contains(t, serviceConfig.Pipelines.Traces.Exporters, "otlp")
-	require.Contains(t, serviceConfig.Pipelines.Traces.Exporters, "logging")
+	require.Contains(t, serviceConfig.Pipelines["traces"].Exporters, "otlp/test")
+	require.Contains(t, serviceConfig.Pipelines["traces"].Exporters, "logging/test")
 
 	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
 	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
@@ -198,7 +238,9 @@ func TestCollectorConfigMarshalling(t *testing.T) {
             grpc:
                 endpoint: ${MY_POD_IP}:4317
 exporters:
-    otlp:
+    logging/test:
+        verbosity: basic
+    otlp/test:
         endpoint: ${OTLP_ENDPOINT}
         sending_queue:
             enabled: true
@@ -208,8 +250,6 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-    logging:
-        verbosity: basic
 processors:
     batch:
         send_batch_size: 512
@@ -277,8 +317,8 @@ service:
                 - resource
                 - batch
             exporters:
-                - otlp
-                - logging
+                - logging/test
+                - otlp/test
     telemetry:
         metrics:
             address: ${MY_POD_IP}:8888

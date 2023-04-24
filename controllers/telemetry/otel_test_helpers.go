@@ -26,12 +26,17 @@ func validatePodAnnotations(deployment appsv1.Deployment) error {
 }
 
 func validateCollectorConfig(configData string) error {
-	var config config.Config
-	if err := yaml.Unmarshal([]byte(configData), &config); err != nil {
+	var collectorConfig config.Config
+	if err := yaml.Unmarshal([]byte(configData), &collectorConfig); err != nil {
 		return err
 	}
 
-	if !config.Exporters.OTLP.TLS.Insecure {
+	otlpExporterConfig, found := collectorConfig.Exporters["otlp/dummy"]
+	if !found {
+		return fmt.Errorf("otlp exporter not found")
+	}
+
+	if !otlpExporterConfig.TLS.Insecure {
 		return fmt.Errorf("insecure flag not set")
 	}
 

@@ -17,7 +17,7 @@ func TestGetOutputTypeHttp(t *testing.T) {
 		Protocol: "http",
 	}
 
-	require.Equal(t, "otlphttp", GetOutputType(output))
+	require.Equal(t, "otlphttp/test", getOTLPOutputAlias(output, "test"))
 }
 
 func TestGetOutputTypeOtlp(t *testing.T) {
@@ -26,7 +26,7 @@ func TestGetOutputTypeOtlp(t *testing.T) {
 		Protocol: "grpc",
 	}
 
-	require.Equal(t, "otlp", GetOutputType(output))
+	require.Equal(t, "otlp/test", getOTLPOutputAlias(output, "test"))
 }
 
 func TestGetOutputTypeDefault(t *testing.T) {
@@ -34,7 +34,7 @@ func TestGetOutputTypeDefault(t *testing.T) {
 		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	require.Equal(t, "otlp", GetOutputType(output))
+	require.Equal(t, "otlp/test", getOTLPOutputAlias(output, "test"))
 }
 
 func TestMakeExporterConfig(t *testing.T) {
@@ -42,7 +42,7 @@ func TestMakeExporterConfig(t *testing.T) {
 		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	exporterConfig, envVars, err := MakeOTLPExporterConfig(context.Background(), fake.NewClientBuilder().Build(), output)
+	exporterConfig, envVars, err := MakeOTLPExportersConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test")
 	require.NoError(t, err)
 	require.NotNil(t, exporterConfig)
 	require.NotNil(t, envVars)
@@ -50,16 +50,22 @@ func TestMakeExporterConfig(t *testing.T) {
 	require.NotNil(t, envVars["OTLP_ENDPOINT"])
 	require.Equal(t, envVars["OTLP_ENDPOINT"], []byte("otlp-endpoint"))
 
-	require.Equal(t, "${OTLP_ENDPOINT}", exporterConfig.OTLP.Endpoint)
-	require.True(t, exporterConfig.OTLP.SendingQueue.Enabled)
-	require.Equal(t, 512, exporterConfig.OTLP.SendingQueue.QueueSize)
+	require.Contains(t, exporterConfig, "otlp/test")
+	otlpExporterConfig := exporterConfig["otlp/test"]
 
-	require.True(t, exporterConfig.OTLP.RetryOnFailure.Enabled)
-	require.Equal(t, "5s", exporterConfig.OTLP.RetryOnFailure.InitialInterval)
-	require.Equal(t, "30s", exporterConfig.OTLP.RetryOnFailure.MaxInterval)
-	require.Equal(t, "300s", exporterConfig.OTLP.RetryOnFailure.MaxElapsedTime)
+	require.Equal(t, "${OTLP_ENDPOINT}", otlpExporterConfig.Endpoint)
+	require.True(t, otlpExporterConfig.SendingQueue.Enabled)
+	require.Equal(t, 512, otlpExporterConfig.SendingQueue.QueueSize)
 
-	require.Equal(t, "basic", exporterConfig.Logging.Verbosity)
+	require.True(t, otlpExporterConfig.RetryOnFailure.Enabled)
+	require.Equal(t, "5s", otlpExporterConfig.RetryOnFailure.InitialInterval)
+	require.Equal(t, "30s", otlpExporterConfig.RetryOnFailure.MaxInterval)
+	require.Equal(t, "300s", otlpExporterConfig.RetryOnFailure.MaxElapsedTime)
+
+	require.Contains(t, exporterConfig, "logging/test")
+	loggingExporterConfig := exporterConfig["logging/test"]
+
+	require.Equal(t, "basic", loggingExporterConfig.Verbosity)
 }
 
 func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
@@ -76,13 +82,15 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 		Headers:  headers,
 	}
 
-	exporterConfig, envVars, err := MakeOTLPExporterConfig(context.Background(), fake.NewClientBuilder().Build(), output)
+	exporterConfig, envVars, err := MakeOTLPExportersConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test")
 	require.NoError(t, err)
 	require.NotNil(t, exporterConfig)
 	require.NotNil(t, envVars)
 
-	require.Equal(t, 1, len(exporterConfig.OTLP.Headers))
-	require.Equal(t, "${HEADER_AUTHORIZATION}", exporterConfig.OTLP.Headers["Authorization"])
+	require.Contains(t, exporterConfig, "otlp/test")
+	otlpExporterConfig := exporterConfig["otlp/test"]
+	require.Equal(t, 1, len(otlpExporterConfig.Headers))
+	require.Equal(t, "${HEADER_AUTHORIZATION}", otlpExporterConfig.Headers["Authorization"])
 }
 
 func TestMakeExtensionConfig(t *testing.T) {
@@ -92,6 +100,6 @@ func TestMakeExtensionConfig(t *testing.T) {
 		},
 	}
 
-	actualConfig := MakeExtensionConfig()
+	actualConfig := MakeExtensionsConfig()
 	require.Equal(t, expectedConfig, actualConfig)
 }

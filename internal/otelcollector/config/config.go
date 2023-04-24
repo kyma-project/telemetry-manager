@@ -16,6 +16,13 @@ type RetryOnFailureConfig struct {
 	MaxElapsedTime  string `yaml:"max_elapsed_time"`
 }
 
+type ExportersConfig map[string]ExporterConfig
+
+type ExporterConfig struct {
+	*OTLPExporterConfig    `yaml:",inline,omitempty"`
+	*LoggingExporterConfig `yaml:",inline,omitempty"`
+}
+
 type OTLPExporterConfig struct {
 	Endpoint       string               `yaml:"endpoint,omitempty"`
 	Headers        map[string]string    `yaml:"headers,omitempty"`
@@ -26,12 +33,6 @@ type OTLPExporterConfig struct {
 
 type LoggingExporterConfig struct {
 	Verbosity string `yaml:"verbosity"`
-}
-
-type ExporterConfig struct {
-	OTLP     OTLPExporterConfig    `yaml:"otlp,omitempty"`
-	OTLPHTTP OTLPExporterConfig    `yaml:"otlphttp,omitempty"`
-	Logging  LoggingExporterConfig `yaml:"logging,omitempty"`
 }
 
 type EndpointConfig struct {
@@ -47,7 +48,7 @@ type OTLPReceiverConfig struct {
 	Protocols ReceiverProtocols `yaml:"protocols,omitempty"`
 }
 
-type ReceiverConfig struct {
+type ReceiversConfig struct {
 	OpenCensus *EndpointConfig     `yaml:"opencensus,omitempty"`
 	OTLP       *OTLPReceiverConfig `yaml:"otlp,omitempty"`
 }
@@ -116,11 +117,6 @@ type PipelineConfig struct {
 	Exporters  []string `yaml:"exporters"`
 }
 
-type PipelinesConfig struct {
-	Traces  *PipelineConfig `yaml:"traces,omitempty"`
-	Metrics *PipelineConfig `yaml:"metrics,omitempty"`
-}
-
 type MetricsConfig struct {
 	Address string `yaml:"address"`
 }
@@ -134,10 +130,10 @@ type TelemetryConfig struct {
 	Logs    LoggingConfig `yaml:"logs"`
 }
 
-type OTLPServiceConfig struct {
-	Pipelines  PipelinesConfig `yaml:"pipelines,omitempty"`
-	Telemetry  TelemetryConfig `yaml:"telemetry,omitempty"`
-	Extensions []string        `yaml:"extensions,omitempty"`
+type ServiceConfig struct {
+	Pipelines  map[string]PipelineConfig `yaml:"pipelines,omitempty"`
+	Telemetry  TelemetryConfig           `yaml:"telemetry,omitempty"`
+	Extensions []string                  `yaml:"extensions,omitempty"`
 }
 
 type ExtensionsConfig struct {
@@ -145,9 +141,9 @@ type ExtensionsConfig struct {
 }
 
 type Config struct {
-	Receivers  ReceiverConfig    `yaml:"receivers"`
-	Exporters  ExporterConfig    `yaml:"exporters"`
-	Processors ProcessorsConfig  `yaml:"processors"`
-	Extensions ExtensionsConfig  `yaml:"extensions"`
-	Service    OTLPServiceConfig `yaml:"service"`
+	Receivers  ReceiversConfig  `yaml:"receivers"`
+	Exporters  ExportersConfig  `yaml:"exporters"`
+	Processors ProcessorsConfig `yaml:"processors"`
+	Extensions ExtensionsConfig `yaml:"extensions"`
+	Service    ServiceConfig    `yaml:"service"`
 }
