@@ -16,6 +16,8 @@ type RetryOnFailureConfig struct {
 	MaxElapsedTime  string `yaml:"max_elapsed_time"`
 }
 
+type ExportersConfig map[string]ExporterConfig
+
 type ExporterConfig struct {
 	*OTLPExporterConfig    `yaml:",inline,omitempty"`
 	*LoggingExporterConfig `yaml:",inline,omitempty"`
@@ -46,7 +48,7 @@ type OTLPReceiverConfig struct {
 	Protocols ReceiverProtocols `yaml:"protocols,omitempty"`
 }
 
-type ReceiverConfig struct {
+type ReceiversConfig struct {
 	OpenCensus *EndpointConfig     `yaml:"opencensus,omitempty"`
 	OTLP       *OTLPReceiverConfig `yaml:"otlp,omitempty"`
 }
@@ -128,7 +130,7 @@ type TelemetryConfig struct {
 	Logs    LoggingConfig `yaml:"logs"`
 }
 
-type OTLPServiceConfig struct {
+type ServiceConfig struct {
 	Pipelines  map[string]PipelineConfig `yaml:"pipelines,omitempty"`
 	Telemetry  TelemetryConfig           `yaml:"telemetry,omitempty"`
 	Extensions []string                  `yaml:"extensions,omitempty"`
@@ -139,9 +141,9 @@ type ExtensionsConfig struct {
 }
 
 type Config struct {
-	Receivers  ReceiverConfig            `yaml:"receivers"`
-	Exporters  map[string]ExporterConfig `yaml:"exporters"`
-	Processors ProcessorsConfig          `yaml:"processors"`
-	Extensions ExtensionsConfig          `yaml:"extensions"`
-	Service    OTLPServiceConfig         `yaml:"service"`
+	Receivers  ReceiversConfig  `yaml:"receivers"`
+	Exporters  ExportersConfig  `yaml:"exporters"`
+	Processors ProcessorsConfig `yaml:"processors"`
+	Extensions ExtensionsConfig `yaml:"extensions"`
+	Service    ServiceConfig    `yaml:"service"`
 }

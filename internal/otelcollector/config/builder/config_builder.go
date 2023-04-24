@@ -29,7 +29,7 @@ func getLoggingOutputAlias(pipelineName string) string {
 	return fmt.Sprintf("logging/%s", pipelineName)
 }
 
-func GetExporterAliases(exporters map[string]config.ExporterConfig) []string {
+func GetExporterAliases(exporters config.ExportersConfig) []string {
 	var aliases []string
 	for alias := range exporters {
 		aliases = append(aliases, alias)
@@ -40,17 +40,17 @@ func GetExporterAliases(exporters map[string]config.ExporterConfig) []string {
 	return aliases
 }
 
-func MakeOTLPExporterConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string]config.ExporterConfig, EnvVars, error) {
+func MakeOTLPExportersConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string) (config.ExportersConfig, EnvVars, error) {
 	envVars, err := makeEnvVars(ctx, c, otlpOutput)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
 	}
 
-	config := makeExporterConfig(otlpOutput, pipelineName, envVars)
-	return config, envVars, nil
+	exportersConfig := makeExportersConfig(otlpOutput, pipelineName, envVars)
+	return exportersConfig, envVars, nil
 }
 
-func makeExporterConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte) map[string]config.ExporterConfig {
+func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte) config.ExportersConfig {
 	otlpOutputAlias := getOTLPOutputAlias(otlpOutput, pipelineName)
 	loggingOutputAlias := getLoggingOutputAlias(pipelineName)
 	headers := makeHeaders(otlpOutput)
@@ -76,7 +76,7 @@ func makeExporterConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName s
 		Verbosity: "basic",
 	}
 
-	return map[string]config.ExporterConfig{
+	return config.ExportersConfig{
 		otlpOutputAlias:    {OTLPExporterConfig: &otlpExporterConfig},
 		loggingOutputAlias: {LoggingExporterConfig: &loggingExporter},
 	}
@@ -98,7 +98,7 @@ func isInsecureOutput(endpoint string) bool {
 	return len(strings.TrimSpace(endpoint)) > 0 && strings.HasPrefix(endpoint, "http://")
 }
 
-func MakeExtensionConfig() config.ExtensionsConfig {
+func MakeExtensionsConfig() config.ExtensionsConfig {
 	return config.ExtensionsConfig{
 		HealthCheck: config.EndpointConfig{
 			Endpoint: "${MY_POD_IP}:13133",

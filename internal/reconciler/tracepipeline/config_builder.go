@@ -13,16 +13,16 @@ import (
 
 func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipeline *v1alpha1.TracePipeline) (*config.Config, configbuilder.EnvVars, error) {
 	output := pipeline.Spec.Output
-	exporterConfig, envVars, err := configbuilder.MakeOTLPExporterConfig(ctx, c, output.Otlp, pipeline.Name)
+	exporterConfig, envVars, err := configbuilder.MakeOTLPExportersConfig(ctx, c, output.Otlp, pipeline.Name)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make exporter config: %v", err)
 	}
 
 	outputAliases := configbuilder.GetExporterAliases(exporterConfig)
-	receiverConfig := makeReceiverConfig()
+	receiverConfig := makeReceiversConfig()
 	processorsConfig := makeProcessorsConfig()
 	serviceConfig := makeServiceConfig(outputAliases)
-	extensionConfig := configbuilder.MakeExtensionConfig()
+	extensionConfig := configbuilder.MakeExtensionsConfig()
 
 	return &config.Config{
 		Exporters:  exporterConfig,
@@ -33,8 +33,8 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipeline *v1a
 	}, envVars, nil
 }
 
-func makeReceiverConfig() config.ReceiverConfig {
-	return config.ReceiverConfig{
+func makeReceiversConfig() config.ReceiversConfig {
+	return config.ReceiversConfig{
 		OpenCensus: &config.EndpointConfig{
 			Endpoint: "${MY_POD_IP}:55678",
 		},
@@ -141,7 +141,7 @@ func makeSpanFilterConfig() []string {
 	}
 }
 
-func makeServiceConfig(outputAliases []string) config.OTLPServiceConfig {
+func makeServiceConfig(outputAliases []string) config.ServiceConfig {
 	pipelines := map[string]config.PipelineConfig{
 		"traces": {
 			Receivers:  []string{"opencensus", "otlp"},
@@ -149,7 +149,7 @@ func makeServiceConfig(outputAliases []string) config.OTLPServiceConfig {
 			Exporters:  outputAliases,
 		},
 	}
-	return config.OTLPServiceConfig{
+	return config.ServiceConfig{
 		Pipelines: pipelines,
 		Telemetry: config.TelemetryConfig{
 			Metrics: config.MetricsConfig{
