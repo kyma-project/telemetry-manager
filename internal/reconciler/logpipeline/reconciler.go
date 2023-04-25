@@ -152,7 +152,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.NamespacedName, pipeline *telemetryv1alpha1.LogPipeline, checksum string) error {
 	serviceAccount := commonresources.MakeServiceAccount(name)
-	if err := controllerutil.SetControllerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
@@ -160,7 +160,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	clusterRole := commonresources.MakeClusterRole(name)
-	if err := controllerutil.SetControllerReference(pipeline, clusterRole, r.Scheme()); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
@@ -168,7 +168,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	clusterRoleBinding := commonresources.MakeClusterRoleBinding(name)
-	if err := controllerutil.SetControllerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
@@ -176,7 +176,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	daemonSet := resources.MakeDaemonSet(name, checksum, r.config.DaemonSetConfig)
-	if err := controllerutil.SetControllerReference(pipeline, daemonSet, r.Scheme()); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, daemonSet, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateDaemonSet(ctx, r, daemonSet); err != nil {
@@ -184,7 +184,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	exporterMetricsService := resources.MakeExporterMetricsService(name)
-	if err := controllerutil.SetControllerReference(pipeline, exporterMetricsService, r.Scheme()); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, exporterMetricsService, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateService(ctx, r, exporterMetricsService); err != nil {
@@ -192,7 +192,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	metricsService := resources.MakeMetricsService(name)
-	if err := controllerutil.SetControllerReference(pipeline, metricsService, r.Scheme()); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, metricsService, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateService(ctx, r, metricsService); err != nil {
@@ -200,7 +200,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	cm := resources.MakeConfigMap(name)
-	if err := controllerutil.SetControllerReference(pipeline, cm, r.Scheme()); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, cm, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateConfigMap(ctx, r, cm); err != nil {
@@ -208,7 +208,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	luaCm := resources.MakeLuaConfigMap(name)
-	if err := controllerutil.SetControllerReference(pipeline, luaCm, r.Scheme()); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, luaCm, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateOrUpdateConfigMap(ctx, r, luaCm); err != nil {
@@ -216,7 +216,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 	}
 
 	parsersCm := resources.MakeDynamicParserConfigmap(name)
-	if err := controllerutil.SetControllerReference(pipeline, parsersCm, r.Scheme()); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, parsersCm, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateIfNotExistsConfigMap(ctx, r, parsersCm); err != nil {

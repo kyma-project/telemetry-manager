@@ -277,21 +277,14 @@ func ownerSliceContains(owners []metav1.OwnerReference, owner metav1.OwnerRefere
 
 // merges two owner references slices. Since only one owner can have the controller flag, we assume that the newOwners slice contains the actual controller and clear the flag on all owners in oldOwners.
 func mergeOwnerReferences(newOwners []metav1.OwnerReference, oldOwners []metav1.OwnerReference) []metav1.OwnerReference {
-	merged := newOwners
-	notOwner := false
+	merged := oldOwners
+	//notOwner := false
 
-	for _, o := range oldOwners {
-		found := false
-		for _, n := range newOwners {
-			if n.UID == o.UID {
-				found = true
-				break
-			}
+	for _, o := range newOwners {
+		if ownerSliceContains(oldOwners, o) {
+			continue
 		}
-		if !found {
-			o.Controller = &notOwner
-			merged = append(merged, o)
-		}
+		merged = append(merged, o)
 	}
 
 	return merged

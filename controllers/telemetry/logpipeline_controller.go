@@ -32,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/setup"
@@ -64,34 +63,34 @@ func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&telemetryv1alpha1.LogPipeline{}).
 		Watches(
 			&source.Kind{Type: &appsv1.DaemonSet{}},
-			utils.EnqueueRequestForOwnerFuncs(ctrl.Log),
-			builder.WithPredicates(setup.DeleteOrUpdate()),
-		).
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
+				IsController: false}).
 		Watches(
 			&source.Kind{Type: &corev1.Service{}},
-			utils.EnqueueRequestForOwnerFuncs(ctrl.Log),
-			builder.WithPredicates(setup.DeleteOrUpdate()),
-		).
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
+				IsController: false}).
 		Watches(
 			&source.Kind{Type: &corev1.ConfigMap{}},
-			utils.EnqueueRequestForOwnerFuncs(ctrl.Log),
-			builder.WithPredicates(setup.DeleteOrUpdate()),
-		).
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
+				IsController: false}).
 		Watches(
 			&source.Kind{Type: &corev1.ServiceAccount{}},
-			utils.EnqueueRequestForOwnerFuncs(ctrl.Log),
-			builder.WithPredicates(setup.DeleteOrUpdate()),
-		).
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
+				IsController: false}).
 		Watches(
 			&source.Kind{Type: &rbacv1.ClusterRole{}},
-			utils.EnqueueRequestForOwnerFuncs(ctrl.Log),
-			builder.WithPredicates(setup.DeleteOrUpdate()),
-		).
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
+				IsController: false}).
 		Watches(
 			&source.Kind{Type: &rbacv1.ClusterRoleBinding{}},
-			utils.EnqueueRequestForOwnerFuncs(ctrl.Log),
-			builder.WithPredicates(setup.DeleteOrUpdate()),
-		).
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
+				IsController: false}).
 		Watches(
 			&source.Kind{Type: &corev1.Secret{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
