@@ -129,7 +129,7 @@ func makeServiceConfig(outputType string) config.OTLPServiceConfig {
 				Address: "${MY_POD_IP}:8888",
 			},
 			Logs: config.LoggingConfig{
-				Level: "debug",
+				Level: "info",
 			},
 		},
 		Extensions: []string{"health_check"},
