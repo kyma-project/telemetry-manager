@@ -64,32 +64,32 @@ func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&source.Kind{Type: &appsv1.DaemonSet{}},
 			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
 				IsController: false}).
 		Watches(
 			&source.Kind{Type: &corev1.Service{}},
 			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
 				IsController: false}).
 		Watches(
 			&source.Kind{Type: &corev1.ConfigMap{}},
 			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
 				IsController: false}).
 		Watches(
 			&source.Kind{Type: &corev1.ServiceAccount{}},
 			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
 				IsController: false}).
 		Watches(
 			&source.Kind{Type: &rbacv1.ClusterRole{}},
 			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
 				IsController: false}).
 		Watches(
 			&source.Kind{Type: &rbacv1.ClusterRoleBinding{}},
 			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
 				IsController: false}).
 		Watches(
 			&source.Kind{Type: &corev1.Secret{}},
