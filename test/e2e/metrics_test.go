@@ -76,16 +76,21 @@ var _ = Describe("Metrics", func() {
 		})
 
 		It("Should verify end-to-end metric delivery", func() {
-			gauge := kitmetrics.NewGauge()
-
-			sendMetrics(context.Background(), gauge, otlpPushURL)
+			builder := kitmetrics.NewBuilder()
+			var gauges []pmetric.Gauge
+			for i := 0; i < 50; i++ {
+				gauge := kitmetrics.NewGauge()
+				gauges = append(gauges, gauge)
+				builder.WithGauge(gauge)
+			}
+			sendMetrics(context.Background(), builder.Build(), otlpPushURL)
 
 			Eventually(func(g Gomega) {
 				resp, err := http.Get(mockBackendMetricsExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveGauges(kitmetrics.AllGauges(gauge)))))
+					HaveGauges(gauges...))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})

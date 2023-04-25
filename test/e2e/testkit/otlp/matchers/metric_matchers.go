@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
 )
 
-func HaveGauges(expected []pmetric.Gauge) types.GomegaMatcher {
+func HaveGauges(expectedGauges ...pmetric.Gauge) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Gauge, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
@@ -32,7 +32,7 @@ func HaveGauges(expected []pmetric.Gauge) types.GomegaMatcher {
 		}
 
 		return actualGauges, nil
-	}, gomega.ContainElements(expected))
+	}, gomega.ContainElements(expectedGauges))
 }
 
 func unmarshalOTLPJSONMetrics(buf []byte) ([]pmetric.Metrics, error) {

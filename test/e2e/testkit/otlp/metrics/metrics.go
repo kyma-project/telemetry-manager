@@ -4,6 +4,7 @@ package metrics
 
 import (
 	"fmt"
+	"math/rand"
 	"net/url"
 	"strconv"
 	"time"
@@ -13,38 +14,71 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-func NewGauge() pmetric.Metrics {
-	totalResourceMetrics := 20
+type Builder struct {
+	metrics []pmetric.Metric
+}
+
+func NewBuilder() *Builder {
+	return &Builder{}
+}
+
+type MetricOption = func(pmetric.Metric)
+
+func WithName(name string) MetricOption {
+	return func(m pmetric.Metric) {
+		m.SetName(name)
+	}
+}
+
+func (b *Builder) WithGauge(gauge pmetric.Gauge, opts ...MetricOption) *Builder {
+	m := pmetric.NewMetric()
+	setMetricDefaults(m)
+
+	gauge.CopyTo(m.SetEmptyGauge())
+	for _, opt := range opts {
+		opt(m)
+	}
+
+	b.metrics = append(b.metrics, m)
+	return b
+}
+
+func setMetricDefaults(m pmetric.Metric) {
+	m.SetName("dummy_gauge")
+	m.SetDescription("Dummy gauge")
+	m.SetUnit("ms")
+}
+
+func (b *Builder) Build() pmetric.Metrics {
+	md := pmetric.NewMetrics()
+	scopeMetric := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty()
+	for _, metrics := range b.metrics {
+		metrics.CopyTo(scopeMetric.Metrics().AppendEmpty())
+	}
+	return md
+}
+
+func NewGauge() pmetric.Gauge {
 	totalAttributes := 7
 	totalPts := 2
 	startTime := time.Now()
 
-	md := pmetric.NewMetrics()
-	rms := md.ResourceMetrics()
-	rms.EnsureCapacity(totalResourceMetrics)
-	for i := 0; i < totalResourceMetrics; i++ {
-		metric := rms.AppendEmpty().ScopeMetrics().AppendEmpty().Metrics().AppendEmpty()
+	gauge := pmetric.NewGauge()
+	pts := gauge.DataPoints()
+	for i := 0; i < totalPts; i++ {
+		pt := pts.AppendEmpty()
+		pt.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
+		pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
+		pt.SetDoubleValue(rand.Float64())
 
-		metric.SetName("dummy_gauge")
-		metric.SetDescription("dummy-description")
-		metric.SetUnit("dummy-units")
-
-		gauge := metric.SetEmptyGauge()
-		pts := gauge.DataPoints()
-		for i := 0; i < totalPts; i++ {
-			pt := pts.AppendEmpty()
-			pt.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
-			pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-			pt.SetDoubleValue(1.0)
-
-			for i := 0; i < totalAttributes; i++ {
-				k := fmt.Sprintf("pt-label-key-%d", i)
-				v := fmt.Sprintf("pt-label-val-%d", i)
-				pt.Attributes().PutStr(k, v)
-			}
+		for i := 0; i < totalAttributes; i++ {
+			k := fmt.Sprintf("pt-label-key-%d", i)
+			v := fmt.Sprintf("pt-label-val-%d", i)
+			pt.Attributes().PutStr(k, v)
 		}
 	}
-	return md
+
+	return gauge
 }
 
 func AllGauges(md pmetric.Metrics) []pmetric.Gauge {
