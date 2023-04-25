@@ -2,10 +2,8 @@ package kubernetes
 
 import (
 	"context"
-	"reflect"
 	"strings"
 
-	"github.com/go-logr/logr"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -14,11 +12,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func CreateOrUpdateClusterRoleBinding(ctx context.Context, c client.Client, desired *rbacv1.ClusterRoleBinding) error {
@@ -200,72 +194,6 @@ func mergeMetadata(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
 	new.SetOwnerReferences(mergeOwnerReferences(new.OwnerReferences, old.OwnerReferences))
 }
 
-func EnqueueRequestForOwnerFuncs(log logr.Logger) handler.EventHandler {
-	return &handler.Funcs{
-		CreateFunc: func(evt event.CreateEvent, q workqueue.RateLimitingInterface) {
-			enqueueRequestsForOwners(log, evt.Object, q)
-		},
-		DeleteFunc: func(evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
-			enqueueRequestsForOwners(log, evt.Object, q)
-		},
-		GenericFunc: func(evt event.GenericEvent, q workqueue.RateLimitingInterface) {
-			enqueueRequestsForOwners(log, evt.Object, q)
-		},
-		UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-			oldOwners := getOwnersFromObject(e.ObjectOld)
-			newOwners := getOwnersFromObject(e.ObjectNew)
-
-			for _, newOwner := range newOwners {
-				if ownerSliceContains(oldOwners, newOwner) && hasController(newOwners) {
-					continue
-				}
-
-				req := reconcile.Request{
-					NamespacedName: types.NamespacedName{
-						Namespace: e.ObjectNew.GetNamespace(),
-						Name:      newOwner.Name,
-					},
-				}
-				q.Add(req)
-				log.V(1).Info("Enqueued reconcile request for owner", "owner", req.NamespacedName)
-			}
-		},
-	}
-}
-
-func hasController(owners []metav1.OwnerReference) bool {
-	for _, owner := range owners {
-		equal := reflect.DeepEqual(owner.Controller, (func() *bool { b := true; return &b }()))
-		if equal {
-			return true
-		}
-	}
-	return false
-}
-
-func enqueueRequestsForOwners(log logr.Logger, obj metav1.Object, q workqueue.RateLimitingInterface) {
-	owners := getOwnersFromObject(obj)
-
-	for _, owner := range owners {
-		req := reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Namespace: obj.GetNamespace(),
-				Name:      owner.Name,
-			},
-		}
-		q.Add(req)
-		log.V(1).Info("Enqueued reconcile request for owner", "owner", req.NamespacedName)
-	}
-}
-
-func getOwnersFromObject(obj metav1.Object) []metav1.OwnerReference {
-	if obj == nil {
-		return nil
-	}
-
-	return obj.GetOwnerReferences()
-}
-
 func ownerSliceContains(owners []metav1.OwnerReference, owner metav1.OwnerReference) bool {
 	for _, o := range owners {
 		if o.UID == owner.UID {
@@ -275,10 +203,9 @@ func ownerSliceContains(owners []metav1.OwnerReference, owner metav1.OwnerRefere
 	return false
 }
 
-// merges two owner references slices. Since only one owner can have the controller flag, we assume that the newOwners slice contains the actual controller and clear the flag on all owners in oldOwners.
+// merges two owner references slices
 func mergeOwnerReferences(newOwners []metav1.OwnerReference, oldOwners []metav1.OwnerReference) []metav1.OwnerReference {
 	merged := oldOwners
-	//notOwner := false
 
 	for _, o := range newOwners {
 		if ownerSliceContains(oldOwners, o) {
