@@ -20,11 +20,12 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
 	mocksmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks/metrics"
+	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
 )
 
 var (
-	metricGatewayServiceName = "telemetry-metric-gateway"
+	metricGatewayBaseName = "telemetry-metric-gateway"
 )
 
 var _ = Describe("Metrics", func() {
@@ -53,7 +54,7 @@ var _ = Describe("Metrics", func() {
 		It("Should have a running metric gateway deployment", func() {
 			Eventually(func(g Gomega) bool {
 				var deployment appsv1.Deployment
-				key := types.NamespacedName{Name: metricGatewayServiceName, Namespace: kymaSystemNamespaceName}
+				key := types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
 				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
 
 				listOptions := client.ListOptions{
@@ -83,6 +84,8 @@ var _ = Describe("Metrics", func() {
 				resp, err := http.Get(mockBackendMetricsExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					HaveGauges(kitmetrics.AllGauges(gauge)))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
@@ -133,7 +136,7 @@ func makeMetricsTestK8sObjects(portRegistry testkit.PortRegistry) []client.Objec
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackendName)),
 		hostSecret.K8sObject(),
 		metricPipelineResource.K8sObject(),
-		metricGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", metricGatewayServiceName)),
+		metricGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", metricGatewayBaseName)),
 	}
 }
 

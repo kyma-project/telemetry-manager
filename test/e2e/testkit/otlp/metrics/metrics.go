@@ -14,7 +14,7 @@ import (
 )
 
 func NewGauge() pmetric.Metrics {
-	totalResourceMetrics := 1
+	totalResourceMetrics := 20
 	totalAttributes := 7
 	totalPts := 2
 	startTime := time.Now()
@@ -45,6 +45,22 @@ func NewGauge() pmetric.Metrics {
 		}
 	}
 	return md
+}
+
+func AllGauges(md pmetric.Metrics) []pmetric.Gauge {
+	var gauges []pmetric.Gauge
+
+	for i := 0; i < md.ResourceMetrics().Len(); i++ {
+		resourceMetrics := md.ResourceMetrics().At(i)
+		for j := 0; j < resourceMetrics.ScopeMetrics().Len(); j++ {
+			scopeMetrics := resourceMetrics.ScopeMetrics().At(j)
+			for k := 0; k < scopeMetrics.Metrics().Len(); k++ {
+				gauges = append(gauges, scopeMetrics.Metrics().At(k).Gauge())
+			}
+		}
+	}
+
+	return gauges
 }
 
 func NewDataSender(otlpPushURL string) (testbed.MetricDataSender, error) {

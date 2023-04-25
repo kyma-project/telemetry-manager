@@ -1,4 +1,6 @@
-package otelmatchers
+//go:build e2e
+
+package matchers
 
 import (
 	"os"

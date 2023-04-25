@@ -17,16 +17,16 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	. "github.com/kyma-project/telemetry-manager/internal/otelmatchers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	kittrace "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/trace"
 	mockstraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks/traces"
+	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 	kittraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/traces"
 )
 
 var (
-	traceCollectorServiceName = "telemetry-trace-collector"
+	traceCollectorBaseName = "telemetry-trace-collector"
 )
 
 var _ = Describe("Tracing", func() {
@@ -55,7 +55,7 @@ var _ = Describe("Tracing", func() {
 		It("Should have a running trace collector deployment", func() {
 			Eventually(func(g Gomega) bool {
 				var deployment appsv1.Deployment
-				key := types.NamespacedName{Name: traceCollectorServiceName, Namespace: kymaSystemNamespaceName}
+				key := types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
 				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
 
 				listOptions := client.ListOptions{
@@ -157,7 +157,7 @@ func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry) []client.Objec
 		externalMockBackendService.K8sObject(kitk8s.WithLabel("app", mockBackendName)),
 		hostSecret.K8sObject(),
 		tracePipeline.K8sObject(),
-		externalTraceService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", traceCollectorServiceName)),
+		externalTraceService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", traceCollectorBaseName)),
 	}
 }
 
