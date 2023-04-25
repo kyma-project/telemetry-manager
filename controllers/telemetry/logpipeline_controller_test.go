@@ -385,17 +385,12 @@ func validateLoggingOwnerReferences(ownerReferences []metav1.OwnerReference) err
 		return fmt.Errorf("unexpected number of owner references: %d", len(ownerReferences))
 	}
 	ownerReference := ownerReferences[0]
-
 	if ownerReference.Kind != "LogPipeline" {
 		return fmt.Errorf("unexpected owner reference type: %s", ownerReference.Kind)
 	}
-
 	if ownerReference.Name != "log-pipeline" {
 		return fmt.Errorf("unexpected owner reference name: %s", ownerReference.Kind)
 	}
 
-	if !*ownerReference.BlockOwnerDeletion {
-		return fmt.Errorf("owner reference does not block owner deletion")
-	}
 	return nil
 }
