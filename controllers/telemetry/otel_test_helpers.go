@@ -44,7 +44,7 @@ func validateCollectorConfig(configData string) error {
 }
 
 func validateSecret(secret corev1.Secret, expectedUsername, expectedPassword string) error {
-	authHeader := secret.Data["BASIC_AUTH_HEADER"]
+	authHeader := secret.Data["BASIC_AUTH_HEADER_DUMMY"]
 	if authHeader == nil {
 		return fmt.Errorf("the key 'Authorization' is not in secret '%s'", secret.Name)
 	}

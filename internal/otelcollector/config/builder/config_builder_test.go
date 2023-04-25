@@ -47,13 +47,13 @@ func TestMakeExporterConfig(t *testing.T) {
 	require.NotNil(t, exporterConfig)
 	require.NotNil(t, envVars)
 
-	require.NotNil(t, envVars["OTLP_ENDPOINT"])
-	require.Equal(t, envVars["OTLP_ENDPOINT"], []byte("otlp-endpoint"))
+	require.NotNil(t, envVars["OTLP_ENDPOINT_TEST"])
+	require.Equal(t, envVars["OTLP_ENDPOINT_TEST"], []byte("otlp-endpoint"))
 
 	require.Contains(t, exporterConfig, "otlp/test")
 	otlpExporterConfig := exporterConfig["otlp/test"]
 
-	require.Equal(t, "${OTLP_ENDPOINT}", otlpExporterConfig.Endpoint)
+	require.Equal(t, "${OTLP_ENDPOINT_TEST}", otlpExporterConfig.Endpoint)
 	require.True(t, otlpExporterConfig.SendingQueue.Enabled)
 	require.Equal(t, 512, otlpExporterConfig.SendingQueue.QueueSize)
 
@@ -90,7 +90,7 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 	require.Contains(t, exporterConfig, "otlp/test")
 	otlpExporterConfig := exporterConfig["otlp/test"]
 	require.Equal(t, 1, len(otlpExporterConfig.Headers))
-	require.Equal(t, "${HEADER_AUTHORIZATION}", otlpExporterConfig.Headers["Authorization"])
+	require.Equal(t, "${HEADER_TEST_AUTHORIZATION}", otlpExporterConfig.Headers["Authorization"])
 }
 
 func TestMakeExtensionConfig(t *testing.T) {

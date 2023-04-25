@@ -116,7 +116,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
-	collectorConfig, envVars, err := makeOtelCollectorConfig(ctx, r, pipeline)
+	var metricPipelineList telemetryv1alpha1.MetricPipelineList
+	if err = r.List(ctx, &metricPipelineList); err != nil {
+		return fmt.Errorf("failed to list metric pipelines: %w", err)
+	}
+	collectorConfig, envVars, err := makeOtelCollectorConfig(ctx, r, metricPipelineList.Items)
 	if err != nil {
 		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}

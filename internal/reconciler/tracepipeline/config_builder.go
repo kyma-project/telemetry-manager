@@ -3,6 +3,7 @@ package tracepipeline
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -11,26 +12,49 @@ import (
 	configbuilder "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
 )
 
-func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipeline *v1alpha1.TracePipeline) (*config.Config, configbuilder.EnvVars, error) {
-	output := pipeline.Spec.Output
-	exporterConfig, envVars, err := configbuilder.MakeOTLPExportersConfig(ctx, c, output.Otlp, pipeline.Name)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to make exporter config: %v", err)
+func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.TracePipeline) (*config.Config, configbuilder.EnvVars, error) {
+	allVars := make(configbuilder.EnvVars)
+	exportersConfig := make(config.ExportersConfig)
+	pipelineConfigs := make(map[string]config.PipelineConfig)
+
+	for _, pipeline := range pipelines {
+		if pipeline.DeletionTimestamp != nil {
+			continue
+		}
+
+		output := pipeline.Spec.Output
+		exporterConfig, envVars, err := configbuilder.MakeOTLPExportersConfig(ctx, c, output.Otlp, pipeline.Name)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to make exporter config: %v", err)
+		}
+
+		var outputAliases []string
+		for k, v := range exporterConfig {
+			exportersConfig[k] = v
+			outputAliases = append(outputAliases, k)
+		}
+		sort.Strings(outputAliases)
+		pipelineConfig := makePipelineConfig(outputAliases)
+		pipelineName := fmt.Sprintf("traces/%s", pipeline.Name)
+		pipelineConfigs[pipelineName] = pipelineConfig
+
+		for k, v := range envVars {
+			allVars[k] = v
+		}
 	}
 
-	outputAliases := configbuilder.GetExporterAliases(exporterConfig)
 	receiverConfig := makeReceiversConfig()
 	processorsConfig := makeProcessorsConfig()
-	serviceConfig := makeServiceConfig(outputAliases)
+	serviceConfig := makeServiceConfig(pipelineConfigs)
 	extensionConfig := configbuilder.MakeExtensionsConfig()
 
 	return &config.Config{
-		Exporters:  exporterConfig,
+		Exporters:  exportersConfig,
 		Receivers:  receiverConfig,
 		Processors: processorsConfig,
 		Service:    serviceConfig,
 		Extensions: extensionConfig,
-	}, envVars, nil
+	}, allVars, nil
 }
 
 func makeReceiversConfig() config.ReceiversConfig {
@@ -139,14 +163,15 @@ func makeSpanFilterConfig() []string {
 	}
 }
 
-func makeServiceConfig(outputAliases []string) config.ServiceConfig {
-	pipelines := map[string]config.PipelineConfig{
-		"traces": {
-			Receivers:  []string{"opencensus", "otlp"},
-			Processors: []string{"memory_limiter", "k8sattributes", "filter", "resource", "batch"},
-			Exporters:  outputAliases,
-		},
+func makePipelineConfig(outputAliases []string) config.PipelineConfig {
+	return config.PipelineConfig{
+		Receivers:  []string{"opencensus", "otlp"},
+		Processors: []string{"memory_limiter", "k8sattributes", "filter", "resource", "batch"},
+		Exporters:  outputAliases,
 	}
+}
+
+func makeServiceConfig(pipelines map[string]config.PipelineConfig) config.ServiceConfig {
 	return config.ServiceConfig{
 		Pipelines: pipelines,
 		Telemetry: config.TelemetryConfig{
