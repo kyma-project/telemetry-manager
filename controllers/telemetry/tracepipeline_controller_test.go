@@ -340,8 +340,5 @@ func validateTracingOwnerReferences(ownerReferences []metav1.OwnerReference) err
 		return fmt.Errorf("unexpected owner reference name: %s", ownerReference.Kind)
 	}
 
-	if !*ownerReference.BlockOwnerDeletion {
-		return fmt.Errorf("owner reference does not block owner deletion")
-	}
 	return nil
 }
