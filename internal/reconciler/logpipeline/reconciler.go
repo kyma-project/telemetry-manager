@@ -21,13 +21,11 @@ import (
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
@@ -153,110 +151,78 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.NamespacedName, pipeline *telemetryv1alpha1.LogPipeline, checksum string) error {
-	shouldDeleteFluentBit, err := r.isLastPipelineMarkedForDeletion(ctx, pipeline)
-	if err != nil {
-		return fmt.Errorf("failed to check if LogPipeline is last marked for deletion: %v", err)
-	}
-
-	if shouldDeleteFluentBit {
-		return deleteFluentBit(ctx, r, name)
-	}
-
 	serviceAccount := commonresources.MakeServiceAccount(name)
-	if err = utils.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create fluent bit service account: %w", err)
 	}
+
 	clusterRole := commonresources.MakeClusterRole(name)
-	if err = utils.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
 		return fmt.Errorf("failed to create fluent bit cluster role: %w", err)
 	}
+
 	clusterRoleBinding := commonresources.MakeClusterRoleBinding(name)
-	if err = utils.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
 		return fmt.Errorf("failed to create fluent bit cluster role Binding: %w", err)
 	}
+
 	daemonSet := resources.MakeDaemonSet(name, checksum, r.config.DaemonSetConfig)
-	if err = utils.CreateOrUpdateDaemonSet(ctx, r, daemonSet); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, daemonSet, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateDaemonSet(ctx, r, daemonSet); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit daemonset: %w", err)
 	}
+
 	exporterMetricsService := resources.MakeExporterMetricsService(name)
-	if err = utils.CreateOrUpdateService(ctx, r, exporterMetricsService); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, exporterMetricsService, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateService(ctx, r, exporterMetricsService); err != nil {
 		return fmt.Errorf("failed to reconcile exporter metrics service: %w", err)
 	}
+
 	metricsService := resources.MakeMetricsService(name)
-	if err = utils.CreateOrUpdateService(ctx, r, metricsService); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, metricsService, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateService(ctx, r, metricsService); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
+
 	cm := resources.MakeConfigMap(name)
-	if err = utils.CreateOrUpdateConfigMap(ctx, r, cm); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, cm, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateConfigMap(ctx, r, cm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit configmap: %w", err)
 	}
+
 	luaCm := resources.MakeLuaConfigMap(name)
-	if err = utils.CreateOrUpdateConfigMap(ctx, r, luaCm); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, luaCm, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateConfigMap(ctx, r, luaCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit lua configmap: %w", err)
 	}
+
 	parsersCm := resources.MakeDynamicParserConfigmap(name)
-	if err = utils.CreateIfNotExistsConfigMap(ctx, r, parsersCm); err != nil {
+	if err := controllerutil.SetOwnerReference(pipeline, parsersCm, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateIfNotExistsConfigMap(ctx, r, parsersCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit parser configmap: %w", err)
 	}
 	return nil
-}
-
-func deleteFluentBit(ctx context.Context, c client.Client, name types.NamespacedName) error {
-	if err := deleteResource(ctx, c, name, &appsv1.DaemonSet{}); err != nil {
-		return fmt.Errorf("unable to delete daemonset %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &corev1.Service{}); err != nil {
-		return fmt.Errorf("unable to delete service %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &corev1.ConfigMap{}); err != nil {
-		return fmt.Errorf("unable to delete configmap %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &corev1.ServiceAccount{}); err != nil {
-		return fmt.Errorf("unable to delete service account %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &rbacv1.ClusterRoleBinding{}); err != nil {
-		return fmt.Errorf("unable to delete cluster role binding %s: %v", name.Name, err)
-	}
-
-	if err := deleteResource(ctx, c, name, &rbacv1.ClusterRole{}); err != nil {
-		return fmt.Errorf("unable to delete cluster role %s: %v", name.Name, err)
-	}
-
-	name.Name = fmt.Sprintf("%s-luascripts", name.Name)
-	if err := deleteResource(ctx, c, name, &corev1.ConfigMap{}); err != nil {
-		return fmt.Errorf("unable to delete configmap %s: %v", name.Name, err)
-	}
-
-	return nil
-}
-
-func deleteResource(ctx context.Context, c client.Client, name client.ObjectKey, obj client.Object) error {
-	err := c.Get(ctx, name, obj)
-	if err == nil {
-		if err = c.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
-			return err
-		}
-	} else if !apierrors.IsNotFound(err) {
-		return err
-	}
-	return nil
-}
-
-func (r *Reconciler) isLastPipelineMarkedForDeletion(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (bool, error) {
-	if isNotMarkedForDeletion(pipeline) {
-		return false, nil
-	}
-
-	var allPipelines telemetryv1alpha1.LogPipelineList
-	if err := r.List(ctx, &allPipelines); err != nil {
-		return false, fmt.Errorf("failed to list LogPipelines: %v", err)
-	}
-
-	return len(allPipelines.Items) == 1 && allPipelines.Items[0].Name == pipeline.Name, nil
 }
 
 func (r *Reconciler) updateMetrics(ctx context.Context) error {

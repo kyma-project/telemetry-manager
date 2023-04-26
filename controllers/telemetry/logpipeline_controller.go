@@ -22,6 +22,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -61,14 +62,39 @@ func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&telemetryv1alpha1.LogPipeline{}).
 		Watches(
+			&source.Kind{Type: &appsv1.DaemonSet{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &corev1.Service{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &corev1.ConfigMap{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &corev1.ServiceAccount{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &rbacv1.ClusterRole{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &rbacv1.ClusterRoleBinding{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.LogPipeline{},
+				IsController: false}).
+		Watches(
 			&source.Kind{Type: &corev1.Secret{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
 			builder.WithPredicates(setup.CreateOrUpdate()),
-		).
-		Watches(
-			&source.Kind{Type: &appsv1.DaemonSet{}},
-			handler.EnqueueRequestsFromMapFunc(r.mapDaemonSet),
-			builder.WithPredicates(setup.DeleteOrUpdate()),
 		).
 		Complete(r)
 }
@@ -96,30 +122,5 @@ func (r *LogPipelineReconciler) mapSecret(object client.Object) []reconcile.Requ
 			ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
 		}
 	}
-	return requests
-}
-
-func (r *LogPipelineReconciler) mapDaemonSet(object client.Object) []reconcile.Request {
-	var requests []reconcile.Request
-	daemonSet, ok := object.(*appsv1.DaemonSet)
-	if !ok {
-		ctrl.Log.V(1).Error(errIncorrectDaemonSetObject, "DaemonSet object of incompatible type")
-		return requests
-	}
-
-	if daemonSet.Name != r.config.DaemonSet.Name || daemonSet.Namespace != r.config.DaemonSet.Namespace {
-		return requests
-	}
-
-	var allPipelines telemetryv1alpha1.LogPipelineList
-	if err := r.List(context.Background(), &allPipelines); err != nil {
-		ctrl.Log.Error(err, "DaemonSet UpdateEvent: fetching LogPipelineList failed!", err.Error())
-		return requests
-	}
-
-	for _, pipeline := range allPipelines.Items {
-		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-	}
-	ctrl.Log.V(1).Info(fmt.Sprintf("DaemonSet changed event handling done: Created %d new reconciliation requests.\n", len(requests)))
 	return requests
 }
