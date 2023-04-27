@@ -19,7 +19,7 @@ var _ = Describe("Telemetry-manager", func() {
 		It("Should have kyma-system namespace", func() {
 			var namespace corev1.Namespace
 			key := types.NamespacedName{
-				Name: kymaSystemNamespace,
+				Name: kymaSystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &namespace)
 			Expect(err).NotTo(HaveOccurred())
@@ -29,7 +29,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var deployment appsv1.Deployment
 			key := types.NamespacedName{
 				Name:      "telemetry-controller-manager",
-				Namespace: kymaSystemNamespace,
+				Namespace: kymaSystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &deployment)
 			Expect(err).NotTo(HaveOccurred())
@@ -37,7 +37,7 @@ var _ = Describe("Telemetry-manager", func() {
 			Eventually(func() bool {
 				listOptions := client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels),
-					Namespace:     kymaSystemNamespace,
+					Namespace:     kymaSystemNamespaceName,
 				}
 				var pods corev1.PodList
 				err := k8sClient.List(ctx, &pods, &listOptions)
@@ -58,7 +58,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var service corev1.Service
 			key := types.NamespacedName{
 				Name:      "telemetry-operator-webhook",
-				Namespace: kymaSystemNamespace,
+				Namespace: kymaSystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &service)
 			Expect(err).NotTo(HaveOccurred())
@@ -76,7 +76,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var service corev1.Service
 			key := types.NamespacedName{
 				Name:      "telemetry-controller-manager-metrics-service",
-				Namespace: kymaSystemNamespace,
+				Namespace: kymaSystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &service)
 			Expect(err).NotTo(HaveOccurred())
@@ -108,7 +108,7 @@ var _ = Describe("Telemetry-manager", func() {
 			Expect(logPipelineWebhook.Name).Should(Equal("validation.logpipelines.telemetry.kyma-project.io"))
 			Expect(logPipelineWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
 			Expect(logPipelineWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-operator-webhook"))
-			Expect(logPipelineWebhook.ClientConfig.Service.Namespace).Should(Equal(kymaSystemNamespace))
+			Expect(logPipelineWebhook.ClientConfig.Service.Namespace).Should(Equal(kymaSystemNamespaceName))
 			Expect(*logPipelineWebhook.ClientConfig.Service.Port).Should(Equal(int32(443)))
 			Expect(*logPipelineWebhook.ClientConfig.Service.Path).Should(Equal("/validate-logpipeline"))
 			Expect(logPipelineWebhook.Rules).Should(HaveLen(1))
@@ -120,7 +120,7 @@ var _ = Describe("Telemetry-manager", func() {
 			Expect(logParserWebhook.Name).Should(Equal("validation.logparsers.telemetry.kyma-project.io"))
 			Expect(logParserWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
 			Expect(logParserWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-operator-webhook"))
-			Expect(logParserWebhook.ClientConfig.Service.Namespace).Should(Equal(kymaSystemNamespace))
+			Expect(logParserWebhook.ClientConfig.Service.Namespace).Should(Equal(kymaSystemNamespaceName))
 			Expect(*logParserWebhook.ClientConfig.Service.Port).Should(Equal(int32(443)))
 			Expect(*logParserWebhook.ClientConfig.Service.Path).Should(Equal("/validate-logparser"))
 			Expect(logParserWebhook.Rules).Should(HaveLen(1))

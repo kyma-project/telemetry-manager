@@ -9,8 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -19,18 +18,18 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	kittrace "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/trace"
+	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
-	kittraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/traces"
+	kitmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
 )
 
 var (
-	traceCollectorBaseName = "telemetry-trace-collector"
+	metricGatewayBaseName = "telemetry-metric-gateway"
 )
 
-var _ = Describe("Tracing", func() {
-	Context("When a tracepipeline exists", Ordered, func() {
+var _ = Describe("Metrics", func() {
+	Context("When a metricpipeline exists", Ordered, func() {
 		var (
 			portRegistry = testkit.NewPortRegistry().
 					AddServicePort("http-otlp", 4318).
@@ -38,13 +37,13 @@ var _ = Describe("Tracing", func() {
 					AddPortMapping("http-metrics", 8888, 30088, 8888).
 					AddPortMapping("http-web", 80, 30090, 9090)
 
-			otlpPushURL               = fmt.Sprintf("grpc://localhost:%d", portRegistry.HostPort("grpc-otlp"))
-			metricsURL                = fmt.Sprintf("http://localhost:%d/metrics", portRegistry.HostPort("http-metrics"))
-			mockBackendTraceExportURL = fmt.Sprintf("http://localhost:%d/%s", portRegistry.HostPort("http-web"), telemetryDataFilename)
+			otlpPushURL                 = fmt.Sprintf("grpc://localhost:%d", portRegistry.HostPort("grpc-otlp"))
+			metricsURL                  = fmt.Sprintf("http://localhost:%d/metrics", portRegistry.HostPort("http-metrics"))
+			mockBackendMetricsExportURL = fmt.Sprintf("http://localhost:%d/%s", portRegistry.HostPort("http-web"), telemetryDataFilename)
 		)
 
 		BeforeAll(func() {
-			k8sObjects := makeTracingTestK8sObjects(portRegistry)
+			k8sObjects := makeMetricsTestK8sObjects(portRegistry)
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -52,10 +51,10 @@ var _ = Describe("Tracing", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running trace collector deployment", func() {
+		It("Should have a running metric gateway deployment", func() {
 			Eventually(func(g Gomega) bool {
 				var deployment appsv1.Deployment
-				key := types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
+				key := types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
 				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
 
 				listOptions := client.ListOptions{
@@ -76,7 +75,7 @@ var _ = Describe("Tracing", func() {
 			}, timeout, interval).Should(BeTrue())
 		})
 
-		It("Should be able to get trace collector metrics endpoint", func() {
+		It("Should be able to get metric gateway metrics endpoint", func() {
 			Eventually(func(g Gomega) {
 				resp, err := http.Get(metricsURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -84,36 +83,29 @@ var _ = Describe("Tracing", func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should verify end-to-end trace delivery", func() {
-			traceID := kittraces.NewTraceID()
-			var spanIDs []pcommon.SpanID
-			for i := 0; i < 100; i++ {
-				spanIDs = append(spanIDs, kittraces.NewSpanID())
+		It("Should verify end-to-end metric delivery", func() {
+			builder := kitmetrics.NewBuilder()
+			var gauges []pmetric.Metric
+			for i := 0; i < 50; i++ {
+				gauge := kitmetrics.NewGauge()
+				gauges = append(gauges, gauge)
+				builder.WithMetric(gauge)
 			}
-			attrs := pcommon.NewMap()
-			attrs.PutStr("attrA", "chocolate")
-			attrs.PutStr("attrB", "raspberry")
-			attrs.PutStr("attrC", "vanilla")
-
-			traces := kittraces.MakeTraces(traceID, spanIDs, attrs)
-
-			sendTraces(context.Background(), traces, otlpPushURL)
+			sendMetrics(context.Background(), builder.Build(), otlpPushURL)
 
 			Eventually(func(g Gomega) {
-				resp, err := http.Get(mockBackendTraceExportURL)
+				resp, err := http.Get(mockBackendMetricsExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ConsistOfSpansWithIDs(spanIDs),
-					ConsistOfSpansWithTraceID(traceID),
-					ConsistOfSpansWithAttributes(attrs))))
+					HaveMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
 })
 
-// makeTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry) []client.Object {
+// makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
+func makeMetricsTestK8sObjects(portRegistry testkit.PortRegistry) []client.Object {
 	var (
 		grpcOTLPPort        = portRegistry.ServicePort("grpc-otlp")
 		grpcOTLPNodePort    = portRegistry.NodePort("grpc-otlp")
@@ -124,10 +116,10 @@ func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry) []client.Objec
 		httpWebNodePort     = portRegistry.NodePort("http-web")
 	)
 
-	//// Mocks namespace objects.
-	mocksNamespace := kitk8s.NewNamespace("trace-mocks")
-	mockBackend := mocks.NewBackend("trace-receiver", mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
-	mockBackendConfigMap := mockBackend.ConfigMap("trace-receiver-config")
+	// Mocks namespace objects.
+	mocksNamespace := kitk8s.NewNamespace("metric-mocks")
+	mockBackend := mocks.NewBackend("metric-receiver", mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
+	mockBackendConfigMap := mockBackend.ConfigMap("metric-receiver-config")
 	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
@@ -136,11 +128,11 @@ func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry) []client.Objec
 
 	// Default namespace objects.
 	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
-	hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("trace-host", otlpEndpointURL))
-	tracePipeline := kittrace.NewPipeline("test", hostSecret.SecretKeyRef("trace-host"))
+	hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
+	metricPipeline := kitmetric.NewPipeline("test", hostSecret.SecretKeyRef("metric-host"))
 
 	// Kyma-system namespace objects.
-	traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kymaSystemNamespaceName).
+	metricGatewayExternalService := kitk8s.NewService("telemetry-otlp-metrics-external", kymaSystemNamespaceName).
 		WithPortMapping("grpc-otlp", grpcOTLPPort, grpcOTLPNodePort).
 		WithPortMapping("http-metrics", httpMetricsPort, httpMetricsNodePort)
 
@@ -150,17 +142,17 @@ func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry) []client.Objec
 		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		hostSecret.K8sObject(),
-		tracePipeline.K8sObject(),
-		traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", traceCollectorBaseName)),
+		metricPipeline.K8sObject(),
+		metricGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", metricGatewayBaseName)),
 	}
 }
 
-func sendTraces(ctx context.Context, traces ptrace.Traces, otlpPushURL string) {
+func sendMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL string) {
 	Eventually(func(g Gomega) {
-		sender, err := kittraces.NewDataSender(otlpPushURL)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(sender.Start()).Should(Succeed())
-		Expect(sender.ConsumeTraces(ctx, traces)).Should(Succeed())
+		sender, err := kitmetrics.NewDataSender(otlpPushURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(sender.Start()).Should(Succeed())
+		g.Expect(sender.ConsumeMetrics(ctx, metrics)).Should(Succeed())
 		sender.Flush()
 	}, timeout, interval).Should(Succeed())
 }

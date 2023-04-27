@@ -1,6 +1,6 @@
 //go:build e2e
 
-package traces
+package mocks
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
@@ -13,22 +13,24 @@ import (
 )
 
 const (
-	replicas       = 1
-	containerImage = "otel/opentelemetry-collector-contrib:0.70.0"
-	nginxImage     = "nginx:1.23.3"
+	replicas           = 1
+	otelCollectorImage = "otel/opentelemetry-collector-contrib:0.75.0"
+	nginxImage         = "nginx:1.23.3"
 )
 
 type BackendDeployment struct {
 	name          string
 	namespace     string
 	configmapName string
+	dataPath      string
 }
 
-func NewBackendDeployment(name, namespace, configmapName string) *BackendDeployment {
+func NewBackendDeployment(name, namespace, configmapName, dataPath string) *BackendDeployment {
 	return &BackendDeployment{
 		name:          name,
 		namespace:     namespace,
 		configmapName: configmapName,
+		dataPath:      dataPath,
 	}
 }
 
@@ -52,14 +54,14 @@ func (d *BackendDeployment) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Depl
 					Containers: []corev1.Container{
 						{
 							Name:  "otel-collector",
-							Image: containerImage,
+							Image: otelCollectorImage,
 							Args:  []string{"--config=/etc/collector/config.yaml"},
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser: pointer.Int64(101),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{Name: "config", MountPath: "/etc/collector"},
-								{Name: "data", MountPath: "/traces"},
+								{Name: "data", MountPath: d.dataPath},
 							},
 						},
 						{

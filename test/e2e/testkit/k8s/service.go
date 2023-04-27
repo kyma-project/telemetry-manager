@@ -1,6 +1,6 @@
 //go:build e2e
 
-package traces
+package k8s
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -8,35 +8,30 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 )
 
-type ExternalBackendService struct {
+type Service struct {
+	testkit.PortRegistry
+
 	name      string
 	namespace string
-	testkit.PortRegistry
 }
 
-func NewExternalBackendService(name, namespace string) *ExternalBackendService {
-	return &ExternalBackendService{
+func NewService(name, namespace string) *Service {
+	return &Service{
 		name:         name,
 		namespace:    namespace,
 		PortRegistry: testkit.NewPortRegistry(),
 	}
 }
 
-func (s *ExternalBackendService) WithPort(name string, port int32) *ExternalBackendService {
-	s.PortRegistry.AddServicePort(name, port)
-	return s
-}
-
-func (s *ExternalBackendService) WithPortMapping(name string, port, nodePort int32) *ExternalBackendService {
+func (s *Service) WithPortMapping(name string, port, nodePort int32) *Service {
 	s.PortRegistry.AddPortMapping(name, port, nodePort, 0)
 	return s
 }
 
-func (s *ExternalBackendService) K8sObject(labelOpts ...testkit.OptFunc) *corev1.Service {
-	labels := k8s.ProcessLabelOptions(labelOpts...)
+func (s *Service) K8sObject(labelOpts ...testkit.OptFunc) *corev1.Service {
+	labels := ProcessLabelOptions(labelOpts...)
 
 	ports := make([]corev1.ServicePort, 0)
 	for name, mapping := range s.PortRegistry.Ports {

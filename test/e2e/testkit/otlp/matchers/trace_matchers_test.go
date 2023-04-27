@@ -1,19 +1,15 @@
-package otelmatchers
+//go:build e2e
+
+package matchers
 
 import (
 	"os"
-	"testing"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestCustomMatcher(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Custom Matcher Suite")
-}
 
 var _ = Describe("ConsistOfSpansWithIDs", func() {
 	var fileBytes []byte
