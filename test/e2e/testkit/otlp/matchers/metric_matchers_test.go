@@ -15,43 +15,33 @@ import (
 
 var _ = Describe("HaveGauges", func() {
 	var fileBytes []byte
-	var expectedGauges []pmetric.Gauge
+	var expectedMetrics []pmetric.Metric
 
 	BeforeEach(func() {
+		m1 := pmetric.NewMetric()
+		m1.SetName("room_temperature")
 		ts1 := pcommon.NewTimestampFromTime(time.Unix(0, 1682438376750990000))
-		gauge1 := pmetric.NewGauge()
+		gauge1 := m1.SetEmptyGauge()
 		dp11 := gauge1.DataPoints().AppendEmpty()
 		dp11.SetTimestamp(ts1)
 		dp11.SetStartTimestamp(ts1)
 		dp11.SetDoubleValue(0.5)
 
+		m2 := pmetric.NewMetric()
+		m2.SetName("room_humidity")
 		ts2 := pcommon.NewTimestampFromTime(time.Unix(0, 1682438376750991000))
-		gauge2 := pmetric.NewGauge()
+		gauge2 := m2.SetEmptyGauge()
 		dp21 := gauge2.DataPoints().AppendEmpty()
 		dp21.SetTimestamp(ts2)
 		dp21.SetStartTimestamp(ts2)
 		dp21.SetDoubleValue(3.5)
 
-		expectedGauges = []pmetric.Gauge{gauge1, gauge2}
-
-		var marshaler pmetric.JSONMarshaler
-		md := pmetric.NewMetrics()
-		metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
-		m1 := metrics.AppendEmpty()
-		m1.SetName("room_temperature")
-		gauge1.CopyTo(m1.SetEmptyGauge())
-
-		m2 := metrics.AppendEmpty()
-		m2.SetName("room_humidity")
-		gauge2.CopyTo(m2.SetEmptyGauge())
-
-		json, _ := marshaler.MarshalMetrics(md)
-		os.WriteFile("testdata/have_gauges/full_match.jsonl", json, 0666)
+		expectedMetrics = []pmetric.Metric{m1, m2}
 	})
 
 	Context("with nil input", func() {
 		It("should error", func() {
-			success, err := HaveGauges(expectedGauges...).Match(nil)
+			success, err := HaveMetrics(expectedMetrics...).Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -59,7 +49,7 @@ var _ = Describe("HaveGauges", func() {
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			success, err := HaveGauges(expectedGauges...).Match(struct{}{})
+			success, err := HaveMetrics(expectedMetrics...).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -67,43 +57,43 @@ var _ = Describe("HaveGauges", func() {
 
 	Context("with empty input", func() {
 		It("should fail", func() {
-			Expect([]byte{}).ShouldNot(HaveGauges(expectedGauges...))
+			Expect([]byte{}).ShouldNot(HaveMetrics(expectedMetrics...))
 		})
 	})
 
-	//Context("with no spans matching the span IDs", func() {
-	//	BeforeEach(func() {
-	//		var err error
-	//		fileBytes, err = os.ReadFile("testdata/have_gauges/no_match.jsonl")
-	//		Expect(err).NotTo(HaveOccurred())
-	//	})
-	//
-	//	It("should fail", func() {
-	//		Expect(fileBytes).ShouldNot(HaveGauges(expectedGauges...))
-	//	})
-	//})
-	//
-	//Context("with some spans matching the span IDs", func() {
-	//	BeforeEach(func() {
-	//		var err error
-	//		fileBytes, err = os.ReadFile("testdata/have_gauges/partial_match.jsonl")
-	//		Expect(err).NotTo(HaveOccurred())
-	//	})
-	//
-	//	It("should fail", func() {
-	//		Expect(fileBytes).ShouldNot(HaveGauges(expectedGauges...))
-	//	})
-	//})
-
-	Context("with all spans matching the span IDs", func() {
+	Context("with no metrics matching the expecting metrics", func() {
 		BeforeEach(func() {
 			var err error
-			fileBytes, err = os.ReadFile("testdata/have_gauges/full_match.jsonl")
+			fileBytes, err = os.ReadFile("testdata/have_metrics/no_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail", func() {
+			Expect(fileBytes).ShouldNot(HaveMetrics(expectedMetrics...))
+		})
+	})
+
+	Context("with some metrics matching the expecting metrics", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/have_metrics/partial_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail", func() {
+			Expect(fileBytes).ShouldNot(HaveMetrics(expectedMetrics...))
+		})
+	})
+
+	Context("with all metrics matching the expecting metrics", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/have_metrics/full_match.jsonl")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should succeed", func() {
-			Expect(fileBytes).Should(HaveGauges(expectedGauges...))
+			Expect(fileBytes).Should(HaveMetrics(expectedMetrics...))
 		})
 	})
 
@@ -113,7 +103,7 @@ var _ = Describe("HaveGauges", func() {
 		})
 
 		It("should error", func() {
-			success, err := HaveGauges(expectedGauges...).Match(fileBytes)
+			success, err := HaveMetrics(expectedMetrics...).Match(fileBytes)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})

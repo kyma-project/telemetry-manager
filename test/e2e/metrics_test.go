@@ -76,11 +76,11 @@ var _ = Describe("Metrics", func() {
 
 		It("Should verify end-to-end metric delivery", func() {
 			builder := kitmetrics.NewBuilder()
-			var gauges []pmetric.Gauge
+			var gauges []pmetric.Metric
 			for i := 0; i < 50; i++ {
 				gauge := kitmetrics.NewGauge()
 				gauges = append(gauges, gauge)
-				builder.WithGauge(gauge)
+				builder.WithMetric(gauge)
 			}
 			sendMetrics(context.Background(), builder.Build(), otlpPushURL)
 
@@ -89,7 +89,7 @@ var _ = Describe("Metrics", func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveGauges(gauges...))))
+					HaveMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})

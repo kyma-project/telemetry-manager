@@ -22,31 +22,9 @@ func NewBuilder() *Builder {
 	return &Builder{}
 }
 
-type MetricOption = func(pmetric.Metric)
-
-func WithName(name string) MetricOption {
-	return func(m pmetric.Metric) {
-		m.SetName(name)
-	}
-}
-
-func (b *Builder) WithGauge(gauge pmetric.Gauge, opts ...MetricOption) *Builder {
-	m := pmetric.NewMetric()
-	setMetricDefaults(m)
-
-	gauge.CopyTo(m.SetEmptyGauge())
-	for _, opt := range opts {
-		opt(m)
-	}
-
+func (b *Builder) WithMetric(m pmetric.Metric) *Builder {
 	b.metrics = append(b.metrics, m)
 	return b
-}
-
-func setMetricDefaults(m pmetric.Metric) {
-	m.SetName("dummy_gauge")
-	m.SetDescription("Dummy gauge")
-	m.SetUnit("ms")
 }
 
 func (b *Builder) Build() pmetric.Metrics {
@@ -58,12 +36,26 @@ func (b *Builder) Build() pmetric.Metrics {
 	return md
 }
 
-func NewGauge() pmetric.Gauge {
+type MetricOption = func(pmetric.Metric)
+
+func WithName(name string) MetricOption {
+	return func(m pmetric.Metric) {
+		m.SetName(name)
+	}
+}
+
+func NewGauge(opts ...MetricOption) pmetric.Metric {
 	totalAttributes := 7
 	totalPts := 2
 	startTime := time.Now()
 
-	gauge := pmetric.NewGauge()
+	m := pmetric.NewMetric()
+	setMetricDefaults(m)
+	for _, opt := range opts {
+		opt(m)
+	}
+
+	gauge := m.SetEmptyGauge()
 	pts := gauge.DataPoints()
 	for i := 0; i < totalPts; i++ {
 		pt := pts.AppendEmpty()
@@ -78,23 +70,29 @@ func NewGauge() pmetric.Gauge {
 		}
 	}
 
-	return gauge
+	return m
 }
 
-func AllGauges(md pmetric.Metrics) []pmetric.Gauge {
-	var gauges []pmetric.Gauge
+func setMetricDefaults(m pmetric.Metric) {
+	m.SetName("dummy_gauge")
+	m.SetDescription("Dummy gauge")
+	m.SetUnit("ms")
+}
+
+func AllMetrics(md pmetric.Metrics) []pmetric.Metric {
+	var metrics []pmetric.Metric
 
 	for i := 0; i < md.ResourceMetrics().Len(); i++ {
 		resourceMetrics := md.ResourceMetrics().At(i)
 		for j := 0; j < resourceMetrics.ScopeMetrics().Len(); j++ {
 			scopeMetrics := resourceMetrics.ScopeMetrics().At(j)
 			for k := 0; k < scopeMetrics.Metrics().Len(); k++ {
-				gauges = append(gauges, scopeMetrics.Metrics().At(k).Gauge())
+				metrics = append(metrics, scopeMetrics.Metrics().At(k))
 			}
 		}
 	}
 
-	return gauges
+	return metrics
 }
 
 func NewDataSender(otlpPushURL string) (testbed.MetricDataSender, error) {
