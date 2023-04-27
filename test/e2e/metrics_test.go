@@ -38,6 +38,7 @@ var _ = Describe("Metrics", func() {
 					AddPortMapping("http-web", 80, 30090, 9090)
 
 			otlpPushURL                 = fmt.Sprintf("grpc://localhost:%d", portRegistry.HostPort("grpc-otlp"))
+			metricsURL                  = fmt.Sprintf("http://localhost:%d/metrics", portRegistry.HostPort("http-metrics"))
 			mockBackendMetricsExportURL = fmt.Sprintf("http://localhost:%d/%s", portRegistry.HostPort("http-web"), telemetryDataFilename)
 		)
 
@@ -72,6 +73,14 @@ var _ = Describe("Metrics", func() {
 
 				return true
 			}, timeout, interval).Should(BeTrue())
+		})
+
+		It("Should be able to get metric gateway metrics endpoint", func() {
+			Eventually(func(g Gomega) {
+				resp, err := http.Get(metricsURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should verify end-to-end metric delivery", func() {
