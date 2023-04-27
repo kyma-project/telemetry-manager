@@ -1,8 +1,10 @@
 //go:build e2e
 
-package traces
+package mocks
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -12,9 +14,10 @@ import (
 )
 
 type ExternalBackendService struct {
+	testkit.PortRegistry
+
 	name      string
 	namespace string
-	testkit.PortRegistry
 }
 
 func NewExternalBackendService(name, namespace string) *ExternalBackendService {
@@ -23,6 +26,10 @@ func NewExternalBackendService(name, namespace string) *ExternalBackendService {
 		namespace:    namespace,
 		PortRegistry: testkit.NewPortRegistry(),
 	}
+}
+
+func (s *ExternalBackendService) OTLPEndpointURL(port int32) string {
+	return fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", s.name, s.namespace, port)
 }
 
 func (s *ExternalBackendService) WithPort(name string, port int32) *ExternalBackendService {

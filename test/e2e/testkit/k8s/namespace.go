@@ -17,6 +17,10 @@ func NewNamespace(name string) *Namespace {
 	}
 }
 
+func (n *Namespace) Name() string {
+	return n.name
+}
+
 func (n *Namespace) K8sObject() *corev1.Namespace {
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

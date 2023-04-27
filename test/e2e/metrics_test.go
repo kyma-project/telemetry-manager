@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
-	mocksmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks/metrics"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
 )
@@ -37,9 +37,8 @@ var _ = Describe("Metrics", func() {
 					AddPortMapping("http-metrics", 8888, 30088, 8888).
 					AddPortMapping("http-web", 80, 30090, 9090)
 
-			otlpPushURL = fmt.Sprintf("grpc://localhost:%d", portRegistry.HostPort("grpc-otlp"))
-			//metricsURL                  = fmt.Sprintf("http://localhost:%d/metrics", portRegistry.HostPort("http-metrics"))
-			mockBackendMetricsExportURL = fmt.Sprintf("http://localhost:%d/otlp-data.jsonl", portRegistry.HostPort("http-web"))
+			otlpPushURL                 = fmt.Sprintf("grpc://localhost:%d", portRegistry.HostPort("grpc-otlp"))
+			mockBackendMetricsExportURL = fmt.Sprintf("http://localhost:%d/%s", portRegistry.HostPort("http-web"), telemetryDataFilename)
 		)
 
 		BeforeAll(func() {
@@ -98,17 +97,6 @@ var _ = Describe("Metrics", func() {
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
 func makeMetricsTestK8sObjects(portRegistry testkit.PortRegistry) []client.Object {
-	const (
-		pipelineName                     = "test"
-		hostSecretName                   = "metric-rcv-hostname" //nolint:gosec // Is not a hardcoded credential.
-		hostSecretNamespace              = "default"
-		hostSecretKey                    = "metric-host"
-		mockBackendName                  = "metric-receiver"
-		mocksNamespaceName               = "metric-mocks"
-		mockBackendConfigMapName         = "metric-receiver-config"
-		metricGatewayExternalServiceName = "telemetry-otlp-metrics-external"
-	)
-
 	var (
 		grpcOTLPPort        = portRegistry.ServicePort("grpc-otlp")
 		grpcOTLPNodePort    = portRegistry.NodePort("grpc-otlp")
@@ -119,28 +107,33 @@ func makeMetricsTestK8sObjects(portRegistry testkit.PortRegistry) []client.Objec
 		httpWebNodePort     = portRegistry.NodePort("http-web")
 	)
 
-	mocksNamespace := kitk8s.NewNamespace(mocksNamespaceName)
-	mockBackendConfigMap := mocksmetrics.NewBackendConfigMap(mockBackendConfigMapName, mocksNamespaceName)
-	mockBackendDeployment := mocksmetrics.NewBackendDeployment(mockBackendName, mocksNamespaceName, mockBackendConfigMapName)
-	mockBackendExternalService := mocksmetrics.NewExternalBackendService(mockBackendName, mocksNamespaceName).
+	// Mocks namespace objects.
+	mocksNamespace := kitk8s.NewNamespace("metric-mocks")
+	mockBackend := mocks.NewBackend("metric-receiver", mocksNamespace.Name(), "metrics", "/metrics/"+telemetryDataFilename)
+	mockBackendConfigMap := mockBackend.ConfigMap("metric-receiver-config")
+	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
+	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-otlp", httpOTLPPort).
 		WithPortMapping("http-web", httpWebPort, httpWebNodePort)
 
-	otlpEndpointURL := fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", mockBackendName, mocksNamespaceName, grpcOTLPPort)
-	hostSecret := kitk8s.NewOpaqueSecret(hostSecretName, hostSecretNamespace, kitk8s.WithStringData(hostSecretKey, otlpEndpointURL))
-	metricPipelineResource := kitmetric.NewPipeline(pipelineName, hostSecret.SecretKeyRef(hostSecretKey))
-	metricGatewayExternalService := kitk8s.NewService(metricGatewayExternalServiceName, kymaSystemNamespaceName).
+	// Default namespace objects.
+	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
+	hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
+	metricPipeline := kitmetric.NewPipeline("test", hostSecret.SecretKeyRef("metric-host"))
+
+	// Kyma-system namespace objects.
+	metricGatewayExternalService := kitk8s.NewService("telemetry-otlp-metrics-external", kymaSystemNamespaceName).
 		WithPortMapping("grpc-otlp", grpcOTLPPort, grpcOTLPNodePort).
 		WithPortMapping("http-metrics", httpMetricsPort, httpMetricsNodePort)
 
 	return []client.Object{
 		mocksNamespace.K8sObject(),
 		mockBackendConfigMap.K8sObject(),
-		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackendName)),
-		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackendName)),
+		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
+		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		hostSecret.K8sObject(),
-		metricPipelineResource.K8sObject(),
+		metricPipeline.K8sObject(),
 		metricGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", metricGatewayBaseName)),
 	}
 }

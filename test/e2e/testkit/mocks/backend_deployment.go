@@ -1,6 +1,6 @@
 //go:build e2e
 
-package traces
+package mocks
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
@@ -22,13 +22,15 @@ type BackendDeployment struct {
 	name          string
 	namespace     string
 	configmapName string
+	dataPath      string
 }
 
-func NewBackendDeployment(name, namespace, configmapName string) *BackendDeployment {
+func NewBackendDeployment(name, namespace, configmapName, dataPath string) *BackendDeployment {
 	return &BackendDeployment{
 		name:          name,
 		namespace:     namespace,
 		configmapName: configmapName,
+		dataPath:      dataPath,
 	}
 }
 
@@ -59,7 +61,7 @@ func (d *BackendDeployment) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Depl
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{Name: "config", MountPath: "/etc/collector"},
-								{Name: "data", MountPath: "/traces"},
+								{Name: "data", MountPath: d.dataPath},
 							},
 						},
 						{
