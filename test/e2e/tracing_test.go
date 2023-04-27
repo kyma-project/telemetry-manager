@@ -126,7 +126,7 @@ func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry) []client.Objec
 
 	//// Mocks namespace objects.
 	mocksNamespace := kitk8s.NewNamespace("trace-mocks")
-	mockBackend := mocks.NewBackend("trace-receiver", mocksNamespace.Name(), "traces", "/traces/"+telemetryDataFilename)
+	mockBackend := mocks.NewBackend("trace-receiver", mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
 	mockBackendConfigMap := mockBackend.ConfigMap("trace-receiver-config")
 	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().

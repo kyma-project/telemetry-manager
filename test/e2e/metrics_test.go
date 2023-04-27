@@ -118,7 +118,7 @@ func makeMetricsTestK8sObjects(portRegistry testkit.PortRegistry) []client.Objec
 
 	// Mocks namespace objects.
 	mocksNamespace := kitk8s.NewNamespace("metric-mocks")
-	mockBackend := mocks.NewBackend("metric-receiver", mocksNamespace.Name(), "metrics", "/metrics/"+telemetryDataFilename)
+	mockBackend := mocks.NewBackend("metric-receiver", mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
 	mockBackendConfigMap := mockBackend.ConfigMap("metric-receiver-config")
 	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().

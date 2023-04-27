@@ -7,18 +7,18 @@ import (
 )
 
 type Backend struct {
-	name         string
-	namespace    string
-	pipelineName string
-	dataPath     string
+	name             string
+	namespace        string
+	exportedFilePath string
+	signalType       SignalType
 }
 
-func NewBackend(name, namespace, pipelineName, dataPath string) *Backend {
+func NewBackend(name, namespace, exportedFilePath string, signalType SignalType) *Backend {
 	return &Backend{
-		name:         name,
-		namespace:    namespace,
-		pipelineName: pipelineName,
-		dataPath:     dataPath,
+		name:             name,
+		namespace:        namespace,
+		exportedFilePath: exportedFilePath,
+		signalType:       signalType,
 	}
 }
 
@@ -27,11 +27,11 @@ func (b *Backend) Name() string {
 }
 
 func (b *Backend) ConfigMap(name string) *BackendConfigMap {
-	return NewBackendConfigMap(name, b.namespace, b.pipelineName, b.dataPath)
+	return NewBackendConfigMap(name, b.namespace, b.exportedFilePath, b.signalType)
 }
 
 func (b *Backend) Deployment(configMapName string) *BackendDeployment {
-	return NewBackendDeployment(b.name, b.namespace, configMapName, filepath.Dir(b.dataPath))
+	return NewBackendDeployment(b.name, b.namespace, configMapName, filepath.Dir(b.exportedFilePath))
 }
 
 func (b *Backend) ExternalService() *ExternalBackendService {

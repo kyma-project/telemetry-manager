@@ -9,19 +9,26 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type SignalType string
+
+const (
+	SignalTypeTraces  = "traces"
+	SignalTypeMetrics = "metrics"
+)
+
 type BackendConfigMap struct {
-	name      string
-	namespace string
-	path      string
-	pipeline  string
+	name             string
+	namespace        string
+	exportedFilePath string
+	signalType       SignalType
 }
 
-func NewBackendConfigMap(name, namespace, pipeline, path string) *BackendConfigMap {
+func NewBackendConfigMap(name, namespace, path string, signalType SignalType) *BackendConfigMap {
 	return &BackendConfigMap{
-		name:      name,
-		namespace: namespace,
-		path:      path,
-		pipeline:  pipeline,
+		name:             name,
+		namespace:        namespace,
+		exportedFilePath: path,
+		signalType:       signalType,
 	}
 }
 
@@ -40,7 +47,7 @@ service:
     logs:
       level: "debug"
   pipelines:
-    {{ PIPELINE_NAME }}:
+    {{ SIGNAL_TYPE }}:
       receivers:
         - otlp
       exporters:
@@ -52,8 +59,8 @@ func (cm *BackendConfigMap) Name() string {
 }
 
 func (cm *BackendConfigMap) K8sObject() *corev1.ConfigMap {
-	config := strings.Replace(configTemplate, "{{ FILEPATH }}", cm.path, 1)
-	config = strings.Replace(config, "{{ PIPELINE_NAME }}", cm.pipeline, 1)
+	config := strings.Replace(configTemplate, "{{ FILEPATH }}", cm.exportedFilePath, 1)
+	config = strings.Replace(config, "{{ SIGNAL_TYPE }}", string(cm.signalType), 1)
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
