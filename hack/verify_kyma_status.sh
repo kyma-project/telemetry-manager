@@ -7,7 +7,7 @@ function get_kyma_status () {
 		local STATUS=$(kubectl get kyma -n kyma-system default-kyma -o jsonpath='{.status.state}')
 		echo "kyma status: ${STATUS:='UNKNOWN'}"
 		[[ "$STATUS" == "Ready" ]] && return 0
-		sleep 5
+		sleep 15
         	((number = number + 1))
 	done
 

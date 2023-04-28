@@ -40,5 +40,6 @@ kyma.yaml
 template.yaml
 # fixed template generated when running 'make fix-module-template'
 template-k3d.yaml
+template-k3d-with-label.yaml
 # generated manifests
 manifests

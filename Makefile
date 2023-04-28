@@ -162,6 +162,7 @@ run-with-lm: \
 	local-manager-image \
 	create-local-module \
 	fix-module-template \
+	apply-local-template-label \
 	deploy-kyma \
 	deploy-module-template \
 	enable-module \
@@ -184,7 +185,7 @@ local-manager-image:
 		IMG=localhost:${REGISTRY_PORT}/${MODULE_NAME}-manager
 
 .PHONY: create-local-module
-create-local-module: 
+create-local-module:
 	@make create-module \
 		IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/${MODULE_NAME}-manager \
 		MODULE_REGISTRY=localhost:${REGISTRY_PORT}
@@ -201,6 +202,11 @@ fix-module-template: ## Create template-k3d.yaml based on template.yaml with rig
 		  -e 's/localhost/k3d-${REGISTRY_NAME}.localhost/g' \
 		> template-k3d.yaml
 
+.PHONY: apply-local-template-label
+apply-local-template-label: ## Apply a marker label to be read by the lifecycle manager.
+	kubectl label --local=true -f ./template-k3d.yaml operator.kyma-project.io/use-local-template=true -oyaml > template-k3d-with-label.yaml
+
+
 .PHONY: deploy-kyma
 deploy-kyma: kyma ## Deploy kyma which includes the deployment of the lifecycle-manager.
 	$(KYMA) alpha deploy \
@@ -209,7 +215,7 @@ deploy-kyma: kyma ## Deploy kyma which includes the deployment of the lifecycle-
 
 .PHONY: deploy-module-template
 deploy-module-template: ## Deploy the ModuleTemplate in the cluster.
-	kubectl apply -f template-k3d.yaml
+	kubectl apply -f template-k3d-with-label.yaml
 
 .PHONY: enable-module
 enable-module: kyma ## Enable the module.
