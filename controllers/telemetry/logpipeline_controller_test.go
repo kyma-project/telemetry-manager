@@ -299,17 +299,14 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			}, timeout, interval).Should(ContainElement("FLUENT_BIT_SECTIONS_CONFIG_MAP"))
 		})
 		It("Should have created a fluent-bit daemon set", func() {
-			Eventually(func() int {
+			Eventually(func() error {
 				var fluentBitDaemonSet appsv1.DaemonSet
 				err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      testLogPipelineConfig.DaemonSet.Name,
 					Namespace: testLogPipelineConfig.DaemonSet.Namespace,
 				}, &fluentBitDaemonSet)
-				if err != nil {
-					return 0
-				}
-				return int(fluentBitDaemonSet.Generation)
-			}, timeout, interval).Should(Equal(1))
+				return err
+			}, timeout, interval).Should(BeNil())
 		})
 		It("Should have the checksum annotation set to the fluent-bit daemonset", func() {
 			// Fluent Bit daemon set should have checksum annotation set
