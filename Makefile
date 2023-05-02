@@ -166,12 +166,6 @@ run-with-lm: \
 	verify-telemetry \
 	verify-kyma \
 
-.PHONY: release
-release: ## Create module with its OCI image pushed to prod registry and create a github release entry
-release: \
-	create-module \
-	create-github-release
-
 .PHONY: create-k3d
 create-k3d: kyma ## Create a k3d cluster using Kyma cli .
 	$(KYMA) provision k3d --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} --ci
@@ -203,7 +197,6 @@ fix-module-template: ## Create template-k3d.yaml based on template.yaml with rig
 apply-local-template-label: ## Apply a marker label to be read by the lifecycle manager.
 	kubectl label --local=true -f ./template-k3d.yaml operator.kyma-project.io/use-local-template=true -oyaml > template-k3d-with-label.yaml
 
-
 .PHONY: deploy-kyma
 deploy-kyma: kyma ## Deploy kyma which includes the deployment of the lifecycle-manager.
 	$(KYMA) alpha deploy \
@@ -225,6 +218,14 @@ verify-telemetry: ## Wait for Telemetry CR to be in Ready state.
 .PHONY: verify-kyma
 verify-kyma: ## Wait for Kyma CR to be in Ready state.
 	@hack/verify_kyma_status.sh
+
+##@ Release Module
+
+.PHONY: release
+release: ## Create module with its OCI image pushed to prod registry and create a github release entry
+release: \
+	create-module \
+	create-github-release
 
 .PHONY: create-github-release
 create-github-release: ## Create github release entry using goreleaser
