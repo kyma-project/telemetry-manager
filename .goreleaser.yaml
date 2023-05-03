@@ -1,0 +1,11 @@
+# Documentation for how to configure GoReleaser can be found at http://goreleaser.com
+changelog:
+  use: github
+  sort: asc
+release:
+  extra_files:
+    - glob: template.yaml
+    - glob: ./manifests/telemetry/rendered.yaml
+builds:
+  -
+    skip: true
