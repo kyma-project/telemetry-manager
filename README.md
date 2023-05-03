@@ -157,4 +157,3 @@ Some parts of the scripts may not work because Kyma CLI is not released for Appl
    export KYMA=$(which kyma)
    ```
 
-The example error may look like this: `Error: unsupported platform OS_TYPE: Darwin, OS_ARCH: arm64; to mitigate this problem set variable KYMA with the absolute path to kyma-cli binary compatible with your operating system and architecture. Stop.`
