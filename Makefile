@@ -1,10 +1,10 @@
 # Image URL to use all building/pushing image targets
-IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20230421-c40cd7f7
+IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20230505-50348605
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.1
 
 MODULE_NAME ?= telemetry
-MODULE_VERSION ?= 0.0.1
+MODULE_VERSION ?= 0.2.0
 CLUSTER_NAME ?= kyma
 REGISTRY_PORT ?= 5001
 REGISTRY_NAME ?= ${CLUSTER_NAME}-registry
