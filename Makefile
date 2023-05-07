@@ -1,5 +1,10 @@
 # Image URL to use all building/pushing image targets
 IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20230421-c40cd7f7
+# Values required for creating telemetry module
+MODULE_VERSION ?= 0.0.1
+MODULE_CHANNEL ?= fast
+MODULE_NAME ?= telemetry
+MODULE_CR_PATH ?= ./config/samples/operator_v1alpha1_telemetry.yaml
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.1
 # Operating system architecture
@@ -142,7 +147,7 @@ endif
 
 .PHONY: run-with-lm
 run-with-lm: kyma kustomize ## Create a k3d cluster and deploy module with the lifecycle-manager. Manager image and module OCI image are pushed to local k3d registry
-	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} ./hack/run_with_lm.sh
+	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/run_with_lm.sh
 
 .PHONY: create-module
 create-module: kyma kustomize ## Build the module and push it to a registry defined in MODULE_REGISTRY.
@@ -152,10 +157,11 @@ create-module: kyma kustomize ## Build the module and push it to a registry defi
 ##@ Release Module
 
 .PHONY: release
-release: ## Create module with its OCI image pushed to prod registry and create a github release entry
-release: \
-	create-module \
-	create-github-release
+release: kyma kustomize ## Create module with its OCI image pushed to prod registry and create a github release entry
+	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} ./hack/release.sh
+
+# create-module \
+# create-github-release
 
 .PHONY: create-github-release
 create-github-release: ## Create github release entry using goreleaser

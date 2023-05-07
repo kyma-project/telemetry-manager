@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
 
-readonly MODULE_VERSION="${MODULE_VERSION:-0.0.1}"
-readonly MODULE_CHANNEL="${MODULE_CHANNEL:-fast}"
-readonly REGISTRY_PORT="${REGISTRY_PORT:-5001}" 
 readonly CLUSTER_NAME="${CLUSTER_NAME:-kyma}" 
-readonly MODULE_NAME="${MODULE_NAME:-telemetry}"
 readonly REGISTRY_NAME="${REGISTRY_NAME:-${CLUSTER_NAME}-registry}"
+readonly REGISTRY_PORT="${REGISTRY_PORT:-5001}" 
 readonly MODULE_REGISTRY="${MODULE_REGISTRY:-localhost:${REGISTRY_PORT}}"
 
-function main() {    
+function main() {
     # Create a k3d cluster using Kyma cli
     ${KYMA} provision k3d --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} --ci
     
@@ -20,7 +17,7 @@ function main() {
     # Build the module and push it to a local k3d registry
     export IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/${MODULE_NAME}-manager
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
-    ${KYMA} alpha create module --name kyma-project.io/module/${MODULE_NAME} --version ${MODULE_VERSION} --channel ${MODULE_CHANNEL} --default-cr ./config/samples/operator_v1alpha1_telemetry.yaml --registry ${MODULE_REGISTRY} --insecure --ci
+    ${KYMA} alpha create module --name kyma-project.io/module/${MODULE_NAME} --version ${MODULE_VERSION} --channel ${MODULE_CHANNEL} --default-cr ${MODULE_CR_PATH} --registry ${MODULE_REGISTRY} --insecure --ci
 
     # Create template-k3d.yaml based on template.yaml with right URLs
     cat template.yaml \
