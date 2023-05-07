@@ -134,40 +134,15 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 ##@ Deployment with lifecycle-manager
 
-# Credentials used for authenticating into the module registry
-# see `kyma alpha mod create --help for more info`
-# GCP_ACCESS_TOKEN is retrieved in case the PROW_JOB_ID is set
-# Otherwise we assume http-based local registries without authentication (e.g. for k3d)
-ifneq (,$(PROW_JOB_ID))
-GCP_ACCESS_TOKEN=$(shell gcloud auth application-default print-access-token)
-MODULE_CREDENTIALS_FLAG=-c oauth2accesstoken:$(GCP_ACCESS_TOKEN)
-else
-MODULE_CREDENTIALS_FLAG=--insecure
-endif
-
 .PHONY: run-with-lm
 run-with-lm: kyma kustomize ## Create a k3d cluster and deploy module with the lifecycle-manager. Manager image and module OCI image are pushed to local k3d registry
 	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/run_with_lm.sh
-
-.PHONY: create-module
-create-module: kyma kustomize ## Build the module and push it to a registry defined in MODULE_REGISTRY.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KYMA) alpha create module --name kyma-project.io/module/${MODULE_NAME} --version ${MODULE_VERSION} --channel ${MODULE_CHANNEL} --default-cr ./config/samples/operator_v1alpha1_telemetry.yaml --registry ${MODULE_REGISTRY} ${MODULE_CREDENTIALS_FLAG}
 
 ##@ Release Module
 
 .PHONY: release
 release: kyma kustomize ## Create module with its OCI image pushed to prod registry and create a github release entry
-	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} ./hack/release.sh
-
-# create-module \
-# create-github-release
-
-.PHONY: create-github-release
-create-github-release: ## Create github release entry using goreleaser
-	git remote add origin git@github.com:kyma-project/telemetry-manager.git
-	git reset --hard
-	curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash
+	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/release.sh
 
 ##@ Build Dependencies
 
