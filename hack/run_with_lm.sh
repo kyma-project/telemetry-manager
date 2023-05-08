@@ -5,7 +5,7 @@ readonly REGISTRY_NAME="${REGISTRY_NAME:-${CLUSTER_NAME}-registry}"
 readonly REGISTRY_PORT="${REGISTRY_PORT:-5001}" 
 readonly MODULE_REGISTRY="${MODULE_REGISTRY:-localhost:${REGISTRY_PORT}}"
 
-function verify_telemetry_status () {
+function verify_telemetry_status() {
 	local number=1
 	while [[ $number -le 100 ]] ; do
 		echo ">--> checking telemetry status #$number"
@@ -20,7 +20,7 @@ function verify_telemetry_status () {
 	exit 1
 }
 
-function verify_kyma_status () {
+function verify_kyma_status() {
 	local number=1
 	while [[ $number -le 100 ]] ; do
 		echo ">--> checking kyma status #$number"
