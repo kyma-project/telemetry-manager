@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-function get_kyma_file_name () {
+function get_kyma_filename() {
 
 	local _OS_TYPE=$1
 	local _OS_ARCH=$2
@@ -12,4 +12,4 @@ function get_kyma_file_name () {
 	[ "$_OS_TYPE" == "Darwin"  ] && [ "$_OS_ARCH" == "x86_64" ] && echo "kyma-darwin"
 }
 
-get_kyma_file_name "$@"
+get_kyma_filename "$@"

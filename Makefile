@@ -134,14 +134,14 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 ##@ Deployment with lifecycle-manager
 
-.PHONY: run-with-lm
-run-with-lm: kyma kustomize ## Create a k3d cluster and deploy module with the lifecycle-manager. Manager image and module OCI image are pushed to local k3d registry
-	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/run_with_lm.sh
+.PHONY: deploy-with-lifecycle-manager
+run-with-lm: kyma kustomize ## Create a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
+	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/deploy-with-lifecycle-manager.sh
 
 ##@ Release Module
 
 .PHONY: release
-release: kyma kustomize ## Create module with its OCI image pushed to prod registry and create a github release entry
+release: kyma kustomize ## Create module with its image pushed to prod registry and create a github release entry
 	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} IMG=${IMG} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/release.sh
 
 ##@ Build Dependencies
@@ -207,11 +207,11 @@ define os_error
 $(error Error: unsupported platform OS_TYPE:$1, OS_ARCH:$2; to mitigate this problem set variable KYMA with absolute path to kyma-cli binary compatible with your operating system and architecture)
 endef
 
-KYMA_FILE_NAME ?=  $(shell ./hack/get_kyma_file_name.sh ${OS_TYPE} ${OS_ARCH})
+KYMA_FILENAME ?=  $(shell ./hack/get-kyma_filename.sh ${OS_TYPE} ${OS_ARCH})
 KYMA_STABILITY ?= unstable
 
 kyma: $(LOCALBIN) $(KYMA) ## Download Kyma cli locally if necessary.
 $(KYMA):
-	$(if $(KYMA_FILE_NAME),,$(call os_error, ${OS_TYPE}, ${OS_ARCH}))
-	test -f $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILE_NAME)
+	$(if $(KYMA_FILENAME),,$(call os_error, ${OS_TYPE}, ${OS_ARCH}))
+	test -f $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILENAME)
 	chmod 0100 $(KYMA)

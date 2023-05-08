@@ -5,6 +5,18 @@ readonly REGISTRY_NAME="${REGISTRY_NAME:-${CLUSTER_NAME}-registry}"
 readonly REGISTRY_PORT="${REGISTRY_PORT:-5001}" 
 readonly MODULE_REGISTRY="${MODULE_REGISTRY:-localhost:${REGISTRY_PORT}}"
 
+function build_and_push_manager_image() {
+    export IMG=localhost:${REGISTRY_PORT}/${MODULE_NAME}-manager
+    make docker-build
+    make docker-push
+}
+
+function create_module() {
+    export IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/${MODULE_NAME}-manager
+    cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
+    ${KYMA} alpha create module --name kyma-project.io/module/${MODULE_NAME} --version ${MODULE_VERSION} --channel ${MODULE_CHANNEL} --default-cr ${MODULE_CR_PATH} --registry ${MODULE_REGISTRY} --insecure --ci
+}
+
 function verify_telemetry_status() {
 	local number=1
 	while [[ $number -le 100 ]] ; do
@@ -40,22 +52,18 @@ function main() {
     ${KYMA} provision k3d --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} --ci
     
     # Build and push manager image to a local k3d registry
-    export IMG=localhost:${REGISTRY_PORT}/${MODULE_NAME}-manager
-    make docker-build
-    make docker-push
+    build_and_push_manager_image
     
-    # Build the module and push it to a local k3d registry
-    export IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/${MODULE_NAME}-manager
-    cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
-    ${KYMA} alpha create module --name kyma-project.io/module/${MODULE_NAME} --version ${MODULE_VERSION} --channel ${MODULE_CHANNEL} --default-cr ${MODULE_CR_PATH} --registry ${MODULE_REGISTRY} --insecure --ci
+    # Create the module and push its image to a local k3d registry
+    create_module
 
-    # Create template-k3d.yaml based on template.yaml with right URLs
+    # Create template-k3d.yaml based on template.yaml with the URL needed for lifecycle manager to access the module image from inside the k3d cluster
     cat template.yaml \
 	| sed -e "s/${REGISTRY_PORT}/5000/g" \
 		  -e "s/localhost/k3d-${REGISTRY_NAME}.localhost/g" \
 		> template-k3d.yaml
 
-    # Apply a marker label to be read by the lifecycle manager
+    # Apply label needed by the lifecycle manager for local module deployment
     kubectl label --local=true -f ./template-k3d.yaml operator.kyma-project.io/use-local-template=true -oyaml > template-k3d-with-label.yaml
 
     # Deploy kyma which includes the deployment of the lifecycle-manager
