@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-readonly MODULE_REGISTRY="europe-docker.pkg.dev/kyma-project/dev/unsigned"
+readonly MODULE_REGISTRY="europe-docker.pkg.dev/kyma-project/prod/unsigned"
 readonly GCP_ACCESS_TOKEN=$(gcloud auth application-default print-access-token)
 
 function create_module() {
