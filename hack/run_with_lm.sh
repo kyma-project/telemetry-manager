@@ -5,6 +5,36 @@ readonly REGISTRY_NAME="${REGISTRY_NAME:-${CLUSTER_NAME}-registry}"
 readonly REGISTRY_PORT="${REGISTRY_PORT:-5001}" 
 readonly MODULE_REGISTRY="${MODULE_REGISTRY:-localhost:${REGISTRY_PORT}}"
 
+function verify_telemetry_status () {
+	local number=1
+	while [[ $number -le 100 ]] ; do
+		echo ">--> checking telemetry status #$number"
+		local STATUS=$(kubectl get telemetry -n kyma-system default -o jsonpath='{.status.state}')
+		echo "telemetry status: ${STATUS:='UNKNOWN'}"
+		[[ "$STATUS" == "Ready" ]] && return 0
+		sleep 15
+        	((number = number + 1))
+	done
+
+	kubectl get all --all-namespaces
+	exit 1
+}
+
+function verify_kyma_status () {
+	local number=1
+	while [[ $number -le 100 ]] ; do
+		echo ">--> checking kyma status #$number"
+		local STATUS=$(kubectl get kyma -n kyma-system default-kyma -o jsonpath='{.status.state}')
+		echo "kyma status: ${STATUS:='UNKNOWN'}"
+		[[ "$STATUS" == "Ready" ]] && return 0
+		sleep 15
+        	((number = number + 1))
+	done
+
+	kubectl get all --all-namespaces
+	exit 1
+}
+
 function main() {
     # Create a k3d cluster using Kyma cli
     ${KYMA} provision k3d --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} --ci
@@ -38,10 +68,10 @@ function main() {
     ${KYMA} alpha enable module ${MODULE_NAME} --channel ${MODULE_CHANNEL}
 
     # Wait for Telemetry CR to be in Ready state
-    ./hack/verify_telemetry_status.sh
+    verify_telemetry_status
 
     # Wait for Kyma CR to be in Ready state
-    ./hack/verify_kyma_status.sh
+    verify_kyma_status
 }
 
 main
