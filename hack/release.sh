@@ -9,7 +9,6 @@ function create_module() {
 }
 
 function create_github_release() {
-    # Create github release entry using goreleaser
     git remote add origin git@github.com:kyma-project/telemetry-manager.git
 	git reset --hard
 	curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash
@@ -17,6 +16,7 @@ function create_github_release() {
 
 function main() {
     create_module
+    # Create github release entry using goreleaser
     create_github_release
 }
 
