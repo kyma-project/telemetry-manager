@@ -103,7 +103,7 @@ make deploy
 make undeploy
 ```
 
-- Deploy module with lifecycle manager on a k3d cluster
+- Deploy module with Lifecycle Manager on a k3d cluster
 
 ```bash
 make e2e-deploy-module
