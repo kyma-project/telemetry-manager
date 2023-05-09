@@ -103,8 +103,11 @@ make deploy
 make undeploy
 ```
 
-### Deploying `ModuleTemplate` with the Lifecycle Manager
-Check the documentation [here](./docs/deploying-module-template.md).
+- Deploy module with Lifecycle Manager on a k3d cluster
+
+```bash
+make e2e-deploy-module
+```
 
 ## Troubleshooting
 
