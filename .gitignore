@@ -1,3 +1,6 @@
+# Finder .DS_Store file
+.DS_Store
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
