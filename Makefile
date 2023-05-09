@@ -210,6 +210,7 @@ endef
 KYMA_FILENAME ?=  $(shell ./hack/get-kyma-filename.sh ${OS_TYPE} ${OS_ARCH})
 KYMA_STABILITY ?= unstable
 
+.PHONY: kyma
 kyma: $(LOCALBIN) $(KYMA) ## Download Kyma cli locally if necessary.
 $(KYMA):
 	$(if $(KYMA_FILENAME),,$(call os_error, ${OS_TYPE}, ${OS_ARCH}))
