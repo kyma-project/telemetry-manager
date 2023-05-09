@@ -91,6 +91,10 @@ e2e-test: ginkgo k3d ## Provision k3d cluster and run end-to-end tests.
 	$(K3D) cluster delete kyma
 	$(K3D) registry delete k3d-kyma-registry
 
+.PHONY: e2e-deploy-module
+e2e-deploy-module: kyma kustomize ## Provision a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
+	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/deploy-with-lifecycle-manager.sh
+
 ##@ Build
 
 .PHONY: build
@@ -109,7 +113,7 @@ docker-build: ## Build docker image with the manager.
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
-##@ Deployment without lifecycle-manager
+##@ Deployment
 
 ifndef ignore-not-found
   ignore-not-found = false
@@ -131,12 +135,6 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
-
-##@ Deployment with lifecycle-manager
-
-.PHONY: e2e-deploy-module
-e2e-deploy-module: kyma kustomize ## Create a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
-	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/deploy-with-lifecycle-manager.sh
 
 ##@ Release Module
 
