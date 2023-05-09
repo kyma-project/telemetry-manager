@@ -11,10 +11,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 var (
-	metricPipeline = &v1alpha1.MetricPipeline{
+	metricPipeline = v1alpha1.MetricPipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test",
 		},
@@ -29,9 +30,9 @@ var (
 		},
 	}
 
-	metricPipelineInsecure = &v1alpha1.MetricPipeline{
+	metricPipelineInsecure = v1alpha1.MetricPipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
+			Name: "test-insecure",
 		},
 		Spec: v1alpha1.MetricPipelineSpec{
 			Output: v1alpha1.MetricPipelineOutput{
@@ -44,9 +45,9 @@ var (
 		},
 	}
 
-	metricPipelineWithBasicAuth = &v1alpha1.MetricPipeline{
+	metricPipelineWithBasicAuth = v1alpha1.MetricPipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
+			Name: "test-basic-auth",
 		},
 		Spec: v1alpha1.MetricPipelineSpec{
 			Output: v1alpha1.MetricPipelineOutput{
@@ -72,9 +73,9 @@ var (
 
 func TestMakeCollectorConfigEndpoint(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, metricPipeline)
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline})
 	require.NoError(t, err)
-	expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT")
+	expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT_TEST")
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
 	actualExporterConfig := collectorConfig.Exporters["otlp/test"]
@@ -83,7 +84,7 @@ func TestMakeCollectorConfigEndpoint(t *testing.T) {
 
 func TestMakeCollectorConfigSecure(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, metricPipeline)
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline})
 	require.NoError(t, err)
 
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -93,41 +94,71 @@ func TestMakeCollectorConfigSecure(t *testing.T) {
 
 func TestMakeCollectorConfigInsecure(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, metricPipelineInsecure)
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipelineInsecure})
 	require.NoError(t, err)
 
-	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	actualExporterConfig := collectorConfig.Exporters["otlp/test"]
+	require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
+	actualExporterConfig := collectorConfig.Exporters["otlp/test-insecure"]
 	require.True(t, actualExporterConfig.TLS.Insecure)
 }
 
 func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, metricPipelineWithBasicAuth)
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipelineWithBasicAuth})
 	require.NoError(t, err)
 
-	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	actualExporterConfig := collectorConfig.Exporters["otlp/test"]
+	require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
+	actualExporterConfig := collectorConfig.Exporters["otlp/test-basic-auth"]
 	headers := actualExporterConfig.Headers
 
 	authHeader, existing := headers["Authorization"]
 	require.True(t, existing)
-	require.Equal(t, "${BASIC_AUTH_HEADER}", authHeader)
+	require.Equal(t, "${BASIC_AUTH_HEADER_TEST_BASIC_AUTH}", authHeader)
+}
+
+func TestMakeCollectorConfigMultiPipeline(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline, metricPipelineInsecure})
+	require.NoError(t, err)
+
+	require.Contains(t, collectorConfig.Exporters, "otlp/test")
+	require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
+
+	require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
+	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[0], "memory_limiter")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[1], "k8sattributes")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[2], "resource")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[3], "batch")
+
+	require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-insecure")
+	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Exporters, "otlp/test-insecure")
+	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Exporters, "logging/test-insecure")
+	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Receivers, "otlp")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[0], "memory_limiter")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[1], "k8sattributes")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[2], "resource")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[3], "batch")
 }
 
 func TestMakeServiceConfig(t *testing.T) {
-	serviceConfig := makeServiceConfig([]string{"otlp/test", "logging/test"})
+	pipelineConfig := map[string]config.PipelineConfig{
+		"metrics/test": makePipelineConfig([]string{"otlp/test", "logging/test"}),
+	}
+	serviceConfig := makeServiceConfig(pipelineConfig)
 
-	require.Contains(t, serviceConfig.Pipelines, "metrics")
-	require.Contains(t, serviceConfig.Pipelines["metrics"].Receivers, "otlp")
+	require.Contains(t, serviceConfig.Pipelines, "metrics/test")
+	require.Contains(t, serviceConfig.Pipelines["metrics/test"].Receivers, "otlp")
 
-	require.Equal(t, serviceConfig.Pipelines["metrics"].Processors[0], "memory_limiter")
-	require.Equal(t, serviceConfig.Pipelines["metrics"].Processors[1], "k8sattributes")
-	require.Equal(t, serviceConfig.Pipelines["metrics"].Processors[2], "resource")
-	require.Equal(t, serviceConfig.Pipelines["metrics"].Processors[3], "batch")
+	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[0], "memory_limiter")
+	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[1], "k8sattributes")
+	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[2], "resource")
+	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[3], "batch")
 
-	require.Contains(t, serviceConfig.Pipelines["metrics"].Exporters, "otlp/test")
-	require.Contains(t, serviceConfig.Pipelines["metrics"].Exporters, "logging/test")
+	require.Contains(t, serviceConfig.Pipelines["metrics/test"].Exporters, "otlp/test")
+	require.Contains(t, serviceConfig.Pipelines["metrics/test"].Exporters, "logging/test")
 
 	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
 	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
@@ -141,7 +172,6 @@ func TestResourceProcessors(t *testing.T) {
 	require.Equal(t, "insert", processors.Resource.Attributes[0].Action)
 	require.Equal(t, "k8s.cluster.name", processors.Resource.Attributes[0].Key)
 	require.Equal(t, "${KUBERNETES_SERVICE_HOST}", processors.Resource.Attributes[0].Value)
-
 }
 
 func TestMemoryLimiterProcessor(t *testing.T) {
@@ -199,7 +229,7 @@ exporters:
     logging/test:
         verbosity: basic
     otlp/test:
-        endpoint: ${OTLP_ENDPOINT}
+        endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:
             enabled: true
             queue_size: 512
@@ -249,7 +279,7 @@ extensions:
         endpoint: ${MY_POD_IP}:13133
 service:
     pipelines:
-        metrics:
+        metrics/test:
             receivers:
                 - otlp
             processors:
@@ -270,7 +300,7 @@ service:
 `
 
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, metricPipeline)
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline})
 	require.NoError(t, err)
 
 	yamlBytes, err := yaml.Marshal(collectorConfig)

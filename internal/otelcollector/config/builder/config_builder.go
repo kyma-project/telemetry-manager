@@ -3,7 +3,6 @@ package builder
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,19 +28,8 @@ func getLoggingOutputAlias(pipelineName string) string {
 	return fmt.Sprintf("logging/%s", pipelineName)
 }
 
-func GetExporterAliases(exporters config.ExportersConfig) []string {
-	var aliases []string
-	for alias := range exporters {
-		aliases = append(aliases, alias)
-	}
-
-	// Sort to ensure deterministic order
-	sort.Strings(aliases)
-	return aliases
-}
-
 func MakeOTLPExportersConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string) (config.ExportersConfig, EnvVars, error) {
-	envVars, err := makeEnvVars(ctx, c, otlpOutput)
+	envVars, err := makeEnvVars(ctx, c, otlpOutput, pipelineName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
 	}
@@ -53,7 +41,8 @@ func MakeOTLPExportersConfig(ctx context.Context, c client.Reader, otlpOutput *t
 func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte) config.ExportersConfig {
 	otlpOutputAlias := getOTLPOutputAlias(otlpOutput, pipelineName)
 	loggingOutputAlias := getLoggingOutputAlias(pipelineName)
-	headers := makeHeaders(otlpOutput)
+	headers := makeHeaders(otlpOutput, pipelineName)
+	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
 	otlpExporterConfig := config.OTLPExporterConfig{
 		Endpoint: fmt.Sprintf("${%s}", otlpEndpointVariable),
 		Headers:  headers,
@@ -82,14 +71,15 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName 
 	}
 }
 
-func makeHeaders(output *telemetryv1alpha1.OtlpOutput) map[string]string {
+func makeHeaders(output *telemetryv1alpha1.OtlpOutput, pipelineName string) map[string]string {
 	headers := make(map[string]string)
 	if output.Authentication != nil && output.Authentication.Basic.IsDefined() {
+		basicAuthHeaderVariable := makeBasicAuthHeaderVariable(pipelineName)
 		headers["Authorization"] = fmt.Sprintf("${%s}", basicAuthHeaderVariable)
 	}
 
 	for _, header := range output.Headers {
-		headers[header.Name] = makeHeaderEnvVarCompliant(header)
+		headers[header.Name] = fmt.Sprintf("${%s}", makeHeaderEnvVarCompliant(header, pipelineName))
 	}
 	return headers
 }

@@ -95,34 +95,38 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		Namespace: r.config.Namespace,
 	}
 	serviceAccount := commonresources.MakeServiceAccount(namespacedBaseName)
-	if err = controllerutil.SetControllerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
+	if err = controllerutil.SetOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
 		return err
 	}
 	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create otel collector service account: %w", err)
 	}
 	clusterRole := commonresources.MakeClusterRole(namespacedBaseName)
-	if err = controllerutil.SetControllerReference(pipeline, clusterRole, r.Scheme()); err != nil {
+	if err = controllerutil.SetOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
 		return err
 	}
 	if err = kubernetes.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
 		return fmt.Errorf("failed to create otel collector cluster role: %w", err)
 	}
 	clusterRoleBinding := commonresources.MakeClusterRoleBinding(namespacedBaseName)
-	if err = controllerutil.SetControllerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
+	if err = controllerutil.SetOwnerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
 		return err
 	}
 	if err = kubernetes.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
-	collectorConfig, envVars, err := makeOtelCollectorConfig(ctx, r, pipeline)
+	var metricPipelineList telemetryv1alpha1.MetricPipelineList
+	if err = r.List(ctx, &metricPipelineList); err != nil {
+		return fmt.Errorf("failed to list metric pipelines: %w", err)
+	}
+	collectorConfig, envVars, err := makeOtelCollectorConfig(ctx, r, metricPipelineList.Items)
 	if err != nil {
 		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}
 
 	secret := collectorresources.MakeSecret(r.config, envVars)
-	if err = controllerutil.SetControllerReference(pipeline, secret, r.Scheme()); err != nil {
+	if err = controllerutil.SetOwnerReference(pipeline, secret, r.Scheme()); err != nil {
 		return err
 	}
 	if err = kubernetes.CreateOrUpdateSecret(ctx, r.Client, secret); err != nil {
@@ -130,7 +134,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	configMap := collectorresources.MakeConfigMap(r.config, *collectorConfig)
-	if err = controllerutil.SetControllerReference(pipeline, configMap, r.Scheme()); err != nil {
+	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
 		return err
 	}
 	if err = kubernetes.CreateOrUpdateConfigMap(ctx, r.Client, configMap); err != nil {
@@ -139,7 +143,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
 	deployment := collectorresources.MakeDeployment(r.config, configHash)
-	if err = controllerutil.SetControllerReference(pipeline, deployment, r.Scheme()); err != nil {
+	if err = controllerutil.SetOwnerReference(pipeline, deployment, r.Scheme()); err != nil {
 		return err
 	}
 	if err = kubernetes.CreateOrUpdateDeployment(ctx, r.Client, deployment); err != nil {
@@ -147,7 +151,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	otlpService := collectorresources.MakeOTLPService(r.config)
-	if err = controllerutil.SetControllerReference(pipeline, otlpService, r.Scheme()); err != nil {
+	if err = controllerutil.SetOwnerReference(pipeline, otlpService, r.Scheme()); err != nil {
 		return err
 	}
 	if err = kubernetes.CreateOrUpdateService(ctx, r.Client, otlpService); err != nil {
@@ -156,7 +160,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	metricsService := collectorresources.MakeMetricsService(r.config)
-	if err = controllerutil.SetControllerReference(pipeline, metricsService, r.Scheme()); err != nil {
+	if err = controllerutil.SetOwnerReference(pipeline, metricsService, r.Scheme()); err != nil {
 		return err
 	}
 	if err = kubernetes.CreateOrUpdateService(ctx, r.Client, metricsService); err != nil {

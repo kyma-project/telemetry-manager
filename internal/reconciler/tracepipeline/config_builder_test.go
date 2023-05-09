@@ -11,10 +11,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 var (
-	tracePipeline = &v1alpha1.TracePipeline{
+	tracePipeline = v1alpha1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test",
 		},
@@ -29,9 +30,9 @@ var (
 		},
 	}
 
-	tracePipelineInsecure = &v1alpha1.TracePipeline{
+	tracePipelineInsecure = v1alpha1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
+			Name: "test-insecure",
 		},
 		Spec: v1alpha1.TracePipelineSpec{
 			Output: v1alpha1.TracePipelineOutput{
@@ -44,9 +45,9 @@ var (
 		},
 	}
 
-	tracePipelineHTTP = &v1alpha1.TracePipeline{
+	tracePipelineHTTP = v1alpha1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
+			Name: "test-http",
 		},
 		Spec: v1alpha1.TracePipelineSpec{
 			Output: v1alpha1.TracePipelineOutput{
@@ -60,9 +61,9 @@ var (
 		},
 	}
 
-	tracePipelineWithBasicAuth = &v1alpha1.TracePipeline{
+	tracePipelineWithBasicAuth = v1alpha1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
+			Name: "test-basic-auth",
 		},
 		Spec: v1alpha1.TracePipelineSpec{
 			Output: v1alpha1.TracePipelineOutput{
@@ -88,9 +89,9 @@ var (
 
 func TestMakeCollectorConfigEndpoint(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline})
 	require.NoError(t, err)
-	expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT")
+	expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT_TEST")
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
 	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
 	require.Equal(t, expectedEndpoint, otlpExporterConfig.Endpoint)
@@ -98,7 +99,7 @@ func TestMakeCollectorConfigEndpoint(t *testing.T) {
 
 func TestMakeCollectorConfigSecure(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline})
 	require.NoError(t, err)
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
 	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
@@ -107,50 +108,84 @@ func TestMakeCollectorConfigSecure(t *testing.T) {
 
 func TestMakeCollectorConfigSecureHttp(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineHTTP)
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipelineHTTP})
 	require.NoError(t, err)
-	require.Contains(t, collectorConfig.Exporters, "otlphttp/test")
-	otlpExporterConfig := collectorConfig.Exporters["otlphttp/test"]
+	require.Contains(t, collectorConfig.Exporters, "otlphttp/test-http")
+	otlpExporterConfig := collectorConfig.Exporters["otlphttp/test-http"]
 	require.False(t, otlpExporterConfig.TLS.Insecure)
 }
 
 func TestMakeCollectorConfigInsecure(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineInsecure)
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipelineInsecure})
 	require.NoError(t, err)
-	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
+	require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
+	otlpExporterConfig := collectorConfig.Exporters["otlp/test-insecure"]
 	require.True(t, otlpExporterConfig.TLS.Insecure)
+}
+
+func TestMakeCollectorConfigMultiPipeline(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline, tracePipelineInsecure})
+	require.NoError(t, err)
+
+	require.Contains(t, collectorConfig.Exporters, "otlp/test")
+	require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
+
+	require.Contains(t, collectorConfig.Service.Pipelines, "traces/test")
+	require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "otlp/test")
+	require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "logging/test")
+	require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "otlp")
+	require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "opencensus")
+	require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[0], "memory_limiter")
+	require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[1], "k8sattributes")
+	require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "filter")
+	require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[3], "resource")
+	require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "batch")
+
+	require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-insecure")
+	require.Contains(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Exporters, "otlp/test-insecure")
+	require.Contains(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Exporters, "logging/test-insecure")
+	require.Contains(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Receivers, "otlp")
+	require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "opencensus")
+	require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[0], "memory_limiter")
+	require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[1], "k8sattributes")
+	require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[2], "filter")
+	require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[3], "resource")
+	require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[4], "batch")
 }
 
 func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipelineWithBasicAuth)
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipelineWithBasicAuth})
 	require.NoError(t, err)
-	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
+	require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
+	otlpExporterConfig := collectorConfig.Exporters["otlp/test-basic-auth"]
 	headers := otlpExporterConfig.Headers
 
 	authHeader, existing := headers["Authorization"]
 	require.True(t, existing)
-	require.Equal(t, "${BASIC_AUTH_HEADER}", authHeader)
+	require.Equal(t, "${BASIC_AUTH_HEADER_TEST_BASIC_AUTH}", authHeader)
 }
 
 func TestMakeServiceConfig(t *testing.T) {
-	serviceConfig := makeServiceConfig([]string{"otlp/test", "logging/test"})
+	pipelineConfig := map[string]config.PipelineConfig{
+		"traces/test": makePipelineConfig([]string{"otlp/test", "logging/test"}),
+	}
+	serviceConfig := makeServiceConfig(pipelineConfig)
 
-	require.Contains(t, serviceConfig.Pipelines, "traces")
-	require.Contains(t, serviceConfig.Pipelines["traces"].Receivers, "otlp")
-	require.Contains(t, serviceConfig.Pipelines["traces"].Receivers, "opencensus")
+	require.Contains(t, serviceConfig.Pipelines, "traces/test")
+	require.Contains(t, serviceConfig.Pipelines["traces/test"].Receivers, "otlp")
+	require.Contains(t, serviceConfig.Pipelines["traces/test"].Receivers, "opencensus")
 
-	require.Equal(t, serviceConfig.Pipelines["traces"].Processors[0], "memory_limiter")
-	require.Equal(t, serviceConfig.Pipelines["traces"].Processors[1], "k8sattributes")
-	require.Equal(t, serviceConfig.Pipelines["traces"].Processors[2], "filter")
-	require.Equal(t, serviceConfig.Pipelines["traces"].Processors[3], "resource")
-	require.Equal(t, serviceConfig.Pipelines["traces"].Processors[4], "batch")
+	require.Equal(t, serviceConfig.Pipelines["traces/test"].Processors[0], "memory_limiter")
+	require.Equal(t, serviceConfig.Pipelines["traces/test"].Processors[1], "k8sattributes")
+	require.Equal(t, serviceConfig.Pipelines["traces/test"].Processors[2], "filter")
+	require.Equal(t, serviceConfig.Pipelines["traces/test"].Processors[3], "resource")
+	require.Equal(t, serviceConfig.Pipelines["traces/test"].Processors[4], "batch")
 
-	require.Contains(t, serviceConfig.Pipelines["traces"].Exporters, "otlp/test")
-	require.Contains(t, serviceConfig.Pipelines["traces"].Exporters, "logging/test")
+	require.Contains(t, serviceConfig.Pipelines["traces/test"].Exporters, "otlp/test")
+	require.Contains(t, serviceConfig.Pipelines["traces/test"].Exporters, "logging/test")
 
 	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
 	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
@@ -239,7 +274,7 @@ exporters:
     logging/test:
         verbosity: basic
     otlp/test:
-        endpoint: ${OTLP_ENDPOINT}
+        endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:
             enabled: true
             queue_size: 512
@@ -302,7 +337,7 @@ extensions:
         endpoint: ${MY_POD_IP}:13133
 service:
     pipelines:
-        traces:
+        traces/test:
             receivers:
                 - opencensus
                 - otlp
@@ -325,7 +360,7 @@ service:
 `
 
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, tracePipeline)
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline})
 	require.NoError(t, err)
 
 	yamlBytes, err := yaml.Marshal(collectorConfig)
