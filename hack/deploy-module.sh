@@ -48,7 +48,7 @@ function verify_kyma_status() {
 }
 
 function main() {
-    # Create a k3d cluster using Kyma cli
+    # Provision a k3d cluster using Kyma cli
     ${KYMA} provision k3d --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} --ci
     
     # Build and push manager image to a local k3d registry
