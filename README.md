@@ -106,7 +106,7 @@ make undeploy
 - Deploy module with lifecycle manager on a k3d cluster
 
 ```bash
-make deploy-with-lifecycle-manager
+make e2e-deploy-module
 ```
 
 ## Troubleshooting

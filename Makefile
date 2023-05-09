@@ -134,8 +134,8 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 ##@ Deployment with lifecycle-manager
 
-.PHONY: deploy-with-lifecycle-manager
-deploy-with-lifecycle-manager: kyma kustomize ## Create a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
+.PHONY: e2e-deploy-module
+e2e-deploy-module: kyma kustomize ## Create a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
 	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/deploy-with-lifecycle-manager.sh
 
 ##@ Release Module
