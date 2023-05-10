@@ -4,4 +4,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: localhost:5001/telemetry-manager
+  newName: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager
+  newTag: v20230421-c40cd7f7
