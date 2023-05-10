@@ -10,7 +10,7 @@ namePrefix: telemetry-
 
 # Labels to add to all resources and selectors.
 labels:
-- includeSelectors: true
+- includeSelectors: false
   pairs:
     app.kubernetes.io/component: telemetry
     app.kubernetes.io/part-of: telemetry

@@ -12,7 +12,7 @@ resources:
 patchesStrategicMerge:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
-- patches/webhook_in_logpipelines.yaml
+#- patches/webhook_in_logpipelines.yaml
 #- patches/webhook_in_logparsers.yaml
 #- patches/webhook_in_tracepipelines.yaml
 #- patches/webhook_in_metricpipelines.yaml
