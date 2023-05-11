@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: controller-manager-metrics-service
+  name: operator-metrics
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "8080"
@@ -12,8 +12,7 @@ spec:
     port: 8080
     targetPort: 8080
   selector:
-    control-plane: controller-manager
-    app.kubernetes.io/name: deployment
-    app.kubernetes.io/instance: controller-manager
-    app.kubernetes.io/component: manager
-    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: telemetry
+    kyma-project.io/component: controller
+    control-plane: telemetry-operator
