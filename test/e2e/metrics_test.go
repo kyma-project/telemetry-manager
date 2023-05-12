@@ -27,7 +27,9 @@ import (
 )
 
 var (
-	metricGatewayBaseName = "telemetry-metric-gateway"
+	metricGatewayBaseName               = "telemetry-metric-gateway"
+	maxNumberOfMetricPipelines          = 3
+	metricPipelineReconciliationTimeout = 10 * time.Second
 )
 
 var _ = Describe("Metrics", func() {
@@ -105,59 +107,67 @@ var _ = Describe("Metrics", func() {
 		})
 	})
 
-	Context("When reaching the pipeline limit", func() {
-		It("Should have 3 running pipelines", func() {
-			pipeline1Objects := makeBrokenMetricPipeline("pipeline-1")
-			pipeline2Objects := makeBrokenMetricPipeline("pipeline-2")
-			pipeline3Objects := makeBrokenMetricPipeline("pipeline-3")
-			pipeline4Objects := makeBrokenMetricPipeline("pipeline-4")
+	Context("When reaching the pipeline limit", Ordered, func() {
+		allPipelines := make(map[string][]client.Object, 0)
+
+		BeforeAll(func() {
+			for i := 0; i < maxNumberOfMetricPipelines; i++ {
+				pipelineName := fmt.Sprintf("pipeline-%d", i)
+				pipelineObjects := makeBrokenMetricPipeline(pipelineName)
+				allPipelines[pipelineName] = pipelineObjects
+
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipelineObjects...)).Should(Succeed())
+			}
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipeline2Objects...)).Should(Succeed())
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipeline3Objects...)).Should(Succeed())
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipeline4Objects...)).Should(Succeed())
+				for _, pipeline := range allPipelines {
+					Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipeline...)).Should(Succeed())
+				}
 			})
+		})
 
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline1Objects...)).Should(Succeed())
-			Eventually(func(g Gomega) bool {
-				var pipeline telemetryv1alpha1.MetricPipeline
-				key := types.NamespacedName{Name: "pipeline-1"}
-				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-				return pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)
-			}, timeout, interval).Should(BeTrue())
+		It("Should have only running pipelines", func() {
+			for pipelineName := range allPipelines {
+				Eventually(func(g Gomega) {
+					var pipeline telemetryv1alpha1.MetricPipeline
+					key := types.NamespacedName{Name: pipelineName}
+					g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+					g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)).To(BeTrue())
+				}, timeout, interval).Should(Succeed())
+			}
+		})
 
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline2Objects...)).Should(Succeed())
-			Eventually(func(g Gomega) bool {
-				var pipeline telemetryv1alpha1.MetricPipeline
-				key := types.NamespacedName{Name: "pipeline-2"}
-				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-				return pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)
-			}, timeout, interval).Should(BeTrue())
+		It("Should have a pending pipeline", func() {
+			By("Creating an additional pipeline", func() {
+				newPipelineName := "new-pipeline"
+				newPipeline := makeBrokenMetricPipeline(newPipelineName)
+				allPipelines[newPipelineName] = newPipeline
 
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline3Objects...)).Should(Succeed())
-			Eventually(func(g Gomega) bool {
-				var pipeline telemetryv1alpha1.MetricPipeline
-				key := types.NamespacedName{Name: "pipeline-3"}
-				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-				return pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)
-			}, timeout, interval).Should(BeTrue())
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, newPipeline...)).Should(Succeed())
+				Consistently(func(g Gomega) {
+					var pipeline telemetryv1alpha1.MetricPipeline
+					key := types.NamespacedName{Name: newPipelineName}
+					g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+					g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)).To(BeFalse())
+				}, metricPipelineReconciliationTimeout, interval).Should(Succeed())
+			})
+		})
 
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline4Objects...)).Should(Succeed())
-			time.Sleep(10 * time.Second) // wait for reconciliation
-			var pipeline telemetryv1alpha1.MetricPipeline
-			key := types.NamespacedName{Name: "pipeline-4"}
-			Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-			// We allow only 3 piplines, pipeline-4 should not be running
-			Expect(!pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning))
+		It("Should have only running pipeline", func() {
+			By("Deleting a pipeline", func() {
+				deletedPipeline := allPipelines["pipeline-0"]
+				delete(allPipelines, "pipeline-0")
 
-			Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipeline1Objects...)).Should(Succeed())
-			Eventually(func(g Gomega) bool {
-				var pipeline telemetryv1alpha1.MetricPipeline
-				key := types.NamespacedName{Name: "pipeline-4"}
-				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-				// pipeline-4 should become running after pipeline-1 is deleted
-				return pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)
-			}, timeout, interval).Should(BeTrue())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, deletedPipeline...)).Should(Succeed())
+				Eventually(func(g Gomega) {
+					for pipelineName := range allPipelines {
+						var pipeline telemetryv1alpha1.MetricPipeline
+						key := types.NamespacedName{Name: pipelineName}
+						g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+						g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning))
+					}
+				}).Should(Succeed())
+			})
 		})
 	})
 

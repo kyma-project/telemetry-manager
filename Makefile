@@ -83,6 +83,7 @@ tidy: ## Check if there any dirty change for go mod tidy.
 .PHONY: test
 test: manifests generate fmt vet tidy envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+	go test -tags e2e ./test/e2e/testkit/otlp/matchers
 
 .PHONY: e2e-test
 e2e-test: ginkgo k3d ## Provision k3d cluster and run end-to-end tests.
