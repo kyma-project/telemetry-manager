@@ -87,6 +87,10 @@ var _ = Describe("Metrics", func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
+		It("Should have a running pipeline", func() {
+			metricPipelineShouldBeRunning("test")
+		})
+
 		It("Should verify end-to-end metric delivery", func() {
 			builder := kitmetrics.NewBuilder()
 			var gauges []pmetric.Metric
@@ -128,12 +132,7 @@ var _ = Describe("Metrics", func() {
 
 		It("Should have only running pipelines", func() {
 			for pipelineName := range allPipelines {
-				Eventually(func(g Gomega) {
-					var pipeline telemetryv1alpha1.MetricPipeline
-					key := types.NamespacedName{Name: pipelineName}
-					g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-					g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)).To(BeTrue())
-				}, timeout, interval).Should(Succeed())
+				metricPipelineShouldBeRunning(pipelineName)
 			}
 		})
 
@@ -144,12 +143,7 @@ var _ = Describe("Metrics", func() {
 				allPipelines[newPipelineName] = newPipeline
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, newPipeline...)).Should(Succeed())
-				Consistently(func(g Gomega) {
-					var pipeline telemetryv1alpha1.MetricPipeline
-					key := types.NamespacedName{Name: newPipelineName}
-					g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-					g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)).To(BeFalse())
-				}, metricPipelineReconciliationTimeout, interval).Should(Succeed())
+				metricPipelineShoudlStayPending(newPipelineName)
 			})
 		})
 
@@ -159,14 +153,9 @@ var _ = Describe("Metrics", func() {
 				delete(allPipelines, "pipeline-0")
 
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, deletedPipeline...)).Should(Succeed())
-				Eventually(func(g Gomega) {
-					for pipelineName := range allPipelines {
-						var pipeline telemetryv1alpha1.MetricPipeline
-						key := types.NamespacedName{Name: pipelineName}
-						g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-						g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning))
-					}
-				}).Should(Succeed())
+				for pipelineName := range allPipelines {
+					metricPipelineShouldBeRunning(pipelineName)
+				}
 			})
 		})
 	})
@@ -185,19 +174,8 @@ var _ = Describe("Metrics", func() {
 		})
 
 		It("Should have running pipelines", func() {
-			Eventually(func(g Gomega) bool {
-				var pipeline telemetryv1alpha1.MetricPipeline
-				key := types.NamespacedName{Name: "test"}
-				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-				return pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)
-			}, timeout, interval).Should(BeTrue())
-
-			Eventually(func(g Gomega) bool {
-				var pipeline telemetryv1alpha1.MetricPipeline
-				key := types.NamespacedName{Name: "pipeline-2"}
-				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-				return pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)
-			}, timeout, interval).Should(BeTrue())
+			metricPipelineShouldBeRunning("test")
+			metricPipelineShouldBeRunning("pipeline-2")
 		})
 
 		It("Should verify end-to-end metric delivery", func() {
@@ -231,19 +209,8 @@ var _ = Describe("Metrics", func() {
 		})
 
 		It("Should have running pipelines", func() {
-			Eventually(func(g Gomega) bool {
-				var pipeline telemetryv1alpha1.MetricPipeline
-				key := types.NamespacedName{Name: "pipeline-1"}
-				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-				return pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)
-			}, timeout, interval).Should(BeTrue())
-
-			Eventually(func(g Gomega) bool {
-				var pipeline telemetryv1alpha1.MetricPipeline
-				key := types.NamespacedName{Name: "pipeline-2"}
-				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-				return pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)
-			}, timeout, interval).Should(BeTrue())
+			metricPipelineShouldBeRunning("pipeline-1")
+			metricPipelineShouldBeRunning("pipeline-2")
 		})
 
 		It("Should verify end-to-end metric delivery", func() {
@@ -266,6 +233,24 @@ var _ = Describe("Metrics", func() {
 		})
 	})
 })
+
+func metricPipelineShouldBeRunning(pipelineName string) {
+	Eventually(func(g Gomega) bool {
+		var pipeline telemetryv1alpha1.MetricPipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		return pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)
+	}, timeout, interval).Should(BeTrue())
+}
+
+func metricPipelineShoudlStayPending(pipelineName string) {
+	Consistently(func(g Gomega) {
+		var pipeline telemetryv1alpha1.MetricPipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)).To(BeFalse())
+	}, tracePipelineReconciliationTimeout, interval).Should(Succeed())
+}
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
 func makeMetricsTestK8sObjects(portRegistry testkit.PortRegistry, namespace string) []client.Object {
