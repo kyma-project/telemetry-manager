@@ -39,7 +39,7 @@ spec:
         - --trace-collector-memory-request=32Mi
         - --validating-webhook-enabled=true
         - --manager-namespace=$(MY_POD_NAMESPACE)
-        image: k3d-kyma-registry:5001/telemetry-manager:latest
+        image: controller:latest
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
