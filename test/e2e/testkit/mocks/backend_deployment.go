@@ -14,7 +14,7 @@ import (
 
 const (
 	replicas           = 1
-	otelCollectorImage = "otel/opentelemetry-collector-contrib:0.75.0"
+	otelCollectorImage = "otel/opentelemetry-collector-contrib:0.77.0"
 	nginxImage         = "nginx:1.23.3"
 )
 
