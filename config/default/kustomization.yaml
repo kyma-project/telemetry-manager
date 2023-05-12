@@ -29,6 +29,8 @@ resources:
 #- ../certmanager
 # [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
 #- ../prometheus
+- ../dashboards
+- ../busola
 - ../networking
 
 patchesStrategicMerge:
