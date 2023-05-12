@@ -3,12 +3,6 @@ kind: Deployment
 metadata:
   name: operator
   namespace: system
-  labels:
-    control-plane: operator
-    app.kubernetes.io/name: deployment
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/component: manager
-    app.kubernetes.io/managed-by: kustomize
 spec:
   selector:
     matchLabels:
