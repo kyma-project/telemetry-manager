@@ -151,7 +151,7 @@ var _ = Describe("Tracing", func() {
 				allPipelines[newPipelineName] = newPipeline
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, newPipeline...)).Should(Succeed())
-				tracePipelineShoudlStayPending(newPipelineName)
+				tracePipelineShouldStayPending(newPipelineName)
 			})
 		})
 
@@ -262,7 +262,7 @@ func tracePipelineShouldBeRunning(pipelineName string) {
 	}, timeout, interval).Should(BeTrue())
 }
 
-func tracePipelineShoudlStayPending(pipelineName string) {
+func tracePipelineShouldStayPending(pipelineName string) {
 	Consistently(func(g Gomega) {
 		var pipeline telemetryv1alpha1.TracePipeline
 		key := types.NamespacedName{Name: pipelineName}
