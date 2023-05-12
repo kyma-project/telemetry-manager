@@ -143,7 +143,7 @@ The `global`, `tracing`, `logging` and `metrics` fields are optional.
 4. To reset the debug actions, perform a restart of Telemetry Manager.
 
    ```bash
-   kubectl rollout restart deployment telemetry-controller-manager
+   kubectl rollout restart deployment telemetry-operator
    ```
 
 **Caveats**
