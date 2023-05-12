@@ -6,7 +6,6 @@ metadata:
     busola.io/extension: resource
     busola.io/extension-version: "0.5"
   name: tracepipelines.telemetry.kyma-project.io
-  namespace: kube-public
 data:
   details: |-
     {
