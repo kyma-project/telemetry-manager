@@ -1,2 +1,3 @@
 resources:
 - configmap_opentelemetry_dashboard.yaml
+- configmap_fluentbit_dashboard.yaml
