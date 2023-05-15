@@ -1,14 +1,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: operator-metrics-secured
+  name: operator-metrics
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
   namespace: system
 spec:
   ports:
-    - name: https
-      port: 8443
-      protocol: TCP
-      targetPort: https
+  - name: http-metrics
+    port: 8080
+    targetPort: 8080
   selector:
     app.kubernetes.io/name: operator
     app.kubernetes.io/instance: telemetry
