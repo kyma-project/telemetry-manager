@@ -2,10 +2,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-    app.kubernetes.io/name: tracepipelines.telemetry.kyma-project.io
+    app.kubernetes.io/name: tracepipelines
     busola.io/extension: resource
     busola.io/extension-version: "0.5"
-  name: tracepipelines.telemetry.kyma-project.io
+  name: tracepipelines
 data:
   details: |-
     {
@@ -374,7 +374,7 @@ data:
       "category": "Observability",
       "urlPath": "tracepipelines",
       "scope": "cluster",
-      "description": "Configure custom Trace Pipeline",
+      "description": "{{[TracePipeline](https://kyma-project.io/docs/kyma/latest/05-technical-reference/00-custom-resources/telemetry-03-tracepipeline)}} configures a custom Trace Pipeline",
     }
   list: |-
     [
