@@ -2,6 +2,7 @@ package webhook
 
 import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -92,6 +93,20 @@ func MakeValidatingWebhookConfig(certificate []byte, webhookService types.Namesp
 					},
 				},
 			},
+		},
+	}
+}
+
+func MakeCertificateSecret(certificate []byte, key []byte, name types.NamespacedName) corev1.Secret {
+	return corev1.Secret{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+		Data: map[string][]byte{
+			"tls.crt": certificate,
+			"tls.key": key,
 		},
 	}
 }

@@ -7,6 +7,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -23,19 +24,27 @@ const (
 	fieldOwner      = "telemetry.kyma-project.io/owner"
 )
 
+type WebhookConfig struct {
+	Enabled bool
+	Service types.NamespacedName
+	CertDir string
+}
+
 type Reconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	*rest.Config
 	// EventRecorder for creating k8s events
 	record.EventRecorder
+	webhookConfig WebhookConfig
 }
 
-func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) *Reconciler {
+func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig WebhookConfig) *Reconciler {
 	return &Reconciler{
 		Client:        client,
 		Scheme:        scheme,
 		EventRecorder: eventRecorder,
+		webhookConfig: webhookConfig,
 	}
 }
 
@@ -63,6 +72,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, r.serverSideApply(ctx, &objectInstance)
 	}
 
+	if err := r.reconcileWebhook(ctx, objectInstance); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to reconcile webhook: %w", err)
+	}
+
 	switch status.State {
 	case "":
 		return ctrl.Result{}, r.HandleInitialState(ctx, &objectInstance)
@@ -77,6 +90,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *Reconciler) reconcileWebhook(ctx context.Context, instance operatorv1alpha1.Telemetry) error {
+	if !r.webhookConfig.Enabled {
+		return nil
+	}
+
+	return nil
 }
 
 // HandleReadyState checks for the consistency of reconciled resource, by verifying the underlying resources.

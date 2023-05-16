@@ -2,6 +2,8 @@ package setup
 
 import (
 	"context"
+	"os"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -28,7 +30,17 @@ var (
 func TestEnsureValidatingWebhookConfig(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
 
-	err := EnsureValidatingWebhookConfig(client, webhookService, []byte("123"))
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
+	defer func(path string) {
+		deleteErr := os.RemoveAll(path)
+		require.NoError(t, deleteErr)
+	}(certDir)
+
+	err = EnsureValidatingWebhookConfig(client, webhookService, certDir)
+	require.NoError(t, err)
+
+	certificate, err := os.ReadFile(path.Join(certDir, "tls.crt"))
 	require.NoError(t, err)
 
 	var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
@@ -47,8 +59,8 @@ func TestEnsureValidatingWebhookConfig(t *testing.T) {
 	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[0].TimeoutSeconds)
 	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[1].TimeoutSeconds)
 
-	require.Equal(t, []byte("123"), validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
-	require.Equal(t, []byte("123"), validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	require.Equal(t, certificate, validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
+	require.Equal(t, certificate, validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
 
 	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Name)
 	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Name)
@@ -157,9 +169,18 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 		},
 	}
 	client := fake.NewClientBuilder().WithObjects(initialValidatingWebhookConfiguration).Build()
-	newCertificate := []byte("asdf")
 
-	err := EnsureValidatingWebhookConfig(client, webhookService, newCertificate)
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
+	defer func(path string) {
+		deleteErr := os.RemoveAll(path)
+		require.NoError(t, deleteErr)
+	}(certDir)
+
+	err = EnsureValidatingWebhookConfig(client, webhookService, certDir)
+	require.NoError(t, err)
+
+	newCertificate, err := os.ReadFile(path.Join(certDir, "tls.crt"))
 	require.NoError(t, err)
 
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration

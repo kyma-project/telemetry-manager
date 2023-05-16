@@ -21,7 +21,6 @@ import (
 	"flag"
 	"net/http"
 	"os"
-	"path"
 	"strings"
 	"sync"
 	"time"
@@ -262,23 +261,6 @@ func main() {
 		}
 	}()
 
-	certificate, key, err := setup.GenerateCert(webhookServiceName, telemetryNamespace)
-	if err != nil {
-		setupLog.Error(err, "failed to generate certificate")
-		os.Exit(1)
-	}
-
-	err = os.WriteFile(path.Join(certDir, "tls.crt"), certificate, 0600)
-	if err != nil {
-		setupLog.Error(err, "failed to write tls.crt")
-		os.Exit(1)
-	}
-
-	err = os.WriteFile(path.Join(certDir, "tls.key"), key, 0600)
-	if err != nil {
-		setupLog.Error(err, "failed to write tls.key")
-		os.Exit(1)
-	}
 	syncPeriod := 1 * time.Hour
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -333,9 +315,19 @@ func main() {
 		}
 	}
 
+	webhookService := types.NamespacedName{
+		Name:      webhookServiceName,
+		Namespace: telemetryNamespace,
+	}
+
 	if enableTelemetryManagerModule {
 		setupLog.Info("Starting with telemetry manager controller")
-		if err = createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), mgr.GetEventRecorderFor("telemetry-operator")).SetupWithManager(mgr); err != nil {
+		webhookConfig := telemetry.WebhookConfig{
+			Enabled: enableWebhook,
+			CertDir: certDir,
+			Service: webhookService,
+		}
+		if err = createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), mgr.GetEventRecorderFor("telemetry-operator"), webhookConfig).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
 			os.Exit(1)
 		}
@@ -362,12 +354,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		webhookService := types.NamespacedName{
-			Name:      webhookServiceName,
-			Namespace: telemetryNamespace,
-		}
-
-		if err = setup.EnsureValidatingWebhookConfig(k8sClient, webhookService, certificate); err != nil {
+		if err = setup.EnsureValidatingWebhookConfig(k8sClient, webhookService, certDir); err != nil {
 			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
 			os.Exit(1)
 		}
@@ -545,6 +532,6 @@ func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
 }
 
-func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) *operatorcontrollers.TelemetryReconciler {
-	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder))
+func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
+	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, webhookConfig))
 }
