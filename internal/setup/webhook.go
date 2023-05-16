@@ -32,9 +32,7 @@ func generateCert(serviceName, namespace string) ([]byte, []byte, error) {
 	return cert.GenerateSelfSignedCertKey(cn, nil, names)
 }
 
-func EnsureValidatingWebhookConfig(client client.Client, webhookService types.NamespacedName, certDir string) error {
-	ctx := context.Background()
-
+func EnsureValidatingWebhookConfig(ctx context.Context, client client.Client, webhookService types.NamespacedName, certDir string) error {
 	secretKey := types.NamespacedName{
 		Name:      webhookCertSecret,
 		Namespace: webhookService.Namespace,

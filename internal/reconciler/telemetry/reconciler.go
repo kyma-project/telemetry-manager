@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/setup"
 )
 
 const (
@@ -92,10 +93,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) reconcileWebhook(ctx context.Context, instance operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) reconcileWebhook(ctx context.Context, _ operatorv1alpha1.Telemetry) error {
 	if !r.webhookConfig.Enabled {
 		return nil
 	}
+
+	if err := setup.EnsureValidatingWebhookConfig(ctx, r.Client, r.webhookConfig.Service, r.webhookConfig.CertDir); err != nil {
+		return fmt.Errorf("failed to reconcile webhook: %w", err)
+	}
+
+	// TODO add owner reference to webhook config and secret
 
 	return nil
 }

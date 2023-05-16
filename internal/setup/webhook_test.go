@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -37,7 +38,7 @@ func TestEnsureValidatingWebhookConfig(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 
-	err = EnsureValidatingWebhookConfig(client, webhookService, certDir)
+	err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
 	require.NoError(t, err)
 
 	certificate, err := os.ReadFile(path.Join(certDir, "tls.crt"))
@@ -177,7 +178,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 
-	err = EnsureValidatingWebhookConfig(client, webhookService, certDir)
+	err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
 	require.NoError(t, err)
 
 	newCertificate, err := os.ReadFile(path.Join(certDir, "tls.crt"))
@@ -193,4 +194,65 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 
 	require.Equal(t, newCertificate, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
 	require.Equal(t, newCertificate, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+}
+
+func TestSecretCreation(t *testing.T) {
+	client := fake.NewClientBuilder().Build()
+
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
+	defer func(path string) {
+		deleteErr := os.RemoveAll(path)
+		require.NoError(t, deleteErr)
+	}(certDir)
+
+	err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
+	require.NoError(t, err)
+
+	var secret corev1.Secret
+	key := types.NamespacedName{
+		Name:      webhookCertSecret,
+		Namespace: webhookService.Namespace,
+	}
+	err = client.Get(context.Background(), key, &secret)
+	require.NoError(t, err)
+
+	require.Contains(t, secret.Data, "tls.crt")
+	require.Contains(t, secret.Data, "tls.key")
+}
+
+func TestReuseExistingCertificate(t *testing.T) {
+	cert := []byte("123")
+	key := []byte("456")
+	secrets := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      webhookCertSecret,
+			Namespace: webhookService.Namespace,
+		},
+		Data: map[string][]byte{
+			"tls.crt": cert,
+			"tls.key": key,
+		},
+	}
+	client := fake.NewClientBuilder().WithObjects(secrets).Build()
+
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
+	defer func(path string) {
+		deleteErr := os.RemoveAll(path)
+		require.NoError(t, deleteErr)
+	}(certDir)
+
+	err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
+	require.NoError(t, err)
+
+	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+	webhookKey := types.NamespacedName{
+		Name: name,
+	}
+	err = client.Get(context.Background(), webhookKey, &updatedValidatingWebhookConfiguration)
+	require.NoError(t, err)
+
+	require.Equal(t, cert, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
+	require.Equal(t, cert, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
 }

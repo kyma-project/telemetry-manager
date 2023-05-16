@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"net/http"
@@ -354,7 +355,8 @@ func main() {
 			os.Exit(1)
 		}
 
-		if err = setup.EnsureValidatingWebhookConfig(k8sClient, webhookService, certDir); err != nil {
+		ctx := context.Background()
+		if err = setup.EnsureValidatingWebhookConfig(ctx, k8sClient, webhookService, certDir); err != nil {
 			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
 			os.Exit(1)
 		}

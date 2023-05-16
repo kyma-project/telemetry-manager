@@ -72,6 +72,20 @@ var _ = Describe("Telemetry-manager", func() {
 			}, timeout, interval).ShouldNot(BeEmpty())
 		})
 
+		It("Should have secret with webhook certificates", func() {
+			Eventually(func(g Gomega) {
+				var secret corev1.Secret
+				key := types.NamespacedName{
+					Name:      "telemetry-webhook-cert",
+					Namespace: kymaSystemNamespaceName,
+				}
+				err := k8sClient.Get(ctx, key, &secret)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(secret.Data).Should(HaveKeyWithValue("tls.crt", Not(BeEmpty())))
+				g.Expect(secret.Data).Should(HaveKeyWithValue("tls.key", Not(BeEmpty())))
+			}).Should(Succeed())
+		})
+
 		It("Should have a metrics service", func() {
 			var service corev1.Service
 			key := types.NamespacedName{
