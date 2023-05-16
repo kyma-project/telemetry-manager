@@ -35,6 +35,27 @@ func ConsistOfSpansWithIDs(expectedSpanIDs []pcommon.SpanID) types.GomegaMatcher
 	}, gomega.ConsistOf(expectedSpanIDs))
 }
 
+func ConsistOfNumberOfSpans(count int) types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) (int, error) {
+		if actual == nil {
+			return 0, nil
+		}
+
+		actualBytes, ok := actual.([]byte)
+		if !ok {
+			return 0, fmt.Errorf("ConsistOfNumberOfSpans requires a []byte, but got %T", actual)
+		}
+
+		actualTraces, err := unmarshalOTLPJSONTraces(actualBytes)
+		if err != nil {
+			return 0, fmt.Errorf("ConsistOfNumberOfSpans requires a valid OTLP JSON document: %v", err)
+		}
+
+		actualSpans := getAllSpans(actualTraces)
+		return len(actualSpans), nil
+	}, gomega.Equal(count))
+}
+
 func ConsistOfSpansWithTraceID(expectedTraceID pcommon.TraceID) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]pcommon.TraceID, error) {
 		actualBytes, ok := actual.([]byte)

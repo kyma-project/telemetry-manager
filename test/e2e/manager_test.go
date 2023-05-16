@@ -28,7 +28,7 @@ var _ = Describe("Telemetry-manager", func() {
 		It("Should have a running manager deployment", func() {
 			var deployment appsv1.Deployment
 			key := types.NamespacedName{
-				Name:      "telemetry-controller-manager",
+				Name:      "telemetry-operator",
 				Namespace: kymaSystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &deployment)
@@ -75,7 +75,7 @@ var _ = Describe("Telemetry-manager", func() {
 		It("Should have a metrics service", func() {
 			var service corev1.Service
 			key := types.NamespacedName{
-				Name:      "telemetry-controller-manager-metrics-service",
+				Name:      "telemetry-operator-metrics",
 				Namespace: kymaSystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &service)

@@ -254,3 +254,48 @@ var _ = Describe("ConsistOfSpansWithAttributes", func() {
 		})
 	})
 })
+
+var _ = Describe("ConsistOfNumberOfSpans", func() {
+	var fileBytes []byte
+
+	Context("with nil input", func() {
+		It("should match 0", func() {
+			success, err := ConsistOfNumberOfSpans(0).Match(nil)
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(success).Should(BeTrue())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should match 0", func() {
+			success, err := ConsistOfNumberOfSpans(0).Match([]byte{})
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(success).Should(BeTrue())
+		})
+	})
+
+	Context("with invalid input", func() {
+		BeforeEach(func() {
+			fileBytes = []byte{1, 2, 3}
+		})
+
+		It("should error", func() {
+			success, err := ConsistOfNumberOfSpans(0).Match(fileBytes)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with having spans", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_attributes/full_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should succeed", func() {
+			Expect(fileBytes).Should(ConsistOfNumberOfSpans(3))
+		})
+	})
+
+})

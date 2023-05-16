@@ -60,7 +60,7 @@ lint: lint-manifests
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN)  crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -84,8 +84,11 @@ tidy: ## Check if there any dirty change for go mod tidy.
 test: manifests generate fmt vet tidy envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
+test-matchers: ginkgo
+	$(GINKGO) run --tags e2e -v ./test/e2e/testkit/otlp/matchers
+
 .PHONY: e2e-test
-e2e-test: ginkgo k3d ## Provision k3d cluster and run end-to-end tests.
+e2e-test: ginkgo k3d test-matchers ## Provision k3d cluster and run end-to-end tests.
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
 	$(GINKGO) run --tags e2e -v ./test/e2e
 	$(K3D) cluster delete kyma
@@ -161,7 +164,7 @@ KYMA ?= $(LOCALBIN)/kyma-$(KYMA_STABILITY)
 KUSTOMIZE_VERSION ?= v5.0.1
 CONTROLLER_TOOLS_VERSION ?= v0.11.3
 K3D_VERSION ?= v5.4.7
-GINKGO_VERSION ?= v2.9.4
+GINKGO_VERSION ?= v2.9.5
 GORELEASER_VERSION ?= v1.17.1
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"

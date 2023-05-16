@@ -10,8 +10,7 @@ spec:
       protocol: TCP
       targetPort: 9443
   selector:
-    control-plane: controller-manager
-    app.kubernetes.io/name: deployment
-    app.kubernetes.io/instance: controller-manager
-    app.kubernetes.io/component: manager
-    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: telemetry
+    kyma-project.io/component: controller
+    control-plane: telemetry-operator

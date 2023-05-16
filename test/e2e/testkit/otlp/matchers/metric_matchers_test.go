@@ -109,3 +109,43 @@ var _ = Describe("HaveGauges", func() {
 		})
 	})
 })
+
+var _ = Describe("HaveNumberOfMetrics", func() {
+	Context("with nil input", func() {
+		It("should match 0", func() {
+			success, err := HaveNumberOfMetrics(0).Match(nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		var emptyMetrics []pmetric.Metric
+		It("should match 0", func() {
+			success, err := HaveNumberOfMetrics(0).Match(emptyMetrics)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with input of invalid type", func() {
+		It("should error", func() {
+			success, err := HaveNumberOfMetrics(0).Match(struct{}{})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with having metrics", func() {
+		var fileBytes []byte
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/have_metrics/full_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should succeed", func() {
+			Expect(fileBytes).Should(HaveNumberOfMetrics(2))
+		})
+	})
+})

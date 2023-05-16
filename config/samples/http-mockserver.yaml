@@ -37,7 +37,7 @@ spec:
             - -i http
             - -o stdout
             - -q
-          image: europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.0.11-6ea7fe7a
+          image: europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.2-95ba1b02
           livenessProbe:
             tcpSocket:
               port: serviceport
