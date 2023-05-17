@@ -21,6 +21,8 @@ import (
 	"errors"
 	"flag"
 	"net/http"
+	//nolint:gosec // pprof package is required for performance analysis.
+	_ "net/http/pprof"
 	"os"
 	"strings"
 	"sync"
@@ -47,6 +49,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	operatorcontrollers "github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/certgen"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
@@ -58,7 +61,6 @@ import (
 	tracepipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/setup"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
@@ -67,8 +69,7 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	//nolint:gosec // pprof package is required for performance analysis.
-	_ "net/http/pprof"
+
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
 	//+kubebuilder:scaffold:imports
 )
@@ -356,7 +357,7 @@ func main() {
 		}
 
 		ctx := context.Background()
-		if err = setup.EnsureValidatingWebhookConfig(ctx, k8sClient, webhookService, certDir); err != nil {
+		if err = certgen.EnsureValidatingWebhookConfig(ctx, k8sClient, webhookService, certDir); err != nil {
 			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
 			os.Exit(1)
 		}
