@@ -6,8 +6,7 @@ import (
 )
 
 type Pipeline struct {
-	name         string
-	secretKeyRef *telemetry.SecretKeyRef
+	name string
 }
 
 func NewPipeline(name string) *Pipeline {
