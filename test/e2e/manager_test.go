@@ -8,6 +8,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	schedulingv1 "k8s.io/api/scheduling/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -163,6 +164,18 @@ var _ = Describe("Telemetry-manager", func() {
 			}
 			err := k8sClient.Get(ctx, key, &crd)
 			Expect(err).NotTo(HaveOccurred())
+		})
+		It("Should have priority class resource created", func() {
+			priorityClassNames := []string{"telemetry-priority-class", "telemetry-priority-class-high"}
+			var priorityClass schedulingv1.PriorityClass
+			for _, prioClass := range priorityClassNames {
+				key := types.NamespacedName{
+					Name:      prioClass,
+					Namespace: kymaSystemNamespaceName,
+				}
+				err := k8sClient.Get(ctx, key, &priorityClass)
+				Expect(err).NotTo(HaveOccurred())
+			}
 		})
 	})
 })
