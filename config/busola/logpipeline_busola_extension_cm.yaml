@@ -295,7 +295,7 @@ data:
     urlPath: logpipelines
     scope: cluster
     description: >-
-      {{"{{[LogPipeline](https://kyma-project.io/docs/kyma/latest/05-technical-reference/00-custom-resources/telemetry-01-logpipeline)}}"}} configures log selection, filters, and outputs.
+      {{[LogPipeline](https://kyma-project.io/docs/kyma/latest/05-technical-reference/00-custom-resources/telemetry-01-logpipeline)}} configures log selection, filters, and outputs.
   list: |-
     - source: >-
         $each(spec.output, function($v, $k) {$v.url.value or
