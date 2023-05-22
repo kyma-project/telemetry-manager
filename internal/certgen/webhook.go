@@ -9,66 +9,80 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/cert"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/resources/webhook"
 )
 
 var (
-	webhookCertSecret = "telemetry-webhook-cert"
-	certFile          = "tls.crt"
-	keyFile           = "tls.key"
+	caCertSecretName = "telemetry-webhook-cert"
+	certFile         = "tls.crt"
+	keyFile          = "tls.key"
 )
 
-func generateCert(serviceName, namespace string) ([]byte, []byte, error) {
-	cn := fmt.Sprintf("%s.%s.svc", serviceName, namespace)
-	names := []string{
-		serviceName,
-		fmt.Sprintf("%s.%s", serviceName, namespace),
-		fmt.Sprintf("%s.cluster.local", cn),
-	}
-	return cert.GenerateSelfSignedCertKey(cn, nil, names)
-}
-
 func EnsureValidatingWebhookConfig(ctx context.Context, client client.Client, webhookService types.NamespacedName, certDir string) error {
-	secretKey := types.NamespacedName{
-		Name:      webhookCertSecret,
-		Namespace: webhookService.Namespace,
-	}
-	var secret corev1.Secret
-	err := client.Get(ctx, secretKey, &secret)
-
-	var certificate, key []byte
-	if err == nil {
-		// TODO: check if certificate is still valid
-		certificate = secret.Data[certFile]
-		key = secret.Data[keyFile]
-	} else {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get secret: %w", err)
-		}
-
-		certificate, key, err = generateCert(webhookService.Name, webhookService.Namespace)
-		if err != nil {
-			return fmt.Errorf("failed to generate certificate: %w", err)
-		}
-
-		newSecret := webhook.MakeCertificateSecret(certificate, key, secretKey)
-		if err = client.Create(ctx, &newSecret); err != nil {
-			return fmt.Errorf("failed to create secret: %w", err)
-		}
+	caCertPEM, caKeyPEM, err := getOrCreateCACertKey(ctx, client, webhookService.Namespace)
+	if err != nil {
+		return fmt.Errorf("failed to get or create ca cert/key: %w", err)
 	}
 
-	if err = os.WriteFile(path.Join(certDir, certFile), certificate, 0600); err != nil {
+	var serverCertPEM, serverKeyPEM []byte
+	serverCertPEM, serverKeyPEM, err = generateServerCertKey(webhookService.Name, webhookService.Namespace, caCertPEM, caKeyPEM)
+	if err != nil {
+		return fmt.Errorf("failed to generate server cert: %w", err)
+	}
+
+	if err = os.WriteFile(path.Join(certDir, certFile), serverCertPEM, 0600); err != nil {
 		return fmt.Errorf("failed to write %v: %w", certFile, err)
 	}
 
-	if err = os.WriteFile(path.Join(certDir, keyFile), key, 0600); err != nil {
+	if err = os.WriteFile(path.Join(certDir, keyFile), serverKeyPEM, 0600); err != nil {
 		return fmt.Errorf("failed to write %v: %w", keyFile, err)
 	}
 
-	validatingWebhookConfig := webhook.MakeValidatingWebhookConfig(certificate, webhookService)
+	validatingWebhookConfig := webhook.MakeValidatingWebhookConfig(caCertPEM, webhookService)
 	return kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, client, &validatingWebhookConfig)
+}
+
+func getOrCreateCACertKey(ctx context.Context, client client.Client, caCertNamespace string) ([]byte, []byte, error) {
+	var caCertPEM, caKeyPEM []byte
+	caSecretKey := types.NamespacedName{Name: caCertSecretName, Namespace: caCertNamespace}
+	var caSecret corev1.Secret
+	err := client.Get(ctx, caSecretKey, &caSecret)
+	if err == nil {
+		logf.FromContext(ctx).Info("Found existing CA cert/key",
+			"secretName", caCertSecretName,
+			"secretNamespace", caCertNamespace)
+
+		if val, found := caSecret.Data[certFile]; found {
+			caCertPEM = val
+		} else {
+			return nil, nil, fmt.Errorf("key not found : %v", certFile)
+		}
+
+		if val, found := caSecret.Data[keyFile]; found {
+			caKeyPEM = val
+		} else {
+			return nil, nil, fmt.Errorf("key not found : %v", keyFile)
+		}
+	} else {
+		if !apierrors.IsNotFound(err) {
+			return nil, nil, fmt.Errorf("failed to find ca cert secret: %w", err)
+		}
+
+		caCertPEM, caKeyPEM, err = generateCACertKey()
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to generate ca cert: %w", err)
+		}
+
+		logf.FromContext(ctx).Info("Generated new CA cert/key")
+		newSecret := webhook.MakeCertificateSecret(caCertPEM, caKeyPEM, caSecretKey)
+		if err = client.Create(ctx, &newSecret); err != nil {
+			return nil, nil, fmt.Errorf("failed to create ca cert secret: %w", err)
+		}
+	}
+
+	return caCertPEM, caKeyPEM, nil
 }
