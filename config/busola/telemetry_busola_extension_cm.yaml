@@ -29,7 +29,7 @@ data:
       group: operator.kyma-project.io
       version: v1alpha1
     name: Telemetries
-    category: Custom Resources
+    category: Observability
     urlPath: telemetries
     scope: cluster
     description: >-
