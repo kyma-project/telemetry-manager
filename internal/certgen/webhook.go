@@ -13,7 +13,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/resources/webhook"
 )
 
 var (
@@ -42,7 +41,7 @@ func EnsureValidatingWebhookConfig(ctx context.Context, client client.Client, we
 		return fmt.Errorf("failed to write %v: %w", keyFile, err)
 	}
 
-	validatingWebhookConfig := webhook.MakeValidatingWebhookConfig(caCertPEM, webhookService)
+	validatingWebhookConfig := makeValidatingWebhookConfig(caCertPEM, webhookService)
 	return kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, client, &validatingWebhookConfig)
 }
 
@@ -78,7 +77,7 @@ func getOrCreateCACertKey(ctx context.Context, client client.Client, caCertNames
 		}
 
 		logf.FromContext(ctx).Info("Generated new CA cert/key")
-		newSecret := webhook.MakeCertificateSecret(caCertPEM, caKeyPEM, caSecretKey)
+		newSecret := makeCertSecret(caCertPEM, caKeyPEM, caSecretKey)
 		if err = client.Create(ctx, &newSecret); err != nil {
 			return nil, nil, fmt.Errorf("failed to create ca cert secret: %w", err)
 		}

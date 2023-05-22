@@ -1,4 +1,4 @@
-package webhook
+package certgen
 
 import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -7,7 +7,21 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func MakeValidatingWebhookConfig(certificate []byte, webhookService types.NamespacedName) admissionregistrationv1.ValidatingWebhookConfiguration {
+func makeCertSecret(certificate []byte, key []byte, name types.NamespacedName) corev1.Secret {
+	return corev1.Secret{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+		Data: map[string][]byte{
+			certFile: certificate,
+			keyFile:  key,
+		},
+	}
+}
+
+func makeValidatingWebhookConfig(certificate []byte, webhookService types.NamespacedName) admissionregistrationv1.ValidatingWebhookConfiguration {
 	webhookName := "validation.webhook.telemetry.kyma-project.io"
 	logPipelinePath := "/validate-logpipeline"
 	logParserPath := "/validate-logparser"
@@ -93,20 +107,6 @@ func MakeValidatingWebhookConfig(certificate []byte, webhookService types.Namesp
 					},
 				},
 			},
-		},
-	}
-}
-
-func MakeCertificateSecret(certificate []byte, key []byte, name types.NamespacedName) corev1.Secret {
-	return corev1.Secret{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
-		Data: map[string][]byte{
-			"tls.crt": certificate,
-			"tls.key": key,
 		},
 	}
 }
