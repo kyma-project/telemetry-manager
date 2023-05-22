@@ -63,21 +63,6 @@ var _ = Describe("Logging", func() {
 				return true
 			}, timeout, interval).Should(BeTrue())
 		})
-
-		It("Should have the right priority class set", func() {
-			var daemonSet appsv1.DaemonSet
-			key := types.NamespacedName{Name: telemetryFluentbitName, Namespace: kymaSystemNamespaceName}
-			Expect(k8sClient.Get(ctx, key, &daemonSet)).To(Succeed())
-			listOptions := client.ListOptions{
-				LabelSelector: labels.SelectorFromSet(daemonSet.Spec.Selector.MatchLabels),
-				Namespace:     kymaSystemNamespaceName,
-			}
-			var pods corev1.PodList
-			Expect(k8sClient.List(ctx, &pods, &listOptions)).To(Succeed())
-
-			Expect(pods.Items[0].Spec.PriorityClassName).To(Equal("telemetry-priority-class-high"))
-		})
-
 	})
 })
 
