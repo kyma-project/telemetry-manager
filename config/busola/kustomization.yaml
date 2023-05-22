@@ -2,3 +2,4 @@ resources:
 - logparser_busola_extension_cm.yaml
 - logpipeline_busola_extension_cm.yaml
 - tracepipeline_busola_extension_cm.yaml
+- telemetry_busola_extension_cm.yaml
