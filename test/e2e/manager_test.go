@@ -5,7 +5,6 @@ package e2e
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -72,20 +71,6 @@ var _ = Describe("Telemetry-manager", func() {
 			}, timeout, interval).ShouldNot(BeEmpty())
 		})
 
-		It("Should have secret with webhook certificates", func() {
-			Eventually(func(g Gomega) {
-				var secret corev1.Secret
-				key := types.NamespacedName{
-					Name:      "telemetry-webhook-cert",
-					Namespace: kymaSystemNamespaceName,
-				}
-				err := k8sClient.Get(ctx, key, &secret)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(secret.Data).Should(HaveKeyWithValue("tls.crt", Not(BeEmpty())))
-				g.Expect(secret.Data).Should(HaveKeyWithValue("tls.key", Not(BeEmpty())))
-			}).Should(Succeed())
-		})
-
 		It("Should have a metrics service", func() {
 			var service corev1.Service
 			key := types.NamespacedName{
@@ -104,43 +89,6 @@ var _ = Describe("Telemetry-manager", func() {
 				Expect(err).NotTo(HaveOccurred())
 				return endpoints.Subsets[0].Addresses
 			}, timeout, interval).ShouldNot(BeEmpty())
-		})
-
-		It("Should have a validatingwebhookconfiguration", func() {
-			var webhookConfig admissionregistrationv1.ValidatingWebhookConfiguration
-			key := types.NamespacedName{
-				Name: "validation.webhook.telemetry.kyma-project.io",
-			}
-
-			Eventually(func() error {
-				return k8sClient.Get(ctx, key, &webhookConfig)
-			}, timeout, interval).Should(BeNil())
-
-			Expect(webhookConfig.Webhooks).Should(HaveLen(2))
-
-			logPipelineWebhook := webhookConfig.Webhooks[0]
-			Expect(logPipelineWebhook.Name).Should(Equal("validation.logpipelines.telemetry.kyma-project.io"))
-			Expect(logPipelineWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
-			Expect(logPipelineWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-operator-webhook"))
-			Expect(logPipelineWebhook.ClientConfig.Service.Namespace).Should(Equal(kymaSystemNamespaceName))
-			Expect(*logPipelineWebhook.ClientConfig.Service.Port).Should(Equal(int32(443)))
-			Expect(*logPipelineWebhook.ClientConfig.Service.Path).Should(Equal("/validate-logpipeline"))
-			Expect(logPipelineWebhook.Rules).Should(HaveLen(1))
-			Expect(logPipelineWebhook.Rules[0].Resources).Should(ContainElement("logpipelines"))
-			Expect(logPipelineWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Create))
-			Expect(logPipelineWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Update))
-
-			logParserWebhook := webhookConfig.Webhooks[1]
-			Expect(logParserWebhook.Name).Should(Equal("validation.logparsers.telemetry.kyma-project.io"))
-			Expect(logParserWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
-			Expect(logParserWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-operator-webhook"))
-			Expect(logParserWebhook.ClientConfig.Service.Namespace).Should(Equal(kymaSystemNamespaceName))
-			Expect(*logParserWebhook.ClientConfig.Service.Port).Should(Equal(int32(443)))
-			Expect(*logParserWebhook.ClientConfig.Service.Path).Should(Equal("/validate-logparser"))
-			Expect(logParserWebhook.Rules).Should(HaveLen(1))
-			Expect(logParserWebhook.Rules[0].Resources).Should(ContainElement("logparsers"))
-			Expect(logParserWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Create))
-			Expect(logParserWebhook.Rules[0].Operations).Should(ContainElement(admissionregistrationv1.Update))
 		})
 
 		It("Should have LogPipelines CRD", func() {

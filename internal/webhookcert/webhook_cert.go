@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 
+	v1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -19,27 +20,30 @@ var (
 	caCertSecretName = "telemetry-webhook-cert"
 	certFile         = "tls.crt"
 	keyFile          = "tls.key"
+	caCertFile       = "ca.crt"
+	caKeyFile        = "ca.key"
 )
 
-func EnsureCertificate(ctx context.Context, client client.Client, webhookService types.NamespacedName, certDir string) error {
-	caCertPEM, caKeyPEM, err := getOrCreateCACertKey(ctx, client, webhookService.Namespace)
+func EnsureCertificate(ctx context.Context, client client.Client, webhookService types.NamespacedName, certDir string) (*v1.ValidatingWebhookConfiguration, *corev1.Secret, error) {
+	var caSecret *corev1.Secret
+	caCertPEM, caKeyPEM, caSecret, err := getOrCreateCACertKey(ctx, client, webhookService.Namespace)
 	if err != nil {
-		return fmt.Errorf("failed to get or create ca cert/key: %w", err)
+		return nil, nil, fmt.Errorf("failed to get or create ca cert/key: %w", err)
 	}
 
 	host, alternativeDNSNames := dnsNames(webhookService)
 	var serverCertPEM, serverKeyPEM []byte
 	serverCertPEM, serverKeyPEM, err = generateServerCertKey(host, alternativeDNSNames, caCertPEM, caKeyPEM)
 	if err != nil {
-		return fmt.Errorf("failed to generate server cert: %w", err)
+		return nil, nil, fmt.Errorf("failed to generate server cert: %w", err)
 	}
 
 	if err = writeFiles(serverCertPEM, serverKeyPEM, certDir); err != nil {
-		return fmt.Errorf("failed to write files %w", err)
+		return nil, nil, fmt.Errorf("failed to write files %w", err)
 	}
 
 	validatingWebhookConfig := makeValidatingWebhookConfig(caCertPEM, webhookService)
-	return kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, client, &validatingWebhookConfig)
+	return &validatingWebhookConfig, caSecret, kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, client, &validatingWebhookConfig)
 }
 
 func dnsNames(webhookService types.NamespacedName) (host string, alternativeDNSNames []string) {
@@ -52,7 +56,7 @@ func dnsNames(webhookService types.NamespacedName) (host string, alternativeDNSN
 	return
 }
 
-func getOrCreateCACertKey(ctx context.Context, client client.Client, caCertNamespace string) ([]byte, []byte, error) {
+func getOrCreateCACertKey(ctx context.Context, client client.Client, caCertNamespace string) ([]byte, []byte, *corev1.Secret, error) {
 	var caCertPEM, caKeyPEM []byte
 	caSecretKey := types.NamespacedName{Name: caCertSecretName, Namespace: caCertNamespace}
 	var caSecret corev1.Secret
@@ -62,35 +66,35 @@ func getOrCreateCACertKey(ctx context.Context, client client.Client, caCertNames
 			"secretName", caCertSecretName,
 			"secretNamespace", caCertNamespace)
 
-		if val, found := caSecret.Data[certFile]; found {
+		if val, found := caSecret.Data[caCertFile]; found {
 			caCertPEM = val
 		} else {
-			return nil, nil, fmt.Errorf("key not found : %v", certFile)
+			return nil, nil, nil, fmt.Errorf("key not found: %v", certFile)
 		}
 
-		if val, found := caSecret.Data[keyFile]; found {
+		if val, found := caSecret.Data[caKeyFile]; found {
 			caKeyPEM = val
 		} else {
-			return nil, nil, fmt.Errorf("key not found : %v", keyFile)
+			return nil, nil, nil, fmt.Errorf("key not found: %v", keyFile)
 		}
 	} else {
 		if !apierrors.IsNotFound(err) {
-			return nil, nil, fmt.Errorf("failed to find ca cert secret: %w", err)
+			return nil, nil, nil, fmt.Errorf("failed to find ca cert secret: %w", err)
 		}
 
 		caCertPEM, caKeyPEM, err = generateCACertKey()
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to generate ca cert: %w", err)
+			return nil, nil, nil, fmt.Errorf("failed to generate ca cert: %w", err)
 		}
 
 		logf.FromContext(ctx).Info("Generated new CA cert/key")
-		newSecret := makeCertSecret(caCertPEM, caKeyPEM, caSecretKey)
+		newSecret := makeCaSecret(caCertPEM, caKeyPEM, caSecretKey)
 		if err = client.Create(ctx, &newSecret); err != nil {
-			return nil, nil, fmt.Errorf("failed to create ca cert secret: %w", err)
+			return nil, nil, nil, fmt.Errorf("failed to create ca cert secret: %w", err)
 		}
 	}
 
-	return caCertPEM, caKeyPEM, nil
+	return caCertPEM, caKeyPEM, &caSecret, nil
 }
 
 func writeFiles(certPEM, keyPEM []byte, certDir string) error {

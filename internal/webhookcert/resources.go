@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func makeCertSecret(certificate []byte, key []byte, name types.NamespacedName) corev1.Secret {
+func makeCaSecret(certificate []byte, key []byte, name types.NamespacedName) corev1.Secret {
 	return corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -15,8 +15,8 @@ func makeCertSecret(certificate []byte, key []byte, name types.NamespacedName) c
 			Namespace: name.Namespace,
 		},
 		Data: map[string][]byte{
-			certFile: certificate,
-			keyFile:  key,
+			caCertFile: certificate,
+			caKeyFile:  key,
 		},
 	}
 }

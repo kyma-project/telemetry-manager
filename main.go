@@ -174,7 +174,7 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=replicasets,verbs=get;list;watch
 
-//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=create;get;update;
+//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch
 
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
@@ -354,7 +354,7 @@ func main() {
 		}
 
 		ctx := context.Background()
-		if err = webhookcert.EnsureCertificate(ctx, k8sClient, webhookService, certDir); err != nil {
+		if _, _, err = webhookcert.EnsureCertificate(ctx, k8sClient, webhookService, certDir); err != nil {
 			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
 			os.Exit(1)
 		}
