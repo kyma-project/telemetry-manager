@@ -49,7 +49,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	operatorcontrollers "github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
-	"github.com/kyma-project/telemetry-manager/internal/certgen"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
@@ -69,7 +68,6 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
 	//+kubebuilder:scaffold:imports
 )
@@ -357,7 +355,7 @@ func main() {
 		}
 
 		ctx := context.Background()
-		if err = certgen.EnsureValidatingWebhookConfig(ctx, k8sClient, webhookService, certDir); err != nil {
+		if err = webhookcert.EnsureValidatingWebhookConfig(ctx, k8sClient, webhookService, certDir); err != nil {
 			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
 			os.Exit(1)
 		}

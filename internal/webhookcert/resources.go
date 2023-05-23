@@ -1,4 +1,4 @@
-package certgen
+package webhookcert
 
 import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"

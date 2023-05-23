@@ -1,4 +1,4 @@
-package certgen
+package webhookcert
 
 import (
 	"bytes"
@@ -51,27 +51,35 @@ func generateServerCertKey(serviceName, namespace string, caCertPEM, caKeyPEM []
 		fmt.Sprintf("%s.cluster.local", cn),
 	}
 
-	caCertBlock, _ := pem.Decode(caCertPEM)
-	if caCertBlock.Type != "CERTIFICATE" {
-		return nil, nil, errors.New("not a cert")
-	}
-
-	caCert, err := x509.ParseCertificate(caCertBlock.Bytes)
+	caCert, err := parseCertPEM(caCertPEM)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to parse ca cert: %v", err)
 	}
 
-	caKeyBlock, _ := pem.Decode(caKeyPEM)
-	if caKeyBlock.Type != "RSA PRIVATE KEY" {
-		return nil, nil, errors.New("not a private key")
-	}
-
-	caKey, err := x509.ParsePKCS1PrivateKey(caKeyBlock.Bytes)
+	caKey, err := parseKeyPEM(caKeyPEM)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to parse ca key: %v", err)
 	}
 
 	return generateCertSignedByCA(cn, names, caCert, caKey)
+}
+
+func parseCertPEM(certPEM []byte) (*x509.Certificate, error) {
+	block, _ := pem.Decode(certPEM)
+	if block == nil || block.Type != "CERTIFICATE" {
+		return nil, errors.New("not a cert")
+	}
+
+	return x509.ParseCertificate(block.Bytes)
+}
+
+func parseKeyPEM(keyPEM []byte) (*rsa.PrivateKey, error) {
+	block, _ := pem.Decode(keyPEM)
+	if block.Type != "RSA PRIVATE KEY" {
+		return nil, errors.New("not a private key")
+	}
+
+	return x509.ParsePKCS1PrivateKey(block.Bytes)
 }
 
 func generateCertSignedByCA(host string, alternateDNS []string, caCert *x509.Certificate, caKey *rsa.PrivateKey) ([]byte, []byte, error) {

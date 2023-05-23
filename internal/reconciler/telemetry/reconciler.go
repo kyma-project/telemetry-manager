@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/certgen"
+	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
 
 const (
@@ -98,7 +98,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, _ operatorv1alpha1.Te
 		return nil
 	}
 
-	if err := certgen.EnsureValidatingWebhookConfig(ctx, r.Client, r.webhookConfig.Service, r.webhookConfig.CertDir); err != nil {
+	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.webhookConfig.Service, r.webhookConfig.CertDir); err != nil {
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 

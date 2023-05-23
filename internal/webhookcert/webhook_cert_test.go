@@ -1,4 +1,4 @@
-package certgen
+package webhookcert
 
 import (
 	"context"
@@ -31,7 +31,7 @@ var (
 	}
 )
 
-func TestEnsureValidatingWebhookConfig(t *testing.T) {
+func TestEnsureCertificate(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
@@ -41,7 +41,7 @@ func TestEnsureValidatingWebhookConfig(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 
-	err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
+	err = EnsureCertificate(context.TODO(), client, webhookService, certDir)
 	require.NoError(t, err)
 
 	serverCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
@@ -181,7 +181,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 
-	err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
+	err = EnsureCertificate(context.TODO(), client, webhookService, certDir)
 	require.NoError(t, err)
 
 	newServerCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
@@ -199,7 +199,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 	require.NoError(t, verifyHasCACertInChain(newServerCert, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle))
 }
 
-func TestSecretCreation(t *testing.T) {
+func TestCreateSecret(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
 
 	certDir, err := os.MkdirTemp("", "certificate")
@@ -209,7 +209,7 @@ func TestSecretCreation(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 
-	err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
+	err = EnsureCertificate(context.TODO(), client, webhookService, certDir)
 	require.NoError(t, err)
 
 	var secret corev1.Secret
@@ -234,14 +234,14 @@ func TestReuseExistingCertificate(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 
-	err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
+	err = EnsureCertificate(context.TODO(), client, webhookService, certDir)
 	require.NoError(t, err)
 
 	var newValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 	err = client.Get(context.Background(), types.NamespacedName{Name: name}, &newValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
-	err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
+	err = EnsureCertificate(context.TODO(), client, webhookService, certDir)
 	require.NoError(t, err)
 
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration

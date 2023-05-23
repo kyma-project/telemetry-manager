@@ -1,4 +1,4 @@
-package certgen
+package webhookcert
 
 import (
 	"context"
@@ -21,7 +21,7 @@ var (
 	keyFile          = "tls.key"
 )
 
-func EnsureValidatingWebhookConfig(ctx context.Context, client client.Client, webhookService types.NamespacedName, certDir string) error {
+func EnsureCertificate(ctx context.Context, client client.Client, webhookService types.NamespacedName, certDir string) error {
 	caCertPEM, caKeyPEM, err := getOrCreateCACertKey(ctx, client, webhookService.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get or create ca cert/key: %w", err)
