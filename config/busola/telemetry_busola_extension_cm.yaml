@@ -8,19 +8,14 @@ metadata:
   name: module
 data:
   details: |
-    header: []
+    header:
+      - name: State
+        source: status.state
+        widget: Badge
     body:
-      - name: Summary
-        widget: Panel
-        children:
-          - name: generation
-            source: metadata.generation
-          - name: age
-            source: metadata.creationTimestamp
-          - name: state
-            source: status.state
       - source: spec
         widget: CodeViewer
+        language: "'plaintext'"
   form: |
     []
   general: |
@@ -28,7 +23,7 @@ data:
       kind: Telemetry
       group: operator.kyma-project.io
       version: v1alpha1
-    name: Telemetries
+    name: Telemetry
     category: Observability
     urlPath: telemetries
     scope: cluster
@@ -36,10 +31,10 @@ data:
       {{[Telemetry](https://github.com/kyma-project/telemetry-manager/blob/main/config/crd/bases/operator.kyma-project.io_telemetries.yaml)}}
       is a detailed description of the kind of data and the format used to define a
       Telemetry module instance.
+    features:
+      actions:
+        disableCreate: true
   list: |
-    - name: generation
-      source: metadata.generation
-    - name: age
-      source: metadata.creationTimestamp
-    - name: state
+    - name: State
       source: status.state
+      widget: Badge
