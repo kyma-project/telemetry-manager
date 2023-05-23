@@ -8,6 +8,8 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+
+	networkingv1 "k8s.io/api/networking/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -162,6 +164,76 @@ var _ = Describe("Telemetry-manager", func() {
 				Name: "metricpipelines.telemetry.kyma-project.io",
 			}
 			err := k8sClient.Get(ctx, key, &crd)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should have a Fluent Bit dashboard", func() {
+			var cm corev1.ConfigMap
+			key := types.NamespacedName{
+				Name:      "telemetry-fluent-bit-dashboard-fluent-bit",
+				Namespace: kymaSystemNamespaceName,
+			}
+			err := k8sClient.Get(ctx, key, &cm)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should have an Otel Collector dashboard", func() {
+			var cm corev1.ConfigMap
+			key := types.NamespacedName{
+				Name:      "telemetry-otel-collector-grafana-dashboard",
+				Namespace: kymaSystemNamespaceName,
+			}
+			err := k8sClient.Get(ctx, key, &cm)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should have a Busola extension for LogParsers CRD", func() {
+			var cm corev1.ConfigMap
+			key := types.NamespacedName{
+				Name:      "telemetry-logparsers",
+				Namespace: kymaSystemNamespaceName,
+			}
+			err := k8sClient.Get(ctx, key, &cm)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should have a Busola extension for LogPipelines CRD", func() {
+			var cm corev1.ConfigMap
+			key := types.NamespacedName{
+				Name:      "telemetry-logpipelines",
+				Namespace: kymaSystemNamespaceName,
+			}
+			err := k8sClient.Get(ctx, key, &cm)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should have a Busola extension for TracePipelines CRD", func() {
+			var cm corev1.ConfigMap
+			key := types.NamespacedName{
+				Name:      "telemetry-tracepipelines",
+				Namespace: kymaSystemNamespaceName,
+			}
+			err := k8sClient.Get(ctx, key, &cm)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should have a Busola extension for Telemetry CRD", func() {
+			var cm corev1.ConfigMap
+			key := types.NamespacedName{
+				Name:      "telemetry-module",
+				Namespace: kymaSystemNamespaceName,
+			}
+			err := k8sClient.Get(ctx, key, &cm)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should have a NetworkPolicy", func() {
+			var networkPolicy networkingv1.NetworkPolicy
+			key := types.NamespacedName{
+				Name:      "telemetry-operator-pprof-deny-ingress",
+				Namespace: kymaSystemNamespaceName,
+			}
+			err := k8sClient.Get(ctx, key, &networkPolicy)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
