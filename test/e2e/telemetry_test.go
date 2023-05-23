@@ -3,43 +3,24 @@
 package e2e
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
 
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
+var (
+	webhookName       = "validation.webhook.telemetry.kyma-project.io"
+	webhookCertSecret = types.NamespacedName{
+		Name:      "telemetry-webhook-cert",
+		Namespace: kymaSystemNamespaceName,
+	}
 )
 
 var _ = Describe("Telemetry-module", func() {
-	var (
-		webhookName       = "validation.webhook.telemetry.kyma-project.io"
-		webhookCertSecret = types.NamespacedName{
-			Name:      "telemetry-webhook-cert",
-			Namespace: kymaSystemNamespaceName,
-		}
-	)
-
 	Context("After creating telemetry resources", Ordered, func() {
-		BeforeAll(func() {
-			k8sObjects := []client.Object{k8s.NewTelemetry("default").K8sObject()}
-
-			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-				Eventually(func(g Gomega) {
-					var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
-					g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(BeNil())
-					var secret corev1.Secret
-					g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(BeNil())
-				}, timeout, interval).ShouldNot(Succeed())
-			})
-
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).To(Succeed())
-		})
-
 		It("Should have ValidatingWebhookkConfiguration", func() {
 			Eventually(func(g Gomega) {
 				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration

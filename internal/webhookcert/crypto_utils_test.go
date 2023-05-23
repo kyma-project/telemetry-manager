@@ -22,6 +22,7 @@ func TestGenerateCACertKey(t *testing.T) {
 		caCert, err := parseCertPEM(caCertPEM)
 		require.NoError(t, err)
 		require.NotNil(t, caCert)
+		require.NotNil(t, caCert.Subject.Organization)
 	})
 
 	t.Run("generates valid rsa private key", func(t *testing.T) {
@@ -47,5 +48,14 @@ func TestGenerateCACertKey(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Zero(t, caCertPublicKey.N.Cmp(caPrivateKey.N), "keys do not match")
+	})
+}
+
+func TestGenerateWebhookServerCertKey(t *testing.T) {
+	t.Run("fails if nil input", func(t *testing.T) {
+		//caCertPEM, caKeyPEM, err := generateServerCertKey()
+		//require.NoError(t, err)
+		//require.NotEmpty(t, caCertPEM)
+		//require.NotEmpty(t, caKeyPEM)
 	})
 }

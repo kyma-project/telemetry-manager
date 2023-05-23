@@ -31,22 +31,29 @@ func EnsureCertificate(ctx context.Context, client client.Client, webhookService
 		return nil, nil, fmt.Errorf("failed to get or create ca cert/key: %w", err)
 	}
 
+	host, alternativeDNSNames := dnsNames(webhookService)
 	var serverCertPEM, serverKeyPEM []byte
-	serverCertPEM, serverKeyPEM, err = generateServerCertKey(webhookService.Name, webhookService.Namespace, caCertPEM, caKeyPEM)
+	serverCertPEM, serverKeyPEM, err = generateServerCertKey(host, alternativeDNSNames, caCertPEM, caKeyPEM)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generate server cert: %w", err)
 	}
 
-	if err = os.WriteFile(path.Join(certDir, certFile), serverCertPEM, 0600); err != nil {
-		return nil, nil, fmt.Errorf("failed to write %v: %w", certFile, err)
-	}
-
-	if err = os.WriteFile(path.Join(certDir, keyFile), serverKeyPEM, 0600); err != nil {
-		return nil, nil, fmt.Errorf("failed to write %v: %w", keyFile, err)
+	if err = writeFiles(serverCertPEM, serverKeyPEM, certDir); err != nil {
+		return nil, nil, fmt.Errorf("failed to write files %w", err)
 	}
 
 	validatingWebhookConfig := makeValidatingWebhookConfig(caCertPEM, webhookService)
 	return &validatingWebhookConfig, caSecret, kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, client, &validatingWebhookConfig)
+}
+
+func dnsNames(webhookService types.NamespacedName) (host string, alternativeDNSNames []string) {
+	host = fmt.Sprintf("%s.%s.svc", webhookService.Name, webhookService.Namespace)
+	alternativeDNSNames = []string{
+		webhookService.Name,
+		fmt.Sprintf("%s.%s", webhookService.Name, webhookService.Namespace),
+		fmt.Sprintf("%s.cluster.local", host),
+	}
+	return
 }
 
 func getOrCreateCACertKey(ctx context.Context, client client.Client, caCertNamespace string) ([]byte, []byte, *corev1.Secret, error) {
@@ -88,4 +95,11 @@ func getOrCreateCACertKey(ctx context.Context, client client.Client, caCertNames
 	}
 
 	return caCertPEM, caKeyPEM, &caSecret, nil
+}
+
+func writeFiles(certPEM, keyPEM []byte, certDir string) error {
+	if err := os.WriteFile(path.Join(certDir, certFile), certPEM, 0600); err != nil {
+		return err
+	}
+	return os.WriteFile(path.Join(certDir, keyFile), keyPEM, 0600)
 }
