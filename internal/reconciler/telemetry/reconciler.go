@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +20,6 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/setup"
 )
 
 const (
@@ -105,7 +105,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	var secret *corev1.Secret
 	var err error
 
-	if secret, webhook, err = setup.EnsureValidatingWebhookConfig(ctx, r.Client, r.webhookConfig.Service, r.webhookConfig.CertDir); err != nil {
+	if webhook, secret, err = webhookcert.EnsureCertificate(ctx, r.Client, r.webhookConfig.Service, r.webhookConfig.CertDir); err != nil {
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 

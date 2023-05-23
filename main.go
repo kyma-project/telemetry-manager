@@ -58,7 +58,7 @@ import (
 	tracepipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/setup"
+	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
@@ -67,8 +67,6 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	//nolint:gosec // pprof package is required for performance analysis.
-	_ "net/http/pprof"
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
 	//+kubebuilder:scaffold:imports
 )
@@ -356,7 +354,7 @@ func main() {
 		}
 
 		ctx := context.Background()
-		if _, _, err = setup.EnsureValidatingWebhookConfig(ctx, k8sClient, webhookService, certDir); err != nil {
+		if _, _, err = webhookcert.EnsureCertificate(ctx, k8sClient, webhookService, certDir); err != nil {
 			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
 			os.Exit(1)
 		}

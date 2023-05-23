@@ -79,8 +79,8 @@ var _ = Describe("Telemetry-module", func() {
 				var secret corev1.Secret
 				g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(BeNil())
 				g.Expect(secret.OwnerReferences).Should(HaveLen(1))
-				g.Expect(secret.Data).Should(HaveKeyWithValue("tls.crt", Not(BeEmpty())))
-				g.Expect(secret.Data).Should(HaveKeyWithValue("tls.key", Not(BeEmpty())))
+				g.Expect(secret.Data).Should(HaveKeyWithValue("ca.crt", Not(BeEmpty())))
+				g.Expect(secret.Data).Should(HaveKeyWithValue("ca.key", Not(BeEmpty())))
 			}, timeout, interval).Should(Succeed())
 		})
 

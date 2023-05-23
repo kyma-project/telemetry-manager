@@ -112,3 +112,7 @@ issues:
       path: internal/kubernetes/utils(_test)?.go
     - linters: [ dupl ]
       path: internal/fluentbit/config/validation_test.go
+    - linters: [ dupl ]
+      path: internal/webhookcert/webhook_cert_test.go
+    - linters: [ dupl ]
+      path: internal/webhookcert/resources.go
