@@ -26,7 +26,7 @@ var (
 
 func EnsureCertificate(ctx context.Context, client client.Client, webhookService types.NamespacedName, certDir string) (*v1.ValidatingWebhookConfiguration, *corev1.Secret, error) {
 	var caSecret *corev1.Secret
-	caCertPEM, caKeyPEM, caSecret, err := getOrCreateCACertKey(ctx, client, webhookService.Namespace)
+	caCertPEM, caKeyPEM, caSecret, err := ensureCACertKey(ctx, client, webhookService.Namespace)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get or create ca cert/key: %w", err)
 	}
@@ -56,7 +56,7 @@ func dnsNames(webhookService types.NamespacedName) (host string, alternativeDNSN
 	return
 }
 
-func getOrCreateCACertKey(ctx context.Context, client client.Client, caCertNamespace string) ([]byte, []byte, *corev1.Secret, error) {
+func ensureCACertKey(ctx context.Context, client client.Client, caCertNamespace string) ([]byte, []byte, *corev1.Secret, error) {
 	var caCertPEM, caKeyPEM []byte
 	caSecretKey := types.NamespacedName{Name: caCertSecretName, Namespace: caCertNamespace}
 	var caSecret corev1.Secret
