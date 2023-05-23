@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 
+	v1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,7 +33,7 @@ func generateCert(serviceName, namespace string) ([]byte, []byte, error) {
 	return cert.GenerateSelfSignedCertKey(cn, nil, names)
 }
 
-func EnsureValidatingWebhookConfig(ctx context.Context, client client.Client, webhookService types.NamespacedName, certDir string) error {
+func EnsureValidatingWebhookConfig(ctx context.Context, client client.Client, webhookService types.NamespacedName, certDir string) (*corev1.Secret, *v1.ValidatingWebhookConfiguration, error) {
 	secretKey := types.NamespacedName{
 		Name:      webhookCertSecret,
 		Namespace: webhookService.Namespace,
@@ -42,33 +43,32 @@ func EnsureValidatingWebhookConfig(ctx context.Context, client client.Client, we
 
 	var certificate, key []byte
 	if err == nil {
-		// TODO: check if certificate is still valid
 		certificate = secret.Data[certFile]
 		key = secret.Data[keyFile]
 	} else {
 		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get secret: %w", err)
+			return nil, nil, fmt.Errorf("failed to get secret: %w", err)
 		}
 
 		certificate, key, err = generateCert(webhookService.Name, webhookService.Namespace)
 		if err != nil {
-			return fmt.Errorf("failed to generate certificate: %w", err)
+			return nil, nil, fmt.Errorf("failed to generate certificate: %w", err)
 		}
 
-		newSecret := webhook.MakeCertificateSecret(certificate, key, secretKey)
-		if err = client.Create(ctx, &newSecret); err != nil {
-			return fmt.Errorf("failed to create secret: %w", err)
+		secret = webhook.MakeCertificateSecret(certificate, key, secretKey)
+		if err = client.Create(ctx, &secret); err != nil {
+			return nil, nil, fmt.Errorf("failed to create secret: %w", err)
 		}
 	}
 
 	if err = os.WriteFile(path.Join(certDir, certFile), certificate, 0600); err != nil {
-		return fmt.Errorf("failed to write %v: %w", certFile, err)
+		return nil, nil, fmt.Errorf("failed to write %v: %w", certFile, err)
 	}
 
 	if err = os.WriteFile(path.Join(certDir, keyFile), key, 0600); err != nil {
-		return fmt.Errorf("failed to write %v: %w", keyFile, err)
+		return nil, nil, fmt.Errorf("failed to write %v: %w", keyFile, err)
 	}
 
 	validatingWebhookConfig := webhook.MakeValidatingWebhookConfig(certificate, webhookService)
-	return kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, client, &validatingWebhookConfig)
+	return &secret, &validatingWebhookConfig, kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, client, &validatingWebhookConfig)
 }

@@ -38,7 +38,7 @@ func TestEnsureValidatingWebhookConfig(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 
-	err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
+	_, _, err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
 	require.NoError(t, err)
 
 	certificate, err := os.ReadFile(path.Join(certDir, "tls.crt"))
@@ -178,7 +178,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 
-	err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
+	_, _, err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
 	require.NoError(t, err)
 
 	newCertificate, err := os.ReadFile(path.Join(certDir, "tls.crt"))
@@ -206,7 +206,7 @@ func TestSecretCreation(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 
-	err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
+	_, _, err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
 	require.NoError(t, err)
 
 	var secret corev1.Secret
@@ -243,7 +243,7 @@ func TestReuseExistingCertificate(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 
-	err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
+	_, _, err = EnsureValidatingWebhookConfig(context.TODO(), client, webhookService, certDir)
 	require.NoError(t, err)
 
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration

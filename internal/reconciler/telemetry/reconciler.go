@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	admissionv1 "k8s.io/api/admissionregistration/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -16,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/setup"
 )
 
@@ -73,7 +76,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, r.serverSideApply(ctx, &objectInstance)
 	}
 
-	if err := r.reconcileWebhook(ctx, objectInstance); err != nil {
+	if err := r.reconcileWebhook(ctx, &objectInstance); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
@@ -93,16 +96,32 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) reconcileWebhook(ctx context.Context, _ operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
 	if !r.webhookConfig.Enabled {
 		return nil
 	}
 
-	if err := setup.EnsureValidatingWebhookConfig(ctx, r.Client, r.webhookConfig.Service, r.webhookConfig.CertDir); err != nil {
+	var webhook *admissionv1.ValidatingWebhookConfiguration
+	var secret *corev1.Secret
+	var err error
+
+	if secret, webhook, err = setup.EnsureValidatingWebhookConfig(ctx, r.Client, r.webhookConfig.Service, r.webhookConfig.CertDir); err != nil {
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
-	// TODO add owner reference to webhook config and secret
+	if err = controllerutil.SetOwnerReference(telemetry, secret, r.Scheme); err != nil {
+		return fmt.Errorf("failed to set owner reference for secret: %w", err)
+	}
+	if err = kubernetes.CreateOrUpdateSecret(ctx, r.Client, secret); err != nil {
+		return fmt.Errorf("failed to update secret: %w", err)
+	}
+
+	if err = controllerutil.SetOwnerReference(telemetry, webhook, r.Scheme); err != nil {
+		return fmt.Errorf("failed to set owner reference for webhook: %w", err)
+	}
+	if err = kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, r.Client, webhook); err != nil {
+		return fmt.Errorf("failed to update webhook: %w", err)
+	}
 
 	return nil
 }
