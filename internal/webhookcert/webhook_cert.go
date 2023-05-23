@@ -28,7 +28,8 @@ func EnsureCertificate(ctx context.Context, client client.Client, webhookService
 	}
 
 	var serverCertPEM, serverKeyPEM []byte
-	serverCertPEM, serverKeyPEM, err = generateServerCertKey(webhookService.Name, webhookService.Namespace, caCertPEM, caKeyPEM)
+	host, alternativeDNSNames := dnsNames(webhookService)
+	serverCertPEM, serverKeyPEM, err = generateServerCertKey(host, alternativeDNSNames, caCertPEM, caKeyPEM)
 	if err != nil {
 		return fmt.Errorf("failed to generate server cert: %w", err)
 	}
@@ -43,6 +44,16 @@ func EnsureCertificate(ctx context.Context, client client.Client, webhookService
 
 	validatingWebhookConfig := makeValidatingWebhookConfig(caCertPEM, webhookService)
 	return kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, client, &validatingWebhookConfig)
+}
+
+func dnsNames(webhookService types.NamespacedName) (host string, alternativeDNSNames []string) {
+	host = fmt.Sprintf("%s.%s.svc", webhookService.Name, webhookService.Namespace)
+	alternativeDNSNames = []string{
+		webhookService.Name,
+		fmt.Sprintf("%s.%s", webhookService.Name, webhookService.Namespace),
+		fmt.Sprintf("%s.cluster.local", host),
+	}
+	return
 }
 
 func getOrCreateCACertKey(ctx context.Context, client client.Client, caCertNamespace string) ([]byte, []byte, error) {

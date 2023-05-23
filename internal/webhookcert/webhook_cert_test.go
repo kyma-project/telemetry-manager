@@ -22,6 +22,12 @@ var (
 		Name:      "telemetry-operator-webhook",
 		Namespace: "telemetry-system",
 	}
+	webhookServiceDNSNames = []string{
+		"telemetry-operator-webhook",
+		"telemetry-operator-webhook.telemetry-system",
+		"telemetry-operator-webhook.telemetry-system.svc",
+		"telemetry-operator-webhook.telemetry-system.svc.cluster.local",
+	}
 	name   = "validation.webhook.telemetry.kyma-project.io"
 	labels = map[string]string{
 		"control-plane":              "telemetry-operator",
@@ -44,8 +50,13 @@ func TestEnsureCertificate(t *testing.T) {
 	err = EnsureCertificate(context.TODO(), client, webhookService, certDir)
 	require.NoError(t, err)
 
-	serverCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
+	serverCertPEM, err := os.ReadFile(path.Join(certDir, "tls.crt"))
 	require.NoError(t, err)
+
+	var serverCert *x509.Certificate
+	serverCert, err = parseCertPEM(serverCertPEM)
+	require.NoError(t, err)
+	require.ElementsMatch(t, serverCert.DNSNames, webhookServiceDNSNames)
 
 	var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 	key := types.NamespacedName{
@@ -63,8 +74,8 @@ func TestEnsureCertificate(t *testing.T) {
 	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[0].TimeoutSeconds)
 	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[1].TimeoutSeconds)
 
-	require.NoError(t, verifyHasCACertInChain(serverCert, validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle))
-	require.NoError(t, verifyHasCACertInChain(serverCert, validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle))
+	require.NoError(t, verifyHasCACertInChain(serverCertPEM, validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle))
+	require.NoError(t, verifyHasCACertInChain(serverCertPEM, validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle))
 
 	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Name)
 	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Name)
@@ -86,7 +97,6 @@ func TestEnsureCertificate(t *testing.T) {
 
 	require.Contains(t, validatingWebhookConfiguration.Webhooks[0].Rules[0].Resources, "logpipelines")
 	require.Contains(t, validatingWebhookConfiguration.Webhooks[1].Rules[0].Resources, "logparsers")
-
 }
 
 func TestUpdateWebhookCertificate(t *testing.T) {
