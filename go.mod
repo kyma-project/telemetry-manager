@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/kyma-project/kyma/common/logging v0.0.0-20230308123227-fef111f7cb46
 	github.com/onsi/ginkgo/v2 v2.9.5
-	github.com/onsi/gomega v1.27.6
+	github.com/onsi/gomega v1.27.7
 	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.77.0
 	github.com/prometheus/client_golang v1.15.1
 	github.com/prometheus/common v0.43.0
