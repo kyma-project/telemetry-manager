@@ -15,7 +15,7 @@ trap cleanup EXIT SIGINT
 
 echo $ROOT_PATH
 
-$CONTROLLER_GEN rbac:roleName=manager-role crd webhook paths="${OPERATOR_DIR}/..." output:crd:artifacts:config="${TMP_DIR}"
+$CONTROLLER_GEN rbac:roleName=operator-manager-role crd webhook paths="${OPERATOR_DIR}/..." output:crd:artifacts:config="${TMP_DIR}"
 
 DIFF=$(diff -q $TMP_DIR ${OPERATOR_DIR}/config/crd/bases)
 if [ -n "${DIFF}" ]; then
