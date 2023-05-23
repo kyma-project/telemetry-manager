@@ -22,7 +22,7 @@ func generateCACertKey() ([]byte, []byte, error) {
 		return nil, nil, fmt.Errorf("failed to generate private key: %v", err)
 	}
 	cfg := cert.Config{
-		CommonName: "kubernetes",
+		Organization: []string{"kyma-project.io"},
 	}
 
 	caCert, err := cert.NewSelfSignedCACert(cfg, key)

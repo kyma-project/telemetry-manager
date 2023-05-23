@@ -1,6 +1,7 @@
 package webhookcert
 
 import (
+	"crypto/rsa"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -30,5 +31,21 @@ func TestGenerateCACertKey(t *testing.T) {
 		caKey, err := parseKeyPEM(caKeyPEM)
 		require.NoError(t, err)
 		require.NotNil(t, caKey)
+	})
+
+	t.Run("generates matching cert and private key", func(t *testing.T) {
+		caCertPEM, caKeyPEM, err := generateCACertKey()
+		require.NoError(t, err)
+
+		caCert, err := parseCertPEM(caCertPEM)
+		require.NoError(t, err)
+
+		caCertPublicKey, isRSA := caCert.PublicKey.(*rsa.PublicKey)
+		require.True(t, isRSA, "not an rsa public key")
+
+		caPrivateKey, err := parseKeyPEM(caKeyPEM)
+		require.NoError(t, err)
+
+		require.Zero(t, caCertPublicKey.N.Cmp(caPrivateKey.N), "keys do not match")
 	})
 }

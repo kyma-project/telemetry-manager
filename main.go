@@ -21,8 +21,6 @@ import (
 	"errors"
 	"flag"
 	"net/http"
-	//nolint:gosec // pprof package is required for performance analysis.
-	_ "net/http/pprof"
 	"os"
 	"strings"
 	"sync"
@@ -60,6 +58,7 @@ import (
 	tracepipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
@@ -355,7 +354,7 @@ func main() {
 		}
 
 		ctx := context.Background()
-		if err = webhookcert.EnsureValidatingWebhookConfig(ctx, k8sClient, webhookService, certDir); err != nil {
+		if err = webhookcert.EnsureCertificate(ctx, k8sClient, webhookService, certDir); err != nil {
 			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
 			os.Exit(1)
 		}
