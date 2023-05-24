@@ -2,24 +2,8 @@ package webhookcert
 
 import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
-
-func makeCaSecret(certificate []byte, key []byte, name types.NamespacedName) corev1.Secret {
-	return corev1.Secret{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
-		Data: map[string][]byte{
-			caCertFile: certificate,
-			caKeyFile:  key,
-		},
-	}
-}
 
 func makeValidatingWebhookConfig(certificate []byte, config Config) admissionregistrationv1.ValidatingWebhookConfiguration {
 	logPipelinePath := "/validate-logpipeline"
@@ -54,8 +38,8 @@ func makeValidatingWebhookConfig(certificate []byte, config Config) admissionreg
 				AdmissionReviewVersions: []string{"v1beta1", "v1"},
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      config.Service.Name,
-						Namespace: config.Service.Namespace,
+						Name:      config.ServiceName.Name,
+						Namespace: config.ServiceName.Namespace,
 						Port:      &servicePort,
 						Path:      &logPipelinePath,
 					},
@@ -82,8 +66,8 @@ func makeValidatingWebhookConfig(certificate []byte, config Config) admissionreg
 				AdmissionReviewVersions: []string{"v1beta1", "v1"},
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      config.Service.Name,
-						Namespace: config.Service.Namespace,
+						Name:      config.ServiceName.Name,
+						Namespace: config.ServiceName.Namespace,
 						Port:      &servicePort,
 						Path:      &logParserPath,
 					},

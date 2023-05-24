@@ -104,7 +104,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	}
 
 	var secret corev1.Secret
-	if err := r.Get(ctx, r.webhookConfig.CertConfig.CABundleSecret, &secret); err != nil {
+	if err := r.Get(ctx, r.webhookConfig.CertConfig.CASecretName, &secret); err != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
 	}
 	if err := controllerutil.SetOwnerReference(telemetry, &secret, r.Scheme); err != nil {

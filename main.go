@@ -318,11 +318,11 @@ func main() {
 		Enabled: enableWebhook,
 		CertConfig: webhookcert.Config{
 			CertDir: certDir,
-			Service: types.NamespacedName{
+			ServiceName: types.NamespacedName{
 				Name:      webhookServiceName,
 				Namespace: telemetryNamespace,
 			},
-			CABundleSecret: types.NamespacedName{
+			CASecretName: types.NamespacedName{
 				Name:      "telemetry-webhook-cert",
 				Namespace: telemetryNamespace,
 			},

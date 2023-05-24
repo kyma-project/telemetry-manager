@@ -48,10 +48,10 @@ func TestEnsureCertificate(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 	config := Config{
-		CertDir:        certDir,
-		Service:        webhookService,
-		CABundleSecret: caBundleSecret,
-		WebhookName:    webhookName,
+		CertDir:      certDir,
+		ServiceName:  webhookService,
+		CASecretName: caBundleSecret,
+		WebhookName:  webhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
@@ -191,10 +191,10 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 	config := Config{
-		CertDir:        certDir,
-		Service:        webhookService,
-		CABundleSecret: caBundleSecret,
-		WebhookName:    webhookName,
+		CertDir:      certDir,
+		ServiceName:  webhookService,
+		CASecretName: caBundleSecret,
+		WebhookName:  webhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
@@ -225,17 +225,17 @@ func TestCreateSecret(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 	config := Config{
-		CertDir:        certDir,
-		Service:        webhookService,
-		CABundleSecret: caBundleSecret,
-		WebhookName:    webhookName,
+		CertDir:      certDir,
+		ServiceName:  webhookService,
+		CASecretName: caBundleSecret,
+		WebhookName:  webhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
 	require.NoError(t, err)
 
 	var secret corev1.Secret
-	err = client.Get(context.Background(), config.CABundleSecret, &secret)
+	err = client.Get(context.Background(), config.CASecretName, &secret)
 	require.NoError(t, err)
 
 	require.Contains(t, secret.Data, "ca.crt")
@@ -252,10 +252,10 @@ func TestReuseExistingCertificate(t *testing.T) {
 		require.NoError(t, deleteErr)
 	}(certDir)
 	config := Config{
-		CertDir:        certDir,
-		Service:        webhookService,
-		CABundleSecret: caBundleSecret,
-		WebhookName:    webhookName,
+		CertDir:      certDir,
+		ServiceName:  webhookService,
+		CASecretName: caBundleSecret,
+		WebhookName:  webhookName,
 	}
 
 	err = EnsureCertificate(context.TODO(), client, config)
