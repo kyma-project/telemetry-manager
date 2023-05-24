@@ -9,6 +9,11 @@ import (
 	"time"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
+	kittrace "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/trace"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
+	kittraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/traces"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -18,13 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	kittrace "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/trace"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
-	kittraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/traces"
 )
 
 var (
@@ -48,7 +46,9 @@ var _ = Describe("Tracing", func() {
 
 	Context("When a tracepipeline exists", Ordered, func() {
 		BeforeAll(func() {
-			k8sObjects := makeTracingTestK8sObjects(portRegistry, "trace-mocks-single-pipeline")
+			mockNs := "trace-mocks-single-pipeline"
+			mocksDeploymentName := "trace-receiver"
+			k8sObjects := makeTracingTestK8sObjects(portRegistry, mockNs, mocksDeploymentName)
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -171,7 +171,9 @@ var _ = Describe("Tracing", func() {
 
 	Context("When a broken tracepipeline exists", Ordered, func() {
 		BeforeAll(func() {
-			k8sObjects := makeTracingTestK8sObjects(portRegistry, "trace-mocks-broken-pipeline")
+			mockNs := "trace-mocks-broken-pipeline"
+			mocksDeploymentName := "trace-receiver"
+			k8sObjects := makeTracingTestK8sObjects(portRegistry, mockNs, mocksDeploymentName)
 			secondPipeline := makeBrokenTracePipeline("pipeline-2")
 
 			DeferCleanup(func() {
@@ -216,7 +218,9 @@ var _ = Describe("Tracing", func() {
 
 	Context("When multiple tracepipelines exist", Ordered, func() {
 		BeforeAll(func() {
-			k8sObjects := makeMultiPipelineTracingTestK8sObjects(portRegistry, "trace-mocks-multi-pipeline")
+			mockNs := "trace-mocks-multi-pipeline"
+			mocksDeploymentName := "trace-receiver"
+			k8sObjects := makeMultiPipelineTracingTestK8sObjects(portRegistry, mockNs, mocksDeploymentName)
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -272,7 +276,7 @@ func tracePipelineShouldStayPending(pipelineName string) {
 }
 
 // makeTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry, namespace string) []client.Object {
+func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry, namespace string, mockDeploymentName string) []client.Object {
 	var (
 		grpcOTLPPort        = portRegistry.ServicePort("grpc-otlp")
 		grpcOTLPNodePort    = portRegistry.NodePort("grpc-otlp")
@@ -285,7 +289,7 @@ func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry, namespace stri
 
 	//// Mocks namespace objects.
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	mockBackend := mocks.NewBackend("trace-receiver", mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
+	mockBackend := mocks.NewBackend(mockDeploymentName, mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
 	mockBackendConfigMap := mockBackend.ConfigMap("trace-receiver-config")
 	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().
@@ -315,7 +319,7 @@ func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry, namespace stri
 }
 
 // makeMultiPipelineTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects including two tracepipelines.
-func makeMultiPipelineTracingTestK8sObjects(portRegistry testkit.PortRegistry, namespace string) []client.Object {
+func makeMultiPipelineTracingTestK8sObjects(portRegistry testkit.PortRegistry, namespace string, mockDeploymentName string) []client.Object {
 	var (
 		grpcOTLPPort        = portRegistry.ServicePort("grpc-otlp")
 		grpcOTLPNodePort    = portRegistry.NodePort("grpc-otlp")
@@ -328,7 +332,7 @@ func makeMultiPipelineTracingTestK8sObjects(portRegistry testkit.PortRegistry, n
 
 	//// Mocks namespace objects.
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	mockBackend := mocks.NewBackend("trace-receiver", mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
+	mockBackend := mocks.NewBackend(mockDeploymentName, mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
 	mockBackendConfigMap := mockBackend.ConfigMap("trace-receiver-config")
 	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().
