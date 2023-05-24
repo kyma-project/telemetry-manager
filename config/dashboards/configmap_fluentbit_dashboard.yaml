@@ -6,7 +6,6 @@ metadata:
     helm.sh/chart: fluent-bit-1.9.5
     app.kubernetes.io/name: fluent-bit
     app.kubernetes.io/instance: telemetry
-    app.kubernetes.io/managed-by: Helm
     grafana_dashboard: "1"
 data:
   fluent-bit.json: |
