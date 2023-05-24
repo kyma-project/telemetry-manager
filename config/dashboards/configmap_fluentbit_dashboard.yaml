@@ -3,7 +3,6 @@ kind: ConfigMap
 metadata:
   name: fluent-bit-dashboard-fluent-bit
   labels:
-    helm.sh/chart: fluent-bit-1.9.5
     app.kubernetes.io/name: fluent-bit
     app.kubernetes.io/instance: telemetry
     grafana_dashboard: "1"
