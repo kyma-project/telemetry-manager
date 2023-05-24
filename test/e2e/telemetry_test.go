@@ -27,6 +27,9 @@ var _ = Describe("Telemetry-module", func() {
 				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(BeNil())
 
 				g.Expect(validatingWebhookConfiguration.OwnerReferences).Should(HaveLen(1))
+				g.Expect(validatingWebhookConfiguration.OwnerReferences[0].Name).Should(Equal("default"))
+				g.Expect(validatingWebhookConfiguration.OwnerReferences[0].Kind).Should(Equal("Telemetry"))
+
 				g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(2))
 
 				logPipelineWebhook := validatingWebhookConfiguration.Webhooks[0]
@@ -60,6 +63,8 @@ var _ = Describe("Telemetry-module", func() {
 				var secret corev1.Secret
 				g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(BeNil())
 				g.Expect(secret.OwnerReferences).Should(HaveLen(1))
+				g.Expect(secret.OwnerReferences[0].Name).Should(Equal("default"))
+				g.Expect(secret.OwnerReferences[0].Kind).Should(Equal("Telemetry"))
 				g.Expect(secret.Data).Should(HaveKeyWithValue("ca.crt", Not(BeEmpty())))
 				g.Expect(secret.Data).Should(HaveKeyWithValue("ca.key", Not(BeEmpty())))
 			}, timeout, interval).Should(Succeed())
