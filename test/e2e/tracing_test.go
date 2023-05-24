@@ -5,6 +5,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	"net/http"
 	"time"
 
@@ -13,14 +14,13 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	kittrace "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
+	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 	kittraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/traces"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -45,10 +45,11 @@ var _ = Describe("Tracing", func() {
 	)
 
 	Context("When a tracepipeline exists", Ordered, func() {
+		mockNs := "trace-mocks-single-pipeline"
+		mockDeploymentName := "trace-receiver"
+
 		BeforeAll(func() {
-			mockNs := "trace-mocks-single-pipeline"
-			mocksDeploymentName := "trace-receiver"
-			k8sObjects := makeTracingTestK8sObjects(portRegistry, mockNs, mocksDeploymentName)
+			k8sObjects := makeTracingTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -58,25 +59,21 @@ var _ = Describe("Tracing", func() {
 
 		It("Should have a running trace collector deployment", func() {
 			Eventually(func(g Gomega) bool {
-				var deployment appsv1.Deployment
+				//var deployment appsv1.Deployment
 				key := types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
-				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
+				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).To(BeNil())
+				return res
+			}, timeout, interval).Should(BeTrue())
+		})
 
-				listOptions := client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels),
-					Namespace:     kymaSystemNamespaceName,
-				}
-				var pods corev1.PodList
-				Expect(k8sClient.List(ctx, &pods, &listOptions)).To(Succeed())
-				for _, pod := range pods.Items {
-					for _, containerStatus := range pod.Status.ContainerStatuses {
-						if containerStatus.State.Running == nil {
-							return false
-						}
-					}
-				}
+		It("Should have a trace backend running", func() {
+			Eventually(func(g Gomega) bool {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).To(BeNil())
+				return res
 
-				return true
 			}, timeout, interval).Should(BeTrue())
 		})
 
@@ -170,10 +167,11 @@ var _ = Describe("Tracing", func() {
 	})
 
 	Context("When a broken tracepipeline exists", Ordered, func() {
+		mockNs := "trace-mocks-broken-pipeline"
+		mockDeploymentName := "trace-receiver"
+
 		BeforeAll(func() {
-			mockNs := "trace-mocks-broken-pipeline"
-			mocksDeploymentName := "trace-receiver"
-			k8sObjects := makeTracingTestK8sObjects(portRegistry, mockNs, mocksDeploymentName)
+			k8sObjects := makeTracingTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 			secondPipeline := makeBrokenTracePipeline("pipeline-2")
 
 			DeferCleanup(func() {
@@ -187,6 +185,16 @@ var _ = Describe("Tracing", func() {
 		It("Should have running pipelines", func() {
 			tracePipelineShouldBeRunning("test")
 			tracePipelineShouldBeRunning("pipeline-2")
+		})
+
+		It("Should have a trace backend running", func() {
+			Eventually(func(g Gomega) bool {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).To(BeNil())
+				return res
+
+			}, timeout, interval).Should(BeTrue())
 		})
 
 		It("Should verify end-to-end trace delivery for the remaining pipeline", func() {
@@ -217,10 +225,11 @@ var _ = Describe("Tracing", func() {
 	})
 
 	Context("When multiple tracepipelines exist", Ordered, func() {
+		mockNs := "trace-mocks-multi-pipeline"
+		mockDeploymentName := "trace-receiver"
+
 		BeforeAll(func() {
-			mockNs := "trace-mocks-multi-pipeline"
-			mocksDeploymentName := "trace-receiver"
-			k8sObjects := makeMultiPipelineTracingTestK8sObjects(portRegistry, mockNs, mocksDeploymentName)
+			k8sObjects := makeMultiPipelineTracingTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -231,6 +240,16 @@ var _ = Describe("Tracing", func() {
 		It("Should have running pipelines", func() {
 			tracePipelineShouldBeRunning("pipeline-1")
 			tracePipelineShouldBeRunning("pipeline-2")
+		})
+
+		It("Should have a trace backend running", func() {
+			Eventually(func(g Gomega) bool {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).To(BeNil())
+				return res
+
+			}, timeout, interval).Should(BeTrue())
 		})
 
 		It("Should verify end-to-end trace delivery", func() {

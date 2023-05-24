@@ -5,16 +5,16 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	"net/http"
 	"time"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -45,9 +45,9 @@ var _ = Describe("Metrics", func() {
 	)
 
 	Context("When a metricpipeline exists", Ordered, func() {
+		mockNs := "metric-mocks"
+		mockDeploymentName := "metric-receiver"
 		BeforeAll(func() {
-			mockNs := "metric-mocks"
-			mockDeploymentName := "metric-receiver"
 			k8sObjects := makeMetricsTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 
 			DeferCleanup(func() {
@@ -58,49 +58,20 @@ var _ = Describe("Metrics", func() {
 
 		It("Should have a running metric gateway deployment", func() {
 			Eventually(func(g Gomega) bool {
-				var deployment appsv1.Deployment
 				key := types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
-				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
-
-				listOptions := client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels),
-					Namespace:     kymaSystemNamespaceName,
-				}
-				var pods corev1.PodList
-				Expect(k8sClient.List(ctx, &pods, &listOptions)).To(Succeed())
-				for _, pod := range pods.Items {
-					for _, containerStatus := range pod.Status.ContainerStatuses {
-						if containerStatus.State.Running == nil {
-							return false
-						}
-					}
-				}
-
-				return true
+				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).To(BeNil())
+				return res
 			}, timeout, interval).Should(BeTrue())
 		})
 
-		It("Should have the mock backend running", func() {
+		It("Should have a metrics backend running", func() {
 			Eventually(func(g Gomega) bool {
-				var deployment appsv1.Deployment
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
+				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).To(BeNil())
+				return res
 
-				listOptions := client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels),
-					Namespace:     mockNs,
-				}
-				var pods corev1.PodList
-				Expect(k8sClient.List(ctx, &pods, &listOptions)).To(Succeed())
-				for _, pod := range pods.Items {
-					for _, containerStatus := range pod.Status.ContainerStatuses {
-						if containerStatus.State.Running == nil {
-							return false
-						}
-					}
-				}
-
-				return true
 			}, timeout, interval).Should(BeTrue())
 		})
 
@@ -186,9 +157,10 @@ var _ = Describe("Metrics", func() {
 	})
 
 	Context("When a broken metricpipeline exists", Ordered, func() {
+		mockNs := "metric-mocks-broken-pipeline"
+		mockDeploymentName := "metric-receiver"
+
 		BeforeAll(func() {
-			mockNs := "metric-mocks-broken-pipeline"
-			mockDeploymentName := "metric-receiver
 			k8sObjects := makeMetricsTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 			secondPipeline := makeBrokenMetricPipeline("pipeline-2")
 
@@ -207,25 +179,19 @@ var _ = Describe("Metrics", func() {
 
 		It("Should have a running metric gateway deployment", func() {
 			Eventually(func(g Gomega) bool {
-				var deployment appsv1.Deployment
 				key := types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
-				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
+				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).To(BeNil())
+				return res
+			}, timeout, interval).Should(BeTrue())
+		})
+		It("Should have a metrics backend running", func() {
+			Eventually(func(g Gomega) bool {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).To(BeNil())
+				return res
 
-				listOptions := client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels),
-					Namespace:     kymaSystemNamespaceName,
-				}
-				var pods corev1.PodList
-				Expect(k8sClient.List(ctx, &pods, &listOptions)).To(Succeed())
-				for _, pod := range pods.Items {
-					for _, containerStatus := range pod.Status.ContainerStatuses {
-						if containerStatus.State.Running == nil {
-							return false
-						}
-					}
-				}
-
-				return true
 			}, timeout, interval).Should(BeTrue())
 		})
 
@@ -250,9 +216,10 @@ var _ = Describe("Metrics", func() {
 	})
 
 	Context("When multiple metricpipelines exist", Ordered, func() {
+		mockNs := "metric-mocks-multi-pipeline"
+		mockDeploymentName := "metric-receiver"
+
 		BeforeAll(func() {
-			mockNs := "metric-mocks-multi-pipeline"
-			mockDeploymentName := "metric-receiver
 			k8sObjects := makeMultiPipelineMetricsTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 
 			DeferCleanup(func() {
@@ -264,6 +231,25 @@ var _ = Describe("Metrics", func() {
 		It("Should have running pipelines", func() {
 			metricPipelineShouldBeRunning("pipeline-1")
 			metricPipelineShouldBeRunning("pipeline-2")
+		})
+
+		It("Should have a running metric gateway deployment", func() {
+			Eventually(func(g Gomega) bool {
+				key := types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
+				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).To(BeNil())
+				return res
+			}, timeout, interval).Should(BeTrue())
+		})
+
+		It("Should have a metrics backend running", func() {
+			Eventually(func(g Gomega) bool {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).To(BeNil())
+				return res
+
+			}, timeout, interval).Should(BeTrue())
 		})
 
 		It("Should verify end-to-end metric delivery", func() {
