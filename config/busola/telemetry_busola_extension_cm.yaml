@@ -23,7 +23,7 @@ data:
       kind: Telemetry
       group: operator.kyma-project.io
       version: v1alpha1
-    name: Telemetry
+    name: Telemetry Module
     category: Observability
     urlPath: telemetries
     scope: cluster
