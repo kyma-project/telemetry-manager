@@ -249,7 +249,7 @@ func metricPipelineShouldStayPending(pipelineName string) {
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)).To(BeFalse())
-	}, tracePipelineReconciliationTimeout, interval).Should(Succeed())
+	}, metricPipelineReconciliationTimeout, interval).Should(Succeed())
 }
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.

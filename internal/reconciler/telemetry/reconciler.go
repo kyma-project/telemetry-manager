@@ -9,7 +9,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -29,9 +28,8 @@ const (
 )
 
 type WebhookConfig struct {
-	Enabled bool
-	Service types.NamespacedName
-	CertDir string
+	Enabled    bool
+	CertConfig webhookcert.Config
 }
 
 type Reconciler struct {
@@ -101,25 +99,29 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 		return nil
 	}
 
-	var webhook *admissionv1.ValidatingWebhookConfiguration
-	var secret *corev1.Secret
-	var err error
-
-	if webhook, secret, err = webhookcert.EnsureCertificate(ctx, r.Client, r.webhookConfig.Service, r.webhookConfig.CertDir); err != nil {
+	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.webhookConfig.CertConfig); err != nil {
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
-	if err = controllerutil.SetOwnerReference(telemetry, secret, r.Scheme); err != nil {
+	var secret corev1.Secret
+	if err := r.Get(ctx, r.webhookConfig.CertConfig.CABundleSecret, &secret); err != nil {
+		return fmt.Errorf("failed to get secret: %w", err)
+	}
+	if err := controllerutil.SetOwnerReference(telemetry, &secret, r.Scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference for secret: %w", err)
 	}
-	if err = kubernetes.CreateOrUpdateSecret(ctx, r.Client, secret); err != nil {
+	if err := kubernetes.CreateOrUpdateSecret(ctx, r.Client, &secret); err != nil {
 		return fmt.Errorf("failed to update secret: %w", err)
 	}
 
-	if err = controllerutil.SetOwnerReference(telemetry, webhook, r.Scheme); err != nil {
+	var webhook admissionv1.ValidatingWebhookConfiguration
+	if err := r.Get(ctx, r.webhookConfig.CertConfig.WebhookName, &webhook); err != nil {
+		return fmt.Errorf("failed to get webhook: %w", err)
+	}
+	if err := controllerutil.SetOwnerReference(telemetry, &webhook, r.Scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference for webhook: %w", err)
 	}
-	if err = kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, r.Client, webhook); err != nil {
+	if err := kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, r.Client, &webhook); err != nil {
 		return fmt.Errorf("failed to update webhook: %w", err)
 	}
 

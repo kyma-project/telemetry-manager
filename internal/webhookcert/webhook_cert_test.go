@@ -18,11 +18,19 @@ import (
 )
 
 var (
-	webhookService = types.NamespacedName{
+	telemetryNamespace = "telemetry-system"
+	webhookService     = types.NamespacedName{
 		Name:      "telemetry-operator-webhook",
-		Namespace: "telemetry-system",
+		Namespace: telemetryNamespace,
 	}
-	name   = "validation.webhook.telemetry.kyma-project.io"
+	caBundleSecret = types.NamespacedName{
+		Name:      "telemetry-webhook-cert",
+		Namespace: telemetryNamespace,
+	}
+	name        = "validation.webhook.telemetry.kyma-project.io"
+	webhookName = types.NamespacedName{
+		Name: name,
+	}
 	labels = map[string]string{
 		"control-plane":              "telemetry-operator",
 		"app.kubernetes.io/instance": "telemetry",
@@ -33,26 +41,28 @@ var (
 
 func TestEnsureCertificate(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
-
 	certDir, err := os.MkdirTemp("", "certificate")
 	require.NoError(t, err)
 	defer func(path string) {
 		deleteErr := os.RemoveAll(path)
 		require.NoError(t, deleteErr)
 	}(certDir)
+	config := Config{
+		CertDir:        certDir,
+		Service:        webhookService,
+		CABundleSecret: caBundleSecret,
+		WebhookName:    webhookName,
+	}
 
-	_, _, err = EnsureCertificate(context.TODO(), client, webhookService, certDir)
+	err = EnsureCertificate(context.TODO(), client, config)
 	require.NoError(t, err)
 
 	serverCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
 	require.NoError(t, err)
 
 	var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-	key := types.NamespacedName{
-		Name: name,
-	}
 
-	err = client.Get(context.Background(), key, &validatingWebhookConfiguration)
+	err = client.Get(context.Background(), config.WebhookName, &validatingWebhookConfiguration)
 	require.NoError(t, err)
 
 	require.Equal(t, name, validatingWebhookConfiguration.Name)
@@ -180,8 +190,14 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 		deleteErr := os.RemoveAll(path)
 		require.NoError(t, deleteErr)
 	}(certDir)
+	config := Config{
+		CertDir:        certDir,
+		Service:        webhookService,
+		CABundleSecret: caBundleSecret,
+		WebhookName:    webhookName,
+	}
 
-	_, _, err = EnsureCertificate(context.TODO(), client, webhookService, certDir)
+	err = EnsureCertificate(context.TODO(), client, config)
 	require.NoError(t, err)
 
 	newServerCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
@@ -208,16 +224,18 @@ func TestCreateSecret(t *testing.T) {
 		deleteErr := os.RemoveAll(path)
 		require.NoError(t, deleteErr)
 	}(certDir)
+	config := Config{
+		CertDir:        certDir,
+		Service:        webhookService,
+		CABundleSecret: caBundleSecret,
+		WebhookName:    webhookName,
+	}
 
-	_, _, err = EnsureCertificate(context.TODO(), client, webhookService, certDir)
+	err = EnsureCertificate(context.TODO(), client, config)
 	require.NoError(t, err)
 
 	var secret corev1.Secret
-	key := types.NamespacedName{
-		Name:      caCertSecretName,
-		Namespace: webhookService.Namespace,
-	}
-	err = client.Get(context.Background(), key, &secret)
+	err = client.Get(context.Background(), config.CABundleSecret, &secret)
 	require.NoError(t, err)
 
 	require.Contains(t, secret.Data, "ca.crt")
@@ -233,15 +251,21 @@ func TestReuseExistingCertificate(t *testing.T) {
 		deleteErr := os.RemoveAll(path)
 		require.NoError(t, deleteErr)
 	}(certDir)
+	config := Config{
+		CertDir:        certDir,
+		Service:        webhookService,
+		CABundleSecret: caBundleSecret,
+		WebhookName:    webhookName,
+	}
 
-	_, _, err = EnsureCertificate(context.TODO(), client, webhookService, certDir)
+	err = EnsureCertificate(context.TODO(), client, config)
 	require.NoError(t, err)
 
 	var newValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 	err = client.Get(context.Background(), types.NamespacedName{Name: name}, &newValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
-	_, _, err = EnsureCertificate(context.TODO(), client, webhookService, certDir)
+	err = EnsureCertificate(context.TODO(), client, config)
 	require.NoError(t, err)
 
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration

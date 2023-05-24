@@ -21,8 +21,7 @@ func makeCaSecret(certificate []byte, key []byte, name types.NamespacedName) cor
 	}
 }
 
-func makeValidatingWebhookConfig(certificate []byte, webhookService types.NamespacedName) admissionregistrationv1.ValidatingWebhookConfiguration {
-	webhookName := "validation.webhook.telemetry.kyma-project.io"
+func makeValidatingWebhookConfig(certificate []byte, config Config) admissionregistrationv1.ValidatingWebhookConfiguration {
 	logPipelinePath := "/validate-logpipeline"
 	logParserPath := "/validate-logparser"
 	failurePolicy := admissionregistrationv1.Fail
@@ -47,7 +46,7 @@ func makeValidatingWebhookConfig(certificate []byte, webhookService types.Namesp
 	return admissionregistrationv1.ValidatingWebhookConfiguration{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   webhookName,
+			Name:   config.WebhookName.Name,
 			Labels: labels,
 		},
 		Webhooks: []admissionregistrationv1.ValidatingWebhook{
@@ -55,8 +54,8 @@ func makeValidatingWebhookConfig(certificate []byte, webhookService types.Namesp
 				AdmissionReviewVersions: []string{"v1beta1", "v1"},
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      webhookService.Name,
-						Namespace: webhookService.Namespace,
+						Name:      config.Service.Name,
+						Namespace: config.Service.Namespace,
 						Port:      &servicePort,
 						Path:      &logPipelinePath,
 					},
@@ -83,8 +82,8 @@ func makeValidatingWebhookConfig(certificate []byte, webhookService types.Namesp
 				AdmissionReviewVersions: []string{"v1beta1", "v1"},
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
-						Name:      webhookService.Name,
-						Namespace: webhookService.Namespace,
+						Name:      config.Service.Name,
+						Namespace: config.Service.Namespace,
 						Port:      &servicePort,
 						Path:      &logParserPath,
 					},

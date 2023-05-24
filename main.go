@@ -314,18 +314,27 @@ func main() {
 		}
 	}
 
-	webhookService := types.NamespacedName{
-		Name:      webhookServiceName,
-		Namespace: telemetryNamespace,
+	webhookConfig := telemetry.WebhookConfig{
+		Enabled: enableWebhook,
+		CertConfig: webhookcert.Config{
+			CertDir: certDir,
+			Service: types.NamespacedName{
+				Name:      webhookServiceName,
+				Namespace: telemetryNamespace,
+			},
+			CABundleSecret: types.NamespacedName{
+				Name:      "telemetry-webhook-cert",
+				Namespace: telemetryNamespace,
+			},
+			WebhookName: types.NamespacedName{
+				Name: "validation.webhook.telemetry.kyma-project.io",
+			},
+		},
 	}
 
 	if enableTelemetryManagerModule {
 		setupLog.Info("Starting with telemetry manager controller")
-		webhookConfig := telemetry.WebhookConfig{
-			Enabled: enableWebhook,
-			CertDir: certDir,
-			Service: webhookService,
-		}
+
 		if err = createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), mgr.GetEventRecorderFor("telemetry-operator"), webhookConfig).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
 			os.Exit(1)
@@ -354,7 +363,7 @@ func main() {
 		}
 
 		ctx := context.Background()
-		if _, _, err = webhookcert.EnsureCertificate(ctx, k8sClient, webhookService, certDir); err != nil {
+		if err = webhookcert.EnsureCertificate(ctx, k8sClient, webhookConfig.CertConfig); err != nil {
 			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
 			os.Exit(1)
 		}
