@@ -53,7 +53,7 @@ func (p *caCertKeyProvider) provideCACertKey(ctx context.Context, caSecretName t
 			"secretName", caSecretName.Name,
 			"secretNamespace", caSecretName.Namespace)
 
-		newSecret := makeCaSecret(caCertPEM, caKeyPEM, caSecretName)
+		newSecret := makeCASecret(caCertPEM, caKeyPEM, caSecretName)
 		if err = kubernetes.CreateOrUpdateSecret(ctx, p.client, &newSecret); err != nil {
 			return nil, nil, fmt.Errorf("failed to create ca cert caSecretName: %w", err)
 		}
@@ -106,7 +106,7 @@ func (p *caCertKeyProvider) checkCertExpiry(certPEM []byte) error {
 	return errors.New("cert is about to expire: rotation needed")
 }
 
-func makeCaSecret(certificate []byte, key []byte, name types.NamespacedName) corev1.Secret {
+func makeCASecret(certificate []byte, key []byte, name types.NamespacedName) corev1.Secret {
 	return corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
