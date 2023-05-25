@@ -58,22 +58,21 @@ var _ = Describe("Tracing", func() {
 		})
 
 		It("Should have a running trace collector deployment", func() {
-			Eventually(func(g Gomega) bool {
+			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
-				return ready
-			}, timeout, interval).Should(BeTrue())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should have a trace backend running", func() {
-			Eventually(func(g Gomega) bool {
+			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
-				return ready
-
-			}, timeout, interval).Should(BeTrue())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should be able to get trace collector metrics endpoint", func() {
@@ -187,13 +186,12 @@ var _ = Describe("Tracing", func() {
 		})
 
 		It("Should have a trace backend running", func() {
-			Eventually(func(g Gomega) bool {
+			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
-				return ready
-
-			}, timeout, interval).Should(BeTrue())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should verify end-to-end trace delivery for the remaining pipeline", func() {
@@ -242,13 +240,12 @@ var _ = Describe("Tracing", func() {
 		})
 
 		It("Should have a trace backend running", func() {
-			Eventually(func(g Gomega) bool {
+			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
-				return ready
-
-			}, timeout, interval).Should(BeTrue())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should verify end-to-end trace delivery", func() {
