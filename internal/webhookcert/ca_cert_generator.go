@@ -15,7 +15,7 @@ type caCertGeneratorImpl struct {
 }
 
 func (g *caCertGeneratorImpl) generateCert() ([]byte, []byte, error) {
-	caCert, caKey, err := g.generateInternal()
+	caCert, caKey, err := g.generateCertInternal()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -33,7 +33,7 @@ func (g *caCertGeneratorImpl) generateCert() ([]byte, []byte, error) {
 	return caCertPEM, caKeyPEM, nil
 }
 
-func (g *caCertGeneratorImpl) generateInternal() (*x509.Certificate, *rsa.PrivateKey, error) {
+func (g *caCertGeneratorImpl) generateCertInternal() (*x509.Certificate, *rsa.PrivateKey, error) {
 	caKey, err := rsa.GenerateKey(crand.Reader, rsaKeySize)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generateCert rsa private key: %w", err)
