@@ -5,26 +5,24 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	"net/http"
 	"time"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"go.opentelemetry.io/collector/pdata/pcommon"
-	"go.opentelemetry.io/collector/pdata/ptrace"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	kittrace "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 	kittraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/traces"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/ptrace"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -47,8 +45,11 @@ var _ = Describe("Tracing", func() {
 	)
 
 	Context("When a tracepipeline exists", Ordered, func() {
+		mockNs := "trace-mocks-single-pipeline"
+		mockDeploymentName := "trace-receiver"
+
 		BeforeAll(func() {
-			k8sObjects := makeTracingTestK8sObjects(portRegistry, "trace-mocks-single-pipeline")
+			k8sObjects := makeTracingTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -57,27 +58,21 @@ var _ = Describe("Tracing", func() {
 		})
 
 		It("Should have a running trace collector deployment", func() {
-			Eventually(func(g Gomega) bool {
-				var deployment appsv1.Deployment
+			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
-				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
+		})
 
-				listOptions := client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels),
-					Namespace:     kymaSystemNamespaceName,
-				}
-				var pods corev1.PodList
-				Expect(k8sClient.List(ctx, &pods, &listOptions)).To(Succeed())
-				for _, pod := range pods.Items {
-					for _, containerStatus := range pod.Status.ContainerStatuses {
-						if containerStatus.State.Running == nil {
-							return false
-						}
-					}
-				}
-
-				return true
-			}, timeout, interval).Should(BeTrue())
+		It("Should have a trace backend running", func() {
+			Eventually(func(g Gomega) {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should be able to get trace collector metrics endpoint", func() {
@@ -170,8 +165,11 @@ var _ = Describe("Tracing", func() {
 	})
 
 	Context("When a broken tracepipeline exists", Ordered, func() {
+		mockNs := "trace-mocks-broken-pipeline"
+		mockDeploymentName := "trace-receiver"
+
 		BeforeAll(func() {
-			k8sObjects := makeTracingTestK8sObjects(portRegistry, "trace-mocks-broken-pipeline")
+			k8sObjects := makeTracingTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 			secondPipeline := makeBrokenTracePipeline("pipeline-2")
 
 			DeferCleanup(func() {
@@ -185,6 +183,15 @@ var _ = Describe("Tracing", func() {
 		It("Should have running pipelines", func() {
 			tracePipelineShouldBeRunning("test")
 			tracePipelineShouldBeRunning("pipeline-2")
+		})
+
+		It("Should have a trace backend running", func() {
+			Eventually(func(g Gomega) {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should verify end-to-end trace delivery for the remaining pipeline", func() {
@@ -215,8 +222,11 @@ var _ = Describe("Tracing", func() {
 	})
 
 	Context("When multiple tracepipelines exist", Ordered, func() {
+		mockNs := "trace-mocks-multi-pipeline"
+		mockDeploymentName := "trace-receiver"
+
 		BeforeAll(func() {
-			k8sObjects := makeMultiPipelineTracingTestK8sObjects(portRegistry, "trace-mocks-multi-pipeline")
+			k8sObjects := makeMultiPipelineTracingTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -227,6 +237,15 @@ var _ = Describe("Tracing", func() {
 		It("Should have running pipelines", func() {
 			tracePipelineShouldBeRunning("pipeline-1")
 			tracePipelineShouldBeRunning("pipeline-2")
+		})
+
+		It("Should have a trace backend running", func() {
+			Eventually(func(g Gomega) {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should verify end-to-end trace delivery", func() {
@@ -272,7 +291,7 @@ func tracePipelineShouldStayPending(pipelineName string) {
 }
 
 // makeTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry, namespace string) []client.Object {
+func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry, namespace string, mockDeploymentName string) []client.Object {
 	var (
 		grpcOTLPPort        = portRegistry.ServicePort("grpc-otlp")
 		grpcOTLPNodePort    = portRegistry.NodePort("grpc-otlp")
@@ -285,7 +304,7 @@ func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry, namespace stri
 
 	//// Mocks namespace objects.
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	mockBackend := mocks.NewBackend("trace-receiver", mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
+	mockBackend := mocks.NewBackend(mockDeploymentName, mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
 	mockBackendConfigMap := mockBackend.ConfigMap("trace-receiver-config")
 	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().
@@ -315,7 +334,7 @@ func makeTracingTestK8sObjects(portRegistry testkit.PortRegistry, namespace stri
 }
 
 // makeMultiPipelineTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects including two tracepipelines.
-func makeMultiPipelineTracingTestK8sObjects(portRegistry testkit.PortRegistry, namespace string) []client.Object {
+func makeMultiPipelineTracingTestK8sObjects(portRegistry testkit.PortRegistry, namespace string, mockDeploymentName string) []client.Object {
 	var (
 		grpcOTLPPort        = portRegistry.ServicePort("grpc-otlp")
 		grpcOTLPNodePort    = portRegistry.NodePort("grpc-otlp")
@@ -328,7 +347,7 @@ func makeMultiPipelineTracingTestK8sObjects(portRegistry testkit.PortRegistry, n
 
 	//// Mocks namespace objects.
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	mockBackend := mocks.NewBackend("trace-receiver", mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
+	mockBackend := mocks.NewBackend(mockDeploymentName, mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
 	mockBackendConfigMap := mockBackend.ConfigMap("trace-receiver-config")
 	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().
