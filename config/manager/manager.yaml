@@ -21,6 +21,7 @@ spec:
         kyma-project.io/component: controller
         control-plane: telemetry-operator
     spec:
+      priorityClassName: "telemetry-priority-class"
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -39,6 +40,9 @@ spec:
         - --trace-collector-memory-request=32Mi
         - --validating-webhook-enabled=true
         - --manager-namespace=$(MY_POD_NAMESPACE)
+        - --trace-collector-priority-class=telemetry-priority-class
+        - --fluent-bit-priority-class-name=telemetry-priority-class-high
+        - --metric-gateway-priority-class=telemetry-priority-class
         image: controller:latest
         name: manager
         securityContext:
