@@ -8,51 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGenerateCACertKey(t *testing.T) {
-	t.Run("succeeds", func(t *testing.T) {
-		caCertPEM, caKeyPEM, err := generateCACertKey()
-		require.NoError(t, err)
-		require.NotEmpty(t, caCertPEM)
-		require.NotEmpty(t, caKeyPEM)
-	})
-
-	t.Run("generates valid x509 cert", func(t *testing.T) {
-		caCertPEM, _, err := generateCACertKey()
-		require.NoError(t, err)
-
-		caCert, err := parseCertPEM(caCertPEM)
-		require.NoError(t, err)
-		require.NotNil(t, caCert)
-		require.NotNil(t, caCert.Subject.Organization)
-	})
-
-	t.Run("generates valid rsa private key", func(t *testing.T) {
-		_, caKeyPEM, err := generateCACertKey()
-		require.NoError(t, err)
-
-		caKey, err := parseKeyPEM(caKeyPEM)
-		require.NoError(t, err)
-		require.NotNil(t, caKey)
-	})
-
-	t.Run("generates matching cert and private key", func(t *testing.T) {
-		caCertPEM, caKeyPEM, err := generateCACertKey()
-		require.NoError(t, err)
-
-		caCert, err := parseCertPEM(caCertPEM)
-		require.NoError(t, err)
-
-		caCertPublicKey, isRSA := caCert.PublicKey.(*rsa.PublicKey)
-		require.True(t, isRSA, "not an rsa public key")
-
-		caPrivateKey, err := parseKeyPEM(caKeyPEM)
-		require.NoError(t, err)
-
-		require.Zero(t, caCertPublicKey.N.Cmp(caPrivateKey.N), "keys do not match")
-	})
-}
-
 func TestGenerateServerCertKey(t *testing.T) {
+	caCertGen := caCertGeneratorImpl{clock: mockClock{}}
 	t.Run("fails if nil input", func(t *testing.T) {
 		_, _, err := generateServerCertKey("my-webhook.my-namespace", nil, nil, nil)
 		require.Error(t, err)
@@ -66,7 +23,7 @@ func TestGenerateServerCertKey(t *testing.T) {
 	})
 
 	t.Run("succeeds", func(t *testing.T) {
-		caCertPEM, caKeyPEM, err := generateCACertKey()
+		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
 		serverCertPEM, serverKeyPEM, err := generateServerCertKey("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
@@ -76,7 +33,7 @@ func TestGenerateServerCertKey(t *testing.T) {
 	})
 
 	t.Run("generates valid x509 cert", func(t *testing.T) {
-		caCertPEM, caKeyPEM, err := generateCACertKey()
+		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
 		serverCertPEM, _, err := generateServerCertKey("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
@@ -89,7 +46,7 @@ func TestGenerateServerCertKey(t *testing.T) {
 	})
 
 	t.Run("generates valid rsa private key", func(t *testing.T) {
-		caCertPEM, caKeyPEM, err := generateCACertKey()
+		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
 		_, serverKeyPEM, err := generateServerCertKey("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
@@ -101,7 +58,7 @@ func TestGenerateServerCertKey(t *testing.T) {
 	})
 
 	t.Run("generates matching cert and private key", func(t *testing.T) {
-		caCertPEM, caKeyPEM, err := generateCACertKey()
+		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
 		serverCertPEM, serverKeyPEM, err := generateServerCertKey("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
@@ -120,7 +77,7 @@ func TestGenerateServerCertKey(t *testing.T) {
 	})
 
 	t.Run("generates cert with alt DNS names", func(t *testing.T) {
-		caCertPEM, caKeyPEM, err := generateCACertKey()
+		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
 		serverCertPEM, _, err := generateServerCertKey("my-webhook.my-namespace", []string{"foo", "bar"}, caCertPEM, caKeyPEM)

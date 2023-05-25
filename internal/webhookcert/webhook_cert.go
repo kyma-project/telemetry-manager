@@ -25,7 +25,7 @@ type Config struct {
 }
 
 func EnsureCertificate(ctx context.Context, client client.Client, certConfig Config) error {
-	caCertPEM, caKeyPEM, err := newCACertKeyProvider(client).provideCACertKey(ctx, certConfig.CASecretName)
+	caCertPEM, caKeyPEM, err := newCACertProvider(client).provideCert(ctx, certConfig.CASecretName)
 	if err != nil {
 		return fmt.Errorf("failed to get or create ca cert/key: %w", err)
 	}
@@ -34,7 +34,7 @@ func EnsureCertificate(ctx context.Context, client client.Client, certConfig Con
 	var serverCertPEM, serverKeyPEM []byte
 	serverCertPEM, serverKeyPEM, err = generateServerCertKey(host, alternativeDNSNames, caCertPEM, caKeyPEM)
 	if err != nil {
-		return fmt.Errorf("failed to generate server cert: %w", err)
+		return fmt.Errorf("failed to generateCert server cert: %w", err)
 	}
 
 	if err = writeFiles(serverCertPEM, serverKeyPEM, certConfig.CertDir); err != nil {

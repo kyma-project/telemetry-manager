@@ -21,19 +21,28 @@ const (
 	caKeyFile  = "ca.key"
 )
 
-type caCertKeyProvider struct {
-	client client.Client
-	clock  clock
+type caCertGenerator interface {
+	generateCert() (certPEM, keyPEM []byte, err error)
 }
 
-func newCACertKeyProvider(client client.Client) *caCertKeyProvider {
-	return &caCertKeyProvider{
+type caCertProvider struct {
+	client    client.Client
+	clock     clock
+	generator caCertGenerator
+}
+
+func newCACertProvider(client client.Client) *caCertProvider {
+	clock := realClock{}
+	return &caCertProvider{
 		client: client,
-		clock:  realClock{},
+		clock:  clock,
+		generator: &caCertGeneratorImpl{
+			clock: clock,
+		},
 	}
 }
 
-func (p *caCertKeyProvider) provideCACertKey(ctx context.Context, caSecretName types.NamespacedName) ([]byte, []byte, error) {
+func (p *caCertProvider) provideCert(ctx context.Context, caSecretName types.NamespacedName) ([]byte, []byte, error) {
 	var caSecret corev1.Secret
 	notFound := false
 	if err := p.client.Get(ctx, caSecretName, &caSecret); err != nil {
@@ -44,9 +53,9 @@ func (p *caCertKeyProvider) provideCACertKey(ctx context.Context, caSecretName t
 	}
 
 	if notFound || !p.checkCASecret(ctx, &caSecret) {
-		caCertPEM, caKeyPEM, err := generateCACertKey()
+		caCertPEM, caKeyPEM, err := p.generator.generateCert()
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to generate ca cert: %w", err)
+			return nil, nil, fmt.Errorf("failed to generateCert ca cert: %w", err)
 		}
 
 		logf.FromContext(ctx).Info("Generated new CA cert/key",
@@ -67,7 +76,7 @@ func (p *caCertKeyProvider) provideCACertKey(ctx context.Context, caSecretName t
 	return caSecret.Data[caCertFile], caSecret.Data[caKeyFile], nil
 }
 
-func (p *caCertKeyProvider) checkCASecret(ctx context.Context, caSecret *corev1.Secret) bool {
+func (p *caCertProvider) checkCASecret(ctx context.Context, caSecret *corev1.Secret) bool {
 	if err := p.checkCASecretInternal(caSecret); err != nil {
 		logf.FromContext(ctx).Error(err, "Invalid ca secret. Rotating the cert",
 			"secretName", caSecret.Name,
@@ -78,7 +87,7 @@ func (p *caCertKeyProvider) checkCASecret(ctx context.Context, caSecret *corev1.
 	return true
 }
 
-func (p *caCertKeyProvider) checkCASecretInternal(caSecret *corev1.Secret) error {
+func (p *caCertProvider) checkCASecretInternal(caSecret *corev1.Secret) error {
 	var caCertPEM, _ []byte
 	if val, found := caSecret.Data[caCertFile]; found {
 		caCertPEM = val
@@ -93,7 +102,7 @@ func (p *caCertKeyProvider) checkCASecretInternal(caSecret *corev1.Secret) error
 	return p.checkCertExpiry(caCertPEM)
 }
 
-func (p *caCertKeyProvider) checkCertExpiry(certPEM []byte) error {
+func (p *caCertProvider) checkCertExpiry(certPEM []byte) error {
 	cert, err := parseCertPEM(certPEM)
 	if err != nil {
 		return err

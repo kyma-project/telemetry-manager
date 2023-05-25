@@ -25,59 +25,6 @@ const (
 	serverCertMaxAge = duration1w
 )
 
-func generateCACertKey() ([]byte, []byte, error) {
-	caCert, caKey, err := generateCACertKeyInternal()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	caCertPEM, err := encodeCertPEM(caCert.Raw)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to pem encode cert: %w", err)
-	}
-
-	caKeyPEM, err := encodeKeyPEM(caKey)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to pem encode key: %w", err)
-	}
-
-	return caCertPEM, caKeyPEM, nil
-}
-
-func generateCACertKeyInternal() (*x509.Certificate, *rsa.PrivateKey, error) {
-	caKey, err := rsa.GenerateKey(crand.Reader, rsaKeySize)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate rsa private key: %w", err)
-	}
-
-	validFrom := time.Now().Add(-time.Hour).UTC()
-	validTo := validFrom.Add(caCertMaxAge).UTC()
-
-	caCertTemplate := x509.Certificate{
-		SerialNumber: new(big.Int).SetInt64(0),
-		Subject: pkix.Name{
-			Organization: []string{"kyma-project.io"},
-		},
-		NotBefore:             validFrom,
-		NotAfter:              validTo,
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		BasicConstraintsValid: true,
-		IsCA:                  true,
-	}
-
-	certDERBytes, err := x509.CreateCertificate(crand.Reader, &caCertTemplate, &caCertTemplate, caKey.Public(), caKey)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create x509 cert: %w", err)
-	}
-
-	caCert, err := x509.ParseCertificate(certDERBytes)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse x509 cert: %w", err)
-	}
-
-	return caCert, caKey, nil
-}
-
 func generateServerCertKey(host string, alternativeDNSNames []string, caCertPEM, caKeyPEM []byte) ([]byte, []byte, error) {
 	caCert, err := parseCertPEM(caCertPEM)
 	if err != nil {
@@ -96,7 +43,7 @@ func generateServerCertKeyInternal(host string, alternativeDNSNames []string, ca
 	// returns a uniform random value in [0, max-1), then add 1 to serial to make it a uniform random value in [1, max).
 	serial, err := crand.Int(crand.Reader, new(big.Int).SetInt64(math.MaxInt64-1))
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate serial number: %w", err)
+		return nil, nil, fmt.Errorf("failed to generateCert serial number: %w", err)
 	}
 
 	validFrom := time.Now().Add(-time.Hour).UTC()
@@ -119,7 +66,7 @@ func generateServerCertKeyInternal(host string, alternativeDNSNames []string, ca
 
 	key, err := rsa.GenerateKey(crand.Reader, rsaKeySize)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate rsa private key: %w", err)
+		return nil, nil, fmt.Errorf("failed to generateCert rsa private key: %w", err)
 	}
 
 	certBytes, err := x509.CreateCertificate(crand.Reader, &certTemplate, caCert, &key.PublicKey, caKey)
