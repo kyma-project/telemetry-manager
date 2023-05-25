@@ -4,21 +4,23 @@ import (
 	"crypto/rsa"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestGenerateServerCertKey(t *testing.T) {
+func TestGenerateServerCert(t *testing.T) {
 	caCertGen := caCertGeneratorImpl{clock: mockClock{}}
+	sut := serverCertGeneratorImpl{clock: mockClock{}}
 	t.Run("fails if nil input", func(t *testing.T) {
-		_, _, err := generateServerCertKey("my-webhook.my-namespace", nil, nil, nil)
+		_, _, err := sut.generateCert("my-webhook.my-namespace", nil, nil, nil)
 		require.Error(t, err)
 	})
 
 	t.Run("fails if invalid input", func(t *testing.T) {
 		invalidCertPEM := []byte{1, 2, 3}
 		invalidKeyPEM := []byte{1, 2, 3}
-		_, _, err := generateServerCertKey("my-webhook.my-namespace", nil, invalidCertPEM, invalidKeyPEM)
+		_, _, err := sut.generateCert("my-webhook.my-namespace", nil, invalidCertPEM, invalidKeyPEM)
 		require.Error(t, err)
 	})
 
@@ -26,7 +28,7 @@ func TestGenerateServerCertKey(t *testing.T) {
 		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
-		serverCertPEM, serverKeyPEM, err := generateServerCertKey("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
+		serverCertPEM, serverKeyPEM, err := sut.generateCert("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
 		require.NoError(t, err)
 		require.NotNil(t, serverCertPEM)
 		require.NotNil(t, serverKeyPEM)
@@ -36,7 +38,7 @@ func TestGenerateServerCertKey(t *testing.T) {
 		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
-		serverCertPEM, _, err := generateServerCertKey("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
+		serverCertPEM, _, err := sut.generateCert("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
 		require.NoError(t, err)
 
 		serverCert, err := parseCertPEM(serverCertPEM)
@@ -49,7 +51,7 @@ func TestGenerateServerCertKey(t *testing.T) {
 		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
-		_, serverKeyPEM, err := generateServerCertKey("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
+		_, serverKeyPEM, err := sut.generateCert("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
 		require.NoError(t, err)
 
 		serverKey, err := parseKeyPEM(serverKeyPEM)
@@ -61,7 +63,7 @@ func TestGenerateServerCertKey(t *testing.T) {
 		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
-		serverCertPEM, serverKeyPEM, err := generateServerCertKey("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
+		serverCertPEM, serverKeyPEM, err := sut.generateCert("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
 		require.NoError(t, err)
 
 		serverCert, err := parseCertPEM(serverCertPEM)
@@ -80,7 +82,7 @@ func TestGenerateServerCertKey(t *testing.T) {
 		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
-		serverCertPEM, _, err := generateServerCertKey("my-webhook.my-namespace", []string{"foo", "bar"}, caCertPEM, caKeyPEM)
+		serverCertPEM, _, err := sut.generateCert("my-webhook.my-namespace", []string{"foo", "bar"}, caCertPEM, caKeyPEM)
 		require.NoError(t, err)
 
 		serverCert, err := parseCertPEM(serverCertPEM)
@@ -89,5 +91,37 @@ func TestGenerateServerCertKey(t *testing.T) {
 		require.Contains(t, serverCert.DNSNames, "my-webhook.my-namespace")
 		require.Contains(t, serverCert.DNSNames, "foo")
 		require.Contains(t, serverCert.DNSNames, "bar")
+	})
+
+	t.Run("generates cert that is valid since 1 hour", func(t *testing.T) {
+		fakeNow := time.Date(2023, 5, 25, 12, 0, 0, 0, time.UTC)
+		sut.clock = mockClock{t: fakeNow}
+
+		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
+		require.NoError(t, err)
+
+		serverCertPEM, _, err := sut.generateCert("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
+		require.NoError(t, err)
+
+		serverCert, err := parseCertPEM(serverCertPEM)
+		require.NoError(t, err)
+
+		require.Equal(t, serverCert.NotBefore, time.Date(2023, 5, 25, 11, 0, 0, 0, time.UTC))
+	})
+
+	t.Run("generates cert that expires in 1 week - 1 hour", func(t *testing.T) {
+		fakeNow := time.Date(2023, 5, 25, 12, 0, 0, 0, time.UTC)
+		sut.clock = mockClock{t: fakeNow}
+
+		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
+		require.NoError(t, err)
+
+		serverCertPEM, _, err := sut.generateCert("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
+		require.NoError(t, err)
+
+		serverCert, err := parseCertPEM(serverCertPEM)
+		require.NoError(t, err)
+
+		require.Equal(t, serverCert.NotAfter, time.Date(2023, 6, 1, 11, 0, 0, 0, time.UTC))
 	})
 }

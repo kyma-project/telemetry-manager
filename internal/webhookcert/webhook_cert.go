@@ -32,7 +32,7 @@ func EnsureCertificate(ctx context.Context, client client.Client, certConfig Con
 
 	host, alternativeDNSNames := dnsNames(certConfig.ServiceName)
 	var serverCertPEM, serverKeyPEM []byte
-	serverCertPEM, serverKeyPEM, err = generateServerCertKey(host, alternativeDNSNames, caCertPEM, caKeyPEM)
+	serverCertPEM, serverKeyPEM, err = newServerCertGenerator().generateCert(host, alternativeDNSNames, caCertPEM, caKeyPEM)
 	if err != nil {
 		return fmt.Errorf("failed to generateCert server cert: %w", err)
 	}

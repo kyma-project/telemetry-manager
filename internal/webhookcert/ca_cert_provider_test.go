@@ -20,7 +20,7 @@ func (g *mockCACertGenerator) generateCert() ([]byte, []byte, error) {
 	return g.cert, g.key, nil
 }
 
-func TestProvideCACertKey(t *testing.T) {
+func TestProvideCert(t *testing.T) {
 	t.Run("should generate new ca cert if no secret found", func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 		fakeCertPEM := []byte{1, 2, 3}

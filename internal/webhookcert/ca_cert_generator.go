@@ -10,6 +10,12 @@ import (
 	"time"
 )
 
+const (
+	rsaKeySize   = 2048
+	duration365d = time.Hour * 24 * 365
+	caCertMaxAge = duration365d
+)
+
 type caCertGeneratorImpl struct {
 	clock clock
 }
