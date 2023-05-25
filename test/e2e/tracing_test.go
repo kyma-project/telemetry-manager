@@ -61,18 +61,18 @@ var _ = Describe("Tracing", func() {
 			Eventually(func(g Gomega) bool {
 				//var deployment appsv1.Deployment
 				key := types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
-				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
-				g.Expect(err).To(BeNil())
-				return res
+				ready, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				return ready
 			}, timeout, interval).Should(BeTrue())
 		})
 
 		It("Should have a trace backend running", func() {
 			Eventually(func(g Gomega) bool {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
-				g.Expect(err).To(BeNil())
-				return res
+				ready, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				return ready
 
 			}, timeout, interval).Should(BeTrue())
 		})
@@ -190,9 +190,9 @@ var _ = Describe("Tracing", func() {
 		It("Should have a trace backend running", func() {
 			Eventually(func(g Gomega) bool {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
-				g.Expect(err).To(BeNil())
-				return res
+				ready, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				return ready
 
 			}, timeout, interval).Should(BeTrue())
 		})
@@ -245,9 +245,9 @@ var _ = Describe("Tracing", func() {
 		It("Should have a trace backend running", func() {
 			Eventually(func(g Gomega) bool {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				res, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
-				g.Expect(err).To(BeNil())
-				return res
+				ready, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				return ready
 
 			}, timeout, interval).Should(BeTrue())
 		})
