@@ -31,11 +31,12 @@ var (
 		BaseName:          "telemetry-trace-collector",
 		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "telemetry-system"},
 		Deployment: collectorresources.DeploymentConfig{
-			Image:         "otel/opentelemetry-collector-contrib:0.73.0",
-			CPULimit:      resource.MustParse("1"),
-			MemoryLimit:   resource.MustParse("1Gi"),
-			CPURequest:    resource.MustParse("150m"),
-			MemoryRequest: resource.MustParse("256Mi"),
+			Image:             "otel/opentelemetry-collector-contrib:0.73.0",
+			CPULimit:          resource.MustParse("1"),
+			MemoryLimit:       resource.MustParse("1Gi"),
+			CPURequest:        resource.MustParse("150m"),
+			MemoryRequest:     resource.MustParse("256Mi"),
+			PriorityClassName: "telemetry-priority-class",
 		},
 		Service: collectorresources.ServiceConfig{OTLPServiceName: "telemetry-otlp-traces"},
 	}
@@ -202,6 +203,18 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 			return validateSecret(otelCollectorSecret, "secret-username", "secret-password")
 		}, timeout, interval).Should(BeNil())
 
+	})
+
+	It("Should have the correct priority class", func() {
+		Eventually(func(g Gomega) {
+			var oteCollectorDep appsv1.Deployment
+			g.Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Name:      "telemetry-trace-collector",
+				Namespace: "telemetry-system",
+			}, &oteCollectorDep)).To(Succeed())
+			priorityClassName := oteCollectorDep.Spec.Template.Spec.PriorityClassName
+			g.Expect(priorityClassName).To(Equal("telemetry-priority-class"))
+		}, timeout, interval).Should(Succeed())
 	})
 
 	It("updates Trace Collector Secret when referenced secret changes", func() {
