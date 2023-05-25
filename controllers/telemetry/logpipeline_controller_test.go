@@ -309,19 +309,15 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			}, timeout, interval).Should(BeNil())
 		})
 		It("Should have the correct priority class", func() {
-			Eventually(func() error {
+			Eventually(func(g Gomega) {
 				var fluentBitDaemonSet appsv1.DaemonSet
-				err := k8sClient.Get(ctx, types.NamespacedName{
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{
 					Name:      testLogPipelineConfig.DaemonSet.Name,
 					Namespace: testLogPipelineConfig.DaemonSet.Namespace,
-				}, &fluentBitDaemonSet)
-				if err != nil {
-					return err
-				}
+				}, &fluentBitDaemonSet)).To(Succeed())
 				priorityClassName := fluentBitDaemonSet.Spec.Template.Spec.PriorityClassName
-				Expect(priorityClassName).To(Equal("telemetry-priority-class-high"))
-				return nil
-			}, timeout, interval).Should(BeNil())
+				g.Expect(priorityClassName).To(Equal("telemetry-priority-class-high"))
+			}, timeout, interval).Should(Succeed())
 		})
 		It("Should have the checksum annotation set to the fluent-bit daemonset", func() {
 			// Fluent Bit daemon set should have checksum annotation set

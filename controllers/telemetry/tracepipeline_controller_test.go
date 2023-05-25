@@ -206,19 +206,15 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 	})
 
 	It("Should have the correct priority class", func() {
-		Eventually(func() error {
+		Eventually(func(g Gomega) {
 			var oteCollectorDep appsv1.Deployment
-			err := k8sClient.Get(ctx, types.NamespacedName{
+			g.Expect(k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "telemetry-trace-collector",
 				Namespace: "telemetry-system",
-			}, &oteCollectorDep)
-			if err != nil {
-				return err
-			}
+			}, &oteCollectorDep)).To(Succeed())
 			priorityClassName := oteCollectorDep.Spec.Template.Spec.PriorityClassName
-			Expect(priorityClassName).To(Equal("telemetry-priority-class"))
-			return nil
-		}, timeout, interval).Should(BeNil())
+			g.Expect(priorityClassName).To(Equal("telemetry-priority-class"))
+		}, timeout, interval).Should(Succeed())
 	})
 
 	It("updates Trace Collector Secret when referenced secret changes", func() {
