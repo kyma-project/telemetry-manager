@@ -24,20 +24,19 @@ var _ = Describe("Logging", func() {
 		BeforeAll(func() {
 			k8sObjects := makeLoggingTestK8sObjects()
 
-			//DeferCleanup(func() {
-			//	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			//})
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
 		It("Should have a healthy webhook", func() {
-			Eventually(func(g Gomega) bool {
+			Eventually(func(g Gomega) {
 				var endPoint corev1.Endpoints
 				key := types.NamespacedName{Name: telemetryWebhookEndpoint, Namespace: kymaSystemNamespaceName}
 				g.Expect(k8sClient.Get(ctx, key, &endPoint)).To(Succeed())
-				Expect(len(endPoint.Subsets)).NotTo(BeZero())
-				return true
-			}, timeout, interval).Should(BeTrue())
+				g.Expect(len(endPoint.Subsets)).NotTo(BeZero())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should have a running fluent-bit daemonset", func() {
@@ -51,12 +50,10 @@ var _ = Describe("Logging", func() {
 					Namespace:     kymaSystemNamespaceName,
 				}
 				var pods corev1.PodList
-				Expect(k8sClient.List(ctx, &pods, &listOptions)).To(Succeed())
+				g.Expect(k8sClient.List(ctx, &pods, &listOptions)).To(Succeed())
 				for _, pod := range pods.Items {
 					for _, containerStatus := range pod.Status.ContainerStatuses {
-						if containerStatus.State.Running == nil {
-							return false
-						}
+						g.Expect(containerStatus.State.Running).NotTo(BeNil())
 					}
 				}
 
