@@ -58,7 +58,7 @@ var _ = Describe("Metrics", func() {
 		It("Should have a running metric gateway deployment", func() {
 			Eventually(func(g Gomega) bool {
 				key := types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
-				ready, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).To(BeNil())
 				return ready
 			}, timeout, interval).Should(BeTrue())
@@ -67,7 +67,7 @@ var _ = Describe("Metrics", func() {
 		It("Should have a metrics backend running", func() {
 			Eventually(func(g Gomega) bool {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).To(BeNil())
 				return ready
 
@@ -179,7 +179,7 @@ var _ = Describe("Metrics", func() {
 		It("Should have a running metric gateway deployment", func() {
 			Eventually(func(g Gomega) bool {
 				key := types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
-				ready, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
 				return ready
 			}, timeout, interval).Should(BeTrue())
@@ -187,7 +187,7 @@ var _ = Describe("Metrics", func() {
 		It("Should have a metrics backend running", func() {
 			Eventually(func(g Gomega) bool {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).To(BeNil())
 				return ready
 
@@ -235,7 +235,7 @@ var _ = Describe("Metrics", func() {
 		It("Should have a running metric gateway deployment", func() {
 			Eventually(func(g Gomega) bool {
 				key := types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
-				ready, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).To(BeNil())
 				return ready
 			}, timeout, interval).Should(BeTrue())
@@ -244,7 +244,7 @@ var _ = Describe("Metrics", func() {
 		It("Should have a metrics backend running", func() {
 			Eventually(func(g Gomega) bool {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(k8sClient, ctx, key)
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).To(BeNil())
 				return ready
 

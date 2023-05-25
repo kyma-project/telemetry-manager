@@ -9,7 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func IsDeploymentReady(k8sClient client.Client, ctx context.Context, name types.NamespacedName) (bool, error) {
+func IsDeploymentReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
 	var deployment appsv1.Deployment
 	err := k8sClient.Get(ctx, name, &deployment)
 	if err != nil {
