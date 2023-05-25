@@ -165,6 +165,7 @@ var _ = Describe("Telemetry-manager", func() {
 			err := k8sClient.Get(ctx, key, &crd)
 			Expect(err).NotTo(HaveOccurred())
 		})
+
 		It("Should have priority class resource created", func() {
 			priorityClassNames := []string{"telemetry-priority-class", "telemetry-priority-class-high"}
 			var priorityClass schedulingv1.PriorityClass
