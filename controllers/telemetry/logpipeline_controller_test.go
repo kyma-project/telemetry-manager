@@ -35,7 +35,7 @@ var (
 			FluentBitImage:              "my-fluent-bit-image",
 			FluentBitConfigPrepperImage: "my-fluent-bit-config-image",
 			ExporterImage:               "my-exporter-image",
-			PriorityClassName:           "my-priority-class",
+			PriorityClassName:           "telemetry-priority-class-high",
 			CPULimit:                    resource.MustParse("1"),
 			MemoryLimit:                 resource.MustParse("500Mi"),
 			CPURequest:                  resource.MustParse(".1"),
@@ -307,6 +307,17 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				}, &fluentBitDaemonSet)
 				return err
 			}, timeout, interval).Should(BeNil())
+		})
+		It("Should have the correct priority class", func() {
+			Eventually(func(g Gomega) {
+				var fluentBitDaemonSet appsv1.DaemonSet
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{
+					Name:      testLogPipelineConfig.DaemonSet.Name,
+					Namespace: testLogPipelineConfig.DaemonSet.Namespace,
+				}, &fluentBitDaemonSet)).To(Succeed())
+				priorityClassName := fluentBitDaemonSet.Spec.Template.Spec.PriorityClassName
+				g.Expect(priorityClassName).To(Equal("telemetry-priority-class-high"))
+			}, timeout, interval).Should(Succeed())
 		})
 		It("Should have the checksum annotation set to the fluent-bit daemonset", func() {
 			// Fluent Bit daemon set should have checksum annotation set

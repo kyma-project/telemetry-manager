@@ -5,16 +5,15 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	"net/http"
 	"time"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -22,7 +21,6 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
 )
 
@@ -46,8 +44,10 @@ var _ = Describe("Metrics", func() {
 	)
 
 	Context("When a metricpipeline exists", Ordered, func() {
+		mockNs := "metric-mocks"
+		mockDeploymentName := "metric-receiver"
 		BeforeAll(func() {
-			k8sObjects := makeMetricsTestK8sObjects(portRegistry, "metric-mocks")
+			k8sObjects := makeMetricsTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -56,27 +56,21 @@ var _ = Describe("Metrics", func() {
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			Eventually(func(g Gomega) bool {
-				var deployment appsv1.Deployment
+			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
-				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).ShouldNot(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
+		})
 
-				listOptions := client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels),
-					Namespace:     kymaSystemNamespaceName,
-				}
-				var pods corev1.PodList
-				Expect(k8sClient.List(ctx, &pods, &listOptions)).To(Succeed())
-				for _, pod := range pods.Items {
-					for _, containerStatus := range pod.Status.ContainerStatuses {
-						if containerStatus.State.Running == nil {
-							return false
-						}
-					}
-				}
-
-				return true
-			}, timeout, interval).Should(BeTrue())
+		It("Should have a metrics backend running", func() {
+			Eventually(func(g Gomega) {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should be able to get metric gateway metrics endpoint", func() {
@@ -161,8 +155,11 @@ var _ = Describe("Metrics", func() {
 	})
 
 	Context("When a broken metricpipeline exists", Ordered, func() {
+		mockNs := "metric-mocks-broken-pipeline"
+		mockDeploymentName := "metric-receiver"
+
 		BeforeAll(func() {
-			k8sObjects := makeMetricsTestK8sObjects(portRegistry, "metric-mocks-broken-pipeline")
+			k8sObjects := makeMetricsTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 			secondPipeline := makeBrokenMetricPipeline("pipeline-2")
 
 			DeferCleanup(func() {
@@ -176,6 +173,23 @@ var _ = Describe("Metrics", func() {
 		It("Should have running pipelines", func() {
 			metricPipelineShouldBeRunning("test")
 			metricPipelineShouldBeRunning("pipeline-2")
+		})
+
+		It("Should have a running metric gateway deployment", func() {
+			Eventually(func(g Gomega) {
+				key := types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
+		})
+		It("Should have a metrics backend running", func() {
+			Eventually(func(g Gomega) {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should verify end-to-end metric delivery", func() {
@@ -199,8 +213,11 @@ var _ = Describe("Metrics", func() {
 	})
 
 	Context("When multiple metricpipelines exist", Ordered, func() {
+		mockNs := "metric-mocks-multi-pipeline"
+		mockDeploymentName := "metric-receiver"
+
 		BeforeAll(func() {
-			k8sObjects := makeMultiPipelineMetricsTestK8sObjects(portRegistry, "metrics-mocks-multi-pipeline")
+			k8sObjects := makeMultiPipelineMetricsTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -211,6 +228,24 @@ var _ = Describe("Metrics", func() {
 		It("Should have running pipelines", func() {
 			metricPipelineShouldBeRunning("pipeline-1")
 			metricPipelineShouldBeRunning("pipeline-2")
+		})
+
+		It("Should have a running metric gateway deployment", func() {
+			Eventually(func(g Gomega) {
+				key := types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should have a metrics backend running", func() {
+			Eventually(func(g Gomega) {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should verify end-to-end metric delivery", func() {
@@ -253,7 +288,7 @@ func metricPipelineShouldStayPending(pipelineName string) {
 }
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeMetricsTestK8sObjects(portRegistry testkit.PortRegistry, namespace string) []client.Object {
+func makeMetricsTestK8sObjects(portRegistry testkit.PortRegistry, namespace string, mockDeploymentName string) []client.Object {
 	var (
 		grpcOTLPPort        = portRegistry.ServicePort("grpc-otlp")
 		grpcOTLPNodePort    = portRegistry.NodePort("grpc-otlp")
@@ -266,7 +301,7 @@ func makeMetricsTestK8sObjects(portRegistry testkit.PortRegistry, namespace stri
 
 	// Mocks namespace objects.
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	mockBackend := mocks.NewBackend("metric-receiver", mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
+	mockBackend := mocks.NewBackend(mockDeploymentName, mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
 	mockBackendConfigMap := mockBackend.ConfigMap("metric-receiver-config")
 	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().
@@ -296,7 +331,7 @@ func makeMetricsTestK8sObjects(portRegistry testkit.PortRegistry, namespace stri
 }
 
 // makeMultiPipelineMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects including two metricpipelines.
-func makeMultiPipelineMetricsTestK8sObjects(portRegistry testkit.PortRegistry, namespace string) []client.Object {
+func makeMultiPipelineMetricsTestK8sObjects(portRegistry testkit.PortRegistry, namespace string, mockDeploymentName string) []client.Object {
 	var (
 		grpcOTLPPort        = portRegistry.ServicePort("grpc-otlp")
 		grpcOTLPNodePort    = portRegistry.NodePort("grpc-otlp")
@@ -309,7 +344,7 @@ func makeMultiPipelineMetricsTestK8sObjects(portRegistry testkit.PortRegistry, n
 
 	// Mocks namespace objects.
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	mockBackend := mocks.NewBackend("metric-receiver", mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
+	mockBackend := mocks.NewBackend(mockDeploymentName, mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
 	mockBackendConfigMap := mockBackend.ConfigMap("metric-receiver-config")
 	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().

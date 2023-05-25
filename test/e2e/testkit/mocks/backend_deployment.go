@@ -14,8 +14,8 @@ import (
 
 const (
 	replicas           = 1
-	otelCollectorImage = "otel/opentelemetry-collector-contrib:0.77.0"
-	nginxImage         = "nginx:1.23.3"
+	otelCollectorImage = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.77.0-8115210c"
+	nginxImage         = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
 )
 
 type BackendDeployment struct {
