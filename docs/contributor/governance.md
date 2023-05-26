@@ -1,13 +1,32 @@
-# Sourcecode linting
+# Governance
+
+Some quality aspects are covered by automated verification and requires a local execution of tooling before a commitment. These aspects are outlined in this document.
+
+## CRD generation
+
+The API of the operator is realized by Kubernetes CRDs defined in the [apis](/apis/) folder as golang source code. In order to install the CRDs later via kustomize together with the operator deployment, proper kubernetes [manifest files](/config/crd/bases/) need to be generated. Also the [user documentation](./resources/) needs to be updated. 
+
+Both aspects can be achieved by calling:
+```shell
+make manifests
+```
+
+That will be verified as well by a [ProwJob](https://github.com/kyma-project/test-infra/blob/main/prow/jobs/telemetry-manager/telemetry-manager-generic.yaml#L6)
+
+## Sourcecode linting
 
 We use [golangci-lint](https://golangci-lint.run) with fine-grained configuration for the source code linting.
 
-## Linters in action
+### Linters in action
 
 The following linters are configured and integrated as a CI stage through a [ProwJob](https://github.com/kyma-project/test-infra/blob/main/prow/jobs/kyma/components/kyma-components-static-checks.yaml#L6).
 
-| Linter                                                                                                                                                            | Description                                                      | Suppress                           |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------| ---------------------------------------------------------------- | ---------------------------------- |
+<details>
+<summary>List of linters</summary>
+<br>
+
+| Linter | Description | Suppress |
+| --- | --- | --- |
 | [`asasalint`](https://github.com/alingse/asasalint) [⛭](https://golangci-lint.run/usage/linters/#asasalint)                                                       | check for pass []any as any in variadic func                     | [inline //nolint](#inline-nolint) |
 | [`asciicheck`](https://github.com/tdakkota/asciicheck)                                                                                                            | checks for non-ASCII identifiers                                 | [inline //nolint](#inline-nolint) |
 | [`bodyclose`](https://github.com/timakin/bodyclose)                                                                                                               | checks whether HTTP response body is closed successfully         | [inline //nolint](#inline-nolint) |
@@ -36,9 +55,15 @@ The following linters are configured and integrated as a CI stage through a [Pro
 | [`unparam`](https://github.com/mvdan/unparam) [⛭](https://golangci-lint.run/usage/linters/#unparam)                                                               | reports unused function parameters                               | [inline //nolint](#inline-nolint) |
 | [`unused`](https://github.com/dominikh/go-tools/tree/master/unused)                                                                                               | checks for unused constants, variables, functions and types      | [inline //nolint](#inline-nolint) |
 
-## Irrelevant linters
+</details> 
 
-Below is the list of linters irrelevant for Huskies team.
+### Irrelevant linters
+
+The following linters irrelevant for development of the Telemetry module:
+
+<details>
+<summary>List of irrelevant linters</summary>
+<br>
 
 | Linter             | Reason                                                               |
 | ------------------ | -------------------------------------------------------------------- |
@@ -60,14 +85,18 @@ Below is the list of linters irrelevant for Huskies team.
 | `varcheck`         | superseded by `unused`                                               |
 | `wastedassign`     | superseded by `inefassign`                                           |
 
-## Nolint
-Some linters produce false-positive warnings, so there is a way to suppress them. Consider disabling the linter if linting warnings are routinely ignored or adding to development noise.
-
-### Inline //nolint
-To suppress a linting warning for a particular line of code, use nolint instruction `//no-lint:{LINTER} // {COMMENT}.` _LINTER_ and _COMMENT_ are two mandatory placeholders with the linter to be suppressed and a reason for the suppression.
+</details>
 
 
-Preceding inline nolint comments for the code blocks suppress linting warnings for the whole block. The following example suppresses the linter for the entire file:
+### Nolint
+
+Some linters produce false-positive warnings. You can suppress them. If linting warnings add to the development noise or are routinely ignored, consider disabling the linter.
+
+#### Inline //nolint
+To suppress a linting warning for a particular line of code, use nolint instruction `//no-lint:{LINTER} // {COMMENT}.` For the _LINTER_ and _COMMENT_ placeholders, you must enter the linter to be suppressed and a reason for the suppression.
+
+
+To suppress linting warnings for the whole block, use preceding inline nolint comments. The following example suppresses the linter for the entire file:
 ```go
 //nolint:errcheck // The error check should be suppressied for the module.
 package config
@@ -75,23 +104,23 @@ package config
 // The rest of the file will not be linted by errcheck.
 ```
 
-### Lining exclusions
+#### Linting exclusions
 To prevent some files from being linted, there is a `.issues.exclude-rules` section in the `.golangci.yaml` configuration file. 
 
-The code duplication linting scenario is problematic for being disabled an a per line basis. So:
+The code duplication linting scenario is problematic for being disabled an a per line basis. The following example suppresses the `dupl` linter for the set of three files in the _apis/telemetry/v1alpha1_ module:
+
 ```yaml
 issues:
   exclude-rules:
     - linters: [ dupl ]
       path: apis/telemetry/v1alpha1/(logparsers|metricpipeline|tracepipeline)_types_test.go
 ```
-suppresses the `dupl` linter for the set of three files in the _apis/telemetry/v1alpha1_ module.
 
 The benefit of declaring linter exclusion rules on a file basis in the config file and not as package-level inline nolint instructions is that it is easier to visualize and analyse the linting suppressions.
 
-# Dev environment configuration
+### Dev environment configuration
 Read [golangci-lint integrations](https://golangci-lint.run/usage/integrations/) for information on configuring file-watchers for your IDE or code editor.
 
-## Autofix
+### Autofix
 Some of the linting errors can be automatically fixed with the command:
 `make lint_autofix`
