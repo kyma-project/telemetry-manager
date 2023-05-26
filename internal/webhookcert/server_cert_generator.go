@@ -47,7 +47,7 @@ func (g *serverCertGeneratorImpl) generateCertInternal(host string, alternativeD
 		return nil, nil, fmt.Errorf("failed to generateCert serial number: %w", err)
 	}
 
-	validFrom := g.clock.now().Add(-time.Hour).UTC()
+	validFrom := g.clock.now().Add(-time.Hour).UTC() // valid an hour earlier to avoid flakes due to clock skew
 	validTo := validFrom.Add(serverCertMaxAge).UTC()
 
 	certTemplate := x509.Certificate{
