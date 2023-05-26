@@ -1,6 +1,11 @@
 # Installation
 
-In the following possible ways of installation are outlined. More details on the available make targets and the prerequisites can be found at [Development](./development.md).
+You can choose among several ways of installation. For more details on the available make targets and the prerequisites, see [Development](./development.md).
+
+## Prerequisites
+
+- See prerequisites for running the make targets at the [Development section](./development.md)
+- Kubecontext pointing to an existing Kubernetes cluster
 
 ## Install Telemetry Manager from sources
 
@@ -40,3 +45,5 @@ Install the ModuleTemplate and activate the component
 kubectl apply -f https://github.com/kyma-project/btp-manager/releases/latest/download/template.yaml
 kyma alpha enable module telemetry
 ```
+
+Verify that a `telemetry-operator` pod starts up in the `kyma-system` namespace

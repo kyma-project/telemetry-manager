@@ -2,7 +2,7 @@
 
 ## Overview
 
-Telemetry Manager is a Kubernetes operator which is fullfiling the [Kyma module interface](https://github.com/kyma-project/community/tree/main/concepts/modularization). It is providing APIs for a managed agent/gateway setup for log, trace, and metric ingestion and dispatching into 3party backend systems, in order to reduce the pain of orchestrating usch setup on your own. Read more on the [usage](./docs/user/README.md) of the module as well as general [design and strategy](https://github.com/kyma-project/community/blob/main/concepts/observability-strategy/strategy.md) behind the module.
+Telemetry Manager is a Kubernetes operator that fulfils the [Kyma module interface](https://github.com/kyma-project/community/tree/main/concepts/modularization). It provides APIs for a managed agent/gateway setup for log, trace, and metric ingestion and dispatching into 3rd-party backend systems, in order to reduce the pain of orchestrating such setup on your own. Read more on the [usage](./docs/usage/README.md) of the module as well as general [design and strategy](https://github.com/kyma-project/community/blob/main/concepts/observability-strategy/strategy.md) behind the module.
 
 ### Logs
 
@@ -24,15 +24,15 @@ See [Dynamic Monitoring Backend Configuration](https://github.com/kyma-project/c
 
 ## Usage
 
-More information can be found at the dedicated [usage documentation](./docs/user/README.md)
+See the [user documentation](./docs/user/README.md)
 
 ## Installation
 
-More information can be found in the dedicated [instruction](./docs/contributor/installation.md).
+See the [installation instruction](./docs/contributor/installation.md).
 
 ## Development
 
-More information can be found in dedicated documents:
+For details, see:
 - [Available commands for building/linting/installation](./docs/contributor/development.md)
 - [Testing Strategy](./docs/contributor/testing.md)
 - [Troubleshooting and Debugging](./docs/contributor/troubleshooting.md)

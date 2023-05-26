@@ -1,25 +1,25 @@
 # Governance
 
-Some quality aspects are covered by automated verification and requires a local execution of tooling before a commitment. These aspects are outlined in this document.
+Some quality aspects are covered by automated verification, so you must locally execute tooling before a commitment. These aspects are outlined in this document.
 
 ## CRD generation
 
-The API of the operator is realized by Kubernetes CRDs defined in the [apis](/apis/) folder as golang source code. In order to install the CRDs later via kustomize together with the operator deployment, proper kubernetes [manifest files](/config/crd/bases/) need to be generated. Also the [user documentation](./resources/) needs to be updated. 
+The API of the operator is realized by Kubernetes CRDs defined in the [apis](/apis/) folder as Golang source code. To install the CRDs later using kustomize together with the operator deployment, you must generate proper Kubernetes [manifest files](/config/crd/bases/). Also, you must update the [user documentation](./resources/). 
 
-Both aspects can be achieved by calling:
+To achieve both aspects, call:
 ```shell
 make manifests
 ```
 
-That will be verified as well by a [ProwJob](https://github.com/kyma-project/test-infra/blob/main/prow/jobs/telemetry-manager/telemetry-manager-generic.yaml#L6)
+Additionally, a [ProwJob](https://github.com/kyma-project/test-infra/blob/main/prow/jobs/telemetry-manager/telemetry-manager-generic.yaml#L6) verifies this operation.
 
 ## Sourcecode linting
 
-We use [golangci-lint](https://golangci-lint.run) with fine-grained configuration for the source code linting.
+For the source code linting, the development team uses [golangci-lint](https://golangci-lint.run) with fine-grained configuration.
 
 ### Linters in action
 
-The following linters are configured and integrated as a CI stage through a [ProwJob](https://github.com/kyma-project/test-infra/blob/main/prow/jobs/kyma/components/kyma-components-static-checks.yaml#L6).
+The following linters are configured and integrated as a CI stage using a [ProwJob](https://github.com/kyma-project/test-infra/blob/main/prow/jobs/kyma/components/kyma-components-static-checks.yaml#L6).
 
 <details>
 <summary>List of linters</summary>
@@ -59,7 +59,7 @@ The following linters are configured and integrated as a CI stage through a [Pro
 
 ### Irrelevant linters
 
-The following linters irrelevant for development of the Telemetry module:
+The following linters are sirrelevant for development of the Telemetry module:
 
 <details>
 <summary>List of irrelevant linters</summary>

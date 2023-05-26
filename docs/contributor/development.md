@@ -13,74 +13,63 @@ Other dependencies will be downloaded by the make targets to the `bin` sub-folde
 
 ## Available Commands
 
-For development, you can use the following commands:
+For development, use the following commands:
 
 - Run unit tests
-
-```bash
-make test
-```
+  ```bash
+  make test
+  ```
 
 - Create a k3d cluster on Docker, deploy Telemetry Manager, and run integration tests
-
-```bash
-make e2e-test
-```
+  ```bash
+  make e2e-test
+  ```
 
 - Run `golangci-lint` and lint manifests
-
-```bash
-make lint
-```
+  ```bash
+  make lint
+  ```
 
 - Autofix all automatically-fixable linter complaints
-
-```bash
-make lint-autofix
-```
+  ```bash
+  make lint-autofix
+  ```
 
 - Regenerate YAML manifests (CRDs and RBAC)
-
-```bash
-make manifests
-```
+  ```bash
+  make manifests
+  ```
 
 - Install CRDs to cluster in current kubeconfig context
-
-```bash
-make install
-```
+  ```bash
+  make install
+  ```
 
 - Uninstall CRDs to cluster in current kubeconfig context
-
-```bash
-make uninstall
-```
+  ```bash
+  make uninstall
+  ```
 
 - Run the operator locally (uses current kubeconfig context)
-
-```bash
-make run
-```
+  ```bash
+  make run
+  ```
 
 - Build container image and deploy to cluster in current kubeconfig context
-
-```bash
-export IMG=<my container repo>
-make docker-build
-make docker-push
-kubectl create ns kyma-system
-make deploy
-```
+  ```bash
+  export IMG=<my container repo>
+  make docker-build
+  make docker-push
+  kubectl create ns kyma-system
+  make deploy
+  ```
 
 - Clean up everything
-
-```bash
-make undeploy
-```
+  ```bash
+  make undeploy
+  ```
 
 - Deploy module with Lifecycle Manager on a k3d cluster
-
-```bash
-make e2e-deploy-module
-```
+  ```bash
+  make e2e-deploy-module
+  ```
