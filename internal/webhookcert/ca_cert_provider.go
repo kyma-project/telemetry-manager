@@ -2,7 +2,6 @@ package webhookcert
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -27,15 +26,16 @@ type caCertGenerator interface {
 
 type caCertProvider struct {
 	client    client.Client
-	clock     clock
+	checker   certExpiryChecker
 	generator caCertGenerator
 }
 
 func newCACertProvider(client client.Client) *caCertProvider {
 	clock := realClock{}
+	const duration30d = 30 * 24 * time.Hour
 	return &caCertProvider{
-		client: client,
-		clock:  clock,
+		client:  client,
+		checker: &certExpiryCheckerImpl{clock: realClock{}, timeLeft: duration30d},
 		generator: &caCertGeneratorImpl{
 			clock: clock,
 		},
@@ -44,21 +44,21 @@ func newCACertProvider(client client.Client) *caCertProvider {
 
 func (p *caCertProvider) provideCert(ctx context.Context, caSecretName types.NamespacedName) ([]byte, []byte, error) {
 	var caSecret corev1.Secret
-	notFound := false
+	shouldCreateNew := false
 	if err := p.client.Get(ctx, caSecretName, &caSecret); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return nil, nil, fmt.Errorf("failed to find ca cert caSecretName: %w", err)
 		}
-		notFound = true
+		shouldCreateNew = true
 	}
 
-	if notFound || !p.checkCASecret(ctx, &caSecret) {
+	if shouldCreateNew || !p.checkCASecret(ctx, &caSecret) {
 		caCertPEM, caKeyPEM, err := p.generator.generateCert()
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to generateCert ca cert: %w", err)
 		}
 
-		logf.FromContext(ctx).Info("Generated new CA cert/key",
+		logf.FromContext(ctx).V(1).Info("Generated new CA cert/key",
 			"secretName", caSecretName.Name,
 			"secretNamespace", caSecretName.Namespace)
 
@@ -77,42 +77,32 @@ func (p *caCertProvider) provideCert(ctx context.Context, caSecretName types.Nam
 }
 
 func (p *caCertProvider) checkCASecret(ctx context.Context, caSecret *corev1.Secret) bool {
-	if err := p.checkCASecretInternal(caSecret); err != nil {
-		logf.FromContext(ctx).Error(err, "Invalid ca secret. Rotating the cert",
+	caCertPEM, err := p.fetchCACert(caSecret)
+	if err != nil {
+
+		logf.FromContext(ctx).Error(err, "Invalid ca secret. Creating a new one",
 			"secretName", caSecret.Name,
 			"secretNamespace", caSecret.Namespace)
 		return false
 	}
 
-	return true
+	valid, err := p.checker.checkExpiry(ctx, caCertPEM)
+	return err != nil && valid
 }
 
-func (p *caCertProvider) checkCASecretInternal(caSecret *corev1.Secret) error {
-	var caCertPEM, _ []byte
+func (p *caCertProvider) fetchCACert(caSecret *corev1.Secret) ([]byte, error) {
+	var caCertPEM []byte
 	if val, found := caSecret.Data[caCertFile]; found {
 		caCertPEM = val
 	} else {
-		return fmt.Errorf("key not found: %v", caCertFile)
+		return nil, fmt.Errorf("key not found: %v", caCertFile)
 	}
 
 	if _, found := caSecret.Data[caKeyFile]; !found {
-		return fmt.Errorf("key not found: %v", caKeyFile)
+		return nil, fmt.Errorf("key not found: %v", caKeyFile)
 	}
 
-	return p.checkCertExpiry(caCertPEM)
-}
-
-func (p *caCertProvider) checkCertExpiry(certPEM []byte) error {
-	cert, err := parseCertPEM(certPEM)
-	if err != nil {
-		return err
-	}
-
-	aboutToExpireTime := cert.NotAfter.UTC().Add(-1 * 24 * time.Hour)
-	if p.clock.now().Before(aboutToExpireTime) {
-		return nil
-	}
-	return errors.New("cert is about to expire: rotation needed")
+	return caCertPEM, nil
 }
 
 func makeCASecret(certificate []byte, key []byte, name types.NamespacedName) corev1.Secret {

@@ -3,18 +3,13 @@ package webhookcert
 import (
 	"context"
 	"fmt"
-	"os"
-	"path"
 
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-)
-
-const (
-	certFile = "tls.crt"
-	keyFile  = "tls.key"
 )
 
 type Config struct {
@@ -24,24 +19,19 @@ type Config struct {
 	WebhookName  types.NamespacedName
 }
 
-func EnsureCertificate(ctx context.Context, client client.Client, certConfig Config) error {
-	caCertPEM, caKeyPEM, err := newCACertProvider(client).provideCert(ctx, certConfig.CASecretName)
+func EnsureCertificate(ctx context.Context, client client.Client, config Config) error {
+	caCertPEM, caKeyPEM, err := newCACertProvider(client).provideCert(ctx, config.CASecretName)
 	if err != nil {
-		return fmt.Errorf("failed to get or create ca cert/key: %w", err)
+		return fmt.Errorf("failed to provider ca cert/key: %w", err)
 	}
 
-	host, alternativeDNSNames := dnsNames(certConfig.ServiceName)
-	var serverCertPEM, serverKeyPEM []byte
-	serverCertPEM, serverKeyPEM, err = newServerCertGenerator().generateCert(host, alternativeDNSNames, caCertPEM, caKeyPEM)
+	host, alternativeDNSNames := dnsNames(config.ServiceName)
+	_, _, err = newServerCertProvider(config.CertDir).provideCert(ctx, host, alternativeDNSNames, caCertPEM, caKeyPEM)
 	if err != nil {
-		return fmt.Errorf("failed to generateCert server cert: %w", err)
+		return fmt.Errorf("failed to provider server cert/key: %w", err)
 	}
 
-	if err = writeFiles(serverCertPEM, serverKeyPEM, certConfig.CertDir); err != nil {
-		return fmt.Errorf("failed to write files %w", err)
-	}
-
-	validatingWebhookConfig := makeValidatingWebhookConfig(caCertPEM, certConfig)
+	validatingWebhookConfig := makeValidatingWebhookConfig(caCertPEM, config)
 	return kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, client, &validatingWebhookConfig)
 }
 
@@ -55,9 +45,91 @@ func dnsNames(webhookService types.NamespacedName) (host string, alternativeDNSN
 	return
 }
 
-func writeFiles(certPEM, keyPEM []byte, certDir string) error {
-	if err := os.WriteFile(path.Join(certDir, certFile), certPEM, 0600); err != nil {
-		return err
+func makeValidatingWebhookConfig(certificate []byte, config Config) admissionregistrationv1.ValidatingWebhookConfiguration {
+	logPipelinePath := "/validate-logpipeline"
+	logParserPath := "/validate-logparser"
+	failurePolicy := admissionregistrationv1.Fail
+	matchPolicy := admissionregistrationv1.Exact
+	sideEffects := admissionregistrationv1.SideEffectClassNone
+	operations := []admissionregistrationv1.OperationType{
+		admissionregistrationv1.Create,
+		admissionregistrationv1.Update,
 	}
-	return os.WriteFile(path.Join(certDir, keyFile), keyPEM, 0600)
+	apiGroups := []string{"telemetry.kyma-project.io"}
+	apiVersions := []string{"v1alpha1"}
+	scope := admissionregistrationv1.AllScopes
+	servicePort := int32(443)
+	timeout := int32(15)
+	labels := map[string]string{
+		"control-plane":              "telemetry-operator",
+		"app.kubernetes.io/instance": "telemetry",
+		"app.kubernetes.io/name":     "operator",
+		"kyma-project.io/component":  "controller",
+	}
+
+	return admissionregistrationv1.ValidatingWebhookConfiguration{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   config.WebhookName.Name,
+			Labels: labels,
+		},
+		Webhooks: []admissionregistrationv1.ValidatingWebhook{
+			{
+				AdmissionReviewVersions: []string{"v1beta1", "v1"},
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					Service: &admissionregistrationv1.ServiceReference{
+						Name:      config.ServiceName.Name,
+						Namespace: config.ServiceName.Namespace,
+						Port:      &servicePort,
+						Path:      &logPipelinePath,
+					},
+					CABundle: certificate,
+				},
+				FailurePolicy:  &failurePolicy,
+				MatchPolicy:    &matchPolicy,
+				Name:           "validation.logpipelines.telemetry.kyma-project.io",
+				SideEffects:    &sideEffects,
+				TimeoutSeconds: &timeout,
+				Rules: []admissionregistrationv1.RuleWithOperations{
+					{
+						Operations: operations,
+						Rule: admissionregistrationv1.Rule{
+							APIGroups:   apiGroups,
+							APIVersions: apiVersions,
+							Scope:       &scope,
+							Resources:   []string{"logpipelines"},
+						},
+					},
+				},
+			},
+			{
+				AdmissionReviewVersions: []string{"v1beta1", "v1"},
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
+					Service: &admissionregistrationv1.ServiceReference{
+						Name:      config.ServiceName.Name,
+						Namespace: config.ServiceName.Namespace,
+						Port:      &servicePort,
+						Path:      &logParserPath,
+					},
+					CABundle: certificate,
+				},
+				FailurePolicy:  &failurePolicy,
+				MatchPolicy:    &matchPolicy,
+				Name:           "validation.logparsers.telemetry.kyma-project.io",
+				SideEffects:    &sideEffects,
+				TimeoutSeconds: &timeout,
+				Rules: []admissionregistrationv1.RuleWithOperations{
+					{
+						Operations: operations,
+						Rule: admissionregistrationv1.Rule{
+							APIGroups:   apiGroups,
+							APIVersions: apiVersions,
+							Scope:       &scope,
+							Resources:   []string{"logparsers"},
+						},
+					},
+				},
+			},
+		},
+	}
 }

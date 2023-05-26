@@ -20,12 +20,6 @@ type serverCertGeneratorImpl struct {
 	clock clock
 }
 
-func newServerCertGenerator() *serverCertGeneratorImpl {
-	return &serverCertGeneratorImpl{
-		clock: realClock{},
-	}
-}
-
 func (g *serverCertGeneratorImpl) generateCert(host string, alternativeDNSNames []string, caCertPEM, caKeyPEM []byte) ([]byte, []byte, error) {
 	caCert, err := parseCertPEM(caCertPEM)
 	if err != nil {

@@ -2,6 +2,7 @@ package webhookcert
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -27,7 +28,6 @@ func TestProvideCert(t *testing.T) {
 		fakeKeyPEM := []byte{4, 5, 6}
 		sut := caCertProvider{
 			client:    fakeClient,
-			clock:     mockClock{},
 			generator: &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 		}
 
@@ -44,7 +44,6 @@ func TestProvideCert(t *testing.T) {
 		fakeKeyPEM := []byte{4, 5, 6}
 		sut := caCertProvider{
 			client:    fakeClient,
-			clock:     mockClock{},
 			generator: &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 		}
 
@@ -76,7 +75,6 @@ func TestProvideCert(t *testing.T) {
 		}).Build()
 		sut := caCertProvider{
 			client:    fakeClient,
-			clock:     mockClock{},
 			generator: &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 		}
 
@@ -109,7 +107,42 @@ func TestProvideCert(t *testing.T) {
 		}).Build()
 		sut := caCertProvider{
 			client:    fakeClient,
-			clock:     mockClock{t: now},
+			checker:   &mockCertExpiryChecker{valid: false},
+			generator: &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+		}
+
+		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
+		certPEM, keyPEM, err := sut.provideCert(context.Background(), secretName)
+		require.NoError(t, err)
+		require.Equal(t, fakeNewCertPEM, certPEM)
+		require.Equal(t, fakeNewKeyPEM, keyPEM)
+
+		var secret corev1.Secret
+		fakeClient.Get(context.Background(), secretName, &secret)
+		require.NotNil(t, secret.Data)
+		require.Contains(t, secret.Data, "ca.crt")
+		require.Contains(t, secret.Data, "ca.key")
+		require.Equal(t, secret.Data["ca.crt"], fakeNewCertPEM)
+		require.Equal(t, secret.Data["ca.key"], fakeNewKeyPEM)
+	})
+
+	t.Run("should create new secret with ca cert if expiry check fails", func(t *testing.T) {
+		now := time.Now()
+		fakeExpiringCertPEM, fakeExpiringKeyPEM := fakeCACert(now.Add(-1 * duration365d))
+		fakeNewCertPEM, fakeNewKeyPEM := fakeCACert(now)
+		fakeClient := fake.NewClientBuilder().WithObjects(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ca-cert",
+				Namespace: "default",
+			},
+			Data: map[string][]byte{
+				"ca.crt": fakeExpiringCertPEM,
+				"ca.key": fakeExpiringKeyPEM,
+			},
+		}).Build()
+		sut := caCertProvider{
+			client:    fakeClient,
+			checker:   &mockCertExpiryChecker{err: errors.New("failed")},
 			generator: &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
 		}
 
@@ -143,7 +176,7 @@ func TestProvideCert(t *testing.T) {
 		}).Build()
 		sut := caCertProvider{
 			client:    fakeClient,
-			clock:     mockClock{},
+			checker:   &mockCertExpiryChecker{valid: true},
 			generator: &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 		}
 
