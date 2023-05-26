@@ -129,8 +129,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 								{MountPath: "/fluent-bit/etc/custom_parsers.conf", Name: "config", SubPath: "custom_parsers.conf"},
 								{MountPath: "/fluent-bit/etc/loki-labelmap.json", Name: "config", SubPath: "loki-labelmap.json"},
 								{MountPath: "/fluent-bit/scripts/filter-script.lua", Name: "luascripts", SubPath: "filter-script.lua"},
-								{MountPath: "/var/log", Name: "varlog"},
-								{MountPath: "/var/lib/docker/containers", Name: "varlibdockercontainers", ReadOnly: true},
+								{MountPath: "/var/log", Name: "varlog", ReadOnly: true},
 								{MountPath: "/data", Name: "varfluentbit"},
 								{MountPath: "/files", Name: "dynamic-files"},
 							},
@@ -185,12 +184,6 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Name: "varlog",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{Path: "/var/log"},
-							},
-						},
-						{
-							Name: "varlibdockercontainers",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{Path: "/var/lib/docker/containers"},
 							},
 						},
 						{

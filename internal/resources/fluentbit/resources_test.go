@@ -33,8 +33,7 @@ func TestMakeDaemonSet(t *testing.T) {
 		{MountPath: "/fluent-bit/etc/custom_parsers.conf", Name: "config", SubPath: "custom_parsers.conf"},
 		{MountPath: "/fluent-bit/etc/loki-labelmap.json", Name: "config", SubPath: "loki-labelmap.json"},
 		{MountPath: "/fluent-bit/scripts/filter-script.lua", Name: "luascripts", SubPath: "filter-script.lua"},
-		{MountPath: "/var/log", Name: "varlog"},
-		{MountPath: "/var/lib/docker/containers", Name: "varlibdockercontainers", ReadOnly: true},
+		{MountPath: "/var/log", Name: "varlog", ReadOnly: true},
 		{MountPath: "/data", Name: "varfluentbit"},
 		{MountPath: "/files", Name: "dynamic-files"},
 	}
