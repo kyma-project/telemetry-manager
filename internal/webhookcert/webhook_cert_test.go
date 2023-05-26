@@ -1,22 +1,36 @@
-package setup
+package webhookcert
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
+	"fmt"
+	"os"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
-	webhookService = types.NamespacedName{
+	telemetryNamespace = "telemetry-system"
+	webhookService     = types.NamespacedName{
 		Name:      "telemetry-operator-webhook",
-		Namespace: "telemetry-system",
+		Namespace: telemetryNamespace,
 	}
-	name   = "validation.webhook.telemetry.kyma-project.io"
+	caBundleSecret = types.NamespacedName{
+		Name:      "telemetry-webhook-cert",
+		Namespace: telemetryNamespace,
+	}
+	name        = "validation.webhook.telemetry.kyma-project.io"
+	webhookName = types.NamespacedName{
+		Name: name,
+	}
 	labels = map[string]string{
 		"control-plane":              "telemetry-operator",
 		"app.kubernetes.io/instance": "telemetry",
@@ -25,18 +39,30 @@ var (
 	}
 )
 
-func TestEnsureValidatingWebhookConfig(t *testing.T) {
+func TestEnsureCertificate(t *testing.T) {
 	client := fake.NewClientBuilder().Build()
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
+	defer func(path string) {
+		deleteErr := os.RemoveAll(path)
+		require.NoError(t, deleteErr)
+	}(certDir)
+	config := Config{
+		CertDir:      certDir,
+		ServiceName:  webhookService,
+		CASecretName: caBundleSecret,
+		WebhookName:  webhookName,
+	}
 
-	err := EnsureValidatingWebhookConfig(client, webhookService, []byte("123"))
+	err = EnsureCertificate(context.TODO(), client, config)
+	require.NoError(t, err)
+
+	serverCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
 	require.NoError(t, err)
 
 	var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
-	key := types.NamespacedName{
-		Name: name,
-	}
 
-	err = client.Get(context.Background(), key, &validatingWebhookConfiguration)
+	err = client.Get(context.Background(), config.WebhookName, &validatingWebhookConfiguration)
 	require.NoError(t, err)
 
 	require.Equal(t, name, validatingWebhookConfiguration.Name)
@@ -47,8 +73,8 @@ func TestEnsureValidatingWebhookConfig(t *testing.T) {
 	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[0].TimeoutSeconds)
 	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[1].TimeoutSeconds)
 
-	require.Equal(t, []byte("123"), validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
-	require.Equal(t, []byte("123"), validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	require.NoError(t, verifyHasCACertInChain(serverCert, validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle))
+	require.NoError(t, verifyHasCACertInChain(serverCert, validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle))
 
 	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Name)
 	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Name)
@@ -157,9 +183,24 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 		},
 	}
 	client := fake.NewClientBuilder().WithObjects(initialValidatingWebhookConfiguration).Build()
-	newCertificate := []byte("asdf")
 
-	err := EnsureValidatingWebhookConfig(client, webhookService, newCertificate)
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
+	defer func(path string) {
+		deleteErr := os.RemoveAll(path)
+		require.NoError(t, deleteErr)
+	}(certDir)
+	config := Config{
+		CertDir:      certDir,
+		ServiceName:  webhookService,
+		CASecretName: caBundleSecret,
+		WebhookName:  webhookName,
+	}
+
+	err = EnsureCertificate(context.TODO(), client, config)
+	require.NoError(t, err)
+
+	newServerCert, err := os.ReadFile(path.Join(certDir, "tls.crt"))
 	require.NoError(t, err)
 
 	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
@@ -170,6 +211,91 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 	err = client.Get(context.Background(), key, &updatedValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
-	require.Equal(t, newCertificate, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
-	require.Equal(t, newCertificate, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	require.NoError(t, verifyHasCACertInChain(newServerCert, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle))
+	require.NoError(t, verifyHasCACertInChain(newServerCert, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle))
+}
+
+func TestCreateSecret(t *testing.T) {
+	client := fake.NewClientBuilder().Build()
+
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
+	defer func(path string) {
+		deleteErr := os.RemoveAll(path)
+		require.NoError(t, deleteErr)
+	}(certDir)
+	config := Config{
+		CertDir:      certDir,
+		ServiceName:  webhookService,
+		CASecretName: caBundleSecret,
+		WebhookName:  webhookName,
+	}
+
+	err = EnsureCertificate(context.TODO(), client, config)
+	require.NoError(t, err)
+
+	var secret corev1.Secret
+	err = client.Get(context.Background(), config.CASecretName, &secret)
+	require.NoError(t, err)
+
+	require.Contains(t, secret.Data, "ca.crt")
+	require.Contains(t, secret.Data, "ca.key")
+}
+
+func TestReuseExistingCertificate(t *testing.T) {
+	client := fake.NewClientBuilder().Build()
+
+	certDir, err := os.MkdirTemp("", "certificate")
+	require.NoError(t, err)
+	defer func(path string) {
+		deleteErr := os.RemoveAll(path)
+		require.NoError(t, deleteErr)
+	}(certDir)
+	config := Config{
+		CertDir:      certDir,
+		ServiceName:  webhookService,
+		CASecretName: caBundleSecret,
+		WebhookName:  webhookName,
+	}
+
+	err = EnsureCertificate(context.TODO(), client, config)
+	require.NoError(t, err)
+
+	var newValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+	err = client.Get(context.Background(), types.NamespacedName{Name: name}, &newValidatingWebhookConfiguration)
+	require.NoError(t, err)
+
+	err = EnsureCertificate(context.TODO(), client, config)
+	require.NoError(t, err)
+
+	var updatedValidatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+	err = client.Get(context.Background(), types.NamespacedName{Name: name}, &updatedValidatingWebhookConfiguration)
+	require.NoError(t, err)
+
+	require.Equal(t, newValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle,
+		updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
+	require.Equal(t, newValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle,
+		updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+}
+
+func verifyHasCACertInChain(serverCertPEM []byte, caCertPEM []byte) error {
+	roots := x509.NewCertPool()
+	ok := roots.AppendCertsFromPEM(caCertPEM)
+	if !ok {
+		panic("failed to parse root certificate")
+	}
+
+	block, _ := pem.Decode(serverCertPEM)
+	serverCert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return fmt.Errorf("failed to parse x509 cert: %v", err)
+	}
+
+	if _, err := serverCert.Verify(x509.VerifyOptions{
+		Roots: roots,
+	}); err != nil {
+		return fmt.Errorf("failed to verify x509 cert: %v", err)
+	}
+
+	return nil
 }

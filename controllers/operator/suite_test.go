@@ -18,6 +18,7 @@ package operator
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -89,8 +90,18 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
+	certDir, err := os.MkdirTemp("", "certificate")
+	Expect(err).ToNot(HaveOccurred())
+	defer func(path string) {
+		deleteErr := os.RemoveAll(path)
+		Expect(deleteErr).ToNot(HaveOccurred())
+	}(certDir)
+
+	webhookConfig := telemetry.WebhookConfig{
+		Enabled: false,
+	}
 	client := mgr.GetClient()
-	telemetryReconciler := telemetry.NewReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"))
+	telemetryReconciler := telemetry.NewReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"), webhookConfig)
 	err = telemetryReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
