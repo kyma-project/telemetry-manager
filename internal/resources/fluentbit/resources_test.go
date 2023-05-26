@@ -38,6 +38,11 @@ func TestMakeDaemonSet(t *testing.T) {
 		{MountPath: "/data", Name: "varfluentbit"},
 		{MountPath: "/files", Name: "dynamic-files"},
 	}
+
+	expectedAnnotations := map[string]string{
+		"checksum/logpipeline-config":                  checksum,
+		"traffic.sidecar.istio.io/excludeInboundPorts": "2020,2021",
+	}
 	daemonSet := MakeDaemonSet(name, checksum, ds)
 
 	require.NotNil(t, daemonSet)
@@ -48,7 +53,7 @@ func TestMakeDaemonSet(t *testing.T) {
 	require.NotEmpty(t, daemonSet.Spec.Template.Spec.Containers[0].EnvFrom)
 	require.NotNil(t, daemonSet.Spec.Template.Spec.Containers[0].LivenessProbe, "liveness probe must be defined")
 	require.NotNil(t, daemonSet.Spec.Template.Spec.Containers[0].ReadinessProbe, "readiness probe must be defined")
-
+	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Annotations, expectedAnnotations, "annotations should contain istio port exclusion of 2020 and 2021")
 	podSecurityContext := daemonSet.Spec.Template.Spec.SecurityContext
 	require.NotNil(t, podSecurityContext, "pod security context must be defined")
 	require.False(t, *podSecurityContext.RunAsNonRoot, "must not run as non-root")

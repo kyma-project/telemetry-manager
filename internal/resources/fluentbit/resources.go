@@ -14,6 +14,7 @@ import (
 )
 
 const checksumAnnotationKey = "checksum/logpipeline-config"
+const istioExcludeInboundPorts = "traffic.sidecar.istio.io/excludeInboundPorts"
 
 type DaemonSetConfig struct {
 	FluentBitImage              string
@@ -50,6 +51,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 
 	annotations := make(map[string]string)
 	annotations[checksumAnnotationKey] = checksum
+	annotations[istioExcludeInboundPorts] = "2020,2021"
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{

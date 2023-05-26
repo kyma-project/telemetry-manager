@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: telemetry-module
+    busola.io/extension: resource
+    busola.io/extension-version: "0.5"
+  name: module
+data:
+  details: |
+    header:
+      - name: State
+        source: status.state
+        widget: Badge
+    body:
+      - source: spec
+        widget: CodeViewer
+        language: "'plaintext'"
+  form: |
+    []
+  general: |
+    resource:
+      kind: Telemetry
+      group: operator.kyma-project.io
+      version: v1alpha1
+    name: Telemetry Module
+    category: Observability
+    urlPath: telemetries
+    scope: cluster
+    description: >-
+      {{[Telemetry](https://github.com/kyma-project/telemetry-manager/blob/main/config/crd/bases/operator.kyma-project.io_telemetries.yaml)}}
+      is a detailed description of the kind of data and the format used to define a
+      Telemetry module instance.
+    features:
+      actions:
+        disableCreate: true
+  list: |
+    - name: State
+      source: status.state
+      widget: Badge
