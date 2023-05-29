@@ -44,15 +44,15 @@ func newCACertProvider(client client.Client) *caCertProvider {
 
 func (p *caCertProvider) provideCert(ctx context.Context, caSecretName types.NamespacedName) ([]byte, []byte, error) {
 	var caSecret corev1.Secret
-	shouldCreateNew := false
+	notFound := false
 	if err := p.client.Get(ctx, caSecretName, &caSecret); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return nil, nil, fmt.Errorf("failed to find ca cert caSecretName: %w", err)
 		}
-		shouldCreateNew = true
+		notFound = true
 	}
 
-	if shouldCreateNew || !p.checkCASecret(ctx, &caSecret) {
+	if notFound || !p.checkCASecret(ctx, &caSecret) {
 		caCertPEM, caKeyPEM, err := p.generator.generateCert()
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to generateCert ca cert: %w", err)
@@ -79,7 +79,6 @@ func (p *caCertProvider) provideCert(ctx context.Context, caSecretName types.Nam
 func (p *caCertProvider) checkCASecret(ctx context.Context, caSecret *corev1.Secret) bool {
 	caCertPEM, err := p.fetchCACert(caSecret)
 	if err != nil {
-
 		logf.FromContext(ctx).Error(err, "Invalid ca secret. Creating a new one",
 			"secretName", caSecret.Name,
 			"secretNamespace", caSecret.Namespace)
@@ -87,7 +86,7 @@ func (p *caCertProvider) checkCASecret(ctx context.Context, caSecret *corev1.Sec
 	}
 
 	valid, err := p.checker.checkExpiry(ctx, caCertPEM)
-	return err != nil && valid
+	return err == nil && valid
 }
 
 func (p *caCertProvider) fetchCACert(caSecret *corev1.Secret) ([]byte, error) {

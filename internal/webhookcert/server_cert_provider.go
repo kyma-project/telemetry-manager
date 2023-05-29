@@ -6,8 +6,14 @@ import (
 	"time"
 )
 
+type serverCertConfig struct {
+	host                string
+	alternativeDNSNames []string
+	caCertPEM, caKeyPEM []byte
+}
+
 type serverCertGenerator interface {
-	generateCert(host string, alternativeDNSNames []string, caCertPEM, caKeyPEM []byte) (certPEM, keyPEM []byte, err error)
+	generateCert(config serverCertConfig) (certPEM, keyPEM []byte, err error)
 }
 
 type serverCertStorage interface {
@@ -33,7 +39,7 @@ func newServerCertProvider(certDir string) *serverCertProvider {
 	}
 }
 
-func (p *serverCertProvider) provideCert(ctx context.Context, host string, alternativeDNSNames []string, caCertPEM, caKeyPEM []byte) ([]byte, []byte, error) {
+func (p *serverCertProvider) provideCert(ctx context.Context, config serverCertConfig) ([]byte, []byte, error) {
 	var err error
 	var serverCertPEM, serverKeyPEM []byte
 	serverCertPEM, serverKeyPEM, err = p.storage.load()
@@ -41,7 +47,7 @@ func (p *serverCertProvider) provideCert(ctx context.Context, host string, alter
 	if err != nil {
 		shouldCreateNew = true
 	} else {
-		valid, checkErr := p.checker.checkExpiry(ctx, caCertPEM)
+		valid, checkErr := p.checker.checkExpiry(ctx, config.caCertPEM)
 		if checkErr != nil {
 			return nil, nil, fmt.Errorf("failed to check cert expiry: %w", checkErr)
 		}
@@ -49,7 +55,7 @@ func (p *serverCertProvider) provideCert(ctx context.Context, host string, alter
 	}
 
 	if shouldCreateNew {
-		serverCertPEM, serverKeyPEM, err = p.generator.generateCert(host, alternativeDNSNames, caCertPEM, caKeyPEM)
+		serverCertPEM, serverKeyPEM, err = p.generator.generateCert(config)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to generate cert: %w", err)
 		}

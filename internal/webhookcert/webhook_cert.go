@@ -26,7 +26,12 @@ func EnsureCertificate(ctx context.Context, client client.Client, config Config)
 	}
 
 	host, alternativeDNSNames := dnsNames(config.ServiceName)
-	_, _, err = newServerCertProvider(config.CertDir).provideCert(ctx, host, alternativeDNSNames, caCertPEM, caKeyPEM)
+	_, _, err = newServerCertProvider(config.CertDir).provideCert(ctx, serverCertConfig{
+		host:                host,
+		alternativeDNSNames: alternativeDNSNames,
+		caCertPEM:           caCertPEM,
+		caKeyPEM:            caKeyPEM,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to provider server cert/key: %w", err)
 	}
