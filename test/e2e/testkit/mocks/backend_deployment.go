@@ -14,7 +14,7 @@ import (
 
 const (
 	replicas           = 1
-	otelCollectorImage = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.77.0-8115210c"
+	otelCollectorImage = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.75.0-6ea7fe7a"
 	nginxImage         = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
 )
 
