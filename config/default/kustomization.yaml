@@ -12,7 +12,7 @@ namePrefix: telemetry-
 labels:
 - includeSelectors: false
   pairs:
-    control-plane: operator
+    control-plane: telemetry-operator
     app.kubernetes.io/component: telemetry
     app.kubernetes.io/part-of: kyma
     app.kubernetes.io/name: telemetry-operator
