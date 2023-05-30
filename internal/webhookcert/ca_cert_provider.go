@@ -69,7 +69,7 @@ func (p *caCertProviderImpl) provideCert(ctx context.Context, caSecretName types
 		return caCertPEM, caKeyPEM, nil
 	}
 
-	logf.FromContext(ctx).Info("Found existing CA cert/key",
+	logf.FromContext(ctx).V(1).Info("Found existing CA cert/key",
 		"secretName", caSecretName.Name,
 		"secretNamespace", caSecretName.Namespace)
 
