@@ -24,25 +24,25 @@ type caCertGenerator interface {
 	generateCert() (certPEM, keyPEM []byte, err error)
 }
 
-type caCertProvider struct {
+type caCertProviderImpl struct {
 	client    client.Client
 	checker   certExpiryChecker
 	generator caCertGenerator
 }
 
-func newCACertProvider(client client.Client) *caCertProvider {
+func newCACertProvider(client client.Client) *caCertProviderImpl {
 	clock := realClock{}
 	const duration30d = 30 * 24 * time.Hour
-	return &caCertProvider{
+	return &caCertProviderImpl{
 		client:  client,
-		checker: &certExpiryCheckerImpl{clock: realClock{}, timeLeft: duration30d},
+		checker: &certExpiryCheckerImpl{clock: realClock{}, softExpiryOffset: duration30d},
 		generator: &caCertGeneratorImpl{
 			clock: clock,
 		},
 	}
 }
 
-func (p *caCertProvider) provideCert(ctx context.Context, caSecretName types.NamespacedName) ([]byte, []byte, error) {
+func (p *caCertProviderImpl) provideCert(ctx context.Context, caSecretName types.NamespacedName) ([]byte, []byte, error) {
 	var caSecret corev1.Secret
 	notFound := false
 	if err := p.client.Get(ctx, caSecretName, &caSecret); err != nil {
@@ -76,7 +76,7 @@ func (p *caCertProvider) provideCert(ctx context.Context, caSecretName types.Nam
 	return caSecret.Data[caCertFile], caSecret.Data[caKeyFile], nil
 }
 
-func (p *caCertProvider) checkCASecret(ctx context.Context, caSecret *corev1.Secret) bool {
+func (p *caCertProviderImpl) checkCASecret(ctx context.Context, caSecret *corev1.Secret) bool {
 	caCertPEM, err := p.fetchCACert(caSecret)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Invalid ca secret. Creating a new one",
@@ -85,11 +85,11 @@ func (p *caCertProvider) checkCASecret(ctx context.Context, caSecret *corev1.Sec
 		return false
 	}
 
-	valid, err := p.checker.checkExpiry(ctx, caCertPEM)
-	return err == nil && valid
+	certValid, checkErr := p.checker.checkExpiry(ctx, caCertPEM)
+	return checkErr == nil && certValid
 }
 
-func (p *caCertProvider) fetchCACert(caSecret *corev1.Secret) ([]byte, error) {
+func (p *caCertProviderImpl) fetchCACert(caSecret *corev1.Secret) ([]byte, error) {
 	var caCertPEM []byte
 	if val, found := caSecret.Data[caCertFile]; found {
 		caCertPEM = val

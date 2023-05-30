@@ -12,32 +12,36 @@ type certExpiryChecker interface {
 }
 
 type certExpiryCheckerImpl struct {
-	clock    clock
-	timeLeft time.Duration
+	clock            clock
+	softExpiryOffset time.Duration
 }
 
+// checkExpiry checks if the provided PEM-encoded certificate is expired
+// if softExpiryOffset is set, it checks if it's soft-expired (before the actual hard expiration date)
 func (c *certExpiryCheckerImpl) checkExpiry(ctx context.Context, certPEM []byte) (bool, error) {
 	cert, err := parseCertPEM(certPEM)
 	if err != nil {
 		return false, err
 	}
 
-	nowTime := c.clock.now()
-	aboutToExpireTime := cert.NotAfter.UTC().Add(-1 * c.timeLeft)
-	if nowTime.Before(aboutToExpireTime) {
+	nowTime := c.clock.now().UTC()
+	hardExpiryTime := cert.NotAfter.UTC()
+	softExpiryTime := hardExpiryTime.Add(-1 * c.softExpiryOffset)
+	if nowTime.Before(softExpiryTime) {
 		return true, nil
 	}
 	logf.FromContext(ctx).Error(err, "Cert is about to expire. Rotation is needed",
 		"nowTime", nowTime,
-		"aboutToExpireTime", aboutToExpireTime)
+		"hardExpiryTime", hardExpiryTime,
+		"softExpiryTime", softExpiryTime)
 	return false, nil
 }
 
 type mockCertExpiryChecker struct {
-	valid bool
-	err   error
+	certValid bool
+	err       error
 }
 
 func (c *mockCertExpiryChecker) checkExpiry(context.Context, []byte) (bool, error) {
-	return c.valid, c.err
+	return c.certValid, c.err
 }

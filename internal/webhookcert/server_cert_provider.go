@@ -21,17 +21,17 @@ type serverCertStorage interface {
 	save(certPEM, keyPEM []byte) error
 }
 
-type serverCertProvider struct {
+type serverCertProviderImpl struct {
 	checker   certExpiryChecker
 	generator serverCertGenerator
 	storage   serverCertStorage
 }
 
-func newServerCertProvider(certDir string) *serverCertProvider {
+func newServerCertProvider(certDir string) *serverCertProviderImpl {
 	clock := realClock{}
 	const duration1d = 24 * time.Hour
-	return &serverCertProvider{
-		checker: &certExpiryCheckerImpl{timeLeft: duration1d, clock: realClock{}},
+	return &serverCertProviderImpl{
+		checker: &certExpiryCheckerImpl{softExpiryOffset: duration1d, clock: realClock{}},
 		generator: &serverCertGeneratorImpl{
 			clock: clock,
 		},
@@ -39,19 +39,16 @@ func newServerCertProvider(certDir string) *serverCertProvider {
 	}
 }
 
-func (p *serverCertProvider) provideCert(ctx context.Context, config serverCertConfig) ([]byte, []byte, error) {
+func (p *serverCertProviderImpl) provideCert(ctx context.Context, config serverCertConfig) ([]byte, []byte, error) {
 	var err error
 	var serverCertPEM, serverKeyPEM []byte
 	serverCertPEM, serverKeyPEM, err = p.storage.load()
 	shouldCreateNew := false
-	if err != nil {
+	if err != nil || len(serverCertPEM) == 0 || len(serverKeyPEM) == 0 {
 		shouldCreateNew = true
 	} else {
-		valid, checkErr := p.checker.checkExpiry(ctx, config.caCertPEM)
-		if checkErr != nil {
-			return nil, nil, fmt.Errorf("failed to check cert expiry: %w", checkErr)
-		}
-		shouldCreateNew = !valid
+		certValid, checkErr := p.checker.checkExpiry(ctx, config.caCertPEM)
+		shouldCreateNew = checkErr != nil || !certValid
 	}
 
 	if shouldCreateNew {

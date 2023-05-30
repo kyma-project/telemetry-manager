@@ -21,12 +21,12 @@ func (g *mockCACertGenerator) generateCert() ([]byte, []byte, error) {
 	return g.cert, g.key, nil
 }
 
-func TestProvideCert(t *testing.T) {
+func TestProvideCACert(t *testing.T) {
 	t.Run("should generate new ca cert if no secret found", func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 		fakeCertPEM := []byte{1, 2, 3}
 		fakeKeyPEM := []byte{4, 5, 6}
-		sut := caCertProvider{
+		sut := caCertProviderImpl{
 			client:    fakeClient,
 			generator: &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 		}
@@ -42,7 +42,7 @@ func TestProvideCert(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 		fakeCertPEM := []byte{1, 2, 3}
 		fakeKeyPEM := []byte{4, 5, 6}
-		sut := caCertProvider{
+		sut := caCertProviderImpl{
 			client:    fakeClient,
 			generator: &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 		}
@@ -73,7 +73,7 @@ func TestProvideCert(t *testing.T) {
 				"ca.key":         {10, 11, 12},
 			},
 		}).Build()
-		sut := caCertProvider{
+		sut := caCertProviderImpl{
 			client:    fakeClient,
 			generator: &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 		}
@@ -92,9 +92,8 @@ func TestProvideCert(t *testing.T) {
 	})
 
 	t.Run("should create new secret with ca cert if existing secret contains cert expiring soon", func(t *testing.T) {
-		now := time.Now()
-		fakeExpiringCertPEM, fakeExpiringKeyPEM := fakeCACert(now.Add(-1 * duration365d))
-		fakeNewCertPEM, fakeNewKeyPEM := fakeCACert(now)
+		fakeExpiringCertPEM, fakeExpiringKeyPEM := []byte{1, 2, 3}, []byte{4, 5, 6}
+		fakeNewCertPEM, fakeNewKeyPEM := []byte{7, 8, 9}, []byte{10, 11, 12}
 		fakeClient := fake.NewClientBuilder().WithObjects(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "ca-cert",
@@ -105,9 +104,9 @@ func TestProvideCert(t *testing.T) {
 				"ca.key": fakeExpiringKeyPEM,
 			},
 		}).Build()
-		sut := caCertProvider{
+		sut := caCertProviderImpl{
 			client:    fakeClient,
-			checker:   &mockCertExpiryChecker{valid: false},
+			checker:   &mockCertExpiryChecker{certValid: false},
 			generator: &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
 		}
 
@@ -127,9 +126,8 @@ func TestProvideCert(t *testing.T) {
 	})
 
 	t.Run("should create new secret with ca cert if expiry check fails", func(t *testing.T) {
-		now := time.Now()
-		fakeExpiringCertPEM, fakeExpiringKeyPEM := fakeCACert(now.Add(-1 * duration365d))
-		fakeNewCertPEM, fakeNewKeyPEM := fakeCACert(now)
+		fakeExpiringCertPEM, fakeExpiringKeyPEM := []byte{1, 2, 3}, []byte{4, 5, 6}
+		fakeNewCertPEM, fakeNewKeyPEM := []byte{7, 8, 9}, []byte{10, 11, 12}
 		fakeClient := fake.NewClientBuilder().WithObjects(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "ca-cert",
@@ -140,7 +138,7 @@ func TestProvideCert(t *testing.T) {
 				"ca.key": fakeExpiringKeyPEM,
 			},
 		}).Build()
-		sut := caCertProvider{
+		sut := caCertProviderImpl{
 			client:    fakeClient,
 			checker:   &mockCertExpiryChecker{err: errors.New("failed")},
 			generator: &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
@@ -174,9 +172,9 @@ func TestProvideCert(t *testing.T) {
 				"ca.key": fakeKeyPEM,
 			},
 		}).Build()
-		sut := caCertProvider{
+		sut := caCertProviderImpl{
 			client:    fakeClient,
-			checker:   &mockCertExpiryChecker{valid: true},
+			checker:   &mockCertExpiryChecker{certValid: true},
 			generator: &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 		}
 
@@ -194,8 +192,13 @@ func TestProvideCert(t *testing.T) {
 	})
 }
 
-func fakeCACert(now time.Time) ([]byte, []byte) {
-	generator := &caCertGeneratorImpl{clock: mockClock{t: now}}
+func generateCACertKey(creationTime time.Time) ([]byte, []byte) {
+	generator := &caCertGeneratorImpl{clock: mockClock{t: creationTime}}
 	cert, key, _ := generator.generateCert()
 	return cert, key
+}
+
+func generateCACert(creationTime time.Time) []byte {
+	certPEM, _ := generateCACertKey(creationTime)
+	return certPEM
 }
