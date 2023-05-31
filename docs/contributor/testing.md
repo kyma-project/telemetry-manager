@@ -6,21 +6,21 @@ This document summarises the software development testing life cycle activities 
 ​
 Software Testing Life Cycle phases:
 ​
-| Phase                                 | When                                            | How                                                          | Result                                                       |
-| ------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| Requirement analysis                  | Sprint planning, grooming and triaging meetings | Brainstorm the feature implementation, design and its implications on the testability | A clarified implementation design with a focus on testability, the acceptance tests criteria are collected, and the testing surface is defined as a part of the story |
-| Test planning, design and development | Development phase during the sprint             | The new functionality is covered with sufficient Unit, Integration and Acceptance-tests. | The unit and integration test suites are augmented, and new tests are integrated into the CI pipeline. All new functionality is covered with an Acceptance test. |
-| Test execution                        | A part of the CI process                        |                                                              |                                                              |
+| Phase | When | How | Result |
+| --- | --- | --- | --- |
+| Requirement analysis | Sprint planning, grooming and triaging meetings | Brainstorm the feature implementation, design and its implications on the testability | A clarified implementation design with a focus on testability, the acceptance tests criteria are collected, and the testing surface is defined as a part of the story |
+| Test planning, design and development | Development phase during the sprint | The new functionality is covered with sufficient Unit, Integration and Acceptance-tests. | The unit and integration test suites are augmented, and new tests are integrated into the CI pipeline. All new functionality is covered with an Acceptance test. |
+| Test execution | A part of the CI process | | |
 ​
 
 The roles and responsibilities during the STLC:
 ​
-| Role        | Responsibilities                                             | Performed by     |
-| ----------- | ------------------------------------------------------------ | ---------------- |
-| `PO`        | Define acceptance criteria for the user stories, assess risks | Product Owner             |
-| `DEV`       | Implement tests for new functionality, extend the test suites, adhere to the test coverage expectations | Development team |
-| `ARCHITECT` | Devise system design with a focus on testability             | team-shared role |
-| `QA`        | Define the testing coverage for each story, ensure the test suite is delivered along with each new piece of functionality. | team-shared role |
+| Role | Responsibilities | Performed by |
+| --- | --- | --- |
+| `PO` | Define acceptance criteria for the user stories, assess risks | Product Owner |
+| `DEV` | Implement tests for new functionality, extend the test suites, adhere to the test coverage expectations | Development team |
+| `ARCHITECT` | Devise system design with a focus on testability | team-shared role |
+| `QA`| Define the testing coverage for each story, ensure the test suite is delivered along with each new piece of functionality. | team-shared role |
 ​
 ## Testing Levels
 ​
@@ -28,19 +28,19 @@ The roles and responsibilities during the STLC:
 ​
 Unit and Env tests follow the [Go convention](https://go.dev/doc/tutorial/add-a-test) and reside next to the code they are testing. The unit tests and integration tests are part of one test suite.
 ​
-| Test suite                                                   | Testing level                         | Purpose                                                      |
-| ------------------------------------------------------------ | ------------------------------------- | ------------------------------------------------------------ |
-| Unit (located with the individual source files)              | Unit                                  | It tests the units in isolation. This test suite assesses the implementation correctness of the units of business logic. |
-| Env-tests (located with the individual source files)         | Integration  (low-level)              | It tests the behaviour of the Telemetry manager in integration with a Kubernetes API server replaced with a test double. This test suite assesses the integration correctness of the Telemetry manager. |
+| Test suite | Testing level | Purpose |
+| --- | --- | --- |
+| Unit (located with the individual source files) | Unit | It tests the units in isolation. This test suite assesses the implementation correctness of the units of business logic. |
+| Env-tests (located with the individual source files) | Integration  (low-level) | It tests the behaviour of the Telemetry manager in integration with a Kubernetes API server replaced with a test double. This test suite assesses the integration correctness of the Telemetry manager. |
 | [E2E](/test/e2e) | Acceptance / Integration (high-level) | It tests the usability scenarios of the Telemetry manager in a cluster. This test suite assesses the functional correctness of the Telemetry manager. |
 ​
 ### Non-functional Tests
 ​
-| Type                                                         | Automation | Frequency                               | Results          |
-| ------------------------------------------------------------ | ---------- | --------------------------------------- | ---------------- |
-| Release testing | Manual     | Regularly before each release           | Manual tests     |
-| Performance tests | Manual     | Ad hoc on a noticeable component change | Tests repository |
-| Security tests (done SAP-internally) | Automated  |                                         |                  |
+| Type | Automation | Frequency | Results |
+| --- | --- | --- | --- |
+| Release testing | Manual | Regularly before each release | Manual tests |
+| Performance tests | Manual | Ad hoc on a noticeable component change | Tests repository |
+| Security tests (done SAP-internally) | Automated | | |
 ​
 ### Source Code Quality
 ​
