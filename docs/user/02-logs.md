@@ -20,7 +20,7 @@ The Telemetry module provides [Fluent Bit](https://fluentbit.io/) as a log agent
 2. Fluent Bit runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per node), detects any new log files in the folder, and tails them using a filesystem buffer for reliability.
 3. Fluent Bit queries the [Kubernetes API Server](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/) for additional Pod metadata, such as Pod annotations and labels.
 4. The Telemetry module configures Fluent Bit with your custom output configuration.
-5. If Kyma's [deprecated](https://kyma-project.io/blog/2022/11/2/loki-deprecation/) logging component is installed, the operator configures the shipment to the in-cluster Loki instance automatically.
+5. If Kyma's [deprecated](https://kyma-project.io/blog/2022/11/2/loki-deprecation/) logging component is installed, the Telemetry manager configures the shipment to the in-cluster Loki instance automatically.
 6. As specified in your LogPipeline configuration, Fluent Bit sends the log data to observability systems outside or inside the Kyma cluster. Here, you can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation.
 7. The user accesses the internal and external observability system to analyze and visualize the logs.
 
@@ -39,13 +39,13 @@ Kyma's Telemetry module brings a predefined setup of the Fluent Bit DaemonSet an
 
 This approach assures a reliable buffer management and isolation of pipelines, while keeping flexibility on customizations.
 
-### Telemetry Operator
+### Telemetry Manager
 
-The LogPipeline resource is managed by the Telemetry Operator, a typical Kubernetes operator responsible for managing the custom parts of the Fluent Bit configuration.
+The LogPipeline resource is managed by the Telemetry manager, a typical Kubernetes operator responsible for managing the custom parts of the Fluent Bit configuration.
 
-![Operator resources](./assets/logging-resources.drawio.svg)
+![Manager resources](./assets/logging-resources.drawio.svg)
 
-The Telemetry Operator watches all LogPipeline resources and related Secrets. Whenever the configuration changes, the Telemetry Operator validates the configuration (with a [validating webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)) and generates a new configuration for the Fluent Bit DaemonSet, where several ConfigMaps for the different aspects of the configuration are generated. Furthermore, referenced Secrets are copied into one Secret that is also mounted to the DaemonSet.
+The Telemetry Manager watches all LogPipeline resources and related Secrets. Whenever the configuration changes, the Telemetry Manager validates the configuration (with a [validating webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)) and generates a new configuration for the Fluent Bit DaemonSet, where several ConfigMaps for the different aspects of the configuration are generated. Furthermore, referenced Secrets are copied into one Secret that is also mounted to the DaemonSet.
 
 ## Setting up a LogPipeline
 
@@ -53,7 +53,7 @@ In the following steps, you can see how to set up a typical LogPipeline. For an 
 
 ### Step 1: Create a LogPipeline and output
 
-1. To ship application logs to a new output, create a resource file of the LogPipeline kind:
+1. To ship application logs to a new output, create a resource file of the kind `LogPipeline`: 
     ```yaml
     kind: LogPipeline
       apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -328,7 +328,7 @@ After a log record has been read, it is preprocessed by centrally configured plu
 
 Learn more about these attributes in the following sections.
 
-### Container log message
+### 1. Container log message
 
 In the example, we assume there's a container `myContainer` of Pod `myPod`, running in Namespace `myNamespace`, logging to `stdout` with the following log message in the JSON format:
 
@@ -341,7 +341,7 @@ In the example, we assume there's a container `myContainer` of Pod `myPod`, runn
 }
 ```
 
-### Tail input
+### 2. Tail input
 
 The central pipeline tails the log message from a log file managed by the container runtime. The file name contains the Namespace, Pod, and container information that will be available later as part of the [tag](https://docs.fluentbit.io/manual/concepts/key-concepts#tag). The resulting log record available in an internal Fluent Bit representation looks similar to the following example:
 
@@ -363,7 +363,7 @@ The attributes in the example have the following meaning:
 | _p | Indicates if the log message is partial (`P`) or final (`F`). Optional, dependent on container runtime. Because a CRI multiline parser is applied for the tailing phase, all multilines on the container runtime level are aggregated already and no partial entries must be left. |
 | log | The raw and unparsed log message. |
 
-### Kubernetes filter (metadata)
+### 3. Kubernetes filter (metadata)
 
 In the next stage, the [Kubernetes filter](https://docs.fluentbit.io/manual/pipeline/filters/kubernetes) is applied. The container information from the log file name (available in the tag) is interpreted and used for a Kubernetes API Server request to resolve more metadata of the container. All the resolved metadata enrich the existing record as a new attribute `kubernetes`:
 
@@ -389,7 +389,7 @@ In the next stage, the [Kubernetes filter](https://docs.fluentbit.io/manual/pipe
 }
 ```
 
-### Kubernetes filter (JSON parser)
+### 4. Kubernetes filter (JSON parser)
 
 After the enrichment of the log record with the Kubernetes-relevant metadata, the [Kubernetes filter](https://docs.fluentbit.io/manual/pipeline/filters/kubernetes) also tries to parse the record as a JSON document. If that is successful, all the parsed root attributes of the parsed document are added as new individual root attributes of the log.
 
@@ -421,7 +421,7 @@ The record **after** applying the JSON parser:
 }
 ```
 
-### Rewrite tag
+### 5. Rewrite tag
 
 As per the LogPipeline definition, a dedicated [rewrite_tag](https://docs.fluentbit.io/manual/pipeline/filters/rewrite-tag) filter is introduced. The filter brings a dedicated filesystem buffer for the outputs defined in the related pipeline, and with that, ensures a shipment of the logs isolated from outputs of other pipelines. As a consequence, each pipeline runs on its own [tag](https://docs.fluentbit.io/manual/concepts/key-concepts#tag).
 

@@ -10,7 +10,7 @@ The diagram shows how distributed tracing helps to track the request path:
 
 ## Prerequisites
 
-For a complete recording of a distributed trace, it is [essential](https://www.w3.org/TR/trace-context/#problem-statement) that every involved component is at least propagating the trace context. In Kyma, all components involved in users' requests support the [W3C Trace Context protocol](https://www.w3.org/TR/trace-context), which is a vendor-neutral protocol getting more and more supported by all kinds of vendors and tools. The involved Kyma components are mainly Istio, Serverless, and Eventing.
+For a complete recording of a distributed trace, it is [essential](https://www.w3.org/TR/trace-context/#problem-statement) that every involved component is at least propagating the trace context. In Kyma, all components involved in users' requests support the [W3C Trace Context protocol](https://www.w3.org/TR/trace-context), which is a vendor-neutral protocol gaining more and more support by all kinds of vendors and tools. The involved Kyma components are mainly Istio, Serverless, and Eventing.
 
 With that, your application must also propagate the W3C Trace Context for any user-related activity. This can be achieved easily using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) available for all common programming languages. If an application follows that guidance and is part of the Istio Service Mesh, it's already outlined with dedicated span data in the trace data collected by the Kyma telemetry setup.
 
@@ -18,43 +18,43 @@ Furthermore, an application should enrich a trace with additional span data and 
 
 ## Architecture
 
-The telemetry module provides an in-cluster central deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as a gateway. The gateway exposes endpoints for the OTLP protocol for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-traces` service, where all Kyma components and users' applications should send the trace data to.
+The Telemetry module provides an in-cluster central deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as a gateway. The gateway exposes endpoints for the OTLP protocol for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-traces` service, where all Kyma components and users' applications should send the trace data to.
 
 ![Architecture](./assets/tracing-arch.drawio.svg)
 
-1. An end-to-end request is triggered and populates across the distributed application. Every involved component is propagating the trace context using the [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
-2. The involved components which have contributed a new span to the trace send the related span data to the trace gateway using the `telemetry-otlp-traces` service. The communication happens based on the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) protocol either using GRPC or HTTP.
+1. An end-to-end request is triggered and populates across the distributed application. Every involved component propagates the trace context using the [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
+2. The involved components that have contributed a new span to the trace send the related span data to the trace gateway using the `telemetry-otlp-traces` service. The communication happens based on the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) protocol either using GRPC or HTTP.
 1. The trace gateway enriches the span data with relevant metadata, typical for sources running on Kubernetes, like Pod identifiers.
 1. With the `TracePipeline` resource, the trace gateway is configured with a target backend.
 1. The backend can run in-cluster.
-1. The backend can also run out-cluster, having a proper way of authentication in place.
+1. The backend can also run out-cluster, if authentication has been set up.
 1. The trace data can be consumed using the backend system.
 
 ### OTel Collector
-The OTel Collector comes with a [concept](https://opentelemetry.io/docs/collector/configuration/) of pipelines consisting of receivers, processors, and exporters with which you can flexibly plug pipelines together. Kyma's TracePipeline provides a hardened setup of an OTel Collector and also abstracts the underlying pipeline concept. The benefits of having that abstraction in place are:
+The OTel Collector comes with a [concept](https://opentelemetry.io/docs/collector/configuration/) of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together. Kyma's TracePipeline provides a hardened setup of an OTel Collector and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
 - Supportability - all features are tested and supported
 - Migratability - smooth migration experiences when switching underlying technologies or architectures
-- Native Kubernetes support - API provided by Kyma allows for an easy integration with Secrets, for example, served by the SAP BTP Operator; The Telemetry Operator takes care of the full lifecycle
+- Native Kubernetes support - API provided by Kyma allows for an easy integration with Secrets, for example, served by the SAP BTP Operator. The Telemetry Operator takes care of the full lifecycle.
 - Focus - the user doesn't need to understand underlying concepts
 
-The downside is that only a limited set of features is available. Here, you can opt out at any time by bringing your own collector setup. The current feature set focuses on providing the full configurability of backends integrated by OTLP. As a next step, meaningful filter options will be provided. Especially head and tail-based sampling configurations.
+The downside is that only a limited set of features is available. If you want to avoid this downside, bring your own collector setup. The current feature set focuses on providing the full configurability of backends integrated by OTLP. As a next step, meaningful filter options will be provided, especially head- and tail-based sampling configurations.
 
-### Telemetry Operator
-The TracePipeline resource is managed by the Telemetry Operator, a typical Kubernetes operator responsible for managing the custom parts of the OTel Collector configuration.
+### Telemetry Manager
+The TracePipeline resource is managed by the Telemetry Manager, a typical Kubernetes operator responsible for managing the custom parts of the OTel Collector configuration.
 
-![Operator resources](./assets/tracing-resources.drawio.svg)
+![Manager resources](./assets/tracing-resources.drawio.svg)
 
-The Telemetry Operator watches all TracePipeline resources and related Secrets. Whenever the configuration changes, it validates the configuration and generates a new configuration for the OTel Collector, where a ConfigMap for the configuration is generated. Furthermore, referenced Secrets are copied into one Secret that is mounted to the OTel Collector as well.
-Furthermore, the operator manages the full lifecycle of the OTel Collector Deployment itself. With that, it only gets deployed when there is an actual TracePipeline defined. At anytime, you can opt out of using the tracing feature by not specifying a TracePipeline.
+The Telemetry Manager watches all TracePipeline resources and related Secrets. Whenever the configuration changes, it validates the configuration and generates a new configuration for the OTel Collector, where a ConfigMap for the configuration is generated. Referenced Secrets are copied into one Secret that is mounted to the OTel Collector as well.
+Furthermore, the manager takes care of the full lifecycle of the OTel Collector Deployment itself. Only if there is a TracePipeline defined, the collector is deployed. At anytime, you can opt out of using the tracing feature by not specifying a TracePipeline.
 
 ## Setting up a TracePipeline
 
 In the following steps, you can see how to set up a typical TracePipeline. For an overview of all available attributes, see the [reference document](./resources/04-tracepipeline.md).
 
 ### Step 1. Create a TracePipeline with an output
-1. To ship traces to a new OTLP output, create a resource file of the TracePipeline kind:
+1. To ship traces to a new OTLP output, create a resource file of the kind `TracePipeline`:
 
-```yaml
+   ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: TracePipeline
 metadata:
@@ -66,7 +66,7 @@ spec:
         value: http://jaeger-collector.jaeger.svc.cluster.local:4317
 ```
 
-This configures the underlying OTel Collector with a pipeline for traces. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-traces` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, dependent on the configured protocol.
+   This configures the underlying OTel Collector with a pipeline for traces. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-traces` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, dependent on the configured protocol.
 
 2. To create the instance, apply the resource file in your cluster:
     ```bash

@@ -9,7 +9,7 @@ If the Telemetry manager detects a configuration, it rolls out the relevant comp
 
 ## Module Configuration
 
-At the moment, the operator has no dedicated configuration options. It is planned to support configuration in the specification of the related [Telemetry](./resources/01-telemetry.md) resource.
+At the moment, the Telemetry manager has no dedicated configuration options. It is planned to support configuration in the specification of the related [Telemetry](./resources/01-telemetry.md) resource.
 
 ## Module Status
-The Telemetry operator syncs the overall status of the module into the [Telemetry](./resources/01-telemetry.md) resource and can be found in the `status` section. In future, the status will be enhanced with more runtime information.
+The Telemetry manager syncs the overall status of the module into the [Telemetry](./resources/01-telemetry.md) resource and can be found in the `status` section. In future, the status will be enhanced with more runtime information.
