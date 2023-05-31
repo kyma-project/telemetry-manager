@@ -120,99 +120,111 @@ spec:
 
 To integrate with external systems, you must configure authentication details. At the moment, Basic Authentication and custom headers are supported.
 
-The following example configures Basic Authentication for a TracePipeline:
+<div tabs>
+  <details>
+    <summary>Basic authentication</summary>
 
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: TracePipeline
-metadata:
-  name: jaeger
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: http://jaeger-collector.jaeger.svc.cluster.local:4317
-      authentication:
-        basic:
-          user:
-            value: myUser
-          password:
-            value: myPwd
-```
+  ```yaml
+  apiVersion: telemetry.kyma-project.io/v1alpha1
+  kind: TracePipeline
+  metadata:
+    name: jaeger
+  spec:
+    output:
+      otlp:
+        endpoint:
+          value: http://jaeger-collector.jaeger.svc.cluster.local:4317
+        authentication:
+          basic:
+            user:
+              value: myUser
+            password:
+              value: myPwd
+  ```
+  </details>
+  <details>
+    <summary>Token-based with custom headers</summary>
 
-To use custom headers for authentication, use the following example that adds a bearer token for authentication:
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: TracePipeline
-metadata:
-  name: jaeger
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: http://jaeger-collector.jaeger.svc.cluster.local:4317
-      headers:
-         - name: Authorization
-           value: "Bearer myToken"
-```
+  ```yaml
+  apiVersion: telemetry.kyma-project.io/v1alpha1
+  kind: TracePipeline
+  metadata:
+    name: jaeger
+  spec:
+    output:
+      otlp:
+        endpoint:
+          value: http://jaeger-collector.jaeger.svc.cluster.local:4317
+        headers:
+          - name: Authorization
+            value: "Bearer myToken"
+  ```
+  </details>
+</div>
 
 ### Step 5: Add authentication details from Secrets
 
 Integrations into external systems usually require authentication details dealing with sensitive data. To handle that data properly in Secrets, TracePipeline supports the reference of Secrets.
 
-Use the **valueFrom** attribute to map Secret keys as in the following example for Basic Authentication:
+Use the **valueFrom** attribute to map Secret keys as in the following examples:
 
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: TracePipeline
-metadata:
-  name: jaeger
-spec:
-  output:
-    otlp:
-      endpoint:
-        valueFrom:
-            secretKeyRef:
-                name: backend
-                namespace: default
-                key: endpoint
-      authentication:
-        basic:
-          user:
+<div tabs>
+  <details>
+    <summary>Basic authentication</summary>
+      
+  ```yaml
+  apiVersion: telemetry.kyma-project.io/v1alpha1
+  kind: TracePipeline
+  metadata:
+    name: jaeger
+  spec:
+    output:
+      otlp:
+        endpoint:
+          valueFrom:
+              secretKeyRef:
+                  name: backend
+                  namespace: default
+                  key: endpoint
+        authentication:
+          basic:
+            user:
+              valueFrom:
+                secretKeyRef:
+                  name: backend
+                  namespace: default
+                  key: user
+            password:
+              valueFrom:
+                secretKeyRef:
+                  name: backend
+                  namespace: default
+                  key: password
+  ```
+</details>
+  <details>
+    <summary>Token-based with custom headers</summary>
+
+  ```yaml
+  apiVersion: telemetry.kyma-project.io/v1alpha1
+  kind: TracePipeline
+  metadata:
+    name: jaeger
+  spec:
+    output:
+      otlp:
+        endpoint:
+          value: http://jaeger-collector.jaeger.svc.cluster.local:4317
+        headers:
+          - name: Authorization
             valueFrom:
               secretKeyRef:
-                 name: backend
-                 namespace: default
-                 key: user
-          password:
-            valueFrom:
-              secretKeyRef:
-                 name: backend
-                 namespace: default
-                 key: password
-```
-
-And the following example for the token-based authentication with a custom header:
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: TracePipeline
-metadata:
-  name: jaeger
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: http://jaeger-collector.jaeger.svc.cluster.local:4317
-      headers:
-         - name: Authorization
-           valueFrom:
-             secretKeyRef:
-                name: backend
-                namespace: default
-                key: token 
-```
+                  name: backend
+                  namespace: default
+                  key: token 
+  ```
+  </details>
+</div>
 
 The related Secret must have the referenced name and needs to be located in the referenced Namespace, and contain the mapped key as in the following example:
 
@@ -344,11 +356,21 @@ System-related spans reported by Istio are filtered out without the opt-out opti
 - All outgoing spans reported by Grafana and Jaeger
 - All spans related to Fluent Bit and Loki communication
 
-## Frequently Asked Questions
+## Troubleshooting
 
-1. Traces are not arriving at the destination at all
-  - Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`
-  - Check the monitoring dashboard for Kyma telemetry if the data gets exported
-  - Verify that you activated Istio tracing
-2. Custom spans are not arriving at the destination, but Istio spans do
-  - Verify that you are using the SDK version for instrumentation that is compatible with the otel-collector version used
+- Symptom: Traces are not arriving at the destination at all.
+
+   Cause: That might be due to {add reasons}.
+
+   Remedy: Investigate the cause with the following steps:
+   1. Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+   1. In the monitoring dashboard for Kyma Telemetry, check if the data is exported.
+   1. Verify that you activated Istio tracing.
+- Symptom: Custom spans don't arrive at the destination, but Istio spans do.
+
+   Cause: Your SDK version is incompatible with the OTel collector version.
+   
+   Remedy:
+   1. Check which SDK version you are using for instrumentation. 
+   1. Investigate whether it is compatible with the OTel collector version.
+   1. If required, upgrade to a supported SDK version.
