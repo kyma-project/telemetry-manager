@@ -36,12 +36,3 @@ func (c *certExpiryCheckerImpl) checkExpiry(ctx context.Context, certPEM []byte)
 		"softExpiryTime", softExpiryTime)
 	return false, nil
 }
-
-type mockCertExpiryChecker struct {
-	certValid bool
-	err       error
-}
-
-func (c *mockCertExpiryChecker) checkExpiry(context.Context, []byte) (bool, error) {
-	return c.certValid, c.err
-}

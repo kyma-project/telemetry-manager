@@ -8,6 +8,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type mockCertExpiryChecker struct {
+	certValid bool
+	err       error
+}
+
+func (c *mockCertExpiryChecker) checkExpiry(context.Context, []byte) (bool, error) {
+	return c.certValid, c.err
+}
+
+type mockCertChainChecker struct {
+	certValid bool
+	err       error
+}
+
+func (c *mockCertChainChecker) checkRoot([]byte, []byte) (bool, error) {
+	return c.certValid, c.err
+}
+
 type mockServerCertStorage struct {
 	certPEM, keyPEM []byte
 }
@@ -35,9 +53,9 @@ func TestProvideServerCert(t *testing.T) {
 		fakeCertPEM := []byte{1, 2, 3}
 		fakeKeyPEM := []byte{4, 5, 6}
 		sut := serverCertProviderImpl{
-			storage:   &mockServerCertStorage{},
-			checker:   &mockCertExpiryChecker{},
-			generator: &mockServerCertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
+			storage:       &mockServerCertStorage{},
+			expiryChecker: &mockCertExpiryChecker{},
+			generator:     &mockServerCertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 		}
 
 		certPEM, keyPEM, err := sut.provideCert(context.Background(), serverCertConfig{})
@@ -50,9 +68,9 @@ func TestProvideServerCert(t *testing.T) {
 		fakeCertPEM, fakeKeyPEM := []byte{1, 2, 3}, []byte{4, 5, 6}
 		mockStorage := &mockServerCertStorage{}
 		sut := serverCertProviderImpl{
-			storage:   mockStorage,
-			checker:   &mockCertExpiryChecker{},
-			generator: &mockServerCertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
+			storage:       mockStorage,
+			expiryChecker: &mockCertExpiryChecker{},
+			generator:     &mockServerCertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 		}
 
 		certPEM, keyPEM, err := sut.provideCert(context.Background(), serverCertConfig{})
@@ -61,7 +79,7 @@ func TestProvideServerCert(t *testing.T) {
 		require.Equal(t, mockStorage.keyPEM, keyPEM)
 	})
 
-	t.Run("should store new server cert if existing cert expiring soon", func(t *testing.T) {
+	t.Run("should store new server cert if expiry check not passes", func(t *testing.T) {
 		fakeExpiringCertPEM, fakeExpiringKeyPEM := []byte{1, 2, 3}, []byte{4, 5, 6}
 		fakeNewCertPEM, fakeNewKeyPEM := []byte{7, 8, 9}, []byte{10, 11, 12}
 		mockStorage := &mockServerCertStorage{
@@ -69,15 +87,15 @@ func TestProvideServerCert(t *testing.T) {
 			keyPEM:  fakeExpiringKeyPEM,
 		}
 		sut := serverCertProviderImpl{
-			storage:   mockStorage,
-			checker:   &mockCertExpiryChecker{certValid: false},
-			generator: &mockServerCertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+			storage:       mockStorage,
+			expiryChecker: &mockCertExpiryChecker{certValid: false},
+			generator:     &mockServerCertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
 		}
 
 		_, _, err := sut.provideCert(context.Background(), serverCertConfig{})
 		require.NoError(t, err)
-		require.Equal(t, mockStorage.certPEM, fakeNewCertPEM)
-		require.Equal(t, mockStorage.keyPEM, fakeNewKeyPEM)
+		require.Equal(t, fakeNewCertPEM, mockStorage.certPEM)
+		require.Equal(t, fakeNewKeyPEM, mockStorage.keyPEM)
 	})
 
 	t.Run("should store new server cert if expiry check fails", func(t *testing.T) {
@@ -88,9 +106,9 @@ func TestProvideServerCert(t *testing.T) {
 			keyPEM:  fakeExpiringKeyPEM,
 		}
 		sut := serverCertProviderImpl{
-			storage:   mockStorage,
-			checker:   &mockCertExpiryChecker{err: errors.New("failed")},
-			generator: &mockServerCertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+			storage:       mockStorage,
+			expiryChecker: &mockCertExpiryChecker{err: errors.New("failed")},
+			generator:     &mockServerCertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
 		}
 
 		_, _, err := sut.provideCert(context.Background(), serverCertConfig{})
@@ -99,15 +117,58 @@ func TestProvideServerCert(t *testing.T) {
 		require.Equal(t, mockStorage.keyPEM, fakeNewKeyPEM)
 	})
 
-	t.Run("should return existing cert if not expired", func(t *testing.T) {
+	t.Run("should store new server cert if chain check not passes", func(t *testing.T) {
+		fakeCertPEM, fakeKeyPEM := []byte{1, 2, 3}, []byte{4, 5, 6}
+		fakeNewCertPEM, fakeNewKeyPEM := []byte{7, 8, 9}, []byte{10, 11, 12}
+		fakeCACertPEM, fakeCAKeyPEM := []byte{7, 8, 9}, []byte{10, 11, 12}
+		mockStorage := &mockServerCertStorage{
+			certPEM: fakeCertPEM,
+			keyPEM:  fakeKeyPEM,
+		}
+		sut := serverCertProviderImpl{
+			storage:       mockStorage,
+			expiryChecker: &mockCertExpiryChecker{certValid: true},
+			chainChecker:  &mockCertChainChecker{certValid: false},
+			generator:     &mockServerCertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+		}
+
+		_, _, err := sut.provideCert(context.Background(), serverCertConfig{caCertPEM: fakeCACertPEM, caKeyPEM: fakeCAKeyPEM})
+		require.NoError(t, err)
+		require.Equal(t, mockStorage.certPEM, fakeNewCertPEM)
+		require.Equal(t, mockStorage.keyPEM, fakeNewKeyPEM)
+	})
+
+	t.Run("should store new server cert if chain check fails", func(t *testing.T) {
+		fakeCertPEM, fakeKeyPEM := []byte{1, 2, 3}, []byte{4, 5, 6}
+		fakeNewCertPEM, fakeNewKeyPEM := []byte{7, 8, 9}, []byte{10, 11, 12}
+		fakeCACertPEM, fakeCAKeyPEM := []byte{7, 8, 9}, []byte{10, 11, 12}
+		mockStorage := &mockServerCertStorage{
+			certPEM: fakeCertPEM,
+			keyPEM:  fakeKeyPEM,
+		}
+		sut := serverCertProviderImpl{
+			storage:       mockStorage,
+			expiryChecker: &mockCertExpiryChecker{certValid: true},
+			chainChecker:  &mockCertChainChecker{err: errors.New("failed")},
+			generator:     &mockServerCertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+		}
+
+		_, _, err := sut.provideCert(context.Background(), serverCertConfig{caCertPEM: fakeCACertPEM, caKeyPEM: fakeCAKeyPEM})
+		require.NoError(t, err)
+		require.Equal(t, mockStorage.certPEM, fakeNewCertPEM)
+		require.Equal(t, mockStorage.keyPEM, fakeNewKeyPEM)
+	})
+
+	t.Run("should not override existing cert if not expired", func(t *testing.T) {
 		fakeCertPEM, fakeKeyPEM := []byte{1, 2, 3}, []byte{4, 5, 6}
 		mockStorage := &mockServerCertStorage{
 			certPEM: fakeCertPEM,
 			keyPEM:  fakeKeyPEM,
 		}
 		sut := serverCertProviderImpl{
-			storage: mockStorage,
-			checker: &mockCertExpiryChecker{certValid: true},
+			storage:       mockStorage,
+			expiryChecker: &mockCertExpiryChecker{certValid: true},
+			chainChecker:  &mockCertChainChecker{certValid: true},
 		}
 
 		_, _, err := sut.provideCert(context.Background(), serverCertConfig{})

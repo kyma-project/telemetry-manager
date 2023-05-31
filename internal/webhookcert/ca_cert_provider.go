@@ -25,17 +25,17 @@ type caCertGenerator interface {
 }
 
 type caCertProviderImpl struct {
-	client    client.Client
-	checker   certExpiryChecker
-	generator caCertGenerator
+	client        client.Client
+	expiryChecker certExpiryChecker
+	generator     caCertGenerator
 }
 
 func newCACertProvider(client client.Client) *caCertProviderImpl {
 	clock := realClock{}
 	const duration30d = 30 * 24 * time.Hour
 	return &caCertProviderImpl{
-		client:  client,
-		checker: &certExpiryCheckerImpl{clock: realClock{}, softExpiryOffset: duration30d},
+		client:        client,
+		expiryChecker: &certExpiryCheckerImpl{clock: realClock{}, softExpiryOffset: duration30d},
 		generator: &caCertGeneratorImpl{
 			clock: clock,
 		},
@@ -85,7 +85,7 @@ func (p *caCertProviderImpl) checkCASecret(ctx context.Context, caSecret *corev1
 		return false
 	}
 
-	certValid, checkErr := p.checker.checkExpiry(ctx, caCertPEM)
+	certValid, checkErr := p.expiryChecker.checkExpiry(ctx, caCertPEM)
 	return checkErr == nil && certValid
 }
 

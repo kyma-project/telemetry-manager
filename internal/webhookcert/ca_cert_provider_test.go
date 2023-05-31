@@ -105,9 +105,9 @@ func TestProvideCACert(t *testing.T) {
 			},
 		}).Build()
 		sut := caCertProviderImpl{
-			client:    fakeClient,
-			checker:   &mockCertExpiryChecker{certValid: false},
-			generator: &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+			client:        fakeClient,
+			expiryChecker: &mockCertExpiryChecker{certValid: false},
+			generator:     &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
@@ -139,9 +139,9 @@ func TestProvideCACert(t *testing.T) {
 			},
 		}).Build()
 		sut := caCertProviderImpl{
-			client:    fakeClient,
-			checker:   &mockCertExpiryChecker{err: errors.New("failed")},
-			generator: &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
+			client:        fakeClient,
+			expiryChecker: &mockCertExpiryChecker{err: errors.New("failed")},
+			generator:     &mockCACertGenerator{cert: fakeNewCertPEM, key: fakeNewKeyPEM},
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
@@ -173,9 +173,9 @@ func TestProvideCACert(t *testing.T) {
 			},
 		}).Build()
 		sut := caCertProviderImpl{
-			client:    fakeClient,
-			checker:   &mockCertExpiryChecker{certValid: true},
-			generator: &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
+			client:        fakeClient,
+			expiryChecker: &mockCertExpiryChecker{certValid: true},
+			generator:     &mockCACertGenerator{cert: fakeCertPEM, key: fakeKeyPEM},
 		}
 
 		secretName := types.NamespacedName{Namespace: "default", Name: "ca-cert"}
@@ -201,4 +201,10 @@ func generateCACertKey(creationTime time.Time) ([]byte, []byte) {
 func generateCACert(creationTime time.Time) []byte {
 	certPEM, _ := generateCACertKey(creationTime)
 	return certPEM
+}
+
+func generateServerCert(caCert, caKey []byte, creationTime time.Time) []byte {
+	generator := &serverCertGeneratorImpl{clock: mockClock{t: creationTime}}
+	cert, _, _ := generator.generateCert(serverCertConfig{caCertPEM: caCert, caKeyPEM: caKey})
+	return cert
 }
