@@ -84,7 +84,7 @@ spec:
 
 >**CAUTION:** The provided Istio feature uses an API in alpha state, which may change in future releases.
 
-By default, the tracing feature of the Istio module is disabled to avoid increased network utilization in the case of the TracePipeline absence.
+By default, the tracing feature of the Istio module is disabled to avoid increased network utilization if there is no TracePipeline.
 To activate the [Istio tracing](#istio) feature with a sampling rate of 100% (not recommended on production), use a resource similar to the following:
 
 ```yaml
@@ -102,7 +102,7 @@ spec:
 
 ### Step 3. Switch the protocol to HTTP
 
-To use the HTTP protocol instead of the default GRPC, use the `protocol` attribute and ensure that the proper port is configured as part of the endpoint. Typically port `4317` is used for GRPC and port `4318` for HTTP.
+To use the HTTP protocol instead of the default GRPC, use the `protocol` attribute and ensure that the proper port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: TracePipeline
@@ -214,7 +214,7 @@ spec:
                 key: token 
 ```
 
-The related Secret must fulfill the referenced name and Namespace, and contain the mapped key as in the following example:
+The related Secret must have the referenced name and needs to be located in the referenced Namespace, and contain the mapped key as in the following example:
 
 ```yaml
 kind: Secret
@@ -235,15 +235,18 @@ As used in the previous step, a Secret referenced with the **secretKeyRef** cons
 
 ## Kyma Components with tracing capabilities
 
-Kyma bundles several modules which are potentially involved in user flows. Applications involved in a distributed trace must propagate the trace context to keep the trace complete. Optionally, they can enrich the trace with custom spans which requires reporting them to the backend.
+Kyma bundles several modules which are potentially involved in user flows. Applications involved in a distributed trace must propagate the trace context to keep the trace complete. Optionally, they can enrich the trace with custom spans, which requires reporting them to the backend.
 
 ### Istio
 
-The Istio module is a crucial enabler in distributed tracing as it provides [ingress gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/) where usually external requests enter the cluster scope and are enriched with trace context if it hasn't happened yet. Furthermore, every component being part of the Istio Service Mesh is running an Istio proxy, which propagates the context properly but also creates span data. Having Istio tracing activated and doing trace propagation in your application already ensures that you will get a complete picture of a trace, as every component will automatically contribute span data. Also, Istio tracing is pre-configured to be based on the vendor-neutral [w3c-tracecontext](https://www.w3.org/TR/trace-context/) protocol.
+The Istio module is crucial in distributed tracing because it provides the [ingress gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Usually, this is where external requests enter the cluster scope and are enriched with trace context if it hasn't happened yet. Furthermore, every component that's part of the Istio Service Mesh runs an Istio proxy, which propagates the context properly but also creates span data. If Istio tracing is activated and taking care of trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is pre-configured to be based on the vendor-neutral [w3c-tracecontext](https://www.w3.org/TR/trace-context/) protocol.
 
 >**CAUTION:** The provided Istio feature uses an API in alpha state, which may change in future releases.
 
-The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces`. The provider can be activated on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#Tracing) by placing a resource to the istio-system namespace like that:
+The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#Tracing), place a resource to the `istio-system` Namespace.
+
+The following example configures all Istio proxies with the `kyma-traces` extension provider, which, by default, reports span data to the trace gateway of the Telemetry module.
+:
 
 ```yaml
 apiVersion: telemetry.istio.io/v1alpha1
@@ -256,11 +259,10 @@ spec:
   - providers:
     - name: "kyma-traces"
 ```
-It configures all Istio proxies with the `kyma-traces` extension provider, which by default, reports span data to the trace gateway of the telemetry module.
 
-Be aware that by default, the sampling rate is configured to 1 percent. That means that only 1 trace out of 100 traces is reported to the trace gateway, and all others are dropped. Hereby, the sampling decision itself gets propagated as part of the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) so that either all involved components are reporting the span data of a trace or none. Increasing the sampling rate results in much higher network utilization in the cluster and also increases the amount of data sent to your tracing backend. Usually, a very low percentage of around 5% is used in a production setup to reduce costs and performance impacts.
+By default, the sampling rate is configured to 1 percent. That means that only 1 trace out of 100 traces is reported to the trace gateway, and all others are dropped. Hereby, the sampling decision itself is propagated as part of the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) so that either all involved components are reporting the span data of a trace, or none. Increasing the sampling rate results in much higher network utilization in the cluster and also increases the amount of data sent to your tracing backend. Usually, a very low percentage of around 5% is used in a production setup to reduce costs and performance impacts.
 
-To configure an "always-on" sampling, you need to configure a sampling rate of 100% by:
+To configure an "always-on" sampling, configure a sampling rate of 100%:
 ```yaml
 apiVersion: telemetry.istio.io/v1alpha1
 kind: Telemetry
@@ -274,7 +276,7 @@ spec:
     randomSamplingPercentage: 100.00
 ```
 
-Namespaces or workloads can selectively be configured with individual settings by placing further resources. To not report spans at all for a specific workload, the `disableSpanReporting` flag can be activated using the selector expression.
+Namespaces or workloads can selectively be configured with individual settings by placing further resources. If you don't want to report spans at all for a specific workload, activate the `disableSpanReporting` flag with the selector expression.
 
 ```yaml
 apiVersion: telemetry.istio.io/v1alpha1
@@ -308,28 +310,28 @@ spec:
 ```
 
 ### Eventing
-The Kyma [Eventing](https://kyma-project.io/docs/kyma/latest/01-overview/main-areas/eventing/) component dispatches events from an in- or out-cluster backend to your workload. Hereby, it is leveraging the [cloudevents](https://cloudevents.io/) protocol which natively supports the [W3C Trace Context](https://www.w3.org/TR/trace-context) propagation. That said, the Eventing component already propagates trace context properly but does not enrich a trace with more advanced span data.
+The Kyma [Eventing](https://kyma-project.io/docs/kyma/latest/01-overview/main-areas/eventing/) component dispatches events from an in- or out-cluster backend to your workload. It leverages the [CloudEvents](https://cloudevents.io/) protocol, which natively supports the [W3C Trace Context](https://www.w3.org/TR/trace-context) propagation. That said, the Eventing component already propagates trace context properly but does not enrich a trace with more advanced span data.
 
 ### Serverless
-All engines for the [Serverless](https://kyma-project.io/docs/kyma/latest/01-overview/main-areas/serverless/) runtime integrate the [Open Telemetry SDK](https://opentelemetry.io/docs/reference/specification/metrics/sdk/) by default. With that, trace propagation will no longer be your concern, as the used middlewares are configured to automatically propagate the context for chained calls. By having the Telemetry endpoints configured by default, it also reports custom spans for incoming and outgoing requests. With the provided [tooling](https://kyma-project.io/docs/kyma/latest/03-tutorials/00-serverless/svls-12-customize-function-traces/), more spans can be easily added as part of your Serverless source code.
+By default, all engines for the [Serverless](https://kyma-project.io/docs/kyma/latest/01-overview/main-areas/serverless/) module integrate the [Open Telemetry SDK](https://opentelemetry.io/docs/reference/specification/metrics/sdk/). With that, trace propagation no longer is your concern, because the used middlewares are configured to automatically propagate the context for chained calls. Because the Telemetry endpoints are configured by default, Serverless also reports custom spans for incoming and outgoing requests. With the provided [tooling](https://kyma-project.io/docs/kyma/latest/03-tutorials/00-serverless/svls-12-customize-function-traces/), you can add more spans as part of your Serverless source code.
 
 ## Limitations
 
 The trace gateway setup is designed using the following assumptions:
-- The collector has no autoscaling options yet and has a limited resource setup of 1 CPU and 1 GiB Memory
-- Batching is enabled, and a batch will contain up to 512 Spans/batch
-- An unavailability of a destination must be survived for 5 minutes without direct loss of trace data
-- An average span consists of 40 attributes with 64 character length
+- The collector has no autoscaling options yet and has a limited resource setup of 1 CPU and 1 GiB memory.
+- Batching is enabled, and a batch will contain up to 512 Spans/batch.
+- An unavailability of a destination must be survived for 5 minutes without direct loss of trace data.
+- An average span consists of 40 attributes with 64 character length.
 
-It results in the following limitations:
+This leads to the following limitations:
 ### Throughput
-The maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If more data needs to be ingested, it can result in a refusal of more data.
+The maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If more data must be ingested, it can result in a refusal of more data.
 
 ### Unavailability of output
-The destination can be unavailable for up to 5 minutes; a retry for data will be up to 5min, and then data is dropped.
+For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 
 ### No guaranteed delivery
-The used buffers are volatile, and the data can be lost on the otel-collector instance crash.
+The used buffers are volatile. If the OTel collector instance crashes, trace data can be lost.
 
 ### Single TracePipeline support
 
