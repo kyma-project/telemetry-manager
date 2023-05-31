@@ -1,6 +1,6 @@
 # Telemetry
 
-The `telemetry.operator.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to define a telemetry module instance. To get the up-to-date CRD and show the output in the YAML format, run this command:
+The `telemetry.operator.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to define a Telemetry module instance. To get the current CRD and show the output in the YAML format, run this command:
 
 ```bash
 kubectl get crd telemetry.operator.kyma-project.io -o yaml
@@ -8,7 +8,7 @@ kubectl get crd telemetry.operator.kyma-project.io -o yaml
 
 ## Sample custom resource
 
-The following Telemetry object defines a module`.
+The following Telemetry object defines a module`:
 
 ```yaml
 apiVersion: operator.kyma-project.io/v1alpha1

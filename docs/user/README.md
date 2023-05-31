@@ -47,11 +47,11 @@ The log agent is based on a [Fluent Bit](https://fluentbit.io/) installation run
 
 ### Trace Gateway
 
-The trace gateway is based on a [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). It provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the trace signals. According to a TracePipeline configuration, the collector processes and ships the trace data to a target system. For details, see [Traces](./03-traces.md).
+The trace gateway is based on a [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). It provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the trace signals. According to a TracePipeline configuration, the gateway processes and ships the trace data to a target system. For details, see [Traces](./03-traces.md).
 
 ### Metric Gateway/Agent
 
-The metric gateway and agent is based on a [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). It provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint where applications can push the metric signals. Also provides scraping of annotated prometheus based workloads. According to a MetricPipeline configuration, the collector will process and ship the metric data to a target system. More details can be found in the detailed section about [Traces](./04-metrics.md).
+The metric gateway and agent is based on a [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). The gateway provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the metric signals. The agent scrapes annotated Prometheus-based workloads. According to a MetricPipeline configuration, the gateway processes and ships the metric data to a target system. For details, see [Traces](./04-metrics.md).
 
 ## API / Custom Resource Definitions
 

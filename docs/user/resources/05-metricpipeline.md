@@ -1,6 +1,6 @@
 # MetricPipeline
 
-The `metricpipeline.telemetry.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to filter and ship metric data in Kyma. To get the up-to-date CRD and show the output in the YAML format, run this command:
+The `metricpipeline.telemetry.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to filter and ship metric data in Kyma. To get the current CRD and show the output in the YAML format, run this command:
 
 ```bash
 kubectl get crd metricpipeline.telemetry.kyma-project.io -o yaml
@@ -8,7 +8,7 @@ kubectl get crd metricpipeline.telemetry.kyma-project.io -o yaml
 
 ## Sample custom resource
 
-The following MetricPipeline object defines a pipeline integrating into an OTLP backend.
+The following MetricPipeline object defines a pipeline that integrates into an OTLP backend:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1

@@ -1,6 +1,6 @@
 # TracePipeline
 
-The `tracepipeline.telemetry.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to filter and ship trace data in Kyma. To get the up-to-date CRD and show the output in the YAML format, run this command:
+The `tracepipeline.telemetry.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to filter and ship trace data in Kyma. To get the current CRD and show the output in the YAML format, run this command:
 
 ```bash
 kubectl get crd tracepipeline.telemetry.kyma-project.io -o yaml
@@ -8,7 +8,7 @@ kubectl get crd tracepipeline.telemetry.kyma-project.io -o yaml
 
 ## Sample custom resource
 
-The following TracePipeline object defines a pipeline integrating into the local Jaeger instance.
+The following TracePipeline object defines a pipeline that integrates into the local Jaeger instance:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1

@@ -1,6 +1,6 @@
 # LogParser
 
-The `logparser.telemetry.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to define a custom log parser in Kyma. To get the up-to-date CRD and show the output in the YAML format, run this command:
+The `logparser.telemetry.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to define a custom log parser in Kyma. To get the current CRD and show the output in the YAML format, run this command:
 
 ```bash
 kubectl get crd logparser.telemetry.kyma-project.io -o yaml
