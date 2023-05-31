@@ -4,7 +4,7 @@ Some quality aspects are covered by automated verification, so you must locally 
 
 ## CRD generation
 
-The API of the operator is realized by Kubernetes CRDs defined in the [apis](/apis/) folder as Golang source code. To install the CRDs later using kustomize together with the operator deployment, you must generate proper Kubernetes [manifest files](/config/crd/bases/). Also, you must update the [user documentation](./resources/). 
+The API of the operator is realized by Kubernetes CRDs defined in the [apis](/apis/) folder as Golang source code. To install the CRDs later using Kustomize together with the operator deployment, you must generate proper Kubernetes [manifest files](/config/crd/bases/). Also, you must update the [user documentation](./resources/). 
 
 To achieve both aspects, call:
 ```shell
@@ -90,7 +90,10 @@ The following linters are sirrelevant for development of the Telemetry module:
 
 ### Nolint
 
-Some linters produce false-positive warnings. You can suppress them. If linting warnings add to the development noise or are routinely ignored, consider disabling the linter.
+If linting warnings add to the development noise or are routinely ignored (for example, because some linters produce false-positive warnings), consider disabling the linter.
+You can either suppress one or more lines of code inline, or exclude whole files.
+
+> **TIP:** The benefit of declaring linter exclusion rules on a file basis in the config file and not as package-level inline nolint instructions is that it is easier to visualize and analyse the linting suppressions.
 
 #### Inline //nolint
 To suppress a linting warning for a particular line of code, use nolint instruction `//no-lint:{LINTER} // {COMMENT}.` For the _LINTER_ and _COMMENT_ placeholders, you must enter the linter to be suppressed and a reason for the suppression.
@@ -104,8 +107,8 @@ package config
 // The rest of the file will not be linted by errcheck.
 ```
 
-#### Linting exclusions
-To prevent some files from being linted, there is a `.issues.exclude-rules` section in the `.golangci.yaml` configuration file. 
+#### Suppress linting warnings for whole files
+To prevent some files from being linted, use the section `.issues.exclude-rules` in the `.golangci.yaml` configuration file. 
 
 The code duplication linting scenario is problematic for being disabled an a per line basis. The following example suppresses the `dupl` linter for the set of three files in the _apis/telemetry/v1alpha1_ module:
 

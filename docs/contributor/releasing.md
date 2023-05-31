@@ -1,8 +1,7 @@
 # Release Process
 
-1. Create a release branch in the `telemetry-manager` repository. The name of this branch must follow the `release-x.y` pattern, such as `release-1.0`.
+1. For new major and minor versions: Create a release branch in the `telemetry-manager` repository. The name of this branch must follow the `release-x.y` pattern, such as `release-1.0`.
 
-   >**NOTE:** This step applies only to new major and minor versions.
 
    ```bash
    git fetch upstream
@@ -26,15 +25,17 @@
 
     Replace {RELEASE_VERSION} with the new module release version, for example, `1.0.0`.
 
-4. Push the tag to trigger a postsubmit job (`post-telemetry-manager-release-module`) that creates the GitHub release.
+4. To trigger a postsubmit job (`post-telemetry-manager-release-module`) that creates the GitHub release, push the tag.
 
     ```bash
     git push upstream {RELEASE_VERSION}
     ```
 
-5. Verify the [Prow Status](https://status.build.kyma-project.io/) of the postsubmit job (`post-telemetry-manager-release-module`). Once the postsubmit job succeeds, the new Github release should be available under [releases](https://github.com/kyma-project/telemetry-manager/releases). If the postsubmit job failed, you can re-trigger it by removing the tag from upstream and pushing it again.
+5. Verify the [Prow Status](https://status.build.kyma-project.io/) of the postsubmit job (`post-telemetry-manager-release-module`).
+   - Once the postsubmit job succeeds, the new Github release should be available under [releases](https://github.com/kyma-project/telemetry-manager/releases).
+   - If the postsubmit job failed, you can re-trigger it by removing the tag from upstream and pushing it again:
 
-    ```bash
-    git push --delete upstream {RELEASE_VERSION}
-    git push upstream {RELEASE_VERSION}
-    ``` 
+      ```bash
+     git push --delete upstream {RELEASE_VERSION}
+     git push upstream {RELEASE_VERSION}
+     ``` 

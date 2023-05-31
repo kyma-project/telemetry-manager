@@ -1,10 +1,11 @@
 # Development
 
-Telemetry Manager has been bootstrapped with [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) 3.6.0. Additional APIs can also be [added by Kubebuilder](https://book.kubebuilder.io/cronjob-tutorial/new-api.html).
+Telemetry Manager has been bootstrapped with [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) 3.6.0. 
+Too add more APIs, use [Kubebuilder](https://book.kubebuilder.io/cronjob-tutorial/new-api.html).
 
 ## Prerequisites
 
-- Install [kubebuilder 3.6.0](https://github.com/kubernetes-sigs/kubebuilder), which is the base framework for this controller. Required to add new APIs.
+- Install [kubebuilder 3.6.0](https://github.com/kubernetes-sigs/kubebuilder), which is the base framework for the Telemetry manager. Required to add new APIs.
 - Install [Golang 1.19](https://golang.org/dl/) or newer (for development and local execution).
 - Install [Docker](https://www.docker.com/get-started).
 - Install [golangci-lint](https://golangci-lint.run).

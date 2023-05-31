@@ -4,8 +4,8 @@ You can choose among several ways of installation. For more details on the avail
 
 ## Prerequisites
 
-- See prerequisites for running the make targets at the [Development section](./development.md)
-- Kubecontext pointing to an existing Kubernetes cluster
+- See prerequisites for running the make targets at the [Development section](./development.md).
+- You have a Kubecontext pointing to an existing Kubernetes cluster.
 
 ## Install Telemetry Manager from sources
 
@@ -31,19 +31,19 @@ kubectl create ns kyma-system
 kubectl apply -f https://github.com/kyma-project/telemetry-manager/releases/latest/download/rendered.yaml
 ```
 
-## Install Telemetry Manager in your cluster from latest release using the lifecycle manager
+## Install Telemetry Manager in your cluster from latest release using the Lifecycle manager
 
-Install the lifecycle-manager
+1. Install the Lifecycle manager:
 
 ```shell
 make kyma
 kyma alpha deploy
 ```
 
-Install the ModuleTemplate and activate the component
+2. Install the ModuleTemplate and activate the component:
 ```shell
 kubectl apply -f https://github.com/kyma-project/btp-manager/releases/latest/download/template.yaml
 kyma alpha enable module telemetry
 ```
 
-Verify that a `telemetry-operator` pod starts up in the `kyma-system` namespace
+3. Verify that a `telemetry-operator` Pod starts up in the `kyma-system` Namespace.
