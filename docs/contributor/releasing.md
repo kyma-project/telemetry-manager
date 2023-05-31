@@ -35,7 +35,7 @@
    - Once the postsubmit job succeeds, the new Github release should be available under [releases](https://github.com/kyma-project/telemetry-manager/releases).
    - If the postsubmit job failed, you can re-trigger it by removing the tag from upstream and pushing it again:
 
-      ```bash
+     ```bash
      git push --delete upstream {RELEASE_VERSION}
      git push upstream {RELEASE_VERSION}
      ``` 

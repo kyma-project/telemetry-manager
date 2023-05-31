@@ -90,12 +90,12 @@ The following linters are sirrelevant for development of the Telemetry module:
 
 ### Nolint
 
-If linting warnings add to the development noise or are routinely ignored (for example, because some linters produce false-positive warnings), consider disabling the linter.
+If linting warnings add noise to the development or are routinely ignored (for example, because some linters produce false-positive warnings), consider disabling the linter.
 You can either suppress one or more lines of code inline, or exclude whole files.
 
 > **TIP:** The benefit of declaring linter exclusion rules on a file basis in the config file and not as package-level inline nolint instructions is that it is easier to visualize and analyse the linting suppressions.
 
-#### Inline //nolint
+#### Suppress linting warnings inline with //nolint
 To suppress a linting warning for a particular line of code, use nolint instruction `//no-lint:{LINTER} // {COMMENT}.` For the _LINTER_ and _COMMENT_ placeholders, you must enter the linter to be suppressed and a reason for the suppression.
 
 
@@ -119,7 +119,6 @@ issues:
       path: apis/telemetry/v1alpha1/(logparsers|metricpipeline|tracepipeline)_types_test.go
 ```
 
-The benefit of declaring linter exclusion rules on a file basis in the config file and not as package-level inline nolint instructions is that it is easier to visualize and analyse the linting suppressions.
 
 ### Dev environment configuration
 Read [golangci-lint integrations](https://golangci-lint.run/usage/integrations/) for information on configuring file-watchers for your IDE or code editor.

@@ -1,9 +1,9 @@
-# Telemetry Operator
+# Telemetry Manager
 
 ## Module lifecycle
 
-The module on its own ships a single component only, namely the Telemetry Operator, which is described by a custom resource of type Telemetry. The operator implements the Kubernetes controller pattern and manages the whole lifecycle of all other components relevant to this module. The operator watches for the Kubernetes LogPipeline, TracePipeline, and, in the future, MetricPipeline resources created by the user. With these, the user describes in a declarative way what data of a signal type to collect and where to ship it.
-If the Telemetry operator detects a configuration, it rolls out the relevant collector components on demand.
+The module on its own ships a single component only, namely the Telemetry manager, which is described by a custom resource of type Telemetry. The Telemetry manager implements the Kubernetes controller pattern and manages the whole lifecycle of all other components relevant to this module. The Telemetry manager looks out for the Kubernetes LogPipeline, TracePipeline, and, in the future, MetricPipeline resources created by the user. With these, the user describes in a declarative way what data of a signal type to collect and where to ship it.
+If the Telemetry manager detects a configuration, it rolls out the relevant components on demand.
 
 ![Operator](./assets/operator-lifecycle.drawio.svg)
 
