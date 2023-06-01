@@ -19,6 +19,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/logs"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
@@ -50,6 +51,15 @@ var _ = Describe("Metrics", func() {
 			k8sObjects := makeMetricsTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 
 			DeferCleanup(func() {
+				pods, err := kitk8s.ListDeploymentPods(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockDeploymentName})
+				Expect(err).NotTo(HaveOccurred())
+				for _, pod := range pods {
+					Expect(logs.Print(ctx, testEnv.Config, logs.Options{
+						Pod:       pod.Name,
+						Container: "otel-collector",
+						Namespace: pod.Namespace,
+					})).Should(Succeed())
+				}
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())

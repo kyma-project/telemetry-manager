@@ -19,6 +19,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/logs"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"k8s.io/apimachinery/pkg/types"
@@ -52,6 +53,16 @@ var _ = Describe("Tracing", func() {
 			k8sObjects := makeTracingTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 
 			DeferCleanup(func() {
+				pods, err := kitk8s.ListDeploymentPods(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockDeploymentName})
+				Expect(err).NotTo(HaveOccurred())
+				for _, pod := range pods {
+					Expect(logs.Print(ctx, testEnv.Config, logs.Options{
+						Pod:       pod.Name,
+						Container: "otel-collector",
+						Namespace: pod.Namespace,
+					})).Should(Succeed())
+				}
+
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
