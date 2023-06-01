@@ -71,11 +71,11 @@ func TestEnsureCertificate(t *testing.T) {
 	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[1].TimeoutSeconds)
 
 	var chainChecker certChainCheckerImpl
-	certValid, err := chainChecker.checkRoot(serverCert, validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
+	certValid, err := chainChecker.checkRoot(context.Background(), serverCert, validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
 	require.NoError(t, err)
 	require.True(t, certValid)
 
-	certValid, err = chainChecker.checkRoot(serverCert, validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	certValid, err = chainChecker.checkRoot(context.Background(), serverCert, validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
 	require.NoError(t, err)
 	require.True(t, certValid)
 
@@ -215,11 +215,11 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 	require.NoError(t, err)
 
 	var chainChecker certChainCheckerImpl
-	certValid, err := chainChecker.checkRoot(newServerCert, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
+	certValid, err := chainChecker.checkRoot(context.Background(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
 	require.NoError(t, err)
 	require.True(t, certValid)
 
-	certValid, err = chainChecker.checkRoot(newServerCert, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	certValid, err = chainChecker.checkRoot(context.Background(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
 	require.NoError(t, err)
 	require.True(t, certValid)
 }

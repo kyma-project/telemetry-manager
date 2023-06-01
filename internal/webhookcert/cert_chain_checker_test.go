@@ -1,6 +1,7 @@
 package webhookcert
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -57,7 +58,7 @@ func TestCheckChain(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.summary, func(t *testing.T) {
 			sut := certChainCheckerImpl{}
-			valid, err := sut.checkRoot(tc.serverCertPEM, tc.caCertPEM)
+			valid, err := sut.checkRoot(context.Background(), tc.serverCertPEM, tc.caCertPEM)
 			require.Equal(t, tc.expectValid, valid)
 			if tc.expectError {
 				require.Error(t, err)

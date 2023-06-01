@@ -22,7 +22,7 @@ type mockCertChainChecker struct {
 	err       error
 }
 
-func (c *mockCertChainChecker) checkRoot([]byte, []byte) (bool, error) {
+func (c *mockCertChainChecker) checkRoot(context.Context, []byte, []byte) (bool, error) {
 	return c.certValid, c.err
 }
 

@@ -44,23 +44,25 @@ func newCACertProvider(client client.Client) *caCertProviderImpl {
 
 func (p *caCertProviderImpl) provideCert(ctx context.Context, caSecretName types.NamespacedName) ([]byte, []byte, error) {
 	var caSecret corev1.Secret
-	notFound := false
+	shouldCreateNew := false
 	if err := p.client.Get(ctx, caSecretName, &caSecret); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return nil, nil, fmt.Errorf("failed to find ca cert caSecretName: %w", err)
 		}
-		notFound = true
+		shouldCreateNew = true
+	} else {
+		shouldCreateNew = !p.checkCASecret(ctx, &caSecret)
 	}
 
-	if notFound || !p.checkCASecret(ctx, &caSecret) {
+	if shouldCreateNew {
+		logf.FromContext(ctx).V(1).Info("Generating new CA cert/key",
+			"secretName", caSecretName.Name,
+			"secretNamespace", caSecretName.Namespace)
+
 		caCertPEM, caKeyPEM, err := p.generator.generateCert()
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to generateCert ca cert: %w", err)
 		}
-
-		logf.FromContext(ctx).V(1).Info("Generated new CA cert/key",
-			"secretName", caSecretName.Name,
-			"secretNamespace", caSecretName.Namespace)
 
 		newSecret := makeCASecret(caCertPEM, caKeyPEM, caSecretName)
 		if err = kubernetes.CreateOrUpdateSecret(ctx, p.client, &newSecret); err != nil {

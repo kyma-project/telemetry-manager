@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type serverCertConfig struct {
@@ -53,6 +55,8 @@ func (p *serverCertProviderImpl) provideCert(ctx context.Context, config serverC
 	}
 
 	if shouldCreateNew {
+		logf.FromContext(ctx).Info("Generating new server cert/key")
+
 		serverCertPEM, serverKeyPEM, err = p.generator.generateCert(config)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to generate cert: %w", err)
@@ -62,6 +66,8 @@ func (p *serverCertProviderImpl) provideCert(ctx context.Context, config serverC
 			return nil, nil, fmt.Errorf("failed to save server cert: %w", err)
 		}
 	}
+
+	logf.FromContext(ctx).V(1).Info("Found existing server cert/key")
 
 	return serverCertPEM, serverKeyPEM, nil
 }
@@ -75,7 +81,7 @@ func (p *serverCertProviderImpl) checkServerCert(ctx context.Context, serverCert
 		return false
 	}
 
-	certValid, err = p.chainChecker.checkRoot(serverCertPEM, caCertPEM)
+	certValid, err = p.chainChecker.checkRoot(ctx, serverCertPEM, caCertPEM)
 	if err != nil || !certValid {
 		return false
 	}

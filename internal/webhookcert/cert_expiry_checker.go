@@ -30,7 +30,7 @@ func (c *certExpiryCheckerImpl) checkExpiry(ctx context.Context, certPEM []byte)
 	if nowTime.Before(softExpiryTime) {
 		return true, nil
 	}
-	logf.FromContext(ctx).Info("Cert is about to expire. Rotation is needed",
+	logf.FromContext(ctx).Info("Cert expiry check failed",
 		"nowTime", nowTime,
 		"hardExpiryTime", hardExpiryTime,
 		"softExpiryTime", softExpiryTime)
