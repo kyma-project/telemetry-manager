@@ -55,7 +55,7 @@ func (p *caCertProviderImpl) provideCert(ctx context.Context, caSecretName types
 	}
 
 	if shouldCreateNew {
-		logf.FromContext(ctx).V(1).Info("Generating new CA cert/key",
+		logf.FromContext(ctx).Info("Generating new CA cert/key",
 			"secretName", caSecretName.Name,
 			"secretNamespace", caSecretName.Namespace)
 
@@ -70,10 +70,6 @@ func (p *caCertProviderImpl) provideCert(ctx context.Context, caSecretName types
 		}
 		return caCertPEM, caKeyPEM, nil
 	}
-
-	logf.FromContext(ctx).V(1).Info("Found existing CA cert/key",
-		"secretName", caSecretName.Name,
-		"secretNamespace", caSecretName.Namespace)
 
 	return caSecret.Data[caCertFile], caSecret.Data[caKeyFile], nil
 }

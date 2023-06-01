@@ -67,8 +67,6 @@ func (p *serverCertProviderImpl) provideCert(ctx context.Context, config serverC
 		}
 	}
 
-	logf.FromContext(ctx).V(1).Info("Found existing server cert/key")
-
 	return serverCertPEM, serverKeyPEM, nil
 }
 
