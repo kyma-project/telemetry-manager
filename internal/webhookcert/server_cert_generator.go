@@ -20,24 +20,18 @@ type serverCertGeneratorImpl struct {
 	clock clock
 }
 
-func newServerCertGenerator() *serverCertGeneratorImpl {
-	return &serverCertGeneratorImpl{
-		clock: realClock{},
-	}
-}
-
-func (g *serverCertGeneratorImpl) generateCert(host string, alternativeDNSNames []string, caCertPEM, caKeyPEM []byte) ([]byte, []byte, error) {
-	caCert, err := parseCertPEM(caCertPEM)
+func (g *serverCertGeneratorImpl) generateCert(config serverCertConfig) ([]byte, []byte, error) {
+	caCert, err := parseCertPEM(config.caCertPEM)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to parse ca cert: %w", err)
 	}
 
-	caKey, err := parseKeyPEM(caKeyPEM)
+	caKey, err := parseKeyPEM(config.caKeyPEM)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to parse ca key: %w", err)
 	}
 
-	return g.generateCertInternal(host, alternativeDNSNames, caCert, caKey)
+	return g.generateCertInternal(config.host, config.alternativeDNSNames, caCert, caKey)
 }
 
 func (g *serverCertGeneratorImpl) generateCertInternal(host string, alternativeDNSNames []string, caCert *x509.Certificate, caKey *rsa.PrivateKey) ([]byte, []byte, error) {

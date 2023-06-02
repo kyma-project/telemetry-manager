@@ -366,10 +366,22 @@ func main() {
 
 		ctx := context.Background()
 		if err = webhookcert.EnsureCertificate(ctx, k8sClient, webhookConfig.CertConfig); err != nil {
-			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
+			setupLog.Error(err, "Failed to ensure webhook cert")
 			os.Exit(1)
 		}
-		setupLog.Info("Updated ValidatingWebhookConfiguration")
+		setupLog.Info("Ensured webhook cert")
+
+		// Temporary solution for non-modularized telemetry operator
+		go func() {
+			for range time.Tick(1 * time.Hour) {
+				ctx := context.Background()
+				if err = webhookcert.EnsureCertificate(ctx, k8sClient, webhookConfig.CertConfig); err != nil {
+					setupLog.Error(err, "Failed to ensure webhook cert")
+					os.Exit(1)
+				}
+				setupLog.Info("Ensured webhook cert")
+			}
+		}()
 	}
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
