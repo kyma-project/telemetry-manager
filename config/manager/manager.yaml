@@ -67,10 +67,10 @@ spec:
         resources:
           limits:
             cpu: 100m
-            memory: 256Mi
+            memory: 384Mi
           requests:
             cpu: 5m
-            memory: 20Mi
+            memory: 100Mi
         env:
         - name: MY_POD_NAMESPACE
           valueFrom:
