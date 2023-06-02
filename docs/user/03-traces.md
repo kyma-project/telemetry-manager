@@ -85,7 +85,7 @@ spec:
 >**CAUTION:** The provided Istio feature uses an API in alpha state, which may change in future releases.
 
 By default, the tracing feature of the Istio module is disabled to avoid increased network utilization if there is no TracePipeline.
-To activate the [Istio tracing](#istio) feature with a sampling rate of 100% (not recommended on production), use a resource similar to the following:
+To activate the Istio tracing feature with a sampling rate of 5% (for recommendations, see [Istio](#istio)), use a resource similar to the following:
 
 ```yaml
 apiVersion: telemetry.istio.io/v1alpha1
