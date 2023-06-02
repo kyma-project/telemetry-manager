@@ -255,40 +255,55 @@ The Istio module is crucial in distributed tracing because it provides the [ingr
 
 >**CAUTION:** The provided Istio feature uses an API in alpha state, which may change in future releases.
 
-The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#Tracing), place a resource to the `istio-system` Namespace.
+ The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#Tracing), place a resource to the `istio-system` Namespace.
 
-The following example configures all Istio proxies with the `kyma-traces` extension provider, which, by default, reports span data to the trace gateway of the Telemetry module.
-:
+<div tabs name="Configure Istio traces" group="configuration-options">
+  <details>
+  <summary label="extension-provider">
+  Set up extension provider
+  </summary>
+    The following example configures all Istio proxies with the `kyma-traces` extension provider, which, by default, reports span data to the trace gateway of the Telemetry module.
+  
+  ```yaml
+  apiVersion: telemetry.istio.io/v1alpha1
+  kind: Telemetry
+  metadata:
+    name: tracing-default
+    namespace: istio-system
+  spec:
+    tracing:
+    - providers:
+      - name: "kyma-traces"
+  ```
 
-```yaml
-apiVersion: telemetry.istio.io/v1alpha1
-kind: Telemetry
-metadata:
-  name: tracing-default
-  namespace: istio-system
-spec:
-  tracing:
-  - providers:
-    - name: "kyma-traces"
-```
+  </details>
+  <details>
+  <summary label="sampling-rate">
+  Set sampling rate
+  </summary>
+  By default, the sampling rate is configured to 1 percent. That means that only 1 trace out of 100 traces is reported to the trace gateway, and all others are dropped. Hereby, the sampling decision itself is propagated as part of the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) so that either all involved components are reporting the span data of a trace, or none. Increasing the sampling rate results in much higher network utilization in the cluster and also increases the amount of data sent to your tracing backend. Usually, a very low percentage of around 5% is used in a production setup to reduce costs and performance impacts.
 
-By default, the sampling rate is configured to 1 percent. That means that only 1 trace out of 100 traces is reported to the trace gateway, and all others are dropped. Hereby, the sampling decision itself is propagated as part of the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) so that either all involved components are reporting the span data of a trace, or none. Increasing the sampling rate results in much higher network utilization in the cluster and also increases the amount of data sent to your tracing backend. Usually, a very low percentage of around 5% is used in a production setup to reduce costs and performance impacts.
+  To configure an "always-on" sampling, configure a sampling rate of 100%:
 
-To configure an "always-on" sampling, configure a sampling rate of 100%:
-```yaml
-apiVersion: telemetry.istio.io/v1alpha1
-kind: Telemetry
-metadata:
-  name: tracing-default
-  namespace: istio-system
-spec:
-  tracing:
-  - providers:
-    - name: "kyma-traces"
-    randomSamplingPercentage: 100.00
-```
+  ```yaml
+  apiVersion: telemetry.istio.io/v1alpha1
+  kind: Telemetry
+  metadata:
+    name: tracing-default
+    namespace: istio-system
+  spec:
+    tracing:
+    - providers:
+      - name: "kyma-traces"
+        randomSamplingPercentage: 100.00
+  ```
 
-Namespaces or workloads can selectively be configured with individual settings by placing further resources. If you don't want to report spans at all for a specific workload, activate the `disableSpanReporting` flag with the selector expression.
+  </details>
+  <details>
+  <summary label="namespaces-workload-settings">
+  Configure single Namespaces or workloads
+  </summary>
+  Namespaces or workloads can selectively be configured with individual settings by placing further resources. If you don't want to report spans at all for a specific workload, activate the `disableSpanReporting` flag with the selector expression.
 
 ```yaml
 apiVersion: telemetry.istio.io/v1alpha1
@@ -306,21 +321,29 @@ spec:
     randomSamplingPercentage: 100.00
 ```
 
-To enable the propagation of the [w3c-tracecontext](https://www.w3.org/TR/trace-context/) only, without reporting any spans (so the actual tracing feature is disabled), you must enable the `kyma-traces` provider with a sampling rate of 0. With this configuration, you get the relevant trace context into the [access logs](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/obsv-03-enable-istio-access-logs/) without any active trace reporting.
+  </details>
+  <details>
+  <summary label="trace-context-only">
+  Collect trace context without spans
+  </summary>
+  
+  To enable the propagation of the [w3c-tracecontext](https://www.w3.org/TR/trace-context/) only, without reporting any spans (so the actual tracing feature is disabled), you must enable the `kyma-traces` provider with a sampling rate of 0. With this configuration, you get the relevant trace context into the [access logs](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/obsv-03-enable-istio-access-logs/) without any active trace reporting.
 
-```yaml
-apiVersion: telemetry.istio.io/v1alpha1
-kind: Telemetry
-metadata:
-  name: tracing-default
-  namespace: istio-system
-spec:
-  tracing:
-  - providers:
-    - name: "kyma-traces"
-    randomSamplingPercentage: 0
-```
+  ```yaml
+  apiVersion: telemetry.istio.io/v1alpha1
+  kind: Telemetry
+  metadata:
+    name: tracing-default
+    namespace: istio-system
+  spec:
+    tracing:
+    - providers:
+      - name: "kyma-traces"
+      randomSamplingPercentage: 0
+  ```
 
+  </details>
+</div>
 ### Eventing
 The Kyma [Eventing](https://kyma-project.io/docs/kyma/latest/01-overview/main-areas/eventing/) component dispatches events from an in- or out-cluster backend to your workload. It leverages the [CloudEvents](https://cloudevents.io/) protocol, which natively supports the [W3C Trace Context](https://www.w3.org/TR/trace-context) propagation. That said, the Eventing component already propagates trace context properly but does not enrich a trace with more advanced span data.
 
