@@ -19,8 +19,8 @@ The roles and responsibilities during the STLC:
 | --- | --- | --- |
 | `PO` | Define acceptance criteria for the user stories, assess risks | Product Owner |
 | `DEV` | Implement tests for new functionality, extend the test suites, adhere to the test coverage expectations | Development team |
-| `ARCHITECT` | Devise system design with a focus on testability | team-shared role |
-| `QA`| Define the testing coverage for each story, ensure the test suite is delivered along with each new piece of functionality. | team-shared role |
+| `ARCHITECT` | Devise system design with a focus on testability | Development team |
+| `QA`| Define the testing coverage for each story, ensure the test suite is delivered along with each new piece of functionality. | Development team |
 ​
 ## Testing Levels
 ​

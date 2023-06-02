@@ -326,9 +326,9 @@ After a log record has been read, it is preprocessed by centrally configured plu
 
 ![Flow](./assets/logging-flow.drawio.svg)
 
-Learn more about these attributes in the following sections.
+Learn more about the flow of the log record through the general pipeline and the available log attributes in the following sections.
 
-### 1. Container log message
+### Stage 1: Container log message
 
 In the example, we assume there's a container `myContainer` of Pod `myPod`, running in Namespace `myNamespace`, logging to `stdout` with the following log message in the JSON format:
 
@@ -341,7 +341,7 @@ In the example, we assume there's a container `myContainer` of Pod `myPod`, runn
 }
 ```
 
-### 2. Tail input
+### Stage 2: Tail input
 
 The central pipeline tails the log message from a log file managed by the container runtime. The file name contains the Namespace, Pod, and container information that will be available later as part of the [tag](https://docs.fluentbit.io/manual/concepts/key-concepts#tag). The resulting log record available in an internal Fluent Bit representation looks similar to the following example:
 
@@ -363,7 +363,7 @@ The attributes in the example have the following meaning:
 | _p | Indicates if the log message is partial (`P`) or final (`F`). Optional, dependent on container runtime. Because a CRI multiline parser is applied for the tailing phase, all multilines on the container runtime level are aggregated already and no partial entries must be left. |
 | log | The raw and unparsed log message. |
 
-### 3. Kubernetes filter (metadata)
+### Stage 3: Kubernetes filter (metadata)
 
 In the next stage, the [Kubernetes filter](https://docs.fluentbit.io/manual/pipeline/filters/kubernetes) is applied. The container information from the log file name (available in the tag) is interpreted and used for a Kubernetes API Server request to resolve more metadata of the container. All the resolved metadata enrich the existing record as a new attribute `kubernetes`:
 
@@ -389,7 +389,7 @@ In the next stage, the [Kubernetes filter](https://docs.fluentbit.io/manual/pipe
 }
 ```
 
-### 4. Kubernetes filter (JSON parser)
+### Stage 4: Kubernetes filter (JSON parser)
 
 After the enrichment of the log record with the Kubernetes-relevant metadata, the [Kubernetes filter](https://docs.fluentbit.io/manual/pipeline/filters/kubernetes) also tries to parse the record as a JSON document. If that is successful, all the parsed root attributes of the parsed document are added as new individual root attributes of the log.
 
@@ -421,7 +421,7 @@ The record **after** applying the JSON parser:
 }
 ```
 
-### 5. Rewrite tag
+### Stage 5: Rewrite tag
 
 As per the LogPipeline definition, a dedicated [rewrite_tag](https://docs.fluentbit.io/manual/pipeline/filters/rewrite-tag) filter is introduced. The filter brings a dedicated filesystem buffer for the outputs defined in the related pipeline, and with that, ensures a shipment of the logs isolated from outputs of other pipelines. As a consequence, each pipeline runs on its own [tag](https://docs.fluentbit.io/manual/concepts/key-concepts#tag).
 
