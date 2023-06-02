@@ -178,7 +178,7 @@ spec:
 
  The Telemetry Operator supports different types of [Fluent Bit filter](https://docs.fluentbit.io/manual/concepts/data-pipeline/filter). The example uses the [grep](https://docs.fluentbit.io/manual/pipeline/filters/grep) and the [record_modifier](https://docs.fluentbit.io/manual/pipeline/filters/record-modifier) filter.
 
-- The first filter keeps all log records that have the `kubernetes.labels.app` attribute set with the value `my-deployment`; all other logs are discarded. The `kubernetes` attribute is available for every log record. See [Kubernetes filter (metadata)](#kubernetes-filter-metadata) for more details.
+- The first filter keeps all log records that have the `kubernetes.labels.app` attribute set with the value `my-deployment`; all other logs are discarded. The `kubernetes` attribute is available for every log record. See [Kubernetes filter (metadata)](#stage-3-kubernetes-filter-metadata) for more details.
 - The second filter drops all log records fulfilling the given rule. Here, typical Namespaces are dropped based on the `kubernetes` attribute.
 - A log record is modified by adding a new attribute. Here, a constant attribute is added to every log record to record the actual cluster node name at the record for later filtering in the backend system. As a value, a placeholder is used referring to a Kubernetes-specific environment variable.
 
