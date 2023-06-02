@@ -53,16 +53,6 @@ var _ = Describe("Tracing", func() {
 			k8sObjects := makeTracingTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
 
 			DeferCleanup(func() {
-				pods, err := kitk8s.ListDeploymentPods(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockDeploymentName})
-				Expect(err).NotTo(HaveOccurred())
-				for _, pod := range pods {
-					Expect(logs.Print(ctx, testEnv.Config, logs.Options{
-						Pod:       pod.Name,
-						Container: "otel-collector",
-						Namespace: pod.Namespace,
-					})).Should(Succeed())
-				}
-
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -184,6 +174,16 @@ var _ = Describe("Tracing", func() {
 			secondPipeline := makeBrokenTracePipeline("pipeline-2")
 
 			DeferCleanup(func() {
+				pods, err := kitk8s.ListDeploymentPods(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockDeploymentName})
+				Expect(err).NotTo(HaveOccurred())
+				for _, pod := range pods {
+					Expect(logs.Print(ctx, testEnv.Config, logs.Options{
+						Pod:       pod.Name,
+						Container: "otel-collector",
+						Namespace: pod.Namespace,
+					})).Should(Succeed())
+				}
+
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, secondPipeline...)).Should(Succeed())
 			})
