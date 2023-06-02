@@ -97,7 +97,7 @@ spec:
   tracing:
   - providers:
     - name: "kyma-traces"
-  randomSamplingPercentage: 100.00
+  randomSamplingPercentage: 5.00
 ```
 
 ### Step 3. Switch the protocol to HTTP
