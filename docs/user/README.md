@@ -20,7 +20,6 @@ The Telemetry module enables your application with the telemetry support by prov
 - Integration in a vendor-neutral way to a vendor-specific observability system: Based on the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/reference/specification/protocol/), you can integrate backend systems.
 - Opt-out from features for advanced scenarios: At any time, you can opt out for each data type, and use custom tooling to collect and ship the telemetry data.
 - SAP BTP as first-class integration: Integration into BTP Observability services is prioritized.
-- Enterprise-grade qualities: The setup is battle-tested and satisfies typical development standards.
 
 ## Scope
 
