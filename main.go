@@ -356,17 +356,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	if enableWebhook {
-		// Create own client since manager might not be started while using
-		clientOptions := client.Options{
-			Scheme: scheme,
-		}
-		k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
-		if err != nil {
-			setupLog.Error(err, "Failed to create client")
-			os.Exit(1)
-		}
+	// Create own client because manager is not yet started
+	clientOptions := client.Options{
+		Scheme: scheme,
+	}
+	k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
+	if err != nil {
+		setupLog.Error(err, "Failed to create client")
+		os.Exit(1)
+	}
 
+	if enableWebhook {
 		ctx := context.Background()
 		if err = webhookcert.EnsureCertificate(ctx, k8sClient, webhookConfig.CertConfig); err != nil {
 			setupLog.Error(err, "Failed to ensure webhook cert")
@@ -385,16 +385,6 @@ func main() {
 				setupLog.Info("Ensured webhook cert")
 			}
 		}()
-	}
-
-	// Create own client because manager is not yet started
-	clientOptions := client.Options{
-		Scheme: scheme,
-	}
-	k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
-	if err != nil {
-		setupLog.Error(err, "Failed to create client")
-		os.Exit(1)
 	}
 
 	ctx := context.Background()
