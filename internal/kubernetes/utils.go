@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/utils/slices"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -186,6 +188,22 @@ func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.
 	return c.Update(ctx, desired)
 }
 
+func CreateOrUpdateLokiLogPipeline(ctx context.Context, c client.Client, desired *telemetryv1alpha1.LogPipeline) error {
+	var existing telemetryv1alpha1.LogPipeline
+	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+
+		return c.Create(ctx, desired)
+	}
+
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
+	mergeFinalizers(&desired.ObjectMeta, existing.ObjectMeta)
+	return c.Update(ctx, desired)
+}
+
 func mergeMetadata(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
 	new.ResourceVersion = old.ResourceVersion
 
@@ -246,6 +264,28 @@ func mergeMapsByPrefix(newMap map[string]string, oldMap map[string]string, prefi
 	}
 
 	return newMap
+}
+
+func mergeFinalizers(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
+	new.SetFinalizers(mergeSlices(new.Finalizers, old.Finalizers))
+}
+
+func mergeSlices(newSlice []string, oldSlice []string) []string {
+	if oldSlice == nil {
+		oldSlice = []string{}
+	}
+
+	if newSlice == nil {
+		newSlice = []string{}
+	}
+
+	for _, v := range oldSlice {
+		if !slices.ContainsString(newSlice, v) {
+			newSlice = append(newSlice, v)
+		}
+	}
+
+	return newSlice
 }
 
 func GetOrCreateConfigMap(ctx context.Context, c client.Client, name types.NamespacedName) (corev1.ConfigMap, error) {

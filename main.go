@@ -41,6 +41,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -57,12 +58,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	tracepipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	lokilogpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/lokilogpipeline"
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 	logpipelinevalidation "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -372,6 +375,33 @@ func main() {
 		setupLog.Info("Updated ValidatingWebhookConfiguration")
 	}
 
+	// Create own client because manager is not yet started
+	clientOptions := client.Options{
+		Scheme: scheme,
+	}
+	k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
+	if err != nil {
+		setupLog.Error(err, "Failed to create client")
+		os.Exit(1)
+	}
+
+	ctx := context.Background()
+	if err := createLokiLogPipeline(ctx, k8sClient); err != nil {
+		setupLog.Error(err, "Failed to create Loki LogPipeline")
+		os.Exit(1)
+	}
+
+	// Ensure reconciliation of the optional Loki LogPipeline
+	go func() {
+		for range time.Tick(1 * time.Hour) {
+			ctx := context.Background()
+			if err := createLokiLogPipeline(ctx, k8sClient); err != nil {
+				setupLog.Error(err, "Failed to create Loki LogPipeline")
+				os.Exit(1)
+			}
+		}
+	}()
+
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
@@ -545,4 +575,28 @@ func parsePlugins(s string) []string {
 
 func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
 	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, webhookConfig))
+}
+
+func createLokiLogPipeline(ctx context.Context, client client.Client) error {
+	var lokiService corev1.Service
+	err := client.Get(ctx, types.NamespacedName{Name: "logging-loki", Namespace: "kyma-system"}, &lokiService)
+	if err != nil {
+		// If Loki service doesn't exist in the cluster, we don't need to deploy Loki LogPipeline
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	lokiLogPipeline := lokilogpipelineresources.MakeLokiLogPipeline()
+
+	// Set the Loki service to be owner of the Loki LogPipeline,
+	// so that when the Loki service is removed, the Loki LogPipeline is automatically deleted
+	if err := controllerutil.SetOwnerReference(&lokiService, lokiLogPipeline, client.Scheme()); err != nil {
+		return err
+	}
+	if err := kubernetes.CreateOrUpdateLokiLogPipeline(ctx, client, lokiLogPipeline); err != nil {
+		return err
+	}
+	return nil
 }
