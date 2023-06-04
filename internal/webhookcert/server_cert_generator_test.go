@@ -13,14 +13,14 @@ func TestGenerateServerCert(t *testing.T) {
 	caCertGen := caCertGeneratorImpl{clock: mockClock{}}
 	sut := serverCertGeneratorImpl{clock: mockClock{}}
 	t.Run("fails if nil input", func(t *testing.T) {
-		_, _, err := sut.generateCert("my-webhook.my-namespace", nil, nil, nil)
+		_, _, err := sut.generateCert(serverCertConfig{host: "my-webhook.my-namespace"})
 		require.Error(t, err)
 	})
 
 	t.Run("fails if invalid input", func(t *testing.T) {
 		invalidCertPEM := []byte{1, 2, 3}
 		invalidKeyPEM := []byte{1, 2, 3}
-		_, _, err := sut.generateCert("my-webhook.my-namespace", nil, invalidCertPEM, invalidKeyPEM)
+		_, _, err := sut.generateCert(serverCertConfig{host: "my-webhook.my-namespace", caCertPEM: invalidCertPEM, caKeyPEM: invalidKeyPEM})
 		require.Error(t, err)
 	})
 
@@ -28,7 +28,7 @@ func TestGenerateServerCert(t *testing.T) {
 		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
-		serverCertPEM, serverKeyPEM, err := sut.generateCert("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
+		serverCertPEM, serverKeyPEM, err := sut.generateCert(serverCertConfig{host: "my-webhook.my-namespace", caCertPEM: caCertPEM, caKeyPEM: caKeyPEM})
 		require.NoError(t, err)
 		require.NotNil(t, serverCertPEM)
 		require.NotNil(t, serverKeyPEM)
@@ -38,7 +38,7 @@ func TestGenerateServerCert(t *testing.T) {
 		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
-		serverCertPEM, _, err := sut.generateCert("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
+		serverCertPEM, _, err := sut.generateCert(serverCertConfig{host: "my-webhook.my-namespace", caCertPEM: caCertPEM, caKeyPEM: caKeyPEM})
 		require.NoError(t, err)
 
 		serverCert, err := parseCertPEM(serverCertPEM)
@@ -51,7 +51,7 @@ func TestGenerateServerCert(t *testing.T) {
 		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
-		_, serverKeyPEM, err := sut.generateCert("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
+		_, serverKeyPEM, err := sut.generateCert(serverCertConfig{host: "my-webhook.my-namespace", caCertPEM: caCertPEM, caKeyPEM: caKeyPEM})
 		require.NoError(t, err)
 
 		serverKey, err := parseKeyPEM(serverKeyPEM)
@@ -63,7 +63,7 @@ func TestGenerateServerCert(t *testing.T) {
 		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
-		serverCertPEM, serverKeyPEM, err := sut.generateCert("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
+		serverCertPEM, serverKeyPEM, err := sut.generateCert(serverCertConfig{host: "my-webhook.my-namespace", caCertPEM: caCertPEM, caKeyPEM: caKeyPEM})
 		require.NoError(t, err)
 
 		serverCert, err := parseCertPEM(serverCertPEM)
@@ -82,7 +82,7 @@ func TestGenerateServerCert(t *testing.T) {
 		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
-		serverCertPEM, _, err := sut.generateCert("my-webhook.my-namespace", []string{"foo", "bar"}, caCertPEM, caKeyPEM)
+		serverCertPEM, _, err := sut.generateCert(serverCertConfig{host: "my-webhook.my-namespace", alternativeDNSNames: []string{"foo", "bar"}, caCertPEM: caCertPEM, caKeyPEM: caKeyPEM})
 		require.NoError(t, err)
 
 		serverCert, err := parseCertPEM(serverCertPEM)
@@ -100,7 +100,7 @@ func TestGenerateServerCert(t *testing.T) {
 		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
-		serverCertPEM, _, err := sut.generateCert("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
+		serverCertPEM, _, err := sut.generateCert(serverCertConfig{host: "my-webhook.my-namespace", caCertPEM: caCertPEM, caKeyPEM: caKeyPEM})
 		require.NoError(t, err)
 
 		serverCert, err := parseCertPEM(serverCertPEM)
@@ -116,7 +116,7 @@ func TestGenerateServerCert(t *testing.T) {
 		caCertPEM, caKeyPEM, err := caCertGen.generateCert()
 		require.NoError(t, err)
 
-		serverCertPEM, _, err := sut.generateCert("my-webhook.my-namespace", nil, caCertPEM, caKeyPEM)
+		serverCertPEM, _, err := sut.generateCert(serverCertConfig{host: "my-webhook.my-namespace", caCertPEM: caCertPEM, caKeyPEM: caKeyPEM})
 		require.NoError(t, err)
 
 		serverCert, err := parseCertPEM(serverCertPEM)
