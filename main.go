@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -386,18 +387,16 @@ func main() {
 		}()
 	}
 
-	ctx := context.Background()
-	if err := createLokiLogPipeline(ctx, k8sClient); err != nil {
-		setupLog.Error(err, "Failed to create Loki LogPipeline")
+	if err := handleLokiLogPipeline(context.Background(), k8sClient); err != nil {
+		setupLog.Error(err, "Failed to handle Loki LogPipeline")
 		os.Exit(1)
 	}
 
 	// Ensure reconciliation of the optional Loki LogPipeline
 	go func() {
 		for range time.Tick(1 * time.Minute) {
-			ctx := context.Background()
-			if err := createLokiLogPipeline(ctx, k8sClient); err != nil {
-				setupLog.Error(err, "Failed to create Loki LogPipeline")
+			if err := handleLokiLogPipeline(context.Background(), k8sClient); err != nil {
+				setupLog.Error(err, "Failed to handle Loki LogPipeline")
 				os.Exit(1)
 			}
 		}
@@ -578,17 +577,26 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eve
 	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, webhookConfig))
 }
 
-func createLokiLogPipeline(ctx context.Context, client client.Client) error {
+func handleLokiLogPipeline(ctx context.Context, client client.Client) error {
+	lokiLogPipeline := lokilogpipelineresources.MakeLokiLogPipeline()
+
 	var lokiService corev1.Service
 	err := client.Get(ctx, types.NamespacedName{Name: "logging-loki", Namespace: "kyma-system"}, &lokiService)
 	if err != nil {
-		// If Loki service doesn't exist in the cluster, we don't need to deploy Loki LogPipeline
+		// If Loki service doesn't exist in the cluster, we shouldn't deploy Loki LogPipeline
+		// Instead, we should delete the Loki LogPipeline if it already exists from the logging component (old helm chart)
 		if apierrors.IsNotFound(err) {
+			if err := kubernetes.DeleteLokiLogPipeline(ctx, client, lokiLogPipeline); err != nil {
+				return fmt.Errorf("failed to delete Loki LogPipeline: %w", err)
+			}
 			return nil
 		}
 		return err
 	}
 
-	lokiLogPipeline := lokilogpipelineresources.MakeLokiLogPipeline()
-	return kubernetes.CreateOrUpdateLokiLogPipeline(ctx, client, lokiLogPipeline)
+	if err := kubernetes.CreateOrUpdateLokiLogPipeline(ctx, client, lokiLogPipeline); err != nil {
+		return fmt.Errorf("failed to create Loki LogPipeline: %w", err)
+	}
+
+	return nil
 }

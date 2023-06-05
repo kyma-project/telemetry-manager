@@ -205,6 +205,17 @@ func CreateOrUpdateLokiLogPipeline(ctx context.Context, c client.Client, desired
 	return c.Update(ctx, desired)
 }
 
+func DeleteLokiLogPipeline(ctx context.Context, c client.Client, lokiLogPipeline *telemetryv1alpha1.LogPipeline) error {
+	err := c.Delete(ctx, lokiLogPipeline)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func mergeMetadata(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
 	new.ResourceVersion = old.ResourceVersion
 
