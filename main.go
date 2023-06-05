@@ -383,11 +383,6 @@ func main() {
 		}()
 	}
 
-	if err := handleLokiLogPipeline(context.Background(), k8sClient); err != nil {
-		setupLog.Error(err, "Failed to handle Loki LogPipeline")
-		os.Exit(1)
-	}
-
 	// Ensure reconciliation of the optional Loki LogPipeline
 	go func() {
 		for range time.Tick(1 * time.Minute) {
