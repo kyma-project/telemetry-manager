@@ -394,7 +394,7 @@ func main() {
 
 	// Ensure reconciliation of the optional Loki LogPipeline
 	go func() {
-		for range time.Tick(1 * time.Hour) {
+		for range time.Tick(1 * time.Minute) {
 			ctx := context.Background()
 			if err := createLokiLogPipeline(ctx, k8sClient); err != nil {
 				setupLog.Error(err, "Failed to create Loki LogPipeline")
