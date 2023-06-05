@@ -31,6 +31,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -65,7 +66,6 @@ import (
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 	logpipelinevalidation "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
