@@ -175,7 +175,7 @@ spec:
     ...
 ```
 > **NOTE:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
-
+labels job=fluentbit, container=$kubernetes['container_name'], namespace=$kubernetes['namespace_name'], pod=$kubernetes['pod_name'], node=$kubernetes['host'], app=$kubernetes['labels']['app'],app=$kubernetes['labels']['app.kubernetes.io/name']
  The Telemetry Operator supports different types of [Fluent Bit filter](https://docs.fluentbit.io/manual/concepts/data-pipeline/filter). The example uses the [grep](https://docs.fluentbit.io/manual/pipeline/filters/grep) and the [record_modifier](https://docs.fluentbit.io/manual/pipeline/filters/record-modifier) filter.
 
 - The first filter keeps all log records that have the `kubernetes.labels.app` attribute set with the value `my-deployment`; all other logs are discarded. The `kubernetes` attribute is available for every log record. See [Kubernetes filter (metadata)](#stage-3-kubernetes-filter-metadata) for more details.
@@ -268,7 +268,8 @@ spec:
 
 ### Step 5: Rotate the Secret
 
-As used in the previous step, a Secret referenced with the **secretKeyRef** construct can be rotated manually or automatically. For automatic rotation, update the Secret's actual values and keep the Secret's keys stable. The LogPipeline watches the referenced Secrets and detects changes, so the Secret rotation takes immediate effect. When using a Secret owned by the [SAP BTP Operator](https://github.com/SAP/sap-btp-service-operator) you can configure a `credentialsRotationPolicy` with a specific `rotationFrequency` to achieve an automated rotation.
+The Telemetry manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and the Telemetry manager detects the changes and applies the new Secret to the setup.
+If you use a Secret owned by the [SAP BTP Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
 ### Step 6: Add a parser
 
@@ -444,7 +445,7 @@ You cannot enable the following plugins, because they potentially harm the stabi
 ### Reserved log attributes
 The log attribute named `kubernetes` is a special attribute that's enriched by the `kubernetes` filter. When you use that attribute as part of your structured log payload, the metadata enriched by the filter are overwritten by the payload data. Filters that rely on the original metadata might no longer work as expected.
 
-Furthermore, the `__kyma__` prefix is used internally by the Telemetry Operator. When you use the prefix attribute in your log data, the data might be overwritten.
+Furthermore, the `__kyma__` prefix is used internally by the Telemetry Manager. When you use the prefix attribute in your log data, the data might be overwritten.
 
 ### Buffer limits
 

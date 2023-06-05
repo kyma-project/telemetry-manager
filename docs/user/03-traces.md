@@ -55,16 +55,16 @@ In the following steps, you can see how to set up a typical TracePipeline. For a
 1. To ship traces to a new OTLP output, create a resource file of the kind `TracePipeline`:
 
    ```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: TracePipeline
-metadata:
-  name: jaeger
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: http://jaeger-collector.jaeger.svc.cluster.local:4317
-```
+   apiVersion: telemetry.kyma-project.io/v1alpha1
+   kind: TracePipeline
+   metadata:
+     name: jaeger
+   spec:
+     output:
+       otlp:
+         endpoint:
+           value: http://jaeger-collector.jaeger.svc.cluster.local:4317
+   ```
 
    This configures the underlying OTel Collector with a pipeline for traces. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-traces` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, dependent on the configured protocol.
 
@@ -243,7 +243,8 @@ stringData:
 
 ### Step 6: Rotate the Secret
 
-As used in the previous step, a Secret referenced with the **secretKeyRef** construct can be rotated manually or automatically. For automatic rotation, update the Secret's actual values and keep the Secret's keys stable. TracePipeline watches the referenced Secrets and detects changes, so the Secret rotation takes immediate effect. When using a Secret owned by the [SAP BTP Operator](https://github.com/SAP/sap-btp-service-operator), you can configure `credentialsRotationPolicy` with a specific `rotationFrequency` to achieve an automated rotation.
+The Telemetry manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and the Telemetry manager detects the changes and applies the new Secret to the setup.
+If you use a Secret owned by the [SAP BTP Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
 ## Kyma Components with tracing capabilities
 
@@ -344,6 +345,7 @@ spec:
 
   </details>
 </div>
+
 ### Eventing
 The Kyma [Eventing](https://kyma-project.io/docs/kyma/latest/01-overview/main-areas/eventing/) component dispatches events from an in- or out-cluster backend to your workload. It leverages the [CloudEvents](https://cloudevents.io/) protocol, which natively supports the [W3C Trace Context](https://www.w3.org/TR/trace-context) propagation. That said, the Eventing component already propagates trace context properly but does not enrich a trace with more advanced span data.
 
