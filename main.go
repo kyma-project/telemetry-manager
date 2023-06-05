@@ -393,7 +393,6 @@ func main() {
 		for range time.Tick(1 * time.Minute) {
 			if err := handleLokiLogPipeline(context.Background(), k8sClient); err != nil {
 				setupLog.Error(err, "Failed to handle Loki LogPipeline")
-				os.Exit(1)
 			}
 		}
 	}()
