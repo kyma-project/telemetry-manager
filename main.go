@@ -42,7 +42,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -591,10 +590,5 @@ func createLokiLogPipeline(ctx context.Context, client client.Client) error {
 	}
 
 	lokiLogPipeline := lokilogpipelineresources.MakeLokiLogPipeline()
-	// Set the Loki service to be owner of the Loki LogPipeline,
-	// so that when the Loki service is removed, the Loki LogPipeline is automatically deleted
-	if err := controllerutil.SetOwnerReference(&lokiService, lokiLogPipeline, client.Scheme()); err != nil {
-		return err
-	}
 	return kubernetes.CreateOrUpdateLokiLogPipeline(ctx, client, lokiLogPipeline)
 }
