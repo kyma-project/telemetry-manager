@@ -364,7 +364,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		if err = webhookcert.EnsureCertificate(context.TODO(), k8sClient, webhookConfig.CertConfig); err != nil {
+		if err = webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); err != nil {
 			setupLog.Error(err, "Failed to ensure webhook cert")
 			os.Exit(1)
 		}
@@ -373,7 +373,7 @@ func main() {
 		// Temporary solution for non-modularized telemetry operator
 		go func() {
 			for range time.Tick(1 * time.Hour) {
-				if ensureErr := webhookcert.EnsureCertificate(context.TODO(), k8sClient, webhookConfig.CertConfig); ensureErr != nil {
+				if ensureErr := webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); ensureErr != nil {
 					setupLog.Error(ensureErr, "Failed to ensure webhook cert")
 				}
 			}
