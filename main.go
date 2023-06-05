@@ -591,14 +591,10 @@ func createLokiLogPipeline(ctx context.Context, client client.Client) error {
 	}
 
 	lokiLogPipeline := lokilogpipelineresources.MakeLokiLogPipeline()
-
 	// Set the Loki service to be owner of the Loki LogPipeline,
 	// so that when the Loki service is removed, the Loki LogPipeline is automatically deleted
 	if err := controllerutil.SetOwnerReference(&lokiService, lokiLogPipeline, client.Scheme()); err != nil {
 		return err
 	}
-	if err := kubernetes.CreateOrUpdateLokiLogPipeline(ctx, client, lokiLogPipeline); err != nil {
-		return err
-	}
-	return nil
+	return kubernetes.CreateOrUpdateLokiLogPipeline(ctx, client, lokiLogPipeline)
 }
