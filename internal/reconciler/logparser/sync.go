@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
@@ -24,7 +25,6 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context) error {
 		return fmt.Errorf("unable to get parsers configmap: %w", err)
 	}
 
-	changed := false
 	var logParsers telemetryv1alpha1.LogParserList
 
 	err = s.List(ctx, &logParsers)
@@ -36,21 +36,20 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context) error {
 		data := make(map[string]string)
 		data[parsersConfigMapKey] = ""
 		cm.Data = data
-		changed = true
 	} else if cm.Data == nil {
 		data := make(map[string]string)
 		data[parsersConfigMapKey] = fluentBitParsersConfig
 		cm.Data = data
-		changed = true
 	} else {
 		if oldConfig, hasKey := cm.Data[parsersConfigMapKey]; !hasKey || oldConfig != fluentBitParsersConfig {
 			cm.Data[parsersConfigMapKey] = fluentBitParsersConfig
-			changed = true
 		}
 	}
 
-	if !changed {
-		return nil
+	for _, parser := range logParsers.Items {
+		if err := controllerutil.SetOwnerReference(&parser, &cm, s.Scheme()); err != nil {
+			return fmt.Errorf("unable to set owner reference for parsers configmap: %w", err)
+		}
 	}
 
 	if err = s.Update(ctx, &cm); err != nil {

@@ -42,6 +42,8 @@ type Config struct {
 	DaemonSet         types.NamespacedName
 	SectionsConfigMap types.NamespacedName
 	FilesConfigMap    types.NamespacedName
+	LuaConfigMap      types.NamespacedName
+	ParsersConfigMap  types.NamespacedName
 	EnvSecret         types.NamespacedName
 	OverrideConfigMap types.NamespacedName
 	PipelineDefaults  configbuilder.PipelineDefaults
@@ -133,13 +135,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	var checksum string
-	if checksum, err = r.calculateChecksum(ctx); err != nil {
-		return err
-	}
-
-	name := r.config.DaemonSet
-	if err = r.reconcileFluentBit(ctx, name, pipeline, checksum); err != nil {
+	if err = r.reconcileFluentBit(ctx, pipeline); err != nil {
 		return err
 	}
 
@@ -150,8 +146,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	return err
 }
 
-func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.NamespacedName, pipeline *telemetryv1alpha1.LogPipeline, checksum string) error {
-	serviceAccount := commonresources.MakeServiceAccount(name)
+func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+	serviceAccount := commonresources.MakeServiceAccount(r.config.DaemonSet)
 	if err := controllerutil.SetOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
 		return err
 	}
@@ -159,7 +155,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 		return fmt.Errorf("failed to create fluent bit service account: %w", err)
 	}
 
-	clusterRole := commonresources.MakeClusterRole(name)
+	clusterRole := commonresources.MakeClusterRole(r.config.DaemonSet)
 	if err := controllerutil.SetOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
 		return err
 	}
@@ -167,7 +163,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 		return fmt.Errorf("failed to create fluent bit cluster role: %w", err)
 	}
 
-	clusterRoleBinding := commonresources.MakeClusterRoleBinding(name)
+	clusterRoleBinding := commonresources.MakeClusterRoleBinding(r.config.DaemonSet)
 	if err := controllerutil.SetOwnerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
 		return err
 	}
@@ -175,15 +171,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 		return fmt.Errorf("failed to create fluent bit cluster role Binding: %w", err)
 	}
 
-	daemonSet := resources.MakeDaemonSet(name, checksum, r.config.DaemonSetConfig)
-	if err := controllerutil.SetOwnerReference(pipeline, daemonSet, r.Scheme()); err != nil {
-		return err
-	}
-	if err := utils.CreateOrUpdateDaemonSet(ctx, r, daemonSet); err != nil {
-		return fmt.Errorf("failed to reconcile fluent bit daemonset: %w", err)
-	}
-
-	exporterMetricsService := resources.MakeExporterMetricsService(name)
+	exporterMetricsService := resources.MakeExporterMetricsService(r.config.DaemonSet)
 	if err := controllerutil.SetOwnerReference(pipeline, exporterMetricsService, r.Scheme()); err != nil {
 		return err
 	}
@@ -191,7 +179,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 		return fmt.Errorf("failed to reconcile exporter metrics service: %w", err)
 	}
 
-	metricsService := resources.MakeMetricsService(name)
+	metricsService := resources.MakeMetricsService(r.config.DaemonSet)
 	if err := controllerutil.SetOwnerReference(pipeline, metricsService, r.Scheme()); err != nil {
 		return err
 	}
@@ -199,7 +187,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
 
-	cm := resources.MakeConfigMap(name)
+	cm := resources.MakeConfigMap(r.config.DaemonSet)
 	if err := controllerutil.SetOwnerReference(pipeline, cm, r.Scheme()); err != nil {
 		return err
 	}
@@ -207,7 +195,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 		return fmt.Errorf("failed to reconcile fluent bit configmap: %w", err)
 	}
 
-	luaCm := resources.MakeLuaConfigMap(name)
+	luaCm := resources.MakeLuaConfigMap(r.config.LuaConfigMap)
 	if err := controllerutil.SetOwnerReference(pipeline, luaCm, r.Scheme()); err != nil {
 		return err
 	}
@@ -215,13 +203,28 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, name types.Namespac
 		return fmt.Errorf("failed to reconcile fluent bit lua configmap: %w", err)
 	}
 
-	parsersCm := resources.MakeDynamicParserConfigmap(name)
+	parsersCm := resources.MakeParserConfigmap(r.config.ParsersConfigMap)
 	if err := controllerutil.SetOwnerReference(pipeline, parsersCm, r.Scheme()); err != nil {
 		return err
 	}
 	if err := utils.CreateIfNotExistsConfigMap(ctx, r, parsersCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit parser configmap: %w", err)
 	}
+
+	var checksum string
+	var err error
+	if checksum, err = r.calculateChecksum(ctx); err != nil {
+		return fmt.Errorf("failed to calculate config checksum: %w", err)
+	}
+
+	daemonSet := resources.MakeDaemonSet(r.config.DaemonSet, checksum, r.config.DaemonSetConfig)
+	if err := controllerutil.SetOwnerReference(pipeline, daemonSet, r.Scheme()); err != nil {
+		return err
+	}
+	if err := utils.CreateOrUpdateDaemonSet(ctx, r, daemonSet); err != nil {
+		return fmt.Errorf("failed to reconcile fluent bit daemonset: %w", err)
+	}
+
 	return nil
 }
 
@@ -258,6 +261,21 @@ func isUnsupported(pipeline *telemetryv1alpha1.LogPipeline) bool {
 }
 
 func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
+	var baseCm corev1.ConfigMap
+	if err := r.Get(ctx, r.config.DaemonSet, &baseCm); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.DaemonSet.Namespace, r.config.DaemonSet.Name, err)
+	}
+
+	var parsersCm corev1.ConfigMap
+	if err := r.Get(ctx, r.config.ParsersConfigMap, &parsersCm); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.ParsersConfigMap.Namespace, r.config.ParsersConfigMap.Name, err)
+	}
+
+	var luaCm corev1.ConfigMap
+	if err := r.Get(ctx, r.config.LuaConfigMap, &luaCm); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.LuaConfigMap.Namespace, r.config.LuaConfigMap.Name, err)
+	}
+
 	var sectionsCm corev1.ConfigMap
 	if err := r.Get(ctx, r.config.SectionsConfigMap, &sectionsCm); err != nil {
 		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.SectionsConfigMap.Namespace, r.config.SectionsConfigMap.Name, err)
@@ -273,5 +291,5 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.EnvSecret.Namespace, r.config.EnvSecret.Name, err)
 	}
 
-	return configchecksum.Calculate([]corev1.ConfigMap{sectionsCm, filesCm}, []corev1.Secret{envSecret}), nil
+	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret}), nil
 }
