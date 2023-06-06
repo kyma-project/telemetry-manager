@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/gomega"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -62,7 +61,8 @@ var _ = BeforeSuite(func() {
 	Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).To(Succeed())
 
 	// Fetch the authentication-related resources.
-	httpsAuthProvider, err = newHTTPSAuth(fetchAuthToken(), apiPort)
+	deployAuthToken(ctx, k8sClient)
+	httpsAuthProvider, err = newHTTPSAuth(fetchAuthToken(ctx, k8sClient), apiPort)
 	Expect(err).NotTo(HaveOccurred())
 })
 
@@ -80,16 +80,3 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
-
-func fetchAuthToken() string {
-	// Fetch the Auth token
-	var sa corev1.ServiceAccount
-	Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "testsuite", Namespace: defaultNamespaceName}, &sa)).To(Succeed())
-	Expect(sa.Secrets).To(HaveLen(1))
-
-	var secret corev1.Secret
-	Expect(k8sClient.Get(ctx, types.NamespacedName{Name: sa.Secrets[0].Name, Namespace: defaultNamespaceName}, &secret)).To(Succeed())
-	Expect(secret.Data["token"]).NotTo(BeEmpty())
-
-	return string(secret.Data["token"])
-}

@@ -11,7 +11,3 @@ make docker-push
 kubectl create ns kyma-system
 
 IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
-
-## Create an api-server proxy authentication token
-kubectl create sa testsuite
-kubectl create clusterrolebinding sa-testsuite --clusterrole=cluster-admin --serviceaccount=default:testsuite
