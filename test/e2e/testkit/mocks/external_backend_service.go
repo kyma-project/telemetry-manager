@@ -28,17 +28,12 @@ func NewExternalBackendService(name, namespace string) *ExternalBackendService {
 	}
 }
 
-func (s *ExternalBackendService) OTLPEndpointURL(port int32) string {
+func (s *ExternalBackendService) OTLPEndpointURL(port int) string {
 	return fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", s.name, s.namespace, port)
 }
 
-func (s *ExternalBackendService) WithPort(name string, port int32) *ExternalBackendService {
-	s.PortRegistry.AddServicePort(name, port)
-	return s
-}
-
-func (s *ExternalBackendService) WithPortMapping(name string, port, nodePort int32) *ExternalBackendService {
-	s.PortRegistry.AddPortMapping(name, port, nodePort, 0)
+func (s *ExternalBackendService) WithPort(name string, port int) *ExternalBackendService {
+	s.PortRegistry.AddPort(name, port)
 	return s
 }
 
@@ -46,13 +41,12 @@ func (s *ExternalBackendService) K8sObject(labelOpts ...testkit.OptFunc) *corev1
 	labels := k8s.ProcessLabelOptions(labelOpts...)
 
 	ports := make([]corev1.ServicePort, 0)
-	for name, mapping := range s.PortRegistry.Ports {
+	for name, port := range s.PortRegistry.Ports {
 		ports = append(ports, corev1.ServicePort{
 			Name:       name,
 			Protocol:   corev1.ProtocolTCP,
-			Port:       mapping.ServicePort,
-			TargetPort: intstr.FromInt(int(mapping.ServicePort)),
-			NodePort:   mapping.NodePort,
+			Port:       port,
+			TargetPort: intstr.FromInt(int(port)),
 		})
 	}
 
