@@ -3,16 +3,28 @@
 package metrics
 
 import (
+	"context"
+	"crypto/tls"
+	"errors"
 	"fmt"
 	"math/rand"
-	"net/url"
-	"strconv"
+	neturl "net/url"
 	"time"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/testbed"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 )
+
+var (
+	ErrInvalidURL       = errors.New("the URL is invalid")
+	ErrExporterCreation = errors.New("metric exporter cannot be created")
+)
+
+type httpAuthProvider interface {
+	TLSConfig() *tls.Config
+	Token() string
+}
 
 type Builder struct {
 	metrics []pmetric.Metric
@@ -95,25 +107,21 @@ func AllMetrics(md pmetric.Metrics) []pmetric.Metric {
 	return metrics
 }
 
-func NewDataSender(otlpPushURL string) (testbed.MetricDataSender, error) {
-	typedURL, err := url.Parse(otlpPushURL)
+func NewHTTPExporter(url string, authProvider httpAuthProvider) (exporter Exporter, err error) {
+	urlSegments, err := neturl.Parse(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse url: %v", err)
+		return exporter, fmt.Errorf("%w: %v", ErrInvalidURL, err)
 	}
 
-	host := typedURL.Hostname()
-	port, err := strconv.Atoi(typedURL.Port())
+	e, err := otlpmetrichttp.New(context.TODO(),
+		otlpmetrichttp.WithHeaders(map[string]string{"Authorization": authProvider.Token()}),
+		otlpmetrichttp.WithTLSClientConfig(authProvider.TLSConfig()),
+		otlpmetrichttp.WithEndpoint(urlSegments.Host),
+		otlpmetrichttp.WithURLPath(urlSegments.Path),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse port: %v", err)
+		return exporter, fmt.Errorf("%w: %v", ErrExporterCreation, err)
 	}
 
-	if typedURL.Scheme == "grpc" {
-		return testbed.NewOTLPMetricDataSender(host, port), nil
-	}
-
-	if typedURL.Scheme == "https" {
-		return testbed.NewOTLPHTTPMetricDataSender(host, port), nil
-	}
-
-	return nil, fmt.Errorf("unsupported url scheme: %s", typedURL.Scheme)
+	return NewExporter(e), nil
 }
