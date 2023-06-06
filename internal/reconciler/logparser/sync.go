@@ -46,8 +46,8 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context) error {
 		}
 	}
 
-	for _, parser := range logParsers.Items {
-		if err := controllerutil.SetOwnerReference(&parser, &cm, s.Scheme()); err != nil {
+	for i := range logParsers.Items {
+		if err := controllerutil.SetOwnerReference(&logParsers.Items[i], &cm, s.Scheme()); err != nil {
 			return fmt.Errorf("unable to set owner reference for parsers configmap: %w", err)
 		}
 	}
