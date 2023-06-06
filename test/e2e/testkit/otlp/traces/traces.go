@@ -3,18 +3,31 @@
 package traces
 
 import (
+	"context"
 	crand "crypto/rand"
+	"crypto/tls"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math/rand"
-	"net/url"
-	"strconv"
+	neturl "net/url"
 	"time"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/testbed"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 )
+
+var (
+	ErrInvalidURL       = errors.New("the URL is invalid")
+	ErrExporterCreation = errors.New("metric exporter cannot be created")
+)
+
+type httpAuthProvider interface {
+	TLSConfig() *tls.Config
+	Token() string
+}
 
 func NewSpanID() pcommon.SpanID {
 	var rngSeed int64
@@ -54,25 +67,23 @@ func MakeTraces(traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attributes pc
 	return traces
 }
 
-func NewDataSender(otlpPushURL string) (testbed.TraceDataSender, error) {
-	typedURL, err := url.Parse(otlpPushURL)
+func NewHTTPSender(ctx context.Context, url string, authProvider httpAuthProvider) (exporter Exporter, err error) {
+	urlSegments, err := neturl.Parse(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse url: %v", err)
+		return exporter, fmt.Errorf("%w: %v", ErrInvalidURL, err)
 	}
 
-	host := typedURL.Hostname()
-	port, err := strconv.Atoi(typedURL.Port())
+	client := otlptracehttp.NewClient(
+		otlptracehttp.WithHeaders(map[string]string{"Authorization": authProvider.Token()}),
+		otlptracehttp.WithTLSClientConfig(authProvider.TLSConfig()),
+		otlptracehttp.WithEndpoint(urlSegments.Host),
+		otlptracehttp.WithURLPath(urlSegments.Path),
+	)
+
+	e, err := otlptrace.New(ctx, client)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse port: %v", err)
+		return exporter, fmt.Errorf("%w: %v", ErrExporterCreation, err)
 	}
 
-	if typedURL.Scheme == "grpc" {
-		return testbed.NewOTLPTraceDataSender(host, port), nil
-	}
-
-	if typedURL.Scheme == "https" {
-		return testbed.NewOTLPHTTPTraceDataSender(host, port), nil
-	}
-
-	return nil, fmt.Errorf("unsupported url scheme: %s", typedURL.Scheme)
+	return NewExporter(e), nil
 }
