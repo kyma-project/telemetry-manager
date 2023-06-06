@@ -2,11 +2,14 @@ package telemetry
 
 import (
 	"context"
+	errorsAPI "errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -17,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
@@ -60,11 +64,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	instanceIsBeingDeleted := !objectInstance.GetDeletionTimestamp().IsZero()
+
 	// check if deletionTimestamp is set, retry until it gets deleted
 	status := getStatusFromTelemetry(&objectInstance)
 
-	if !objectInstance.GetDeletionTimestamp().IsZero() &&
+	if instanceIsBeingDeleted &&
 		status.State != operatorv1alpha1.StateDeleting {
+		if r.checkAnyResourceExist(ctx, req) {
+			// there are some resources still in use wait and update status
+			return ctrl.Result{Requeue: true}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(operatorv1alpha1.StateError))
+		}
 		// if the status is not yet set to deleting, also update the status
 		return ctrl.Result{}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(operatorv1alpha1.StateDeleting))
 	}
@@ -209,4 +219,116 @@ func (r *Reconciler) serverSideApply(ctx context.Context, obj client.Object) err
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")
 	return r.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner(fieldOwner))
+}
+
+func (r *Reconciler) checkAnyResourceExist(ctx context.Context, req ctrl.Request) bool {
+	return r.checkLogParserExist(ctx, req) ||
+		r.checkLogPipelineExist(ctx, req) ||
+		r.checkMetricPipelinesExist(ctx) ||
+		r.checkTracePipelinesExist(ctx)
+}
+
+func (r *Reconciler) checkLogParserExist(ctx context.Context, req ctrl.Request) bool {
+	var parser telemetryv1alpha1.LogParser
+	if err := r.Get(ctx, req.NamespacedName, &parser); err != nil {
+		//no kind found
+		if _, ok := err.(*meta.NoKindMatchError); ok {
+			return false
+		}
+		// no instance found return false
+		if isNotFound(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *Reconciler) checkLogPipelineExist(ctx context.Context, req ctrl.Request) bool {
+	var pipeline telemetryv1alpha1.LogPipeline
+	if err := r.Get(ctx, req.NamespacedName, &pipeline); err != nil {
+		//no kind found
+		if _, ok := err.(*meta.NoKindMatchError); ok {
+			return false
+		}
+		// no instance found return false
+		if isNotFound(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *Reconciler) checkMetricPipelinesExist(ctx context.Context) bool {
+	var metricPipelineList telemetryv1alpha1.MetricPipelineList
+	if err := r.List(ctx, &metricPipelineList); err != nil {
+		//no kind found
+		if _, ok := err.(*meta.NoKindMatchError); ok {
+			return false
+		}
+	}
+
+	if len(metricPipelineList.Items) > 0 {
+		return true
+	}
+
+	return false
+}
+
+func (r *Reconciler) checkTracePipelinesExist(ctx context.Context) bool {
+	var tracePipelineList telemetryv1alpha1.TracePipelineList
+	if err := r.List(ctx, &tracePipelineList); err != nil {
+		//no kind found
+		if _, ok := err.(*meta.NoKindMatchError); ok {
+			return false
+		}
+	}
+
+	if len(tracePipelineList.Items) > 0 {
+		return true
+	}
+
+	return false
+}
+func isNotFound(err error) bool {
+	reason, code := reasonAndCodeForError(err)
+	if reason == metav1.StatusReasonNotFound {
+		return true
+	}
+	if _, ok := knownReasons[reason]; !ok && code == http.StatusNotFound {
+		return true
+	}
+	return false
+}
+
+type APIStatus interface {
+	Status() metav1.Status
+}
+
+func reasonAndCodeForError(err error) (metav1.StatusReason, int32) {
+	if status, ok := err.(APIStatus); ok || errorsAPI.As(err, &status) {
+		return status.Status().Reason, status.Status().Code
+	}
+	return metav1.StatusReasonUnknown, 0
+}
+
+var knownReasons = map[metav1.StatusReason]struct{}{
+	// metav1.StatusReasonUnknown : {}
+	metav1.StatusReasonUnauthorized:          {},
+	metav1.StatusReasonForbidden:             {},
+	metav1.StatusReasonNotFound:              {},
+	metav1.StatusReasonAlreadyExists:         {},
+	metav1.StatusReasonConflict:              {},
+	metav1.StatusReasonGone:                  {},
+	metav1.StatusReasonInvalid:               {},
+	metav1.StatusReasonServerTimeout:         {},
+	metav1.StatusReasonTimeout:               {},
+	metav1.StatusReasonTooManyRequests:       {},
+	metav1.StatusReasonBadRequest:            {},
+	metav1.StatusReasonMethodNotAllowed:      {},
+	metav1.StatusReasonNotAcceptable:         {},
+	metav1.StatusReasonRequestEntityTooLarge: {},
+	metav1.StatusReasonUnsupportedMediaType:  {},
+	metav1.StatusReasonInternalError:         {},
+	metav1.StatusReasonExpired:               {},
+	metav1.StatusReasonServiceUnavailable:    {},
 }
