@@ -13,9 +13,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/utils/slices"
 )
 
 func CreateOrUpdateClusterRoleBinding(ctx context.Context, c client.Client, desired *rbacv1.ClusterRoleBinding) error {
@@ -201,7 +201,8 @@ func CreateOrUpdateLokiLogPipeline(ctx context.Context, c client.Client, desired
 	}
 
 	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
-	mergeFinalizers(&desired.ObjectMeta, existing.ObjectMeta)
+	mergeFinalizers(desired, existing.ObjectMeta.Finalizers)
+
 	return c.Update(ctx, desired)
 }
 
@@ -278,26 +279,10 @@ func mergeMapsByPrefix(newMap map[string]string, oldMap map[string]string, prefi
 	return newMap
 }
 
-func mergeFinalizers(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
-	new.SetFinalizers(mergeSlices(new.Finalizers, old.Finalizers))
-}
-
-func mergeSlices(newSlice []string, oldSlice []string) []string {
-	if oldSlice == nil {
-		oldSlice = []string{}
+func mergeFinalizers(newObject client.Object, oldFinalizers []string) {
+	for _, v := range oldFinalizers {
+		controllerutil.AddFinalizer(newObject, v)
 	}
-
-	if newSlice == nil {
-		newSlice = []string{}
-	}
-
-	for _, v := range oldSlice {
-		if !slices.ContainsString(newSlice, v) {
-			newSlice = append(newSlice, v)
-		}
-	}
-
-	return newSlice
 }
 
 func GetOrCreateConfigMap(ctx context.Context, c client.Client, name types.NamespacedName) (corev1.ConfigMap, error) {
