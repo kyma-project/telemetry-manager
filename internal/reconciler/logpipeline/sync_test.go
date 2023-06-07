@@ -54,6 +54,7 @@ func TestSyncSectionsConfigMap(t *testing.T) {
 				Namespace: sectionsCmName.Namespace,
 			},
 		}).Build()
+	require.NoError(t, telemetryv1alpha1.AddToScheme(fakeClient.Scheme()))
 
 	t.Run("should add section during first sync", func(t *testing.T) {
 		sut := syncer{fakeClient, Config{SectionsConfigMap: sectionsCmName}}
@@ -78,10 +79,13 @@ alias foo`,
 		require.NoError(t, err)
 		require.Contains(t, sectionsCm.Data, "noop.conf")
 		require.Contains(t, sectionsCm.Data["noop.conf"], "foo")
+		require.Len(t, sectionsCm.OwnerReferences, 1)
+		require.Equal(t, pipeline.Name, sectionsCm.OwnerReferences[0].Name)
 	})
 
 	t.Run("should update section during subsequent sync", func(t *testing.T) {
 		sut := syncer{fakeClient, Config{SectionsConfigMap: sectionsCmName}}
+		require.NoError(t, telemetryv1alpha1.AddToScheme(fakeClient.Scheme()))
 
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
@@ -115,6 +119,7 @@ alias bar`
 
 	t.Run("should remove section if marked for deletion", func(t *testing.T) {
 		sut := syncer{fakeClient, Config{SectionsConfigMap: sectionsCmName}}
+		require.NoError(t, telemetryv1alpha1.AddToScheme(fakeClient.Scheme()))
 
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
@@ -196,6 +201,8 @@ alias foo`,
 		require.Contains(t, filesCm.Data["lua-script"], "here comes some lua code")
 		require.Contains(t, filesCm.Data, "js-script")
 		require.Contains(t, filesCm.Data["js-script"], "here comes some js code")
+		require.Len(t, filesCm.OwnerReferences, 1)
+		require.Equal(t, pipeline.Name, filesCm.OwnerReferences[0].Name)
 	})
 
 	t.Run("should update files during subsequent sync", func(t *testing.T) {
@@ -324,6 +331,8 @@ func TestSyncReferencedSecrets(t *testing.T) {
 		require.NoError(t, err)
 		require.Contains(t, envSecret.Data, "HTTP_DEFAULT_CREDS_PASSWORD")
 		require.Equal(t, []byte("qwerty"), envSecret.Data["HTTP_DEFAULT_CREDS_PASSWORD"])
+		require.Len(t, envSecret.OwnerReferences, 1)
+		require.Equal(t, allPipelines.Items[0].Name, envSecret.OwnerReferences[0].Name)
 	})
 
 	t.Run("should update value in env secret during subsequent sync", func(t *testing.T) {

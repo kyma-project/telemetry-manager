@@ -44,7 +44,7 @@ func TestSuccessfulParserConfigMap(t *testing.T) {
 	require.NoError(t, err)
 
 	lp := &telemetryv1alpha1.LogParser{
-		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "fooNs"},
+		ObjectMeta: metav1.ObjectMeta{Name: "foo"},
 		Spec: telemetryv1alpha1.LogParserSpec{Parser: `
 Format regex`},
 	}
@@ -60,4 +60,6 @@ Format regex`},
 	require.NoError(t, err)
 	expectedCMData := "[PARSER]\n    Name foo\n    Format regex\n\n"
 	require.Contains(t, cm.Data[parsersConfigMapKey], expectedCMData)
+	require.Len(t, cm.OwnerReferences, 1)
+	require.Equal(t, lp.Name, cm.OwnerReferences[0].Name)
 }

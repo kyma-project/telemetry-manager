@@ -125,12 +125,11 @@ func TestMakeConfigMap(t *testing.T) {
 }
 
 func TestMakeLuaConfigMap(t *testing.T) {
-	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
+	name := types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: "telemetry-system"}
 	cm := MakeLuaConfigMap(name)
 
 	require.NotNil(t, cm)
-	require.NotEqual(t, cm.Name, name.Name)
-	require.Equal(t, cm.Name, name.Name+"-luascripts")
+	require.Equal(t, cm.Name, name.Name)
 	require.Equal(t, cm.Namespace, name.Namespace)
 	require.NotEmpty(t, cm.Data["filter-script.lua"])
 }
