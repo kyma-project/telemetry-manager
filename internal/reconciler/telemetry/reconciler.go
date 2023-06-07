@@ -72,7 +72,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if instanceIsBeingDeleted &&
 		status.State != operatorv1alpha1.StateDeleting {
 		if r.checkAnyResourceExist(ctx, req) {
-			// there are some resources still in use wait and update status
+			// there are some resources still in use update status and retry
 			return ctrl.Result{Requeue: true}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(operatorv1alpha1.StateError))
 		}
 		// if the status is not yet set to deleting, also update the status
