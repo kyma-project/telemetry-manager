@@ -33,7 +33,7 @@ var (
 var _ = Describe("Metrics", func() {
 	Context("When a metricpipeline exists", Ordered, func() {
 		var (
-			urls               *urlProvider
+			urls               *mocks.URLProvider
 			mockDeploymentName = "metric-receiver"
 			mockNs             = "metric-mocks"
 		)
@@ -68,7 +68,7 @@ var _ = Describe("Metrics", func() {
 
 		It("Should be able to get metric gateway metrics endpoint", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.metrics())
+				resp, err := proxyClient.Get(urls.Metrics())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 			}, timeout, interval).Should(Succeed())
@@ -86,10 +86,10 @@ var _ = Describe("Metrics", func() {
 				gauges = append(gauges, gauge)
 				builder.WithMetric(gauge)
 			}
-			Expect(sendMetrics(context.Background(), builder.Build(), urls.otlpPush())).To(Succeed())
+			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.mockBackendExport())
+				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -149,7 +149,7 @@ var _ = Describe("Metrics", func() {
 
 	Context("When a broken metricpipeline exists", Ordered, func() {
 		var (
-			urls               *urlProvider
+			urls               *mocks.URLProvider
 			mockDeploymentName = "metric-receiver"
 			mockNs             = "metric-mocks-broken-pipeline"
 		)
@@ -197,10 +197,10 @@ var _ = Describe("Metrics", func() {
 				gauges = append(gauges, gauge)
 				builder.WithMetric(gauge)
 			}
-			Expect(sendMetrics(context.Background(), builder.Build(), urls.otlpPush())).Should(Succeed())
+			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).Should(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.mockBackendExport())
+				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -211,7 +211,7 @@ var _ = Describe("Metrics", func() {
 
 	Context("When multiple metricpipelines exist", Ordered, func() {
 		var (
-			urls                        *urlProvider
+			urls                        *mocks.URLProvider
 			primaryMockDeploymentName   = "metric-receiver"
 			auxiliaryMockDeploymentName = "metric-receiver-1"
 			mockNs                      = "metric-mocks-multi-pipeline"
@@ -258,11 +258,11 @@ var _ = Describe("Metrics", func() {
 				gauges = append(gauges, gauge)
 				builder.WithMetric(gauge)
 			}
-			Expect(sendMetrics(context.Background(), builder.Build(), urls.otlpPush())).To(Succeed())
-			Expect(sendMetrics(context.Background(), builder.Build(), urls.otlpPushAt(1))).To(Succeed())
+			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
+			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPushAt(1))).To(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.mockBackendExport())
+				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -271,7 +271,7 @@ var _ = Describe("Metrics", func() {
 			}, timeout, interval).Should(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.mockBackendExportAt(1))
+				resp, err := proxyClient.Get(urls.MockBackendExportAt(1))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -301,10 +301,10 @@ func metricPipelineShouldStayPending(pipelineName string) {
 }
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames ...string) ([]client.Object, *urlProvider) {
+func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames ...string) ([]client.Object, *mocks.URLProvider) {
 	var (
 		objs []client.Object
-		urls = newURLProvider()
+		urls = mocks.NewURLProvider()
 
 		grpcOTLPPort    = 4317
 		httpMetricsPort = 8888
@@ -338,16 +338,15 @@ func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 			metricPipeline.K8sObject(),
 		}...)
 
-		urls.pipelines[i] = map[string]string{}
-		urls.pipelines[i]["otlpPush"] = proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), "v1/metrics/", httpOTLPPort)
-		urls.pipelines[i]["mockBackendExport"] = proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort)
+		urls.SetOTLPPushAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), "v1/metrics/", httpOTLPPort), i)
+		urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), i)
 	}
 
 	// Kyma-system namespace objects.
 	metricGatewayExternalService := kitk8s.NewService("telemetry-otlp-metrics-external", kymaSystemNamespaceName).
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-metrics", httpMetricsPort)
-	urls._metrics = proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-metrics-external", "metrics", httpMetricsPort)
+	urls.SetMetrics(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-metrics-external", "metrics", httpMetricsPort))
 
 	objs = append(objs, metricGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", metricGatewayBaseName)))
 
@@ -378,35 +377,4 @@ func suffixize(name string, idx int) string {
 	}
 
 	return fmt.Sprintf("%s-%d", name, idx)
-}
-
-type urlProvider struct {
-	_metrics  string
-	pipelines map[int]map[string]string
-}
-
-func newURLProvider() *urlProvider {
-	return &urlProvider{
-		pipelines: map[int]map[string]string{},
-	}
-}
-
-func (p *urlProvider) metrics() string {
-	return p._metrics
-}
-
-func (p *urlProvider) otlpPush() string {
-	return p.otlpPushAt(0)
-}
-
-func (p *urlProvider) otlpPushAt(idx int) string {
-	return p.pipelines[idx]["otlpPush"]
-}
-
-func (p *urlProvider) mockBackendExport() string {
-	return p.mockBackendExportAt(0)
-}
-
-func (p *urlProvider) mockBackendExportAt(idx int) string {
-	return p.pipelines[idx]["mockBackendExport"]
 }
