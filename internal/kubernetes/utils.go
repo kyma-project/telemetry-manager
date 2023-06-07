@@ -13,6 +13,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 func CreateOrUpdateClusterRoleBinding(ctx context.Context, c client.Client, desired *rbacv1.ClusterRoleBinding) error {
@@ -186,6 +189,34 @@ func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.
 	return c.Update(ctx, desired)
 }
 
+func CreateOrUpdateLokiLogPipeline(ctx context.Context, c client.Client, desired *telemetryv1alpha1.LogPipeline) error {
+	var existing telemetryv1alpha1.LogPipeline
+	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+
+		return c.Create(ctx, desired)
+	}
+
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
+	mergeFinalizers(desired, existing.ObjectMeta.Finalizers)
+
+	return c.Update(ctx, desired)
+}
+
+func DeleteLokiLogPipeline(ctx context.Context, c client.Client, lokiLogPipeline *telemetryv1alpha1.LogPipeline) error {
+	err := c.Delete(ctx, lokiLogPipeline)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func mergeMetadata(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
 	new.ResourceVersion = old.ResourceVersion
 
@@ -246,6 +277,12 @@ func mergeMapsByPrefix(newMap map[string]string, oldMap map[string]string, prefi
 	}
 
 	return newMap
+}
+
+func mergeFinalizers(newObject client.Object, oldFinalizers []string) {
+	for _, v := range oldFinalizers {
+		controllerutil.AddFinalizer(newObject, v)
+	}
 }
 
 func GetOrCreateConfigMap(ctx context.Context, c client.Client, name types.NamespacedName) (corev1.ConfigMap, error) {
