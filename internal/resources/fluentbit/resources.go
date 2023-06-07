@@ -316,6 +316,7 @@ func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
     Name tail
     Alias tele-tail
     Path /var/log/containers/*.log
+    Exclude_Path /var/log/containers/*-fluent-bit-*.log
     multiline.parser docker, cri, go, python, java
     Tag tele.*
     Mem_Buf_Limit 5MB
