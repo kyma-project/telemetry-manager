@@ -243,7 +243,7 @@ stringData:
 
 ### Step 6: Rotate the Secret
 
-The Telemetry manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and the Telemetry manager detects the changes and applies the new Secret to the setup.
+The Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and the Telemetry Manager detects the changes and applies the new Secret to the setup.
 If you use a Secret owned by the [SAP BTP Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
 ## Kyma Components with tracing capabilities

@@ -5,7 +5,7 @@ Too add more APIs, use [Kubebuilder](https://book.kubebuilder.io/cronjob-tutoria
 
 ## Prerequisites
 
-- Install [kubebuilder 3.6.0](https://github.com/kubernetes-sigs/kubebuilder), which is the base framework for the Telemetry manager. Required to add new APIs.
+- Install [kubebuilder 3.6.0](https://github.com/kubernetes-sigs/kubebuilder), which is the base framework for the Telemetry Manager. Required to add new APIs.
 - Install [Golang 1.20](https://golang.org/dl/) or newer (for development and local execution).
 - Install [Docker](https://www.docker.com/get-started).
 - Install [golangci-lint](https://golangci-lint.run).

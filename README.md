@@ -34,8 +34,8 @@ See the [installation instruction](./docs/contributor/installation.md).
 
 For details, see:
 - [Available commands for building/linting/installation](./docs/contributor/development.md)
-- [Testing Strategy](./docs/contributor/testing.md)
-- [Troubleshooting and Debugging](./docs/contributor/troubleshooting.md)
+- [Testing strategy](./docs/contributor/testing.md)
+- [Troubleshooting and debugging](./docs/contributor/troubleshooting.md)
 - [Release process](./docs/contributor/releasing.md)
 - [Governance checks like linting](./docs/contributor/governance.md)
 

@@ -31,8 +31,8 @@ Unit and Env tests follow the [Go convention](https://go.dev/doc/tutorial/add-a-
 | Test suite | Testing level | Purpose |
 | --- | --- | --- |
 | Unit (located with the individual source files) | Unit | It tests the units in isolation. This test suite assesses the implementation correctness of the units of business logic. |
-| Env-tests (located with the individual source files) | Integration  (low-level) | It tests the behaviour of the Telemetry manager in integration with a Kubernetes API server replaced with a test double. This test suite assesses the integration correctness of the Telemetry manager. |
-| [E2E](/test/e2e) | Acceptance / Integration (high-level) | It tests the usability scenarios of the Telemetry manager in a cluster. This test suite assesses the functional correctness of the Telemetry manager. |
+| Env-tests (located with the individual source files) | Integration  (low-level) | It tests the behaviour of the Telemetry Manager in integration with a Kubernetes API server replaced with a test double. This test suite assesses the integration correctness of the Telemetry Manager. |
+| [E2E](/test/e2e) | Acceptance / Integration (high-level) | It tests the usability scenarios of the Telemetry Manager in a cluster. This test suite assesses the functional correctness of the Telemetry Manager. |
 ​
 ### Non-functional Tests
 ​
