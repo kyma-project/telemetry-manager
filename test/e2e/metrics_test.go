@@ -266,7 +266,8 @@ var _ = Describe("Metrics", func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveNumberOfMetrics(len(gauges)))))
+					HaveNumberOfMetrics(len(gauges)),
+					HaveMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 
 			Eventually(func(g Gomega) {
@@ -274,7 +275,8 @@ var _ = Describe("Metrics", func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveNumberOfMetrics(len(gauges)))))
+					HaveNumberOfMetrics(len(gauges)),
+					HaveMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})

@@ -267,7 +267,10 @@ var _ = Describe("Tracing", func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ConsistOfNumberOfSpans(len(spanIDs)))))
+					ConsistOfNumberOfSpans(len(spanIDs)),
+					ConsistOfSpansWithIDs(spanIDs),
+					ConsistOfSpansWithTraceID(traceID),
+					ConsistOfSpansWithAttributes(attrs))))
 			}, timeout, interval).Should(Succeed())
 
 			Eventually(func(g Gomega) {
@@ -275,7 +278,10 @@ var _ = Describe("Tracing", func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ConsistOfNumberOfSpans(len(spanIDs)))))
+					ConsistOfNumberOfSpans(len(spanIDs)),
+					ConsistOfSpansWithIDs(spanIDs),
+					ConsistOfSpansWithTraceID(traceID),
+					ConsistOfSpansWithAttributes(attrs))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
