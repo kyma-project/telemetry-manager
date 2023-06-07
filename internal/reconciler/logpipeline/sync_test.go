@@ -80,6 +80,7 @@ alias foo`,
 		require.Contains(t, sectionsCm.Data, "noop.conf")
 		require.Contains(t, sectionsCm.Data["noop.conf"], "foo")
 		require.Len(t, sectionsCm.OwnerReferences, 1)
+		require.Equal(t, pipeline.Name, sectionsCm.OwnerReferences[0].Name)
 	})
 
 	t.Run("should update section during subsequent sync", func(t *testing.T) {
@@ -201,6 +202,7 @@ alias foo`,
 		require.Contains(t, filesCm.Data, "js-script")
 		require.Contains(t, filesCm.Data["js-script"], "here comes some js code")
 		require.Len(t, filesCm.OwnerReferences, 1)
+		require.Equal(t, pipeline.Name, filesCm.OwnerReferences[0].Name)
 	})
 
 	t.Run("should update files during subsequent sync", func(t *testing.T) {
@@ -330,6 +332,7 @@ func TestSyncReferencedSecrets(t *testing.T) {
 		require.Contains(t, envSecret.Data, "HTTP_DEFAULT_CREDS_PASSWORD")
 		require.Equal(t, []byte("qwerty"), envSecret.Data["HTTP_DEFAULT_CREDS_PASSWORD"])
 		require.Len(t, envSecret.OwnerReferences, 1)
+		require.Equal(t, allPipelines.Items[0].Name, envSecret.OwnerReferences[0].Name)
 	})
 
 	t.Run("should update value in env secret during subsequent sync", func(t *testing.T) {

@@ -61,4 +61,5 @@ Format regex`},
 	expectedCMData := "[PARSER]\n    Name foo\n    Format regex\n\n"
 	require.Contains(t, cm.Data[parsersConfigMapKey], expectedCMData)
 	require.Len(t, cm.OwnerReferences, 1)
+	require.Equal(t, lp.Name, cm.OwnerReferences[0].Name)
 }
