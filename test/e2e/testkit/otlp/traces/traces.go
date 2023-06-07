@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	ErrInvalidURL       = errors.New("the URL is invalid")
+	ErrInvalidURL       = errors.New("the ProxyURLForService is invalid")
 	ErrExporterCreation = errors.New("metric exporter cannot be created")
 )
 
@@ -73,12 +73,17 @@ func NewHTTPSender(ctx context.Context, url string, authProvider httpAuthProvide
 		return exporter, fmt.Errorf("%w: %v", ErrInvalidURL, err)
 	}
 
-	client := otlptracehttp.NewClient(
-		otlptracehttp.WithHeaders(map[string]string{"Authorization": authProvider.Token()}),
+	opts := []otlptracehttp.Option{
 		otlptracehttp.WithTLSClientConfig(authProvider.TLSConfig()),
 		otlptracehttp.WithEndpoint(urlSegments.Host),
 		otlptracehttp.WithURLPath(urlSegments.Path),
-	)
+	}
+
+	if len(authProvider.Token()) > 0 {
+		opts = append(opts, otlptracehttp.WithHeaders(map[string]string{"Authorization": authProvider.Token()}))
+	}
+
+	client := otlptracehttp.NewClient(opts...)
 
 	e, err := otlptrace.New(ctx, client)
 	if err != nil {

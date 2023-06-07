@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	ErrInvalidURL       = errors.New("the URL is invalid")
+	ErrInvalidURL       = errors.New("the ProxyURLForService is invalid")
 	ErrExporterCreation = errors.New("metric exporter cannot be created")
 )
 
@@ -113,12 +113,16 @@ func NewHTTPExporter(url string, authProvider httpAuthProvider) (exporter Export
 		return exporter, fmt.Errorf("%w: %v", ErrInvalidURL, err)
 	}
 
-	e, err := otlpmetrichttp.New(context.TODO(),
-		otlpmetrichttp.WithHeaders(map[string]string{"Authorization": authProvider.Token()}),
-		otlpmetrichttp.WithTLSClientConfig(authProvider.TLSConfig()),
+	opts := []otlpmetrichttp.Option{otlpmetrichttp.WithTLSClientConfig(authProvider.TLSConfig()),
 		otlpmetrichttp.WithEndpoint(urlSegments.Host),
 		otlpmetrichttp.WithURLPath(urlSegments.Path),
-	)
+	}
+
+	if len(authProvider.Token()) > 0 {
+		opts = append(opts, otlpmetrichttp.WithHeaders(map[string]string{"Authorization": authProvider.Token()}))
+	}
+
+	e, err := otlpmetrichttp.New(context.TODO(), opts...)
 	if err != nil {
 		return exporter, fmt.Errorf("%w: %v", ErrExporterCreation, err)
 	}

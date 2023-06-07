@@ -68,7 +68,7 @@ var _ = Describe("Metrics", func() {
 
 		It("Should be able to get metric gateway metrics endpoint", func() {
 			Eventually(func(g Gomega) {
-				resp, err := httpsAuthProvider.Get(urls.metrics())
+				resp, err := proxyClient.Get(urls.metrics())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 			}, timeout, interval).Should(Succeed())
@@ -89,7 +89,7 @@ var _ = Describe("Metrics", func() {
 			Expect(sendMetrics(context.Background(), builder.Build(), urls.otlpPush())).To(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := httpsAuthProvider.Get(urls.mockBackendExport())
+				resp, err := proxyClient.Get(urls.mockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -200,7 +200,7 @@ var _ = Describe("Metrics", func() {
 			Expect(sendMetrics(context.Background(), builder.Build(), urls.otlpPush())).Should(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := httpsAuthProvider.Get(urls.mockBackendExport())
+				resp, err := proxyClient.Get(urls.mockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -262,7 +262,7 @@ var _ = Describe("Metrics", func() {
 			Expect(sendMetrics(context.Background(), builder.Build(), urls.otlpPushAt(1))).To(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := httpsAuthProvider.Get(urls.mockBackendExport())
+				resp, err := proxyClient.Get(urls.mockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -270,7 +270,7 @@ var _ = Describe("Metrics", func() {
 			}, timeout, interval).Should(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := httpsAuthProvider.Get(urls.mockBackendExportAt(1))
+				resp, err := proxyClient.Get(urls.mockBackendExportAt(1))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -337,15 +337,15 @@ func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 		}...)
 
 		urls.pipelines[i] = map[string]string{}
-		urls.pipelines[i]["otlpPush"] = httpsAuthProvider.URL(mocksNamespace.Name(), mockBackend.Name(), "v1/metrics/", httpOTLPPort)
-		urls.pipelines[i]["mockBackendExport"] = httpsAuthProvider.URL(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort)
+		urls.pipelines[i]["otlpPush"] = proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), "v1/metrics/", httpOTLPPort)
+		urls.pipelines[i]["mockBackendExport"] = proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort)
 	}
 
 	// Kyma-system namespace objects.
 	metricGatewayExternalService := kitk8s.NewService("telemetry-otlp-metrics-external", kymaSystemNamespaceName).
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-metrics", httpMetricsPort)
-	urls._metrics = httpsAuthProvider.URL(kymaSystemNamespaceName, "telemetry-otlp-metrics-external", "metrics", httpMetricsPort)
+	urls._metrics = proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-metrics-external", "metrics", httpMetricsPort)
 
 	objs = append(objs, metricGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", metricGatewayBaseName)))
 
@@ -363,7 +363,7 @@ func makeBrokenMetricPipeline(name string) []client.Object {
 }
 
 func sendMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL string) error {
-	sender, err := kitmetrics.NewHTTPExporter(otlpPushURL, httpsAuthProvider)
+	sender, err := kitmetrics.NewHTTPExporter(otlpPushURL, proxyClient)
 	if err != nil {
 		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)
 	}

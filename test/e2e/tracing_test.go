@@ -69,7 +69,7 @@ var _ = Describe("Tracing", func() {
 
 		It("Should be able to get trace collector metrics endpoint", func() {
 			Eventually(func(g Gomega) {
-				resp, err := httpsAuthProvider.Get(urls.metrics())
+				resp, err := proxyClient.Get(urls.metrics())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 			}, timeout, interval).Should(Succeed())
@@ -95,7 +95,7 @@ var _ = Describe("Tracing", func() {
 			Expect(sendTraces(context.Background(), traces, urls.otlpPush())).To(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := httpsAuthProvider.Get(urls.mockBackendExport())
+				resp, err := proxyClient.Get(urls.mockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -206,7 +206,7 @@ var _ = Describe("Tracing", func() {
 			Expect(sendTraces(ctx, traces, urls.otlpPush())).To(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := httpsAuthProvider.Get(urls.mockBackendExport())
+				resp, err := proxyClient.Get(urls.mockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -263,7 +263,7 @@ var _ = Describe("Tracing", func() {
 			Expect(sendTraces(context.Background(), traces, urls.otlpPushAt(1))).To(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := httpsAuthProvider.Get(urls.mockBackendExport())
+				resp, err := proxyClient.Get(urls.mockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -271,7 +271,7 @@ var _ = Describe("Tracing", func() {
 			}, timeout, interval).Should(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := httpsAuthProvider.Get(urls.mockBackendExportAt(1))
+				resp, err := proxyClient.Get(urls.mockBackendExportAt(1))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -338,15 +338,15 @@ func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 		}...)
 
 		urls.pipelines[i] = map[string]string{}
-		urls.pipelines[i]["otlpPush"] = httpsAuthProvider.URL(mocksNamespace.Name(), mockBackend.Name(), "v1/traces/", httpOTLPPort)
-		urls.pipelines[i]["mockBackendExport"] = httpsAuthProvider.URL(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort)
+		urls.pipelines[i]["otlpPush"] = proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), "v1/traces/", httpOTLPPort)
+		urls.pipelines[i]["mockBackendExport"] = proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort)
 	}
 
 	// Kyma-system namespace objects.
 	traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kymaSystemNamespaceName).
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-metrics", httpMetricsPort)
-	urls._metrics = httpsAuthProvider.URL(kymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", httpMetricsPort)
+	urls._metrics = proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", httpMetricsPort)
 
 	objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", traceCollectorBaseName)))
 
@@ -364,7 +364,7 @@ func makeBrokenTracePipeline(name string) []client.Object {
 }
 
 func sendTraces(ctx context.Context, traces ptrace.Traces, otlpPushURL string) error {
-	sender, err := kittraces.NewHTTPSender(ctx, otlpPushURL, httpsAuthProvider)
+	sender, err := kittraces.NewHTTPSender(ctx, otlpPushURL, proxyClient)
 	if err != nil {
 		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)
 	}

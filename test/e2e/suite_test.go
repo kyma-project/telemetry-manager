@@ -21,15 +21,16 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/apiserver"
 )
 
 var (
-	ctx               context.Context
-	cancel            context.CancelFunc
-	k8sClient         client.Client
-	testEnv           *envtest.Environment
-	httpsAuthProvider httpsAuth
-	k8sObjects        = []client.Object{k8s.NewTelemetry("default").K8sObject()}
+	ctx         context.Context
+	cancel      context.CancelFunc
+	k8sClient   client.Client
+	proxyClient *apiserver.ProxyClient
+	testEnv     *envtest.Environment
+	k8sObjects  = []client.Object{k8s.NewTelemetry("default").K8sObject()}
 )
 
 func TestE2e(t *testing.T) {
@@ -60,9 +61,7 @@ var _ = BeforeSuite(func() {
 
 	Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).To(Succeed())
 
-	// Fetch the authentication-related resources.
-	deployAuthToken(ctx, k8sClient)
-	httpsAuthProvider, err = newHTTPSAuth(fetchAuthToken(ctx, k8sClient), apiPort)
+	proxyClient, err = apiserver.NewProxyClient(testEnv.Config)
 	Expect(err).NotTo(HaveOccurred())
 })
 
