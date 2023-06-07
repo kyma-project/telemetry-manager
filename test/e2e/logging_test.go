@@ -3,12 +3,17 @@
 package e2e
 
 import (
+	"time"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
 
@@ -88,10 +93,7 @@ var _ = Describe("Logging", func() {
 					var lokiLogPipeline telemetryv1alpha1.LogPipeline
 					key := types.NamespacedName{Name: "loki"}
 					err := k8sClient.Get(ctx, key, &lokiLogPipeline)
-					if apierrors.IsNotFound(err) {
-						return true
-					}
-					return false
+					return apierrors.IsNotFound(err)
 				}, 2*time.Minute, interval).Should(BeTrue())
 			})
 		})
