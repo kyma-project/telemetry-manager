@@ -83,19 +83,20 @@ var _ = Describe("Logging", func() {
 		})
 
 		It("Should delete loki logpipeline", func() {
-			By("Deleting loki service")
-			lokiService := makeLokiService()
-			Expect(kitk8s.DeleteObjects(ctx, k8sClient, lokiService)).Should(Succeed())
+			By("Deleting loki service", func() {
+				lokiService := makeLokiService()
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, lokiService)).Should(Succeed())
 
-			Eventually(func(g Gomega) bool {
-				var lokiLogPipeline telemetryv1alpha1.LogPipeline
-				key := types.NamespacedName{Name: "loki"}
-				err := k8sClient.Get(ctx, key, &lokiLogPipeline)
-				if apierrors.IsNotFound(err) {
-					return true
-				}
-				return false
-			}, 2*time.Minute, interval).Should(BeTrue())
+				Eventually(func(g Gomega) bool {
+					var lokiLogPipeline telemetryv1alpha1.LogPipeline
+					key := types.NamespacedName{Name: "loki"}
+					err := k8sClient.Get(ctx, key, &lokiLogPipeline)
+					if apierrors.IsNotFound(err) {
+						return true
+					}
+					return false
+				}, 2*time.Minute, interval).Should(BeTrue())
+			})
 		})
 	})
 })
