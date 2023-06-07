@@ -157,6 +157,9 @@ var _ = Describe("Telemetry-module", func() {
 					var telemetry v1alpha1.Telemetry
 					g.Expect(k8sClient.Get(ctx, resourceKey, &telemetry)).Should(BeNil())
 					g.Expect(telemetry.Status).Should(Equal(v1alpha1.StateDeleting))
+
+					k8sObjects := makeTelemetryTestK8sObjects()
+					g.Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 				}, timeout, interval).Should(Succeed())
 			})
 		})
