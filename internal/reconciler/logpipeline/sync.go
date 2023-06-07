@@ -1,12 +1,12 @@
 package logpipeline
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
@@ -46,13 +46,9 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 		return fmt.Errorf("unable to get section configmap: %w", err)
 	}
 
-	changed := false
 	cmKey := pipeline.Name + ".conf"
 	if pipeline.DeletionTimestamp != nil {
-		if cm.Data != nil {
-			delete(cm.Data, cmKey)
-			changed = true
-		}
+		delete(cm.Data, cmKey)
 	} else {
 		newConfig, err := builder.BuildFluentBitConfig(pipeline, s.config.PipelineDefaults)
 		if err != nil {
@@ -60,15 +56,13 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 		}
 		if cm.Data == nil {
 			cm.Data = map[string]string{cmKey: newConfig}
-			changed = true
 		} else if oldConfig, hasKey := cm.Data[cmKey]; !hasKey || oldConfig != newConfig {
 			cm.Data[cmKey] = newConfig
-			changed = true
 		}
-	}
 
-	if !changed {
-		return nil
+		if err = controllerutil.SetOwnerReference(pipeline, &cm, s.Scheme()); err != nil {
+			return fmt.Errorf("unable to set owner reference for section configmap: %w", err)
+		}
 	}
 
 	if err = s.Update(ctx, &cm); err != nil {
@@ -83,26 +77,22 @@ func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1al
 		return fmt.Errorf("unable to get files configmap: %w", err)
 	}
 
-	changed := false
 	for _, file := range pipeline.Spec.Files {
 		if pipeline.DeletionTimestamp != nil {
-			if _, hasKey := cm.Data[file.Name]; hasKey {
-				delete(cm.Data, file.Name)
-				changed = true
-			}
+			delete(cm.Data, file.Name)
 		} else {
 			if cm.Data == nil {
 				cm.Data = map[string]string{file.Name: file.Content}
-				changed = true
 			} else if oldContent, hasKey := cm.Data[file.Name]; !hasKey || oldContent != file.Content {
 				cm.Data[file.Name] = file.Content
-				changed = true
 			}
 		}
 	}
 
-	if !changed {
-		return nil
+	if pipeline.DeletionTimestamp.IsZero() {
+		if err = controllerutil.SetOwnerReference(pipeline, &cm, s.Scheme()); err != nil {
+			return fmt.Errorf("unable to set owner reference for files configmap: %w", err)
+		}
 	}
 
 	if err = s.Update(ctx, &cm); err != nil {
@@ -121,29 +111,29 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 	newSecret.Data = make(map[string][]byte)
 
 	for i := range logPipelines.Items {
-		if !logPipelines.Items[i].DeletionTimestamp.IsZero() {
+		logPipeline := logPipelines.Items[i]
+		if !logPipeline.DeletionTimestamp.IsZero() {
 			continue
 		}
 
-		for _, ref := range logPipelines.Items[i].GetSecretRefs() {
-			targetKey := envvar.FormatEnvVarName(logPipelines.Items[i].Name, ref.Namespace, ref.Name, ref.Key)
+		for _, ref := range logPipeline.GetSecretRefs() {
+			targetKey := envvar.FormatEnvVarName(logPipeline.Name, ref.Namespace, ref.Name, ref.Key)
 			if copyErr := s.copySecretData(ctx, ref, targetKey, newSecret.Data); copyErr != nil {
 				return fmt.Errorf("unable to copy secret data: %w", copyErr)
 			}
 		}
 
-		for _, ref := range logPipelines.Items[i].Spec.Variables {
+		for _, ref := range logPipeline.Spec.Variables {
 			if ref.ValueFrom.IsSecretKeyRef() {
 				if copyErr := s.copySecretData(ctx, *ref.ValueFrom.SecretKeyRef, ref.Name, newSecret.Data); copyErr != nil {
 					return fmt.Errorf("unable to copy secret data: %w", copyErr)
 				}
 			}
 		}
-	}
 
-	changed := secretDataEqual(oldSecret.Data, newSecret.Data)
-	if !changed {
-		return nil
+		if err = controllerutil.SetOwnerReference(&logPipeline, &newSecret, s.Scheme()); err != nil {
+			return fmt.Errorf("unable to set owner reference for files configmap: %w", err)
+		}
 	}
 
 	if err = s.Update(ctx, &newSecret); err != nil {
@@ -167,16 +157,4 @@ func (s *syncer) copySecretData(ctx context.Context, sourceRef telemetryv1alpha1
 		sourceRef.Key,
 		sourceRef.Name,
 		sourceRef.Namespace)
-}
-
-func secretDataEqual(oldSecret, newSecret map[string][]byte) bool {
-	if len(newSecret) != len(oldSecret) {
-		return true
-	}
-	for k, newSecretVal := range newSecret {
-		if oldSecretVal, ok := oldSecret[k]; !ok || !bytes.Equal(newSecretVal, oldSecretVal) {
-			return true
-		}
-	}
-	return false
 }
