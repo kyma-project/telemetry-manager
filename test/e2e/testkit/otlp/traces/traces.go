@@ -32,7 +32,7 @@ type httpAuthProvider interface {
 func NewSpanID() pcommon.SpanID {
 	var rngSeed int64
 	_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
-	randSource := rand.New(rand.NewSource(rngSeed))
+	randSource := rand.New(rand.NewSource(rngSeed)) //nolint:gosec // random number generator is sufficient.
 	sid := pcommon.SpanID{}
 	_, _ = randSource.Read(sid[:])
 	return sid
@@ -41,9 +41,10 @@ func NewSpanID() pcommon.SpanID {
 func NewTraceID() pcommon.TraceID {
 	var rngSeed int64
 	_ = binary.Read(crand.Reader, binary.LittleEndian, &rngSeed)
-	randSource := rand.New(rand.NewSource(rngSeed))
+	randSource := rand.New(rand.NewSource(rngSeed)) //nolint:gosec // random number generator is sufficient.
 	tid := pcommon.TraceID{}
 	_, _ = randSource.Read(tid[:])
+
 	return tid
 }
 

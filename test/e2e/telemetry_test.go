@@ -3,12 +3,13 @@
 package e2e
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var (
@@ -21,10 +22,10 @@ var (
 
 var _ = Describe("Telemetry-module", func() {
 	Context("After creating telemetry resources", Ordered, func() {
-		It("Should have ValidatingWebhookkConfiguration", func() {
+		It("Should have ValidatingWebhookConfiguration", func() {
 			Eventually(func(g Gomega) {
 				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
-				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(BeNil())
+				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 
 				g.Expect(validatingWebhookConfiguration.OwnerReferences).Should(HaveLen(1))
 				g.Expect(validatingWebhookConfiguration.OwnerReferences[0].Name).Should(Equal("default"))
@@ -61,7 +62,7 @@ var _ = Describe("Telemetry-module", func() {
 		It("Should have secret with webhook CA bundle", func() {
 			Eventually(func(g Gomega) {
 				var secret corev1.Secret
-				g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(BeNil())
+				g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
 				g.Expect(secret.OwnerReferences).Should(HaveLen(1))
 				g.Expect(secret.OwnerReferences[0].Name).Should(Equal("default"))
 				g.Expect(secret.OwnerReferences[0].Kind).Should(Equal("Telemetry"))
@@ -71,39 +72,39 @@ var _ = Describe("Telemetry-module", func() {
 		})
 
 		It("Should reconcile ValidatingWebhookConfiguration", func() {
-			var oldUid types.UID
+			var oldUID types.UID
 			By("Deleting ValidatingWebhookConfiguration", func() {
 				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
-				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(BeNil())
-				oldUid = validatingWebhookConfiguration.UID
+				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+				oldUID = validatingWebhookConfiguration.UID
 				Expect(k8sClient.Delete(ctx, &validatingWebhookConfiguration)).Should(Succeed())
 			})
 
 			Eventually(func(g Gomega) {
 				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
 				Eventually(func(g Gomega) {
-					g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(BeNil())
+					g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 					g.Expect(validatingWebhookConfiguration.OwnerReferences).Should(HaveLen(1))
-					g.Expect(validatingWebhookConfiguration.UID).ShouldNot(Equal(oldUid))
+					g.Expect(validatingWebhookConfiguration.UID).ShouldNot(Equal(oldUID))
 				}, timeout, interval).Should(Succeed())
 			})
 		})
 
 		It("Should reconcile CA bundle secret", func() {
-			var oldUid types.UID
+			var oldUID types.UID
 			By("Deleting secret", func() {
 				var secret corev1.Secret
-				Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(BeNil())
-				oldUid = secret.UID
+				Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
+				oldUID = secret.UID
 				Expect(k8sClient.Delete(ctx, &secret)).Should(Succeed())
 			})
 
 			Eventually(func(g Gomega) {
 				Eventually(func(g Gomega) {
 					var secret corev1.Secret
-					g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(BeNil())
+					g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
 					g.Expect(secret.OwnerReferences).Should(HaveLen(1))
-					g.Expect(secret.UID).ShouldNot(Equal(oldUid))
+					g.Expect(secret.UID).ShouldNot(Equal(oldUID))
 				}, timeout, interval).Should(Succeed())
 			})
 		})

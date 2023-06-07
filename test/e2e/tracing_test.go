@@ -8,10 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"k8s.io/apimachinery/pkg/types"
@@ -19,10 +15,14 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	kittrace "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 	kittraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/traces"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var (

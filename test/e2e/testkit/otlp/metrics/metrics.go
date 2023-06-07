@@ -73,7 +73,7 @@ func NewGauge(opts ...MetricOption) pmetric.Metric {
 		pt := pts.AppendEmpty()
 		pt.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 		pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-		pt.SetDoubleValue(rand.Float64())
+		pt.SetDoubleValue(rand.Float64()) //nolint:gosec // random number generator is sufficient.
 
 		for i := 0; i < totalAttributes; i++ {
 			k := fmt.Sprintf("pt-label-key-%d", i)

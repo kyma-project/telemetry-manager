@@ -5,10 +5,11 @@ package apiserver
 import (
 	"crypto/tls"
 	"fmt"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/transport"
 	"net/http"
 	"strings"
+
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/transport"
 )
 
 const (
@@ -33,7 +34,7 @@ func NewProxyClient(config *rest.Config) (*ProxyClient, error) {
 	var tlsClientConfig *tls.Config
 	tlsClientConfig, err = transport.TLSConfigFor(transportConfig)
 	if tlsClientConfig == nil || err != nil {
-		tlsClientConfig = &tls.Config{}
+		tlsClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	}
 	tlsClientConfig.InsecureSkipVerify = true
 

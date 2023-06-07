@@ -3,15 +3,17 @@
 package e2e
 
 import (
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
+	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var (
@@ -35,7 +37,7 @@ var _ = Describe("Logging", func() {
 				var endPoint corev1.Endpoints
 				key := types.NamespacedName{Name: telemetryWebhookEndpoint, Namespace: kymaSystemNamespaceName}
 				g.Expect(k8sClient.Get(ctx, key, &endPoint)).To(Succeed())
-				g.Expect(len(endPoint.Subsets)).NotTo(BeZero())
+				g.Expect(endPoint.Subsets).NotTo(BeEmpty())
 			}, timeout, interval).Should(Succeed())
 		})
 

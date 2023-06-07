@@ -3,8 +3,9 @@
 package log
 
 import (
-	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 type Pipeline struct {

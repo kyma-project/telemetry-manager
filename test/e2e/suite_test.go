@@ -6,8 +6,6 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -17,11 +15,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/apiserver"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var (
@@ -30,7 +29,7 @@ var (
 	k8sClient   client.Client
 	proxyClient *apiserver.ProxyClient
 	testEnv     *envtest.Environment
-	k8sObjects  = []client.Object{k8s.NewTelemetry("default").K8sObject()}
+	k8sObjects  = []client.Object{kitk8s.NewTelemetry("default").K8sObject()}
 )
 
 func TestE2e(t *testing.T) {
@@ -69,9 +68,9 @@ var _ = AfterSuite(func() {
 	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 	Eventually(func(g Gomega) {
 		var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
-		g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(BeNil())
+		g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 		var secret corev1.Secret
-		g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(BeNil())
+		g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
 	}, timeout, interval).ShouldNot(Succeed())
 
 	cancel()
