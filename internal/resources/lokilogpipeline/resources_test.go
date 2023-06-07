@@ -10,11 +10,11 @@ func TestMakeLokiLogPipeline(t *testing.T) {
 	lokiLogPipeline := MakeLokiLogPipeline()
 
 	require.NotNil(t, lokiLogPipeline)
-	require.Equal(t, lokiLogPipeline.APIVersion, "telemetry.kyma-project.io/v1alpha1")
-	require.Equal(t, lokiLogPipeline.Kind, "LogPipeline")
-	require.Equal(t, lokiLogPipeline.Name, "loki")
-	require.Equal(t, lokiLogPipeline.Spec.Input.Application.Namespaces.System, true)
-	require.Equal(t, lokiLogPipeline.Spec.Output.Loki.URL.Value, "http://logging-loki:3100/loki/api/v1/push")
-	require.Equal(t, lokiLogPipeline.Spec.Output.Loki.Labels, map[string]string{"job": "telemetry-fluent-bit"})
-	require.Equal(t, lokiLogPipeline.Spec.Output.Loki.RemoveKeys, []string{"kubernetes", "stream"})
+	require.Equal(t, "telemetry.kyma-project.io/v1alpha1", lokiLogPipeline.APIVersion)
+	require.Equal(t, "LogPipeline", lokiLogPipeline.Kind)
+	require.Equal(t, "loki", lokiLogPipeline.Name)
+	require.Equal(t, true, lokiLogPipeline.Spec.Input.Application.Namespaces.System)
+	require.Equal(t, "http://logging-loki:3100/loki/api/v1/push", lokiLogPipeline.Spec.Output.Loki.URL.Value)
+	require.Equal(t, map[string]string{"job": "telemetry-fluent-bit"}, lokiLogPipeline.Spec.Output.Loki.Labels)
+	require.Equal(t, []string{"kubernetes", "stream"}, lokiLogPipeline.Spec.Output.Loki.RemoveKeys)
 }
