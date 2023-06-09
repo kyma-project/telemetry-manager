@@ -235,11 +235,7 @@ func (r *Reconciler) checkLogParserExist(ctx context.Context) bool {
 		}
 		return true
 	}
-	if len(parserList.Items) > 0 {
-		return true
-	}
-
-	return false
+	return len(parserList.Items) > 0
 }
 
 func (r *Reconciler) checkLogPipelineExist(ctx context.Context) bool {
@@ -251,11 +247,7 @@ func (r *Reconciler) checkLogPipelineExist(ctx context.Context) bool {
 		}
 		return true
 	}
-	if len(pipelineList.Items) > 0 {
-		return true
-	}
-
-	return false
+	return len(pipelineList.Items) > 0
 }
 
 func (r *Reconciler) checkMetricPipelinesExist(ctx context.Context) bool {
@@ -268,11 +260,7 @@ func (r *Reconciler) checkMetricPipelinesExist(ctx context.Context) bool {
 		return true
 	}
 
-	if len(metricPipelineList.Items) > 0 {
-		return true
-	}
-
-	return false
+	return len(metricPipelineList.Items) > 0
 }
 
 func (r *Reconciler) checkTracePipelinesExist(ctx context.Context) bool {
@@ -285,9 +273,5 @@ func (r *Reconciler) checkTracePipelinesExist(ctx context.Context) bool {
 		return true
 	}
 
-	if len(tracePipelineList.Items) > 0 {
-		return true
-	}
-
-	return false
+	return len(tracePipelineList.Items) > 0
 }
