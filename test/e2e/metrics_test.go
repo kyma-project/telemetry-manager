@@ -259,7 +259,6 @@ var _ = Describe("Metrics", func() {
 				builder.WithMetric(gauge)
 			}
 			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
-			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPushAt(1))).To(Succeed())
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
@@ -338,9 +337,10 @@ func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 			metricPipeline.K8sObject(),
 		}...)
 
-		urls.SetOTLPPushAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), "v1/metrics/", httpOTLPPort), i)
 		urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), i)
 	}
+
+	urls.SetOTLPPush(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", httpOTLPPort))
 
 	// Kyma-system namespace objects.
 	metricGatewayExternalService := kitk8s.NewService("telemetry-otlp-metrics-external", kymaSystemNamespaceName).
