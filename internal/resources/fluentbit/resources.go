@@ -316,6 +316,7 @@ func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
     Name tail
     Alias tele-tail
     Path /var/log/containers/*.log
+    Exclude_Path /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log
     multiline.parser docker, cri, go, python, java
     Tag tele.*
     Mem_Buf_Limit 5MB
@@ -367,10 +368,10 @@ func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 	}
 }
 
-func MakeDynamicParserConfigmap(name types.NamespacedName) *corev1.ConfigMap {
+func MakeParserConfigmap(name types.NamespacedName) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-parsers", name.Name),
+			Name:      name.Name,
 			Namespace: name.Namespace,
 			Labels:    labels(),
 		},
@@ -413,7 +414,7 @@ end
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-luascripts", name.Name),
+			Name:      name.Name,
 			Namespace: name.Namespace,
 			Labels:    labels(),
 		},

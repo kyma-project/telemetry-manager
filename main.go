@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -31,6 +32,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -57,6 +59,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	tracepipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	lokilogpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/lokilogpipeline"
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
@@ -122,9 +125,9 @@ var (
 )
 
 const (
-	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.77.0-8115210c"
+	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.79.0-0065b2a5"
 	overrideConfigMapName  = "telemetry-override-config"
-	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.2-95ba1b02"
+	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.2-0065b2a5"
 	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20230503-c10c571f"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
@@ -353,24 +356,42 @@ func main() {
 		os.Exit(1)
 	}
 
-	if enableWebhook {
-		// Create own client since manager might not be started while using
-		clientOptions := client.Options{
-			Scheme: scheme,
-		}
-		k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
-		if err != nil {
-			setupLog.Error(err, "Failed to create client")
-			os.Exit(1)
-		}
-
-		ctx := context.Background()
-		if err = webhookcert.EnsureCertificate(ctx, k8sClient, webhookConfig.CertConfig); err != nil {
-			setupLog.Error(err, "Failed to patch ValidatingWebhookConfigurations")
-			os.Exit(1)
-		}
-		setupLog.Info("Updated ValidatingWebhookConfiguration")
+	// Create own client because manager is not yet started
+	clientOptions := client.Options{
+		Scheme: scheme,
 	}
+	k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
+	if err != nil {
+		setupLog.Error(err, "Failed to create client")
+		os.Exit(1)
+	}
+
+	if enableWebhook {
+		if err = webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); err != nil {
+			setupLog.Error(err, "Failed to ensure webhook cert")
+			os.Exit(1)
+		}
+		setupLog.Info("Ensured webhook cert")
+
+		// Temporary solution for non-modularized telemetry operator
+		go func() {
+			for range time.Tick(1 * time.Hour) {
+				if ensureErr := webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); ensureErr != nil {
+					setupLog.Error(ensureErr, "Failed to ensure webhook cert")
+				}
+			}
+		}()
+	}
+
+	// Ensure reconciliation of the optional Loki LogPipeline
+	go func() {
+		for {
+			if err := handleLokiLogPipeline(context.Background(), k8sClient); err != nil {
+				setupLog.Error(err, "Failed to handle Loki LogPipeline")
+			}
+			time.Sleep(1 * time.Minute)
+		}
+	}()
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "Failed to run manager")
@@ -411,6 +432,8 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 	config := logpipelinereconciler.Config{
 		SectionsConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
 		FilesConfigMap:    types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
+		LuaConfigMap:      types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: telemetryNamespace},
+		ParsersConfigMap:  types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
 		EnvSecret:         types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: telemetryNamespace},
 		DaemonSet:         types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
@@ -545,4 +568,28 @@ func parsePlugins(s string) []string {
 
 func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
 	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, webhookConfig))
+}
+
+func handleLokiLogPipeline(ctx context.Context, client client.Client) error {
+	lokiLogPipeline := lokilogpipelineresources.MakeLokiLogPipeline()
+
+	var lokiService corev1.Service
+	err := client.Get(ctx, types.NamespacedName{Name: "logging-loki", Namespace: "kyma-system"}, &lokiService)
+	if err != nil {
+		// If Loki service doesn't exist in the cluster, we shouldn't deploy Loki LogPipeline
+		// Instead, we should delete the Loki LogPipeline if it already exists from the logging component (old helm chart)
+		if apierrors.IsNotFound(err) {
+			if err := kubernetes.DeleteLokiLogPipeline(ctx, client, lokiLogPipeline); err != nil {
+				return fmt.Errorf("failed to delete Loki LogPipeline: %w", err)
+			}
+			return nil
+		}
+		return err
+	}
+
+	if err := kubernetes.CreateOrUpdateLokiLogPipeline(ctx, client, lokiLogPipeline); err != nil {
+		return fmt.Errorf("failed to create Loki LogPipeline: %w", err)
+	}
+
+	return nil
 }

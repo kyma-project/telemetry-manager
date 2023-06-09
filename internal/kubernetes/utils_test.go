@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes/mocks"
 )
 
@@ -188,4 +189,84 @@ func TestMergeOwnerReference(t *testing.T) {
 
 	merged := mergeOwnerReferences(newOwners, oldOwners)
 	require.Equal(t, 3, len(merged))
+}
+
+func TestMergeFinalizers(t *testing.T) {
+	newObject := v1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "some-deployment",
+			Finalizers: []string{"FINALIZER_1", "FINALIZER_2"},
+		},
+		Spec:   v1.DeploymentSpec{},
+		Status: v1.DeploymentStatus{},
+	}
+	oldFinalizers := []string{"FINALIZER_2", "FINALIZER_3"}
+	mergeFinalizers(&newObject, oldFinalizers)
+	require.Equal(t, 3, len(newObject.Finalizers))
+	require.Contains(t, newObject.Finalizers, "FINALIZER_1")
+	require.Contains(t, newObject.Finalizers, "FINALIZER_2")
+	require.Contains(t, newObject.Finalizers, "FINALIZER_3")
+}
+
+func TestCreateOrUpdateLokiLogPipelineError(t *testing.T) {
+	mockClient := &mocks.Client{}
+	badReqErr := errors.NewBadRequest("")
+	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
+
+	logPipeline := &telemetryv1alpha1.LogPipeline{}
+	err := CreateOrUpdateLokiLogPipeline(context.Background(), mockClient, logPipeline)
+
+	require.Error(t, err)
+	require.Equal(t, badReqErr, err)
+}
+
+func TestCreateOrUpdateLokiLogPipelineCreateSuccess(t *testing.T) {
+	mockClient := &mocks.Client{}
+	notFoundErr := errors.NewNotFound(schema.GroupResource{}, "")
+	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(notFoundErr)
+	mockClient.On("Create", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	logPipeline := &telemetryv1alpha1.LogPipeline{}
+	ctx := context.Background()
+	err := CreateOrUpdateLokiLogPipeline(ctx, mockClient, logPipeline)
+
+	require.NoError(t, err)
+	mockClient.AssertCalled(t, "Create", ctx, logPipeline)
+}
+
+func TestCreateOrUpdateLokiLogPipelineUpdateSuccess(t *testing.T) {
+	mockClient := &mocks.Client{}
+	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mockClient.On("Update", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	logPipeline := &telemetryv1alpha1.LogPipeline{}
+	ctx := context.Background()
+	err := CreateOrUpdateLokiLogPipeline(ctx, mockClient, logPipeline)
+
+	require.NoError(t, err)
+	mockClient.AssertCalled(t, "Update", ctx, logPipeline)
+}
+
+func TestDeleteLokiLogPipelineError(t *testing.T) {
+	mockClient := &mocks.Client{}
+	badReqErr := errors.NewBadRequest("")
+	mockClient.On("Delete", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
+
+	logPipeline := &telemetryv1alpha1.LogPipeline{}
+	err := DeleteLokiLogPipeline(context.Background(), mockClient, logPipeline)
+
+	require.Error(t, err)
+	require.Equal(t, badReqErr, err)
+}
+
+func TestDeleteLokiLogPipelineSuccess(t *testing.T) {
+	mockClient := &mocks.Client{}
+	mockClient.On("Delete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	logPipeline := &telemetryv1alpha1.LogPipeline{}
+	ctx := context.Background()
+	err := DeleteLokiLogPipeline(ctx, mockClient, logPipeline)
+
+	require.NoError(t, err)
+	mockClient.AssertCalled(t, "Delete", ctx, logPipeline)
 }

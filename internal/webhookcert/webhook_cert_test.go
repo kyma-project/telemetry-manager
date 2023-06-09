@@ -2,9 +2,6 @@ package webhookcert
 
 import (
 	"context"
-	"crypto/x509"
-	"encoding/pem"
-	"fmt"
 	"os"
 	"path"
 	"testing"
@@ -73,8 +70,14 @@ func TestEnsureCertificate(t *testing.T) {
 	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[0].TimeoutSeconds)
 	require.Equal(t, int32(15), *validatingWebhookConfiguration.Webhooks[1].TimeoutSeconds)
 
-	require.NoError(t, verifyHasCACertInChain(serverCert, validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle))
-	require.NoError(t, verifyHasCACertInChain(serverCert, validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle))
+	var chainChecker certChainCheckerImpl
+	certValid, err := chainChecker.checkRoot(context.Background(), serverCert, validatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
+	require.NoError(t, err)
+	require.True(t, certValid)
+
+	certValid, err = chainChecker.checkRoot(context.Background(), serverCert, validatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	require.NoError(t, err)
+	require.True(t, certValid)
 
 	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[0].ClientConfig.Service.Name)
 	require.Equal(t, webhookService.Name, validatingWebhookConfiguration.Webhooks[1].ClientConfig.Service.Name)
@@ -211,8 +214,14 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 	err = client.Get(context.Background(), key, &updatedValidatingWebhookConfiguration)
 	require.NoError(t, err)
 
-	require.NoError(t, verifyHasCACertInChain(newServerCert, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle))
-	require.NoError(t, verifyHasCACertInChain(newServerCert, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle))
+	var chainChecker certChainCheckerImpl
+	certValid, err := chainChecker.checkRoot(context.Background(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
+	require.NoError(t, err)
+	require.True(t, certValid)
+
+	certValid, err = chainChecker.checkRoot(context.Background(), newServerCert, updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
+	require.NoError(t, err)
+	require.True(t, certValid)
 }
 
 func TestCreateSecret(t *testing.T) {
@@ -276,26 +285,4 @@ func TestReuseExistingCertificate(t *testing.T) {
 		updatedValidatingWebhookConfiguration.Webhooks[0].ClientConfig.CABundle)
 	require.Equal(t, newValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle,
 		updatedValidatingWebhookConfiguration.Webhooks[1].ClientConfig.CABundle)
-}
-
-func verifyHasCACertInChain(serverCertPEM []byte, caCertPEM []byte) error {
-	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM(caCertPEM)
-	if !ok {
-		panic("failed to parse root certificate")
-	}
-
-	block, _ := pem.Decode(serverCertPEM)
-	serverCert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return fmt.Errorf("failed to parse x509 cert: %v", err)
-	}
-
-	if _, err := serverCert.Verify(x509.VerifyOptions{
-		Roots: roots,
-	}); err != nil {
-		return fmt.Errorf("failed to verify x509 cert: %v", err)
-	}
-
-	return nil
 }

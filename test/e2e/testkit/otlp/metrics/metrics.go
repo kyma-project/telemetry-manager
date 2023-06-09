@@ -3,16 +3,28 @@
 package metrics
 
 import (
+	"context"
+	"crypto/tls"
+	"errors"
 	"fmt"
 	"math/rand"
-	"net/url"
-	"strconv"
+	neturl "net/url"
 	"time"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/testbed"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 )
+
+var (
+	ErrInvalidURL       = errors.New("the ProxyURLForService is invalid")
+	ErrExporterCreation = errors.New("metric exporter cannot be created")
+)
+
+type httpAuthProvider interface {
+	TLSConfig() *tls.Config
+	Token() string
+}
 
 type Builder struct {
 	metrics []pmetric.Metric
@@ -61,7 +73,7 @@ func NewGauge(opts ...MetricOption) pmetric.Metric {
 		pt := pts.AppendEmpty()
 		pt.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 		pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-		pt.SetDoubleValue(rand.Float64())
+		pt.SetDoubleValue(rand.Float64()) //nolint:gosec // random number generator is sufficient.
 
 		for i := 0; i < totalAttributes; i++ {
 			k := fmt.Sprintf("pt-label-key-%d", i)
@@ -95,25 +107,25 @@ func AllMetrics(md pmetric.Metrics) []pmetric.Metric {
 	return metrics
 }
 
-func NewDataSender(otlpPushURL string) (testbed.MetricDataSender, error) {
-	typedURL, err := url.Parse(otlpPushURL)
+func NewHTTPExporter(url string, authProvider httpAuthProvider) (exporter Exporter, err error) {
+	urlSegments, err := neturl.Parse(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse url: %v", err)
+		return exporter, fmt.Errorf("%w: %v", ErrInvalidURL, err)
 	}
 
-	host := typedURL.Hostname()
-	port, err := strconv.Atoi(typedURL.Port())
+	opts := []otlpmetrichttp.Option{otlpmetrichttp.WithTLSClientConfig(authProvider.TLSConfig()),
+		otlpmetrichttp.WithEndpoint(urlSegments.Host),
+		otlpmetrichttp.WithURLPath(urlSegments.Path),
+	}
+
+	if len(authProvider.Token()) > 0 {
+		opts = append(opts, otlpmetrichttp.WithHeaders(map[string]string{"Authorization": authProvider.Token()}))
+	}
+
+	e, err := otlpmetrichttp.New(context.TODO(), opts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse port: %v", err)
+		return exporter, fmt.Errorf("%w: %v", ErrExporterCreation, err)
 	}
 
-	if typedURL.Scheme == "grpc" {
-		return testbed.NewOTLPMetricDataSender(host, port), nil
-	}
-
-	if typedURL.Scheme == "https" {
-		return testbed.NewOTLPHTTPMetricDataSender(host, port), nil
-	}
-
-	return nil, fmt.Errorf("unsupported url scheme: %s", typedURL.Scheme)
+	return NewExporter(e), nil
 }

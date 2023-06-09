@@ -27,6 +27,8 @@ import (
 var (
 	testLogPipelineConfig = logpipelinereconciler.Config{
 		DaemonSet:         types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
+		ParsersConfigMap:  types.NamespacedName{Name: "test-telemetry-fluent-bit-parsers", Namespace: "default"},
+		LuaConfigMap:      types.NamespacedName{Name: "test-telemetry-fluent-bit-luascripts", Namespace: "default"},
 		SectionsConfigMap: types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
 		FilesConfigMap:    types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
 		EnvSecret:         types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
@@ -189,7 +191,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 					}
 				}
 				return false
-			}, timeout, interval).Should(Equal(true))
+			}, timeout, interval).Should(BeTrue())
 		})
 		It("Should have the telemetry_all_logpipelines metric set to 1", func() {
 			// All log pipeline gauge should be updated

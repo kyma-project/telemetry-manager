@@ -3,13 +3,7 @@
 package testkit
 
 type (
-	PortMapping struct {
-		ServicePort int32
-		NodePort    int32
-		HostPort    int32
-	}
-
-	portMap map[string]PortMapping
+	portMap map[string]int32
 
 	PortRegistry struct {
 		Ports portMap
@@ -23,39 +17,18 @@ func NewPortRegistry() PortRegistry {
 	}
 }
 
-// ServicePort returns a registered port value by its name.
-func (p PortRegistry) ServicePort(name string) int32 {
+// Port returns a registered port value by its name.
+func (p PortRegistry) Port(name string) int32 {
 	if _, ok := p.Ports[name]; !ok {
 		return 0
 	}
 
-	return p.Ports[name].ServicePort
+	return p.Ports[name]
 }
 
-// NodePort returns a registered NodePort value by its name.
-func (p PortRegistry) NodePort(name string) int32 {
-	return p.Ports[name].NodePort
-}
-
-// HostPort returns a registered HostPort value by its name.
-func (p PortRegistry) HostPort(name string) int32 {
-	return p.Ports[name].HostPort
-}
-
-// AddServicePort adds a port mapping to the registry.
-func (p PortRegistry) AddServicePort(name string, servicePort int32) PortRegistry {
-	p.Ports[name] = PortMapping{ServicePort: servicePort}
-
-	return p
-}
-
-// AddPortMapping adds a port mapping to the registry.
-func (p PortRegistry) AddPortMapping(name string, servicePort, nodePort, hostPort int32) PortRegistry {
-	p.Ports[name] = PortMapping{
-		ServicePort: servicePort,
-		NodePort:    nodePort,
-		HostPort:    hostPort,
-	}
+// AddPort adds a port mapping to the registry.
+func (p PortRegistry) AddPort(name string, port int) PortRegistry {
+	p.Ports[name] = int32(port)
 
 	return p
 }

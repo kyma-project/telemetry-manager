@@ -1,6 +1,8 @@
 run:
   modules-download-mode: readonly
   timeout: 10m
+  build-tags:
+    - e2e
 linters:
   disable-all: true
   enable:
@@ -100,6 +102,8 @@ issues:
       text: "shadow: declaration of \"err\" shadows declaration at line ([\\d]+)"
       linters:
         - govet
+    - linters: [ gci ]
+      path: test/e2e/(tracing|metrics)_test.go
     - linters: [ dupl ]
       path: apis/telemetry/v1alpha1/(logparsers|metricpipeline|tracepipeline)_types_test.go
     - linters: [ dupl ]
@@ -116,4 +120,13 @@ issues:
       path: internal/webhookcert/webhook_cert_test.go
     - linters: [ dupl ]
       path: internal/webhookcert/server_cert_generator_test.go
-
+    - linters: [ dupl ]
+      path: test/e2e/testkit/otlp/matchers/metric_matchers.go
+    - linters: [ dupl ]
+      path: test/e2e/testkit/otlp/matchers/trace_matchers.go
+    - linters: [ dupl ]
+      path: test/e2e/metrics_test.go
+    - linters: [ dupl ]
+      path: test/e2e/tracing_test
+    - linters: [ errcheck ]
+      path: test/e2e/testkit/otlp/traces/traces.go
