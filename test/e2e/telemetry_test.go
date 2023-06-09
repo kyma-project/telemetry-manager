@@ -126,7 +126,14 @@ var _ = Describe("Telemetry-module", Ordered, func() {
 		AfterAll(func() {
 			// Re-create telemetry to have ValidatingWebhookConfiguration for remaining tests
 			Eventually(func(g Gomega) {
-				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
+				newTelemetry := []client.Object{kitk8s.NewTelemetry("default").K8sObject()}
+				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, newTelemetry...)).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
+
+			Eventually(func(g Gomega) {
+				var telemetry v1alpha1.Telemetry
+				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
+				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateReady))
 			}, timeout, interval).Should(Succeed())
 		})
 
@@ -140,9 +147,7 @@ var _ = Describe("Telemetry-module", Ordered, func() {
 
 		It("Should not delete telemetry when LogPipeline exists", func() {
 			By("Deleting telemetry", func() {
-				var telemetry v1alpha1.Telemetry
-				Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
-				Expect(k8sClient.Delete(ctx, &telemetry)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
 			})
 
 			Eventually(func(g Gomega) {
