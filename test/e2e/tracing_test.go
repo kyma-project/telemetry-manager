@@ -260,7 +260,6 @@ var _ = Describe("Tracing", func() {
 			traces := kittraces.MakeTraces(traceID, spanIDs, attrs)
 
 			Expect(sendTraces(context.Background(), traces, urls.OTLPPush())).To(Succeed())
-			Expect(sendTraces(context.Background(), traces, urls.OTLPPushAt(1))).To(Succeed())
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
@@ -343,9 +342,10 @@ func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 			tracePipeline.K8sObject(),
 		}...)
 
-		urls.SetOTLPPushAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), "v1/traces/", httpOTLPPort), i)
 		urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), i)
 	}
+
+	urls.SetOTLPPush(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", httpOTLPPort))
 
 	// Kyma-system namespace objects.
 	traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kymaSystemNamespaceName).

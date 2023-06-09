@@ -5,6 +5,7 @@ package mocks
 type URLProvider struct {
 	metrics   string
 	pipelines map[int]map[string]string
+	otlpPush  string
 }
 
 func NewURLProvider() *URLProvider {
@@ -23,25 +24,12 @@ func (p *URLProvider) Metrics() string {
 }
 
 func (p *URLProvider) SetOTLPPush(url string) *URLProvider {
-	return p.SetOTLPPushAt(url, 0)
-}
-
-func (p *URLProvider) OTLPPush() string {
-	return p.OTLPPushAt(0)
-}
-
-func (p *URLProvider) SetOTLPPushAt(url string, idx int) *URLProvider {
-	if p.pipelines[idx] == nil {
-		p.pipelines[idx] = map[string]string{}
-	}
-
-	p.pipelines[idx]["otlpPush"] = url
-
+	p.otlpPush = url
 	return p
 }
 
-func (p *URLProvider) OTLPPushAt(idx int) string {
-	return p.pipelines[idx]["otlpPush"]
+func (p *URLProvider) OTLPPush() string {
+	return p.otlpPush
 }
 
 func (p *URLProvider) SetMockBackendExport(url string) *URLProvider {
