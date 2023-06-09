@@ -332,10 +332,10 @@ func makeNetworkPolicyPorts() []networkingv1.NetworkPolicyPort {
 		intstr.FromInt(8888),
 	}
 
-	for _, port := range ports {
+	for idx := range ports {
 		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
 			Protocol: &tcpProtocol,
-			Port:     &port,
+			Port:     &ports[idx],
 		})
 	}
 
