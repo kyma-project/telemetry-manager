@@ -106,3 +106,13 @@ func TestMakeExtensionConfig(t *testing.T) {
 	actualConfig := MakeExtensionsConfig()
 	require.Equal(t, expectedConfig, actualConfig)
 }
+
+func TestMakeServiceConfig(t *testing.T) {
+	var pipelineConfig map[string]config.PipelineConfig
+	serviceConfig := MakeServiceConfig(pipelineConfig)
+
+	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
+	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
+	require.Contains(t, serviceConfig.Extensions, "health_check")
+	require.Contains(t, serviceConfig.Extensions, "pprof")
+}

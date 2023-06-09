@@ -4,6 +4,7 @@ import (
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -288,4 +289,55 @@ func MakeOpenCensusService(config Config) *corev1.Service {
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
+}
+
+func MakeNetworkPolicy(config Config) *networkingv1.NetworkPolicy {
+	labels := makeDefaultLabels(config)
+	ports := makeNetworkPolicyPorts()
+	return &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      config.BaseName + "-pprof-deny-ingress",
+			Namespace: config.Namespace,
+			Labels:    labels,
+		},
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			PolicyTypes: []networkingv1.PolicyType{
+				networkingv1.PolicyTypeIngress,
+			},
+			Ingress: []networkingv1.NetworkPolicyIngressRule{
+				{
+					From: []networkingv1.NetworkPolicyPeer{
+						{
+							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
+						},
+					},
+					Ports: ports,
+				},
+			},
+		},
+	}
+}
+
+func makeNetworkPolicyPorts() []networkingv1.NetworkPolicyPort {
+	var networkPolicyPorts []networkingv1.NetworkPolicyPort
+
+	tcpProtocol := corev1.ProtocolTCP
+	ports := []intstr.IntOrString{
+		intstr.FromInt(13133),
+		intstr.FromInt(4317),
+		intstr.FromInt(4318),
+		intstr.FromInt(8888),
+	}
+
+	for _, port := range ports {
+		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
+			Protocol: &tcpProtocol,
+			Port:     &port,
+		})
+	}
+
+	return networkPolicyPorts
 }

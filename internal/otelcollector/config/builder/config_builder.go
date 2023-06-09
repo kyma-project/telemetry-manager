@@ -98,3 +98,18 @@ func MakeExtensionsConfig() config.ExtensionsConfig {
 		},
 	}
 }
+
+func MakeServiceConfig(pipelines map[string]config.PipelineConfig) config.ServiceConfig {
+	return config.ServiceConfig{
+		Pipelines: pipelines,
+		Telemetry: config.TelemetryConfig{
+			Metrics: config.MetricsConfig{
+				Address: "${MY_POD_IP}:8888",
+			},
+			Logs: config.LoggingConfig{
+				Level: "info",
+			},
+		},
+		Extensions: []string{"health_check", "pprof"},
+	}
+}

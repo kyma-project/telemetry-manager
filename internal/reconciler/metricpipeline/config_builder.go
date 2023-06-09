@@ -45,7 +45,7 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v
 
 	receiverConfig := makeReceiversConfig()
 	processorsConfig := makeProcessorsConfig()
-	serviceConfig := makeServiceConfig(pipelineConfigs)
+	serviceConfig := configbuilder.MakeServiceConfig(pipelineConfigs)
 	extensionConfig := configbuilder.MakeExtensionsConfig()
 
 	return &config.Config{
@@ -145,20 +145,5 @@ func makePipelineConfig(outputAliases []string) config.PipelineConfig {
 		Receivers:  []string{"otlp"},
 		Processors: []string{"memory_limiter", "k8sattributes", "resource", "batch"},
 		Exporters:  outputAliases,
-	}
-}
-
-func makeServiceConfig(pipelines map[string]config.PipelineConfig) config.ServiceConfig {
-	return config.ServiceConfig{
-		Pipelines: pipelines,
-		Telemetry: config.TelemetryConfig{
-			Metrics: config.MetricsConfig{
-				Address: "${MY_POD_IP}:8888",
-			},
-			Logs: config.LoggingConfig{
-				Level: "info",
-			},
-		},
-		Extensions: []string{"health_check", "pprof"},
 	}
 }

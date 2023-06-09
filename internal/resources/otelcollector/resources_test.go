@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -117,4 +118,20 @@ func TestMakeOpenCensusService(t *testing.T) {
 	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
 	require.NotEmpty(t, service.Spec.Ports)
 	require.Len(t, service.Spec.Ports, 1)
+}
+
+func TestMakeNetworkPolicy(t *testing.T) {
+	networkPolicy := MakeNetworkPolicy(config)
+	labels := makeDefaultLabels(config)
+
+	require.NotNil(t, networkPolicy)
+	require.Equal(t, networkPolicy.Name, config.BaseName+"-pprof-deny-ingress")
+	require.Equal(t, networkPolicy.Namespace, config.Namespace)
+	require.Equal(t, networkPolicy.Spec.PodSelector.MatchLabels, labels)
+	require.Len(t, networkPolicy.Spec.PolicyTypes, 1)
+	require.Equal(t, networkPolicy.Spec.PolicyTypes[0], networkingv1.PolicyTypeIngress)
+	require.Len(t, networkPolicy.Spec.Ingress, 1)
+	require.Len(t, networkPolicy.Spec.Ingress[0].From, 1)
+	require.Equal(t, networkPolicy.Spec.Ingress[0].From[0].IPBlock.CIDR, "0.0.0.0/0")
+	require.Len(t, networkPolicy.Spec.Ingress[0].Ports, 4)
 }

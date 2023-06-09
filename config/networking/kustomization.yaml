@@ -1,4 +1,2 @@
 resources:
-  - networkpolicy-operator.yaml
-  - networkpolicy-metric-collector.yaml
-  - networkpolicy-trace-collector.yaml
+  - networkpolicy.yaml
