@@ -5,23 +5,23 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	"net/http"
 	"time"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
+	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var (
@@ -31,23 +31,16 @@ var (
 )
 
 var _ = Describe("Metrics", func() {
-	var (
-		portRegistry = testkit.NewPortRegistry().
-				AddServicePort("http-otlp", 4318).
-				AddPortMapping("grpc-otlp", 4317, 30017, 4317).
-				AddPortMapping("http-metrics", 8888, 30088, 8888).
-				AddPortMapping("http-web", 80, 30090, 9090)
-
-		otlpPushURL                 = fmt.Sprintf("grpc://localhost:%d", portRegistry.HostPort("grpc-otlp"))
-		metricsURL                  = fmt.Sprintf("http://localhost:%d/metrics", portRegistry.HostPort("http-metrics"))
-		mockBackendMetricsExportURL = fmt.Sprintf("http://localhost:%d/%s", portRegistry.HostPort("http-web"), telemetryDataFilename)
-	)
-
 	Context("When a metricpipeline exists", Ordered, func() {
-		mockNs := "metric-mocks"
-		mockDeploymentName := "metric-receiver"
+		var (
+			urls               *mocks.URLProvider
+			mockDeploymentName = "metric-receiver"
+			mockNs             = "metric-mocks"
+		)
+
 		BeforeAll(func() {
-			k8sObjects := makeMetricsTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
+			k8sObjects, urlProvider := makeMetricsTestK8sObjects(mockNs, mockDeploymentName)
+			urls = urlProvider
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -75,14 +68,14 @@ var _ = Describe("Metrics", func() {
 
 		It("Should be able to get metric gateway metrics endpoint", func() {
 			Eventually(func(g Gomega) {
-				resp, err := http.Get(metricsURL)
+				resp, err := proxyClient.Get(urls.Metrics())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should have a running pipeline", func() {
-			metricPipelineShouldBeRunning("test")
+			metricPipelineShouldBeRunning("pipeline")
 		})
 
 		It("Should verify end-to-end metric delivery", func() {
@@ -93,10 +86,10 @@ var _ = Describe("Metrics", func() {
 				gauges = append(gauges, gauge)
 				builder.WithMetric(gauge)
 			}
-			sendMetrics(context.Background(), builder.Build(), otlpPushURL)
+			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := http.Get(mockBackendMetricsExportURL)
+				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -155,12 +148,16 @@ var _ = Describe("Metrics", func() {
 	})
 
 	Context("When a broken metricpipeline exists", Ordered, func() {
-		mockNs := "metric-mocks-broken-pipeline"
-		mockDeploymentName := "metric-receiver"
+		var (
+			urls               *mocks.URLProvider
+			mockDeploymentName = "metric-receiver"
+			mockNs             = "metric-mocks-broken-pipeline"
+		)
 
 		BeforeAll(func() {
-			k8sObjects := makeMetricsTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
-			secondPipeline := makeBrokenMetricPipeline("pipeline-2")
+			k8sObjects, urlProvider := makeMetricsTestK8sObjects(mockNs, mockDeploymentName)
+			urls = urlProvider
+			secondPipeline := makeBrokenMetricPipeline("pipeline-1")
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -171,8 +168,8 @@ var _ = Describe("Metrics", func() {
 		})
 
 		It("Should have running pipelines", func() {
-			metricPipelineShouldBeRunning("test")
-			metricPipelineShouldBeRunning("pipeline-2")
+			metricPipelineShouldBeRunning("pipeline")
+			metricPipelineShouldBeRunning("pipeline-1")
 		})
 
 		It("Should have a running metric gateway deployment", func() {
@@ -200,10 +197,10 @@ var _ = Describe("Metrics", func() {
 				gauges = append(gauges, gauge)
 				builder.WithMetric(gauge)
 			}
-			sendMetrics(context.Background(), builder.Build(), otlpPushURL)
+			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).Should(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := http.Get(mockBackendMetricsExportURL)
+				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -213,11 +210,16 @@ var _ = Describe("Metrics", func() {
 	})
 
 	Context("When multiple metricpipelines exist", Ordered, func() {
-		mockNs := "metric-mocks-multi-pipeline"
-		mockDeploymentName := "metric-receiver"
+		var (
+			urls                        *mocks.URLProvider
+			primaryMockDeploymentName   = "metric-receiver"
+			auxiliaryMockDeploymentName = "metric-receiver-1"
+			mockNs                      = "metric-mocks-multi-pipeline"
+		)
 
 		BeforeAll(func() {
-			k8sObjects := makeMultiPipelineMetricsTestK8sObjects(portRegistry, mockNs, mockDeploymentName)
+			k8sObjects, urlProvider := makeMetricsTestK8sObjects(mockNs, primaryMockDeploymentName, auxiliaryMockDeploymentName)
+			urls = urlProvider
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -226,8 +228,8 @@ var _ = Describe("Metrics", func() {
 		})
 
 		It("Should have running pipelines", func() {
+			metricPipelineShouldBeRunning("pipeline")
 			metricPipelineShouldBeRunning("pipeline-1")
-			metricPipelineShouldBeRunning("pipeline-2")
 		})
 
 		It("Should have a running metric gateway deployment", func() {
@@ -241,7 +243,7 @@ var _ = Describe("Metrics", func() {
 
 		It("Should have a metrics backend running", func() {
 			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				key := types.NamespacedName{Name: primaryMockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
@@ -256,14 +258,25 @@ var _ = Describe("Metrics", func() {
 				gauges = append(gauges, gauge)
 				builder.WithMetric(gauge)
 			}
-			sendMetrics(context.Background(), builder.Build(), otlpPushURL)
+			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
+			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPushAt(1))).To(Succeed())
 
 			Eventually(func(g Gomega) {
-				resp, err := http.Get(mockBackendMetricsExportURL)
+				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveNumberOfMetrics(2 * len(gauges))))) // Metrics should arrive in the backend twice
+					HaveNumberOfMetrics(len(gauges)),
+					HaveMetrics(gauges...))))
+			}, timeout, interval).Should(Succeed())
+
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(urls.MockBackendExportAt(1))
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					HaveNumberOfMetrics(len(gauges)),
+					HaveMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
@@ -288,95 +301,56 @@ func metricPipelineShouldStayPending(pipelineName string) {
 }
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeMetricsTestK8sObjects(portRegistry testkit.PortRegistry, namespace string, mockDeploymentName string) []client.Object {
+func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames ...string) ([]client.Object, *mocks.URLProvider) {
 	var (
-		grpcOTLPPort        = portRegistry.ServicePort("grpc-otlp")
-		grpcOTLPNodePort    = portRegistry.NodePort("grpc-otlp")
-		httpMetricsPort     = portRegistry.ServicePort("http-metrics")
-		httpMetricsNodePort = portRegistry.NodePort("http-metrics")
-		httpOTLPPort        = portRegistry.ServicePort("http-otlp")
-		httpWebPort         = portRegistry.ServicePort("http-web")
-		httpWebNodePort     = portRegistry.NodePort("http-web")
+		objs []client.Object
+		urls = mocks.NewURLProvider()
+
+		grpcOTLPPort    = 4317
+		httpMetricsPort = 8888
+		httpOTLPPort    = 4318
+		httpWebPort     = 80
 	)
 
-	// Mocks namespace objects.
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	mockBackend := mocks.NewBackend(mockDeploymentName, mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
-	mockBackendConfigMap := mockBackend.ConfigMap("metric-receiver-config")
-	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
-	mockBackendExternalService := mockBackend.ExternalService().
-		WithPort("grpc-otlp", grpcOTLPPort).
-		WithPort("http-otlp", httpOTLPPort).
-		WithPortMapping("http-web", httpWebPort, httpWebNodePort)
+	objs = append(objs, kitk8s.NewNamespace(namespace).K8sObject())
 
-	// Default namespace objects.
-	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
-	hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
-	metricPipeline := kitmetric.NewPipeline("test", hostSecret.SecretKeyRef("metric-host"))
+	for i, mockDeploymentName := range mockDeploymentNames {
+		// Mocks namespace objects.
+		mockBackend := mocks.NewBackend(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
+		mockBackendConfigMap := mockBackend.ConfigMap(suffixize("metric-receiver-config", i))
+		mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
+		mockBackendExternalService := mockBackend.ExternalService().
+			WithPort("grpc-otlp", grpcOTLPPort).
+			WithPort("http-otlp", httpOTLPPort).
+			WithPort("http-web", httpWebPort)
+
+		// Default namespace objects.
+		otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
+		hostSecret := kitk8s.NewOpaqueSecret(suffixize("metric-rcv-hostname", i), defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
+		metricPipeline := kitmetric.NewPipeline(suffixize("pipeline", i), hostSecret.SecretKeyRef("metric-host"))
+
+		objs = append(objs, []client.Object{
+			mockBackendConfigMap.K8sObject(),
+			mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
+			mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
+			hostSecret.K8sObject(),
+			metricPipeline.K8sObject(),
+		}...)
+
+		urls.SetOTLPPushAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), "v1/metrics/", httpOTLPPort), i)
+		urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), i)
+	}
 
 	// Kyma-system namespace objects.
 	metricGatewayExternalService := kitk8s.NewService("telemetry-otlp-metrics-external", kymaSystemNamespaceName).
-		WithPortMapping("grpc-otlp", grpcOTLPPort, grpcOTLPNodePort).
-		WithPortMapping("http-metrics", httpMetricsPort, httpMetricsNodePort)
-
-	return []client.Object{
-		mocksNamespace.K8sObject(),
-		mockBackendConfigMap.K8sObject(),
-		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		hostSecret.K8sObject(),
-		metricPipeline.K8sObject(),
-		metricGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", metricGatewayBaseName)),
-	}
-}
-
-// makeMultiPipelineMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects including two metricpipelines.
-func makeMultiPipelineMetricsTestK8sObjects(portRegistry testkit.PortRegistry, namespace string, mockDeploymentName string) []client.Object {
-	var (
-		grpcOTLPPort        = portRegistry.ServicePort("grpc-otlp")
-		grpcOTLPNodePort    = portRegistry.NodePort("grpc-otlp")
-		httpMetricsPort     = portRegistry.ServicePort("http-metrics")
-		httpMetricsNodePort = portRegistry.NodePort("http-metrics")
-		httpOTLPPort        = portRegistry.ServicePort("http-otlp")
-		httpWebPort         = portRegistry.ServicePort("http-web")
-		httpWebNodePort     = portRegistry.NodePort("http-web")
-	)
-
-	// Mocks namespace objects.
-	mocksNamespace := kitk8s.NewNamespace(namespace)
-	mockBackend := mocks.NewBackend(mockDeploymentName, mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
-	mockBackendConfigMap := mockBackend.ConfigMap("metric-receiver-config")
-	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
-	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
-		WithPort("http-otlp", httpOTLPPort).
-		WithPortMapping("http-web", httpWebPort, httpWebNodePort)
+		WithPort("http-metrics", httpMetricsPort)
+	urls.SetMetrics(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-metrics-external", "metrics", httpMetricsPort))
 
-	// Default namespace objects.
-	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
+	objs = append(objs, metricGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", metricGatewayBaseName)))
 
-	hostSecret1 := kitk8s.NewOpaqueSecret("metric-rcv-hostname-1", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
-	metricPipeline1 := kitmetric.NewPipeline("pipeline-1", hostSecret1.SecretKeyRef("metric-host"))
-
-	hostSecret2 := kitk8s.NewOpaqueSecret("metric-rcv-hostname-2", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
-	metricPipeline2 := kitmetric.NewPipeline("pipeline-2", hostSecret2.SecretKeyRef("metric-host"))
-
-	// Kyma-system namespace objects.
-	metricGatewayExternalService := kitk8s.NewService("telemetry-otlp-metrics-external", kymaSystemNamespaceName).
-		WithPortMapping("grpc-otlp", grpcOTLPPort, grpcOTLPNodePort).
-		WithPortMapping("http-metrics", httpMetricsPort, httpMetricsNodePort)
-
-	return []client.Object{
-		mocksNamespace.K8sObject(),
-		mockBackendConfigMap.K8sObject(),
-		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		hostSecret1.K8sObject(),
-		metricPipeline1.K8sObject(),
-		hostSecret2.K8sObject(),
-		metricPipeline2.K8sObject(),
-		metricGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", metricGatewayBaseName)),
-	}
+	return objs, urls
 }
 
 func makeBrokenMetricPipeline(name string) []client.Object {
@@ -389,12 +363,18 @@ func makeBrokenMetricPipeline(name string) []client.Object {
 	}
 }
 
-func sendMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL string) {
-	Eventually(func(g Gomega) {
-		sender, err := kitmetrics.NewDataSender(otlpPushURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(sender.Start()).Should(Succeed())
-		g.Expect(sender.ConsumeMetrics(ctx, metrics)).Should(Succeed())
-		sender.Flush()
-	}, timeout, interval).Should(Succeed())
+func sendMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL string) error {
+	sender, err := kitmetrics.NewHTTPExporter(otlpPushURL, proxyClient)
+	if err != nil {
+		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)
+	}
+	return sender.Export(ctx, metrics)
+}
+
+func suffixize(name string, idx int) string {
+	if idx == 0 {
+		return name
+	}
+
+	return fmt.Sprintf("%s-%d", name, idx)
 }
