@@ -233,6 +233,7 @@ func (r *Reconciler) checkLogParserExist(ctx context.Context) bool {
 		if _, ok := err.(*meta.NoKindMatchError); ok {
 			return false
 		}
+		return true
 	}
 	if len(parserList.Items) > 0 {
 		return true
@@ -248,6 +249,7 @@ func (r *Reconciler) checkLogPipelineExist(ctx context.Context) bool {
 		if _, ok := err.(*meta.NoKindMatchError); ok {
 			return false
 		}
+		return true
 	}
 	if len(pipelineList.Items) > 0 {
 		return true
@@ -263,6 +265,7 @@ func (r *Reconciler) checkMetricPipelinesExist(ctx context.Context) bool {
 		if _, ok := err.(*meta.NoKindMatchError); ok {
 			return false
 		}
+		return true
 	}
 
 	if len(metricPipelineList.Items) > 0 {
@@ -279,6 +282,7 @@ func (r *Reconciler) checkTracePipelinesExist(ctx context.Context) bool {
 		if _, ok := err.(*meta.NoKindMatchError); ok {
 			return false
 		}
+		return true
 	}
 
 	if len(tracePipelineList.Items) > 0 {
