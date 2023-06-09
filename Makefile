@@ -114,8 +114,18 @@ e2e-deploy-module: kyma kustomize ## Provision a k3d cluster and deploy module w
 build: generate fmt vet tidy ## Build manager binary.
 	go build -o bin/manager main.go
 
+tls.key:
+	@openssl genrsa -out tls.key 4096
+
+tls.crt: tls.key
+	@openssl req -sha256 -new -key tls.key -out tls.csr -subj '/CN=localhost'
+	@openssl x509 -req -sha256 -days 3650 -in tls.csr -signkey tls.key -out tls.crt
+	@rm tls.csr
+
+gen-webhook-cert: tls.key tls.crt
+
 .PHONY: run
-run: manifests generate fmt vet tidy ## Run a controller from your host.
+run: gen-webhook-cert manifests generate fmt vet tidy ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
