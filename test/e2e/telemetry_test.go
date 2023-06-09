@@ -26,7 +26,7 @@ var (
 )
 
 var _ = Describe("Telemetry-module", Ordered, func() {
-	Context("After creating telemetry resources", Ordered, func() {
+	Context("After creating Telemetry resources", Ordered, func() {
 		It("Should have ValidatingWebhookConfiguration", func() {
 			Eventually(func(g Gomega) {
 				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
@@ -111,7 +111,7 @@ var _ = Describe("Telemetry-module", Ordered, func() {
 		})
 	})
 
-	Context("Deleting telemetry resources", Ordered, func() {
+	Context("Deleting Telemetry resources", Ordered, func() {
 		telemetryKey := types.NamespacedName{
 			Name: "default",
 		}
@@ -124,7 +124,7 @@ var _ = Describe("Telemetry-module", Ordered, func() {
 		})
 
 		AfterAll(func() {
-			// Re-create telemetry to have ValidatingWebhookConfiguration for remaining tests
+			// Re-create Telemetry to have ValidatingWebhookConfiguration for remaining tests
 			Eventually(func(g Gomega) {
 				newTelemetry := []client.Object{kitk8s.NewTelemetry("default").K8sObject()}
 				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, newTelemetry...)).Should(Succeed())
@@ -137,7 +137,7 @@ var _ = Describe("Telemetry-module", Ordered, func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should have telemetry resource", func() {
+		It("Should have Telemetry resource", func() {
 			Eventually(func(g Gomega) {
 				var telemetry v1alpha1.Telemetry
 				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
@@ -145,7 +145,7 @@ var _ = Describe("Telemetry-module", Ordered, func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should not delete telemetry when LogPipeline exists", func() {
+		It("Should not delete Telemetry when LogPipeline exists", func() {
 			By("Deleting telemetry", func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
 			})
@@ -159,8 +159,8 @@ var _ = Describe("Telemetry-module", Ordered, func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should delete telemetry", func() {
-			By("Deleting telemetry and other resources", func() {
+		It("Should delete Telemetry", func() {
+			By("Deleting Telemetry and other resources", func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sLogPipelineObject...)).Should(Succeed())
 			})
 

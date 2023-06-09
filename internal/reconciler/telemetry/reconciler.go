@@ -69,7 +69,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	if instanceIsBeingDeleted &&
 		status.State != operatorv1alpha1.StateDeleting {
-		if r.checkAnyResourceExist(ctx) {
+		if r.customResourceExist(ctx) {
 			// there are some resources still in use update status and retry
 			return ctrl.Result{Requeue: true}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(operatorv1alpha1.StateError))
 		}
@@ -219,7 +219,7 @@ func (r *Reconciler) serverSideApply(ctx context.Context, obj client.Object) err
 	return r.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner(fieldOwner))
 }
 
-func (r *Reconciler) checkAnyResourceExist(ctx context.Context) bool {
+func (r *Reconciler) customResourceExist(ctx context.Context) bool {
 	return r.checkLogParserExist(ctx) ||
 		r.checkLogPipelineExist(ctx) ||
 		r.checkMetricPipelinesExist(ctx) ||
