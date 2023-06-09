@@ -182,6 +182,6 @@ func makeServiceConfig(pipelines map[string]config.PipelineConfig) config.Servic
 				Level: "info",
 			},
 		},
-		Extensions: []string{"health_check"},
+		Extensions: []string{"health_check", "pprof"},
 	}
 }

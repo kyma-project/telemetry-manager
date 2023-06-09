@@ -93,5 +93,8 @@ func MakeExtensionsConfig() config.ExtensionsConfig {
 		HealthCheck: config.EndpointConfig{
 			Endpoint: "${MY_POD_IP}:13133",
 		},
+		Pprof: config.EndpointConfig{
+			Endpoint: "127.0.0.1:1777",
+		},
 	}
 }

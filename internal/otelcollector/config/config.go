@@ -138,6 +138,7 @@ type ServiceConfig struct {
 
 type ExtensionsConfig struct {
 	HealthCheck EndpointConfig `yaml:"health_check"`
+	Pprof       EndpointConfig `yaml:"pprof"`
 }
 
 type Config struct {

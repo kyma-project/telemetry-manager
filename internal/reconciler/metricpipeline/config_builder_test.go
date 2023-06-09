@@ -277,6 +277,8 @@ processors:
 extensions:
     health_check:
         endpoint: ${MY_POD_IP}:13133
+    pprof:
+        endpoint: 127.0.0.1:1777
 service:
     pipelines:
         metrics/test:
@@ -297,6 +299,7 @@ service:
             level: info
     extensions:
         - health_check
+        - pprof
 `
 
 	fakeClient := fake.NewClientBuilder().Build()

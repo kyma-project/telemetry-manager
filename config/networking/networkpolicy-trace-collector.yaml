@@ -1,13 +1,11 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: operator-pprof-deny-ingress
+  name: trace-collector-pprof-deny-ingress
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: fluent-bit
-      app.kubernetes.io/instance: telemetry
-      kyma-project.io/component: controller
+      app.kubernetes.io/name: telemetry-trace-gateway
   policyTypes:
     - Ingress
   ingress:
@@ -16,8 +14,8 @@ spec:
             cidr: 0.0.0.0/0
       ports:
         - protocol: TCP
-          port: 8080
+          port: 4317
         - protocol: TCP
-          port: 8081
+          port: 4318
         - protocol: TCP
-          port: 9443
+          port: 8888
