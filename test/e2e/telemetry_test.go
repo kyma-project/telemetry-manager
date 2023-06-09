@@ -8,20 +8,25 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
+	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var (
-	webhookName       = "validation.webhook.telemetry.kyma-project.io"
-	webhookCertSecret = types.NamespacedName{
+	webhookName                = "validation.webhook.telemetry.kyma-project.io"
+	telemetryTestK8SObjectName = "telemetry-test"
+	webhookCertSecret          = types.NamespacedName{
 		Name:      "telemetry-webhook-cert",
 		Namespace: kymaSystemNamespaceName,
 	}
 )
 
-var _ = Describe("Telemetry-module", func() {
-	Context("After creating telemetry resources", Ordered, func() {
+var _ = Describe("Telemetry-module", Ordered, func() {
+	Context("After creating Telemetry resources", Ordered, func() {
 		It("Should have ValidatingWebhookConfiguration", func() {
 			Eventually(func(g Gomega) {
 				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
@@ -80,14 +85,12 @@ var _ = Describe("Telemetry-module", func() {
 				Expect(k8sClient.Delete(ctx, &validatingWebhookConfiguration)).Should(Succeed())
 			})
 
+			var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
 			Eventually(func(g Gomega) {
-				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
-				Eventually(func(g Gomega) {
-					g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
-					g.Expect(validatingWebhookConfiguration.OwnerReferences).Should(HaveLen(1))
-					g.Expect(validatingWebhookConfiguration.UID).ShouldNot(Equal(oldUID))
-				}, timeout, interval).Should(Succeed())
-			})
+				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+				g.Expect(validatingWebhookConfiguration.OwnerReferences).Should(HaveLen(1))
+				g.Expect(validatingWebhookConfiguration.UID).ShouldNot(Equal(oldUID))
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should reconcile CA bundle secret", func() {
@@ -100,13 +103,78 @@ var _ = Describe("Telemetry-module", func() {
 			})
 
 			Eventually(func(g Gomega) {
-				Eventually(func(g Gomega) {
-					var secret corev1.Secret
-					g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
-					g.Expect(secret.OwnerReferences).Should(HaveLen(1))
-					g.Expect(secret.UID).ShouldNot(Equal(oldUID))
-				}, timeout, interval).Should(Succeed())
+				var secret corev1.Secret
+				g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
+				g.Expect(secret.OwnerReferences).Should(HaveLen(1))
+				g.Expect(secret.UID).ShouldNot(Equal(oldUID))
+			}, timeout, interval).Should(Succeed())
+		})
+	})
+
+	Context("Deleting Telemetry resources", Ordered, func() {
+		telemetryKey := types.NamespacedName{
+			Name: "default",
+		}
+		k8sLogPipelineObject := makeTestPipelineK8sObjects()
+
+		BeforeAll(func() {
+			Eventually(func(g Gomega) {
+				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sLogPipelineObject...)).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
+		})
+
+		AfterAll(func() {
+			// Re-create Telemetry to have ValidatingWebhookConfiguration for remaining tests
+			Eventually(func(g Gomega) {
+				newTelemetry := []client.Object{kitk8s.NewTelemetry("default").K8sObject()}
+				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, newTelemetry...)).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
+
+			Eventually(func(g Gomega) {
+				var telemetry v1alpha1.Telemetry
+				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
+				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateReady))
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should have Telemetry resource", func() {
+			Eventually(func(g Gomega) {
+				var telemetry v1alpha1.Telemetry
+				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
+				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateReady))
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should not delete Telemetry when LogPipeline exists", func() {
+			By("Deleting telemetry", func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
 			})
+
+			Eventually(func(g Gomega) {
+				var telemetry v1alpha1.Telemetry
+				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
+				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateError))
+				g.Expect(telemetry.Finalizers).Should(HaveLen(1))
+				g.Expect(telemetry.Finalizers[0]).Should(Equal("telemetry.kyma-project.io/finalizer"))
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should delete Telemetry", func() {
+			By("Deleting Telemetry and other resources", func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sLogPipelineObject...)).Should(Succeed())
+			})
+
+			Eventually(func(g Gomega) {
+				var telemetry v1alpha1.Telemetry
+				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).ShouldNot(Succeed())
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 })
+
+func makeTestPipelineK8sObjects() []client.Object {
+	logPipeline := kitlog.NewPipeline(telemetryTestK8SObjectName)
+	return []client.Object{
+		logPipeline.K8sObject(),
+	}
+}

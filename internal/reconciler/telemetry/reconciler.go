@@ -7,6 +7,7 @@ import (
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -17,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
@@ -60,11 +62,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	instanceIsBeingDeleted := !objectInstance.GetDeletionTimestamp().IsZero()
+
 	// check if deletionTimestamp is set, retry until it gets deleted
 	status := getStatusFromTelemetry(&objectInstance)
 
-	if !objectInstance.GetDeletionTimestamp().IsZero() &&
+	if instanceIsBeingDeleted &&
 		status.State != operatorv1alpha1.StateDeleting {
+		if r.customResourceExist(ctx) {
+			// there are some resources still in use update status and retry
+			return ctrl.Result{Requeue: true}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(operatorv1alpha1.StateError))
+		}
 		// if the status is not yet set to deleting, also update the status
 		return ctrl.Result{}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(operatorv1alpha1.StateDeleting))
 	}
@@ -209,4 +217,61 @@ func (r *Reconciler) serverSideApply(ctx context.Context, obj client.Object) err
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")
 	return r.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner(fieldOwner))
+}
+
+func (r *Reconciler) customResourceExist(ctx context.Context) bool {
+	return r.checkLogParserExist(ctx) ||
+		r.checkLogPipelineExist(ctx) ||
+		r.checkMetricPipelinesExist(ctx) ||
+		r.checkTracePipelinesExist(ctx)
+}
+
+func (r *Reconciler) checkLogParserExist(ctx context.Context) bool {
+	var parserList telemetryv1alpha1.LogParserList
+	if err := r.List(ctx, &parserList); err != nil {
+		//no kind found
+		if _, ok := err.(*meta.NoKindMatchError); ok {
+			return false
+		}
+		return true
+	}
+	return len(parserList.Items) > 0
+}
+
+func (r *Reconciler) checkLogPipelineExist(ctx context.Context) bool {
+	var pipelineList telemetryv1alpha1.LogPipelineList
+	if err := r.List(ctx, &pipelineList); err != nil {
+		//no kind found
+		if _, ok := err.(*meta.NoKindMatchError); ok {
+			return false
+		}
+		return true
+	}
+	return len(pipelineList.Items) > 0
+}
+
+func (r *Reconciler) checkMetricPipelinesExist(ctx context.Context) bool {
+	var metricPipelineList telemetryv1alpha1.MetricPipelineList
+	if err := r.List(ctx, &metricPipelineList); err != nil {
+		//no kind found
+		if _, ok := err.(*meta.NoKindMatchError); ok {
+			return false
+		}
+		return true
+	}
+
+	return len(metricPipelineList.Items) > 0
+}
+
+func (r *Reconciler) checkTracePipelinesExist(ctx context.Context) bool {
+	var tracePipelineList telemetryv1alpha1.TracePipelineList
+	if err := r.List(ctx, &tracePipelineList); err != nil {
+		//no kind found
+		if _, ok := err.(*meta.NoKindMatchError); ok {
+			return false
+		}
+		return true
+	}
+
+	return len(tracePipelineList.Items) > 0
 }
