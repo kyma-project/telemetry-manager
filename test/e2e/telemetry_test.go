@@ -125,7 +125,9 @@ var _ = Describe("Telemetry-module", Ordered, func() {
 
 		AfterAll(func() {
 			// Re-create telemetry to have ValidatingWebhookConfiguration for remaining tests
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
+			Eventually(func(g Gomega) {
+				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should have telemetry resource", func() {
