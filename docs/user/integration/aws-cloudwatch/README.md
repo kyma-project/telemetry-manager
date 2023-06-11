@@ -60,10 +60,9 @@ After creating the IAM Policies, we can finally create an IAM User:
 
 In order to connect the AWS Distro to the AWS services we need to define place the credentials of the created user into the cluster. 
 
-1. In the [secret.yaml](./resources/secret.yaml), replace the `{ACCESS_KEY}` and `{SECRET_ACCESS_KEY}` to your access keys, and `{AWS_REGION}` with the AWS region you want to use
-2. Now, create the secret by using 
+1. Create the secret by using the following command. Replace the `{ACCESS_KEY}` and `{SECRET_ACCESS_KEY}` to your access keys, and `{AWS_REGION}` with the AWS region you want to use
     ```bash
-    kubectl apply -f ./resources/secret.yaml
+    kubectl create secret generic aws-credentials --from-literal=AWS_ACCESS_KEY_ID={ACCESS_KEY} --from-literal=AWS_SECRET_ACCESS_KEY={SECRET_ACCESS_KEY} --from-literal=AWS_REGION={AWS_REGION}
     ```
 
 ### Deploy the AWS Distro
@@ -79,7 +78,7 @@ After creating a secret and configuring the required users in AWS, we finally ca
 
 Enable ingestion of the signals from your workloads, using the available features of the Kyma Telemetry module:
 
-1. Enable a LogPipeline which is shipping container logs of all workload directly to the AWS X-Ray service, leveraging the same secret as the AWS Distro is using, bypassing the AWS Distro. As logs are not yet supported by the AWS Distro and the Kyma feature is not based on OTLP yet, the integration here is not consistent with the rest for now. Enable the LogPipeline by running:
+1. Enable a LogPipeline which is shipping container logs of all workload directly to the AWS X-Ray service, leveraging the same secret as the AWS Distro is using, bypassing the AWS Distro. As logs are not yet supported by the AWS Distro and the Kyma feature is not based on OTLP yet, the integration here is not consistent with the rest for now. For that replace `{NAMESPACE}` and enable the LogPipeline by running:
     ```bash
     kubectl apply -f ./resources/logpipeline.yaml
     ```
