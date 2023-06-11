@@ -13,7 +13,7 @@ data:
               scrape_interval: 5s
               static_configs:
                 - targets: [localhost:8888]
-      otlp:
+      otlp:xw
         protocols:
           grpc:
           http:

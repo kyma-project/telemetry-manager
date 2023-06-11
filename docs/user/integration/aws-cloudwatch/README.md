@@ -4,7 +4,7 @@
 
 The Kyma Telemetry module supports you in integrating with observability backends in a convenient way. This example outlines how to integrate with [AWS CloudWatch](https://aws.amazon.com/cloudwatch) as a backend. As CloudWatch is not supporting OTLP ingestion natively, it will require to deploy the [AWS Distro for OpenTelemetry](https://aws-otel.github.io) additionally. 
 
-![overview](./integration-diagram.svg)
+![overview](../../assets/cloudwatch-integration-diagram.svg)
 
 ## Prerequisistes 
 
@@ -60,10 +60,10 @@ After creating the IAM Policies, we can finally create an IAM User:
 
 In order to connect the AWS Distro to the AWS services we need to define place the credentials of the created user into the cluster. 
 
-1. In the [values.yaml](./aws-secret/values.yaml), replace the `{ACCESS_KEY}` and `{SECRET_ACCESS_KEY}` to your access keys, and `{AWS_REGION}` with the AWS region you want to use
+1. In the [secret.yaml](./resources/secret.yaml), replace the `{ACCESS_KEY}` and `{SECRET_ACCESS_KEY}` to your access keys, and `{AWS_REGION}` with the AWS region you want to use
 2. Now, create the secret by using 
     ```bash
-    kubectl apply -f ./aws-secret/aws-secret.yaml
+    kubectl apply -f ./resources/secret.yaml
     ```
 
 ### Deploy the AWS Distro
@@ -72,7 +72,7 @@ After creating a secret and configuring the required users in AWS, we finally ca
 
 1. Deploy the AWS Distro by calling 
     ```bash
-    kubectl -n $KYMA_NS apply -f ./aws-otel-collector/aws-otel.yaml
+    kubectl -n $KYMA_NS apply -f ./resources/aws-otel.yaml
     ```
 
 ### Setup Kyma Telemetry
@@ -81,15 +81,15 @@ Enable ingestion of the signals from your workloads, using the available feature
 
 1. Enable a LogPipeline which is shipping container logs of all workload directly to the AWS X-Ray service, leveraging the same secret as the AWS Distro is using, bypassing the AWS Distro. As logs are not yet supported by the AWS Distro and the Kyma feature is not based on OTLP yet, the integration here is not consistent with the rest for now. Enable the LogPipeline by running:
     ```bash
-    kubectl apply -f ./pipelines/logpipeline.yaml
+    kubectl apply -f ./resources/logpipeline.yaml
     ```
 1. Enable a TracePipeline in the cluster so that all components have a well-defined OTLP based push URL in the cluster to send trace data to. For that replace `{NAMESPACE}` and apply a TracePipeline by calling 
     ```bash
-    kubectl apply -f ./pipelines/tracepipeline.yaml
+    kubectl apply -f ./resources/tracepipeline.yaml
     ```
 1. Replace `{NAMESPACE}` and deploy a metricpipeline by calling 
     ```bash
-    kubectl apply -f ./pipelines/metricpipeline.yaml
+    kubectl apply -f ./resources/metricpipeline.yaml
     ```
 
 ## Verifying the results by deploying sample apps
@@ -101,11 +101,11 @@ In order to verify the results of CloudWatch and X-Ray we will deploy sample app
 In order to deploy sample app which generates traces that we took from [aws-otel tutorial](https://docs.aws.amazon.com/eks/latest/userguide/sample-app.html):
 1. Deploy traffic generator app
     ```bash
-    kubectl apply -n ${KYMA_NS} -f ./trace-sample-app/traffic-generator.yaml
+    kubectl apply -n ${KYMA_NS} -f ./sample-app/traffic-generator.yaml
     ```
 1. Deploy an app using 
     ```bash
-    kubectl apply -n ${KYMA_NS} -f ./trace-sample-app/sample-app.yaml
+    kubectl apply -n ${KYMA_NS} -f ./sample-app/deployment.yaml
     ```
 1. Port-forward an application in order to be able to access it by calling 
     ```bash
