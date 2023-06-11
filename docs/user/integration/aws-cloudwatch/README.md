@@ -87,7 +87,7 @@ Enable ingestion of the signals from your workloads, using the available feature
     ```bash
     kubectl apply -f ./resources/tracepipeline.yaml
     ```
-1. Replace `{NAMESPACE}` and deploy a metricpipeline by calling 
+1. Enable a MetricPipeline in the cluster so that all components have a well-defined OTLP based push URL in the cluster to send metric data to. Also it will activate annotation based metric scraping for workloads. For that replace `{NAMESPACE}` and apply a MetricPipeline by calling
     ```bash
     kubectl apply -f ./resources/metricpipeline.yaml
     ```
