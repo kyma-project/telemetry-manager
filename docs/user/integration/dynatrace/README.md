@@ -1,0 +1,150 @@
+# Integrate Kyma with Dynatrace
+
+## Overview 
+
+The Kyma Telemetry module supports you in integrating with observability backends in a convenient way. This example outlines how to integrate with [Dynatrace](https://www.dynatrace.com) as a backend. With Dynatrace, you can get all your monitoring and tracing data into one observability backend to achieve real Application Performance Management with monitoring data in context.
+
+## Prerequisistes 
+
+- Kyma as the target deployment environment
+- Dynatrace account with permissions to create new access tokens
+- Helm 3.x if you want to deploy open-telemetry sample application
+
+## Installation
+
+### Preparation
+
+1. Export namespace you want to use for dynatrace as a variable. Replace `{NAMESPACE}` placeholder in the following command and run it:
+
+    ```bash
+    export DYNATRACE_NS="{NAMESPACE}"
+    ```
+1. If you don't have created a Namespace yet, do it now:
+    ```bash
+    kubectl create namespace $DYNATRACE_NS
+    ```
+
+### Create access token
+
+Before connecting Kyma and Dynatrace, we need to create Dynatrace access token first
+
+1. Open the Dynatrace navigation menu and go to the `Manage` > `Access tokens`
+1. Click `Generate new token`
+1. Type the name you want to give to this token, set an axpiration date if you need
+1. Select the following scopes: `Ingest metrics`, `Read metrics`, `Write metrics`, `Ingest OpenTelemetry traces`, `Look up a single trace`, `Access problem and event feed, metrics, and topology`
+1. Click `Generate token`
+1. Copy and save the generated token
+
+### Create secret
+
+1. Create a new secret containing your access token by calling the following command. Replace {API_TOKEN} with the previously created token:
+    ```bash
+    kubectl -n $DYNATRACE_NS create secret generic dynatrace-token --from-literal="apiToken=Api-Token {API_TOKEN}"
+    ```
+
+### Ingest Traces
+
+#### Enable Collecting Istio Traces
+
+By default, the tracing feature of the Istio service mesh is disabled to avoid unnecessary resource usage for the case that no TracePipeline is defined. Create a Telemetry custom resource in the istio-system Namespace to enable emitting traces with the kyma-traces Istio extension provider:
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: tracing-default
+  namespace: istio-system
+spec:
+  tracing:
+  - providers:
+    - name: "kyma-traces"
+    randomSamplingPercentage: 1.0
+EOF
+```
+
+This configuration samples 1% of all requests. Adjust the randomSamplingPercentage property if you want to use a different sampling rate.
+
+#### Create Kyma TracePipeline
+
+1. Replace {ENVIRONMENT_ID} with the environment Id of your Dynatrace instance:
+    ```bash
+    cat <<EOF | kubectl apply -f -
+    apiVersion: telemetry.kyma-project.io/v1alpha1
+    kind: TracePipeline
+    metadata:
+        name: dynatrace
+    spec:
+        output:
+            otlp:
+            endpoint:
+                value: https://apm.cf.eu12.hana.ondemand.com/e/{ENVIRONMENT_ID}/api/v2/otlp
+            headers:
+                - name: Authorization
+                valueFrom:
+                    secretKeyRef:
+                    name: dynatrace-token
+                    namespace: ${DYNATRACE_NS}
+                    key: apiToken
+            protocol: http
+    EOF
+    ```
+1. To find traces from your Kyma cluster in the Dynatrace UI, go to `Applications & Microservices` > `Distributed traces`.
+
+### Ingest Metrics
+
+#### Create Kyma MetricPipeline
+
+1. Replace {ENVIRONMENT_ID} with the environment Id of your Dynatrace instance:
+    ```bash
+    cat <<EOF | kubectl apply -f -
+    apiVersion: telemetry.kyma-project.io/v1alpha1
+    kind: MetricPipeline
+    metadata:
+        name: dynatrace
+    spec:
+        output:
+            otlp:
+            endpoint:
+                value: https://apm.cf.eu12.hana.ondemand.com/e/{ENVIRONMENT_ID}/api/v2/otlp
+            headers:
+                - name: Authorization
+                valueFrom:
+                    secretKeyRef:
+                    name: dynatrace-token
+                    namespace: ${DYNATRACE_NS}
+                    key: apiToken
+            protocol: http
+    EOF
+    ```
+
+## Verifying the results by deploying sample apps
+
+### Preparation
+
+1. Export your Namespace as a variable. Replace `{NAMESPACE}` placeholder in the following command and run it:
+
+    ```bash
+    export KYMA_NS="{NAMESPACE}"
+    ```
+1. If you don't have created a Namespace yet, do it now:
+    ```bash
+    kubectl create namespace $KYMA_NS
+    ```
+1. Update your Helm installation with the required Helm repository:
+    ```bash
+    helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+    helm repo update
+    ```
+
+### Installation
+
+Run the Helm upgrade command, which installs the chart if not present yet.
+```bash
+helm upgrade --version 0.22.2 --install --create-namespace -n $KYMA_NS otel open-telemetry/opentelemetry-demo -f ./sample-app/values.yaml
+```
+
+Port-forward your app to access the frontend:
+```bash
+kubectl -n $KYMA_NS port-forward svc/otel-frontend 8080
+```
