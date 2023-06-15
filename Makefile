@@ -108,6 +108,12 @@ e2e-test: ginkgo k3d test-matchers ## Provision k3d cluster and run end-to-end t
 e2e-deploy-module: kyma kustomize ## Provision a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
 	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/deploy-module.sh
 
+.PHONY:
+e2e-coverage: ginkgo
+	@$(GINKGO) outline --format indent test/e2e/metrics_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
+	@$(GINKGO) outline --format indent test/e2e/tracing_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
+	@$(GINKGO) outline --format indent test/e2e/logging_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
+
 ##@ Build
 
 .PHONY: build
