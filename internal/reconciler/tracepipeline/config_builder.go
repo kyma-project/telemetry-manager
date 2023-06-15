@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -168,5 +169,15 @@ func makePipelineConfig(outputAliases []string) config.PipelineConfig {
 		Receivers:  []string{"opencensus", "otlp"},
 		Processors: []string{"memory_limiter", "k8sattributes", "filter", "resource", "batch"},
 		Exporters:  outputAliases,
+	}
+}
+
+func makeNetworkPolicyPorts() []intstr.IntOrString {
+	return []intstr.IntOrString{
+		intstr.FromInt(13133),
+		intstr.FromInt(4317),
+		intstr.FromInt(4318),
+		intstr.FromInt(55678),
+		intstr.FromInt(8888),
 	}
 }

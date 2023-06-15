@@ -7,6 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 var (
@@ -121,7 +122,14 @@ func TestMakeOpenCensusService(t *testing.T) {
 }
 
 func TestMakeNetworkPolicy(t *testing.T) {
-	networkPolicy := MakeNetworkPolicy(config)
+	testPorts := []intstr.IntOrString{
+		{
+			Type:   0,
+			IntVal: 5000,
+			StrVal: "",
+		},
+	}
+	networkPolicy := MakeNetworkPolicy(config, testPorts)
 	labels := makeDefaultLabels(config)
 
 	require.NotNil(t, networkPolicy)
@@ -133,5 +141,6 @@ func TestMakeNetworkPolicy(t *testing.T) {
 	require.Len(t, networkPolicy.Spec.Ingress, 1)
 	require.Len(t, networkPolicy.Spec.Ingress[0].From, 1)
 	require.Equal(t, networkPolicy.Spec.Ingress[0].From[0].IPBlock.CIDR, "0.0.0.0/0")
-	require.Len(t, networkPolicy.Spec.Ingress[0].Ports, 4)
+	require.Len(t, networkPolicy.Spec.Ingress[0].Ports, 1)
+	require.Equal(t, networkPolicy.Spec.Ingress[0].Ports[0].Port.IntVal, int32(5000))
 }

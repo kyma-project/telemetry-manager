@@ -291,9 +291,10 @@ func MakeOpenCensusService(config Config) *corev1.Service {
 	}
 }
 
-func MakeNetworkPolicy(config Config) *networkingv1.NetworkPolicy {
+func MakeNetworkPolicy(config Config, ports []intstr.IntOrString) *networkingv1.NetworkPolicy {
 	labels := makeDefaultLabels(config)
-	ports := makeNetworkPolicyPorts()
+	networkPolicyPorts := makeNetworkPolicyPorts(ports)
+
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.BaseName + "-pprof-deny-ingress",
@@ -314,23 +315,17 @@ func MakeNetworkPolicy(config Config) *networkingv1.NetworkPolicy {
 							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
 						},
 					},
-					Ports: ports,
+					Ports: networkPolicyPorts,
 				},
 			},
 		},
 	}
 }
 
-func makeNetworkPolicyPorts() []networkingv1.NetworkPolicyPort {
+func makeNetworkPolicyPorts(ports []intstr.IntOrString) []networkingv1.NetworkPolicyPort {
 	var networkPolicyPorts []networkingv1.NetworkPolicyPort
 
 	tcpProtocol := corev1.ProtocolTCP
-	ports := []intstr.IntOrString{
-		intstr.FromInt(13133),
-		intstr.FromInt(4317),
-		intstr.FromInt(4318),
-		intstr.FromInt(8888),
-	}
 
 	for idx := range ports {
 		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
