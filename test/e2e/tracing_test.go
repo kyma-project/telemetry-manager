@@ -10,6 +10,7 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -102,6 +103,22 @@ var _ = Describe("Tracing", func() {
 					ConsistOfSpansWithIDs(spanIDs),
 					ConsistOfSpansWithTraceID(traceID),
 					ConsistOfSpansWithAttributes(attrs))))
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should have a working network policy", func() {
+			var networkPolicy networkingv1.NetworkPolicy
+			key := types.NamespacedName{Name: traceCollectorBaseName + "-pprof-deny-ingress", Namespace: kymaSystemNamespaceName}
+			Expect(k8sClient.Get(ctx, key, &networkPolicy)).To(Succeed())
+
+			traceCollectorPodName := getPodNameByLabel(kymaSystemNamespaceName, "app.kubernetes.io/name", traceCollectorBaseName)
+			pprofPort := 1777
+			pprofEndpoint := proxyClient.ProxyURLForPod(kymaSystemNamespaceName, traceCollectorPodName, "debug/pprof/", pprofPort)
+
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(pprofEndpoint)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
