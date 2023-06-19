@@ -18,7 +18,7 @@ function create_module() {
 }
 
 function apply_local_template_label() {
-    kubectl label --local=true -f ./template.yaml operator.kyma-project.io/use-local-template=true -o yaml > temporary-template.yaml
+    kubectl label --local=true -f template.yaml operator.kyma-project.io/use-local-template=true -o yaml > temporary-template.yaml
     mv temporary-template.yaml template.yaml
 }
 
