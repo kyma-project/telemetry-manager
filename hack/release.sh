@@ -2,7 +2,7 @@
 
 # readonly MODULE_REGISTRY="europe-docker.pkg.dev/kyma-project/prod/unsigned"
 readonly MODULE_REGISTRY="${MODULE_REGISTRY:-localhost:5001}"
-readonly GCP_ACCESS_TOKEN=$(gcloud auth application-default print-access-token)
+# readonly GCP_ACCESS_TOKEN=$(gcloud auth application-default print-access-token)
 
 function create_module() {
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
