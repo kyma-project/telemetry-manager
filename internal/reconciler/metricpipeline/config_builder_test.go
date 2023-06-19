@@ -129,34 +129,39 @@ func TestMakeCollectorConfigMultiPipeline(t *testing.T) {
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[0], "memory_limiter")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[1], "k8sattributes")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[2], "resource")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[3], "batch")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[0], "batch")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[1], "cumulativetodelta/test")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[2], "k8sattributes")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[3], "memory_limiter")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[4], "resource")
 
 	require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-insecure")
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Exporters, "otlp/test-insecure")
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Exporters, "logging/test-insecure")
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Receivers, "otlp")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[0], "memory_limiter")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[0], "batch")
 	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[1], "k8sattributes")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[2], "resource")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[3], "batch")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[2], "memory_limiter")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[3], "resource")
 }
 
 func TestMakeServiceConfig(t *testing.T) {
 	pipelineConfig := map[string]config.PipelineConfig{
-		"metrics/test": makePipelineConfig([]string{"otlp/test", "logging/test"}, []string{}),
+		"metrics/test": makePipelineConfig(
+			[]string{"otlp/test", "logging/test"},
+			[]string{"cumulativetodelta/test", "memory_limiter", "k8sattributes", "resource", "batch"},
+		),
 	}
 	serviceConfig := makeServiceConfig(pipelineConfig)
 
 	require.Contains(t, serviceConfig.Pipelines, "metrics/test")
 	require.Contains(t, serviceConfig.Pipelines["metrics/test"].Receivers, "otlp")
 
-	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[0], "memory_limiter")
-	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[1], "k8sattributes")
-	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[2], "resource")
-	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[3], "batch")
+	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[0], "cumulativetodelta/test")
+	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[1], "memory_limiter")
+	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[2], "k8sattributes")
+	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[3], "resource")
+	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[4], "batch")
 
 	require.Contains(t, serviceConfig.Pipelines["metrics/test"].Exporters, "otlp/test")
 	require.Contains(t, serviceConfig.Pipelines["metrics/test"].Exporters, "logging/test")
@@ -285,10 +290,11 @@ service:
             receivers:
                 - otlp
             processors:
-                - memory_limiter
-                - k8sattributes
-                - resource
                 - batch
+                - cumulativetodelta/test
+                - k8sattributes
+                - memory_limiter
+                - resource
             exporters:
                 - logging/test
                 - otlp/test

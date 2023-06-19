@@ -45,6 +45,8 @@ spec:
               output:
                 description: Configures the trace receiver of a MetricPipeline.
                 properties:
+                  cumulative:
+                    type: boolean
                   otlp:
                     description: Defines an output using the OpenTelmetry protocol.
                     properties:
