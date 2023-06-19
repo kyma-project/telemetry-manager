@@ -59,6 +59,16 @@ type BatchProcessorConfig struct {
 	SendBatchMaxSize int    `yaml:"send_batch_max_size"`
 }
 
+type CumulativeToDeltaConfig struct {
+	Include CumulativeToDeltaAttribute `yaml:"include,omitempty"`
+	Exclude CumulativeToDeltaAttribute `yaml:"exclude,omitempty"`
+}
+
+type CumulativeToDeltaAttribute struct {
+	Metrics   []string `yaml:"metrics,omitempty"`
+	MatchType string   `yaml:"match_type,omitempty"`
+}
+
 type MemoryLimiterConfig struct {
 	CheckInterval        string `yaml:"check_interval"`
 	LimitPercentage      int    `yaml:"limit_percentage"`
@@ -96,11 +106,12 @@ type ResourceProcessorConfig struct {
 }
 
 type ProcessorsConfig struct {
-	Batch         *BatchProcessorConfig         `yaml:"batch,omitempty"`
-	MemoryLimiter *MemoryLimiterConfig          `yaml:"memory_limiter,omitempty"`
-	K8sAttributes *K8sAttributesProcessorConfig `yaml:"k8sattributes,omitempty"`
-	Resource      *ResourceProcessorConfig      `yaml:"resource,omitempty"`
-	Filter        *FilterProcessorConfig        `yaml:"filter,omitempty"`
+	CumulativeToDelta *CumulativeToDeltaConfig      `yaml:"cumulativetodelta,omitempty"`
+	Batch             *BatchProcessorConfig         `yaml:"batch,omitempty"`
+	MemoryLimiter     *MemoryLimiterConfig          `yaml:"memory_limiter,omitempty"`
+	K8sAttributes     *K8sAttributesProcessorConfig `yaml:"k8sattributes,omitempty"`
+	Resource          *ResourceProcessorConfig      `yaml:"resource,omitempty"`
+	Filter            *FilterProcessorConfig        `yaml:"filter,omitempty"`
 }
 
 type FilterProcessorConfig struct {

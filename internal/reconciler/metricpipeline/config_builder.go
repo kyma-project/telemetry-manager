@@ -33,8 +33,13 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v
 			exportersConfig[k] = v
 			outputAliases = append(outputAliases, k)
 		}
+
+		processorAliases := getProcessorAliases(&output, pipeline.Name)
+
 		sort.Strings(outputAliases)
-		pipelineConfig := makePipelineConfig(outputAliases)
+		sort.Strings(processorAliases)
+
+		pipelineConfig := makePipelineConfig(outputAliases, processorAliases)
 		pipelineName := fmt.Sprintf("metrics/%s", pipeline.Name)
 		pipelineConfigs[pipelineName] = pipelineConfig
 
@@ -55,6 +60,13 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v
 		Service:    serviceConfig,
 		Extensions: extensionConfig,
 	}, allVars, nil
+}
+
+func getProcessorAliases(output *v1alpha1.MetricPipelineOutput, pipelineName string) []string {
+	if output.Cumulative {
+		return []string{fmt.Sprintf("%s/%s", "cumulativetodelta", pipelineName), "memory_limiter", "k8sattributes", "resource", "batch"}
+	}
+	return []string{"memory_limiter", "k8sattributes", "resource", "batch"}
 }
 
 func makeReceiversConfig() config.ReceiversConfig {
@@ -110,6 +122,7 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 		},
 	}
 	return config.ProcessorsConfig{
+		CumulativeToDelta: &config.CumulativeToDeltaConfig{},
 		Batch: &config.BatchProcessorConfig{
 			SendBatchSize:    1024,
 			Timeout:          "10s",
@@ -140,10 +153,10 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 	}
 }
 
-func makePipelineConfig(outputAliases []string) config.PipelineConfig {
+func makePipelineConfig(outputAliases []string, processorAliases []string) config.PipelineConfig {
 	return config.PipelineConfig{
 		Receivers:  []string{"otlp"},
-		Processors: []string{"memory_limiter", "k8sattributes", "resource", "batch"},
+		Processors: processorAliases,
 		Exporters:  outputAliases,
 	}
 }

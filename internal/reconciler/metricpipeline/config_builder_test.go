@@ -26,6 +26,7 @@ var (
 						Value: "localhost",
 					},
 				},
+				Cumulative: true,
 			},
 		},
 	}
@@ -145,7 +146,7 @@ func TestMakeCollectorConfigMultiPipeline(t *testing.T) {
 
 func TestMakeServiceConfig(t *testing.T) {
 	pipelineConfig := map[string]config.PipelineConfig{
-		"metrics/test": makePipelineConfig([]string{"otlp/test", "logging/test"}),
+		"metrics/test": makePipelineConfig([]string{"otlp/test", "logging/test"}, []string{}),
 	}
 	serviceConfig := makeServiceConfig(pipelineConfig)
 
@@ -239,6 +240,7 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 processors:
+    cumulativetodelta: {}
     batch:
         send_batch_size: 1024
         timeout: 10s
