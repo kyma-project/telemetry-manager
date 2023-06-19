@@ -18,7 +18,7 @@ function apply_doc_url_annotation() {
 function create_github_release() {
     git remote add origin git@github.com:kyma-project/telemetry-manager.git
 	git reset --hard
-	curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash -s --  --skip-publish
+	curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash -s --  --snapshot
 }
 
 function main() {
