@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
 
-# readonly MODULE_REGISTRY="europe-docker.pkg.dev/kyma-project/prod/unsigned"
-readonly MODULE_REGISTRY="${MODULE_REGISTRY:-localhost:5001}"
-# readonly GCP_ACCESS_TOKEN=$(gcloud auth application-default print-access-token)
+readonly MODULE_REGISTRY="europe-docker.pkg.dev/kyma-project/prod/unsigned"
+readonly GCP_ACCESS_TOKEN=$(gcloud auth application-default print-access-token)
 
 function create_module() {
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
-    # ${KYMA} alpha create module --name kyma-project.io/module/${MODULE_NAME} --version ${MODULE_VERSION} --channel ${MODULE_CHANNEL} --default-cr ${MODULE_CR_PATH} --registry ${MODULE_REGISTRY} -c oauth2accesstoken:${GCP_ACCESS_TOKEN} --ci
-    ${KYMA} alpha create module --name kyma-project.io/module/${MODULE_NAME} --version ${MODULE_VERSION} --channel ${MODULE_CHANNEL} --default-cr ${MODULE_CR_PATH} --registry ${MODULE_REGISTRY} --insecure --ci
+    ${KYMA} alpha create module --name kyma-project.io/module/${MODULE_NAME} --version ${MODULE_VERSION} --channel ${MODULE_CHANNEL} --default-cr ${MODULE_CR_PATH} --registry ${MODULE_REGISTRY} -c oauth2accesstoken:${GCP_ACCESS_TOKEN} --ci
 }
 
 function apply_doc_url_annotation() {
@@ -18,7 +16,7 @@ function apply_doc_url_annotation() {
 function create_github_release() {
     git remote add origin git@github.com:kyma-project/telemetry-manager.git
 	git reset --hard
-	curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash -s --  --snapshot
+	curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash
 }
 
 function main() {
