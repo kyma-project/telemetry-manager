@@ -55,7 +55,7 @@ var _ = Describe("Tracing", func() {
 		It("Should have a running trace collector deployment", func() {
 			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				ready, err := verifiers.IsDeploymentReady(context.Background(), k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
 			}, timeout, interval).Should(Succeed())
