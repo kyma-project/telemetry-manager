@@ -61,7 +61,7 @@ var _ = Describe("Metrics", func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should have 2 trace collector replicas", func() {
+		It("Should have 2 metric gateway replicas", func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
 				err := k8sClient.Get(ctx, metricGatewayName, &deployment)
