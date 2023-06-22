@@ -32,6 +32,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/fields"
@@ -402,19 +403,19 @@ func main() {
 	}
 }
 
-// setupFilteredCache creates filtered cache for the given resources. The controller handles various resource that are namespace scoped, and additionally
-// it handles resources that are cluster scoped (secrets used in pipelines, clusterroles etc). In order to restrict the rights of the controller such that
-// it can only fetch resources from a given namespace only we create a filtered cache.
-
+// setupFilteredCache creates a filtered cache for the given resources. The controller handles various resource that are namespace scoped, and additionally
+// some resources that are cluster scoped (secrets used in pipelines, clusterroles etc.). In order to restrict the rights of the controller to only fetch
+// resources from a given namespace, we create a filtered cache.
 func setupFilteredCache() cache.NewCacheFunc {
 	return cache.BuilderWithOptions(cache.Options{
 		SelectorsByObject: cache.SelectorsByObject{
-			&appsv1.Deployment{}:     {Field: setNamespaceFieldSelector()},
-			&appsv1.ReplicaSet{}:     {Field: setNamespaceFieldSelector()},
-			&appsv1.DaemonSet{}:      {Field: setNamespaceFieldSelector()},
-			&corev1.ConfigMap{}:      {Field: setNamespaceFieldSelector()},
-			&corev1.ServiceAccount{}: {Field: setNamespaceFieldSelector()},
-			&corev1.Service{}:        {Field: setNamespaceFieldSelector()},
+			&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
+			&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
+			&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
+			&corev1.ConfigMap{}:           {Field: setNamespaceFieldSelector()},
+			&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
+			&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
+			&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
 		},
 	})
 }
