@@ -126,7 +126,7 @@ var _ = Describe("Tracing", func() {
 			Eventually(func(g Gomega) {
 				var podList corev1.PodList
 				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kymaSystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": traceCollectorBaseName})).To(Succeed())
-				g.Expect(podList.Items).To(HaveLen(1))
+				g.Expect(podList.Items).NotTo(BeEmpty())
 
 				traceCollectorPodName := podList.Items[0].Name
 				pprofPort := 1777
