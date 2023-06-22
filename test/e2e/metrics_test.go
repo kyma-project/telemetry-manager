@@ -105,11 +105,15 @@ var _ = Describe("Metrics", func() {
 			key := types.NamespacedName{Name: metricGatewayBaseName + "-pprof-deny-ingress", Namespace: kymaSystemNamespaceName}
 			Expect(k8sClient.Get(ctx, key, &networkPolicy)).To(Succeed())
 
-			metricGatewayPodName := getPodNameByLabel(kymaSystemNamespaceName, "app.kubernetes.io/name", metricGatewayBaseName)
-			pprofPort := 1777
-			pprofEndpoint := proxyClient.ProxyURLForPod(kymaSystemNamespaceName, metricGatewayPodName, "debug/pprof/", pprofPort)
-
 			Eventually(func(g Gomega) {
+				var podList corev1.PodList
+				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kymaSystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": metricGatewayBaseName})).To(Succeed())
+				g.Expect(podList.Items).To(HaveLen(1))
+
+				metricGatewayPodName := podList.Items[0].Name
+				pprofPort := 1777
+				pprofEndpoint := proxyClient.ProxyURLForPod(kymaSystemNamespaceName, metricGatewayPodName, "debug/pprof/", pprofPort)
+
 				resp, err := proxyClient.Get(pprofEndpoint)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
@@ -397,12 +401,4 @@ func suffixize(name string, idx int) string {
 	}
 
 	return fmt.Sprintf("%s-%d", name, idx)
-}
-
-func getPodNameByLabel(namespace, labelKey, labelValue string) string {
-	var podList corev1.PodList
-
-	Expect(k8sClient.List(ctx, &podList, client.InNamespace(namespace), client.MatchingLabels{labelKey: labelValue})).To(Succeed())
-	Expect(podList.Items).To(HaveLen(1))
-	return podList.Items[0].Name
 }

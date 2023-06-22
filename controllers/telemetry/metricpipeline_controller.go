@@ -22,6 +22,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -76,6 +77,11 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				IsController: false}).
 		Watches(
 			&source.Kind{Type: &corev1.Service{}},
+			&handler.EnqueueRequestForOwner{
+				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
+				IsController: false}).
+		Watches(
+			&source.Kind{Type: &networkingv1.NetworkPolicy{}},
 			&handler.EnqueueRequestForOwner{
 				OwnerType:    &telemetryv1alpha1.MetricPipeline{},
 				IsController: false}).
