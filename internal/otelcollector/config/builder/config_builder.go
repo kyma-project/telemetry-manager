@@ -28,17 +28,17 @@ func getLoggingOutputAlias(pipelineName string) string {
 	return fmt.Sprintf("logging/%s", pipelineName)
 }
 
-func MakeOTLPExportersConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string) (config.ExportersConfig, EnvVars, error) {
+func MakeOTLPExportersConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, queueSize int) (config.ExportersConfig, EnvVars, error) {
 	envVars, err := makeEnvVars(ctx, c, otlpOutput, pipelineName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
 	}
 
-	exportersConfig := makeExportersConfig(otlpOutput, pipelineName, envVars)
+	exportersConfig := makeExportersConfig(otlpOutput, pipelineName, envVars, queueSize)
 	return exportersConfig, envVars, nil
 }
 
-func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte) config.ExportersConfig {
+func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte, queueSize int) config.ExportersConfig {
 	otlpOutputAlias := getOTLPOutputAlias(otlpOutput, pipelineName)
 	loggingOutputAlias := getLoggingOutputAlias(pipelineName)
 	headers := makeHeaders(otlpOutput, pipelineName)
@@ -51,7 +51,7 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName 
 		},
 		SendingQueue: config.SendingQueueConfig{
 			Enabled:   true,
-			QueueSize: 512,
+			QueueSize: queueSize,
 		},
 		RetryOnFailure: config.RetryOnFailureConfig{
 			Enabled:         true,

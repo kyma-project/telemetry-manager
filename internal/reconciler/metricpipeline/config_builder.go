@@ -24,7 +24,8 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v
 		}
 
 		output := pipeline.Spec.Output
-		exporterConfig, envVars, err := configbuilder.MakeOTLPExportersConfig(ctx, c, output.Otlp, pipeline.Name)
+		queueSize := 256 / len(pipelines)
+		exporterConfig, envVars, err := configbuilder.MakeOTLPExportersConfig(ctx, c, output.Otlp, pipeline.Name, queueSize)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to make exporter config: %v", err)
 		}

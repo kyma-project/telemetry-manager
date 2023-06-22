@@ -42,7 +42,7 @@ func TestMakeExporterConfig(t *testing.T) {
 		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	exporterConfig, envVars, err := MakeOTLPExportersConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test")
+	exporterConfig, envVars, err := MakeOTLPExportersConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test", 512)
 	require.NoError(t, err)
 	require.NotNil(t, exporterConfig)
 	require.NotNil(t, envVars)
@@ -82,7 +82,7 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 		Headers:  headers,
 	}
 
-	exporterConfig, envVars, err := MakeOTLPExportersConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test")
+	exporterConfig, envVars, err := MakeOTLPExportersConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test", 512)
 	require.NoError(t, err)
 	require.NotNil(t, exporterConfig)
 	require.NotNil(t, envVars)

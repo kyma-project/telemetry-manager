@@ -142,7 +142,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	deployment := collectorresources.MakeDeployment(r.config, configHash)
+	deployment := collectorresources.MakeDeployment(r.config, configHash, len(metricPipelineList.Items))
 	if err = controllerutil.SetOwnerReference(pipeline, deployment, r.Scheme()); err != nil {
 		return err
 	}

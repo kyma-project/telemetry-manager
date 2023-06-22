@@ -124,6 +124,22 @@ func TestMakeCollectorConfigInsecure(t *testing.T) {
 	require.True(t, otlpExporterConfig.TLS.Insecure)
 }
 
+func TestMakeCollectorConfigQueueSize(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+	require.NoError(t, err)
+	require.Equal(t, 256, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Pipeline should have the full queue size")
+}
+
+func TestMakeCollectorConfigMultiPipelineQueueSize(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline, tracePipelineWithBasicAuth, tracePipelineInsecure})
+	require.NoError(t, err)
+	require.Equal(t, 85, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+	require.Equal(t, 85, collectorConfig.Exporters["otlp/test-basic-auth"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+	require.Equal(t, 85, collectorConfig.Exporters["otlp/test-insecure"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+}
+
 func TestMakeCollectorConfigMultiPipeline(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline, tracePipelineInsecure})
@@ -272,7 +288,7 @@ exporters:
         endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:
             enabled: true
-            queue_size: 512
+            queue_size: 256
         retry_on_failure:
             enabled: true
             initial_interval: 5s

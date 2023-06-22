@@ -113,6 +113,8 @@ issues:
     - linters: [ dupl ]
       path: internal/reconciler/(logpipeline|metricpipeline|tracepipeline)/status_test.go
     - linters: [ dupl ]
+      path: internal/resources/otelcollector/resources_test.go
+    - linters: [ dupl ]
       path: internal/kubernetes/utils(_test)?.go
     - linters: [ dupl ]
       path: internal/fluentbit/config/validation_test.go

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -39,6 +40,7 @@ var _ = Describe("Metrics", func() {
 			urls               *mocks.URLProvider
 			mockDeploymentName = "metric-receiver"
 			mockNs             = "metric-mocks"
+			metricGatewayName  = types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
 		)
 
 		BeforeAll(func() {
@@ -53,11 +55,19 @@ var _ = Describe("Metrics", func() {
 
 		It("Should have a running metric gateway deployment", func() {
 			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, metricGatewayName)
 				g.Expect(err).ShouldNot(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
 			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should have 2 metric gateway replicas", func() {
+			Eventually(func(g Gomega) int32 {
+				var deployment appsv1.Deployment
+				err := k8sClient.Get(ctx, metricGatewayName, &deployment)
+				g.Expect(err).NotTo(HaveOccurred())
+				return *deployment.Spec.Replicas
+			}, timeout, interval).Should(Equal(int32(2)))
 		})
 
 		It("Should have a metrics backend running", func() {
@@ -108,7 +118,7 @@ var _ = Describe("Metrics", func() {
 			Eventually(func(g Gomega) {
 				var podList corev1.PodList
 				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kymaSystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": metricGatewayBaseName})).To(Succeed())
-				g.Expect(podList.Items).To(HaveLen(1))
+				g.Expect(podList.Items).NotTo(BeEmpty())
 
 				metricGatewayPodName := podList.Items[0].Name
 				pprofPort := 1777
