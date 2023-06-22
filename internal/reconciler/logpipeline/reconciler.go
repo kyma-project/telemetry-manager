@@ -155,7 +155,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to create fluent bit service account: %w", err)
 	}
 
-	clusterRole := commonresources.MakeClusterRole(r.config.DaemonSet)
+	clusterRole := resources.MakeClusterRole(r.config.DaemonSet)
 	if err := controllerutil.SetOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
 		return err
 	}

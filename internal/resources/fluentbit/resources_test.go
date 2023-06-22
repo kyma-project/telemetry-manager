@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -71,6 +72,22 @@ func TestMakeDaemonSet(t *testing.T) {
 
 	volMounts := daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts
 	require.True(t, reflect.DeepEqual(volMounts, expectedVolMounts))
+}
+
+func TestMakeClusterRole(t *testing.T) {
+	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
+	clusterRole := MakeClusterRole(name)
+	expectedRules := []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"namespaces", "pods"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+	}
+
+	require.NotNil(t, clusterRole)
+	require.Equal(t, clusterRole.Name, name.Name)
+	require.Equal(t, clusterRole.Rules, expectedRules)
 }
 
 func TestMakeMetricsService(t *testing.T) {
