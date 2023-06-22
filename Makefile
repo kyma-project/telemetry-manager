@@ -107,6 +107,12 @@ e2e-test: ginkgo k3d test-matchers ## Provision k3d cluster and run end-to-end t
 	$(K3D) cluster delete kyma
 	$(K3D) registry delete k3d-kyma-registry
 
+.PHONY: upgrade-test
+upgrade-test: ginkgo k3d test-matchers ## Provision k3d cluster and run upgrade tests.
+	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/upgrade-test.sh
+	$(K3D) cluster delete kyma
+	$(K3D) registry delete k3d-kyma-registry
+
 .PHONY: e2e-deploy-module
 e2e-deploy-module: kyma kustomize ## Provision a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
 	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/deploy-module.sh
