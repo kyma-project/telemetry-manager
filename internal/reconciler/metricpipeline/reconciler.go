@@ -167,5 +167,14 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to create otel collector metrics service: %w", err)
 	}
 
+	networkPolicyPorts := makeNetworkPolicyPorts()
+	networkPolicy := collectorresources.MakeNetworkPolicy(r.config, networkPolicyPorts)
+	if err = controllerutil.SetOwnerReference(pipeline, networkPolicy, r.Scheme()); err != nil {
+		return err
+	}
+	if err = kubernetes.CreateOrUpdateNetworkPolicy(ctx, r.Client, networkPolicy); err != nil {
+		return fmt.Errorf("failed to create otel collector network policy: %w", err)
+	}
+
 	return nil
 }

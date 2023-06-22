@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -45,7 +46,7 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v
 
 	receiverConfig := makeReceiversConfig()
 	processorsConfig := makeProcessorsConfig()
-	serviceConfig := makeServiceConfig(pipelineConfigs)
+	serviceConfig := configbuilder.MakeServiceConfig(pipelineConfigs)
 	extensionConfig := configbuilder.MakeExtensionsConfig()
 
 	return &config.Config{
@@ -148,17 +149,12 @@ func makePipelineConfig(outputAliases []string) config.PipelineConfig {
 	}
 }
 
-func makeServiceConfig(pipelines map[string]config.PipelineConfig) config.ServiceConfig {
-	return config.ServiceConfig{
-		Pipelines: pipelines,
-		Telemetry: config.TelemetryConfig{
-			Metrics: config.MetricsConfig{
-				Address: "${MY_POD_IP}:8888",
-			},
-			Logs: config.LoggingConfig{
-				Level: "info",
-			},
-		},
-		Extensions: []string{"health_check"},
+func makeNetworkPolicyPorts() []intstr.IntOrString {
+	return []intstr.IntOrString{
+		intstr.FromInt(13133),
+		intstr.FromInt(4317),
+		intstr.FromInt(4318),
+		intstr.FromInt(55678),
+		intstr.FromInt(8888),
 	}
 }

@@ -143,26 +143,21 @@ func TestMakeCollectorConfigMultiPipeline(t *testing.T) {
 	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[3], "batch")
 }
 
-func TestMakeServiceConfig(t *testing.T) {
-	pipelineConfig := map[string]config.PipelineConfig{
+func TestMakePipelineConfig(t *testing.T) {
+	pipelines := map[string]config.PipelineConfig{
 		"metrics/test": makePipelineConfig([]string{"otlp/test", "logging/test"}),
 	}
-	serviceConfig := makeServiceConfig(pipelineConfig)
 
-	require.Contains(t, serviceConfig.Pipelines, "metrics/test")
-	require.Contains(t, serviceConfig.Pipelines["metrics/test"].Receivers, "otlp")
+	require.Contains(t, pipelines, "metrics/test")
+	require.Contains(t, pipelines["metrics/test"].Receivers, "otlp")
 
-	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[0], "memory_limiter")
-	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[1], "k8sattributes")
-	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[2], "resource")
-	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[3], "batch")
+	require.Equal(t, pipelines["metrics/test"].Processors[0], "memory_limiter")
+	require.Equal(t, pipelines["metrics/test"].Processors[1], "k8sattributes")
+	require.Equal(t, pipelines["metrics/test"].Processors[2], "resource")
+	require.Equal(t, pipelines["metrics/test"].Processors[3], "batch")
 
-	require.Contains(t, serviceConfig.Pipelines["metrics/test"].Exporters, "otlp/test")
-	require.Contains(t, serviceConfig.Pipelines["metrics/test"].Exporters, "logging/test")
-
-	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
-	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
-	require.Contains(t, serviceConfig.Extensions, "health_check")
+	require.Contains(t, pipelines["metrics/test"].Exporters, "otlp/test")
+	require.Contains(t, pipelines["metrics/test"].Exporters, "logging/test")
 }
 
 func TestResourceProcessors(t *testing.T) {
@@ -277,6 +272,8 @@ processors:
 extensions:
     health_check:
         endpoint: ${MY_POD_IP}:13133
+    pprof:
+        endpoint: 127.0.0.1:1777
 service:
     pipelines:
         metrics/test:
@@ -297,6 +294,7 @@ service:
             level: info
     extensions:
         - health_check
+        - pprof
 `
 
 	fakeClient := fake.NewClientBuilder().Build()

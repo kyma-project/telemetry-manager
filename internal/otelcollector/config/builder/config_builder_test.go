@@ -98,8 +98,21 @@ func TestMakeExtensionConfig(t *testing.T) {
 		HealthCheck: config.EndpointConfig{
 			Endpoint: "${MY_POD_IP}:13133",
 		},
+		Pprof: config.EndpointConfig{
+			Endpoint: "127.0.0.1:1777",
+		},
 	}
 
 	actualConfig := MakeExtensionsConfig()
 	require.Equal(t, expectedConfig, actualConfig)
+}
+
+func TestMakeServiceConfig(t *testing.T) {
+	var pipelineConfig map[string]config.PipelineConfig
+	serviceConfig := MakeServiceConfig(pipelineConfig)
+
+	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
+	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
+	require.Contains(t, serviceConfig.Extensions, "health_check")
+	require.Contains(t, serviceConfig.Extensions, "pprof")
 }

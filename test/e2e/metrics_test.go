@@ -9,19 +9,22 @@ import (
 	"time"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var (
@@ -96,6 +99,27 @@ var _ = Describe("Metrics", func() {
 					HaveMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 		})
+
+		It("Should have a working network policy", func() {
+			var networkPolicy networkingv1.NetworkPolicy
+			key := types.NamespacedName{Name: metricGatewayBaseName + "-pprof-deny-ingress", Namespace: kymaSystemNamespaceName}
+			Expect(k8sClient.Get(ctx, key, &networkPolicy)).To(Succeed())
+
+			Eventually(func(g Gomega) {
+				var podList corev1.PodList
+				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kymaSystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": metricGatewayBaseName})).To(Succeed())
+				g.Expect(podList.Items).To(HaveLen(1))
+
+				metricGatewayPodName := podList.Items[0].Name
+				pprofPort := 1777
+				pprofEndpoint := proxyClient.ProxyURLForPod(kymaSystemNamespaceName, metricGatewayPodName, "debug/pprof/", pprofPort)
+
+				resp, err := proxyClient.Get(pprofEndpoint)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
+			}, timeout, interval).Should(Succeed())
+		})
+
 	})
 
 	Context("When reaching the pipeline limit", Ordered, func() {

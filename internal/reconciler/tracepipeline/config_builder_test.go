@@ -168,28 +168,23 @@ func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
 	require.Equal(t, "${BASIC_AUTH_HEADER_TEST_BASIC_AUTH}", authHeader)
 }
 
-func TestMakeServiceConfig(t *testing.T) {
-	pipelineConfig := map[string]config.PipelineConfig{
+func TestMakePipelineConfig(t *testing.T) {
+	pipelines := map[string]config.PipelineConfig{
 		"traces/test": makePipelineConfig([]string{"otlp/test", "logging/test"}),
 	}
-	serviceConfig := makeServiceConfig(pipelineConfig)
 
-	require.Contains(t, serviceConfig.Pipelines, "traces/test")
-	require.Contains(t, serviceConfig.Pipelines["traces/test"].Receivers, "otlp")
-	require.Contains(t, serviceConfig.Pipelines["traces/test"].Receivers, "opencensus")
+	require.Contains(t, pipelines, "traces/test")
+	require.Contains(t, pipelines["traces/test"].Receivers, "otlp")
+	require.Contains(t, pipelines["traces/test"].Receivers, "opencensus")
 
-	require.Equal(t, serviceConfig.Pipelines["traces/test"].Processors[0], "memory_limiter")
-	require.Equal(t, serviceConfig.Pipelines["traces/test"].Processors[1], "k8sattributes")
-	require.Equal(t, serviceConfig.Pipelines["traces/test"].Processors[2], "filter")
-	require.Equal(t, serviceConfig.Pipelines["traces/test"].Processors[3], "resource")
-	require.Equal(t, serviceConfig.Pipelines["traces/test"].Processors[4], "batch")
+	require.Equal(t, pipelines["traces/test"].Processors[0], "memory_limiter")
+	require.Equal(t, pipelines["traces/test"].Processors[1], "k8sattributes")
+	require.Equal(t, pipelines["traces/test"].Processors[2], "filter")
+	require.Equal(t, pipelines["traces/test"].Processors[3], "resource")
+	require.Equal(t, pipelines["traces/test"].Processors[4], "batch")
 
-	require.Contains(t, serviceConfig.Pipelines["traces/test"].Exporters, "otlp/test")
-	require.Contains(t, serviceConfig.Pipelines["traces/test"].Exporters, "logging/test")
-
-	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
-	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
-	require.Contains(t, serviceConfig.Extensions, "health_check")
+	require.Contains(t, pipelines["traces/test"].Exporters, "otlp/test")
+	require.Contains(t, pipelines["traces/test"].Exporters, "logging/test")
 }
 
 func TestResourceProcessors(t *testing.T) {
@@ -335,6 +330,8 @@ processors:
 extensions:
     health_check:
         endpoint: ${MY_POD_IP}:13133
+    pprof:
+        endpoint: 127.0.0.1:1777
 service:
     pipelines:
         traces/test:
@@ -357,6 +354,7 @@ service:
             level: info
     extensions:
         - health_check
+        - pprof
 `
 
 	fakeClient := fake.NewClientBuilder().Build()
