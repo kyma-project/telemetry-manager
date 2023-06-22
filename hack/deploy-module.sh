@@ -17,6 +17,11 @@ function create_module() {
     ${KYMA} alpha create module --name kyma-project.io/module/${MODULE_NAME} --version ${MODULE_VERSION} --channel ${MODULE_CHANNEL} --default-cr ${MODULE_CR_PATH} --registry ${MODULE_REGISTRY} --insecure --ci
 }
 
+function apply_local_template_label() {
+    kubectl label --local=true -f template.yaml operator.kyma-project.io/use-local-template=true -o yaml > temporary-template.yaml
+    mv temporary-template.yaml template.yaml
+}
+
 function verify_telemetry_status() {
 	local number=1
 	while [[ $number -le 100 ]] ; do
@@ -57,20 +62,19 @@ function main() {
     # Create the module and push its image to a local k3d registry
     create_module
 
-    # Create template-k3d.yaml based on template.yaml with the URL needed for lifecycle manager to access the module image from inside the k3d cluster
-    cat template.yaml \
-	| sed -e "s/${REGISTRY_PORT}/5000/g" \
-		  -e "s/localhost/k3d-${REGISTRY_NAME}.localhost/g" \
-		> template-k3d.yaml
-
+    # Modify template.yaml with the URL needed for lifecycle manager to access the module image from inside the k3d cluster
+    sed -e "s/${REGISTRY_PORT}/5000/" \
+		-e "s/localhost/k3d-${REGISTRY_NAME}.localhost/" \
+        -i "" template.yaml
+	
     # Apply label needed by the lifecycle manager for local module deployment
-    kubectl label --local=true -f ./template-k3d.yaml operator.kyma-project.io/use-local-template=true -oyaml > template-k3d-with-label.yaml
+    apply_local_template_label
 
     # Deploy kyma which includes the deployment of the lifecycle-manager
     ${KYMA} alpha deploy --ci
 
     # Deploy the ModuleTemplate in the cluster
-    kubectl apply -f template-k3d-with-label.yaml
+    kubectl apply -f template.yaml
 
     # Enable the module
     ${KYMA} alpha enable module ${MODULE_NAME} --channel ${MODULE_CHANNEL}
