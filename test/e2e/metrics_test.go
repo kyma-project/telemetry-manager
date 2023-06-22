@@ -53,7 +53,7 @@ var _ = Describe("Metrics", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running metric gateway deployment", func() {
+		It("Should have a running metric gateway deployment", Label("operational"), func() {
 			Eventually(func(g Gomega) {
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, metricGatewayName)
 				g.Expect(err).ShouldNot(HaveOccurred())
@@ -70,7 +70,7 @@ var _ = Describe("Metrics", func() {
 			}, timeout, interval).Should(Equal(int32(2)))
 		})
 
-		It("Should have a metrics backend running", func() {
+		It("Should have a metrics backend running", Label("operational"), func() {
 			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
@@ -79,7 +79,7 @@ var _ = Describe("Metrics", func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should be able to get metric gateway metrics endpoint", func() {
+		It("Should be able to get metric gateway metrics endpoint", Label("operational"), func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.Metrics())
 				g.Expect(err).NotTo(HaveOccurred())
@@ -87,11 +87,11 @@ var _ = Describe("Metrics", func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should have a running pipeline", func() {
+		It("Should have a running pipeline", Label("operational"), func() {
 			metricPipelineShouldBeRunning("pipeline")
 		})
 
-		It("Should verify end-to-end metric delivery", func() {
+		It("Should verify end-to-end metric delivery", Label("operational"), func() {
 			builder := kitmetrics.NewBuilder()
 			var gauges []pmetric.Metric
 			for i := 0; i < 50; i++ {
