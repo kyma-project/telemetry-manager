@@ -48,7 +48,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
 | **output** (required) | object | Configures the trace receiver of a MetricPipeline. |
-| **output.&#x200b;cumulative**  | boolean |  |
+| **output.&#x200b;cumulative**  | boolean | Defines whether this metricpipeline should handle cumulative sum and histogram metrics. |
 | **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelmetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Defines authentication options for the OTLP output |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic**  | object | Activates `Basic` authentication for the destination providing relevant Secrets. |

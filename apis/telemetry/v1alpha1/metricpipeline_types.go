@@ -26,8 +26,9 @@ import (
 // MetricPipelineOutput defines the output configuration section.
 type MetricPipelineOutput struct {
 	// Defines an output using the OpenTelmetry protocol.
-	Otlp       *OtlpOutput `json:"otlp"`
-	Cumulative bool        `json:"cumulative,omitempty"`
+	Otlp *OtlpOutput `json:"otlp"`
+	// Defines whether this metricpipeline should handle cumulative sum and histogram metrics.
+	Cumulative bool `json:"cumulative,omitempty"`
 }
 
 // MetricPipelineSpec defines the desired state of MetricPipeline

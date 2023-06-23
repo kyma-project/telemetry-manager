@@ -39,7 +39,18 @@ func MakeClusterRole(name types.NamespacedName) *v1.ClusterRole {
 			Name:      name.Name,
 			Namespace: name.Namespace,
 		},
-		Rules: []v1.PolicyRule{{Verbs: []string{"get", "list", "watch"}, APIGroups: []string{""}, Resources: []string{"namespaces", "pods"}}},
+		Rules: []v1.PolicyRule{
+			{
+				Verbs:     []string{"get", "list", "watch"},
+				APIGroups: []string{""},
+				Resources: []string{"namespaces", "pods"},
+			},
+			{
+				Verbs:     []string{"get", "list", "watch"},
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+			},
+		},
 	}
 	return &clusterRole
 }

@@ -20,7 +20,18 @@ func TestMakeServiceAccount(t *testing.T) {
 func TestMakeClusterRole(t *testing.T) {
 	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 	clusterRole := MakeClusterRole(name)
-	expectedRules := []v1.PolicyRule{{Verbs: []string{"get", "list", "watch"}, APIGroups: []string{""}, Resources: []string{"namespaces", "pods"}}}
+	expectedRules := []v1.PolicyRule{
+		{
+			Verbs:     []string{"get", "list", "watch"},
+			APIGroups: []string{""},
+			Resources: []string{"namespaces", "pods"},
+		},
+		{
+			Verbs:     []string{"get", "list", "watch"},
+			APIGroups: []string{"apps"},
+			Resources: []string{"replicasets"},
+		},
+	}
 
 	require.NotNil(t, clusterRole)
 	require.Equal(t, clusterRole.Name, name.Name)
