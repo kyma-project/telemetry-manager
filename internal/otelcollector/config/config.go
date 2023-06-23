@@ -59,15 +59,7 @@ type BatchProcessorConfig struct {
 	SendBatchMaxSize int    `yaml:"send_batch_max_size"`
 }
 
-type CumulativeToDeltaConfig struct {
-	Include CumulativeToDeltaAttribute `yaml:"include,omitempty"`
-	Exclude CumulativeToDeltaAttribute `yaml:"exclude,omitempty"`
-}
-
-type CumulativeToDeltaAttribute struct {
-	Metrics   []string `yaml:"metrics,omitempty"`
-	MatchType string   `yaml:"match_type,omitempty"`
-}
+type CumulativeToDeltaConfig struct{}
 
 type MemoryLimiterConfig struct {
 	CheckInterval        string `yaml:"check_interval"`
