@@ -12,6 +12,7 @@ OS_ARCH ?= $(shell uname -m)
 # Operating system type
 OS_TYPE ?= $(shell uname)
 PROJECT_DIR ?= $(shell pwd)
+ARTIFACTS ?= $(shell pwd)/artifacts
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -57,7 +58,7 @@ lint: lint-manifests
 	go version
 	golangci-lint version
 	GO111MODULE=on golangci-lint run
-	
+
 
 .PHONY: crd-docs-gen
 crd-docs-gen: tablegen ## Generates CRD spec into docs folder
@@ -100,7 +101,9 @@ test-matchers: ginkgo
 .PHONY: e2e-test
 e2e-test: ginkgo k3d test-matchers ## Provision k3d cluster and run end-to-end tests.
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
-	$(GINKGO) run --tags e2e -v ./test/e2e
+	$(GINKGO) run --tags e2e -v --junit-report=junit.xml ./test/e2e
+	mkdir -p ${ARTIFACTS}
+	mv junit.xml ${ARTIFACTS}
 	$(K3D) cluster delete kyma
 	$(K3D) registry delete k3d-kyma-registry
 
