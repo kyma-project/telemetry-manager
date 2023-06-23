@@ -10,6 +10,9 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -18,11 +21,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	kittrace "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 	kittraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/traces"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
 )
 
 var (
@@ -37,6 +41,7 @@ var _ = Describe("Tracing", func() {
 			urls               *mocks.URLProvider
 			mockNs             = "trace-mocks-single-pipeline"
 			mockDeploymentName = "trace-receiver"
+			traceCollectorname = types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
 		)
 
 		BeforeAll(func() {
@@ -51,11 +56,19 @@ var _ = Describe("Tracing", func() {
 
 		It("Should have a running trace collector deployment", func() {
 			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, traceCollectorname)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
 			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should have 2 trace collector replicas", func() {
+			Eventually(func(g Gomega) int32 {
+				var deployment appsv1.Deployment
+				err := k8sClient.Get(ctx, traceCollectorname, &deployment)
+				g.Expect(err).NotTo(HaveOccurred())
+				return *deployment.Spec.Replicas
+			}, timeout, interval).Should(Equal(int32(2)))
 		})
 
 		It("Should have a trace backend running", func() {
@@ -102,6 +115,26 @@ var _ = Describe("Tracing", func() {
 					ConsistOfSpansWithIDs(spanIDs),
 					ConsistOfSpansWithTraceID(traceID),
 					ConsistOfSpansWithAttributes(attrs))))
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should have a working network policy", func() {
+			var networkPolicy networkingv1.NetworkPolicy
+			key := types.NamespacedName{Name: traceCollectorBaseName + "-pprof-deny-ingress", Namespace: kymaSystemNamespaceName}
+			Expect(k8sClient.Get(ctx, key, &networkPolicy)).To(Succeed())
+
+			Eventually(func(g Gomega) {
+				var podList corev1.PodList
+				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kymaSystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": traceCollectorBaseName})).To(Succeed())
+				g.Expect(podList.Items).NotTo(BeEmpty())
+
+				traceCollectorPodName := podList.Items[0].Name
+				pprofPort := 1777
+				pprofEndpoint := proxyClient.ProxyURLForPod(kymaSystemNamespaceName, traceCollectorPodName, "debug/pprof/", pprofPort)
+
+				resp, err := proxyClient.Get(pprofEndpoint)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
 			}, timeout, interval).Should(Succeed())
 		})
 	})

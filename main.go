@@ -32,6 +32,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/fields"
@@ -94,12 +95,16 @@ var (
 	maxTracePipelines  int
 	maxMetricPipelines int
 
-	traceCollectorImage         string
-	traceCollectorPriorityClass string
-	traceCollectorCPULimit      string
-	traceCollectorMemoryLimit   string
-	traceCollectorCPURequest    string
-	traceCollectorMemoryRequest string
+	traceCollectorImage                string
+	traceCollectorPriorityClass        string
+	traceCollectorCPULimit             string
+	traceCollectorDynamicCPULimit      string
+	traceCollectorMemoryLimit          string
+	traceCollectorDynamicMemoryLimit   string
+	traceCollectorCPURequest           string
+	traceCollectorDynamicCPURequest    string
+	traceCollectorMemoryRequest        string
+	traceCollectorDynamicMemoryRequest string
 
 	fluentBitMemoryBufferLimit         string
 	fluentBitFsBufferLimit             string
@@ -112,12 +117,16 @@ var (
 	fluentBitConfigPrepperImageVersion string
 	fluentBitPriorityClassName         string
 
-	metricGatewayImage         string
-	metricGatewayPriorityClass string
-	metricGatewayCPULimit      string
-	metricGatewayMemoryLimit   string
-	metricGatewayCPURequest    string
-	metricGatewayMemoryRequest string
+	metricGatewayImage                string
+	metricGatewayPriorityClass        string
+	metricGatewayCPULimit             string
+	metricGatewayDynamicCPULimit      string
+	metricGatewayMemoryLimit          string
+	metricGatewayDynamicMemoryLimit   string
+	metricGatewayCPURequest           string
+	metricGatewayDynamicCPURequest    string
+	metricGatewayMemoryRequest        string
+	metricGatewayDynamicMemoryRequest string
 
 	enableTelemetryManagerModule bool
 	enableWebhook                bool
@@ -177,12 +186,15 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,namespace=system,resources=replicasets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch
 
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch
 
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
+
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch
+// +kubebuilder:rbac:groups=networking.k8s.io,namespace=system,resources=networkpolicies,verbs=create;update;patch;delete
 
 func main() {
 	flag.BoolVar(&enableLogging, "enable-logging", true, "Enable configurable logging.")
@@ -194,18 +206,26 @@ func main() {
 
 	flag.StringVar(&traceCollectorImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorCPULimit, "trace-collector-cpu-limit", "1", "CPU limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorMemoryLimit, "trace-collector-memory-limit", "1Gi", "Memory limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceCollectorCPULimit, "trace-collector-cpu-limit", "900m", "CPU limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceCollectorDynamicCPULimit, "trace-collector-dynamic-cpu-limit", "100m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceCollectorMemoryLimit, "trace-collector-memory-limit", "512Mi", "Memory limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceCollectorDynamicMemoryLimit, "trace-collector-dynamic-memory-limit", "512Mi", "Additional memory limit for tracing OpenTelemetry Collector per TracePipeline")
 	flag.StringVar(&traceCollectorCPURequest, "trace-collector-cpu-request", "25m", "CPU request for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceCollectorDynamicCPURequest, "trace-collector-dynamic-cpu-request", "0", "Additional CPU request for tracing OpenTelemetry Collector per TracePipeline")
 	flag.StringVar(&traceCollectorMemoryRequest, "trace-collector-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceCollectorDynamicMemoryRequest, "trace-collector-dynamic-memory-request", "0", "Additional memory request for tracing OpenTelemetry Collector per TracePipeline")
 	flag.IntVar(&maxTracePipelines, "trace-collector-pipelines", 3, "Maximum number of TracePipelines to be created. If 0, no limit is applied.")
 
 	flag.StringVar(&metricGatewayImage, "metric-gateway-image", otelImage, "Image for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayCPULimit, "metric-gateway-cpu-limit", "1", "CPU limit for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayMemoryLimit, "metric-gateway-memory-limit", "1Gi", "Memory limit for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayCPULimit, "metric-gateway-cpu-limit", "900m", "CPU limit for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayDynamicCPULimit, "metric-gateway-dynamic-cpu-limit", "100m", "Additional CPU limit for metrics OpenTelemetry Collector per MetricPipeline")
+	flag.StringVar(&metricGatewayMemoryLimit, "metric-gateway-memory-limit", "512Mi", "Memory limit for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayDynamicMemoryLimit, "metric-gateway-dynamic-memory-limit", "512Mi", "Additional memory limit for metrics OpenTelemetry Collector per MetricPipeline")
 	flag.StringVar(&metricGatewayCPURequest, "metric-gateway-cpu-request", "25m", "CPU request for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayDynamicCPURequest, "metric-gateway-dynamic-cpu-request", "0", "Additional CPU request for metrics OpenTelemetry Collector per MetricPipeline")
 	flag.StringVar(&metricGatewayMemoryRequest, "metric-gateway-memory-request", "32Mi", "Memory request for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayDynamicMemoryRequest, "metric-gateway-dynamic-memory-request", "0", "Additional memory request for metrics OpenTelemetry Collector per MetricPipeline")
 	flag.IntVar(&maxMetricPipelines, "metric-gateway-pipelines", 3, "Maximum number of MetricPipelines to be created. If 0, no limit is applied.")
 
 	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
@@ -399,19 +419,19 @@ func main() {
 	}
 }
 
-// setupFilteredCache creates filtered cache for the given resources. The controller handles various resource that are namespace scoped, and additionally
-// it handles resources that are cluster scoped (secrets used in pipelines, clusterroles etc). In order to restrict the rights of the controller such that
-// it can only fetch resources from a given namespace only we create a filtered cache.
-
+// setupFilteredCache creates a filtered cache for the given resources. The controller handles various resource that are namespace scoped, and additionally
+// some resources that are cluster scoped (secrets used in pipelines, clusterroles etc.). In order to restrict the rights of the controller to only fetch
+// resources from a given namespace, we create a filtered cache.
 func setupFilteredCache() cache.NewCacheFunc {
 	return cache.BuilderWithOptions(cache.Options{
 		SelectorsByObject: cache.SelectorsByObject{
-			&appsv1.Deployment{}:     {Field: setNamespaceFieldSelector()},
-			&appsv1.ReplicaSet{}:     {Field: setNamespaceFieldSelector()},
-			&appsv1.DaemonSet{}:      {Field: setNamespaceFieldSelector()},
-			&corev1.ConfigMap{}:      {Field: setNamespaceFieldSelector()},
-			&corev1.ServiceAccount{}: {Field: setNamespaceFieldSelector()},
-			&corev1.Service{}:        {Field: setNamespaceFieldSelector()},
+			&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
+			&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
+			&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
+			&corev1.ConfigMap{}:           {Field: setNamespaceFieldSelector()},
+			&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
+			&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
+			&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
 		},
 	})
 }
@@ -499,12 +519,16 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 		Namespace: telemetryNamespace,
 		BaseName:  "telemetry-trace-collector",
 		Deployment: collectorresources.DeploymentConfig{
-			Image:             traceCollectorImage,
-			PriorityClassName: traceCollectorPriorityClass,
-			CPULimit:          resource.MustParse(traceCollectorCPULimit),
-			MemoryLimit:       resource.MustParse(traceCollectorMemoryLimit),
-			CPURequest:        resource.MustParse(traceCollectorCPURequest),
-			MemoryRequest:     resource.MustParse(traceCollectorMemoryRequest),
+			Image:                traceCollectorImage,
+			PriorityClassName:    traceCollectorPriorityClass,
+			BaseCPULimit:         resource.MustParse(traceCollectorCPULimit),
+			DynamicCPULimit:      resource.MustParse(traceCollectorDynamicCPULimit),
+			BaseMemoryLimit:      resource.MustParse(traceCollectorMemoryLimit),
+			DynamicMemoryLimit:   resource.MustParse(traceCollectorDynamicMemoryLimit),
+			BaseCPURequest:       resource.MustParse(traceCollectorCPURequest),
+			DynamicCPURequest:    resource.MustParse(traceCollectorDynamicCPURequest),
+			BaseMemoryRequest:    resource.MustParse(traceCollectorMemoryRequest),
+			DynamicMemoryRequest: resource.MustParse(traceCollectorDynamicMemoryRequest),
 		},
 		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
 		Service: collectorresources.ServiceConfig{
@@ -525,12 +549,16 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 		Namespace: telemetryNamespace,
 		BaseName:  "telemetry-metric-gateway",
 		Deployment: collectorresources.DeploymentConfig{
-			Image:             metricGatewayImage,
-			PriorityClassName: metricGatewayPriorityClass,
-			CPULimit:          resource.MustParse(metricGatewayCPULimit),
-			MemoryLimit:       resource.MustParse(metricGatewayMemoryLimit),
-			CPURequest:        resource.MustParse(metricGatewayCPURequest),
-			MemoryRequest:     resource.MustParse(metricGatewayMemoryRequest),
+			Image:                metricGatewayImage,
+			PriorityClassName:    metricGatewayPriorityClass,
+			BaseCPULimit:         resource.MustParse(metricGatewayCPULimit),
+			DynamicCPULimit:      resource.MustParse(metricGatewayDynamicCPULimit),
+			BaseMemoryLimit:      resource.MustParse(metricGatewayMemoryLimit),
+			DynamicMemoryLimit:   resource.MustParse(metricGatewayDynamicMemoryLimit),
+			BaseCPURequest:       resource.MustParse(metricGatewayCPURequest),
+			DynamicCPURequest:    resource.MustParse(metricGatewayDynamicCPURequest),
+			BaseMemoryRequest:    resource.MustParse(metricGatewayMemoryRequest),
+			DynamicMemoryRequest: resource.MustParse(metricGatewayDynamicMemoryRequest),
 		},
 		Service: collectorresources.ServiceConfig{
 			OTLPServiceName: "telemetry-otlp-metrics",

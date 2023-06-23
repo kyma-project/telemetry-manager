@@ -6,7 +6,7 @@ MODULE_CHANNEL ?= fast
 MODULE_NAME ?= telemetry
 MODULE_CR_PATH ?= ./config/samples/operator_v1alpha1_telemetry.yaml
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.24.1
+ENVTEST_K8S_VERSION = 1.26.5
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
 # Operating system type
@@ -169,7 +169,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 .PHONY: release
 release: kyma kustomize ## Create module with its image pushed to prod registry and create a github release entry
-	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} IMG=${IMG} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/release.sh
+	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} IMG=${IMG} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} RELEASE_TAG=${RELEASE_TAG} ./hack/release.sh
 
 ##@ Build Dependencies
 

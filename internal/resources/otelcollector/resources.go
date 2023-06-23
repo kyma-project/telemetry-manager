@@ -4,6 +4,8 @@ import (
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -26,12 +28,16 @@ type Config struct {
 }
 
 type DeploymentConfig struct {
-	Image             string
-	PriorityClassName string
-	CPULimit          resource.Quantity
-	MemoryLimit       resource.Quantity
-	CPURequest        resource.Quantity
-	MemoryRequest     resource.Quantity
+	Image                string
+	PriorityClassName    string
+	BaseCPULimit         resource.Quantity
+	DynamicCPULimit      resource.Quantity
+	BaseMemoryLimit      resource.Quantity
+	DynamicMemoryLimit   resource.Quantity
+	BaseCPURequest       resource.Quantity
+	DynamicCPURequest    resource.Quantity
+	BaseMemoryRequest    resource.Quantity
+	DynamicMemoryRequest resource.Quantity
 }
 
 type ServiceConfig struct {
@@ -49,7 +55,7 @@ var (
 	defaultPodAnnotations = map[string]string{
 		"sidecar.istio.io/inject": "false",
 	}
-	replicas = int32(1)
+	replicas = int32(2)
 )
 
 func makeDefaultLabels(config Config) map[string]string {
@@ -74,6 +80,55 @@ func MakeConfigMap(config Config, collectorConfig collectorconfig.Config) *corev
 	}
 }
 
+func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
+	clusterRole := rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces", "pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+		},
+	}
+	return &clusterRole
+}
+
+func makePodAffinity(labels map[string]string) corev1.Affinity {
+	return corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				{
+					Weight: 100,
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: "kubernetes.io/hostname",
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: labels,
+						},
+					},
+				},
+				{
+					Weight: 100,
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: "topology.kubernetes.io/zone",
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: labels,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func MakeSecret(config Config, secretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -85,11 +140,12 @@ func MakeSecret(config Config, secretData map[string][]byte) *corev1.Secret {
 	}
 }
 
-func MakeDeployment(config Config, configHash string) *appsv1.Deployment {
+func MakeDeployment(config Config, configHash string, pipelineCount int) *appsv1.Deployment {
 	labels := makeDefaultLabels(config)
 	optional := true
 	annotations := makePodAnnotations(configHash)
-	resources := makeResourceRequirements(config)
+	resources := makeResourceRequirements(config, pipelineCount)
+	affinity := makePodAffinity(labels)
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.BaseName,
@@ -107,6 +163,7 @@ func MakeDeployment(config Config, configHash string) *appsv1.Deployment {
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
+					Affinity: &affinity,
 					Containers: []corev1.Container{
 						{
 							Name:  collectorContainerName,
@@ -198,17 +255,32 @@ func makePodAnnotations(configHash string) map[string]string {
 	return annotations
 }
 
-func makeResourceRequirements(config Config) corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{
+// makeResourceRequirements returns the resource requirements for the opentelemetry-collector. We calculate the resources based on a initial base value and a dynamic part per pipeline.
+func makeResourceRequirements(config Config, pipelineCount int) corev1.ResourceRequirements {
+	memoryRequest := config.Deployment.BaseMemoryRequest.DeepCopy()
+	memoryLimit := config.Deployment.BaseMemoryLimit.DeepCopy()
+	cpuRequest := config.Deployment.BaseCPURequest.DeepCopy()
+	cpuLimit := config.Deployment.BaseCPULimit.DeepCopy()
+
+	for i := 0; i < pipelineCount; i++ {
+		memoryRequest.Add(config.Deployment.DynamicMemoryRequest)
+		memoryLimit.Add(config.Deployment.DynamicMemoryLimit)
+		cpuRequest.Add(config.Deployment.DynamicCPURequest)
+		cpuLimit.Add(config.Deployment.DynamicCPULimit)
+	}
+
+	resources := corev1.ResourceRequirements{
 		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    config.Deployment.CPURequest,
-			corev1.ResourceMemory: config.Deployment.MemoryRequest,
+			corev1.ResourceCPU:    cpuRequest,
+			corev1.ResourceMemory: memoryRequest,
 		},
 		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    config.Deployment.CPULimit,
-			corev1.ResourceMemory: config.Deployment.MemoryLimit,
+			corev1.ResourceCPU:    cpuLimit,
+			corev1.ResourceMemory: memoryLimit,
 		},
 	}
+
+	return resources
 }
 
 func MakeOTLPService(config Config) *corev1.Service {
@@ -234,8 +306,9 @@ func MakeOTLPService(config Config) *corev1.Service {
 					TargetPort: intstr.FromInt(4318),
 				},
 			},
-			Selector: labels,
-			Type:     corev1.ServiceTypeClusterIP,
+			Selector:        labels,
+			Type:            corev1.ServiceTypeClusterIP,
+			SessionAffinity: corev1.ServiceAffinityClientIP,
 		},
 	}
 }
@@ -284,8 +357,55 @@ func MakeOpenCensusService(config Config) *corev1.Service {
 					TargetPort: intstr.FromInt(55678),
 				},
 			},
-			Selector: labels,
-			Type:     corev1.ServiceTypeClusterIP,
+			Selector:        labels,
+			Type:            corev1.ServiceTypeClusterIP,
+			SessionAffinity: corev1.ServiceAffinityClientIP,
 		},
 	}
+}
+
+func MakeNetworkPolicy(config Config, ports []intstr.IntOrString) *networkingv1.NetworkPolicy {
+	labels := makeDefaultLabels(config)
+	networkPolicyPorts := makeNetworkPolicyPorts(ports)
+
+	return &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      config.BaseName + "-pprof-deny-ingress",
+			Namespace: config.Namespace,
+			Labels:    labels,
+		},
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			PolicyTypes: []networkingv1.PolicyType{
+				networkingv1.PolicyTypeIngress,
+			},
+			Ingress: []networkingv1.NetworkPolicyIngressRule{
+				{
+					From: []networkingv1.NetworkPolicyPeer{
+						{
+							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
+						},
+					},
+					Ports: networkPolicyPorts,
+				},
+			},
+		},
+	}
+}
+
+func makeNetworkPolicyPorts(ports []intstr.IntOrString) []networkingv1.NetworkPolicyPort {
+	var networkPolicyPorts []networkingv1.NetworkPolicyPort
+
+	tcpProtocol := corev1.ProtocolTCP
+
+	for idx := range ports {
+		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
+			Protocol: &tcpProtocol,
+			Port:     &ports[idx],
+		})
+	}
+
+	return networkPolicyPorts
 }

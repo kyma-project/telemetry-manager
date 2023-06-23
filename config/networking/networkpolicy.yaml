@@ -5,9 +5,10 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: fluent-bit
+      app.kubernetes.io/name: operator
       app.kubernetes.io/instance: telemetry
       kyma-project.io/component: controller
+      control-plane: telemetry-operator
   policyTypes:
     - Ingress
   ingress:

@@ -8,5 +8,5 @@ whitesource:
   language: golang-mod
   subprojects: false
   exclude:
-    - "/test"
-    - "*_test.go"
+    - "**/test/**"
+    - "**/*_test.go"

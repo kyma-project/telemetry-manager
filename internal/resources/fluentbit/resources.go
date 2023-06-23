@@ -6,6 +6,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -230,6 +231,23 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 			},
 		},
 	}
+}
+
+func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
+	clusterRole := rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces", "pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+		},
+	}
+	return &clusterRole
 }
 
 func MakeMetricsService(name types.NamespacedName) *corev1.Service {

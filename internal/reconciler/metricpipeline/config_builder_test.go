@@ -117,6 +117,22 @@ func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
 	require.Equal(t, "${BASIC_AUTH_HEADER_TEST_BASIC_AUTH}", authHeader)
 }
 
+func TestMakeCollectorConfigQueueSize(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline})
+	require.NoError(t, err)
+	require.Equal(t, 256, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Pipeline should have the full queue size")
+}
+
+func TestMakeCollectorConfigMultiPipelineQueueSize(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline, metricPipelineWithBasicAuth, metricPipelineInsecure})
+	require.NoError(t, err)
+	require.Equal(t, 85, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+	require.Equal(t, 85, collectorConfig.Exporters["otlp/test-basic-auth"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+	require.Equal(t, 85, collectorConfig.Exporters["otlp/test-insecure"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+}
+
 func TestMakeCollectorConfigMultiPipeline(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline, metricPipelineInsecure})
@@ -145,30 +161,25 @@ func TestMakeCollectorConfigMultiPipeline(t *testing.T) {
 	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[3], "resource")
 }
 
-func TestMakeServiceConfig(t *testing.T) {
-	pipelineConfig := map[string]config.PipelineConfig{
+func TestMakePipelineConfig(t *testing.T) {
+	pipelines := map[string]config.PipelineConfig{
 		"metrics/test": makePipelineConfig(
 			[]string{"otlp/test", "logging/test"},
 			[]string{"cumulativetodelta/test", "memory_limiter", "k8sattributes", "resource", "batch"},
 		),
 	}
-	serviceConfig := makeServiceConfig(pipelineConfig)
 
-	require.Contains(t, serviceConfig.Pipelines, "metrics/test")
-	require.Contains(t, serviceConfig.Pipelines["metrics/test"].Receivers, "otlp")
+	require.Contains(t, pipelines, "metrics/test")
+	require.Contains(t, pipelines["metrics/test"].Receivers, "otlp")
 
-	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[0], "cumulativetodelta/test")
-	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[1], "memory_limiter")
-	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[2], "k8sattributes")
-	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[3], "resource")
-	require.Equal(t, serviceConfig.Pipelines["metrics/test"].Processors[4], "batch")
+	require.Equal(t, pipelines["metrics/test"].Processors[0], "cumulativetodelta/test")
+	require.Equal(t, pipelines["metrics/test"].Processors[1], "memory_limiter")
+	require.Equal(t, pipelines["metrics/test"].Processors[2], "k8sattributes")
+	require.Equal(t, pipelines["metrics/test"].Processors[3], "resource")
+	require.Equal(t, pipelines["metrics/test"].Processors[4], "batch")
 
-	require.Contains(t, serviceConfig.Pipelines["metrics/test"].Exporters, "otlp/test")
-	require.Contains(t, serviceConfig.Pipelines["metrics/test"].Exporters, "logging/test")
-
-	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
-	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
-	require.Contains(t, serviceConfig.Extensions, "health_check")
+	require.Contains(t, pipelines["metrics/test"].Exporters, "otlp/test")
+	require.Contains(t, pipelines["metrics/test"].Exporters, "logging/test")
 }
 
 func TestResourceProcessors(t *testing.T) {
@@ -238,7 +249,7 @@ exporters:
         endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:
             enabled: true
-            queue_size: 512
+            queue_size: 256
         retry_on_failure:
             enabled: true
             initial_interval: 5s
@@ -284,6 +295,8 @@ processors:
 extensions:
     health_check:
         endpoint: ${MY_POD_IP}:13133
+    pprof:
+        endpoint: 127.0.0.1:1777
 service:
     pipelines:
         metrics/test:
@@ -305,6 +318,7 @@ service:
             level: info
     extensions:
         - health_check
+        - pprof
 `
 
 	fakeClient := fake.NewClientBuilder().Build()

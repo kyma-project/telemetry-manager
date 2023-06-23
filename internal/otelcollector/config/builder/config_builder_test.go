@@ -42,7 +42,7 @@ func TestMakeExporterConfig(t *testing.T) {
 		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	exporterConfig, envVars, err := MakeOTLPExportersConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test")
+	exporterConfig, envVars, err := MakeOTLPExportersConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test", 512)
 	require.NoError(t, err)
 	require.NotNil(t, exporterConfig)
 	require.NotNil(t, envVars)
@@ -82,7 +82,7 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 		Headers:  headers,
 	}
 
-	exporterConfig, envVars, err := MakeOTLPExportersConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test")
+	exporterConfig, envVars, err := MakeOTLPExportersConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test", 512)
 	require.NoError(t, err)
 	require.NotNil(t, exporterConfig)
 	require.NotNil(t, envVars)
@@ -98,8 +98,21 @@ func TestMakeExtensionConfig(t *testing.T) {
 		HealthCheck: config.EndpointConfig{
 			Endpoint: "${MY_POD_IP}:13133",
 		},
+		Pprof: config.EndpointConfig{
+			Endpoint: "127.0.0.1:1777",
+		},
 	}
 
 	actualConfig := MakeExtensionsConfig()
 	require.Equal(t, expectedConfig, actualConfig)
+}
+
+func TestMakeServiceConfig(t *testing.T) {
+	var pipelineConfig map[string]config.PipelineConfig
+	serviceConfig := MakeServiceConfig(pipelineConfig)
+
+	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
+	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
+	require.Contains(t, serviceConfig.Extensions, "health_check")
+	require.Contains(t, serviceConfig.Extensions, "pprof")
 }
