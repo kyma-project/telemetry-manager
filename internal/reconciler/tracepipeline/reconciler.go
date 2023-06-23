@@ -117,7 +117,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create otel collector service account: %w", err)
 	}
-	clusterRole := commonresources.MakeClusterRole(namespacedBaseName)
+	clusterRole := collectorresources.MakeClusterRole(namespacedBaseName)
 	if err = controllerutil.SetOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
 		return err
 	}
