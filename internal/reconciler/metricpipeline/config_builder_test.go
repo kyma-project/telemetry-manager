@@ -146,7 +146,7 @@ func TestMakeCollectorConfigMultiPipeline(t *testing.T) {
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[0], "batch")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[1], "cumulativetodelta/test")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[1], "cumulativetodelta")
 	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[2], "k8sattributes")
 	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[3], "memory_limiter")
 	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[4], "resource")
@@ -304,7 +304,7 @@ service:
                 - otlp
             processors:
                 - batch
-                - cumulativetodelta/test
+                - cumulativetodelta
                 - k8sattributes
                 - memory_limiter
                 - resource
