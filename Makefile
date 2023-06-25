@@ -6,7 +6,7 @@ MODULE_CHANNEL ?= fast
 MODULE_NAME ?= telemetry
 MODULE_CR_PATH ?= ./config/samples/operator_v1alpha1_telemetry.yaml
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.26.5
+ENVTEST_K8S_VERSION = 1.26.1
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
 # Operating system type
@@ -104,6 +104,12 @@ e2e-test: ginkgo k3d test-matchers ## Provision k3d cluster and run end-to-end t
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
+	$(K3D) cluster delete kyma
+	$(K3D) registry delete k3d-kyma-registry
+
+.PHONY: upgrade-test
+upgrade-test: ginkgo k3d test-matchers ## Provision k3d cluster and run upgrade tests.
+	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/upgrade-test.sh
 	$(K3D) cluster delete kyma
 	$(K3D) registry delete k3d-kyma-registry
 
