@@ -27,8 +27,8 @@ import (
 type MetricPipelineOutput struct {
 	// Defines an output using the OpenTelmetry protocol.
 	Otlp *OtlpOutput `json:"otlp"`
-	// Defines whether this metricpipeline should handle cumulative sum and histogram metrics.
-	Cumulative bool `json:"cumulative,omitempty"`
+	// Defines whether this metricpipeline should convert monotonic, cumulative sum and histogram metrics to monotonic, delta metrics.
+	ToDelta bool `json:"toDelta,omitempty"`
 }
 
 // MetricPipelineSpec defines the desired state of MetricPipeline

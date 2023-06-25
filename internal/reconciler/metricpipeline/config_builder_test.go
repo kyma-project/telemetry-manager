@@ -41,7 +41,7 @@ var (
 						Value: "localhost",
 					},
 				},
-				Cumulative: true,
+				ToDelta: true,
 			},
 		},
 	}

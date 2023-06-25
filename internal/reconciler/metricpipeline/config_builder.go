@@ -65,7 +65,7 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v
 }
 
 func getProcessorAliases(output *v1alpha1.MetricPipelineOutput) []string {
-	if output.Cumulative {
+	if output.ToDelta {
 		return []string{"cumulativetodelta", "memory_limiter", "k8sattributes", "resource", "batch"}
 	}
 	return []string{"memory_limiter", "k8sattributes", "resource", "batch"}
