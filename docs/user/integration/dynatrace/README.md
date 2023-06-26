@@ -104,6 +104,7 @@ This configuration samples 1% of all requests. Adjust the randomSamplingPercenta
         name: dynatrace
     spec:
         output:
+            toDelta: true
             otlp:
             endpoint:
                 value: https://apm.cf.eu12.hana.ondemand.com/e/{ENVIRONMENT_ID}/api/v2/otlp
