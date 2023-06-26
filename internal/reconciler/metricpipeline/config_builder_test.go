@@ -160,19 +160,19 @@ func TestMakeCollectorConfigMultiPipeline(t *testing.T) {
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[0], "batch")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[0], "memory_limiter")
 	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[1], "k8sattributes")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[2], "memory_limiter")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[3], "resource")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[2], "resource")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[3], "batch")
 
 	require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-insecure")
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Exporters, "otlp/test-insecure")
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Exporters, "logging/test-insecure")
 	require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Receivers, "otlp")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[0], "batch")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[0], "memory_limiter")
 	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[1], "k8sattributes")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[2], "memory_limiter")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[3], "resource")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[2], "resource")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-insecure"].Processors[3], "batch")
 }
 
 func TestMakePipelineConfig(t *testing.T) {
@@ -316,10 +316,10 @@ service:
             receivers:
                 - otlp
             processors:
-                - batch
-                - k8sattributes
                 - memory_limiter
+                - k8sattributes
                 - resource
+                - batch
             exporters:
                 - logging/test
                 - otlp/test
@@ -348,15 +348,15 @@ func TestCumulativeToDeltaProcessorInclusion(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[0], "batch")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[0], "memory_limiter")
 	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[1], "k8sattributes")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[2], "memory_limiter")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[3], "resource")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[2], "resource")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[3], "batch")
 
 	require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-delta")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[0], "batch")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[1], "cumulativetodelta")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[2], "k8sattributes")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[3], "memory_limiter")
-	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[4], "resource")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[0], "memory_limiter")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[1], "k8sattributes")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[2], "resource")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[3], "batch")
+	require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[4], "cumulativetodelta")
 }
