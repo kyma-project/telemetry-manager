@@ -136,7 +136,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = r.List(ctx, &tracePipelineList); err != nil {
 		return fmt.Errorf("failed to list trace pipelines: %w", err)
 	}
-	collectorConfig, envVars, err := makeOtelCollectorConfig(ctx, r, tracePipelineList.Items)
+	activePipelines, err := r.getActiveTracePipelines(ctx, tracePipelineList.Items, lock)
+	if err != nil {
+		return fmt.Errorf("failed to fetch active trace pipelines: %w", err)
+	}
+	collectorConfig, envVars, err := makeOtelCollectorConfig(ctx, r, activePipelines)
 	if err != nil {
 		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}
@@ -201,4 +205,18 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	return nil
+}
+
+func (r *Reconciler) getActiveTracePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline, lock *kubernetes.ResourceCountLock) ([]telemetryv1alpha1.TracePipeline, error) {
+	var activePipelines []telemetryv1alpha1.TracePipeline
+	for i := range allPipelines {
+		active, err := lock.IsLockHolder(ctx, &allPipelines[i])
+		if err != nil {
+			return nil, err
+		}
+		if active {
+			activePipelines = append(activePipelines, allPipelines[i])
+		}
+	}
+	return activePipelines, nil
 }

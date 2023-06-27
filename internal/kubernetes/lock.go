@@ -58,6 +58,21 @@ func (l *ResourceCountLock) TryAcquireLock(ctx context.Context, owner metav1.Obj
 	return errLockInUse
 }
 
+func (l *ResourceCountLock) IsLockHolder(ctx context.Context, obj metav1.Object) (bool, error) {
+	var lock corev1.ConfigMap
+	if err := l.client.Get(ctx, l.lockName, &lock); err != nil {
+		return false, fmt.Errorf("failed to get lock: %w", err)
+	}
+
+	for _, ref := range lock.GetOwnerReferences() {
+		if ref.Name == obj.GetName() && ref.UID == obj.GetUID() {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func (l *ResourceCountLock) createLock(ctx context.Context, owner metav1.Object) error {
 	lock := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{

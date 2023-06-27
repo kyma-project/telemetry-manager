@@ -120,7 +120,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = r.List(ctx, &metricPipelineList); err != nil {
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
 	}
-	collectorConfig, envVars, err := makeOtelCollectorConfig(ctx, r, metricPipelineList.Items)
+	activePipelines, err := r.getActiveMetricPipelines(ctx, metricPipelineList.Items, lock)
+	if err != nil {
+		return fmt.Errorf("failed to fetch active metric pipelines: %w", err)
+	}
+	collectorConfig, envVars, err := makeOtelCollectorConfig(ctx, r, activePipelines)
 	if err != nil {
 		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}
@@ -177,4 +181,18 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	return nil
+}
+
+func (r *Reconciler) getActiveMetricPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, lock *kubernetes.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
+	var activePipelines []telemetryv1alpha1.MetricPipeline
+	for i := range allPipelines {
+		active, err := lock.IsLockHolder(ctx, &allPipelines[i])
+		if err != nil {
+			return nil, err
+		}
+		if active {
+			activePipelines = append(activePipelines, allPipelines[i])
+		}
+	}
+	return activePipelines, nil
 }

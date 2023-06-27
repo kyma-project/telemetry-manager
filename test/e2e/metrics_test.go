@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -154,6 +155,7 @@ var _ = Describe("Metrics", func() {
 		It("Should have only running pipelines", func() {
 			for pipelineName := range allPipelines {
 				metricPipelineShouldBeRunning(pipelineName)
+				metricPipelineShouldBeDeployed(pipelineName)
 			}
 		})
 
@@ -165,6 +167,7 @@ var _ = Describe("Metrics", func() {
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, newPipeline...)).Should(Succeed())
 				metricPipelineShouldStayPending(newPipelineName)
+				metricPipelineShouldNotBeDeployed(newPipelineName)
 			})
 		})
 
@@ -331,6 +334,28 @@ func metricPipelineShouldStayPending(pipelineName string) {
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)).To(BeFalse())
 	}, metricPipelineReconciliationTimeout, interval).Should(Succeed())
+}
+
+func metricPipelineShouldBeDeployed(pipelineName string) {
+	Eventually(func(g Gomega) bool {
+		var collectorConfig corev1.ConfigMap
+		key := types.NamespacedName{Name: "telemetry-metric-gateway", Namespace: "kyma-system"}
+		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
+		configString := collectorConfig.Data["relay.conf"]
+		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
+		return strings.Contains(configString, pipelineAlias)
+	}, timeout, interval).Should(BeTrue())
+}
+
+func metricPipelineShouldNotBeDeployed(pipelineName string) {
+	Consistently(func(g Gomega) bool {
+		var collectorConfig corev1.ConfigMap
+		key := types.NamespacedName{Name: "telemetry-metric-gateway", Namespace: "kyma-system"}
+		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
+		configString := collectorConfig.Data["relay.conf"]
+		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
+		return !strings.Contains(configString, pipelineAlias)
+	}, tracePipelineReconciliationTimeout, interval).Should(BeTrue())
 }
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
