@@ -355,7 +355,7 @@ func metricPipelineShouldNotBeDeployed(pipelineName string) {
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return !strings.Contains(configString, pipelineAlias)
-	}, tracePipelineReconciliationTimeout, interval).Should(BeTrue())
+	}, metricPipelineReconciliationTimeout, interval).Should(BeTrue())
 }
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
