@@ -20,8 +20,40 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+//nolint:gochecknoinits // SchemeBuilder's registration is required.
+func init() {
+	SchemeBuilder.Register(&MetricPipeline{}, &MetricPipelineList{})
+}
+
+//+kubebuilder:object:root=true
+
+// MetricPipelineList contains a list of MetricPipeline
+type MetricPipelineList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []MetricPipeline `json:"items"`
+}
+
+//+kubebuilder:object:root=true
+//+kubebuilder:resource:scope=Cluster
+//+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.conditions[-1].type`
+//+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+
+// MetricPipeline is the Schema for the metricpipelines API
+type MetricPipeline struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   MetricPipelineSpec   `json:"spec,omitempty"`
+	Status MetricPipelineStatus `json:"status,omitempty"`
+}
+
+// MetricPipelineSpec defines the desired state of MetricPipeline
+type MetricPipelineSpec struct {
+	// Configures the trace receiver of a MetricPipeline.
+	Output MetricPipelineOutput `json:"output"`
+}
 
 // MetricPipelineOutput defines the output configuration section.
 type MetricPipelineOutput struct {
@@ -29,10 +61,9 @@ type MetricPipelineOutput struct {
 	Otlp *OtlpOutput `json:"otlp"`
 }
 
-// MetricPipelineSpec defines the desired state of MetricPipeline
-type MetricPipelineSpec struct {
-	// Configures the trace receiver of a MetricPipeline.
-	Output MetricPipelineOutput `json:"output"`
+// MetricPipelineStatus defines the observed state of MetricPipeline
+type MetricPipelineStatus struct {
+	Conditions []MetricPipelineCondition `json:"conditions,omitempty"`
 }
 
 type MetricPipelineConditionType string
@@ -43,16 +74,11 @@ const (
 	MetricPipelineRunning MetricPipelineConditionType = "Running"
 )
 
-// Contains details for the current condition of this MetricPipeline
+// MetricPipelineCondition contains details for the current condition of this MetricPipeline
 type MetricPipelineCondition struct {
 	LastTransitionTime metav1.Time                 `json:"lastTransitionTime,omitempty"`
 	Reason             string                      `json:"reason,omitempty"`
 	Type               MetricPipelineConditionType `json:"type,omitempty"`
-}
-
-// Defines the observed state of MetricPipeline
-type MetricPipelineStatus struct {
-	Conditions []MetricPipelineCondition `json:"conditions,omitempty"`
 }
 
 func NewMetricPipelineCondition(reason string, condType MetricPipelineConditionType) *MetricPipelineCondition {
@@ -97,33 +123,4 @@ func filterMetricPipelineCondition(conditions []MetricPipelineCondition, condTyp
 		newConditions = append(newConditions, cond)
 	}
 	return newConditions
-}
-
-//+kubebuilder:object:root=true
-//+kubebuilder:resource:scope=Cluster
-//+kubebuilder:subresource:status
-//+kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.conditions[-1].type`
-//+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-
-// MetricPipeline is the Schema for the metricpipelines API
-type MetricPipeline struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   MetricPipelineSpec   `json:"spec,omitempty"`
-	Status MetricPipelineStatus `json:"status,omitempty"`
-}
-
-//+kubebuilder:object:root=true
-
-// MetricPipelineList contains a list of MetricPipeline
-type MetricPipelineList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []MetricPipeline `json:"items"`
-}
-
-//nolint:gochecknoinits // SchemeBuilder's registration is required.
-func init() {
-	SchemeBuilder.Register(&MetricPipeline{}, &MetricPipelineList{})
 }
