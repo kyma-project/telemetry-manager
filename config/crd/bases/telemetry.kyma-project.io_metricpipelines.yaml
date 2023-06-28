@@ -42,6 +42,25 @@ spec:
           spec:
             description: MetricPipelineSpec defines the desired state of MetricPipeline.
             properties:
+              input:
+                description: Configures different inputs to send additional metrics
+                  to the metric gateway.
+                properties:
+                  istio:
+                    description: Configures Istio scraping.
+                    properties:
+                      enabled:
+                        description: Indicates if Istio scraping is enabled.
+                        type: boolean
+                    type: object
+                  runtime:
+                    description: Configures container runtime scraping.
+                    properties:
+                      enabled:
+                        description: Indicates if container runtime scraping is enabled.
+                        type: boolean
+                    type: object
+                type: object
               output:
                 description: Configures the metric gateway.
                 properties:

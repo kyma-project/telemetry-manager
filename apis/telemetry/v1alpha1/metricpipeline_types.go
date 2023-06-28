@@ -52,10 +52,10 @@ type MetricPipeline struct {
 // MetricPipelineSpec defines the desired state of MetricPipeline.
 type MetricPipelineSpec struct {
 	// Configures different inputs to send additional metrics to the metric gateway.
-	Input MetricPipelineInput `json:"output,omitempty"`
+	Input MetricPipelineInput `json:"input,omitempty"`
 
 	// Configures the metric gateway.
-	Output MetricPipelineOutput `json:"output"`
+	Output MetricPipelineOutput `json:"output,output"`
 }
 
 // MetricPipelineInput defines the input configuration section.
