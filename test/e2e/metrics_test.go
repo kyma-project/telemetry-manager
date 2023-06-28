@@ -44,7 +44,7 @@ var _ = Describe("Metrics", func() {
 		)
 
 		BeforeAll(func() {
-			k8sObjects, urlProvider := makeMetricsTestK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects, urlProvider := makeMetricsTestK8sObjects(mockNs, []string{mockDeploymentName})
 			urls = urlProvider
 
 			DeferCleanup(func() {
@@ -132,6 +132,68 @@ var _ = Describe("Metrics", func() {
 
 	})
 
+	Context("When a metricpipeline has toDelta flag active", Ordered, func() {
+		var (
+			urls               *mocks.URLProvider
+			mockDeploymentName = "metric-receiver"
+			mockNs             = "metric-mocks-delta"
+			metricGatewayName  = types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
+		)
+
+		BeforeAll(func() {
+			k8sObjects, urlProvider := makeMetricsTestK8sObjects(mockNs, []string{mockDeploymentName}, addCumulativeToDeltaConversion)
+
+			urls = urlProvider
+
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			})
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have a running metric gateway deployment", Label("operational"), func() {
+			Eventually(func(g Gomega) {
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, metricGatewayName)
+				g.Expect(err).ShouldNot(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should have a metrics backend running", Label("operational"), func() {
+			Eventually(func(g Gomega) {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should have a running pipeline", Label("operational"), func() {
+			metricPipelineShouldBeRunning("pipeline")
+		})
+
+		It("Should verify end-to-end metric delivery", Label("operational"), func() {
+			builder := kitmetrics.NewBuilder()
+			var gauges []pmetric.Metric
+			for i := 0; i < 50; i++ {
+				gauge := kitmetrics.NewGauge()
+				gauges = append(gauges, gauge)
+				builder.WithMetric(gauge)
+			}
+			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
+
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(urls.MockBackendExport())
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					HaveMetrics(gauges...)))) // add validation
+			}, timeout, interval).Should(Succeed())
+		})
+
+		// validate that metrics arriving in the delta format
+	})
+
 	Context("When reaching the pipeline limit", Ordered, func() {
 		allPipelines := make(map[string][]client.Object, 0)
 
@@ -189,7 +251,7 @@ var _ = Describe("Metrics", func() {
 		)
 
 		BeforeAll(func() {
-			k8sObjects, urlProvider := makeMetricsTestK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects, urlProvider := makeMetricsTestK8sObjects(mockNs, []string{mockDeploymentName})
 			urls = urlProvider
 			secondPipeline := makeBrokenMetricPipeline("pipeline-1")
 
@@ -252,7 +314,7 @@ var _ = Describe("Metrics", func() {
 		)
 
 		BeforeAll(func() {
-			k8sObjects, urlProvider := makeMetricsTestK8sObjects(mockNs, primaryMockDeploymentName, auxiliaryMockDeploymentName)
+			k8sObjects, urlProvider := makeMetricsTestK8sObjects(mockNs, []string{primaryMockDeploymentName, auxiliaryMockDeploymentName})
 			urls = urlProvider
 
 			DeferCleanup(func() {
@@ -333,8 +395,12 @@ func metricPipelineShouldStayPending(pipelineName string) {
 	}, metricPipelineReconciliationTimeout, interval).Should(Succeed())
 }
 
+func addCumulativeToDeltaConversion(metricPipeline telemetryv1alpha1.MetricPipeline) {
+	metricPipeline.Spec.Output.ToDelta = true
+}
+
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames ...string) ([]client.Object, *mocks.URLProvider) {
+func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames []string, metricPipelineOptions ...kitmetric.PipelineOption) ([]client.Object, *mocks.URLProvider) {
 	var (
 		objs []client.Object
 		urls = mocks.NewURLProvider()
@@ -368,7 +434,7 @@ func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 			mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 			mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 			hostSecret.K8sObject(),
-			metricPipeline.K8sObject(),
+			metricPipeline.K8sObject(metricPipelineOptions...),
 		}...)
 
 		urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), i)

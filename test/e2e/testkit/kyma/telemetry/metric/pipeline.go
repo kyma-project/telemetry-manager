@@ -20,8 +20,10 @@ func NewPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
 	}
 }
 
-func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
-	return &telemetry.MetricPipeline{
+type PipelineOption = func(telemetry.MetricPipeline)
+
+func (p *Pipeline) K8sObject(opts ...PipelineOption) *telemetry.MetricPipeline {
+	metricPipeline := telemetry.MetricPipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
 			Name: p.name,
 		},
@@ -37,4 +39,10 @@ func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
 			},
 		},
 	}
+
+	for _, opt := range opts {
+		opt(metricPipeline)
+	}
+
+	return &metricPipeline
 }
