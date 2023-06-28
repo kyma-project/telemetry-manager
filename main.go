@@ -75,6 +75,7 @@ import (
 	_ "net/http/pprof"
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
 	//+kubebuilder:scaffold:imports
+	agentresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
 )
 
 var (
@@ -548,6 +549,10 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 
 func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.MetricPipelineReconciler {
 	config := metricpipeline.Config{
+		Agent: agentresources.Config{
+			Namespace: telemetryNamespace,
+			BaseName:  "telemetry-metric-agent",
+		},
 		Gateway: gatewayresources.Config{
 			Namespace: telemetryNamespace,
 			BaseName:  "telemetry-metric-gateway",

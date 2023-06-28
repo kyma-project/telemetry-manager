@@ -16,10 +16,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	agentresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
 	gatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 )
 
 type Config struct {
+	Agent                  agentresources.Config
 	Gateway                gatewayresources.Config
 	OverridesConfigMapName types.NamespacedName
 	MaxPipelines           int
@@ -97,6 +99,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	if err = r.reconcileMetricGateway(ctx, pipeline); err != nil {
 		return fmt.Errorf("failed to reconcile metric gateway: %w", err)
+	}
+
+	if isMetricAgentRequired(pipeline) {
+		if err = r.reconcileMetricAgent(ctx, pipeline); err != nil {
+			return fmt.Errorf("failed to reconcile metric agent: %w", err)
+		}
 	}
 
 	return nil
@@ -191,6 +199,44 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	}
 	if err = kubernetes.CreateOrUpdateNetworkPolicy(ctx, r.Client, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create otel collector network policy: %w", err)
+	}
+
+	return nil
+}
+
+func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	return pipeline.Spec.Input.Istio.Enabled || pipeline.Spec.Input.Runtime.Enabled
+}
+
+func (r *Reconciler) reconcileMetricAgent(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+	namespacedBaseName := types.NamespacedName{
+		Name:      r.config.Gateway.BaseName,
+		Namespace: r.config.Gateway.Namespace,
+	}
+
+	var err error
+	serviceAccount := commonresources.MakeServiceAccount(namespacedBaseName)
+	if err = controllerutil.SetOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
+		return err
+	}
+	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
+		return fmt.Errorf("failed to create otel collector service account: %w", err)
+	}
+
+	clusterRole := agentresources.MakeClusterRole(namespacedBaseName)
+	if err = controllerutil.SetOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
+		return err
+	}
+	if err = kubernetes.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
+		return fmt.Errorf("failed to create otel collector cluster role: %w", err)
+	}
+
+	clusterRoleBinding := commonresources.MakeClusterRoleBinding(namespacedBaseName)
+	if err = controllerutil.SetOwnerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
+		return err
+	}
+	if err = kubernetes.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
+		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
 	return nil
