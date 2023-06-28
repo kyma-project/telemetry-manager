@@ -19,7 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 
@@ -43,7 +42,6 @@ var (
 			Service: collectorresources.ServiceConfig{OTLPServiceName: "telemetry-otlp-traces"},
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: "override-config", Namespace: "telemetry-system"},
-		Overrides:              overrides.Config{},
 		MaxPipelines:           0,
 	}
 )
