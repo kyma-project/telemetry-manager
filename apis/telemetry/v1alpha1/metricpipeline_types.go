@@ -27,7 +27,7 @@ func init() {
 
 //+kubebuilder:object:root=true
 
-// MetricPipelineList contains a list of MetricPipeline
+// MetricPipelineList contains a list of MetricPipeline.
 type MetricPipelineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -40,7 +40,7 @@ type MetricPipelineList struct {
 //+kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.conditions[-1].type`
 //+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
-// MetricPipeline is the Schema for the metricpipelines API
+// MetricPipeline is the Schema for the metricpipelines API.
 type MetricPipeline struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -49,19 +49,43 @@ type MetricPipeline struct {
 	Status MetricPipelineStatus `json:"status,omitempty"`
 }
 
-// MetricPipelineSpec defines the desired state of MetricPipeline
+// MetricPipelineSpec defines the desired state of MetricPipeline.
 type MetricPipelineSpec struct {
-	// Configures the trace receiver of a MetricPipeline.
+	// Configures different inputs to send additional metrics to the metric gateway.
+	Input MetricPipelineInput `json:"output,omitempty"`
+
+	// Configures the metric gateway.
 	Output MetricPipelineOutput `json:"output"`
+}
+
+// MetricPipelineInput defines the input configuration section.
+type MetricPipelineInput struct {
+	// Configures container runtime scraping.
+	Runtime MetricPipelineContainerRuntimeInput `json:"runtime,omitempty"`
+
+	// Configures Istio scraping.
+	Istio MetricPipelineIstioInput `json:"istio,omitempty"`
+}
+
+// MetricPipelineContainerRuntimeInput defines container runtime scraping section.
+type MetricPipelineContainerRuntimeInput struct {
+	// Indicates if container runtime scraping is enabled.
+	Enabled bool
+}
+
+// MetricPipelineIstioInput defines Istio scraping section.
+type MetricPipelineIstioInput struct {
+	// Indicates if Istio scraping is enabled.
+	Enabled bool
 }
 
 // MetricPipelineOutput defines the output configuration section.
 type MetricPipelineOutput struct {
-	// Defines an output using the OpenTelmetry protocol.
+	// Defines an output using the OpenTelemetry protocol.
 	Otlp *OtlpOutput `json:"otlp"`
 }
 
-// MetricPipelineStatus defines the observed state of MetricPipeline
+// MetricPipelineStatus defines the observed state of MetricPipeline.
 type MetricPipelineStatus struct {
 	Conditions []MetricPipelineCondition `json:"conditions,omitempty"`
 }
@@ -74,7 +98,7 @@ const (
 	MetricPipelineRunning MetricPipelineConditionType = "Running"
 )
 
-// MetricPipelineCondition contains details for the current condition of this MetricPipeline
+// MetricPipelineCondition contains details for the current condition of this MetricPipeline.
 type MetricPipelineCondition struct {
 	LastTransitionTime metav1.Time                 `json:"lastTransitionTime,omitempty"`
 	Reason             string                      `json:"reason,omitempty"`
