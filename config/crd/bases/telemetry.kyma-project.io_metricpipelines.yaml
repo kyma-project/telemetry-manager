@@ -54,10 +54,10 @@ spec:
                         type: boolean
                     type: object
                   runtime:
-                    description: Configures container runtime scraping.
+                    description: Configures runtime scraping (kubelet, node metrics).
                     properties:
                       enabled:
-                        description: Indicates if container runtime scraping is enabled.
+                        description: Indicates if runtime scraping is enabled.
                         type: boolean
                     type: object
                 type: object
