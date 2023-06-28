@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -174,12 +175,29 @@ var _ = Describe("Metrics", func() {
 
 		It("Should verify end-to-end metric delivery", Label("operational"), func() {
 			builder := kitmetrics.NewBuilder()
-			var gauges []pmetric.Metric
-			for i := 0; i < 50; i++ {
-				gauge := kitmetrics.NewGauge()
-				gauges = append(gauges, gauge)
-				builder.WithMetric(gauge)
+			var cumulativeSums []pmetric.Metric
+
+			sum := kitmetrics.NewCumulativeMetric()
+			cumulativeSums = append(cumulativeSums, sum)
+			builder.WithMetric(sum)
+			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
+
+			// sum.setValue...
+			startTime := sum.Sum().DataPoints().At(0).StartTimestamp().AsTime()
+			pt := sum.Sum().DataPoints().AppendEmpty()
+
+			pt.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
+			pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
+			//define static val
+			pt.SetDoubleValue(float64(2)) //nolint:gosec // random number generator is sufficient.
+
+			for i := 0; i < 7; i++ {
+				k := fmt.Sprintf("pt-label-key-%d", i)
+				v := fmt.Sprintf("pt-label-val-%d", i)
+				pt.Attributes().PutStr(k, v)
 			}
+
+			builder.WithMetric(sum) // maybe :)
 			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
 			Eventually(func(g Gomega) {
@@ -187,9 +205,14 @@ var _ = Describe("Metrics", func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetrics(gauges...)))) // add validation
+					HaveMetrics(cumulativeSums...)))) // add validation
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					HaveDeltaMetrics(cumulativeSums...))))
+				// take a look on how data looks like
 			}, timeout, interval).Should(Succeed())
 		})
+
+		// maybe check whether aggregation flag is still there after processor transforms the metric
 
 		// validate that metrics arriving in the delta format
 	})

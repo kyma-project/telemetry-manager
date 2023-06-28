@@ -34,6 +34,32 @@ func HaveMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 	}, gomega.ContainElements(expectedMetrics))
 }
 
+func HaveDeltaMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
+		actualBytes, ok := actual.([]byte)
+		if !ok {
+			return nil, fmt.Errorf("HaveGauges requires a []byte, but got %T", actual)
+		}
+		fmt.Println(string(actualBytes))
+
+		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+		if err != nil {
+			return nil, fmt.Errorf("HaveGauges requires a valid OTLP JSON document: %v", err)
+		}
+		fmt.Println(actualMds[len(actualMds)-1].ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().SchemaUrl())
+
+		var actualMetrics []pmetric.Metric
+		for _, md := range actualMds {
+			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
+		}
+		fmt.Println(actualMetrics[len(actualMetrics)-1].Sum().AggregationTemporality())
+		fmt.Println(actualMetrics[len(actualMetrics)-1].Sum().DataPoints().At(0))
+		fmt.Println(actualMetrics[len(actualMetrics)-1].Sum().DataPoints().At(1))
+		fmt.Println(actualMetrics[len(actualMetrics)-1].Sum().DataPoints().At(2))
+		return actualMetrics, nil
+	}, gomega.ContainElements(expectedMetrics))
+}
+
 func HaveNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) (int, error) {
 		actualBytes, ok := actual.([]byte)
