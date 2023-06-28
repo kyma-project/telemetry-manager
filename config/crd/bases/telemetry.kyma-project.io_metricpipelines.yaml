@@ -199,8 +199,6 @@ spec:
                 required:
                 - otlp
                 type: object
-            required:
-            - output
             type: object
           status:
             description: MetricPipelineStatus defines the observed state of MetricPipeline.

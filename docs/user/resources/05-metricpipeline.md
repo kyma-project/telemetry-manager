@@ -52,7 +52,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;istio.&#x200b;enabled**  | boolean | Indicates if Istio scraping is enabled. |
 | **input.&#x200b;runtime**  | object | Configures runtime scraping (kubelet, node metrics). |
 | **input.&#x200b;runtime.&#x200b;enabled**  | boolean | Indicates if runtime scraping is enabled. |
-| **output** (required) | object | Configures the metric gateway. |
+| **output**  | object | Configures the metric gateway. |
 | **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Defines authentication options for the OTLP output |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic**  | object | Activates `Basic` authentication for the destination providing relevant Secrets. |

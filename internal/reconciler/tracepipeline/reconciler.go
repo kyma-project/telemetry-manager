@@ -32,8 +32,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	gatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 )
+
+type Config struct {
+	Gateway                gatewayresources.Config
+	OverridesConfigMapName types.NamespacedName
+	MaxPipelines           int
+}
 
 //go:generate mockery --name DeploymentProber --filename deployment_prober.go
 type DeploymentProber interface {
@@ -42,12 +48,12 @@ type DeploymentProber interface {
 
 type Reconciler struct {
 	client.Client
-	config           collectorresources.Config
+	config           Config
 	prober           DeploymentProber
 	overridesHandler overrides.GlobalConfigHandler
 }
 
-func NewReconciler(client client.Client, config collectorresources.Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
+func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
 	return &Reconciler{
 		Client:           client,
 		config:           config,
@@ -61,7 +67,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	log.V(1).Info("Reconciliation triggered")
 
-	overrideConfig, err := r.overridesHandler.UpdateOverrideConfig(ctx, r.config.OverrideConfigMap)
+	overrideConfig, err := r.overridesHandler.UpdateOverrideConfig(ctx, r.config.OverridesConfigMapName)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -96,20 +102,29 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		}
 	}()
 
-	lockName := types.NamespacedName{
+	lock := kubernetes.NewResourceCountLock(r.Client, types.NamespacedName{
 		Name:      "telemetry-tracepipeline-lock",
-		Namespace: r.config.Namespace,
-	}
-	lock := kubernetes.NewResourceCountLock(r.Client, lockName, r.config.MaxPipelines)
+		Namespace: r.config.Gateway.Namespace,
+	}, r.config.MaxPipelines)
 	if err = lock.TryAcquireLock(ctx, pipeline); err != nil {
 		lockAcquired = false
 		return err
 	}
 
-	namespacedBaseName := types.NamespacedName{
-		Name:      r.config.BaseName,
-		Namespace: r.config.Namespace,
+	if err = r.reconcileTraceGateway(ctx, pipeline); err != nil {
+		return fmt.Errorf("failed to reconcile trace gateway: %w", err)
 	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
+	namespacedBaseName := types.NamespacedName{
+		Name:      r.config.Gateway.BaseName,
+		Namespace: r.config.Gateway.Namespace,
+	}
+
+	var err error
 	serviceAccount := commonresources.MakeServiceAccount(namespacedBaseName)
 	if err = controllerutil.SetOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
 		return err
@@ -117,13 +132,15 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create otel collector service account: %w", err)
 	}
-	clusterRole := collectorresources.MakeClusterRole(namespacedBaseName)
+
+	clusterRole := gatewayresources.MakeClusterRole(namespacedBaseName)
 	if err = controllerutil.SetOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
 		return err
 	}
 	if err = kubernetes.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
 		return fmt.Errorf("failed to create otel collector cluster role: %w", err)
 	}
+
 	clusterRoleBinding := commonresources.MakeClusterRoleBinding(namespacedBaseName)
 	if err = controllerutil.SetOwnerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
 		return err
@@ -141,15 +158,15 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}
 
-	secret := collectorresources.MakeSecret(r.config, envVars)
+	secret := gatewayresources.MakeSecret(r.config.Gateway, envVars)
 	if err = controllerutil.SetOwnerReference(pipeline, secret, r.Scheme()); err != nil {
 		return err
 	}
 	if err = kubernetes.CreateOrUpdateSecret(ctx, r.Client, secret); err != nil {
-		return err
+		return fmt.Errorf("failed to create otel collector env secret: %w", err)
 	}
 
-	configMap := collectorresources.MakeConfigMap(r.config, *collectorConfig)
+	configMap := gatewayresources.MakeConfigMap(r.config.Gateway, *collectorConfig)
 	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
 		return err
 	}
@@ -158,7 +175,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	deployment := collectorresources.MakeDeployment(r.config, configHash, len(tracePipelineList.Items))
+	deployment := gatewayresources.MakeDeployment(r.config.Gateway, configHash, len(tracePipelineList.Items))
 	if err = controllerutil.SetOwnerReference(pipeline, deployment, r.Scheme()); err != nil {
 		return err
 	}
@@ -166,7 +183,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to create otel collector deployment: %w", err)
 	}
 
-	otlpService := collectorresources.MakeOTLPService(r.config)
+	otlpService := gatewayresources.MakeOTLPService(r.config.Gateway)
 	if err = controllerutil.SetOwnerReference(pipeline, otlpService, r.Scheme()); err != nil {
 		return err
 	}
@@ -175,7 +192,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to create otel collector collector service: %w", err)
 	}
 
-	openCensusService := collectorresources.MakeOpenCensusService(r.config)
+	openCensusService := gatewayresources.MakeOpenCensusService(r.config.Gateway)
 	if err = controllerutil.SetOwnerReference(pipeline, openCensusService, r.Scheme()); err != nil {
 		return err
 	}
@@ -183,7 +200,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to create otel collector open census service: %w", err)
 	}
 
-	metricsService := collectorresources.MakeMetricsService(r.config)
+	metricsService := gatewayresources.MakeMetricsService(r.config.Gateway)
 	if err = controllerutil.SetOwnerReference(pipeline, metricsService, r.Scheme()); err != nil {
 		return err
 	}
@@ -192,7 +209,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	networkPolicyPorts := makeNetworkPolicyPorts()
-	networkPolicy := collectorresources.MakeNetworkPolicy(r.config, networkPolicyPorts)
+	networkPolicy := gatewayresources.MakeNetworkPolicy(r.config.Gateway, networkPolicyPorts)
 	if err = controllerutil.SetOwnerReference(pipeline, networkPolicy, r.Scheme()); err != nil {
 		return err
 	}

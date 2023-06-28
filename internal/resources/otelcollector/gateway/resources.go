@@ -1,4 +1,4 @@
-package otelcollector
+package gateway
 
 import (
 	"gopkg.in/yaml.v3"
@@ -13,18 +13,13 @@ import (
 	"k8s.io/utils/pointer"
 
 	collectorconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 )
 
 type Config struct {
-	BaseName          string
-	Namespace         string
-	OverrideConfigMap types.NamespacedName
-
-	Deployment   DeploymentConfig
-	Service      ServiceConfig
-	Overrides    overrides.Config
-	MaxPipelines int
+	BaseName   string
+	Namespace  string
+	Deployment DeploymentConfig
+	Service    ServiceConfig
 }
 
 type DeploymentConfig struct {
