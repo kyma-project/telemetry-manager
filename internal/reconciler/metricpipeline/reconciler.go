@@ -210,8 +210,8 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 
 func (r *Reconciler) reconcileMetricAgent(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
 	namespacedBaseName := types.NamespacedName{
-		Name:      r.config.Gateway.BaseName,
-		Namespace: r.config.Gateway.Namespace,
+		Name:      r.config.Agent.BaseName,
+		Namespace: r.config.Agent.Namespace,
 	}
 
 	var err error
