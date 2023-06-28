@@ -70,13 +70,13 @@ type MetricPipelineInput struct {
 // MetricPipelineContainerRuntimeInput defines container runtime scraping section.
 type MetricPipelineContainerRuntimeInput struct {
 	// Indicates if container runtime scraping is enabled.
-	Enabled bool
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineIstioInput defines Istio scraping section.
 type MetricPipelineIstioInput struct {
 	// Indicates if Istio scraping is enabled.
-	Enabled bool
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineOutput defines the output configuration section.

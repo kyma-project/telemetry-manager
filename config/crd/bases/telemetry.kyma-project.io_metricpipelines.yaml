@@ -25,7 +25,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: MetricPipeline is the Schema for the metricpipelines API
+        description: MetricPipeline is the Schema for the metricpipelines API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -40,13 +40,13 @@ spec:
           metadata:
             type: object
           spec:
-            description: MetricPipelineSpec defines the desired state of MetricPipeline
+            description: MetricPipelineSpec defines the desired state of MetricPipeline.
             properties:
               output:
-                description: Configures the trace receiver of a MetricPipeline.
+                description: Configures the metric gateway.
                 properties:
                   otlp:
-                    description: Defines an output using the OpenTelmetry protocol.
+                    description: Defines an output using the OpenTelemetry protocol.
                     properties:
                       authentication:
                         description: Defines authentication options for the OTLP output
@@ -184,12 +184,12 @@ spec:
             - output
             type: object
           status:
-            description: Defines the observed state of MetricPipeline
+            description: MetricPipelineStatus defines the observed state of MetricPipeline.
             properties:
               conditions:
                 items:
-                  description: Contains details for the current condition of this
-                    MetricPipeline
+                  description: MetricPipelineCondition contains details for the current
+                    condition of this MetricPipeline.
                   properties:
                     lastTransitionTime:
                       format: date-time
