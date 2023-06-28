@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
 //go:generate mockery --name DeploymentProber --filename deployment_prober.go
@@ -120,7 +121,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = r.List(ctx, &metricPipelineList); err != nil {
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
 	}
-	deployablePipelines, err := r.getDeployableMetricPipelines(ctx, metricPipelineList.Items, lock)
+	deployablePipelines, err := getDeployableMetricPipelines(ctx, metricPipelineList.Items, r, lock)
 	if err != nil {
 		return fmt.Errorf("failed to fetch active metric pipelines: %w", err)
 	}
@@ -183,10 +184,14 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	return nil
 }
 
-func (r *Reconciler) getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, lock *kubernetes.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
+func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, client client.Client, lock *kubernetes.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
 	var deployablePipelines []telemetryv1alpha1.MetricPipeline
 	for i := range allPipelines {
 		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
+			continue
+		}
+
+		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
 			continue
 		}
 
