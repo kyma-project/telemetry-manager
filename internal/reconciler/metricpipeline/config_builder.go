@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"sort"
 
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	configbuilder "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
-	"k8s.io/apimachinery/pkg/types"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/otlpoutput"
 )
 
-func makeGatewayConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.MetricPipeline) (*config.Config, configbuilder.EnvVars, error) {
-	allVars := make(configbuilder.EnvVars)
+func makeGatewayConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.MetricPipeline) (*config.Config, otlpoutput.EnvVars, error) {
+	allVars := make(otlpoutput.EnvVars)
 	exportersConfig := make(config.ExportersConfig)
 	pipelinesConfig := make(config.PipelinesConfig)
 
@@ -26,7 +26,7 @@ func makeGatewayConfig(ctx context.Context, c client.Reader, pipelines []v1alpha
 
 		output := pipeline.Spec.Output
 		queueSize := 256 / len(pipelines)
-		exporterConfig, envVars, err := configbuilder.MakeOTLPExportersConfig(ctx, c, output.Otlp, pipeline.Name, queueSize)
+		exporterConfig, envVars, err := otlpoutput.MakeExportersConfig(ctx, c, output.Otlp, pipeline.Name, queueSize)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to make exporter config: %v", err)
 		}
@@ -48,8 +48,8 @@ func makeGatewayConfig(ctx context.Context, c client.Reader, pipelines []v1alpha
 
 	receiverConfig := makeGatewayReceiversConfig()
 	processorsConfig := makeGatewayProcessorsConfig()
-	serviceConfig := configbuilder.MakeServiceConfig(pipelinesConfig)
-	extensionConfig := configbuilder.MakeExtensionsConfig()
+	serviceConfig := makeGatewayServiceConfig(pipelinesConfig)
+	extensionConfig := makeGatewayExtensionsConfig()
 
 	return &config.Config{
 		Exporters:  exportersConfig,
@@ -148,6 +148,32 @@ func makeGatewayPipelineConfig(outputAliases []string) config.PipelineConfig {
 		Receivers:  []string{"otlp"},
 		Processors: []string{"memory_limiter", "k8sattributes", "resource", "batch"},
 		Exporters:  outputAliases,
+	}
+}
+
+func makeGatewayExtensionsConfig() config.ExtensionsConfig {
+	return config.ExtensionsConfig{
+		HealthCheck: config.EndpointConfig{
+			Endpoint: "${MY_POD_IP}:13133",
+		},
+		Pprof: config.EndpointConfig{
+			Endpoint: "127.0.0.1:1777",
+		},
+	}
+}
+
+func makeGatewayServiceConfig(pipelines config.PipelinesConfig) config.ServiceConfig {
+	return config.ServiceConfig{
+		Pipelines: pipelines,
+		Telemetry: config.TelemetryConfig{
+			Metrics: config.MetricsConfig{
+				Address: "${MY_POD_IP}:8888",
+			},
+			Logs: config.LoggingConfig{
+				Level: "info",
+			},
+		},
+		Extensions: []string{"health_check", "pprof"},
 	}
 }
 
