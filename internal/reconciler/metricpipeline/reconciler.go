@@ -97,20 +97,25 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	if err = r.reconcileMetricGateway(ctx, pipeline); err != nil {
+	var allPipelinesList telemetryv1alpha1.MetricPipelineList
+	if err = r.List(ctx, &allPipelinesList); err != nil {
+		return fmt.Errorf("failed to list metric pipelines: %w", err)
+	}
+
+	if err = r.reconcileMetricGateway(ctx, pipeline, allPipelinesList.Items); err != nil {
 		return fmt.Errorf("failed to reconcile metric gateway: %w", err)
 	}
 
 	if isMetricAgentRequired(pipeline) {
-		if err = r.reconcileMetricAgent(ctx, pipeline); err != nil {
-			return fmt.Errorf("failed to reconcile metric agent: %w", err)
+		if err = r.reconcileMetricAgents(ctx, pipeline, allPipelinesList.Items); err != nil {
+			return fmt.Errorf("failed to reconcile metric agents: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	namespacedBaseName := types.NamespacedName{
 		Name:      r.config.Gateway.BaseName,
 		Namespace: r.config.Gateway.Namespace,
@@ -141,11 +146,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
-	var metricPipelineList telemetryv1alpha1.MetricPipelineList
-	if err = r.List(ctx, &metricPipelineList); err != nil {
-		return fmt.Errorf("failed to list metric pipelines: %w", err)
-	}
-	collectorConfig, envVars, err := makeOtelCollectorConfig(ctx, r, metricPipelineList.Items)
+	gatewayConfig, envVars, err := makeGatewayConfig(ctx, r, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}
@@ -158,7 +159,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		return fmt.Errorf("failed to create otel collector env secret: %w", err)
 	}
 
-	configMap := gatewayresources.MakeConfigMap(r.config.Gateway, *collectorConfig)
+	configMap := gatewayresources.MakeConfigMap(r.config.Gateway, *gatewayConfig)
 	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
 		return err
 	}
@@ -167,7 +168,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	}
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	deployment := gatewayresources.MakeDeployment(r.config.Gateway, configHash, len(metricPipelineList.Items))
+	deployment := gatewayresources.MakeDeployment(r.config.Gateway, configHash, len(allPipelines))
 	if err = controllerutil.SetOwnerReference(pipeline, deployment, r.Scheme()); err != nil {
 		return err
 	}
@@ -208,7 +209,7 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	return pipeline.Spec.Input.Istio.Enabled || pipeline.Spec.Input.Runtime.Enabled
 }
 
-func (r *Reconciler) reconcileMetricAgent(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	namespacedBaseName := types.NamespacedName{
 		Name:      r.config.Agent.BaseName,
 		Namespace: r.config.Agent.Namespace,
@@ -237,6 +238,19 @@ func (r *Reconciler) reconcileMetricAgent(ctx context.Context, pipeline *telemet
 	}
 	if err = kubernetes.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
+	}
+
+	agentConfig := makeAgentConfig(types.NamespacedName{
+		Namespace: r.config.Gateway.Namespace,
+		Name:      r.config.Gateway.Service.OTLPServiceName,
+	}, allPipelines)
+
+	configMap := agentresources.MakeConfigMap(r.config.Agent, *agentConfig)
+	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
+		return err
+	}
+	if err = kubernetes.CreateOrUpdateConfigMap(ctx, r.Client, configMap); err != nil {
+		return fmt.Errorf("failed to create otel collector configmap: %w", err)
 	}
 
 	return nil

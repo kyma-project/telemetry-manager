@@ -73,7 +73,7 @@ var (
 
 func TestMakeCollectorConfigEndpoint(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline})
+	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline})
 	require.NoError(t, err)
 	expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT_TEST")
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -84,7 +84,7 @@ func TestMakeCollectorConfigEndpoint(t *testing.T) {
 
 func TestMakeCollectorConfigSecure(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline})
+	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline})
 	require.NoError(t, err)
 
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -94,7 +94,7 @@ func TestMakeCollectorConfigSecure(t *testing.T) {
 
 func TestMakeCollectorConfigInsecure(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipelineInsecure})
+	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipelineInsecure})
 	require.NoError(t, err)
 
 	require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
@@ -104,7 +104,7 @@ func TestMakeCollectorConfigInsecure(t *testing.T) {
 
 func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipelineWithBasicAuth})
+	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipelineWithBasicAuth})
 	require.NoError(t, err)
 
 	require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
@@ -118,14 +118,14 @@ func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
 
 func TestMakeCollectorConfigQueueSize(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline})
+	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline})
 	require.NoError(t, err)
 	require.Equal(t, 256, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Pipeline should have the full queue size")
 }
 
 func TestMakeCollectorConfigMultiPipelineQueueSize(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline, metricPipelineWithBasicAuth, metricPipelineInsecure})
+	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline, metricPipelineWithBasicAuth, metricPipelineInsecure})
 	require.NoError(t, err)
 	require.Equal(t, 85, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
 	require.Equal(t, 85, collectorConfig.Exporters["otlp/test-basic-auth"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
@@ -134,7 +134,7 @@ func TestMakeCollectorConfigMultiPipelineQueueSize(t *testing.T) {
 
 func TestMakeCollectorConfigMultiPipeline(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline, metricPipelineInsecure})
+	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline, metricPipelineInsecure})
 	require.NoError(t, err)
 
 	require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -161,7 +161,7 @@ func TestMakeCollectorConfigMultiPipeline(t *testing.T) {
 
 func TestMakePipelineConfig(t *testing.T) {
 	pipelines := map[string]config.PipelineConfig{
-		"metrics/test": makePipelineConfig([]string{"otlp/test", "logging/test"}),
+		"metrics/test": makeGatewayPipelineConfig([]string{"otlp/test", "logging/test"}),
 	}
 
 	require.Contains(t, pipelines, "metrics/test")
@@ -177,7 +177,7 @@ func TestMakePipelineConfig(t *testing.T) {
 }
 
 func TestResourceProcessors(t *testing.T) {
-	processors := makeProcessorsConfig()
+	processors := makeGatewayProcessorsConfig()
 
 	require.Equal(t, 1, len(processors.Resource.Attributes))
 	require.Equal(t, "insert", processors.Resource.Attributes[0].Action)
@@ -186,7 +186,7 @@ func TestResourceProcessors(t *testing.T) {
 }
 
 func TestMemoryLimiterProcessor(t *testing.T) {
-	processors := makeProcessorsConfig()
+	processors := makeGatewayProcessorsConfig()
 
 	require.Equal(t, "1s", processors.MemoryLimiter.CheckInterval)
 	require.Equal(t, 75, processors.MemoryLimiter.LimitPercentage)
@@ -194,7 +194,7 @@ func TestMemoryLimiterProcessor(t *testing.T) {
 }
 
 func TestBatchProcessor(t *testing.T) {
-	processors := makeProcessorsConfig()
+	processors := makeGatewayProcessorsConfig()
 
 	require.Equal(t, 1024, processors.Batch.SendBatchSize)
 	require.Equal(t, 1024, processors.Batch.SendBatchMaxSize)
@@ -202,7 +202,7 @@ func TestBatchProcessor(t *testing.T) {
 }
 
 func TestK8sAttributesProcessor(t *testing.T) {
-	processors := makeProcessorsConfig()
+	processors := makeGatewayProcessorsConfig()
 
 	require.Equal(t, "serviceAccount", processors.K8sAttributes.AuthType)
 	require.False(t, processors.K8sAttributes.Passthrough)
@@ -314,7 +314,7 @@ service:
 `
 
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeOtelCollectorConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline})
+	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{metricPipeline})
 	require.NoError(t, err)
 
 	yamlBytes, err := yaml.Marshal(collectorConfig)

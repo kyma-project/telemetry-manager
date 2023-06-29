@@ -11,9 +11,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	configbuilder "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
+	"k8s.io/apimachinery/pkg/types"
 )
 
-func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.MetricPipeline) (*config.Config, configbuilder.EnvVars, error) {
+func makeGatewayConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.MetricPipeline) (*config.Config, configbuilder.EnvVars, error) {
 	allVars := make(configbuilder.EnvVars)
 	exportersConfig := make(config.ExportersConfig)
 	pipelineConfigs := make(map[string]config.PipelineConfig)
@@ -36,7 +37,7 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v
 			outputAliases = append(outputAliases, k)
 		}
 		sort.Strings(outputAliases)
-		pipelineConfig := makePipelineConfig(outputAliases)
+		pipelineConfig := makeGatewayPipelineConfig(outputAliases)
 		pipelineName := fmt.Sprintf("metrics/%s", pipeline.Name)
 		pipelineConfigs[pipelineName] = pipelineConfig
 
@@ -45,8 +46,8 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v
 		}
 	}
 
-	receiverConfig := makeReceiversConfig()
-	processorsConfig := makeProcessorsConfig()
+	receiverConfig := makeGatewayReceiversConfig()
+	processorsConfig := makeGatewayProcessorsConfig()
 	serviceConfig := configbuilder.MakeServiceConfig(pipelineConfigs)
 	extensionConfig := configbuilder.MakeExtensionsConfig()
 
@@ -59,7 +60,7 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v
 	}, allVars, nil
 }
 
-func makeReceiversConfig() config.ReceiversConfig {
+func makeGatewayReceiversConfig() config.ReceiversConfig {
 	return config.ReceiversConfig{
 		OTLP: &config.OTLPReceiverConfig{
 			Protocols: config.ReceiverProtocols{
@@ -74,7 +75,7 @@ func makeReceiversConfig() config.ReceiversConfig {
 	}
 }
 
-func makeProcessorsConfig() config.ProcessorsConfig {
+func makeGatewayProcessorsConfig() config.ProcessorsConfig {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -142,7 +143,7 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 	}
 }
 
-func makePipelineConfig(outputAliases []string) config.PipelineConfig {
+func makeGatewayPipelineConfig(outputAliases []string) config.PipelineConfig {
 	return config.PipelineConfig{
 		Receivers:  []string{"otlp"},
 		Processors: []string{"memory_limiter", "k8sattributes", "resource", "batch"},
@@ -157,5 +158,70 @@ func makeNetworkPolicyPorts() []intstr.IntOrString {
 		intstr.FromInt(4318),
 		intstr.FromInt(55678),
 		intstr.FromInt(8888),
+	}
+}
+
+func makeAgentConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *config.Config {
+	return &config.Config{
+		Receivers: makeAgentReceiversConfig(pipelines),
+		Exporters: makeAgentExportersConfig(gatewayServiceName),
+		Service:   makeAgentServiceConfig(),
+	}
+}
+
+func makeAgentReceiversConfig(pipelines []v1alpha1.MetricPipeline) config.ReceiversConfig {
+	enableRuntimeMetrics := false
+	for i, _ := range pipelines {
+		input := pipelines[i].Spec.Input
+		if input.Runtime.Enabled {
+			enableRuntimeMetrics = true
+		}
+	}
+
+	receiversConfig := config.ReceiversConfig{}
+	if enableRuntimeMetrics {
+		collectionInterval := "30s"
+		receiversConfig.HostMetrics = &config.HostMetricsReceiverConfig{
+			CollectionInterval: collectionInterval,
+		}
+		receiversConfig.KubeletStats = &config.KubeletStatsReceiverConfig{
+			CollectionInterval: collectionInterval,
+		}
+	}
+
+	return receiversConfig
+}
+
+func makeAgentExportersConfig(gatewayServiceName types.NamespacedName) config.ExportersConfig {
+	exportersConfig := make(config.ExportersConfig)
+	exportersConfig["otlp"] = config.ExporterConfig{
+		OTLPExporterConfig: &config.OTLPExporterConfig{
+			Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local", gatewayServiceName.Name, gatewayServiceName.Namespace),
+			TLS: config.TLSConfig{
+				Insecure: true,
+			},
+			SendingQueue: config.SendingQueueConfig{
+				Enabled:   true,
+				QueueSize: 512,
+			},
+			RetryOnFailure: config.RetryOnFailureConfig{
+				Enabled:         true,
+				InitialInterval: "5s",
+				MaxInterval:     "30s",
+				MaxElapsedTime:  "300s",
+			},
+		},
+	}
+	return exportersConfig
+}
+
+func makeAgentServiceConfig() config.ServiceConfig {
+	pipelinesConfig := make(config.PipelinesConfig)
+	pipelinesConfig["metrics"] = config.PipelineConfig{
+		Receivers: []string{"hostmetrics", "kubeletstats"},
+		Exporters: []string{"otlp"},
+	}
+	return config.ServiceConfig{
+		Pipelines: pipelinesConfig,
 	}
 }

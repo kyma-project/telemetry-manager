@@ -111,14 +111,19 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	if err = r.reconcileTraceGateway(ctx, pipeline); err != nil {
+	var allPipelinesList telemetryv1alpha1.TracePipelineList
+	if err = r.List(ctx, &allPipelinesList); err != nil {
+		return fmt.Errorf("failed to list trace pipelines: %w", err)
+	}
+
+	if err = r.reconcileTraceGateway(ctx, pipeline, allPipelinesList.Items); err != nil {
 		return fmt.Errorf("failed to reconcile trace gateway: %w", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
+func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, allPipelines []telemetryv1alpha1.TracePipeline) error {
 	namespacedBaseName := types.NamespacedName{
 		Name:      r.config.Gateway.BaseName,
 		Namespace: r.config.Gateway.Namespace,
@@ -149,11 +154,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
-	var tracePipelineList telemetryv1alpha1.TracePipelineList
-	if err = r.List(ctx, &tracePipelineList); err != nil {
-		return fmt.Errorf("failed to list trace pipelines: %w", err)
-	}
-	collectorConfig, envVars, err := makeOtelCollectorConfig(ctx, r, tracePipelineList.Items)
+	gatewayConfig, envVars, err := makeGatewayConfig(ctx, r, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}
@@ -166,7 +167,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector env secret: %w", err)
 	}
 
-	configMap := gatewayresources.MakeConfigMap(r.config.Gateway, *collectorConfig)
+	configMap := gatewayresources.MakeConfigMap(r.config.Gateway, *gatewayConfig)
 	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
 		return err
 	}
@@ -175,7 +176,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	deployment := gatewayresources.MakeDeployment(r.config.Gateway, configHash, len(tracePipelineList.Items))
+	deployment := gatewayresources.MakeDeployment(r.config.Gateway, configHash, len(allPipelines))
 	if err = controllerutil.SetOwnerReference(pipeline, deployment, r.Scheme()); err != nil {
 		return err
 	}
