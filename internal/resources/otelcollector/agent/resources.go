@@ -28,11 +28,6 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
-				APIGroups: []string{"networking.k8s.io"},
-				Resources: []string{"ingresses"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
 				NonResourceURLs: []string{"/metrics", "/metrics/cadvisor"},
 				Verbs:           []string{"get"},
 			},
