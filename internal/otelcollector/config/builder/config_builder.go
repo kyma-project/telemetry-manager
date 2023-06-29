@@ -99,7 +99,7 @@ func MakeExtensionsConfig() config.ExtensionsConfig {
 	}
 }
 
-func MakeServiceConfig(pipelines map[string]config.PipelineConfig) config.ServiceConfig {
+func MakeServiceConfig(pipelines config.PipelinesConfig) config.ServiceConfig {
 	return config.ServiceConfig{
 		Pipelines: pipelines,
 		Telemetry: config.TelemetryConfig{

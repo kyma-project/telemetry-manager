@@ -108,7 +108,7 @@ func TestMakeExtensionConfig(t *testing.T) {
 }
 
 func TestMakeServiceConfig(t *testing.T) {
-	var pipelineConfig map[string]config.PipelineConfig
+	var pipelineConfig config.PipelinesConfig
 	serviceConfig := MakeServiceConfig(pipelineConfig)
 
 	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)

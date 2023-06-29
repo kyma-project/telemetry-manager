@@ -16,7 +16,7 @@ import (
 func makeGatewayConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.TracePipeline) (*config.Config, configbuilder.EnvVars, error) {
 	allVars := make(configbuilder.EnvVars)
 	exportersConfig := make(config.ExportersConfig)
-	pipelineConfigs := make(map[string]config.PipelineConfig)
+	pipelinesConfig := make(config.PipelinesConfig)
 
 	for _, pipeline := range pipelines {
 		if pipeline.DeletionTimestamp != nil {
@@ -38,7 +38,7 @@ func makeGatewayConfig(ctx context.Context, c client.Reader, pipelines []v1alpha
 		sort.Strings(outputAliases)
 		pipelineConfig := makeGatewayPipelineConfig(outputAliases)
 		pipelineName := fmt.Sprintf("traces/%s", pipeline.Name)
-		pipelineConfigs[pipelineName] = pipelineConfig
+		pipelinesConfig[pipelineName] = pipelineConfig
 
 		for k, v := range envVars {
 			allVars[k] = v
@@ -47,7 +47,7 @@ func makeGatewayConfig(ctx context.Context, c client.Reader, pipelines []v1alpha
 
 	receiverConfig := makeGatewayReceiversConfig()
 	processorsConfig := makeGatewayProcessorsConfig()
-	serviceConfig := configbuilder.MakeServiceConfig(pipelineConfigs)
+	serviceConfig := configbuilder.MakeServiceConfig(pipelinesConfig)
 	extensionConfig := configbuilder.MakeExtensionsConfig()
 
 	return &config.Config{
