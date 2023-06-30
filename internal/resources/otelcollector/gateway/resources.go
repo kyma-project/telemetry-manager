@@ -1,6 +1,8 @@
 package gateway
 
 import (
+	collectorconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -10,9 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
-
-	collectorconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 type Config struct {
@@ -41,8 +40,6 @@ type ServiceConfig struct {
 
 const (
 	configHashAnnotationKey = "checksum/config"
-	collectorUser           = 10001
-	collectorContainerName  = "collector"
 )
 
 var (
@@ -53,12 +50,6 @@ var (
 	replicas = int32(2)
 )
 
-func makeDefaultLabels(config Config) map[string]string {
-	return map[string]string{
-		"app.kubernetes.io/name": config.BaseName,
-	}
-}
-
 func MakeConfigMap(config Config, collectorConfig collectorconfig.Config) *corev1.ConfigMap {
 	bytes, _ := yaml.Marshal(collectorConfig)
 	confYAML := string(bytes)
@@ -67,7 +58,7 @@ func MakeConfigMap(config Config, collectorConfig collectorconfig.Config) *corev
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.BaseName,
 			Namespace: config.Namespace,
-			Labels:    makeDefaultLabels(config),
+			Labels:    core.MakeDefaultLabels(config.BaseName),
 		},
 		Data: map[string]string{
 			configMapKey: confYAML,
@@ -97,50 +88,23 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func makePodAffinity(labels map[string]string) corev1.Affinity {
-	return corev1.Affinity{
-		PodAntiAffinity: &corev1.PodAntiAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-				{
-					Weight: 100,
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						TopologyKey: "kubernetes.io/hostname",
-						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: labels,
-						},
-					},
-				},
-				{
-					Weight: 100,
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						TopologyKey: "topology.kubernetes.io/zone",
-						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: labels,
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
 func MakeSecret(config Config, secretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.BaseName,
 			Namespace: config.Namespace,
-			Labels:    makeDefaultLabels(config),
+			Labels:    core.MakeDefaultLabels(config.BaseName),
 		},
 		Data: secretData,
 	}
 }
 
 func MakeDeployment(config Config, configHash string, pipelineCount int) *appsv1.Deployment {
-	labels := makeDefaultLabels(config)
-	optional := true
+	labels := core.MakeDefaultLabels(config.BaseName)
 	annotations := makePodAnnotations(configHash)
 	resources := makeResourceRequirements(config, pipelineCount)
-	affinity := makePodAffinity(labels)
+	podSpec := core.MakePodSpec(config.BaseName, config.Deployment.Image, config.Deployment.PriorityClassName, resources)
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.BaseName,
@@ -157,84 +121,7 @@ func MakeDeployment(config Config, configHash string, pipelineCount int) *appsv1
 					Labels:      labels,
 					Annotations: annotations,
 				},
-				Spec: corev1.PodSpec{
-					Affinity: &affinity,
-					Containers: []corev1.Container{
-						{
-							Name:  collectorContainerName,
-							Image: config.Deployment.Image,
-							Args:  []string{"--config=/conf/" + configMapKey},
-							EnvFrom: []corev1.EnvFromSource{
-								{
-									SecretRef: &corev1.SecretEnvSource{
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: config.BaseName,
-										},
-										Optional: &optional,
-									},
-								},
-							},
-							Env: []corev1.EnvVar{
-								{
-									Name: "MY_POD_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath:  "status.podIP",
-											APIVersion: "v1",
-										},
-									},
-								},
-							},
-							Resources: resources,
-							SecurityContext: &corev1.SecurityContext{
-								Privileged:               pointer.Bool(false),
-								RunAsUser:                pointer.Int64(collectorUser),
-								RunAsNonRoot:             pointer.Bool(true),
-								ReadOnlyRootFilesystem:   pointer.Bool(true),
-								AllowPrivilegeEscalation: pointer.Bool(false),
-								SeccompProfile: &corev1.SeccompProfile{
-									Type: corev1.SeccompProfileTypeRuntimeDefault,
-								},
-								Capabilities: &corev1.Capabilities{
-									Drop: []corev1.Capability{"ALL"},
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{{Name: "config", MountPath: "/conf"}},
-							LivenessProbe: &corev1.Probe{
-								ProbeHandler: corev1.ProbeHandler{
-									HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.IntOrString{IntVal: 13133}},
-								},
-							},
-							ReadinessProbe: &corev1.Probe{
-								ProbeHandler: corev1.ProbeHandler{
-									HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.IntOrString{IntVal: 13133}},
-								},
-							},
-						},
-					},
-					ServiceAccountName: config.BaseName,
-					PriorityClassName:  config.Deployment.PriorityClassName,
-					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser:    pointer.Int64(collectorUser),
-						RunAsNonRoot: pointer.Bool(true),
-						SeccompProfile: &corev1.SeccompProfile{
-							Type: corev1.SeccompProfileTypeRuntimeDefault,
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "config",
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: config.BaseName,
-									},
-									Items: []corev1.KeyToPath{{Key: configMapKey, Path: configMapKey}},
-								},
-							},
-						},
-					},
-				},
+				Spec: podSpec,
 			},
 		},
 	}
@@ -279,7 +166,7 @@ func makeResourceRequirements(config Config, pipelineCount int) corev1.ResourceR
 }
 
 func MakeOTLPService(config Config) *corev1.Service {
-	labels := makeDefaultLabels(config)
+	labels := core.MakeDefaultLabels(config.BaseName)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.Service.OTLPServiceName,
@@ -309,7 +196,8 @@ func MakeOTLPService(config Config) *corev1.Service {
 }
 
 func MakeMetricsService(config Config) *corev1.Service {
-	labels := makeDefaultLabels(config)
+	labels := core.MakeDefaultLabels(config.BaseName)
+
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.BaseName + "-metrics",
@@ -336,7 +224,7 @@ func MakeMetricsService(config Config) *corev1.Service {
 }
 
 func MakeOpenCensusService(config Config) *corev1.Service {
-	labels := makeDefaultLabels(config)
+	labels := core.MakeDefaultLabels(config.BaseName)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.BaseName + "-internal",
@@ -360,7 +248,7 @@ func MakeOpenCensusService(config Config) *corev1.Service {
 }
 
 func MakeNetworkPolicy(config Config, ports []intstr.IntOrString) *networkingv1.NetworkPolicy {
-	labels := makeDefaultLabels(config)
+	labels := core.MakeDefaultLabels(config.BaseName)
 	networkPolicyPorts := makeNetworkPolicyPorts(ports)
 
 	return &networkingv1.NetworkPolicy{
