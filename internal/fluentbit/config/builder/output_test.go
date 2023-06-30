@@ -13,7 +13,7 @@ func TestCreateOutputSectionWithCustomOutput(t *testing.T) {
     name                     null
     match                    foo.*
     alias                    foo-null
-    retry_limit              no_limits
+    retry_limit              300
     storage.total_limit_size 1G
 
 `
@@ -44,7 +44,7 @@ func TestCreateOutputSectionWithHTTPOutput(t *testing.T) {
     http_passwd              password
     http_user                user
     port                     1234
-    retry_limit              no_limits
+    retry_limit              300
     storage.total_limit_size 1G
     tls                      on
     tls.verify               on
@@ -85,7 +85,7 @@ func TestCreateOutputSectionWithHTTPOutputWithSecretReference(t *testing.T) {
     http_passwd              ${FOO_MY_NAMESPACE_SECRET_KEY}
     http_user                user
     port                     443
-    retry_limit              no_limits
+    retry_limit              300
     storage.total_limit_size 1G
     tls                      on
     tls.verify               on
