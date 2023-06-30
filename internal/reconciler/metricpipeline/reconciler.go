@@ -19,6 +19,7 @@ import (
 	otelagentresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
 	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 	otelgatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
 type Config struct {
@@ -102,8 +103,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
 	}
+	deployablePipelines, err := getDeployableMetricPipelines(ctx, allPipelinesList.Items, r, lock)
+	if err != nil {
+		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
+	}
 
-	if err = r.reconcileMetricGateway(ctx, pipeline, allPipelinesList.Items); err != nil {
+	if err = r.reconcileMetricGateway(ctx, pipeline, deployablePipelines); err != nil {
 		return fmt.Errorf("failed to reconcile metric gateway: %w", err)
 	}
 
@@ -264,4 +269,28 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	}
 
 	return nil
+}
+
+// getDeployableTracePipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
+func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, client client.Client, lock *kubernetes.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
+	var deployablePipelines []telemetryv1alpha1.MetricPipeline
+	for i := range allPipelines {
+		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
+			continue
+		}
+
+		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
+			continue
+		}
+
+		hasLock, err := lock.IsLockHolder(ctx, &allPipelines[i])
+		if err != nil {
+			return nil, err
+		}
+
+		if hasLock {
+			deployablePipelines = append(deployablePipelines, allPipelines[i])
+		}
+	}
+	return deployablePipelines, nil
 }

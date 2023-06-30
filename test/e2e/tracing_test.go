@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -161,6 +162,7 @@ var _ = Describe("Tracing", func() {
 		It("Should have only running pipelines", func() {
 			for pipelineName := range allPipelines {
 				tracePipelineShouldBeRunning(pipelineName)
+				tracePipelineShouldBeDeployed(pipelineName)
 			}
 		})
 
@@ -172,6 +174,7 @@ var _ = Describe("Tracing", func() {
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, newPipeline...)).Should(Succeed())
 				tracePipelineShouldStayPending(newPipelineName)
+				tracePipelineShouldNotBeDeployed(newPipelineName)
 			})
 		})
 
@@ -335,6 +338,28 @@ func tracePipelineShouldStayPending(pipelineName string) {
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning)).To(BeFalse())
 	}, tracePipelineReconciliationTimeout, interval).Should(Succeed())
+}
+
+func tracePipelineShouldBeDeployed(pipelineName string) {
+	Eventually(func(g Gomega) bool {
+		var collectorConfig corev1.ConfigMap
+		key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
+		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
+		configString := collectorConfig.Data["relay.conf"]
+		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
+		return strings.Contains(configString, pipelineAlias)
+	}, timeout, interval).Should(BeTrue())
+}
+
+func tracePipelineShouldNotBeDeployed(pipelineName string) {
+	Consistently(func(g Gomega) bool {
+		var collectorConfig corev1.ConfigMap
+		key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
+		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
+		configString := collectorConfig.Data["relay.conf"]
+		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
+		return !strings.Contains(configString, pipelineAlias)
+	}, tracePipelineReconciliationTimeout, interval).Should(BeTrue())
 }
 
 // makeTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
