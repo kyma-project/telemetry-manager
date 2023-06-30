@@ -1,9 +1,7 @@
 package gateway
 
 import (
-	collectorconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
-	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -12,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
 type Config struct {
@@ -36,34 +35,6 @@ type DeploymentConfig struct {
 
 type ServiceConfig struct {
 	OTLPServiceName string
-}
-
-const (
-	configHashAnnotationKey = "checksum/config"
-)
-
-var (
-	configMapKey          = "relay.conf"
-	defaultPodAnnotations = map[string]string{
-		"sidecar.istio.io/inject": "false",
-	}
-	replicas = int32(2)
-)
-
-func MakeConfigMap(config Config, collectorConfig collectorconfig.Config) *corev1.ConfigMap {
-	bytes, _ := yaml.Marshal(collectorConfig)
-	confYAML := string(bytes)
-
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.BaseName,
-			Namespace: config.Namespace,
-			Labels:    core.MakeDefaultLabels(config.BaseName),
-		},
-		Data: map[string]string{
-			configMapKey: confYAML,
-		},
-	}
 }
 
 func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
@@ -101,7 +72,7 @@ func MakeSecret(config Config, secretData map[string][]byte) *corev1.Secret {
 
 func MakeDeployment(config Config, configHash string, pipelineCount int) *appsv1.Deployment {
 	labels := core.MakeDefaultLabels(config.BaseName)
-	annotations := makePodAnnotations(configHash)
+	annotations := core.MakePodAnnotations(configHash)
 	resources := makeResourceRequirements(config, pipelineCount)
 	podSpec := core.MakePodSpec(config.BaseName, config.Deployment.Image, config.Deployment.PriorityClassName, resources)
 
@@ -112,7 +83,7 @@ func MakeDeployment(config Config, configHash string, pipelineCount int) *appsv1
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
+			Replicas: pointer.Int32(2),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -125,16 +96,6 @@ func MakeDeployment(config Config, configHash string, pipelineCount int) *appsv1
 			},
 		},
 	}
-}
-
-func makePodAnnotations(configHash string) map[string]string {
-	annotations := map[string]string{
-		configHashAnnotationKey: configHash,
-	}
-	for k, v := range defaultPodAnnotations {
-		annotations[k] = v
-	}
-	return annotations
 }
 
 // makeResourceRequirements returns the resource requirements for the opentelemetry-collector. We calculate the resources based on a initial base value and a dynamic part per pipeline.

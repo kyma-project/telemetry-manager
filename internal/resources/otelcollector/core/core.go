@@ -1,8 +1,11 @@
 package core
 
 import (
+	collectorconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 )
@@ -127,6 +130,38 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 					},
 				},
 			},
+		},
+	}
+}
+
+func MakePodAnnotations(configHash string) map[string]string {
+	annotations := map[string]string{
+		configHashAnnotationKey: configHash,
+	}
+
+	defaultAnnotations := map[string]string{
+		"sidecar.istio.io/inject": "false",
+	}
+
+	for k, v := range defaultAnnotations {
+		annotations[k] = v
+	}
+
+	return annotations
+}
+
+func MakeConfigMap(name types.NamespacedName, collectorConfig collectorconfig.Config) *corev1.ConfigMap {
+	bytes, _ := yaml.Marshal(collectorConfig)
+	confYAML := string(bytes)
+
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    MakeDefaultLabels(name.Name),
+		},
+		Data: map[string]string{
+			configMapKey: confYAML,
 		},
 	}
 }

@@ -1,25 +1,12 @@
 package agent
 
 import (
-	collectorconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
-	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-)
-
-const (
-	configMapKey            = "relay.conf"
-	configHashAnnotationKey = "checksum/config"
-)
-
-var (
-	defaultPodAnnotations = map[string]string{
-		"sidecar.istio.io/inject": "false",
-	}
 )
 
 type Config struct {
@@ -55,25 +42,9 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func MakeConfigMap(config Config, collectorConfig collectorconfig.Config) *corev1.ConfigMap {
-	bytes, _ := yaml.Marshal(collectorConfig)
-	confYAML := string(bytes)
-
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.BaseName,
-			Namespace: config.Namespace,
-			Labels:    core.MakeDefaultLabels(config.BaseName),
-		},
-		Data: map[string]string{
-			configMapKey: confYAML,
-		},
-	}
-}
-
 func MakeDaemonSet(config Config, configHash string) *appsv1.DaemonSet {
 	labels := core.MakeDefaultLabels(config.BaseName)
-	annotations := makePodAnnotations(configHash)
+	annotations := core.MakePodAnnotations(configHash)
 	resources := corev1.ResourceRequirements{}
 	podSpec := core.MakePodSpec(config.BaseName, config.DaemonSet.Image, config.DaemonSet.PriorityClassName, resources)
 
@@ -96,14 +67,4 @@ func MakeDaemonSet(config Config, configHash string) *appsv1.DaemonSet {
 			},
 		},
 	}
-}
-
-func makePodAnnotations(configHash string) map[string]string {
-	annotations := map[string]string{
-		configHashAnnotationKey: configHash,
-	}
-	for k, v := range defaultPodAnnotations {
-		annotations[k] = v
-	}
-	return annotations
 }

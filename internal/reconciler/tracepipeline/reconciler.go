@@ -32,11 +32,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	gatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
+	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
+	otelgatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 )
 
 type Config struct {
-	Gateway                gatewayresources.Config
+	Gateway                otelgatewayresources.Config
 	OverridesConfigMapName types.NamespacedName
 	MaxPipelines           int
 }
@@ -138,7 +139,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector service account: %w", err)
 	}
 
-	clusterRole := gatewayresources.MakeClusterRole(namespacedBaseName)
+	clusterRole := otelgatewayresources.MakeClusterRole(namespacedBaseName)
 	if err = controllerutil.SetOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
 		return err
 	}
@@ -159,7 +160,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}
 
-	secret := gatewayresources.MakeSecret(r.config.Gateway, envVars)
+	secret := otelgatewayresources.MakeSecret(r.config.Gateway, envVars)
 	if err = controllerutil.SetOwnerReference(pipeline, secret, r.Scheme()); err != nil {
 		return err
 	}
@@ -167,7 +168,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector env secret: %w", err)
 	}
 
-	configMap := gatewayresources.MakeConfigMap(r.config.Gateway, *gatewayConfig)
+	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, *gatewayConfig)
 	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
 		return err
 	}
@@ -176,7 +177,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	deployment := gatewayresources.MakeDeployment(r.config.Gateway, configHash, len(allPipelines))
+	deployment := otelgatewayresources.MakeDeployment(r.config.Gateway, configHash, len(allPipelines))
 	if err = controllerutil.SetOwnerReference(pipeline, deployment, r.Scheme()); err != nil {
 		return err
 	}
@@ -184,7 +185,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector deployment: %w", err)
 	}
 
-	otlpService := gatewayresources.MakeOTLPService(r.config.Gateway)
+	otlpService := otelgatewayresources.MakeOTLPService(r.config.Gateway)
 	if err = controllerutil.SetOwnerReference(pipeline, otlpService, r.Scheme()); err != nil {
 		return err
 	}
@@ -193,7 +194,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector collector service: %w", err)
 	}
 
-	openCensusService := gatewayresources.MakeOpenCensusService(r.config.Gateway)
+	openCensusService := otelgatewayresources.MakeOpenCensusService(r.config.Gateway)
 	if err = controllerutil.SetOwnerReference(pipeline, openCensusService, r.Scheme()); err != nil {
 		return err
 	}
@@ -201,7 +202,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector open census service: %w", err)
 	}
 
-	metricsService := gatewayresources.MakeMetricsService(r.config.Gateway)
+	metricsService := otelgatewayresources.MakeMetricsService(r.config.Gateway)
 	if err = controllerutil.SetOwnerReference(pipeline, metricsService, r.Scheme()); err != nil {
 		return err
 	}
@@ -210,7 +211,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	networkPolicyPorts := makeNetworkPolicyPorts()
-	networkPolicy := gatewayresources.MakeNetworkPolicy(r.config.Gateway, networkPolicyPorts)
+	networkPolicy := otelgatewayresources.MakeNetworkPolicy(r.config.Gateway, networkPolicyPorts)
 	if err = controllerutil.SetOwnerReference(pipeline, networkPolicy, r.Scheme()); err != nil {
 		return err
 	}
