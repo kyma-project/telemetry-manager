@@ -57,6 +57,9 @@ type ReceiverProtocols struct {
 
 type KubeletStatsReceiverConfig struct {
 	CollectionInterval string `yaml:"collection_interval,omitempty"`
+	AuthType           string `yaml:"auth_type,omitempty"`
+	Endpoint           string `yaml:"endpoint,omitempty"`
+	InsecureSkipVerify bool   `yaml:"insecure_skip_verify,omitempty"`
 }
 
 type HostMetricsReceiverConfig struct {

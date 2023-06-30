@@ -135,7 +135,7 @@ var (
 )
 
 const (
-	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.79.0-3b3cb87a"
+	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.79.0-58a64bcf"
 	overridesConfigMapName = "telemetry-override-config"
 	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.4-fef25e9c"
 	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20230503-c10c571f"
@@ -559,6 +559,9 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 		Agent: agentresources.Config{
 			Namespace: telemetryNamespace,
 			BaseName:  "telemetry-metric-agent",
+			DaemonSet: agentresources.DaemonSetConfig{
+				Image: traceCollectorImage,
+			},
 		},
 		Gateway: gatewayresources.Config{
 			Namespace: telemetryNamespace,

@@ -189,9 +189,10 @@ func makeNetworkPolicyPorts() []intstr.IntOrString {
 
 func makeAgentConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *config.Config {
 	return &config.Config{
-		Receivers: makeAgentReceiversConfig(pipelines),
-		Exporters: makeAgentExportersConfig(gatewayServiceName),
-		Service:   makeAgentServiceConfig(),
+		Receivers:  makeAgentReceiversConfig(pipelines),
+		Exporters:  makeAgentExportersConfig(gatewayServiceName),
+		Extensions: makeGatewayExtensionsConfig(),
+		Service:    makeAgentServiceConfig(),
 	}
 }
 
@@ -206,12 +207,12 @@ func makeAgentReceiversConfig(pipelines []v1alpha1.MetricPipeline) config.Receiv
 
 	receiversConfig := config.ReceiversConfig{}
 	if enableRuntimeMetrics {
-		collectionInterval := "30s"
-		receiversConfig.HostMetrics = &config.HostMetricsReceiverConfig{
-			CollectionInterval: collectionInterval,
-		}
+		const collectionInterval = "30s"
 		receiversConfig.KubeletStats = &config.KubeletStatsReceiverConfig{
 			CollectionInterval: collectionInterval,
+			AuthType:           "serviceAccount",
+			Endpoint:           "https://${env:MY_NODE_NAME}:10250",
+			InsecureSkipVerify: true,
 		}
 	}
 
@@ -222,7 +223,7 @@ func makeAgentExportersConfig(gatewayServiceName types.NamespacedName) config.Ex
 	exportersConfig := make(config.ExportersConfig)
 	exportersConfig["otlp"] = config.ExporterConfig{
 		OTLPExporterConfig: &config.OTLPExporterConfig{
-			Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local", gatewayServiceName.Name, gatewayServiceName.Namespace),
+			Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:4317", gatewayServiceName.Name, gatewayServiceName.Namespace),
 			TLS: config.TLSConfig{
 				Insecure: true,
 			},
@@ -244,10 +245,19 @@ func makeAgentExportersConfig(gatewayServiceName types.NamespacedName) config.Ex
 func makeAgentServiceConfig() config.ServiceConfig {
 	pipelinesConfig := make(config.PipelinesConfig)
 	pipelinesConfig["metrics"] = config.PipelineConfig{
-		Receivers: []string{"hostmetrics", "kubeletstats"},
+		Receivers: []string{"kubeletstats"},
 		Exporters: []string{"otlp"},
 	}
 	return config.ServiceConfig{
 		Pipelines: pipelinesConfig,
+		Telemetry: config.TelemetryConfig{
+			Metrics: config.MetricsConfig{
+				Address: "${MY_POD_IP}:8888",
+			},
+			Logs: config.LoggingConfig{
+				Level: "info",
+			},
+		},
+		Extensions: []string{"health_check"},
 	}
 }

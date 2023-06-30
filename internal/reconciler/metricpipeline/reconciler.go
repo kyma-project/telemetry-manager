@@ -253,5 +253,14 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector configmap: %w", err)
 	}
 
+	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
+	daemonSet := agentresources.MakeDaemonSet(r.config.Agent, configHash)
+	if err = controllerutil.SetOwnerReference(pipeline, daemonSet, r.Scheme()); err != nil {
+		return err
+	}
+	if err = kubernetes.CreateOrUpdateDaemonSet(ctx, r.Client, daemonSet); err != nil {
+		return fmt.Errorf("failed to create otel collector deployment: %w", err)
+	}
+
 	return nil
 }
