@@ -198,7 +198,7 @@ func makeAgentConfig(gatewayServiceName types.NamespacedName, pipelines []v1alph
 
 func makeAgentReceiversConfig(pipelines []v1alpha1.MetricPipeline) config.ReceiversConfig {
 	enableRuntimeMetrics := false
-	for i, _ := range pipelines {
+	for i := range pipelines {
 		input := pipelines[i].Spec.Input
 		if input.Runtime.Enabled {
 			enableRuntimeMetrics = true

@@ -59,9 +59,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
-	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	lokilogpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/lokilogpipeline"
-	gatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/resources/lokilogpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
+	//nolint:gci // Mandatory kubebuilder imports scaffolding.
+	//+kubebuilder:scaffold:imports
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
@@ -74,8 +77,6 @@ import (
 	//nolint:gosec // pprof package is required for performance analysis.
 	_ "net/http/pprof"
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
-	//+kubebuilder:scaffold:imports
-	agentresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
 )
 
 var (
@@ -466,7 +467,7 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 		DaemonSet:         types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 		OverrideConfigMap: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		PipelineDefaults:  createPipelineDefaults(),
-		DaemonSetConfig: logpipelineresources.DaemonSetConfig{
+		DaemonSetConfig: fluentbit.DaemonSetConfig{
 			FluentBitImage:              fluentBitImageVersion,
 			FluentBitConfigPrepperImage: fluentBitConfigPrepperImageVersion,
 			ExporterImage:               fluentBitExporterVersion,
@@ -524,10 +525,10 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 
 func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.TracePipelineReconciler {
 	config := tracepipeline.Config{
-		Gateway: gatewayresources.Config{
+		Gateway: gateway.Config{
 			Namespace: telemetryNamespace,
 			BaseName:  "telemetry-trace-collector",
-			Deployment: gatewayresources.DeploymentConfig{
+			Deployment: gateway.DeploymentConfig{
 				Image:                traceCollectorImage,
 				PriorityClassName:    traceCollectorPriorityClass,
 				BaseCPULimit:         resource.MustParse(traceCollectorCPULimit),
@@ -539,7 +540,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 				BaseMemoryRequest:    resource.MustParse(traceCollectorMemoryRequest),
 				DynamicMemoryRequest: resource.MustParse(traceCollectorDynamicMemoryRequest),
 			},
-			Service: gatewayresources.ServiceConfig{
+			Service: gateway.ServiceConfig{
 				OTLPServiceName: "telemetry-otlp-traces",
 			},
 		},
@@ -556,17 +557,17 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 
 func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.MetricPipelineReconciler {
 	config := metricpipeline.Config{
-		Agent: agentresources.Config{
+		Agent: agent.Config{
 			Namespace: telemetryNamespace,
 			BaseName:  "telemetry-metric-agent",
-			DaemonSet: agentresources.DaemonSetConfig{
+			DaemonSet: agent.DaemonSetConfig{
 				Image: traceCollectorImage,
 			},
 		},
-		Gateway: gatewayresources.Config{
+		Gateway: gateway.Config{
 			Namespace: telemetryNamespace,
 			BaseName:  "telemetry-metric-gateway",
-			Deployment: gatewayresources.DeploymentConfig{
+			Deployment: gateway.DeploymentConfig{
 				Image:                metricGatewayImage,
 				PriorityClassName:    metricGatewayPriorityClass,
 				BaseCPULimit:         resource.MustParse(metricGatewayCPULimit),
@@ -578,7 +579,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 				BaseMemoryRequest:    resource.MustParse(metricGatewayMemoryRequest),
 				DynamicMemoryRequest: resource.MustParse(metricGatewayDynamicMemoryRequest),
 			},
-			Service: gatewayresources.ServiceConfig{
+			Service: gateway.ServiceConfig{
 				OTLPServiceName: "telemetry-otlp-metrics",
 			},
 		},
@@ -618,7 +619,7 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eve
 }
 
 func handleLokiLogPipeline(ctx context.Context, client client.Client) error {
-	lokiLogPipeline := lokilogpipelineresources.MakeLokiLogPipeline()
+	lokiLogPipeline := lokilogpipeline.MakeLokiLogPipeline()
 
 	var lokiService corev1.Service
 	err := client.Get(ctx, types.NamespacedName{Name: "logging-loki", Namespace: "kyma-system"}, &lokiService)

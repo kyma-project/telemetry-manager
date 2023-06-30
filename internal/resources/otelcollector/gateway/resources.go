@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -11,6 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
+
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 )
 
 type Config struct {

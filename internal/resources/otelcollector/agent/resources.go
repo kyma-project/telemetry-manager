@@ -1,12 +1,13 @@
 package agent
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 )
 
 type Config struct {

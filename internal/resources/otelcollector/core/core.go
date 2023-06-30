@@ -1,13 +1,14 @@
 package core
 
 import (
-	collectorconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
+
+	collectorconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 const (
