@@ -130,5 +130,9 @@ issues:
       path: test/e2e/metrics_test.go
     - linters: [ dupl ]
       path: test/e2e/tracing_test
+    - linters: [ dupl ]
+      path: internal/reconciler/tracepipeline/reconciler_test.go
+    - linters: [ dupl ]
+      path: internal/reconciler/metricpipeline/reconciler_test.go
     - linters: [ errcheck ]
       path: test/e2e/testkit/otlp/traces/traces.go
