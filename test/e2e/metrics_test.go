@@ -177,9 +177,11 @@ var _ = Describe("Metrics", func() {
 			builder := kitmetrics.NewBuilder()
 			var cumulativeSums []pmetric.Metric
 
+			fmt.Println("Building metric")
 			sum := kitmetrics.NewCumulativeMetric()
 			cumulativeSums = append(cumulativeSums, sum)
 			builder.WithMetric(sum)
+			fmt.Println("Sending metric")
 			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
 			// sum.setValue...
