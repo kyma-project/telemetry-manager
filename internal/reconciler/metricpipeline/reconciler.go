@@ -20,6 +20,7 @@ import (
 	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 	otelgatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type Config struct {
@@ -121,6 +122,30 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	return nil
 }
 
+// getDeployableTracePipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
+func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, client client.Client, lock *kubernetes.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
+	var deployablePipelines []telemetryv1alpha1.MetricPipeline
+	for i := range allPipelines {
+		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
+			continue
+		}
+
+		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
+			continue
+		}
+
+		hasLock, err := lock.IsLockHolder(ctx, &allPipelines[i])
+		if err != nil {
+			return nil, err
+		}
+
+		if hasLock {
+			deployablePipelines = append(deployablePipelines, allPipelines[i])
+		}
+	}
+	return deployablePipelines, nil
+}
+
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	namespacedBaseName := types.NamespacedName{
 		Name:      r.config.Gateway.BaseName,
@@ -211,6 +236,16 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	return nil
 }
 
+func makeNetworkPolicyPorts() []intstr.IntOrString {
+	return []intstr.IntOrString{
+		intstr.FromInt(13133),
+		intstr.FromInt(4317),
+		intstr.FromInt(4318),
+		intstr.FromInt(55678),
+		intstr.FromInt(8888),
+	}
+}
+
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	return pipeline.Spec.Input.Istio.Enabled || pipeline.Spec.Input.Runtime.Enabled
 }
@@ -269,28 +304,4 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	}
 
 	return nil
-}
-
-// getDeployableTracePipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, client client.Client, lock *kubernetes.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
-	var deployablePipelines []telemetryv1alpha1.MetricPipeline
-	for i := range allPipelines {
-		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
-			continue
-		}
-
-		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
-			continue
-		}
-
-		hasLock, err := lock.IsLockHolder(ctx, &allPipelines[i])
-		if err != nil {
-			return nil, err
-		}
-
-		if hasLock {
-			deployablePipelines = append(deployablePipelines, allPipelines[i])
-		}
-	}
-	return deployablePipelines, nil
 }
