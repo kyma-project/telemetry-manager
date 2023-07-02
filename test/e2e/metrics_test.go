@@ -1,3 +1,5 @@
+//go:build e2e
+
 package e2e
 
 import (
@@ -424,7 +426,7 @@ func metricPipelineShouldStayPending(pipelineName string) {
 func addCumulativeToDeltaConversion(metricPipeline telemetryv1alpha1.MetricPipeline) {
 	metricPipeline.Spec.Output.ToDelta = true
 }
- 
+
 func metricPipelineShouldBeDeployed(pipelineName string) {
 	Eventually(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
