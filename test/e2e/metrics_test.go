@@ -1,5 +1,3 @@
-//go:build e2e
-
 package e2e
 
 import (
@@ -520,10 +518,14 @@ func makeBrokenMetricPipeline(name string) []client.Object {
 }
 
 func sendMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL string) error {
+	GinkgoLogr.Info("Starting send metrics function")
 	sender, err := kitmetrics.NewHTTPExporter(otlpPushURL, proxyClient)
+	GinkgoLogr.Info("Finished creating exporter")
 	if err != nil {
+		GinkgoLogr.Info("Some error occured")
 		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)
 	}
+	GinkgoLogr.Info("Calling export...")
 	return sender.Export(ctx, metrics)
 }
 
