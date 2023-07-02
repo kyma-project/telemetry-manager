@@ -90,7 +90,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
 
-	t.Run("endpoint", func(t *testing.T) {
+	t.Run("otlp exporter endpoint", func(t *testing.T) {
 		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
 		require.NoError(t, err)
 		expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT_TEST")

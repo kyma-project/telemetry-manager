@@ -175,7 +175,7 @@ func makeAgentConfig(gatewayServiceName types.NamespacedName, pipelines []v1alph
 	return &config.Config{
 		Receivers:  makeAgentReceiversConfig(pipelines),
 		Exporters:  makeAgentExportersConfig(gatewayServiceName),
-		Extensions: makeGatewayExtensionsConfig(),
+		Extensions: makeAgentExtensionsConfig(),
 		Service:    makeAgentServiceConfig(),
 	}
 }
@@ -243,5 +243,13 @@ func makeAgentServiceConfig() config.ServiceConfig {
 			},
 		},
 		Extensions: []string{"health_check"},
+	}
+}
+
+func makeAgentExtensionsConfig() config.ExtensionsConfig {
+	return config.ExtensionsConfig{
+		HealthCheck: config.EndpointConfig{
+			Endpoint: "${MY_POD_IP}:13133",
+		},
 	}
 }
