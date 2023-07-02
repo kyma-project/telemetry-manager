@@ -63,8 +63,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/lokilogpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
-	//nolint:gci // Mandatory kubebuilder imports scaffolding.
-	//+kubebuilder:scaffold:imports
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
@@ -77,6 +75,7 @@ import (
 	//nolint:gosec // pprof package is required for performance analysis.
 	_ "net/http/pprof"
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
+	//+kubebuilder:scaffold:imports
 )
 
 var (

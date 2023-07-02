@@ -6,6 +6,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -20,7 +21,6 @@ import (
 	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 	otelgatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type Config struct {

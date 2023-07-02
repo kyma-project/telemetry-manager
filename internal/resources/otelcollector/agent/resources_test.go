@@ -1,10 +1,11 @@
 package agent
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"testing"
 )
 
 var (

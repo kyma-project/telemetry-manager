@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"gopkg.in/yaml.v3"
 )
 
 func TestMakeGatewayConfig(t *testing.T) {
@@ -218,7 +218,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[4], "batch")
 	})
 
-	t.Run("marshalling", func(t *testing.T) {
+	t.Run("marshaling", func(t *testing.T) {
 		expected := `receivers:
     opencensus:
         endpoint: ${MY_POD_IP}:55678

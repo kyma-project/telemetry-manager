@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"gopkg.in/yaml.v3"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestMakeGatewayConfig(t *testing.T) {
@@ -199,7 +199,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-2"].Processors[3], "batch")
 	})
 
-	t.Run("marshalling", func(t *testing.T) {
+	t.Run("marshaling", func(t *testing.T) {
 		expected := `receivers:
     otlp:
         protocols:
@@ -360,7 +360,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		require.Equal(t, "${MY_POD_IP}:8888", collectorConfig.Service.Telemetry.Metrics.Address)
 	})
 
-	t.Run("marshalling", func(t *testing.T) {
+	t.Run("marshaling", func(t *testing.T) {
 		expected := `receivers:
     kubeletstats:
         collection_interval: 30s
