@@ -6,12 +6,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -87,215 +86,203 @@ var (
 	}
 )
 
-func TestMakeCollectorConfigEndpoint(t *testing.T) {
+func TestMakeGatewayConfig(t *testing.T) {
+	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline})
-	require.NoError(t, err)
-	expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT_TEST")
-	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
-	require.Equal(t, expectedEndpoint, otlpExporterConfig.Endpoint)
-}
 
-func TestMakeCollectorConfigSecure(t *testing.T) {
-	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline})
-	require.NoError(t, err)
-	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
-	require.False(t, otlpExporterConfig.TLS.Insecure)
-}
+	t.Run("endpoint", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		require.NoError(t, err)
+		expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT_TEST")
+		require.Contains(t, collectorConfig.Exporters, "otlp/test")
+		otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
+		require.Equal(t, expectedEndpoint, otlpExporterConfig.Endpoint)
+	})
 
-func TestMakeCollectorConfigSecureHttp(t *testing.T) {
-	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipelineHTTP})
-	require.NoError(t, err)
-	require.Contains(t, collectorConfig.Exporters, "otlphttp/test-http")
-	otlpExporterConfig := collectorConfig.Exporters["otlphttp/test-http"]
-	require.False(t, otlpExporterConfig.TLS.Insecure)
-}
+	t.Run("secure", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		require.NoError(t, err)
+		require.Contains(t, collectorConfig.Exporters, "otlp/test")
+		otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
+		require.False(t, otlpExporterConfig.TLS.Insecure)
+	})
 
-func TestMakeCollectorConfigInsecure(t *testing.T) {
-	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipelineInsecure})
-	require.NoError(t, err)
-	require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
-	otlpExporterConfig := collectorConfig.Exporters["otlp/test-insecure"]
-	require.True(t, otlpExporterConfig.TLS.Insecure)
-}
+	t.Run("insecure", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipelineHTTP})
+		require.NoError(t, err)
+		require.Contains(t, collectorConfig.Exporters, "otlphttp/test-http")
+		otlpExporterConfig := collectorConfig.Exporters["otlphttp/test-http"]
+		require.False(t, otlpExporterConfig.TLS.Insecure)
+	})
 
-func TestMakeCollectorConfigQueueSize(t *testing.T) {
-	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline})
-	require.NoError(t, err)
-	require.Equal(t, 256, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Pipeline should have the full queue size")
-}
+	t.Run("basic auth", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipelineWithBasicAuth})
+		require.NoError(t, err)
+		require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
+		otlpExporterConfig := collectorConfig.Exporters["otlp/test-basic-auth"]
+		headers := otlpExporterConfig.Headers
 
-func TestMakeCollectorConfigMultiPipelineQueueSize(t *testing.T) {
-	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline, tracePipelineWithBasicAuth, tracePipelineInsecure})
-	require.NoError(t, err)
-	require.Equal(t, 85, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
-	require.Equal(t, 85, collectorConfig.Exporters["otlp/test-basic-auth"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
-	require.Equal(t, 85, collectorConfig.Exporters["otlp/test-insecure"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
-}
+		authHeader, existing := headers["Authorization"]
+		require.True(t, existing)
+		require.Equal(t, "${BASIC_AUTH_HEADER_TEST_BASIC_AUTH}", authHeader)
+	})
 
-func TestMakeCollectorConfigMultiPipeline(t *testing.T) {
-	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline, tracePipelineInsecure})
-	require.NoError(t, err)
+	t.Run("resource processors", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		require.NoError(t, err)
 
-	require.Contains(t, collectorConfig.Exporters, "otlp/test")
-	require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
+		require.Equal(t, 1, len(collectorConfig.Processors.Resource.Attributes))
+		require.Equal(t, "insert", collectorConfig.Processors.Resource.Attributes[0].Action)
+		require.Equal(t, "k8s.cluster.name", collectorConfig.Processors.Resource.Attributes[0].Key)
+		require.Equal(t, "${KUBERNETES_SERVICE_HOST}", collectorConfig.Processors.Resource.Attributes[0].Value)
+	})
 
-	require.Contains(t, collectorConfig.Service.Pipelines, "traces/test")
-	require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "otlp/test")
-	require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "logging/test")
-	require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "otlp")
-	require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "opencensus")
-	require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[0], "memory_limiter")
-	require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[1], "k8sattributes")
-	require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "filter")
-	require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[3], "resource")
-	require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "batch")
+	t.Run("memory limit processors", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		require.NoError(t, err)
 
-	require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-insecure")
-	require.Contains(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Exporters, "otlp/test-insecure")
-	require.Contains(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Exporters, "logging/test-insecure")
-	require.Contains(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Receivers, "otlp")
-	require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "opencensus")
-	require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[0], "memory_limiter")
-	require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[1], "k8sattributes")
-	require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[2], "filter")
-	require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[3], "resource")
-	require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[4], "batch")
-}
+		require.Equal(t, "1s", collectorConfig.Processors.MemoryLimiter.CheckInterval)
+		require.Equal(t, 75, collectorConfig.Processors.MemoryLimiter.LimitPercentage)
+		require.Equal(t, 10, collectorConfig.Processors.MemoryLimiter.SpikeLimitPercentage)
+	})
 
-func TestMakeCollectorConfigWithBasicAuth(t *testing.T) {
-	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipelineWithBasicAuth})
-	require.NoError(t, err)
-	require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
-	otlpExporterConfig := collectorConfig.Exporters["otlp/test-basic-auth"]
-	headers := otlpExporterConfig.Headers
+	t.Run("batch processors", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		require.NoError(t, err)
 
-	authHeader, existing := headers["Authorization"]
-	require.True(t, existing)
-	require.Equal(t, "${BASIC_AUTH_HEADER_TEST_BASIC_AUTH}", authHeader)
-}
+		require.Equal(t, 512, collectorConfig.Processors.Batch.SendBatchSize)
+		require.Equal(t, 512, collectorConfig.Processors.Batch.SendBatchMaxSize)
+		require.Equal(t, "10s", collectorConfig.Processors.Batch.Timeout)
+	})
 
-func TestMakePipelineConfig(t *testing.T) {
-	pipelines := map[string]config.PipelineConfig{
-		"traces/test": makeGatewayPipelineConfig([]string{"otlp/test", "logging/test"}),
-	}
+	t.Run("k8s attributes processors", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		require.NoError(t, err)
 
-	require.Contains(t, pipelines, "traces/test")
-	require.Contains(t, pipelines["traces/test"].Receivers, "otlp")
-	require.Contains(t, pipelines["traces/test"].Receivers, "opencensus")
+		require.Equal(t, "serviceAccount", collectorConfig.Processors.K8sAttributes.AuthType)
+		require.False(t, collectorConfig.Processors.K8sAttributes.Passthrough)
 
-	require.Equal(t, pipelines["traces/test"].Processors[0], "memory_limiter")
-	require.Equal(t, pipelines["traces/test"].Processors[1], "k8sattributes")
-	require.Equal(t, pipelines["traces/test"].Processors[2], "filter")
-	require.Equal(t, pipelines["traces/test"].Processors[3], "resource")
-	require.Equal(t, pipelines["traces/test"].Processors[4], "batch")
+		require.Contains(t, collectorConfig.Processors.K8sAttributes.Extract.Metadata, "k8s.pod.name")
 
-	require.Contains(t, pipelines["traces/test"].Exporters, "otlp/test")
-	require.Contains(t, pipelines["traces/test"].Exporters, "logging/test")
-}
+		require.Contains(t, collectorConfig.Processors.K8sAttributes.Extract.Metadata, "k8s.node.name")
+		require.Contains(t, collectorConfig.Processors.K8sAttributes.Extract.Metadata, "k8s.namespace.name")
+		require.Contains(t, collectorConfig.Processors.K8sAttributes.Extract.Metadata, "k8s.deployment.name")
 
-func TestResourceProcessors(t *testing.T) {
-	processors := makeGatewayProcessorsConfig()
+		require.Contains(t, collectorConfig.Processors.K8sAttributes.Extract.Metadata, "k8s.statefulset.name")
+		require.Contains(t, collectorConfig.Processors.K8sAttributes.Extract.Metadata, "k8s.daemonset.name")
+		require.Contains(t, collectorConfig.Processors.K8sAttributes.Extract.Metadata, "k8s.cronjob.name")
+		require.Contains(t, collectorConfig.Processors.K8sAttributes.Extract.Metadata, "k8s.job.name")
 
-	require.Equal(t, 1, len(processors.Resource.Attributes))
-	require.Equal(t, "insert", processors.Resource.Attributes[0].Action)
-	require.Equal(t, "k8s.cluster.name", processors.Resource.Attributes[0].Key)
-	require.Equal(t, "${KUBERNETES_SERVICE_HOST}", processors.Resource.Attributes[0].Value)
-}
+		require.Equal(t, 3, len(collectorConfig.Processors.K8sAttributes.PodAssociation))
+		require.Equal(t, "resource_attribute", collectorConfig.Processors.K8sAttributes.PodAssociation[0].Sources[0].From)
+		require.Equal(t, "k8s.pod.ip", collectorConfig.Processors.K8sAttributes.PodAssociation[0].Sources[0].Name)
 
-func TestMemoryLimiterProcessor(t *testing.T) {
-	processors := makeGatewayProcessorsConfig()
+		require.Equal(t, "resource_attribute", collectorConfig.Processors.K8sAttributes.PodAssociation[1].Sources[0].From)
+		require.Equal(t, "k8s.pod.uid", collectorConfig.Processors.K8sAttributes.PodAssociation[1].Sources[0].Name)
 
-	require.Equal(t, "1s", processors.MemoryLimiter.CheckInterval)
-	require.Equal(t, 75, processors.MemoryLimiter.LimitPercentage)
-	require.Equal(t, 10, processors.MemoryLimiter.SpikeLimitPercentage)
-}
+		require.Equal(t, "connection", collectorConfig.Processors.K8sAttributes.PodAssociation[2].Sources[0].From)
+	})
 
-func TestBatchProcessor(t *testing.T) {
-	processors := makeGatewayProcessorsConfig()
+	t.Run("filter processor", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		require.NoError(t, err)
 
-	require.Equal(t, 512, processors.Batch.SendBatchSize)
-	require.Equal(t, 512, processors.Batch.SendBatchMaxSize)
-	require.Equal(t, "10s", processors.Batch.Timeout)
-}
+		require.Equal(t, len(collectorConfig.Processors.Filter.Traces.Span), 10, "Span filter list size is wrong")
+		require.Contains(t, collectorConfig.Processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (resource.attributes[\"service.name\"] == \"grafana.kyma-system\")", "Grafana span filter egress missing")
+		require.Contains(t, collectorConfig.Processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"grafana.kyma-system\")", "Grafana span filter ingress GET missing")
+		require.Contains(t, collectorConfig.Processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"loki.kyma-system\")", "Loki span filter ingress GET missing")
+		require.Contains(t, collectorConfig.Processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (IsMatch(attributes[\"http.url\"], \".+/metrics\") == true) and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\")", "/metrics endpoint span filter missing")
+		require.Contains(t, collectorConfig.Processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (IsMatch(attributes[\"http.url\"], \".+/healthz(/.*)?\") == true) and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\")", "/healthz endpoint span filter missing")
+		require.Contains(t, collectorConfig.Processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (attributes[\"user_agent\"] == \"vm_promscrape\")", "Victoria Metrics agent span filter missing")
+		require.Contains(t, collectorConfig.Processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-otlp-traces\\\\.kyma-system(\\\\..*)?:(4318|4317).*\") == true)", "Telemetry OTLP service span filter missing")
+		require.Contains(t, collectorConfig.Processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-trace-collector-internal\\\\.kyma-system(\\\\..*)?:(55678).*\") == true)", "Telemetry Opencensus service span filter missing")
+		require.Contains(t, collectorConfig.Processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"loki.kyma-system\")", "Loki service span filter missing")
+		require.Contains(t, collectorConfig.Processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (resource.attributes[\"service.name\"] == \"telemetry-fluent-bit.kyma-system\")", "Fluent-Bit service span filter missing")
+	})
 
-func TestK8sAttributesProcessor(t *testing.T) {
-	processors := makeGatewayProcessorsConfig()
+	t.Run("extensions", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		require.NoError(t, err)
 
-	require.Equal(t, "serviceAccount", processors.K8sAttributes.AuthType)
-	require.False(t, processors.K8sAttributes.Passthrough)
+		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
+		require.NotEmpty(t, collectorConfig.Extensions.Pprof.Endpoint)
+		require.Contains(t, collectorConfig.Service.Extensions, "health_check")
+		require.Contains(t, collectorConfig.Service.Extensions, "pprof")
+	})
 
-	require.Contains(t, processors.K8sAttributes.Extract.Metadata, "k8s.pod.name")
+	t.Run("telemetry", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		require.NoError(t, err)
 
-	require.Contains(t, processors.K8sAttributes.Extract.Metadata, "k8s.node.name")
-	require.Contains(t, processors.K8sAttributes.Extract.Metadata, "k8s.namespace.name")
-	require.Contains(t, processors.K8sAttributes.Extract.Metadata, "k8s.deployment.name")
+		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
+		require.Equal(t, "${MY_POD_IP}:8888", collectorConfig.Service.Telemetry.Metrics.Address)
+	})
 
-	require.Contains(t, processors.K8sAttributes.Extract.Metadata, "k8s.statefulset.name")
-	require.Contains(t, processors.K8sAttributes.Extract.Metadata, "k8s.daemonset.name")
-	require.Contains(t, processors.K8sAttributes.Extract.Metadata, "k8s.cronjob.name")
-	require.Contains(t, processors.K8sAttributes.Extract.Metadata, "k8s.job.name")
+	t.Run("single pipeline queue size", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		require.NoError(t, err)
+		require.Equal(t, 256, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Pipeline should have the full queue size")
+	})
 
-	require.Equal(t, 3, len(processors.K8sAttributes.PodAssociation))
-	require.Equal(t, "resource_attribute", processors.K8sAttributes.PodAssociation[0].Sources[0].From)
-	require.Equal(t, "k8s.pod.ip", processors.K8sAttributes.PodAssociation[0].Sources[0].Name)
+	t.Run("multi pipeline queue size", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline, tracePipelineWithBasicAuth, tracePipelineInsecure})
+		require.NoError(t, err)
+		require.Equal(t, 85, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-basic-auth"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-insecure"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+	})
 
-	require.Equal(t, "resource_attribute", processors.K8sAttributes.PodAssociation[1].Sources[0].From)
-	require.Equal(t, "k8s.pod.uid", processors.K8sAttributes.PodAssociation[1].Sources[0].Name)
+	t.Run("single pipeline topology", func(t *testing.T) {
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		require.NoError(t, err)
 
-	require.Equal(t, "connection", processors.K8sAttributes.PodAssociation[2].Sources[0].From)
-}
+		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "otlp")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "opencensus")
 
-func TestMakeFilterProcessor(t *testing.T) {
-	processors := makeGatewayProcessorsConfig()
-	require.Equal(t, len(processors.Filter.Traces.Span), 10, "Span filter list size is wrong")
-	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (resource.attributes[\"service.name\"] == \"grafana.kyma-system\")", "Grafana span filter egress missing")
-	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"grafana.kyma-system\")", "Grafana span filter ingress GET missing")
-	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"loki.kyma-system\")", "Loki span filter ingress GET missing")
-	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (IsMatch(attributes[\"http.url\"], \".+/metrics\") == true) and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\")", "/metrics endpoint span filter missing")
-	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (IsMatch(attributes[\"http.url\"], \".+/healthz(/.*)?\") == true) and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\")", "/healthz endpoint span filter missing")
-	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (attributes[\"user_agent\"] == \"vm_promscrape\")", "Victoria Metrics agent span filter missing")
-	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-otlp-traces\\\\.kyma-system(\\\\..*)?:(4318|4317).*\") == true)", "Telemetry OTLP service span filter missing")
-	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-trace-collector-internal\\\\.kyma-system(\\\\..*)?:(55678).*\") == true)", "Telemetry Opencensus service span filter missing")
-	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"loki.kyma-system\")", "Loki service span filter missing")
-	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (resource.attributes[\"service.name\"] == \"telemetry-fluent-bit.kyma-system\")", "Fluent-Bit service span filter missing")
-}
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[0], "memory_limiter")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[1], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "filter")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[3], "resource")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "batch")
 
-func TestMakeExtensionConfig(t *testing.T) {
-	expectedConfig := config.ExtensionsConfig{
-		HealthCheck: config.EndpointConfig{
-			Endpoint: "${MY_POD_IP}:13133",
-		},
-		Pprof: config.EndpointConfig{
-			Endpoint: "127.0.0.1:1777",
-		},
-	}
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "otlp/test")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "logging/test")
+	})
 
-	actualConfig := makeGatewayExtensionsConfig()
-	require.Equal(t, expectedConfig, actualConfig)
-}
+	t.Run("multi pipeline topology", func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().Build()
+		collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline, tracePipelineInsecure})
+		require.NoError(t, err)
 
-func TestMakeServiceConfig(t *testing.T) {
-	var pipelineConfig map[string]config.PipelineConfig
-	serviceConfig := makeGatewayServiceConfig(pipelineConfig)
+		require.Contains(t, collectorConfig.Exporters, "otlp/test")
+		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
 
-	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
-	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
-	require.Contains(t, serviceConfig.Extensions, "health_check")
-	require.Contains(t, serviceConfig.Extensions, "pprof")
-}
+		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "otlp/test")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "logging/test")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "otlp")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "opencensus")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[0], "memory_limiter")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[1], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "filter")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[3], "resource")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "batch")
 
-func TestCollectorConfigMarshalling(t *testing.T) {
-	expected := `receivers:
+		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-insecure")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Exporters, "otlp/test-insecure")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Exporters, "logging/test-insecure")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Receivers, "otlp")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "opencensus")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[0], "memory_limiter")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[1], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[2], "filter")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[3], "resource")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[4], "batch")
+	})
+
+	t.Run("marshalling", func(t *testing.T) {
+		expected := `receivers:
     opencensus:
         endpoint: ${MY_POD_IP}:55678
     otlp:
@@ -396,11 +383,12 @@ service:
         - pprof
 `
 
-	fakeClient := fake.NewClientBuilder().Build()
-	collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline})
-	require.NoError(t, err)
+		fakeClient := fake.NewClientBuilder().Build()
+		collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		require.NoError(t, err)
 
-	yamlBytes, err := yaml.Marshal(collectorConfig)
-	require.NoError(t, err)
-	require.Equal(t, expected, string(yamlBytes))
+		yamlBytes, err := yaml.Marshal(collectorConfig)
+		require.NoError(t, err)
+		require.Equal(t, expected, string(yamlBytes))
+	})
 }
