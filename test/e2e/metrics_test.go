@@ -1,3 +1,5 @@
+//go:build e2e
+
 package e2e
 
 import (
@@ -181,7 +183,7 @@ var _ = Describe("Metrics", func() {
 			cumulativeSums = append(cumulativeSums, sum)
 			builder.WithMetric(sum)
 			GinkgoLogr.Info("Sending metric")
-			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
+			Expect(sendSumMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
 			// sum.setValue...
 			GinkgoLogr.Info("Changing metric by adding data points")
@@ -205,7 +207,7 @@ var _ = Describe("Metrics", func() {
 			}
 
 			builder.WithMetric(sum) // maybe :)
-			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
+			Expect(sendSumMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
@@ -527,6 +529,18 @@ func sendMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL strin
 	}
 	GinkgoLogr.Info("Calling export...")
 	return sender.Export(ctx, metrics)
+}
+
+func sendSumMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL string) error {
+	GinkgoLogr.Info("Starting send metrics function")
+	sender, err := kitmetrics.NewHTTPExporter(otlpPushURL, proxyClient)
+	GinkgoLogr.Info("Finished creating exporter")
+	if err != nil {
+		GinkgoLogr.Info("Some error occured")
+		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)
+	}
+	GinkgoLogr.Info("Calling export...")
+	return sender.ExportSum(ctx, metrics)
 }
 
 func suffixize(name string, idx int) string {
