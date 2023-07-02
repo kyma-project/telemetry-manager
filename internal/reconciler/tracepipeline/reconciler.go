@@ -35,6 +35,7 @@ import (
 	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 	otelgatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type Config struct {
@@ -129,6 +130,30 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	return nil
 }
 
+// getDeployableTracePipelines returns the list of trace pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
+func getDeployableTracePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline, client client.Client, lock *kubernetes.ResourceCountLock) ([]telemetryv1alpha1.TracePipeline, error) {
+	var deployablePipelines []telemetryv1alpha1.TracePipeline
+	for i := range allPipelines {
+		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
+			continue
+		}
+
+		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
+			continue
+		}
+
+		hasLock, err := lock.IsLockHolder(ctx, &allPipelines[i])
+		if err != nil {
+			return nil, err
+		}
+
+		if hasLock {
+			deployablePipelines = append(deployablePipelines, allPipelines[i])
+		}
+	}
+	return deployablePipelines, nil
+}
+
 func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, allPipelines []telemetryv1alpha1.TracePipeline) error {
 	namespacedBaseName := types.NamespacedName{
 		Name:      r.config.Gateway.BaseName,
@@ -195,8 +220,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return err
 	}
 	if err = kubernetes.CreateOrUpdateService(ctx, r.Client, otlpService); err != nil {
-		//nolint:dupword // otel collector collector service is a real name.
-		return fmt.Errorf("failed to create otel collector collector service: %w", err)
+		return fmt.Errorf("failed to create otel collector otlp service: %w", err)
 	}
 
 	openCensusService := otelgatewayresources.MakeOpenCensusService(r.config.Gateway)
@@ -227,26 +251,12 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	return nil
 }
 
-// getDeployableTracePipelines returns the list of trace pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func getDeployableTracePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline, client client.Client, lock *kubernetes.ResourceCountLock) ([]telemetryv1alpha1.TracePipeline, error) {
-	var deployablePipelines []telemetryv1alpha1.TracePipeline
-	for i := range allPipelines {
-		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
-			continue
-		}
-
-		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
-			continue
-		}
-
-		hasLock, err := lock.IsLockHolder(ctx, &allPipelines[i])
-		if err != nil {
-			return nil, err
-		}
-
-		if hasLock {
-			deployablePipelines = append(deployablePipelines, allPipelines[i])
-		}
+func makeNetworkPolicyPorts() []intstr.IntOrString {
+	return []intstr.IntOrString{
+		intstr.FromInt(13133),
+		intstr.FromInt(4317),
+		intstr.FromInt(4318),
+		intstr.FromInt(55678),
+		intstr.FromInt(8888),
 	}
-	return deployablePipelines, nil
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -45,17 +44,12 @@ func makeGatewayConfig(ctx context.Context, c client.Reader, pipelines []v1alpha
 		}
 	}
 
-	receiverConfig := makeGatewayReceiversConfig()
-	processorsConfig := makeGatewayProcessorsConfig()
-	serviceConfig := makeGatewayServiceConfig(pipelinesConfig)
-	extensionConfig := makeGatewayExtensionsConfig()
-
 	return &config.Config{
 		Exporters:  exportersConfig,
-		Receivers:  receiverConfig,
-		Processors: processorsConfig,
-		Service:    serviceConfig,
-		Extensions: extensionConfig,
+		Receivers:  makeGatewayReceiversConfig(),
+		Processors: makeGatewayProcessorsConfig(),
+		Service:    makeGatewayServiceConfig(pipelinesConfig),
+		Extensions: makeGatewayExtensionsConfig(),
 	}, allVars, nil
 }
 
@@ -196,15 +190,5 @@ func makeGatewayServiceConfig(pipelines config.PipelinesConfig) config.ServiceCo
 			},
 		},
 		Extensions: []string{"health_check", "pprof"},
-	}
-}
-
-func makeNetworkPolicyPorts() []intstr.IntOrString {
-	return []intstr.IntOrString{
-		intstr.FromInt(13133),
-		intstr.FromInt(4317),
-		intstr.FromInt(4318),
-		intstr.FromInt(55678),
-		intstr.FromInt(8888),
 	}
 }

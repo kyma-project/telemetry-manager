@@ -210,7 +210,6 @@ func TestResourceProcessors(t *testing.T) {
 	require.Equal(t, "insert", processors.Resource.Attributes[0].Action)
 	require.Equal(t, "k8s.cluster.name", processors.Resource.Attributes[0].Key)
 	require.Equal(t, "${KUBERNETES_SERVICE_HOST}", processors.Resource.Attributes[0].Value)
-
 }
 
 func TestMemoryLimiterProcessor(t *testing.T) {
@@ -256,7 +255,7 @@ func TestK8sAttributesProcessor(t *testing.T) {
 	require.Equal(t, "connection", processors.K8sAttributes.PodAssociation[2].Sources[0].From)
 }
 
-func TestFilterProcessor(t *testing.T) {
+func TestMakeFilterProcessor(t *testing.T) {
 	processors := makeGatewayProcessorsConfig()
 	require.Equal(t, len(processors.Filter.Traces.Span), 10, "Span filter list size is wrong")
 	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (resource.attributes[\"service.name\"] == \"grafana.kyma-system\")", "Grafana span filter egress missing")
@@ -269,6 +268,30 @@ func TestFilterProcessor(t *testing.T) {
 	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-trace-collector-internal\\\\.kyma-system(\\\\..*)?:(55678).*\") == true)", "Telemetry Opencensus service span filter missing")
 	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"loki.kyma-system\")", "Loki service span filter missing")
 	require.Contains(t, processors.Filter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (resource.attributes[\"service.name\"] == \"telemetry-fluent-bit.kyma-system\")", "Fluent-Bit service span filter missing")
+}
+
+func TestMakeExtensionConfig(t *testing.T) {
+	expectedConfig := config.ExtensionsConfig{
+		HealthCheck: config.EndpointConfig{
+			Endpoint: "${MY_POD_IP}:13133",
+		},
+		Pprof: config.EndpointConfig{
+			Endpoint: "127.0.0.1:1777",
+		},
+	}
+
+	actualConfig := makeGatewayExtensionsConfig()
+	require.Equal(t, expectedConfig, actualConfig)
+}
+
+func TestMakeServiceConfig(t *testing.T) {
+	var pipelineConfig map[string]config.PipelineConfig
+	serviceConfig := makeGatewayServiceConfig(pipelineConfig)
+
+	require.Equal(t, "${MY_POD_IP}:8888", serviceConfig.Telemetry.Metrics.Address)
+	require.Equal(t, "info", serviceConfig.Telemetry.Logs.Level)
+	require.Contains(t, serviceConfig.Extensions, "health_check")
+	require.Contains(t, serviceConfig.Extensions, "pprof")
 }
 
 func TestCollectorConfigMarshalling(t *testing.T) {
