@@ -6,84 +6,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"gopkg.in/yaml.v3"
-)
-
-var (
-	tracePipeline = v1alpha1.TracePipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
-		},
-		Spec: v1alpha1.TracePipelineSpec{
-			Output: v1alpha1.TracePipelineOutput{
-				Otlp: &v1alpha1.OtlpOutput{
-					Endpoint: v1alpha1.ValueType{
-						Value: "localhost",
-					},
-				},
-			},
-		},
-	}
-
-	tracePipelineInsecure = v1alpha1.TracePipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-insecure",
-		},
-		Spec: v1alpha1.TracePipelineSpec{
-			Output: v1alpha1.TracePipelineOutput{
-				Otlp: &v1alpha1.OtlpOutput{
-					Endpoint: v1alpha1.ValueType{
-						Value: "http://localhost",
-					},
-				},
-			},
-		},
-	}
-
-	tracePipelineHTTP = v1alpha1.TracePipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-http",
-		},
-		Spec: v1alpha1.TracePipelineSpec{
-			Output: v1alpha1.TracePipelineOutput{
-				Otlp: &v1alpha1.OtlpOutput{
-					Protocol: "http",
-					Endpoint: v1alpha1.ValueType{
-						Value: "localhost",
-					},
-				},
-			},
-		},
-	}
-
-	tracePipelineWithBasicAuth = v1alpha1.TracePipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-basic-auth",
-		},
-		Spec: v1alpha1.TracePipelineSpec{
-			Output: v1alpha1.TracePipelineOutput{
-				Otlp: &v1alpha1.OtlpOutput{
-					Endpoint: v1alpha1.ValueType{
-						Value: "localhost",
-					},
-					Authentication: &v1alpha1.AuthenticationOptions{
-						Basic: &v1alpha1.BasicAuthOptions{
-							User: v1alpha1.ValueType{
-								Value: "user",
-							},
-							Password: v1alpha1.ValueType{
-								Value: "password",
-							},
-						},
-					},
-				},
-			},
-		},
-	}
 )
 
 func TestMakeGatewayConfig(t *testing.T) {
@@ -91,7 +17,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{newPipelineBuilder().withName("test").build()})
 		require.NoError(t, err)
 		expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT_TEST")
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -100,7 +26,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("secure", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{newPipelineBuilder().withName("test").build()})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 		otlpExporterConfig := collectorConfig.Exporters["otlp/test"]
@@ -108,15 +34,20 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("insecure", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipelineHTTP})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{
+			newPipelineBuilder().withName("test-insecure").withEndpoint("http://localhost").build()},
+		)
 		require.NoError(t, err)
-		require.Contains(t, collectorConfig.Exporters, "otlphttp/test-http")
-		otlpExporterConfig := collectorConfig.Exporters["otlphttp/test-http"]
-		require.False(t, otlpExporterConfig.TLS.Insecure)
+
+		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
+		actualExporterConfig := collectorConfig.Exporters["otlp/test-insecure"]
+		require.True(t, actualExporterConfig.TLS.Insecure)
 	})
 
 	t.Run("basic auth", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipelineWithBasicAuth})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{
+			newPipelineBuilder().withName("test-basic-auth").withBasicAuth("user", "password").build(),
+		})
 		require.NoError(t, err)
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
 		otlpExporterConfig := collectorConfig.Exporters["otlp/test-basic-auth"]
@@ -128,7 +59,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("resource processors", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{newPipelineBuilder().build()})
 		require.NoError(t, err)
 
 		require.Equal(t, 1, len(collectorConfig.Processors.Resource.Attributes))
@@ -138,7 +69,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("memory limit processors", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{newPipelineBuilder().build()})
 		require.NoError(t, err)
 
 		require.Equal(t, "1s", collectorConfig.Processors.MemoryLimiter.CheckInterval)
@@ -147,7 +78,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("batch processors", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{newPipelineBuilder().build()})
 		require.NoError(t, err)
 
 		require.Equal(t, 512, collectorConfig.Processors.Batch.SendBatchSize)
@@ -156,7 +87,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("k8s attributes processors", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{newPipelineBuilder().build()})
 		require.NoError(t, err)
 
 		require.Equal(t, "serviceAccount", collectorConfig.Processors.K8sAttributes.AuthType)
@@ -184,7 +115,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("filter processor", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{newPipelineBuilder().build()})
 		require.NoError(t, err)
 
 		require.Equal(t, len(collectorConfig.Processors.Filter.Traces.Span), 10, "Span filter list size is wrong")
@@ -201,7 +132,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("extensions", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{newPipelineBuilder().build()})
 		require.NoError(t, err)
 
 		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
@@ -211,7 +142,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("telemetry", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{newPipelineBuilder().build()})
 		require.NoError(t, err)
 
 		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
@@ -219,21 +150,25 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("single pipeline queue size", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{newPipelineBuilder().withName("test").build()})
 		require.NoError(t, err)
 		require.Equal(t, 256, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Pipeline should have the full queue size")
 	})
 
 	t.Run("multi pipeline queue size", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline, tracePipelineWithBasicAuth, tracePipelineInsecure})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{
+			newPipelineBuilder().withName("test-1").build(),
+			newPipelineBuilder().withName("test-2").build(),
+			newPipelineBuilder().withName("test-3").build()},
+		)
 		require.NoError(t, err)
-		require.Equal(t, 85, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
-		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-basic-auth"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
-		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-insecure"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-1"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-2"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-3"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
 	})
 
 	t.Run("single pipeline topology", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.TracePipeline{newPipelineBuilder().withName("test").build()})
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test")
@@ -251,34 +186,36 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
-		fakeClient := fake.NewClientBuilder().Build()
-		collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline, tracePipelineInsecure})
+		collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{
+			newPipelineBuilder().withName("test-1").build(),
+			newPipelineBuilder().withName("test-2").build()},
+		)
 		require.NoError(t, err)
 
-		require.Contains(t, collectorConfig.Exporters, "otlp/test")
-		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
+		require.Contains(t, collectorConfig.Exporters, "otlp/test-1")
+		require.Contains(t, collectorConfig.Exporters, "otlp/test-2")
 
-		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "otlp/test")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "logging/test")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "otlp")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "opencensus")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[0], "memory_limiter")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "filter")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[3], "resource")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "batch")
+		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-1")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Exporters, "otlp/test-1")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Exporters, "logging/test-1")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Receivers, "otlp")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Receivers, "opencensus")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[0], "memory_limiter")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[1], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[2], "filter")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[3], "resource")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[4], "batch")
 
-		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-insecure")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Exporters, "otlp/test-insecure")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Exporters, "logging/test-insecure")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Receivers, "otlp")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Receivers, "opencensus")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[0], "memory_limiter")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[2], "filter")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[3], "resource")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-insecure"].Processors[4], "batch")
+		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-2")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Exporters, "otlp/test-2")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Exporters, "logging/test-2")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Receivers, "otlp")
+		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Receivers, "opencensus")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[0], "memory_limiter")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[1], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[2], "filter")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[3], "resource")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[4], "batch")
 	})
 
 	t.Run("marshalling", func(t *testing.T) {
@@ -383,8 +320,7 @@ service:
         - pprof
 `
 
-		fakeClient := fake.NewClientBuilder().Build()
-		collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{tracePipeline})
+		collectorConfig, _, err := makeGatewayConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{newPipelineBuilder().withName("test").build()})
 		require.NoError(t, err)
 
 		yamlBytes, err := yaml.Marshal(collectorConfig)
