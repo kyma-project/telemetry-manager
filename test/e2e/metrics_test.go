@@ -186,12 +186,18 @@ var _ = Describe("Metrics", func() {
 			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
 			// sum.setValue...
+			GinkgoLogr.Info("Changing metric by adding data points")
+			GinkgoLogr.Info("Getting first point's time")
 			startTime := sum.Sum().DataPoints().At(0).StartTimestamp().AsTime()
+			GinkgoLogr.Info("Appending empty point")
 			pt := sum.Sum().DataPoints().AppendEmpty()
 
+			GinkgoLogr.Info("Setting start time to the point")
 			pt.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
+			GinkgoLogr.Info("Setting timestamp to the point")
 			pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
 			//define static val
+			GinkgoLogr.Info("Setting value to the point")
 			pt.SetDoubleValue(float64(2)) //nolint:gosec // random number generator is sufficient.
 
 			for i := 0; i < 7; i++ {
