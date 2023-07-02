@@ -214,9 +214,7 @@ var _ = Describe("Metrics", func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetrics(cumulativeSums...)))) // add validation
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveDeltaMetrics(cumulativeSums...))))
+					HaveDeltaMetrics(cumulativeSums...)))) // add validation
 				// take a look on how data looks like
 			}, timeout, interval).Should(Succeed())
 		})

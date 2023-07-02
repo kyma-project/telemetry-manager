@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/go-logr/logr"
+
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -34,7 +36,7 @@ func HaveMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 	}, gomega.ContainElements(expectedMetrics))
 }
 
-func HaveDeltaMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
+func HaveDeltaMetrics(logger logr.Logger, expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
@@ -52,10 +54,10 @@ func HaveDeltaMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 		for _, md := range actualMds {
 			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
 		}
-		fmt.Println(actualMetrics[len(actualMetrics)-1].Sum().AggregationTemporality())
-		fmt.Println(actualMetrics[len(actualMetrics)-1].Sum().DataPoints().At(0))
-		fmt.Println(actualMetrics[len(actualMetrics)-1].Sum().DataPoints().At(1))
-		fmt.Println(actualMetrics[len(actualMetrics)-1].Sum().DataPoints().At(2))
+		logger.Info(actualMetrics[len(actualMetrics)-1].Sum().AggregationTemporality().String())
+		logger.Info(actualMetrics[len(actualMetrics)-1].Sum().DataPoints().At(0).ValueType().String())
+		logger.Info(actualMetrics[len(actualMetrics)-1].Sum().DataPoints().At(1).ValueType().String())
+		logger.Info(actualMetrics[len(actualMetrics)-1].Sum().DataPoints().At(2).ValueType().String())
 		return actualMetrics, nil
 	}, gomega.ContainElements(expectedMetrics))
 }
