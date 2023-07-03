@@ -247,7 +247,7 @@ func makeNetworkPolicyPorts() []intstr.IntOrString {
 }
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Istio.Enabled || pipeline.Spec.Input.Runtime.Enabled
+	return pipeline.Spec.Input.Application.Runtime.Enabled
 }
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {

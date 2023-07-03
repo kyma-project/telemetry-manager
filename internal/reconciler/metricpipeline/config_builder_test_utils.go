@@ -58,11 +58,10 @@ func (b *metricPipelineBuilder) build() telemetryv1alpha1.MetricPipeline {
 		},
 		Spec: telemetryv1alpha1.MetricPipelineSpec{
 			Input: telemetryv1alpha1.MetricPipelineInput{
-				Runtime: telemetryv1alpha1.MetricPipelineContainerRuntimeInput{
-					Enabled: b.runtimeInputOn,
-				},
-				Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-					Enabled: b.istioInputOn,
+				Application: telemetryv1alpha1.MetricPipelineApplicationInput{
+					Runtime: telemetryv1alpha1.MetricPipelineContainerRuntimeInput{
+						Enabled: b.runtimeInputOn,
+					},
 				},
 			},
 			Output: telemetryv1alpha1.MetricPipelineOutput{

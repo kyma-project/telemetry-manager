@@ -184,7 +184,7 @@ func makeAgentReceiversConfig(pipelines []v1alpha1.MetricPipeline) config.Receiv
 	enableRuntimeMetrics := false
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if input.Runtime.Enabled {
+		if input.Application.Runtime.Enabled {
 			enableRuntimeMetrics = true
 		}
 	}

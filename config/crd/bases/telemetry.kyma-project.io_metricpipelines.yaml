@@ -46,19 +46,17 @@ spec:
                 description: Configures different inputs to send additional metrics
                   to the metric gateway.
                 properties:
-                  istio:
-                    description: Configures Istio scraping.
+                  application:
+                    description: Configures application related scraping.
                     properties:
-                      enabled:
-                        description: Indicates if Istio scraping is enabled.
-                        type: boolean
-                    type: object
-                  runtime:
-                    description: Configures runtime scraping (kubelet, node metrics).
-                    properties:
-                      enabled:
-                        description: Indicates if runtime scraping is enabled.
-                        type: boolean
+                      runtime:
+                        description: Configures runtime scraping (workload-related
+                          k8s ).
+                        properties:
+                          enabled:
+                            description: Indicates if runtime scraping is enabled.
+                            type: boolean
+                        type: object
                     type: object
                 type: object
               output:

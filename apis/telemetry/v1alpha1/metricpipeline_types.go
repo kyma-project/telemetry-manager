@@ -60,11 +60,14 @@ type MetricPipelineSpec struct {
 
 // MetricPipelineInput defines the input configuration section.
 type MetricPipelineInput struct {
-	// Configures runtime scraping (kubelet, node metrics).
-	Runtime MetricPipelineContainerRuntimeInput `json:"runtime,omitempty"`
+	// Configures application related scraping.
+	Application MetricPipelineApplicationInput `json:"application,omitempty"`
+}
 
-	// Configures Istio scraping.
-	Istio MetricPipelineIstioInput `json:"istio,omitempty"`
+// MetricPipelineApplicationInput defines the application input configuration section.
+type MetricPipelineApplicationInput struct {
+	// Configures runtime scraping (workload-related k8s ).
+	Runtime MetricPipelineContainerRuntimeInput `json:"runtime,omitempty"`
 }
 
 // MetricPipelineContainerRuntimeInput defines the runtime scraping (kubelet, node metrics) section.
