@@ -111,9 +111,6 @@ var _ = Describe("Metrics", func() {
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
-				defer resp.Body.Close()
-				body, _ := ioutil.ReadAll(resp.Body)
-				GinkgoLogr.Info(string(body))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -146,8 +143,8 @@ var _ = Describe("Metrics", func() {
 	Context("When a metricpipeline has toDelta flag active", Ordered, func() {
 		var (
 			urls               *mocks.URLProvider
-			mockDeploymentName = "metric-receiver-delta"
-			mockNs             = "metric-mocks-delta"
+			mockDeploymentName = "metric-receiver"
+			mockNs             = "metric-mocks"
 			metricGatewayName  = types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
 		)
 
