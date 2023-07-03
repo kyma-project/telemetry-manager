@@ -14,6 +14,7 @@ type SignalType string
 const (
 	SignalTypeTraces  = "traces"
 	SignalTypeMetrics = "metrics"
+	SignalTypeLogs    = "logs"
 )
 
 type BackendConfigMap struct {
@@ -33,6 +34,8 @@ func NewBackendConfigMap(name, namespace, path string, signalType SignalType) *B
 }
 
 const configTemplate = `receivers:
+  fluentforward:
+    endpoint: 0.0.0.0:8006
   otlp:
     protocols:
       grpc: {}

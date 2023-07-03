@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <testsuites tests="0" disabled="0" errors="0" failures="0" time="0">
+      <testsuite name="" package="/Users/d061618/go/src/github.com/kyma-project/telemetry-manager/test/e2e" tests="0" disabled="0" skipped="0" errors="0" failures="0" time="0" timestamp="0001-01-01T00:00:00">
+          <properties>
+              <property name="SuiteSucceeded" value="false"></property>
+              <property name="SuiteHasProgrammaticFocus" value="false"></property>
+              <property name="SpecialSuiteFailureReason" value="Failed to compile e2e:&#xA;&#xA;# github.com/kyma-project/telemetry-manager/test/e2e [github.com/kyma-project/telemetry-manager/test/e2e.test]&#xA;./logging_test.go:35:4: traceCollectorname declared and not used&#xA;./logging_test.go:39:35: assignment mismatch: 2 variables but makeLoggingTestK8sObjects returns 1 value&#xA;./logging_test.go:39:61: too many arguments in call to makeLoggingTestK8sObjects&#xA;&#x9;have (string, string)&#xA;&#x9;want ()&#xA;./logging_test.go:40:11: undefined: tracesURLProvider&#xA;./logging_test.go:161:17: undefined: kittrace&#xA;./logging_test.go:171:141: undefined: i&#xA;"></property>
+              <property name="SuiteLabels" value="[]"></property>
+              <property name="RandomSeed" value="1688367358"></property>
+              <property name="RandomizeAllSpecs" value="false"></property>
+              <property name="LabelFilter" value=""></property>
+              <property name="FocusStrings" value=""></property>
+              <property name="SkipStrings" value=""></property>
+              <property name="FocusFiles" value=""></property>
+              <property name="SkipFiles" value=""></property>
+              <property name="FailOnPending" value="false"></property>
+              <property name="FailFast" value="false"></property>
+              <property name="FlakeAttempts" value="0"></property>
+              <property name="DryRun" value="false"></property>
+              <property name="ParallelTotal" value="1"></property>
+              <property name="OutputInterceptorMode" value=""></property>
+          </properties>
+      </testsuite>
+  </testsuites>

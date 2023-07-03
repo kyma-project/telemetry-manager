@@ -24,7 +24,19 @@ func (p *Pipeline) K8sObject() *telemetry.LogPipeline {
 		},
 		Spec: telemetry.LogPipelineSpec{
 			Output: telemetry.Output{
-				Custom: "Name               stdout",
+				HTTP: &telemetry.HTTPOutput{
+					Dedot: true,
+					Host: telemetry.ValueType{
+						Value: "http://endpoint",
+					},
+					Port:   "9880",
+					URI:    "/",
+					Format: "json",
+					TLSConfig: telemetry.TLSConfig{
+						Disabled:                  true,
+						SkipCertificateValidation: true,
+					},
+				},
 			},
 		},
 	}
