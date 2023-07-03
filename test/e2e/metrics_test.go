@@ -5,6 +5,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -220,6 +221,9 @@ var _ = Describe("Metrics", func() {
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
+				defer resp.Body.Close()
+				body, _ := ioutil.ReadAll(resp.Body)
+				GinkgoLogr.Info(string(body))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
