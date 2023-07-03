@@ -1,11 +1,10 @@
-//go:build e2e
-
 package e2e
 
 import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -103,6 +102,10 @@ var _ = Describe("Metrics", func() {
 			}
 			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
+			GinkgoLogr.Info("MockBackendExport: " + urls.MockBackendExport())
+			GinkgoLogr.Info("OTLPPush: " + urls.OTLPPush())
+			GinkgoLogr.Info("Number of generated metrics: " + strconv.Itoa(builder.Build().MetricCount()))
+
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
@@ -137,7 +140,7 @@ var _ = Describe("Metrics", func() {
 	Context("When a metricpipeline has toDelta flag active", Ordered, func() {
 		var (
 			urls               *mocks.URLProvider
-			mockDeploymentName = "metric-receiver"
+			mockDeploymentName = "metric-receiver-delta"
 			mockNs             = "metric-mocks-delta"
 			metricGatewayName  = types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
 		)
@@ -206,8 +209,12 @@ var _ = Describe("Metrics", func() {
 				pt.Attributes().PutStr(k, v)
 			}
 
-			builder.WithMetric(sum) // maybe :)
+			// builder.WithMetric(sum) // maybe :)
 			Expect(sendSumMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
+
+			GinkgoLogr.Info("MockBackendExport: " + urls.MockBackendExport())
+			GinkgoLogr.Info("OTLPPush: " + urls.OTLPPush())
+			GinkgoLogr.Info("Number of generated metrics: " + strconv.Itoa(builder.Build().MetricCount()))
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
