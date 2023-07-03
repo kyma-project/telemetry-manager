@@ -49,7 +49,6 @@ func HaveDeltaMetrics(logger logr.Logger, expectedMetrics ...pmetric.Metric) typ
 		if err != nil {
 			return nil, fmt.Errorf("HaveGauges requires a valid OTLP JSON document: %v", err)
 		}
-		fmt.Println(actualMds[len(actualMds)-1].ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().SchemaUrl())
 
 		var actualMetrics []pmetric.Metric
 		for _, md := range actualMds {
