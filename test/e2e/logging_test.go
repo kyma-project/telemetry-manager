@@ -29,15 +29,13 @@ var (
 var _ = Describe("Logging", func() {
 	Context("When a logpipeline exists", Ordered, func() {
 		var (
-			urls               *mocks.URLProvider
 			mockNs             = "log-mocks-single-pipeline"
 			mockDeploymentName = "log-receiver"
-			traceCollectorname = types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
 		)
 
 		BeforeAll(func() {
-			k8sObjects, logsURLProvider := makeLoggingTestK8sObjects(mockNs, mockDeploymentName)
-			urls = tracesURLProvider
+			k8sObjects, _ := makeLogsTestK8sObjects(mockNs, mockDeploymentName)
+
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
@@ -107,14 +105,6 @@ var _ = Describe("Logging", func() {
 	})
 })
 
-// makeLoggingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeLoggingTestK8sObjects() []client.Object {
-	logPipeline := kitlog.NewPipeline("test")
-	return []client.Object{
-		logPipeline.K8sObject(),
-	}
-}
-
 func makeLokiService() *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -147,9 +137,10 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) ([]clie
 	objs = append(objs, kitk8s.NewNamespace(namespace).K8sObject())
 
 	//// Mocks namespace objects.
-	mockBackend := mocks.NewBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename, mocks.SignalTypeLogs)
-	mockBackendConfigMap := mockBackend.ConfigMap("log-receiver-config")
-	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
+	mockBackend := mocks.NewLogBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)
+
+	mockBackendConfigMap := mockBackend.LogConfigMap("log-receiver-config")
+	mockBackendDeployment := mockBackend.LogDeployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-otlp", httpOTLPPort).
@@ -158,7 +149,7 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) ([]clie
 	// Default namespace objects.
 	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", otlpEndpointURL))
-	logPipeline := kittrace.NewPipeline("pipeline", hostSecret.SecretKeyRef("log-host"))
+	logPipeline := kitlog.NewLogPipeline("pipeline", hostSecret.SecretKeyRef("log-host"))
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
@@ -168,12 +159,12 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) ([]clie
 		logPipeline.K8sObject(),
 	}...)
 
-	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), i)
+	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
 	urls.SetOTLPPush(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-logs", "v1/traces/", httpOTLPPort))
 
 	// Kyma-system namespace objects.
 	logGatewayExternalService := kitk8s.NewService("telemetry-otlp-logs-external", kymaSystemNamespaceName).
-		WithPort("grpc-otlp", grpcOTLPPort).
+		WithPort("http-input", grpcOTLPPort).
 		WithPort("http-metrics", httpMetricsPort)
 	urls.SetMetrics(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-logs-external", "metrics", httpMetricsPort))
 

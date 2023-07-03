@@ -14,15 +14,17 @@ import (
 
 const (
 	replicas           = 1
-	otelCollectorImage = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:.79.0-58a64bcf"
+	otelCollectorImage = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.79.0-58a64bcf"
 	nginxImage         = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
+	fluentDImage       = "fluent/fluentd:v1.16-debian-1"
 )
 
 type BackendDeployment struct {
-	name          string
-	namespace     string
-	configmapName string
-	dataPath      string
+	name              string
+	namespace         string
+	configmapName     string
+	dataPath          string
+	fluentdConfigName string
 }
 
 func NewBackendDeployment(name, namespace, configmapName, dataPath string) *BackendDeployment {
@@ -31,6 +33,94 @@ func NewBackendDeployment(name, namespace, configmapName, dataPath string) *Back
 		namespace:     namespace,
 		configmapName: configmapName,
 		dataPath:      dataPath,
+	}
+}
+
+func NewLogBackendDeployment(name, namespace, configmapName, dataPath, fluentdConfigMap string) *BackendDeployment {
+	return &BackendDeployment{
+		name:              name,
+		namespace:         namespace,
+		configmapName:     configmapName,
+		dataPath:          dataPath,
+		fluentdConfigName: fluentdConfigMap,
+	}
+}
+
+func (d *BackendDeployment) K8sObjectWithFluentD(labelOpts ...testkit.OptFunc) *appsv1.Deployment {
+	labels := k8s.ProcessLabelOptions(labelOpts...)
+
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      d.name,
+			Namespace: d.namespace,
+			Labels:    labels,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: pointer.Int32(replicas),
+			Selector: &metav1.LabelSelector{MatchLabels: labels},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "otel-collector",
+							Image: otelCollectorImage,
+							Args:  []string{"--config=/etc/collector/config.yaml"},
+							SecurityContext: &corev1.SecurityContext{
+								RunAsUser: pointer.Int64(101),
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{Name: "config", MountPath: "/etc/collector"},
+								{Name: "data", MountPath: d.dataPath},
+							},
+						},
+						{
+							Name:  "web",
+							Image: nginxImage,
+							VolumeMounts: []corev1.VolumeMount{
+								{Name: "data", MountPath: "/usr/share/nginx/html"},
+							},
+						},
+						{
+							Name:  "fluentd",
+							Image: fluentDImage,
+							VolumeMounts: []corev1.VolumeMount{
+								{Name: "fluentdConfig", MountPath: "/fluentd/etc/"},
+							},
+						},
+					},
+					SecurityContext: &corev1.PodSecurityContext{
+						FSGroup: pointer.Int64(101),
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "config",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{Name: d.configmapName},
+								},
+							},
+						},
+						{
+							Name: "data",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: "fluentdConfig",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{Name: d.fluentdConfigName},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

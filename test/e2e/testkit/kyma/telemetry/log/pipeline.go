@@ -9,7 +9,15 @@ import (
 )
 
 type Pipeline struct {
-	name string
+	name         string
+	secretKeyRef *telemetry.SecretKeyRef
+}
+
+func NewLogPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
+	return &Pipeline{
+		name:         name,
+		secretKeyRef: secretKeyRef,
+	}
 }
 
 func NewPipeline(name string) *Pipeline {
@@ -24,10 +32,25 @@ func (p *Pipeline) K8sObject() *telemetry.LogPipeline {
 		},
 		Spec: telemetry.LogPipelineSpec{
 			Output: telemetry.Output{
+				Custom: "Name               stdout",
+			},
+		},
+	}
+}
+
+func (p *Pipeline) K8sObjectFluentD() *telemetry.LogPipeline {
+	return &telemetry.LogPipeline{
+		ObjectMeta: k8smeta.ObjectMeta{
+			Name: p.name,
+		},
+		Spec: telemetry.LogPipelineSpec{
+			Output: telemetry.Output{
 				HTTP: &telemetry.HTTPOutput{
 					Dedot: true,
 					Host: telemetry.ValueType{
-						Value: "http://endpoint",
+						ValueFrom: &telemetry.ValueFromSource{
+							SecretKeyRef: p.secretKeyRef,
+						},
 					},
 					Port:   "9880",
 					URI:    "/",
