@@ -43,7 +43,7 @@ func HaveDeltaMetrics(logger logr.Logger, expectedMetrics ...pmetric.Metric) typ
 		if !ok {
 			return nil, fmt.Errorf("HaveGauges requires a []byte, but got %T", actual)
 		}
-		fmt.Println(string(actualBytes))
+		logger.Info(string(actualBytes))
 
 		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
 		if err != nil {
