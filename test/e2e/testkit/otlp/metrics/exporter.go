@@ -4,7 +4,9 @@ package metrics
 
 import (
 	"context"
+	"strconv"
 
+	"github.com/go-logr/logr"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -25,12 +27,12 @@ func (e Exporter) Export(ctx context.Context, pmetrics pmetric.Metrics) error {
 	return e.otlpExporter.Export(ctx, toResourceMetrics(pmetrics))
 }
 
-func (e Exporter) ExportSum(ctx context.Context, pmetrics pmetric.Metrics) error {
-	return e.otlpExporter.Export(ctx, sumToResourceMetrics(pmetrics))
+func (e Exporter) ExportSum(ctx context.Context, pmetrics pmetric.Metrics, logger logr.Logger) error {
+	return e.otlpExporter.Export(ctx, sumToResourceMetrics(pmetrics, logger))
 }
 
 // sumToResourceMetrics converts metrics from pmetric.Metrics to metricdata.ResourceMetrics.
-func sumToResourceMetrics(pmetrics pmetric.Metrics) *metricdata.ResourceMetrics {
+func sumToResourceMetrics(pmetrics pmetric.Metrics, logger logr.Logger) *metricdata.ResourceMetrics {
 	var scopeMetrics []metricdata.Metrics
 
 	for i := 0; i < pmetrics.ResourceMetrics().Len(); i++ {
@@ -68,6 +70,8 @@ func sumToResourceMetrics(pmetrics pmetric.Metrics) *metricdata.ResourceMetrics 
 			}
 		}
 	}
+
+	logger.Info(strconv.Itoa(len(scopeMetrics)))
 
 	return &metricdata.ResourceMetrics{
 		Resource: resource.NewSchemaless(),

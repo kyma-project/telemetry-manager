@@ -1,3 +1,5 @@
+//go:build e2e
+
 package e2e
 
 import (
@@ -545,7 +547,7 @@ func sendSumMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL st
 		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)
 	}
 	GinkgoLogr.Info("Calling export...")
-	return sender.ExportSum(ctx, metrics)
+	return sender.ExportSum(ctx, metrics, GinkgoLogr)
 }
 
 func suffixize(name string, idx int) string {
