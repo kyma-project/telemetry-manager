@@ -24,8 +24,9 @@ func NewBackend(name, namespace, exportedFilePath string, signalType SignalType)
 
 func NewLogBackend(name, namespace, exportedFilePath string) *Backend {
 	return &Backend{
-		name:      name,
-		namespace: namespace,
+		name:             name,
+		namespace:        namespace,
+		exportedFilePath: exportedFilePath,
 	}
 }
 
