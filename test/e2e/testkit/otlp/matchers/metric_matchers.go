@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"strconv"
 
 	"github.com/go-logr/logr"
 
@@ -54,7 +55,7 @@ func HaveDeltaMetrics(logger logr.Logger, expectedMetrics ...pmetric.Metric) typ
 		for _, md := range actualMds {
 			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
 		}
-		logger.Info(len(actualMetrics))
+		logger.Info(strconv.Itoa(len(actualMetrics)))
 		logger.Info(actualMetrics[0].Sum().AggregationTemporality().String())
 		logger.Info(actualMetrics[0].Sum().DataPoints().At(0).ValueType().String())
 		logger.Info(actualMetrics[0].Sum().DataPoints().At(1).ValueType().String())
