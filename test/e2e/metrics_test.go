@@ -144,7 +144,7 @@ var _ = Describe("Metrics", func() {
 		var (
 			urls               *mocks.URLProvider
 			mockDeploymentName = "metric-receiver"
-			mockNs             = "metric-mocks"
+			mockNs             = "metric-mocks-delta"
 			metricGatewayName  = types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
 		)
 
