@@ -367,6 +367,9 @@ func TestMakeAgentConfig(t *testing.T) {
         auth_type: serviceAccount
         endpoint: https://${env:MY_NODE_NAME}:10250
         insecure_skip_verify: true
+        metric_groups:
+            - container
+            - pod
 exporters:
     otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317

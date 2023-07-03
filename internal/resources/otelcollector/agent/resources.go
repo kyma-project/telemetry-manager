@@ -47,7 +47,9 @@ func MakeDaemonSet(config Config, configHash string) *appsv1.DaemonSet {
 	labels := core.MakeDefaultLabels(config.BaseName)
 	annotations := core.MakePodAnnotations(configHash)
 	resources := corev1.ResourceRequirements{}
-	podSpec := core.MakePodSpec(config.BaseName, config.DaemonSet.Image, config.DaemonSet.PriorityClassName, resources)
+	podSpec := core.MakePodSpec(config.BaseName, config.DaemonSet.Image,
+		core.WithPriorityClass(config.DaemonSet.PriorityClassName),
+		core.WithResources(resources))
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{

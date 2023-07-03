@@ -24,12 +24,30 @@ func MakeDefaultLabels(baseName string) map[string]string {
 	}
 }
 
-func MakePodSpec(baseName, image, priorityClassName string, resources corev1.ResourceRequirements) corev1.PodSpec {
-	labels := MakeDefaultLabels(baseName)
-	affinity := makePodAffinity(labels)
+type PodSpecOption = func(pod *corev1.PodSpec)
 
-	return corev1.PodSpec{
-		Affinity: &affinity,
+func WithAffinity(affinity corev1.Affinity) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.Affinity = &affinity
+	}
+}
+
+func WithPriorityClass(priorityClassName string) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.PriorityClassName = priorityClassName
+	}
+}
+
+func WithResources(resources corev1.ResourceRequirements) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		for i := range pod.Containers {
+			pod.Containers[i].Resources = resources
+		}
+	}
+}
+
+func MakePodSpec(baseName, image string, opts ...PodSpecOption) corev1.PodSpec {
+	pod := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:  collectorContainerName,
@@ -56,7 +74,6 @@ func MakePodSpec(baseName, image, priorityClassName string, resources corev1.Res
 						},
 					},
 				},
-				Resources: resources,
 				SecurityContext: &corev1.SecurityContext{
 					Privileged:               pointer.Bool(false),
 					RunAsUser:                pointer.Int64(collectorUser),
@@ -84,7 +101,6 @@ func MakePodSpec(baseName, image, priorityClassName string, resources corev1.Res
 			},
 		},
 		ServiceAccountName: baseName,
-		PriorityClassName:  priorityClassName,
 		SecurityContext: &corev1.PodSecurityContext{
 			RunAsUser:    pointer.Int64(collectorUser),
 			RunAsNonRoot: pointer.Bool(true),
@@ -106,33 +122,11 @@ func MakePodSpec(baseName, image, priorityClassName string, resources corev1.Res
 			},
 		},
 	}
-}
 
-func makePodAffinity(labels map[string]string) corev1.Affinity {
-	return corev1.Affinity{
-		PodAntiAffinity: &corev1.PodAntiAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-				{
-					Weight: 100,
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						TopologyKey: "kubernetes.io/hostname",
-						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: labels,
-						},
-					},
-				},
-				{
-					Weight: 100,
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						TopologyKey: "topology.kubernetes.io/zone",
-						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: labels,
-						},
-					},
-				},
-			},
-		},
+	for _, opt := range opts {
+		opt(&pod)
 	}
+	return pod
 }
 
 func MakePodAnnotations(configHash string) map[string]string {

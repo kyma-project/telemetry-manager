@@ -75,7 +75,11 @@ func MakeDeployment(config Config, configHash string, pipelineCount int) *appsv1
 	labels := core.MakeDefaultLabels(config.BaseName)
 	annotations := core.MakePodAnnotations(configHash)
 	resources := makeResourceRequirements(config, pipelineCount)
-	podSpec := core.MakePodSpec(config.BaseName, config.Deployment.Image, config.Deployment.PriorityClassName, resources)
+	affinity := makePodAffinity(labels)
+	podSpec := core.MakePodSpec(config.BaseName, config.Deployment.Image,
+		core.WithPriorityClass(config.Deployment.PriorityClassName),
+		core.WithResources(resources),
+		core.WithAffinity(affinity))
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -125,6 +129,33 @@ func makeResourceRequirements(config Config, pipelineCount int) corev1.ResourceR
 	}
 
 	return resources
+}
+
+func makePodAffinity(labels map[string]string) corev1.Affinity {
+	return corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				{
+					Weight: 100,
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: "kubernetes.io/hostname",
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: labels,
+						},
+					},
+				},
+				{
+					Weight: 100,
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: "topology.kubernetes.io/zone",
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: labels,
+						},
+					},
+				},
+			},
+		},
+	}
 }
 
 func MakeOTLPService(config Config) *corev1.Service {
