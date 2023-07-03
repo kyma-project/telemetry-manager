@@ -383,7 +383,7 @@ In the next stage, the [Kubernetes filter](https://docs.fluentbit.io/manual/pipe
       "labels":
       {
           "app": "myApp",
-          "sidecar.istio.io/inject"=>"true",
+          "sidecar.istio.io/inject": "true",
           ...
       }
   }
@@ -449,7 +449,7 @@ Furthermore, the `__kyma__` prefix is used internally by the Telemetry Manager. 
 
 ### Buffer limits
 
-Fluent Bit buffers up to 1 GB of logs if a configured output cannot receive logs. The oldest logs are dropped when the limit is reached.
+Fluent Bit buffers up to 1 GB of logs if a configured output cannot receive logs. The oldest logs are dropped when the limit is reached or after 300 retries.
 
 ### Throughput
 
