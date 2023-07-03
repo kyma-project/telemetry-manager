@@ -55,11 +55,19 @@ type ReceiverProtocols struct {
 	GRPC EndpointConfig `yaml:"grpc,omitempty"`
 }
 
+type MetricGroupType string
+
+const (
+	MetricGroupTypeContainer MetricGroupType = "container"
+	MetricGroupTypePod       MetricGroupType = "pod"
+)
+
 type KubeletStatsReceiverConfig struct {
-	CollectionInterval string `yaml:"collection_interval,omitempty"`
-	AuthType           string `yaml:"auth_type,omitempty"`
-	Endpoint           string `yaml:"endpoint,omitempty"`
-	InsecureSkipVerify bool   `yaml:"insecure_skip_verify,omitempty"`
+	CollectionInterval string            `yaml:"collection_interval,omitempty"`
+	AuthType           string            `yaml:"auth_type,omitempty"`
+	Endpoint           string            `yaml:"endpoint,omitempty"`
+	InsecureSkipVerify bool              `yaml:"insecure_skip_verify,omitempty"`
+	MetricGroups       []MetricGroupType `yaml:"metric_groups,omitempty"`
 }
 
 type HostMetricsReceiverConfig struct {

@@ -197,6 +197,7 @@ func makeAgentReceiversConfig(pipelines []v1alpha1.MetricPipeline) config.Receiv
 			AuthType:           "serviceAccount",
 			Endpoint:           "https://${env:MY_NODE_NAME}:10250",
 			InsecureSkipVerify: true,
+			MetricGroups:       []config.MetricGroupType{config.MetricGroupTypeContainer, config.MetricGroupTypePod},
 		}
 	}
 
