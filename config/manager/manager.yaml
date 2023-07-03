@@ -73,6 +73,8 @@ spec:
             cpu: 5m
             memory: 100Mi
         env:
+        - name: APP_LOG_LEVEL
+          value: "info"
         - name: MY_POD_NAMESPACE
           valueFrom:
             fieldRef:
