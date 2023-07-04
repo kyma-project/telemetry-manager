@@ -5,18 +5,17 @@ import (
 	"fmt"
 	"sort"
 
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	configbuilder "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/otlpoutput"
 )
 
-func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.TracePipeline) (*config.Config, configbuilder.EnvVars, error) {
-	allVars := make(configbuilder.EnvVars)
+func makeGatewayConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.TracePipeline) (*config.Config, otlpoutput.EnvVars, error) {
+	allVars := make(otlpoutput.EnvVars)
 	exportersConfig := make(config.ExportersConfig)
-	pipelineConfigs := make(map[string]config.PipelineConfig)
+	pipelinesConfig := make(config.PipelinesConfig)
 
 	for _, pipeline := range pipelines {
 		if pipeline.DeletionTimestamp != nil {
@@ -25,7 +24,7 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v
 
 		output := pipeline.Spec.Output
 		queueSize := 256 / len(pipelines)
-		exporterConfig, envVars, err := configbuilder.MakeOTLPExportersConfig(ctx, c, output.Otlp, pipeline.Name, queueSize)
+		exporterConfig, envVars, err := otlpoutput.MakeExportersConfig(ctx, c, output.Otlp, pipeline.Name, queueSize)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to make exporter config: %v", err)
 		}
@@ -36,30 +35,25 @@ func makeOtelCollectorConfig(ctx context.Context, c client.Reader, pipelines []v
 			outputAliases = append(outputAliases, k)
 		}
 		sort.Strings(outputAliases)
-		pipelineConfig := makePipelineConfig(outputAliases)
+		pipelineConfig := makeGatewayPipelineConfig(outputAliases)
 		pipelineName := fmt.Sprintf("traces/%s", pipeline.Name)
-		pipelineConfigs[pipelineName] = pipelineConfig
+		pipelinesConfig[pipelineName] = pipelineConfig
 
 		for k, v := range envVars {
 			allVars[k] = v
 		}
 	}
 
-	receiverConfig := makeReceiversConfig()
-	processorsConfig := makeProcessorsConfig()
-	serviceConfig := configbuilder.MakeServiceConfig(pipelineConfigs)
-	extensionConfig := configbuilder.MakeExtensionsConfig()
-
 	return &config.Config{
 		Exporters:  exportersConfig,
-		Receivers:  receiverConfig,
-		Processors: processorsConfig,
-		Service:    serviceConfig,
-		Extensions: extensionConfig,
+		Receivers:  makeGatewayReceiversConfig(),
+		Processors: makeGatewayProcessorsConfig(),
+		Service:    makeGatewayServiceConfig(pipelinesConfig),
+		Extensions: makeGatewayExtensionsConfig(),
 	}, allVars, nil
 }
 
-func makeReceiversConfig() config.ReceiversConfig {
+func makeGatewayReceiversConfig() config.ReceiversConfig {
 	return config.ReceiversConfig{
 		OpenCensus: &config.EndpointConfig{
 			Endpoint: "${MY_POD_IP}:55678",
@@ -77,7 +71,7 @@ func makeReceiversConfig() config.ReceiversConfig {
 	}
 }
 
-func makeProcessorsConfig() config.ProcessorsConfig {
+func makeGatewayProcessorsConfig() config.ProcessorsConfig {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -144,13 +138,13 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 		},
 		Filter: &config.FilterProcessorConfig{
 			Traces: config.TraceConfig{
-				Span: makeSpanFilterConfig(),
+				Span: makeGatewaySpanFilterConfig(),
 			},
 		},
 	}
 }
 
-func makeSpanFilterConfig() []string {
+func makeGatewaySpanFilterConfig() []string {
 	return []string{
 		"(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (resource.attributes[\"service.name\"] == \"grafana.kyma-system\")",
 		"(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"grafana.kyma-system\")",
@@ -165,7 +159,7 @@ func makeSpanFilterConfig() []string {
 	}
 }
 
-func makePipelineConfig(outputAliases []string) config.PipelineConfig {
+func makeGatewayPipelineConfig(outputAliases []string) config.PipelineConfig {
 	return config.PipelineConfig{
 		Receivers:  []string{"opencensus", "otlp"},
 		Processors: []string{"memory_limiter", "k8sattributes", "filter", "resource", "batch"},
@@ -173,12 +167,28 @@ func makePipelineConfig(outputAliases []string) config.PipelineConfig {
 	}
 }
 
-func makeNetworkPolicyPorts() []intstr.IntOrString {
-	return []intstr.IntOrString{
-		intstr.FromInt(13133),
-		intstr.FromInt(4317),
-		intstr.FromInt(4318),
-		intstr.FromInt(55678),
-		intstr.FromInt(8888),
+func makeGatewayExtensionsConfig() config.ExtensionsConfig {
+	return config.ExtensionsConfig{
+		HealthCheck: config.EndpointConfig{
+			Endpoint: "${MY_POD_IP}:13133",
+		},
+		Pprof: config.EndpointConfig{
+			Endpoint: "127.0.0.1:1777",
+		},
+	}
+}
+
+func makeGatewayServiceConfig(pipelines config.PipelinesConfig) config.ServiceConfig {
+	return config.ServiceConfig{
+		Pipelines: pipelines,
+		Telemetry: config.TelemetryConfig{
+			Metrics: config.MetricsConfig{
+				Address: "${MY_POD_IP}:8888",
+			},
+			Logs: config.LoggingConfig{
+				Level: "info",
+			},
+		},
+		Extensions: []string{"health_check", "pprof"},
 	}
 }

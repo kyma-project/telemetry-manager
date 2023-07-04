@@ -19,28 +19,31 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
+	gatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var (
-	testMetricPipelineConfig = collectorresources.Config{
-		BaseName:          "telemetry-metric-gateway",
-		Namespace:         "telemetry-system",
-		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "telemetry-system"},
-		Deployment: collectorresources.DeploymentConfig{
-			Image:             "otel/opentelemetry-collector-contrib:0.60.0",
-			BaseCPULimit:      resource.MustParse("1"),
-			BaseMemoryLimit:   resource.MustParse("1Gi"),
-			BaseCPURequest:    resource.MustParse("150m"),
-			BaseMemoryRequest: resource.MustParse("256Mi"),
-			PriorityClassName: "telemetry-priority-class",
+	testMetricPipelineReconcilerConfig = metricpipeline.Config{
+		Gateway: gatewayresources.Config{
+			BaseName:  "telemetry-metric-gateway",
+			Namespace: "telemetry-system",
+			Deployment: gatewayresources.DeploymentConfig{
+				Image:             "otel/opentelemetry-collector-contrib:0.60.0",
+				BaseCPULimit:      resource.MustParse("1"),
+				BaseMemoryLimit:   resource.MustParse("1Gi"),
+				BaseCPURequest:    resource.MustParse("150m"),
+				BaseMemoryRequest: resource.MustParse("256Mi"),
+				PriorityClassName: "telemetry-priority-class",
+			},
+			Service: gatewayresources.ServiceConfig{
+				OTLPServiceName: "telemetry-otlp-metrics",
+			},
 		},
-		Service: collectorresources.ServiceConfig{
-			OTLPServiceName: "telemetry-otlp-metrics",
-		},
+		OverridesConfigMapName: types.NamespacedName{Name: "override-config", Namespace: "telemetry-system"},
 	}
 )
 
