@@ -1,5 +1,9 @@
 package config
 
+import (
+	promconfig "github.com/prometheus/prometheus/config"
+)
+
 type TLSConfig struct {
 	Insecure bool `yaml:"insecure"`
 }
@@ -36,10 +40,10 @@ type LoggingExporterConfig struct {
 }
 
 type ReceiversConfig struct {
-	OpenCensus   *EndpointConfig             `yaml:"opencensus,omitempty"`
-	OTLP         *OTLPReceiverConfig         `yaml:"otlp,omitempty"`
-	KubeletStats *KubeletStatsReceiverConfig `yaml:"kubeletstats,omitempty"`
-	HostMetrics  *HostMetricsReceiverConfig  `yaml:"hostmetrics,omitempty"`
+	OpenCensus     *EndpointConfig             `yaml:"opencensus,omitempty"`
+	OTLP           *OTLPReceiverConfig         `yaml:"otlp,omitempty"`
+	KubeletStats   *KubeletStatsReceiverConfig `yaml:"kubeletstats,omitempty"`
+	PrometheusSelf *PrometheusReceiverConfig   `yaml:"prometheus/self,omitempty"`
 }
 
 type EndpointConfig struct {
@@ -55,13 +59,6 @@ type ReceiverProtocols struct {
 	GRPC EndpointConfig `yaml:"grpc,omitempty"`
 }
 
-type MetricGroupType string
-
-const (
-	MetricGroupTypeContainer MetricGroupType = "container"
-	MetricGroupTypePod       MetricGroupType = "pod"
-)
-
 type KubeletStatsReceiverConfig struct {
 	CollectionInterval string            `yaml:"collection_interval,omitempty"`
 	AuthType           string            `yaml:"auth_type,omitempty"`
@@ -70,8 +67,15 @@ type KubeletStatsReceiverConfig struct {
 	MetricGroups       []MetricGroupType `yaml:"metric_groups,omitempty"`
 }
 
-type HostMetricsReceiverConfig struct {
-	CollectionInterval string `yaml:"collection_interval,omitempty"`
+type MetricGroupType string
+
+const (
+	MetricGroupTypeContainer MetricGroupType = "container"
+	MetricGroupTypePod       MetricGroupType = "pod"
+)
+
+type PrometheusReceiverConfig struct {
+	Config promconfig.Config `yaml:"config,omitempty"`
 }
 
 type BatchProcessorConfig struct {

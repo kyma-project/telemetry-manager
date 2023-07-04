@@ -18,30 +18,6 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.Me
 	}
 }
 
-func makeReceiversConfig(pipelines []v1alpha1.MetricPipeline) config.ReceiversConfig {
-	enableRuntimeMetrics := false
-	for i := range pipelines {
-		input := pipelines[i].Spec.Input
-		if input.Application.Runtime.Enabled {
-			enableRuntimeMetrics = true
-		}
-	}
-
-	receiversConfig := config.ReceiversConfig{}
-	if enableRuntimeMetrics {
-		const collectionInterval = "30s"
-		receiversConfig.KubeletStats = &config.KubeletStatsReceiverConfig{
-			CollectionInterval: collectionInterval,
-			AuthType:           "serviceAccount",
-			Endpoint:           "https://${env:MY_NODE_NAME}:10250",
-			InsecureSkipVerify: true,
-			MetricGroups:       []config.MetricGroupType{config.MetricGroupTypeContainer, config.MetricGroupTypePod},
-		}
-	}
-
-	return receiversConfig
-}
-
 func makeExportersConfig(gatewayServiceName types.NamespacedName) config.ExportersConfig {
 	exportersConfig := make(config.ExportersConfig)
 	exportersConfig["otlp"] = config.ExporterConfig{
@@ -76,7 +52,7 @@ func makeExtensionsConfig() config.ExtensionsConfig {
 func makeServiceConfig() config.ServiceConfig {
 	pipelinesConfig := make(config.PipelinesConfig)
 	pipelinesConfig["metrics"] = config.PipelineConfig{
-		Receivers: []string{"kubeletstats"},
+		Receivers: []string{"kubeletstats", "prometheus/self"},
 		Exporters: []string{"otlp"},
 	}
 	return config.ServiceConfig{
