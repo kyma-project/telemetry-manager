@@ -1,4 +1,4 @@
-package tracepipeline
+package testutils
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-type tracePipelineBuilder struct {
+type TracePipelineBuilder struct {
 	name              string
 	namespace         string
 	endpoint          string
@@ -17,31 +17,31 @@ type tracePipelineBuilder struct {
 	basicAuthPassword string
 }
 
-func newPipelineBuilder() *tracePipelineBuilder {
-	return &tracePipelineBuilder{
+func NewTracePipelineBuilder() *TracePipelineBuilder {
+	return &TracePipelineBuilder{
 		name:      fmt.Sprintf("test-%d", time.Now().Nanosecond()),
 		namespace: "telemetry-system",
 		endpoint:  "https://localhost",
 	}
 }
 
-func (b *tracePipelineBuilder) withName(name string) *tracePipelineBuilder {
+func (b *TracePipelineBuilder) WithName(name string) *TracePipelineBuilder {
 	b.name = name
 	return b
 }
 
-func (b *tracePipelineBuilder) withEndpoint(endpoint string) *tracePipelineBuilder {
+func (b *TracePipelineBuilder) WithEndpoint(endpoint string) *TracePipelineBuilder {
 	b.endpoint = endpoint
 	return b
 }
 
-func (b *tracePipelineBuilder) withBasicAuth(user, password string) *tracePipelineBuilder {
+func (b *TracePipelineBuilder) WithBasicAuth(user, password string) *TracePipelineBuilder {
 	b.basicAuthUser = user
 	b.basicAuthPassword = password
 	return b
 }
 
-func (b *tracePipelineBuilder) build() telemetryv1alpha1.TracePipeline {
+func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
 	return telemetryv1alpha1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      b.name,
