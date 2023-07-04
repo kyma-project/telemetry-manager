@@ -1,7 +1,7 @@
 # Image URL to use all building/pushing image targets
-IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20230421-c40cd7f7
+IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20230704-76ba9dbc
 # Values required for creating telemetry module
-MODULE_VERSION ?= 0.0.3
+MODULE_VERSION ?= 0.6.0
 MODULE_CHANNEL ?= fast
 MODULE_NAME ?= telemetry
 MODULE_CR_PATH ?= ./config/samples/operator_v1alpha1_telemetry.yaml
