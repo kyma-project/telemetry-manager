@@ -57,6 +57,15 @@ spec:
                             description: Indicates if runtime scraping is enabled.
                             type: boolean
                         type: object
+                      workload:
+                        description: Configures workload scraping.
+                        properties:
+                          enabled:
+                            description: Indicates if workload scraping is enabled.
+                              Services and pods marked with prometheus.io/scrape=true
+                              annotation will be scraped.
+                            type: boolean
+                        type: object
                     type: object
                 type: object
               output:
