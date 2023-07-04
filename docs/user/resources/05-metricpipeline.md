@@ -90,7 +90,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
-| **conditions**  | \[\]object | MetricPipelineCondition contains details for the current condition of this MetricPipeline. |
+| **conditions**  | \[\]object | Defines the trail of MetricPipeline conditions. |
 | **conditions.&#x200b;lastTransitionTime**  | string |  |
 | **conditions.&#x200b;reason**  | string |  |
 | **conditions.&#x200b;type**  | string |  |

@@ -45,7 +45,10 @@ type MetricPipeline struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MetricPipelineSpec   `json:"spec,omitempty"`
+	// Defines the desired characteristics of MetricPipeline.
+	Spec MetricPipelineSpec `json:"spec,omitempty"`
+
+	// Represents the current information/status of MetricPipeline.
 	Status MetricPipelineStatus `json:"status,omitempty"`
 }
 
@@ -90,6 +93,7 @@ type MetricPipelineOutput struct {
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.
 type MetricPipelineStatus struct {
+	// Defines the trail of MetricPipeline conditions.
 	Conditions []MetricPipelineCondition `json:"conditions,omitempty"`
 }
 
@@ -101,7 +105,7 @@ const (
 	MetricPipelineRunning MetricPipelineConditionType = "Running"
 )
 
-// MetricPipelineCondition contains details for the current condition of this MetricPipeline.
+// Contains details for the current condition of this MetricPipeline.
 type MetricPipelineCondition struct {
 	LastTransitionTime metav1.Time                 `json:"lastTransitionTime,omitempty"`
 	Reason             string                      `json:"reason,omitempty"`

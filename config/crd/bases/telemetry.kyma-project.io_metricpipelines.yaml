@@ -40,7 +40,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: MetricPipelineSpec defines the desired state of MetricPipeline.
+            description: Defines the desired characteristics of MetricPipeline.
             properties:
               input:
                 description: Configures different inputs to send additional metrics
@@ -199,12 +199,13 @@ spec:
                 type: object
             type: object
           status:
-            description: MetricPipelineStatus defines the observed state of MetricPipeline.
+            description: Represents the current information/status of MetricPipeline.
             properties:
               conditions:
+                description: Defines the trail of MetricPipeline conditions.
                 items:
-                  description: MetricPipelineCondition contains details for the current
-                    condition of this MetricPipeline.
+                  description: Contains details for the current condition of this
+                    MetricPipeline.
                   properties:
                     lastTransitionTime:
                       format: date-time
