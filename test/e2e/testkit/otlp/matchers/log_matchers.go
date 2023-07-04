@@ -4,12 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/plog"
-
-	_ "go.opentelemetry.io/collector/pdata/pcommon"
-	_ "go.opentelemetry.io/collector/pdata/plog"
 )
 
 func ContainLogs() types.GomegaMatcher {
@@ -57,9 +55,9 @@ func ConsistOfNumberOfLogs(count int) types.GomegaMatcher {
 func getAllLogRecords(logs []plog.Logs) []plog.LogRecord {
 	var logRecords []plog.LogRecord
 
-	for _, l := range logs {
-		for i := 0; i < l.ResourceLogs().Len(); i++ {
-			resourceLogs := l.ResourceLogs().At(i)
+	for _, lr := range logs {
+		for i := 0; i < lr.ResourceLogs().Len(); i++ {
+			resourceLogs := lr.ResourceLogs().At(i)
 			for j := 0; j < resourceLogs.ScopeLogs().Len(); j++ {
 				scopeLogs := resourceLogs.ScopeLogs().At(j)
 				for k := 0; k < scopeLogs.LogRecords().Len(); k++ {
@@ -72,11 +70,11 @@ func getAllLogRecords(logs []plog.Logs) []plog.LogRecord {
 	return logRecords
 }
 
-func unmarshalOTLPJSONLogs(buf []byte) ([]plog.Logs, error) {
+func unmarshalOTLPJSONLogs(buffer []byte) ([]plog.Logs, error) {
 	var results []plog.Logs
 
 	var logsUnmarshaler plog.JSONUnmarshaler
-	scanner := bufio.NewScanner(bytes.NewReader(buf))
+	scanner := bufio.NewScanner(bytes.NewReader(buffer))
 	for scanner.Scan() {
 		td, err := logsUnmarshaler.UnmarshalLogs(scanner.Bytes())
 		if err != nil {
