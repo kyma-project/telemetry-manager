@@ -15,6 +15,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 
@@ -41,6 +42,15 @@ var _ = Describe("Logging", func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have a log backend running", Label("operational"), func() {
+			Eventually(func(g Gomega) {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should have a healthy webhook", func() {
@@ -133,6 +143,7 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) ([]clie
 		httpMetricsPort = 8888
 		httpOTLPPort    = 4318
 		httpWebPort     = 80
+		httpLogPort     = 9880
 	)
 	mocksNamespace := kitk8s.NewNamespace(namespace)
 	objs = append(objs, kitk8s.NewNamespace(namespace).K8sObject())
@@ -145,16 +156,18 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) ([]clie
 	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-otlp", httpOTLPPort).
-		WithPort("http-web", httpWebPort)
+		WithPort("http-web", httpWebPort).
+		WithPort("http-log", httpLogPort)
 
 	// Default namespace objects.
-	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
-	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", otlpEndpointURL))
+	logEndpointURL := mockBackendExternalService.URL()
+	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
 	logPipeline := kitlog.NewLogPipeline("pipeline", hostSecret.SecretKeyRef("log-host"))
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
-		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
+		mockBackendConfigMap.K8sObjectFluentDConfig(),
+		mockBackendDeployment.K8sObjectWithFluentD(kitk8s.WithLabel("app", mockBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		hostSecret.K8sObject(),
 		logPipeline.K8sObject(),

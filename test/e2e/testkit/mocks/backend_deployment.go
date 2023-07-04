@@ -86,8 +86,11 @@ func (d *BackendDeployment) K8sObjectWithFluentD(labelOpts ...testkit.OptFunc) *
 						{
 							Name:  "fluentd",
 							Image: fluentDImage,
+							Ports: []corev1.ContainerPort{
+								{ContainerPort: 9880, Name: "http-log", Protocol: corev1.ProtocolTCP},
+							},
 							VolumeMounts: []corev1.VolumeMount{
-								{Name: "fluentdConfig", MountPath: "/fluentd/etc/"},
+								{Name: "fluentd-config", MountPath: "/fluentd/etc/"},
 							},
 						},
 					},
@@ -110,7 +113,7 @@ func (d *BackendDeployment) K8sObjectWithFluentD(labelOpts ...testkit.OptFunc) *
 							},
 						},
 						{
-							Name: "fluentdConfig",
+							Name: "fluentd-config",
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{Name: d.fluentdConfigName},
