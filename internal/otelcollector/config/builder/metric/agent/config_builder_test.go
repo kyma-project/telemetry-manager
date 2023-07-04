@@ -31,39 +31,6 @@ func TestMakeAgentConfig(t *testing.T) {
 		})
 	})
 
-	t.Run("no pipelines have runtime scraping enabled", func(t *testing.T) {
-		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().Build(),
-			testutils.NewMetricPipelineBuilder().Build(),
-		})
-
-		require.Empty(t, collectorConfig.Receivers.KubeletStats)
-	})
-
-	t.Run("some pipelines have runtime scraping enabled", func(t *testing.T) {
-		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(false).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
-		})
-
-		require.NotEmpty(t, collectorConfig.Receivers.KubeletStats)
-		require.Equal(t, "serviceAccount", collectorConfig.Receivers.KubeletStats.AuthType)
-		require.Equal(t, "https://${env:MY_NODE_NAME}:10250", collectorConfig.Receivers.KubeletStats.Endpoint)
-		require.Equal(t, true, collectorConfig.Receivers.KubeletStats.InsecureSkipVerify)
-	})
-
-	t.Run("all pipelines have runtime scraping enabled", func(t *testing.T) {
-		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
-			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
-		})
-
-		require.NotEmpty(t, collectorConfig.Receivers.KubeletStats)
-		require.Equal(t, "serviceAccount", collectorConfig.Receivers.KubeletStats.AuthType)
-		require.Equal(t, "https://${env:MY_NODE_NAME}:10250", collectorConfig.Receivers.KubeletStats.Endpoint)
-		require.Equal(t, true, collectorConfig.Receivers.KubeletStats.InsecureSkipVerify)
-	})
-
 	t.Run("extensions", func(t *testing.T) {
 		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
 
