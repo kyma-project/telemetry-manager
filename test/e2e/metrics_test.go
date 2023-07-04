@@ -185,7 +185,7 @@ var _ = Describe("Metrics", func() {
 			var cumulativeSums []pmetric.Metric
 
 			GinkgoLogr.Info("Building metric")
-			for i := 0; i < 50; i++ {
+			for i := 0; i < 150; i++ {
 				sum := kitmetrics.NewCumulativeMetric()
 				cumulativeSums = append(cumulativeSums, sum)
 				builder.WithMetric(sum)
@@ -197,17 +197,13 @@ var _ = Describe("Metrics", func() {
 			// sum.setValue...
 			GinkgoLogr.Info("Changing metric by adding data points")
 			GinkgoLogr.Info("Getting first point's time")
-			for i := 0; i < 50; i++ {
+			for i := 0; i < 150; i++ {
 				startTime := cumulativeSums[i].Sum().DataPoints().At(0).StartTimestamp().AsTime()
-				GinkgoLogr.Info("Appending empty point")
 				pt := cumulativeSums[i].Sum().DataPoints().AppendEmpty()
 
-				GinkgoLogr.Info("Setting start time to the point")
 				pt.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
-				GinkgoLogr.Info("Setting timestamp to the point")
 				pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
 				//define static val
-				GinkgoLogr.Info("Setting value to the point")
 				pt.SetDoubleValue(float64(2)) //nolint:gosec // random number generator is sufficient.
 
 				for i := 0; i < 7; i++ {
@@ -226,9 +222,9 @@ var _ = Describe("Metrics", func() {
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
-				defer resp.Body.Close()
-				body, _ := ioutil.ReadAll(resp.Body)
-				GinkgoLogr.Info(string(body))
+				// defer resp.Body.Close()
+				// body, _ := ioutil.ReadAll(resp.Body)
+				// GinkgoLogr.Info(string(body))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
