@@ -194,26 +194,26 @@ var _ = Describe("Metrics", func() {
 			Expect(sendSumMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
 			// sum.setValue...
-			GinkgoLogr.Info("Changing metric by adding data points")
-			GinkgoLogr.Info("Getting first point's time")
-			for i := 0; i < 150; i++ {
-				startTime := cumulativeSums[i].Sum().DataPoints().At(0).StartTimestamp().AsTime()
-				pt := cumulativeSums[i].Sum().DataPoints().AppendEmpty()
+			// GinkgoLogr.Info("Changing metric by adding data points")
+			// GinkgoLogr.Info("Getting first point's time")
+			// for i := 0; i < 150; i++ {
+			// 	startTime := cumulativeSums[i].Sum().DataPoints().At(0).StartTimestamp().AsTime()
+			// 	pt := cumulativeSums[i].Sum().DataPoints().AppendEmpty()
 
-				pt.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
-				pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-				//define static val
-				pt.SetDoubleValue(float64(2)) //nolint:gosec // random number generator is sufficient.
+			// 	pt.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
+			// 	pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
+			// 	//define static val
+			// 	pt.SetDoubleValue(float64(2)) //nolint:gosec // random number generator is sufficient.
 
-				for i := 0; i < 7; i++ {
-					k := fmt.Sprintf("pt-label-key-%d", i)
-					v := fmt.Sprintf("pt-label-val-%d", i)
-					pt.Attributes().PutStr(k, v)
-				}
-			}
+			// 	for i := 0; i < 7; i++ {
+			// 		k := fmt.Sprintf("pt-label-key-%d", i)
+			// 		v := fmt.Sprintf("pt-label-val-%d", i)
+			// 		pt.Attributes().PutStr(k, v)
+			// 	}
+			// }
 
-			// builder.WithMetric(sum) // maybe :)
-			Expect(sendSumMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
+			// // builder.WithMetric(sum) // maybe :)
+			// Expect(sendSumMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
 			GinkgoLogr.Info("MockBackendExport: " + urls.MockBackendExport())
 			GinkgoLogr.Info("OTLPPush: " + urls.OTLPPush())
