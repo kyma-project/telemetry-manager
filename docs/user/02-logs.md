@@ -21,7 +21,7 @@ The Telemetry module provides [Fluent Bit](https://fluentbit.io/) as a log agent
 3. Fluent Bit queries the [Kubernetes API Server](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/) for additional Pod metadata, such as Pod annotations and labels.
 4. The Telemetry module configures Fluent Bit with your custom output configuration.
 5. As specified in your LogPipeline configuration, Fluent Bit sends the log data to observability systems outside or inside the Kyma cluster. Here, you can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation.
-6. The user accesses the internal and external observability system to analyze and visualize the logs.
+6. To analyze and visualize your logs, access the internal or external observability system.
 
 ### Pipelines
 
