@@ -7,6 +7,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/ports"
 )
 
 func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *config.Config {
@@ -22,7 +23,7 @@ func makeExportersConfig(gatewayServiceName types.NamespacedName) config.Exporte
 	exportersConfig := make(config.ExportersConfig)
 	exportersConfig["otlp"] = config.ExporterConfig{
 		OTLPExporterConfig: &config.OTLPExporterConfig{
-			Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:4317", gatewayServiceName.Name, gatewayServiceName.Namespace),
+			Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:%d", gatewayServiceName.Name, gatewayServiceName.Namespace, ports.OTLPGRPC),
 			TLS: config.TLSConfig{
 				Insecure: true,
 			},
@@ -44,7 +45,7 @@ func makeExportersConfig(gatewayServiceName types.NamespacedName) config.Exporte
 func makeExtensionsConfig() config.ExtensionsConfig {
 	return config.ExtensionsConfig{
 		HealthCheck: config.EndpointConfig{
-			Endpoint: "${MY_POD_IP}:13133",
+			Endpoint: fmt.Sprintf("${MY_POD_IP}:%d", ports.Healthz),
 		},
 	}
 }
@@ -59,7 +60,7 @@ func makeServiceConfig() config.ServiceConfig {
 		Pipelines: pipelinesConfig,
 		Telemetry: config.TelemetryConfig{
 			Metrics: config.MetricsConfig{
-				Address: "${MY_POD_IP}:8888",
+				Address: fmt.Sprintf("${MY_POD_IP}:%d", ports.Metrics),
 			},
 			Logs: config.LoggingConfig{
 				Level: "info",

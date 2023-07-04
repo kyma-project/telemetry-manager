@@ -1,8 +1,10 @@
 package agent
 
 import (
+	"fmt"
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/ports"
 	prommodel "github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	promdiscovery "github.com/prometheus/prometheus/discovery"
@@ -46,7 +48,7 @@ func makePrometheusSelfConfig() *config.PrometheusReceiverConfig {
 		{
 			Targets: []prommodel.LabelSet{
 				{
-					prommodel.AddressLabel: "${MY_POD_IP}:8888",
+					prommodel.AddressLabel: prommodel.LabelValue(fmt.Sprintf("${MY_POD_IP}:%d", ports.Metrics)),
 				},
 			},
 		},
