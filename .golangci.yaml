@@ -111,6 +111,8 @@ issues:
     - linters: [ dupl ]
       path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller(_test)?.go
     - linters: [ dupl ]
+      path: internal/otelcollector/config/builder/metric/agent/config_builder_test.go
+    - linters: [ dupl ]
       path: internal/reconciler/(logpipeline|metricpipeline|tracepipeline)/status_test.go
     - linters: [ dupl ]
       path: internal/resources/otelcollector/gateway/resources_test.go
