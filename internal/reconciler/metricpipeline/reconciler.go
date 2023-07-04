@@ -15,6 +15,8 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/metric/agent"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	otelagentresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
@@ -177,7 +179,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
-	gatewayConfig, envVars, err := makeGatewayConfig(ctx, r, allPipelines)
+	gatewayConfig, envVars, err := gateway.MakeConfig(ctx, r, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}
@@ -281,7 +283,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
-	agentConfig := makeAgentConfig(types.NamespacedName{
+	agentConfig := agent.MakeConfig(types.NamespacedName{
 		Namespace: r.config.Gateway.Namespace,
 		Name:      r.config.Gateway.Service.OTLPServiceName,
 	}, allPipelines)

@@ -1,4 +1,4 @@
-package metricpipeline
+package gateway
 
 import (
 	"context"
@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 func TestMakeGatewayConfig(t *testing.T) {
@@ -18,7 +18,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{newPipelineBuilder().withName("test").build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithName("test").Build()})
 		require.NoError(t, err)
 		expectedEndpoint := fmt.Sprintf("${%s}", "OTLP_ENDPOINT_TEST")
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -28,7 +28,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("secure", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{newPipelineBuilder().withName("test").build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithName("test").Build()})
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -37,8 +37,8 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("insecure", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
-			newPipelineBuilder().withName("test-insecure").withEndpoint("http://localhost").build()},
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test-insecure").WithEndpoint("http://localhost").Build()},
 		)
 		require.NoError(t, err)
 
@@ -48,8 +48,8 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("basic auth", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
-			newPipelineBuilder().withName("test-basic-auth").withBasicAuth("user", "password").build(),
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test-basic-auth").WithBasicAuth("user", "password").Build(),
 		})
 		require.NoError(t, err)
 
@@ -63,7 +63,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("resource processors", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{newPipelineBuilder().build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
 		require.NoError(t, err)
 
 		require.Equal(t, 1, len(collectorConfig.Processors.Resource.Attributes))
@@ -73,7 +73,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("memory limit processors", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{newPipelineBuilder().build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
 		require.NoError(t, err)
 
 		require.Equal(t, "1s", collectorConfig.Processors.MemoryLimiter.CheckInterval)
@@ -82,7 +82,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("batch processors", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{newPipelineBuilder().build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
 		require.NoError(t, err)
 
 		require.Equal(t, 1024, collectorConfig.Processors.Batch.SendBatchSize)
@@ -91,7 +91,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("k8s attributes processors", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{newPipelineBuilder().build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
 		require.NoError(t, err)
 
 		require.Equal(t, "serviceAccount", collectorConfig.Processors.K8sAttributes.AuthType)
@@ -119,7 +119,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("extensions", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{newPipelineBuilder().build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
 		require.NoError(t, err)
 
 		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
@@ -129,7 +129,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("telemetry", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{newPipelineBuilder().build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
 		require.NoError(t, err)
 
 		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
@@ -137,16 +137,16 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("single pipeline queue size", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{newPipelineBuilder().withName("test").build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithName("test").Build()})
 		require.NoError(t, err)
 		require.Equal(t, 256, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Pipeline should have the full queue size")
 	})
 
 	t.Run("multi pipeline queue size", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
-			newPipelineBuilder().withName("test-1").build(),
-			newPipelineBuilder().withName("test-2").build(),
-			newPipelineBuilder().withName("test-3").build()},
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test-1").Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test-2").Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test-3").Build()},
 		)
 		require.NoError(t, err)
 		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-1"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
@@ -155,7 +155,7 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("single pipeline topology", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{newPipelineBuilder().withName("test").build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithName("test").Build()})
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -171,9 +171,9 @@ func TestMakeGatewayConfig(t *testing.T) {
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
-			newPipelineBuilder().withName("test-1").build(),
-			newPipelineBuilder().withName("test-2").build()},
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test-1").Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test-2").Build()},
 		)
 		require.NoError(t, err)
 
@@ -284,127 +284,8 @@ service:
         - pprof
 `
 
-		collectorConfig, _, err := makeGatewayConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{newPipelineBuilder().withName("test").build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithName("test").Build()})
 		require.NoError(t, err)
-
-		yamlBytes, err := yaml.Marshal(collectorConfig)
-		require.NoError(t, err)
-		require.Equal(t, expected, string(yamlBytes))
-	})
-}
-
-func TestMakeAgentConfig(t *testing.T) {
-	gatewayServiceName := types.NamespacedName{Name: "metrics", Namespace: "telemetry-system"}
-	t.Run("otlp exporter endpoint", func(t *testing.T) {
-		collectorConfig := makeAgentConfig(gatewayServiceName, []v1alpha1.MetricPipeline{newPipelineBuilder().build()})
-
-		require.Contains(t, collectorConfig.Exporters, "otlp")
-		actualExporterConfig := collectorConfig.Exporters["otlp"]
-		require.Equal(t, "metrics.telemetry-system.svc.cluster.local:4317", actualExporterConfig.Endpoint)
-	})
-
-	t.Run("insecure", func(t *testing.T) {
-		t.Run("otlp exporter endpoint", func(t *testing.T) {
-			collectorConfig := makeAgentConfig(gatewayServiceName, []v1alpha1.MetricPipeline{newPipelineBuilder().build()})
-
-			require.Contains(t, collectorConfig.Exporters, "otlp")
-			actualExporterConfig := collectorConfig.Exporters["otlp"]
-			require.True(t, actualExporterConfig.TLS.Insecure)
-		})
-	})
-
-	t.Run("no pipelines have runtime scraping enabled", func(t *testing.T) {
-		collectorConfig := makeAgentConfig(gatewayServiceName, []v1alpha1.MetricPipeline{
-			newPipelineBuilder().build(),
-			newPipelineBuilder().build(),
-		})
-
-		require.Empty(t, collectorConfig.Receivers.KubeletStats)
-	})
-
-	t.Run("some pipelines have runtime scraping enabled", func(t *testing.T) {
-		collectorConfig := makeAgentConfig(gatewayServiceName, []v1alpha1.MetricPipeline{
-			newPipelineBuilder().withRuntimeInputOn(false).build(),
-			newPipelineBuilder().withRuntimeInputOn(true).build(),
-		})
-
-		require.NotEmpty(t, collectorConfig.Receivers.KubeletStats)
-		require.Equal(t, "serviceAccount", collectorConfig.Receivers.KubeletStats.AuthType)
-		require.Equal(t, "https://${env:MY_NODE_NAME}:10250", collectorConfig.Receivers.KubeletStats.Endpoint)
-		require.Equal(t, true, collectorConfig.Receivers.KubeletStats.InsecureSkipVerify)
-	})
-
-	t.Run("all pipelines have runtime scraping enabled", func(t *testing.T) {
-		collectorConfig := makeAgentConfig(gatewayServiceName, []v1alpha1.MetricPipeline{
-			newPipelineBuilder().withRuntimeInputOn(true).build(),
-			newPipelineBuilder().withRuntimeInputOn(true).build(),
-		})
-
-		require.NotEmpty(t, collectorConfig.Receivers.KubeletStats)
-		require.Equal(t, "serviceAccount", collectorConfig.Receivers.KubeletStats.AuthType)
-		require.Equal(t, "https://${env:MY_NODE_NAME}:10250", collectorConfig.Receivers.KubeletStats.Endpoint)
-		require.Equal(t, true, collectorConfig.Receivers.KubeletStats.InsecureSkipVerify)
-	})
-
-	t.Run("extensions", func(t *testing.T) {
-		collectorConfig := makeAgentConfig(gatewayServiceName, []v1alpha1.MetricPipeline{newPipelineBuilder().build()})
-
-		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
-		require.Contains(t, collectorConfig.Service.Extensions, "health_check")
-	})
-
-	t.Run("telemetry", func(t *testing.T) {
-		collectorConfig := makeAgentConfig(gatewayServiceName, []v1alpha1.MetricPipeline{newPipelineBuilder().build()})
-
-		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
-		require.Equal(t, "${MY_POD_IP}:8888", collectorConfig.Service.Telemetry.Metrics.Address)
-	})
-
-	t.Run("marshaling", func(t *testing.T) {
-		expected := `receivers:
-    kubeletstats:
-        collection_interval: 30s
-        auth_type: serviceAccount
-        endpoint: https://${env:MY_NODE_NAME}:10250
-        insecure_skip_verify: true
-        metric_groups:
-            - container
-            - pod
-exporters:
-    otlp:
-        endpoint: metrics.telemetry-system.svc.cluster.local:4317
-        tls:
-            insecure: true
-        sending_queue:
-            enabled: true
-            queue_size: 512
-        retry_on_failure:
-            enabled: true
-            initial_interval: 5s
-            max_interval: 30s
-            max_elapsed_time: 300s
-processors: {}
-extensions:
-    health_check:
-        endpoint: ${MY_POD_IP}:13133
-service:
-    pipelines:
-        metrics:
-            receivers:
-                - kubeletstats
-            processors: []
-            exporters:
-                - otlp
-    telemetry:
-        metrics:
-            address: ${MY_POD_IP}:8888
-        logs:
-            level: info
-    extensions:
-        - health_check
-`
-
-		collectorConfig := makeAgentConfig(gatewayServiceName, []v1alpha1.MetricPipeline{newPipelineBuilder().withRuntimeInputOn(true).build()})
 
 		yamlBytes, err := yaml.Marshal(collectorConfig)
 		require.NoError(t, err)

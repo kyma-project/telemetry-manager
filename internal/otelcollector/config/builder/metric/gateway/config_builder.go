@@ -1,11 +1,10 @@
-package metricpipeline
+package gateway
 
 import (
 	"context"
 	"fmt"
 	"sort"
 
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -13,7 +12,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/otlpoutput"
 )
 
-func makeGatewayConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.MetricPipeline) (*config.Config, otlpoutput.EnvVars, error) {
+func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.MetricPipeline) (*config.Config, otlpoutput.EnvVars, error) {
 	allVars := make(otlpoutput.EnvVars)
 	exportersConfig := make(config.ExportersConfig)
 	pipelinesConfig := make(config.PipelinesConfig)
@@ -36,7 +35,7 @@ func makeGatewayConfig(ctx context.Context, c client.Reader, pipelines []v1alpha
 			outputAliases = append(outputAliases, k)
 		}
 		sort.Strings(outputAliases)
-		pipelineConfig := makeGatewayPipelineConfig(outputAliases)
+		pipelineConfig := makePipelineConfig(outputAliases)
 		pipelineName := fmt.Sprintf("metrics/%s", pipeline.Name)
 		pipelinesConfig[pipelineName] = pipelineConfig
 
@@ -47,14 +46,14 @@ func makeGatewayConfig(ctx context.Context, c client.Reader, pipelines []v1alpha
 
 	return &config.Config{
 		Exporters:  exportersConfig,
-		Receivers:  makeGatewayReceiversConfig(),
-		Processors: makeGatewayProcessorsConfig(),
-		Service:    makeGatewayServiceConfig(pipelinesConfig),
-		Extensions: makeGatewayExtensionsConfig(),
+		Receivers:  makeReceiversConfig(),
+		Processors: makeProcessorsConfig(),
+		Service:    makeServiceConfig(pipelinesConfig),
+		Extensions: makeExtensionsConfig(),
 	}, allVars, nil
 }
 
-func makeGatewayReceiversConfig() config.ReceiversConfig {
+func makeReceiversConfig() config.ReceiversConfig {
 	return config.ReceiversConfig{
 		OTLP: &config.OTLPReceiverConfig{
 			Protocols: config.ReceiverProtocols{
@@ -69,7 +68,7 @@ func makeGatewayReceiversConfig() config.ReceiversConfig {
 	}
 }
 
-func makeGatewayProcessorsConfig() config.ProcessorsConfig {
+func makeProcessorsConfig() config.ProcessorsConfig {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -137,7 +136,7 @@ func makeGatewayProcessorsConfig() config.ProcessorsConfig {
 	}
 }
 
-func makeGatewayPipelineConfig(outputAliases []string) config.PipelineConfig {
+func makePipelineConfig(outputAliases []string) config.PipelineConfig {
 	return config.PipelineConfig{
 		Receivers:  []string{"otlp"},
 		Processors: []string{"memory_limiter", "k8sattributes", "resource", "batch"},
@@ -145,7 +144,7 @@ func makeGatewayPipelineConfig(outputAliases []string) config.PipelineConfig {
 	}
 }
 
-func makeGatewayExtensionsConfig() config.ExtensionsConfig {
+func makeExtensionsConfig() config.ExtensionsConfig {
 	return config.ExtensionsConfig{
 		HealthCheck: config.EndpointConfig{
 			Endpoint: "${MY_POD_IP}:13133",
@@ -156,7 +155,7 @@ func makeGatewayExtensionsConfig() config.ExtensionsConfig {
 	}
 }
 
-func makeGatewayServiceConfig(pipelines config.PipelinesConfig) config.ServiceConfig {
+func makeServiceConfig(pipelines config.PipelinesConfig) config.ServiceConfig {
 	return config.ServiceConfig{
 		Pipelines: pipelines,
 		Telemetry: config.TelemetryConfig{
@@ -168,89 +167,5 @@ func makeGatewayServiceConfig(pipelines config.PipelinesConfig) config.ServiceCo
 			},
 		},
 		Extensions: []string{"health_check", "pprof"},
-	}
-}
-
-func makeAgentConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *config.Config {
-	return &config.Config{
-		Receivers:  makeAgentReceiversConfig(pipelines),
-		Exporters:  makeAgentExportersConfig(gatewayServiceName),
-		Extensions: makeAgentExtensionsConfig(),
-		Service:    makeAgentServiceConfig(),
-	}
-}
-
-func makeAgentReceiversConfig(pipelines []v1alpha1.MetricPipeline) config.ReceiversConfig {
-	enableRuntimeMetrics := false
-	for i := range pipelines {
-		input := pipelines[i].Spec.Input
-		if input.Application.Runtime.Enabled {
-			enableRuntimeMetrics = true
-		}
-	}
-
-	receiversConfig := config.ReceiversConfig{}
-	if enableRuntimeMetrics {
-		const collectionInterval = "30s"
-		receiversConfig.KubeletStats = &config.KubeletStatsReceiverConfig{
-			CollectionInterval: collectionInterval,
-			AuthType:           "serviceAccount",
-			Endpoint:           "https://${env:MY_NODE_NAME}:10250",
-			InsecureSkipVerify: true,
-			MetricGroups:       []config.MetricGroupType{config.MetricGroupTypeContainer, config.MetricGroupTypePod},
-		}
-	}
-
-	return receiversConfig
-}
-
-func makeAgentExportersConfig(gatewayServiceName types.NamespacedName) config.ExportersConfig {
-	exportersConfig := make(config.ExportersConfig)
-	exportersConfig["otlp"] = config.ExporterConfig{
-		OTLPExporterConfig: &config.OTLPExporterConfig{
-			Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:4317", gatewayServiceName.Name, gatewayServiceName.Namespace),
-			TLS: config.TLSConfig{
-				Insecure: true,
-			},
-			SendingQueue: config.SendingQueueConfig{
-				Enabled:   true,
-				QueueSize: 512,
-			},
-			RetryOnFailure: config.RetryOnFailureConfig{
-				Enabled:         true,
-				InitialInterval: "5s",
-				MaxInterval:     "30s",
-				MaxElapsedTime:  "300s",
-			},
-		},
-	}
-	return exportersConfig
-}
-
-func makeAgentServiceConfig() config.ServiceConfig {
-	pipelinesConfig := make(config.PipelinesConfig)
-	pipelinesConfig["metrics"] = config.PipelineConfig{
-		Receivers: []string{"kubeletstats"},
-		Exporters: []string{"otlp"},
-	}
-	return config.ServiceConfig{
-		Pipelines: pipelinesConfig,
-		Telemetry: config.TelemetryConfig{
-			Metrics: config.MetricsConfig{
-				Address: "${MY_POD_IP}:8888",
-			},
-			Logs: config.LoggingConfig{
-				Level: "info",
-			},
-		},
-		Extensions: []string{"health_check"},
-	}
-}
-
-func makeAgentExtensionsConfig() config.ExtensionsConfig {
-	return config.ExtensionsConfig{
-		HealthCheck: config.EndpointConfig{
-			Endpoint: "${MY_POD_IP}:13133",
-		},
 	}
 }

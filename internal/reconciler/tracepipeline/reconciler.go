@@ -31,6 +31,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
@@ -185,7 +186,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
-	gatewayConfig, envVars, err := makeGatewayConfig(ctx, r, allPipelines)
+	gatewayConfig, envVars, err := gateway.MakeConfig(ctx, r, allPipelines)
 	if err != nil {
 		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}
