@@ -69,8 +69,16 @@ type MetricPipelineInput struct {
 
 // MetricPipelineApplicationInput defines the application input configuration section.
 type MetricPipelineApplicationInput struct {
+	// Configures workload scraping.
+	Workload MetricPipelineWorkloadInput `json:"workload,omitempty"`
 	// Configures runtime scraping (workload-related k8s ).
 	Runtime MetricPipelineContainerRuntimeInput `json:"runtime,omitempty"`
+}
+
+// MetricPipelineWorkloadInput defines the workload scraping section.
+type MetricPipelineWorkloadInput struct {
+	// Indicates if workload scraping is enabled. Services and pods marked with prometheus.io/scrape=true annotation will be scraped.
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineContainerRuntimeInput defines the runtime scraping (kubelet, node metrics) section.
