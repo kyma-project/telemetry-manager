@@ -73,6 +73,14 @@ func MakePodSpec(baseName, image string, opts ...PodSpecOption) corev1.PodSpec {
 							},
 						},
 					},
+					{
+						Name: "MY_NODE_NAME",
+						ValueFrom: &corev1.EnvVarSource{
+							FieldRef: &corev1.ObjectFieldSelector{
+								FieldPath: "spec.nodeName",
+							},
+						},
+					},
 				},
 				SecurityContext: &corev1.SecurityContext{
 					Privileged:               pointer.Bool(false),
