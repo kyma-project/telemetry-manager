@@ -96,8 +96,9 @@ metadata:
   name: metricpipeline-sample
 spec:
   input:
-    runtime:
-      enabled: true
+    application:
+      runtime:
+        enabled: true
   output:
     otlp:
       endpoint:
