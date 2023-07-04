@@ -53,3 +53,7 @@ func (b *Backend) Deployment(configMapName string) *BackendDeployment {
 func (b *Backend) ExternalService() *ExternalBackendService {
 	return NewExternalBackendService(b.name, b.namespace)
 }
+
+func (b *Backend) LogSpammer() *LogSpammer {
+	return NewLogSpammer(b.name, b.namespace)
+}

@@ -52,7 +52,6 @@ service:
 
 const configTemplateFluentd = `<source>
   @type http
-  tag input
   port 9880
   bind 0.0.0.0
   body_size_limit 32m
@@ -61,7 +60,7 @@ const configTemplateFluentd = `<source>
     @type json
   </parse>
 </source>
-<match input>
+<match **>
   @type forward
   send_timeout 60s
   recover_wait 10s

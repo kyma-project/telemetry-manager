@@ -32,8 +32,8 @@ func (s *ExternalBackendService) OTLPEndpointURL(port int) string {
 	return fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", s.name, s.namespace, port)
 }
 
-func (s *ExternalBackendService) URL() string {
-	return fmt.Sprintf("http://%s.%s.svc.cluster.local", s.name, s.namespace)
+func (s *ExternalBackendService) Host() string {
+	return fmt.Sprintf("%s.%s.svc.cluster.local", s.name, s.namespace)
 }
 
 func (s *ExternalBackendService) WithPort(name string, port int) *ExternalBackendService {
