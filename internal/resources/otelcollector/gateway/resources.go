@@ -103,7 +103,7 @@ func MakeDeployment(config Config, configHash string, pipelineCount int) *appsv1
 	}
 }
 
-// makeResourceRequirements returns the resource requirements for the opentelemetry-collector. We calculate the resources based on a initial base value and a dynamic part per pipeline.
+// makeResourceRequirements returns the resource requirements for the opentelemetry-collector. We calculate the resources based on the initial base value and a dynamic part per pipeline.
 func makeResourceRequirements(config Config, pipelineCount int) corev1.ResourceRequirements {
 	memoryRequest := config.Deployment.BaseMemoryRequest.DeepCopy()
 	memoryLimit := config.Deployment.BaseMemoryLimit.DeepCopy()

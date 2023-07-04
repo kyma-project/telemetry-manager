@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 type Config struct {
@@ -20,6 +21,10 @@ type Config struct {
 type DaemonSetConfig struct {
 	Image             string
 	PriorityClassName string
+	CPULimit          resource.Quantity
+	CPURequest        resource.Quantity
+	MemoryLimit       resource.Quantity
+	MemoryRequest     resource.Quantity
 }
 
 func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
@@ -46,7 +51,7 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 func MakeDaemonSet(config Config, configHash string) *appsv1.DaemonSet {
 	labels := core.MakeDefaultLabels(config.BaseName)
 	annotations := core.MakePodAnnotations(configHash)
-	resources := corev1.ResourceRequirements{}
+	resources := makeResourceRequirements(config)
 	podSpec := core.MakePodSpec(config.BaseName, config.DaemonSet.Image,
 		core.WithPriorityClass(config.DaemonSet.PriorityClassName),
 		core.WithResources(resources))
@@ -68,6 +73,19 @@ func MakeDaemonSet(config Config, configHash string) *appsv1.DaemonSet {
 				},
 				Spec: podSpec,
 			},
+		},
+	}
+}
+
+func makeResourceRequirements(config Config) corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    config.DaemonSet.CPULimit,
+			corev1.ResourceMemory: config.DaemonSet.MemoryLimit,
+		},
+		Requests: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    config.DaemonSet.CPURequest,
+			corev1.ResourceMemory: config.DaemonSet.MemoryRequest,
 		},
 	}
 }

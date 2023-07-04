@@ -506,7 +506,6 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 }
 
 func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
-
 	return logpipelinewebhook.NewValidatingWebhookHandler(
 		client,
 		logpipelinevalidation.NewVariablesValidator(client),
@@ -560,7 +559,12 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 			Namespace: telemetryNamespace,
 			BaseName:  "telemetry-metric-agent",
 			DaemonSet: agent.DaemonSetConfig{
-				Image: traceCollectorImage,
+				Image:             metricGatewayImage,
+				PriorityClassName: metricGatewayPriorityClass,
+				CPULimit:          resource.MustParse("1"),
+				MemoryLimit:       resource.MustParse("1Gi"),
+				CPURequest:        resource.MustParse("15m"),
+				MemoryRequest:     resource.MustParse("50Mi"),
 			},
 		},
 		Gateway: gateway.Config{
