@@ -389,8 +389,9 @@ func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 
 		// Default namespace objects.
 		otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
-		hostSecret := kitk8s.NewOpaqueSecret(suffixize("trace-rcv-hostname", i), defaultNamespaceName, kitk8s.WithStringData("trace-host", otlpEndpointURL))
-		tracePipeline := kittrace.NewPipeline(suffixize("pipeline", i), hostSecret.SecretKeyRef("trace-host"))
+		hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("trace-host", otlpEndpointURL)).Persistent(isOperational())
+		tracePipeline := kittrace.NewPipeline("pipeline", hostSecret.SecretKeyRef("trace-host")).Persistent(isOperational())
+		pipelines.Append(tracePipeline.Name())
 
 		objs = append(objs, []client.Object{
 			mockBackendConfigMap.K8sObject(),

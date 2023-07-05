@@ -8,6 +8,10 @@ import (
 
 type Labels map[string]string
 
+var (
+	PersistentLabel = Labels{"persistent": "true"}
+)
+
 // WithLabel is a functional option for attaching a label value.
 func WithLabel(label, value string) testkit.OptFunc {
 	return func(opt testkit.Opt) {
