@@ -48,26 +48,6 @@ var _ = Describe("Logging", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a log backend running", Label("operational"), func() {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout, interval).Should(Succeed())
-		})
-
-		It("Should verify end-to-end log delivery", Label("operational"), func() {
-
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogs())))
-			}, timeout, interval).Should(Succeed())
-		})
-
 		It("Should have a healthy webhook", func() {
 			Eventually(func(g Gomega) {
 				var endPoint corev1.Endpoints
@@ -97,6 +77,26 @@ var _ = Describe("Logging", func() {
 
 				return true
 			}, timeout, interval).Should(BeTrue())
+		})
+
+		It("Should have a log backend running", Label("operational"), func() {
+			Eventually(func(g Gomega) {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should verify end-to-end log delivery", Label("operational"), func() {
+
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(urls.MockBackendExport())
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					ContainLogs())))
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 

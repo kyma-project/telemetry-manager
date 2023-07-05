@@ -4,11 +4,24 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/plog"
 )
+
+const (
+	tagNamespace = "k8s.namespace.name"
+	tagPod       = "k8s.pod.name"
+	tagContainer = "k8s.container.name"
+)
+
+type ResourceTags struct {
+	Namespace string
+	Pod       string
+	Container string
+}
 
 func ContainLogs() types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) (int, error) {
@@ -50,6 +63,80 @@ func ConsistOfNumberOfLogs(count int) types.GomegaMatcher {
 		actualLogRecords := getAllLogRecords(actualLogs)
 		return len(actualLogRecords), nil
 	}, gomega.Equal(count))
+}
+
+func ContainsLogsWith(namespace, pod, container string) types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) (bool, error) {
+		filter := ResourceTags{
+			Namespace: namespace,
+			Pod:       pod,
+			Container: container,
+		}
+
+		actualBytes, ok := actual.([]byte)
+		if !ok {
+			return false, fmt.Errorf("ContainsLogsWith requires a []byte, but got %T", actual)
+		}
+
+		actualLogs, err := unmarshalOTLPJSONLogs(actualBytes)
+		if err != nil {
+			return false, fmt.Errorf("ContainsLogsWith requires a valid OTLP JSON document: %v", err)
+		}
+
+		actualLogRecords := getAllLogRecords(actualLogs)
+
+		for _, lr := range actualLogRecords {
+			tags, err := extractTags(lr.Attributes().AsRaw())
+			if err != nil {
+				return false, fmt.Errorf("LogRecord has invalid or malformed attributes: %v", err)
+			}
+
+			if matchPrefixes(tags, filter) {
+				return true, nil
+			}
+		}
+		return false, nil
+	}, gomega.BeTrue())
+}
+
+func matchPrefixes(logRecordTags, filter ResourceTags) bool {
+	if filter.Namespace != "" && !strings.HasPrefix(logRecordTags.Namespace, filter.Namespace) {
+		return false
+	}
+
+	if filter.Pod != "" && !strings.HasPrefix(logRecordTags.Pod, filter.Pod) {
+		return false
+	}
+
+	if filter.Container != "" && !strings.HasPrefix(logRecordTags.Container, filter.Container) {
+		return false
+	}
+
+	return true
+}
+
+func extractTags(attrs map[string]any) (tags ResourceTags, err error) {
+	for k, v := range attrs {
+		if k != tagNamespace && k != tagPod && k != tagContainer {
+			continue
+		}
+
+		tagValue, ok := v.(string)
+		if !ok {
+			return tags, fmt.Errorf("an attribute %s is malformed", k)
+		}
+
+		switch k {
+		case tagNamespace:
+			tags.Namespace = tagValue
+		case tagPod:
+			tags.Pod = tagValue
+		case tagContainer:
+			tags.Container = tagValue
+		}
+	}
+
+	return tags, nil
 }
 
 func getAllLogRecords(logs []plog.Logs) []plog.LogRecord {

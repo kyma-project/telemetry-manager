@@ -36,19 +36,18 @@ exporters:
   file:
     path: {{ FILEPATH }}
   logging:
-    loglevel: debug
+    loglevel: info
 service:
   telemetry:
     logs:
-      level: "debug"
+      level: "info"
   pipelines:
     logs:
       receivers:
         - otlp
         - fluentforward
       exporters:
-        - file
-        - logging`
+        - file`
 
 const configTemplateFluentd = `<source>
   @type http
