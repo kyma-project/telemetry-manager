@@ -55,7 +55,7 @@ var _ = Describe("Tracing", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running trace collector deployment", Label("operational"), func() {
+		It("Should have a running trace collector deployment", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, traceCollectorname)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -72,7 +72,7 @@ var _ = Describe("Tracing", func() {
 			}, timeout, interval).Should(Equal(int32(2)))
 		})
 
-		It("Should have a trace backend running", Label("operational"), func() {
+		It("Should have a trace backend running", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
@@ -81,7 +81,7 @@ var _ = Describe("Tracing", func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should be able to get trace collector metrics endpoint", Label("operational"), func() {
+		It("Should be able to get trace collector metrics endpoint", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.Metrics())
 				g.Expect(err).NotTo(HaveOccurred())
@@ -93,7 +93,7 @@ var _ = Describe("Tracing", func() {
 			tracePipelineShouldBeRunning("pipeline")
 		})
 
-		It("Should verify end-to-end trace delivery", Label("operational"), func() {
+		It("Should verify end-to-end trace delivery", Label(operationalTest), func() {
 			traceID := kittraces.NewTraceID()
 			var spanIDs []pcommon.SpanID
 			for i := 0; i < 100; i++ {

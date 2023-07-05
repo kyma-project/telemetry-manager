@@ -23,6 +23,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const (
+	// A label that designates a test as an operational one.
+	// Operational tests preserve K8s objects between test runs.
+	operationalTest = "operational"
+)
+
 var (
 	ctx                 context.Context
 	cancel              context.CancelFunc
@@ -78,3 +84,10 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
+
+// isOperational returns true if the test is invoked with an "operational" tag.
+func isOperational() bool {
+	labelsFilter := GinkgoLabelFilter()
+
+	return labelsFilter != "" && Label(operationalTest).MatchesLabelFilter(labelsFilter)
+}
