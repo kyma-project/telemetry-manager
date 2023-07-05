@@ -113,7 +113,7 @@ func TestMergeSectionsConfig(t *testing.T) {
     format                   json
     host                     localhost
     port                     443
-    retry_limit              no_limits
+    retry_limit              300
     storage.total_limit_size 1G
     tls                      on
     tls.verify               on
@@ -184,7 +184,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     name                     stdout
     match                    foo.*
     alias                    foo-stdout
-    retry_limit              no_limits
+    retry_limit              300
     storage.total_limit_size 1G
 
 `

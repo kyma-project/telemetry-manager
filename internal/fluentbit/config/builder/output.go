@@ -9,6 +9,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
+// Considering Fluent Bit's exponential back-off and jitter algorithm with the default scheduler.base and scheduler.cap,
+// this retry limit should be enough to cover about 3 days of retrying. See
+// https://docs.fluentbit.io/manual/administration/scheduling-and-retries. We do not want unlimited retries to avoid
+// that malformed logs stay in the buffer forever.
+var retryLimit = "300"
+
 func createOutputSection(pipeline *telemetryv1alpha1.LogPipeline, defaults PipelineDefaults) string {
 	output := &pipeline.Spec.Output
 	if output.IsCustomDefined() {
@@ -42,7 +48,7 @@ func generateCustomOutput(output *telemetryv1alpha1.Output, fsBufferLimit string
 	}
 	sb.AddConfigParam("match", fmt.Sprintf("%s.*", name))
 	sb.AddConfigParam("storage.total_limit_size", fsBufferLimit)
-	sb.AddConfigParam("retry_limit", "no_limits")
+	sb.AddConfigParam("retry_limit", retryLimit)
 	return sb.Build()
 }
 
@@ -53,7 +59,7 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit 
 	sb.AddConfigParam("match", fmt.Sprintf("%s.*", name))
 	sb.AddConfigParam("alias", fmt.Sprintf("%s-http", name))
 	sb.AddConfigParam("storage.total_limit_size", fsBufferLimit)
-	sb.AddConfigParam("retry_limit", "no_limits")
+	sb.AddConfigParam("retry_limit", retryLimit)
 	sb.AddIfNotEmpty("uri", httpOutput.URI)
 	sb.AddIfNotEmpty("compress", httpOutput.Compress)
 	sb.AddIfNotEmptyOrDefault("port", httpOutput.Port, "443")

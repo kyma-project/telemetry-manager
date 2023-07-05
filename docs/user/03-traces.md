@@ -378,8 +378,7 @@ Only one TracePipeline resource at a time is supported at the moment.
 System-related spans reported by Istio are filtered out without the opt-out option. Here are a few examples of such spans:
 - `/healthz` endpoint of a component deployed in the `kyma-system` Namespace
 - `/metrics` endpoint of a component deployed in the `kyma-system` Namespace
-- All outgoing spans reported by Grafana and Jaeger
-- All spans related to Fluent Bit and Loki communication
+- All outgoing spans reported by Grafana
 
 ## Troubleshooting
 

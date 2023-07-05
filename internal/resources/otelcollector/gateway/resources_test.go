@@ -1,4 +1,4 @@
-package otelcollector
+package gateway
 
 import (
 	"testing"
@@ -70,18 +70,18 @@ func TestMakeClusterRole(t *testing.T) {
 
 func TestMakeDeployment(t *testing.T) {
 	deployment := MakeDeployment(config, "123", 1)
-	labels := makeDefaultLabels(config)
 
 	require.NotNil(t, deployment)
 	require.Equal(t, deployment.Name, config.BaseName)
 	require.Equal(t, deployment.Namespace, config.Namespace)
 	require.Equal(t, *deployment.Spec.Replicas, int32(2))
-	require.Equal(t, deployment.Spec.Selector.MatchLabels, labels)
-	require.Equal(t, deployment.Spec.Template.ObjectMeta.Labels, labels)
-	for k, v := range defaultPodAnnotations {
-		require.Equal(t, deployment.Spec.Template.ObjectMeta.Annotations[k], v)
-	}
-	require.Equal(t, deployment.Spec.Template.ObjectMeta.Annotations[configHashAnnotationKey], "123")
+
+	expectedLabels := map[string]string{"app.kubernetes.io/name": config.BaseName}
+	require.Equal(t, deployment.Spec.Selector.MatchLabels, expectedLabels)
+	require.Equal(t, deployment.Spec.Template.ObjectMeta.Labels, expectedLabels)
+
+	require.Equal(t, deployment.Spec.Template.ObjectMeta.Annotations["sidecar.istio.io/inject"], "false")
+	require.Equal(t, deployment.Spec.Template.ObjectMeta.Annotations["checksum/config"], "123")
 	require.NotEmpty(t, deployment.Spec.Template.Spec.Containers[0].EnvFrom)
 
 	resources := deployment.Spec.Template.Spec.Containers[0].Resources
@@ -109,12 +109,14 @@ func TestMakeDeployment(t *testing.T) {
 
 func TestMakeOTLPService(t *testing.T) {
 	service := MakeOTLPService(config)
-	labels := makeDefaultLabels(config)
 
 	require.NotNil(t, service)
 	require.Equal(t, service.Name, config.Service.OTLPServiceName)
 	require.Equal(t, service.Namespace, config.Namespace)
-	require.Equal(t, service.Spec.Selector, labels)
+
+	expectedLabels := map[string]string{"app.kubernetes.io/name": config.BaseName}
+	require.Equal(t, service.Spec.Selector, expectedLabels)
+
 	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
 	require.NotEmpty(t, service.Spec.Ports)
 	require.Len(t, service.Spec.Ports, 2)
@@ -123,12 +125,14 @@ func TestMakeOTLPService(t *testing.T) {
 
 func TestMakeMetricsService(t *testing.T) {
 	service := MakeMetricsService(config)
-	labels := makeDefaultLabels(config)
 
 	require.NotNil(t, service)
 	require.Equal(t, service.Name, config.BaseName+"-metrics")
 	require.Equal(t, service.Namespace, config.Namespace)
-	require.Equal(t, service.Spec.Selector, labels)
+
+	expectedLabels := map[string]string{"app.kubernetes.io/name": config.BaseName}
+	require.Equal(t, service.Spec.Selector, expectedLabels)
+
 	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
 	require.Len(t, service.Spec.Ports, 1)
 
@@ -138,12 +142,14 @@ func TestMakeMetricsService(t *testing.T) {
 
 func TestMakeOpenCensusService(t *testing.T) {
 	service := MakeOpenCensusService(config)
-	labels := makeDefaultLabels(config)
 
 	require.NotNil(t, service)
 	require.Equal(t, service.Name, config.BaseName+"-internal")
 	require.Equal(t, service.Namespace, config.Namespace)
-	require.Equal(t, service.Spec.Selector, labels)
+
+	expectedLabels := map[string]string{"app.kubernetes.io/name": config.BaseName}
+	require.Equal(t, service.Spec.Selector, expectedLabels)
+
 	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
 	require.NotEmpty(t, service.Spec.Ports)
 	require.Len(t, service.Spec.Ports, 1)
@@ -175,12 +181,14 @@ func TestMakeNetworkPolicy(t *testing.T) {
 		},
 	}
 	networkPolicy := MakeNetworkPolicy(config, testPorts)
-	labels := makeDefaultLabels(config)
 
 	require.NotNil(t, networkPolicy)
 	require.Equal(t, networkPolicy.Name, config.BaseName+"-pprof-deny-ingress")
 	require.Equal(t, networkPolicy.Namespace, config.Namespace)
-	require.Equal(t, networkPolicy.Spec.PodSelector.MatchLabels, labels)
+
+	expectedLabels := map[string]string{"app.kubernetes.io/name": config.BaseName}
+	require.Equal(t, networkPolicy.Spec.PodSelector.MatchLabels, expectedLabels)
+
 	require.Len(t, networkPolicy.Spec.PolicyTypes, 1)
 	require.Equal(t, networkPolicy.Spec.PolicyTypes[0], networkingv1.PolicyTypeIngress)
 	require.Len(t, networkPolicy.Spec.Ingress, 1)
