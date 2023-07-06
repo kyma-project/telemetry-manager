@@ -38,12 +38,16 @@ func (b *Backend) ConfigMap(name string) *BackendConfigMap {
 	return NewBackendConfigMap(name, b.namespace, b.exportedFilePath, b.signalType)
 }
 
-func (b *Backend) LogConfigMap(name string) *LogBackendConfigMap {
-	return NewLogBackendConfigMap(name, b.namespace, b.exportedFilePath, name+"-fluentd")
+func (b *Backend) LogBackendConfigMap(name string) *LogBackendConfigMap {
+	return NewLogBackendConfigMap(name, b.namespace, b.exportedFilePath)
 }
 
-func (b *Backend) LogDeployment(configMapName string) *BackendDeployment {
-	return NewLogBackendDeployment(b.name, b.namespace, configMapName, filepath.Dir(b.exportedFilePath), configMapName+"-fluentd")
+func (b *Backend) FluentDConfigMap(name string) *FluentDConfigMap {
+	return NewFluentDConfigMap(name, b.namespace)
+}
+
+func (b *Backend) LogDeployment(configMapName, fluentDConfigMapName string) *BackendDeployment {
+	return NewLogBackendDeployment(b.name, b.namespace, configMapName, filepath.Dir(b.exportedFilePath), fluentDConfigMapName)
 }
 
 func (b *Backend) Deployment(configMapName string) *BackendDeployment {

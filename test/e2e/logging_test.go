@@ -164,8 +164,9 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) ([]clie
 	//// Mocks namespace objects.
 	mockBackend := mocks.NewLogBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)
 
-	mockBackendConfigMap := mockBackend.LogConfigMap("log-receiver-config")
-	mockBackendDeployment := mockBackend.LogDeployment(mockBackendConfigMap.Name())
+	mockBackendConfigMap := mockBackend.LogBackendConfigMap("log-receiver-config")
+	mockFluentDConfigMap := mockBackend.FluentDConfigMap("log-receiver-config-fluentd")
+	mockBackendDeployment := mockBackend.LogDeployment(mockBackendConfigMap.Name(), mockFluentDConfigMap.FluentDName())
 	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-otlp", httpOTLPPort).
@@ -179,7 +180,7 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) ([]clie
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
-		mockBackendConfigMap.K8sObjectFluentDConfig(),
+		mockFluentDConfigMap.K8sObjectFluentDConfig(),
 		mockBackendDeployment.K8sObjectWithFluentD(kitk8s.WithLabel("app", mockBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		hostSecret.K8sObject(),

@@ -16,12 +16,23 @@ type LogBackendConfigMap struct {
 	fluentdConfigName string
 }
 
-func NewLogBackendConfigMap(name, namespace, path, fluentdConfigName string) *LogBackendConfigMap {
+type FluentDConfigMap struct {
+	name      string
+	namespace string
+}
+
+func NewLogBackendConfigMap(name, namespace, path string) *LogBackendConfigMap {
 	return &LogBackendConfigMap{
-		name:              name,
-		namespace:         namespace,
-		exportedFilePath:  path,
-		fluentdConfigName: fluentdConfigName,
+		name:             name,
+		namespace:        namespace,
+		exportedFilePath: path,
+	}
+}
+
+func NewFluentDConfigMap(name, namespace string) *FluentDConfigMap {
+	return &FluentDConfigMap{
+		name:      name,
+		namespace: namespace,
 	}
 }
 
@@ -79,6 +90,10 @@ func (cm *LogBackendConfigMap) Name() string {
 	return cm.name
 }
 
+func (cm *FluentDConfigMap) FluentDName() string {
+	return cm.name
+}
+
 func (cm *LogBackendConfigMap) K8sObject() *corev1.ConfigMap {
 	config := strings.Replace(configTemplateLog, "{{ FILEPATH }}", cm.exportedFilePath, 1)
 
@@ -91,10 +106,10 @@ func (cm *LogBackendConfigMap) K8sObject() *corev1.ConfigMap {
 	}
 }
 
-func (cm *LogBackendConfigMap) K8sObjectFluentDConfig() *corev1.ConfigMap {
+func (cm *FluentDConfigMap) K8sObjectFluentDConfig() *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cm.fluentdConfigName,
+			Name:      cm.name,
 			Namespace: cm.namespace,
 		},
 		Data: map[string]string{"fluent.conf": configTemplateFluentd},
