@@ -20,6 +20,13 @@ const (
 )
 
 type BackendDeployment struct {
+	name          string
+	namespace     string
+	configmapName string
+	dataPath      string
+}
+
+type HttpBackendDeployment struct {
 	name              string
 	namespace         string
 	configmapName     string
@@ -36,8 +43,8 @@ func NewBackendDeployment(name, namespace, configmapName, dataPath string) *Back
 	}
 }
 
-func NewLogBackendDeployment(name, namespace, configmapName, dataPath, fluentdConfigMap string) *BackendDeployment {
-	return &BackendDeployment{
+func NewHttpBackendDeployment(name, namespace, configmapName, dataPath, fluentdConfigMap string) *HttpBackendDeployment {
+	return &HttpBackendDeployment{
 		name:              name,
 		namespace:         namespace,
 		configmapName:     configmapName,
@@ -46,7 +53,7 @@ func NewLogBackendDeployment(name, namespace, configmapName, dataPath, fluentdCo
 	}
 }
 
-func (d *BackendDeployment) K8sObjectWithFluentD(labelOpts ...testkit.OptFunc) *appsv1.Deployment {
+func (d *HttpBackendDeployment) K8sObjectHttp(labelOpts ...testkit.OptFunc) *appsv1.Deployment {
 	labels := k8s.ProcessLabelOptions(labelOpts...)
 
 	return &appsv1.Deployment{

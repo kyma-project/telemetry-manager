@@ -162,33 +162,33 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) ([]clie
 	objs = append(objs, kitk8s.NewNamespace(namespace).K8sObject())
 
 	//// Mocks namespace objects.
-	mockBackend := mocks.NewLogBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)
+	mockHttpBackend := mocks.NewHttpBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)
 
-	mockBackendConfigMap := mockBackend.LogBackendConfigMap("log-receiver-config")
-	mockFluentDConfigMap := mockBackend.FluentDConfigMap("log-receiver-config-fluentd")
-	mockBackendDeployment := mockBackend.LogDeployment(mockBackendConfigMap.Name(), mockFluentDConfigMap.FluentDName())
-	mockBackendExternalService := mockBackend.ExternalService().
+	mockBackendConfigMap := mockHttpBackend.HttpBackendConfigMap("log-receiver-config")
+	mockFluentDConfigMap := mockHttpBackend.FluentDConfigMap("log-receiver-config-fluentd")
+	mockBackendDeployment := mockHttpBackend.HttpDeployment(mockBackendConfigMap.Name(), mockFluentDConfigMap.FluentDName())
+	mockBackendExternalService := mockHttpBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-otlp", httpOTLPPort).
 		WithPort("http-web", httpWebPort).
 		WithPort("http-log", httpLogPort)
-	mockLogSpammer := mockBackend.LogSpammer()
+	mockLogSpammer := mockHttpBackend.LogSpammer()
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	logPipeline := kitlog.NewLogPipeline("pipeline-mock-backend", hostSecret.SecretKeyRef("log-host"))
+	logHttpPipeline := kitlog.NewHttpPipeline("pipeline-mock-backend", hostSecret.SecretKeyRef("log-host"))
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
 		mockFluentDConfigMap.K8sObjectFluentDConfig(),
-		mockBackendDeployment.K8sObjectWithFluentD(kitk8s.WithLabel("app", mockBackend.Name())),
-		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
+		mockBackendDeployment.K8sObjectHttp(kitk8s.WithLabel("app", mockHttpBackend.Name())),
+		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHttpBackend.Name())),
 		hostSecret.K8sObject(),
-		logPipeline.K8sObjectFluentD(),
+		logHttpPipeline.K8sObjectHttp(),
 		mockLogSpammer.K8sObject(),
 	}...)
 
-	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
+	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockHttpBackend.Name(), telemetryDataFilename, httpWebPort), 0)
 
 	return objs, urls
 }
