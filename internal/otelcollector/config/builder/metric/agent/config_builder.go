@@ -13,6 +13,7 @@ import (
 func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *config.Config {
 	return &config.Config{
 		Receivers:  makeReceiversConfig(pipelines),
+		Processors: makeProcessorsConfig(),
 		Exporters:  makeExportersConfig(gatewayServiceName),
 		Extensions: makeExtensionsConfig(),
 		Service:    makeServiceConfig(),
@@ -53,8 +54,9 @@ func makeExtensionsConfig() config.ExtensionsConfig {
 func makeServiceConfig() config.ServiceConfig {
 	pipelinesConfig := make(config.PipelinesConfig)
 	pipelinesConfig["metrics"] = config.PipelineConfig{
-		Receivers: []string{"kubeletstats", "prometheus/self", "prometheus/app-pods"},
-		Exporters: []string{"otlp"},
+		Receivers:  []string{"kubeletstats", "prometheus/self", "prometheus/app-pods"},
+		Processors: []string{"resource"},
+		Exporters:  []string{"otlp"},
 	}
 	return config.ServiceConfig{
 		Pipelines: pipelinesConfig,
@@ -63,7 +65,7 @@ func makeServiceConfig() config.ServiceConfig {
 				Address: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortMetrics),
 			},
 			Logs: config.LoggingConfig{
-				Level: "debug",
+				Level: "info",
 			},
 		},
 		Extensions: []string{"health_check"},

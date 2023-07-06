@@ -112,13 +112,23 @@ type K8sAttributesProcessorConfig struct {
 }
 
 type AttributeAction struct {
-	Action string `yaml:"action"`
-	Key    string `yaml:"key"`
-	Value  string `yaml:"value"`
+	Action string `yaml:"action,omitempty"`
+	Key    string `yaml:"key,omitempty"`
+	Value  string `yaml:"value,omitempty"`
 }
 
 type ResourceProcessorConfig struct {
 	Attributes []AttributeAction `yaml:"attributes"`
+}
+
+type TransformProcessorConfig struct {
+	ErrorMode        string                              `yaml:"error_mode,omitempty"`
+	MetricStatements []TransformProcessorMetricStatement `yaml:"metic_statements,omitempty"`
+}
+
+type TransformProcessorMetricStatement struct {
+	Context    string   `yaml:"context,omitempty"`
+	Statements []string `yaml:"statements,omitempty"`
 }
 
 type ProcessorsConfig struct {
@@ -127,6 +137,7 @@ type ProcessorsConfig struct {
 	K8sAttributes *K8sAttributesProcessorConfig `yaml:"k8sattributes,omitempty"`
 	Resource      *ResourceProcessorConfig      `yaml:"resource,omitempty"`
 	Filter        *FilterProcessorConfig        `yaml:"filter,omitempty"`
+	Transform     *TransformProcessorConfig     `yaml:"transform,omitempty"`
 }
 
 type FilterProcessorConfig struct {

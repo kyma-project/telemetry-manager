@@ -203,7 +203,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
 	deployment := otelgatewayresources.MakeDeployment(r.config.Gateway, configHash, len(allPipelines),
-		common.EnvVarCurrentPodIP, common.EnvVarCurrentPodIP)
+		common.EnvVarCurrentPodIP, common.EnvVarCurrentNodeName)
 	if err = controllerutil.SetOwnerReference(pipeline, deployment, r.Scheme()); err != nil {
 		return err
 	}
@@ -300,7 +300,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
 	daemonSet := otelagentresources.MakeDaemonSet(r.config.Agent, configHash,
-		common.EnvVarCurrentPodIP, common.EnvVarCurrentPodIP)
+		common.EnvVarCurrentPodIP, common.EnvVarCurrentNodeName)
 	if err = controllerutil.SetOwnerReference(pipeline, daemonSet, r.Scheme()); err != nil {
 		return err
 	}
