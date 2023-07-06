@@ -103,7 +103,7 @@ issues:
       linters:
         - govet
     - linters: [ gci ]
-      path: test/e2e/(tracing|metrics)_test.go
+      path: test/e2e/(tracing|metrics|logging)_test.go
     - linters: [ dupl ]
       path: apis/telemetry/v1alpha1/(logparsers|metricpipeline|tracepipeline)_types_test.go
     - linters: [ dupl ]
@@ -128,6 +128,12 @@ issues:
       path: test/e2e/testkit/otlp/matchers/metric_matchers.go
     - linters: [ dupl ]
       path: test/e2e/testkit/otlp/matchers/trace_matchers.go
+    - linters: [ dupl ]
+      path: test/e2e/testkit/otlp/matchers/log_matchers.go
+    - linters: [ dupl ]
+      path: test/e2e/testkit/otlp/matchers/log_matchers_test.go
+    - linters: [ dupl ]
+      path: test/e2e/testkit/otlp/matchers/trace_matchers_test.go
     - linters: [ dupl ]
       path: test/e2e/metrics_test.go
     - linters: [ dupl ]
