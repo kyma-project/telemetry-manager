@@ -89,7 +89,6 @@ var _ = Describe("Logging", func() {
 		})
 
 		It("Should verify end-to-end log delivery", Label("operational"), func() {
-
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())

@@ -25,7 +25,11 @@ func (ls *LogSpammer) K8sObject() *corev1.Pod {
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
-				{Name: "flog", Image: "mingrammer/flog", Args: []string{"-b=100", "-f=json", "-l"}},
+				{Name: "logspammer", Image: "alpine:3.17.2", Command: []string{"/bin/sh", "-c", `|while true
+do
+	echo "foo bar"
+	sleep 10
+done`}},
 			},
 		},
 	}
