@@ -37,10 +37,11 @@ func makeReceiversConfig(pipelines []v1alpha1.MetricPipeline) config.ReceiversCo
 
 func makeKubeletStatsConfig() *config.KubeletStatsReceiverConfig {
 	const collectionInterval = "30s"
+	const portKubelet = 10250
 	return &config.KubeletStatsReceiverConfig{
 		CollectionInterval: collectionInterval,
 		AuthType:           "serviceAccount",
-		Endpoint:           "https://${env:MY_NODE_NAME}:10250",
+		Endpoint:           fmt.Sprintf("https://${env:%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
 		InsecureSkipVerify: true,
 		MetricGroups:       []config.MetricGroupType{config.MetricGroupTypeContainer, config.MetricGroupTypePod},
 	}
@@ -51,7 +52,7 @@ func makePrometheusSelfConfig() *config.PrometheusReceiverConfig {
 		{
 			Targets: []prommodel.LabelSet{
 				{
-					prommodel.AddressLabel: prommodel.LabelValue(fmt.Sprintf("${MY_POD_IP}:%d", common.PortMetrics)),
+					prommodel.AddressLabel: prommodel.LabelValue(fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortMetrics)),
 				},
 			},
 		},
@@ -89,7 +90,7 @@ func makePrometheusAppPodsConfig() *config.PrometheusReceiverConfig {
 					RelabelConfigs: []*promlabel.Config{
 						{
 							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_node_name"},
-							Regex:        promlabel.MustNewRegexp("$MY_NODE_NAME"),
+							Regex:        promlabel.MustNewRegexp(fmt.Sprintf("$%s", common.EnvVarCurrentNodeName)),
 							Action:       promlabel.Keep,
 						},
 						{

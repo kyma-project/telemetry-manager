@@ -46,6 +46,37 @@ func WithResources(resources corev1.ResourceRequirements) PodSpecOption {
 	}
 }
 
+func WithCurrentPodIPEnvVar(envVarName string) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		for i := range pod.Containers {
+			pod.Containers[i].Env = append(pod.Containers[i].Env, corev1.EnvVar{
+				Name: envVarName,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath:  "status.podIP",
+						APIVersion: "v1",
+					},
+				},
+			})
+		}
+	}
+}
+
+func WithCurrentNodeNameEnvVar(envVarName string) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		for i := range pod.Containers {
+			pod.Containers[i].Env = append(pod.Containers[i].Env, corev1.EnvVar{
+				Name: envVarName,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: "spec.nodeName",
+					},
+				},
+			})
+		}
+	}
+}
+
 func MakePodSpec(baseName, image string, opts ...PodSpecOption) corev1.PodSpec {
 	pod := corev1.PodSpec{
 		Containers: []corev1.Container{
@@ -60,25 +91,6 @@ func MakePodSpec(baseName, image string, opts ...PodSpecOption) corev1.PodSpec {
 								Name: baseName,
 							},
 							Optional: pointer.Bool(true),
-						},
-					},
-				},
-				Env: []corev1.EnvVar{
-					{
-						Name: "MY_POD_IP",
-						ValueFrom: &corev1.EnvVarSource{
-							FieldRef: &corev1.ObjectFieldSelector{
-								FieldPath:  "status.podIP",
-								APIVersion: "v1",
-							},
-						},
-					},
-					{
-						Name: "MY_NODE_NAME",
-						ValueFrom: &corev1.EnvVarSource{
-							FieldRef: &corev1.ObjectFieldSelector{
-								FieldPath: "spec.nodeName",
-							},
 						},
 					},
 				},

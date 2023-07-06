@@ -69,7 +69,7 @@ func TestMakeClusterRole(t *testing.T) {
 }
 
 func TestMakeDeployment(t *testing.T) {
-	deployment := MakeDeployment(config, "123", 1)
+	deployment := MakeDeployment(config, "123", 1, "MY_POD_IP", "MY_NODE_NAME")
 
 	require.NotNil(t, deployment)
 	require.Equal(t, deployment.Name, config.BaseName)

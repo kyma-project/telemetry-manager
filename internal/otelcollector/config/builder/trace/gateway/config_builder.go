@@ -57,15 +57,15 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.Trace
 func makeReceiversConfig() config.ReceiversConfig {
 	return config.ReceiversConfig{
 		OpenCensus: &config.EndpointConfig{
-			Endpoint: "${MY_POD_IP}:55678",
+			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortOpenCensus),
 		},
 		OTLP: &config.OTLPReceiverConfig{
 			Protocols: config.ReceiverProtocols{
 				HTTP: config.EndpointConfig{
-					Endpoint: fmt.Sprintf("${MY_POD_IP}:%d", common.PortOTLPHTTP),
+					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortOTLPHTTP),
 				},
 				GRPC: config.EndpointConfig{
-					Endpoint: fmt.Sprintf("${MY_POD_IP}:%d", common.PortOTLPGRPC),
+					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortOTLPGRPC),
 				},
 			},
 		},
@@ -83,7 +83,7 @@ func makePipelineConfig(outputAliases []string) config.PipelineConfig {
 func makeExtensionsConfig() config.ExtensionsConfig {
 	return config.ExtensionsConfig{
 		HealthCheck: config.EndpointConfig{
-			Endpoint: fmt.Sprintf("${MY_POD_IP}:%d", common.PortHealth),
+			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortHealthCheck),
 		},
 		Pprof: config.EndpointConfig{
 			Endpoint: fmt.Sprintf("127.0.0.1:%d", common.PortPprof),
@@ -96,7 +96,7 @@ func makeServiceConfig(pipelines config.PipelinesConfig) config.ServiceConfig {
 		Pipelines: pipelines,
 		Telemetry: config.TelemetryConfig{
 			Metrics: config.MetricsConfig{
-				Address: fmt.Sprintf("${MY_POD_IP}:%d", common.PortMetrics),
+				Address: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortMetrics),
 			},
 			Logs: config.LoggingConfig{
 				Level: "info",

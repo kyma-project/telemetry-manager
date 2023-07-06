@@ -45,7 +45,7 @@ func makeExportersConfig(gatewayServiceName types.NamespacedName) config.Exporte
 func makeExtensionsConfig() config.ExtensionsConfig {
 	return config.ExtensionsConfig{
 		HealthCheck: config.EndpointConfig{
-			Endpoint: fmt.Sprintf("${MY_POD_IP}:%d", common.PortHealth),
+			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortHealthCheck),
 		},
 	}
 }
@@ -53,15 +53,14 @@ func makeExtensionsConfig() config.ExtensionsConfig {
 func makeServiceConfig() config.ServiceConfig {
 	pipelinesConfig := make(config.PipelinesConfig)
 	pipelinesConfig["metrics"] = config.PipelineConfig{
-		//Receivers: []string{"kubeletstats", "prometheus/self", "prometheus/app-pods"},
-		Receivers: []string{"prometheus/app-pods"},
+		Receivers: []string{"kubeletstats", "prometheus/self", "prometheus/app-pods"},
 		Exporters: []string{"otlp"},
 	}
 	return config.ServiceConfig{
 		Pipelines: pipelinesConfig,
 		Telemetry: config.TelemetryConfig{
 			Metrics: config.MetricsConfig{
-				Address: fmt.Sprintf("${MY_POD_IP}:%d", common.PortMetrics),
+				Address: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortMetrics),
 			},
 			Logs: config.LoggingConfig{
 				Level: "debug",
