@@ -3,6 +3,8 @@
 package trace
 
 import (
+	"fmt"
+
 	"github.com/google/uuid"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -10,21 +12,29 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 )
 
+const version = "1.0.0"
+
 type Pipeline struct {
 	name         string
 	secretKeyRef *telemetry.SecretKeyRef
 	persistent   bool
+	id           string
 }
 
 func NewPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
 	return &Pipeline{
-		name:         name + uuid.New().String(),
+		name:         name,
 		secretKeyRef: secretKeyRef,
+		id:           uuid.New().String(),
 	}
 }
 
 func (p *Pipeline) Name() string {
-	return p.name
+	if p.persistent {
+		return p.name
+	}
+
+	return fmt.Sprintf("%s-%s", p.name, p.id)
 }
 
 func (p *Pipeline) K8sObject() *telemetry.TracePipeline {
@@ -32,10 +42,11 @@ func (p *Pipeline) K8sObject() *telemetry.TracePipeline {
 	if p.persistent {
 		labels = k8s.PersistentLabel
 	}
+	labels.Version(version)
 
 	return &telemetry.TracePipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
-			Name:   p.name,
+			Name:   p.Name(),
 			Labels: labels,
 		},
 		Spec: telemetry.TracePipelineSpec{
