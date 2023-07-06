@@ -40,3 +40,7 @@ func (l *PipelineList) Third() string {
 func (l *PipelineList) Last() string {
 	return l.At(len(l.pipelines))
 }
+
+func (l *PipelineList) All() []string {
+	return l.pipelines
+}

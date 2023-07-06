@@ -164,11 +164,9 @@ var _ = Describe("Tracing", func() {
 		})
 
 		It("Should have only running pipelines", func() {
-			idx := 0
-			for range pipelinesObjects {
-				tracePipelineShouldBeRunning(pipelines.At(idx))
-				tracePipelineShouldBeDeployed(pipelines.At(idx))
-				idx++
+			for _, pipeline := range pipelines.All() {
+				tracePipelineShouldBeRunning(pipeline)
+				tracePipelineShouldBeDeployed(pipeline)
 			}
 		})
 
@@ -191,13 +189,8 @@ var _ = Describe("Tracing", func() {
 
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, deletedPipeline...)).Should(Succeed())
 
-				idx := 0
-				for range pipelinesObjects {
-					if idx == 0 {
-						continue
-					}
-					tracePipelineShouldBeRunning(pipelines.At(idx))
-					idx++
+				for _, pipeline := range pipelines.All()[1:] {
+					tracePipelineShouldBeRunning(pipeline)
 				}
 			})
 		})

@@ -155,10 +155,9 @@ var _ = Describe("Metrics", func() {
 		})
 
 		It("Should have only running pipelines", func() {
-			idx := 0
-			for range pipelinesObjects {
-				metricPipelineShouldBeRunning(pipelines.At(idx))
-				metricPipelineShouldBeDeployed(pipelines.At(idx))
+			for _, pipeline := range pipelines.All() {
+				metricPipelineShouldBeRunning(pipeline)
+				metricPipelineShouldBeDeployed(pipeline)
 			}
 		})
 
@@ -180,13 +179,8 @@ var _ = Describe("Metrics", func() {
 				delete(pipelinesObjects, pipelines.First())
 
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, deletedPipeline...)).Should(Succeed())
-				idx := 0
-				for range pipelinesObjects {
-					if idx == 0 {
-						continue
-					}
-					metricPipelineShouldBeRunning(pipelines.At(idx))
-					idx++
+				for _, pipeline := range pipelines.All()[1:] {
+					metricPipelineShouldBeRunning(pipeline)
 				}
 			})
 		})
