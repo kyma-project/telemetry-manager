@@ -25,7 +25,7 @@ func (ls *LogSpammer) K8sObject() *corev1.Pod {
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
-				{Name: "logspammer", Image: "alpine:3.17.2", Command: []string{"/bin/sh", "-c", `|while true
+				{Name: "logspammer", Image: "alpine:3.17.2", Command: []string{"/bin/sh", "-c", `while true
 do
 	echo "foo bar"
 	sleep 10

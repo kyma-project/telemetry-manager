@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	tagNamespace = "k8s.namespace.name"
-	tagPod       = "k8s.pod.name"
-	tagContainer = "k8s.container.name"
+	tagNamespace = "namespace_name"
+	tagPod       = "pod_name"
+	tagContainer = "container_name"
 )
 
 type ResourceTags struct {
@@ -61,6 +61,7 @@ func ConsistOfNumberOfLogs(count int) types.GomegaMatcher {
 		}
 
 		actualLogRecords := getAllLogRecords(actualLogs)
+
 		return len(actualLogRecords), nil
 	}, gomega.Equal(count))
 }
@@ -86,7 +87,11 @@ func ContainsLogsWith(namespace, pod, container string) types.GomegaMatcher {
 		actualLogRecords := getAllLogRecords(actualLogs)
 
 		for _, lr := range actualLogRecords {
-			tags, err := extractTags(lr.Attributes().AsRaw())
+			attributes, ok := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+			if !ok {
+				continue
+			}
+			tags, err := extractTags(attributes)
 			if err != nil {
 				return false, fmt.Errorf("LogRecord has invalid or malformed attributes: %v", err)
 			}
@@ -170,6 +175,7 @@ func unmarshalOTLPJSONLogs(buffer []byte) ([]plog.Logs, error) {
 
 		results = append(results, td)
 	}
+
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("failed to read logs: %v", err)
 	}
