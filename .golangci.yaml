@@ -131,6 +131,10 @@ issues:
     - linters: [ dupl ]
       path: test/e2e/testkit/otlp/matchers/log_matchers.go
     - linters: [ dupl ]
+      path: test/e2e/testkit/otlp/matchers/log_matchers_test.go
+    - linters: [ dupl ]
+      path: test/e2e/testkit/otlp/matchers/trace_matchers_test.go
+    - linters: [ dupl ]
       path: test/e2e/metrics_test.go
     - linters: [ dupl ]
       path: test/e2e/tracing_test.go

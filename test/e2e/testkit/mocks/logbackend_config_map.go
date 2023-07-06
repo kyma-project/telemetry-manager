@@ -10,10 +10,9 @@ import (
 )
 
 type LogBackendConfigMap struct {
-	name              string
-	namespace         string
-	exportedFilePath  string
-	fluentdConfigName string
+	name             string
+	namespace        string
+	exportedFilePath string
 }
 
 type FluentDConfigMap struct {
