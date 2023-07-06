@@ -22,7 +22,7 @@ func NewBackend(name, namespace, exportedFilePath string, signalType SignalType)
 	}
 }
 
-func NewHttpBackend(name, namespace, exportedFilePath string) *Backend {
+func NewHTTPBackend(name, namespace, exportedFilePath string) *Backend {
 	return &Backend{
 		name:             name,
 		namespace:        namespace,
@@ -38,7 +38,7 @@ func (b *Backend) ConfigMap(name string) *BackendConfigMap {
 	return NewBackendConfigMap(name, b.namespace, b.exportedFilePath, b.signalType)
 }
 
-func (b *Backend) HttpBackendConfigMap(name string) *LogBackendConfigMap {
+func (b *Backend) HTTPBackendConfigMap(name string) *LogBackendConfigMap {
 	return NewLogBackendConfigMap(name, b.namespace, b.exportedFilePath)
 }
 
@@ -46,8 +46,8 @@ func (b *Backend) FluentDConfigMap(name string) *FluentDConfigMap {
 	return NewFluentDConfigMap(name, b.namespace)
 }
 
-func (b *Backend) HttpDeployment(configMapName, fluentDConfigMapName string) *HttpBackendDeployment {
-	return NewHttpBackendDeployment(b.name, b.namespace, configMapName, filepath.Dir(b.exportedFilePath), fluentDConfigMapName)
+func (b *Backend) HTTPDeployment(configMapName, fluentDConfigMapName string) *HTTPBackendDeployment {
+	return NewHTTPBackendDeployment(b.name, b.namespace, configMapName, filepath.Dir(b.exportedFilePath), fluentDConfigMapName)
 }
 
 func (b *Backend) Deployment(configMapName string) *BackendDeployment {

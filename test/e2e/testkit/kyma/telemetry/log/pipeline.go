@@ -12,13 +12,13 @@ type Pipeline struct {
 	name string
 }
 
-type HttpPipeline struct {
+type HTTPPipeline struct {
 	name         string
 	secretKeyRef *telemetry.SecretKeyRef
 }
 
-func NewHttpPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *HttpPipeline {
-	return &HttpPipeline{
+func NewHTTPPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *HTTPPipeline {
+	return &HTTPPipeline{
 		name:         name,
 		secretKeyRef: secretKeyRef,
 	}
@@ -42,7 +42,7 @@ func (p *Pipeline) K8sObject() *telemetry.LogPipeline {
 	}
 }
 
-func (p *HttpPipeline) K8sObjectHttp() *telemetry.LogPipeline {
+func (p *HTTPPipeline) K8sObjectHTTP() *telemetry.LogPipeline {
 	return &telemetry.LogPipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
 			Name: p.name,
