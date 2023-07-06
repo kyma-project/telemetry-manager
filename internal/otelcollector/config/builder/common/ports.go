@@ -1,9 +1,9 @@
 package common
 
 const (
-	OTLPHTTP = 4318
-	OTLPGRPC = 4317
-	Metrics  = 8888
-	Healthz  = 13133
-	Pprof    = 1777
+	PortOTLPHTTP = 4318
+	PortOTLPGRPC = 4317
+	PortMetrics  = 8888
+	PortHealth   = 13133
+	PortPprof    = 1777
 )

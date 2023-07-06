@@ -51,7 +51,7 @@ func makePrometheusSelfConfig() *config.PrometheusReceiverConfig {
 		{
 			Targets: []prommodel.LabelSet{
 				{
-					prommodel.AddressLabel: prommodel.LabelValue(fmt.Sprintf("${MY_POD_IP}:%d", common.Metrics)),
+					prommodel.AddressLabel: prommodel.LabelValue(fmt.Sprintf("${MY_POD_IP}:%d", common.PortMetrics)),
 				},
 			},
 		},

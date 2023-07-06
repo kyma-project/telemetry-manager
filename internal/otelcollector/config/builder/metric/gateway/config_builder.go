@@ -9,6 +9,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/otlpoutput"
 )
 
@@ -58,10 +59,10 @@ func makeReceiversConfig() config.ReceiversConfig {
 		OTLP: &config.OTLPReceiverConfig{
 			Protocols: config.ReceiverProtocols{
 				HTTP: config.EndpointConfig{
-					Endpoint: fmt.Sprintf("${MY_POD_IP}:%d", common.OTLPHTTP),
+					Endpoint: fmt.Sprintf("${MY_POD_IP}:%d", common.PortOTLPHTTP),
 				},
 				GRPC: config.EndpointConfig{
-					Endpoint: fmt.Sprintf("${MY_POD_IP}:%d", common.OTLPGRPC),
+					Endpoint: fmt.Sprintf("${MY_POD_IP}:%d", common.PortOTLPGRPC),
 				},
 			},
 		},
@@ -79,10 +80,10 @@ func makePipelineConfig(outputAliases []string) config.PipelineConfig {
 func makeExtensionsConfig() config.ExtensionsConfig {
 	return config.ExtensionsConfig{
 		HealthCheck: config.EndpointConfig{
-			Endpoint: fmt.Sprintf("${MY_POD_IP}:%d", common.Healthz),
+			Endpoint: fmt.Sprintf("${MY_POD_IP}:%d", common.PortHealth),
 		},
 		Pprof: config.EndpointConfig{
-			Endpoint: fmt.Sprintf("127.0.0.1:%d", common.Pprof),
+			Endpoint: fmt.Sprintf("127.0.0.1:%d", common.PortPprof),
 		},
 	}
 }
@@ -92,7 +93,7 @@ func makeServiceConfig(pipelines config.PipelinesConfig) config.ServiceConfig {
 		Pipelines: pipelines,
 		Telemetry: config.TelemetryConfig{
 			Metrics: config.MetricsConfig{
-				Address: fmt.Sprintf("${MY_POD_IP}:%d", common.Metrics),
+				Address: fmt.Sprintf("${MY_POD_IP}:%d", common.PortMetrics),
 			},
 			Logs: config.LoggingConfig{
 				Level: "info",
