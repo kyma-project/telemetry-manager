@@ -7,7 +7,6 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/ports"
 )
 
 func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *config.Config {
@@ -23,7 +22,7 @@ func makeExportersConfig(gatewayServiceName types.NamespacedName) config.Exporte
 	exportersConfig := make(config.ExportersConfig)
 	exportersConfig["otlp"] = config.ExporterConfig{
 		OTLPExporterConfig: &config.OTLPExporterConfig{
-			Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:%d", gatewayServiceName.Name, gatewayServiceName.Namespace, ports.OTLPGRPC),
+			Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:%d", gatewayServiceName.Name, gatewayServiceName.Namespace, common.OTLPGRPC),
 			TLS: config.TLSConfig{
 				Insecure: true,
 			},
@@ -45,7 +44,7 @@ func makeExportersConfig(gatewayServiceName types.NamespacedName) config.Exporte
 func makeExtensionsConfig() config.ExtensionsConfig {
 	return config.ExtensionsConfig{
 		HealthCheck: config.EndpointConfig{
-			Endpoint: fmt.Sprintf("${MY_POD_IP}:%d", ports.Healthz),
+			Endpoint: fmt.Sprintf("${MY_POD_IP}:%d", common.Healthz),
 		},
 	}
 }
@@ -53,17 +52,18 @@ func makeExtensionsConfig() config.ExtensionsConfig {
 func makeServiceConfig() config.ServiceConfig {
 	pipelinesConfig := make(config.PipelinesConfig)
 	pipelinesConfig["metrics"] = config.PipelineConfig{
-		Receivers: []string{"kubeletstats", "prometheus/self"},
+		//Receivers: []string{"kubeletstats", "prometheus/self", "prometheus/app-pods"},
+		Receivers: []string{"prometheus/app-pods"},
 		Exporters: []string{"otlp"},
 	}
 	return config.ServiceConfig{
 		Pipelines: pipelinesConfig,
 		Telemetry: config.TelemetryConfig{
 			Metrics: config.MetricsConfig{
-				Address: fmt.Sprintf("${MY_POD_IP}:%d", ports.Metrics),
+				Address: fmt.Sprintf("${MY_POD_IP}:%d", common.Metrics),
 			},
 			Logs: config.LoggingConfig{
-				Level: "info",
+				Level: "debug",
 			},
 		},
 		Extensions: []string{"health_check"},

@@ -1,4 +1,4 @@
-package ports
+package common
 
 const (
 	OTLPHTTP = 4318

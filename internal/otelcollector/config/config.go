@@ -40,10 +40,11 @@ type LoggingExporterConfig struct {
 }
 
 type ReceiversConfig struct {
-	OpenCensus     *EndpointConfig             `yaml:"opencensus,omitempty"`
-	OTLP           *OTLPReceiverConfig         `yaml:"otlp,omitempty"`
-	KubeletStats   *KubeletStatsReceiverConfig `yaml:"kubeletstats,omitempty"`
-	PrometheusSelf *PrometheusReceiverConfig   `yaml:"prometheus/self,omitempty"`
+	OpenCensus        *EndpointConfig             `yaml:"opencensus,omitempty"`
+	OTLP              *OTLPReceiverConfig         `yaml:"otlp,omitempty"`
+	KubeletStats      *KubeletStatsReceiverConfig `yaml:"kubeletstats,omitempty"`
+	PrometheusSelf    *PrometheusReceiverConfig   `yaml:"prometheus/self,omitempty"`
+	PrometheusAppPods *PrometheusReceiverConfig   `yaml:"prometheus/app-pods,omitempty"`
 }
 
 type EndpointConfig struct {
