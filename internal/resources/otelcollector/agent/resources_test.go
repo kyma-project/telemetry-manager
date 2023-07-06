@@ -36,7 +36,7 @@ func TestMakeClusterRole(t *testing.T) {
 }
 
 func TestMakeDaemonSet(t *testing.T) {
-	daemonSet := MakeDaemonSet(config, "123", "MY_POD_IP", "MY_NODE_NAME"t )
+	daemonSet := MakeDaemonSet(config, "123", "MY_POD_IP", "MY_NODE_NAME")
 
 	require.NotNil(t, daemonSet)
 	require.Equal(t, daemonSet.Name, config.BaseName)
