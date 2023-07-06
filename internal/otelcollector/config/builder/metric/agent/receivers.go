@@ -87,6 +87,7 @@ func makePrometheusAppPodsConfig() *config.PrometheusReceiverConfig {
 							HTTPClientConfig: promcommonconfig.DefaultHTTPClientConfig,
 						},
 					},
+					HTTPClientConfig: promcommonconfig.DefaultHTTPClientConfig,
 					RelabelConfigs: []*promlabel.Config{
 						{
 							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_node_name"},

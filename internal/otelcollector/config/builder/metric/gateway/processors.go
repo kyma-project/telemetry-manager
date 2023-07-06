@@ -77,5 +77,16 @@ func makeResourceProcessorConfig() *config.ResourceProcessorConfig {
 }
 
 func makeTransformProcessorConfig() *config.TransformProcessorConfig {
-	return &config.TransformProcessorConfig{}
+	deduceServiceName := config.TransformProcessorMetricStatement{
+		Context: "resource",
+		Statements: []string{
+			`set(attributes["service.name"], attributes["k8s.deployment.name"]) where attributes["service.name"] == nil`,
+			`set(attributes["service.name"], attributes["k8s.daemonset.name"]) where attributes["service.name"] == nil`,
+			`set(attributes["service.name"], attributes["k8s.statefulset.name"]) where attributes["service.name"] == nil`,
+		},
+	}
+	return &config.TransformProcessorConfig{
+		ErrorMode:        "ignore",
+		MetricStatements: []config.TransformProcessorMetricStatement{deduceServiceName},
+	}
 }

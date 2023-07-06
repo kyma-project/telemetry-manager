@@ -72,7 +72,7 @@ func makeReceiversConfig() config.ReceiversConfig {
 func makePipelineConfig(outputAliases []string) config.PipelineConfig {
 	return config.PipelineConfig{
 		Receivers:  []string{"otlp"},
-		Processors: []string{"memory_limiter", "k8sattributes", "resource", "batch"},
+		Processors: []string{"memory_limiter", "k8sattributes", "resource", "transform", "batch"},
 		Exporters:  outputAliases,
 	}
 }

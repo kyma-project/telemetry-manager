@@ -123,7 +123,7 @@ type ResourceProcessorConfig struct {
 
 type TransformProcessorConfig struct {
 	ErrorMode        string                              `yaml:"error_mode,omitempty"`
-	MetricStatements []TransformProcessorMetricStatement `yaml:"metic_statements,omitempty"`
+	MetricStatements []TransformProcessorMetricStatement `yaml:"metric_statements,omitempty"`
 }
 
 type TransformProcessorMetricStatement struct {
