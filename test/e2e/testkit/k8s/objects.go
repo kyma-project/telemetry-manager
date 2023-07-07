@@ -54,6 +54,17 @@ func DeleteObjects(ctx context.Context, client client.Client, resources ...clien
 	return nil
 }
 
+// ForceDeleteObjects deletes k8s objects including persistent ones.
+func ForceDeleteObjects(ctx context.Context, client client.Client, resources ...client.Object) error {
+	for _, r := range resources {
+		if err := client.Delete(ctx, r); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func labelMatches(labels Labels, label, value string) bool {
 	l, ok := labels[label]
 	if !ok {
