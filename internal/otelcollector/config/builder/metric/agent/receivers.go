@@ -107,6 +107,7 @@ func makePrometheusAppPodsConfig() *config.PrometheusReceiverConfig {
 						{
 							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_label_security_istio_io_tlsMode"},
 							Action:       promlabel.Replace,
+							Regex:        promlabel.MustNewRegexp("(istio)"),
 							Replacement:  "https",
 							TargetLabel:  "__scheme__",
 						},
