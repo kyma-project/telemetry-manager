@@ -14,7 +14,22 @@ import (
 	promk8sdiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
 	promtargetgroup "github.com/prometheus/prometheus/discovery/targetgroup"
 	promlabel "github.com/prometheus/prometheus/model/relabel"
+	"path"
 )
+
+const IstioCertDir = "/etc/istio-output-certs"
+
+func istioCAPath() string {
+	return path.Join(IstioCertDir, "root-cert.pem")
+}
+
+func istioCertPath() string {
+	return path.Join(IstioCertDir, "cert-chain.pem")
+}
+
+func istioKeyPath() string {
+	return path.Join(IstioCertDir, "key.pem")
+}
 
 func makeReceiversConfig(pipelines []v1alpha1.MetricPipeline) config.ReceiversConfig {
 	enableRuntimeMetrics := false
@@ -42,7 +57,6 @@ func makeKubeletStatsConfig() *config.KubeletStatsReceiverConfig {
 		CollectionInterval: collectionInterval,
 		AuthType:           "serviceAccount",
 		Endpoint:           fmt.Sprintf("https://${env:%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
-		InsecureSkipVerify: true,
 		MetricGroups:       []config.MetricGroupType{config.MetricGroupTypeContainer, config.MetricGroupTypePod},
 	}
 }
@@ -87,7 +101,14 @@ func makePrometheusAppPodsConfig() *config.PrometheusReceiverConfig {
 							HTTPClientConfig: promcommonconfig.DefaultHTTPClientConfig,
 						},
 					},
-					HTTPClientConfig: promcommonconfig.DefaultHTTPClientConfig,
+					HTTPClientConfig: promcommonconfig.HTTPClientConfig{
+						TLSConfig: promcommonconfig.TLSConfig{
+							CAFile:             istioCAPath(),
+							CertFile:           istioCertPath(),
+							KeyFile:            istioKeyPath(),
+							InsecureSkipVerify: true,
+						},
+					},
 					RelabelConfigs: []*promlabel.Config{
 						{
 							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_node_name"},
