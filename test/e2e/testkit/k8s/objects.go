@@ -15,6 +15,7 @@ func CreateObjects(ctx context.Context, cl client.Client, resources ...client.Ob
 	for _, resource := range resources {
 		// Skip object creation if it already exists.
 		if labelMatches(resource.GetLabels(), PersistentLabelName, "true") {
+			//nolint:errcheck // The value is guaranteed to be of type client.Object.
 			existingResource := reflect.New(reflect.ValueOf(resource).Elem().Type()).Interface().(client.Object)
 			if err := cl.Get(
 				ctx,
