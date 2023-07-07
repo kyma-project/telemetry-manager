@@ -12,10 +12,9 @@ import (
 )
 
 const (
-	configMapKey            = "relay.conf"
-	configHashAnnotationKey = "checksum/config"
-	collectorUser           = 10001
-	collectorContainerName  = "collector"
+	configMapKey           = "relay.conf"
+	collectorUser          = 10001
+	collectorContainerName = "collector"
 )
 
 func MakeDefaultLabels(baseName string) map[string]string {
@@ -32,6 +31,51 @@ func WithAffinity(affinity corev1.Affinity) PodSpecOption {
 	}
 }
 
+func WithCurrentPodIPEnvVar(envVarName string) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.Containers[0].Env = append(pod.Containers[0].Env, corev1.EnvVar{
+			Name: envVarName,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath:  "status.podIP",
+					APIVersion: "v1",
+				},
+			},
+		})
+	}
+}
+
+func WithCurrentNodeNameEnvVar(envVarName string) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.Containers[0].Env = append(pod.Containers[0].Env, corev1.EnvVar{
+			Name: envVarName,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath:  "spec.nodeName",
+					APIVersion: "v1",
+				},
+			},
+		})
+	}
+}
+
+func WithEmptyDirVolume(volumeName, mountPath string, readOnly bool) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.Volumes = append(pod.Volumes, corev1.Volume{
+			Name: volumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		})
+
+		pod.Containers[0].VolumeMounts = append(pod.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      volumeName,
+			ReadOnly:  readOnly,
+			MountPath: mountPath,
+		})
+	}
+}
+
 func WithPriorityClass(priorityClassName string) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.PriorityClassName = priorityClassName
@@ -42,37 +86,6 @@ func WithResources(resources corev1.ResourceRequirements) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		for i := range pod.Containers {
 			pod.Containers[i].Resources = resources
-		}
-	}
-}
-
-func WithCurrentPodIPEnvVar(envVarName string) PodSpecOption {
-	return func(pod *corev1.PodSpec) {
-		for i := range pod.Containers {
-			pod.Containers[i].Env = append(pod.Containers[i].Env, corev1.EnvVar{
-				Name: envVarName,
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath:  "status.podIP",
-						APIVersion: "v1",
-					},
-				},
-			})
-		}
-	}
-}
-
-func WithCurrentNodeNameEnvVar(envVarName string) PodSpecOption {
-	return func(pod *corev1.PodSpec) {
-		for i := range pod.Containers {
-			pod.Containers[i].Env = append(pod.Containers[i].Env, corev1.EnvVar{
-				Name: envVarName,
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "spec.nodeName",
-					},
-				},
-			})
 		}
 	}
 }
@@ -149,17 +162,10 @@ func MakePodSpec(baseName, image string, opts ...PodSpecOption) corev1.PodSpec {
 	return pod
 }
 
-func MakePodAnnotations(configHash string) map[string]string {
+func MakeCommonPodAnnotations(configHash string) map[string]string {
 	annotations := map[string]string{
-		configHashAnnotationKey: configHash,
-	}
-
-	defaultAnnotations := map[string]string{
+		"checksum/config":         configHash,
 		"sidecar.istio.io/inject": "false",
-	}
-
-	for k, v := range defaultAnnotations {
-		annotations[k] = v
 	}
 
 	return annotations

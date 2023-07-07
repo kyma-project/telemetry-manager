@@ -8,7 +8,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	"fmt"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
+	"golang.org/x/exp/maps"
 )
 
 type Config struct {
@@ -48,15 +50,19 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func MakeDaemonSet(config Config, configHash string, envVarCurrentPodIP, envVarCurrentNode string) *appsv1.DaemonSet {
+func MakeDaemonSet(config Config, configHash string, envVarCurrentPodIP, envVarCurrentNode, istioCertDir string) *appsv1.DaemonSet {
 	labels := core.MakeDefaultLabels(config.BaseName)
-	annotations := core.MakePodAnnotations(configHash)
+
+	annotations := core.MakeCommonPodAnnotations(configHash)
+	maps.Copy(annotations, makeIstioAnnotations(istioCertDir))
+
 	resources := makeResourceRequirements(config)
 	podSpec := core.MakePodSpec(config.BaseName, config.DaemonSet.Image,
 		core.WithPriorityClass(config.DaemonSet.PriorityClassName),
 		core.WithResources(resources),
 		core.WithCurrentPodIPEnvVar(envVarCurrentPodIP),
-		core.WithCurrentNodeNameEnvVar(envVarCurrentNode))
+		core.WithCurrentNodeNameEnvVar(envVarCurrentNode),
+		core.WithEmptyDirVolume("istio-certs", istioCertDir, true))
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -76,6 +82,19 @@ func MakeDaemonSet(config Config, configHash string, envVarCurrentPodIP, envVarC
 				Spec: podSpec,
 			},
 		},
+	}
+}
+
+func makeIstioAnnotations(istioCertDir string) map[string]string {
+	return map[string]string{
+		"proxy.istio.io/config": `
+# configure an env variable OUTPUT_CERTS to write certificates to the given folder
+proxyMetadata:
+  OUTPUT_CERTS: /etc/istio-output-certs`,
+		"sidecar.istio.io/inject":                          "true",
+		"sidecar.istio.io/userVolumeMount":                 fmt.Sprintf("[{\"name\": \"istio-certs\", \"mountPath\": \"%s\"}]", istioCertDir),
+		"traffic.sidecar.istio.io/includeInboundPorts":     "",
+		"traffic.sidecar.istio.io/includeOutboundIPRanges": "",
 	}
 }
 

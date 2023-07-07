@@ -73,7 +73,7 @@ func MakeSecret(config Config, secretData map[string][]byte) *corev1.Secret {
 
 func MakeDeployment(config Config, configHash string, pipelineCount int, envVarCurrentPodIP, envVarCurrentNode string) *appsv1.Deployment {
 	labels := core.MakeDefaultLabels(config.BaseName)
-	annotations := core.MakePodAnnotations(configHash)
+	annotations := core.MakeCommonPodAnnotations(configHash)
 	resources := makeResourceRequirements(config, pipelineCount)
 	affinity := makePodAffinity(labels)
 	podSpec := core.MakePodSpec(config.BaseName, config.Deployment.Image,
