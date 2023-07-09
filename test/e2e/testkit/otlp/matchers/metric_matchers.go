@@ -1,14 +1,9 @@
-//go:build e2e
-
 package matchers
 
 import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"strconv"
-
-	"github.com/go-logr/logr"
 
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
@@ -21,44 +16,18 @@ func HaveMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
-			return nil, fmt.Errorf("HaveGauges requires a []byte, but got %T", actual)
+			return nil, fmt.Errorf("HaveMetrics requires a []byte, but got %T", actual)
 		}
 
 		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
 		if err != nil {
-			return nil, fmt.Errorf("HaveGauges requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("HaveMetrics requires a valid OTLP JSON document: %v", err)
 		}
 
 		var actualMetrics []pmetric.Metric
 		for _, md := range actualMds {
 			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
 		}
-		return actualMetrics, nil
-	}, gomega.ContainElements(expectedMetrics))
-}
-
-func HaveDeltaMetrics(logger logr.Logger, expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("HaveGauges requires a []byte, but got %T", actual)
-		}
-		logger.Info(string(actualBytes))
-
-		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
-		if err != nil {
-			return nil, fmt.Errorf("HaveGauges requires a valid OTLP JSON document: %v", err)
-		}
-
-		var actualMetrics []pmetric.Metric
-		for _, md := range actualMds {
-			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
-		}
-		logger.Info(strconv.Itoa(len(actualMetrics)))
-		logger.Info(actualMetrics[0].Sum().AggregationTemporality().String())
-		logger.Info(actualMetrics[0].Sum().DataPoints().At(0).ValueType().String())
-		logger.Info(actualMetrics[0].Sum().DataPoints().At(1).ValueType().String())
-		logger.Info(actualMetrics[0].Sum().DataPoints().At(2).ValueType().String())
 		return actualMetrics, nil
 	}, gomega.ContainElements(expectedMetrics))
 }

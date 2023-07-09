@@ -1,12 +1,9 @@
-//go:build e2e
-
 package e2e
 
 import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -101,11 +98,7 @@ var _ = Describe("Metrics", func() {
 				gauges = append(gauges, gauge)
 				builder.WithMetric(gauge)
 			}
-			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
-
-			GinkgoLogr.Info("MockBackendExport: " + urls.MockBackendExport())
-			GinkgoLogr.Info("OTLPPush: " + urls.OTLPPush())
-			GinkgoLogr.Info("Number of generated metrics: " + strconv.Itoa(builder.Build().MetricCount()))
+			Expect(sendGaugeMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
@@ -182,58 +175,26 @@ var _ = Describe("Metrics", func() {
 			builder := kitmetrics.NewBuilder()
 			var cumulativeSums []pmetric.Metric
 
-			GinkgoLogr.Info("Building metric")
-			for i := 0; i < 150; i++ {
-				sum := kitmetrics.NewCumulativeMetric()
+			for i := 0; i < 50; i++ {
+				sum := kitmetrics.NewCumulativeSum()
 				cumulativeSums = append(cumulativeSums, sum)
 				builder.WithMetric(sum)
 			}
 
-			GinkgoLogr.Info("Sending metric")
 			Expect(sendSumMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
-			// sum.setValue...
-			// GinkgoLogr.Info("Changing metric by adding data points")
-			// GinkgoLogr.Info("Getting first point's time")
-			// for i := 0; i < 150; i++ {
-			// 	startTime := cumulativeSums[i].Sum().DataPoints().At(0).StartTimestamp().AsTime()
-			// 	pt := cumulativeSums[i].Sum().DataPoints().AppendEmpty()
-
-			// 	pt.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
-			// 	pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-			// 	//define static val
-			// 	pt.SetDoubleValue(float64(2)) //nolint:gosec // random number generator is sufficient.
-
-			// 	for i := 0; i < 7; i++ {
-			// 		k := fmt.Sprintf("pt-label-key-%d", i)
-			// 		v := fmt.Sprintf("pt-label-val-%d", i)
-			// 		pt.Attributes().PutStr(k, v)
-			// 	}
-			// }
-
-			// // builder.WithMetric(sum) // maybe :)
-			// Expect(sendSumMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
-
-			GinkgoLogr.Info("MockBackendExport: " + urls.MockBackendExport())
-			GinkgoLogr.Info("OTLPPush: " + urls.OTLPPush())
-			GinkgoLogr.Info("Number of generated metrics: " + strconv.Itoa(builder.Build().MetricCount()))
+			for i := 0; i < len(cumulativeSums); i++ {
+				cumulativeSums[i].Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+			}
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
-				// defer resp.Body.Close()
-				// body, _ := ioutil.ReadAll(resp.Body)
-				// GinkgoLogr.Info(string(body))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveDeltaMetrics(GinkgoLogr, cumulativeSums...)))) // add validation
-				// take a look on how data looks like
+					HaveMetrics(cumulativeSums...))))
 			}, timeout, interval).Should(Succeed())
 		})
-
-		// maybe check whether aggregation flag is still there after processor transforms the metric
-
-		// validate that metrics arriving in the delta format
 	})
 
 	Context("When reaching the pipeline limit", Ordered, func() {
@@ -337,7 +298,7 @@ var _ = Describe("Metrics", func() {
 				gauges = append(gauges, gauge)
 				builder.WithMetric(gauge)
 			}
-			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).Should(Succeed())
+			Expect(sendGaugeMetrics(context.Background(), builder.Build(), urls.OTLPPush())).Should(Succeed())
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
@@ -398,7 +359,7 @@ var _ = Describe("Metrics", func() {
 				gauges = append(gauges, gauge)
 				builder.WithMetric(gauge)
 			}
-			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
+			Expect(sendGaugeMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
@@ -529,28 +490,20 @@ func makeBrokenMetricPipeline(name string) []client.Object {
 	}
 }
 
-func sendMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL string) error {
-	GinkgoLogr.Info("Starting send metrics function")
+func sendGaugeMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL string) error {
 	sender, err := kitmetrics.NewHTTPExporter(otlpPushURL, proxyClient)
-	GinkgoLogr.Info("Finished creating exporter")
 	if err != nil {
-		GinkgoLogr.Info("Some error occured")
 		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)
 	}
-	GinkgoLogr.Info("Calling export...")
-	return sender.Export(ctx, metrics)
+	return sender.ExportGaugeMetrics(ctx, metrics)
 }
 
 func sendSumMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL string) error {
-	GinkgoLogr.Info("Starting send metrics function")
 	sender, err := kitmetrics.NewHTTPExporter(otlpPushURL, proxyClient)
-	GinkgoLogr.Info("Finished creating exporter")
 	if err != nil {
-		GinkgoLogr.Info("Some error occured")
 		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)
 	}
-	GinkgoLogr.Info("Calling export...")
-	return sender.ExportSum(ctx, metrics, GinkgoLogr)
+	return sender.ExportSumMetrics(ctx, metrics)
 }
 
 func suffixize(name string, idx int) string {

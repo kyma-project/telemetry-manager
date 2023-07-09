@@ -1,5 +1,3 @@
-//go:build e2e
-
 package metrics
 
 import (
@@ -62,7 +60,7 @@ func NewGauge(opts ...MetricOption) pmetric.Metric {
 	startTime := time.Now()
 
 	m := pmetric.NewMetric()
-	setMetricDefaults(m)
+	setGaugeDefaults(m)
 	for _, opt := range opts {
 		opt(m)
 	}
@@ -85,13 +83,13 @@ func NewGauge(opts ...MetricOption) pmetric.Metric {
 	return m
 }
 
-func NewCumulativeMetric(opts ...MetricOption) pmetric.Metric {
+func NewCumulativeSum(opts ...MetricOption) pmetric.Metric {
 	startTime := time.Now()
 	totalPts := 2
 	totalAttributes := 7
 
 	m := pmetric.NewMetric()
-	setCumulativeMetricDefaults(m)
+	setCumulativeSumDefaults(m)
 	for _, opt := range opts {
 		opt(m)
 	}
@@ -103,8 +101,7 @@ func NewCumulativeMetric(opts ...MetricOption) pmetric.Metric {
 		pt := pts.AppendEmpty()
 		pt.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
 		pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-		//define static val
-		pt.SetDoubleValue(float64(i)) //nolint:gosec // random number generator is sufficient.
+		pt.SetDoubleValue(float64(i))
 
 		for i := 0; i < totalAttributes; i++ {
 			k := fmt.Sprintf("pt-label-key-%d", i)
@@ -116,13 +113,13 @@ func NewCumulativeMetric(opts ...MetricOption) pmetric.Metric {
 	return m
 }
 
-func setCumulativeMetricDefaults(m pmetric.Metric) {
+func setCumulativeSumDefaults(m pmetric.Metric) {
 	m.SetName("dummy_cumulative_sum")
 	m.SetDescription("Dummy cumulative sum")
 	m.SetUnit("ms")
 }
 
-func setMetricDefaults(m pmetric.Metric) {
+func setGaugeDefaults(m pmetric.Metric) {
 	m.SetName("dummy_gauge")
 	m.SetDescription("Dummy gauge")
 	m.SetUnit("ms")

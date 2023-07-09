@@ -1,12 +1,8 @@
-//go:build e2e
-
 package metrics
 
 import (
 	"context"
-	"strconv"
 
-	"github.com/go-logr/logr"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -18,71 +14,56 @@ type Exporter struct {
 	otlpExporter metric.Exporter
 }
 
+type MetricConvertion = func(metric pmetric.Metric, dataPoints []metricdata.DataPoint[float64]) metricdata.Metrics
+
+type DataPointsRetrieval = func(metric pmetric.Metric) pmetric.NumberDataPointSlice
+
 // NewExporter is an adapter over the OTLP metric.Exporter instance.
 func NewExporter(e metric.Exporter) Exporter {
 	return Exporter{otlpExporter: e}
 }
 
-func (e Exporter) Export(ctx context.Context, pmetrics pmetric.Metrics) error {
-	return e.otlpExporter.Export(ctx, toResourceMetrics(pmetrics))
+func (e Exporter) ExportGaugeMetrics(ctx context.Context, pmetrics pmetric.Metrics) error {
+	return e.otlpExporter.Export(ctx, toResourceMetrics(pmetrics, getGaugeMetricDataPoints, convertGaugeMetric))
 }
 
-func (e Exporter) ExportSum(ctx context.Context, pmetrics pmetric.Metrics, logger logr.Logger) error {
-	return e.otlpExporter.Export(ctx, sumToResourceMetrics(pmetrics, logger))
+func (e Exporter) ExportSumMetrics(ctx context.Context, pmetrics pmetric.Metrics) error {
+	return e.otlpExporter.Export(ctx, toResourceMetrics(pmetrics, getSumMetricDataPoints, convertSumMetric))
 }
 
-// sumToResourceMetrics converts metrics from pmetric.Metrics to metricdata.ResourceMetrics.
-func sumToResourceMetrics(pmetrics pmetric.Metrics, logger logr.Logger) *metricdata.ResourceMetrics {
-	var scopeMetrics []metricdata.Metrics
-
-	for i := 0; i < pmetrics.ResourceMetrics().Len(); i++ {
-		res := pmetrics.ResourceMetrics().At(i)
-		for j := 0; j < res.ScopeMetrics().Len(); j++ {
-			sc := res.ScopeMetrics().At(j)
-			for k := 0; k < sc.Metrics().Len(); k++ {
-				metrics := sc.Metrics().At(k)
-
-				var dataPoints []metricdata.DataPoint[float64]
-				for l := 0; l < metrics.Sum().DataPoints().Len(); l++ {
-					d := metrics.Sum().DataPoints().At(l)
-
-					var attrs []attribute.KeyValue
-					for k, v := range d.Attributes().AsRaw() {
-						attrs = append(attrs, attribute.String(k, v.(string)))
-					}
-
-					dataPoints = append(dataPoints, metricdata.DataPoint[float64]{
-						Attributes: attribute.NewSet(attrs...),
-						StartTime:  d.StartTimestamp().AsTime(),
-						Time:       d.Timestamp().AsTime(),
-						Value:      d.DoubleValue(),
-					})
-				}
-
-				scopeMetrics = append(scopeMetrics, metricdata.Metrics{
-					Name:        metrics.Name(),
-					Description: metrics.Description(),
-					Unit:        metrics.Unit(),
-					Data: metricdata.Gauge[float64]{
-						DataPoints: dataPoints,
-					},
-				})
-			}
-		}
+func convertGaugeMetric(metric pmetric.Metric, dataPoints []metricdata.DataPoint[float64]) metricdata.Metrics {
+	return metricdata.Metrics{
+		Name:        metric.Name(),
+		Description: metric.Description(),
+		Unit:        metric.Unit(),
+		Data: metricdata.Gauge[float64]{
+			DataPoints: dataPoints,
+		},
 	}
+}
 
-	logger.Info(strconv.Itoa(len(scopeMetrics)))
-
-	return &metricdata.ResourceMetrics{
-		Resource: resource.NewSchemaless(),
-		ScopeMetrics: []metricdata.ScopeMetrics{{
-			Metrics: scopeMetrics,
-		}},
+func convertSumMetric(metric pmetric.Metric, dataPoints []metricdata.DataPoint[float64]) metricdata.Metrics {
+	return metricdata.Metrics{
+		Name:        metric.Name(),
+		Description: metric.Description(),
+		Unit:        metric.Unit(),
+		Data: metricdata.Sum[float64]{
+			DataPoints:  dataPoints,
+			Temporality: metricdata.Temporality(metric.Sum().AggregationTemporality()),
+		},
 	}
+}
+
+func getSumMetricDataPoints(metric pmetric.Metric) pmetric.NumberDataPointSlice {
+	return metric.Sum().DataPoints()
+}
+
+func getGaugeMetricDataPoints(metric pmetric.Metric) pmetric.NumberDataPointSlice {
+	return metric.Gauge().DataPoints()
 }
 
 // toResourceMetrics converts metrics from pmetric.Metrics to metricdata.ResourceMetrics.
-func toResourceMetrics(pmetrics pmetric.Metrics) *metricdata.ResourceMetrics {
+func toResourceMetrics(pmetrics pmetric.Metrics, retrieveDataPoints DataPointsRetrieval, convertMetrics MetricConvertion) *metricdata.ResourceMetrics {
 	var scopeMetrics []metricdata.Metrics
 
 	for i := 0; i < pmetrics.ResourceMetrics().Len(); i++ {
@@ -93,8 +74,8 @@ func toResourceMetrics(pmetrics pmetric.Metrics) *metricdata.ResourceMetrics {
 				metrics := sc.Metrics().At(k)
 
 				var dataPoints []metricdata.DataPoint[float64]
-				for l := 0; l < metrics.Gauge().DataPoints().Len(); l++ {
-					d := metrics.Gauge().DataPoints().At(l)
+				for l := 0; l < retrieveDataPoints(metrics).Len(); l++ {
+					d := retrieveDataPoints(metrics).At(l)
 
 					var attrs []attribute.KeyValue
 					for k, v := range d.Attributes().AsRaw() {
@@ -109,14 +90,7 @@ func toResourceMetrics(pmetrics pmetric.Metrics) *metricdata.ResourceMetrics {
 					})
 				}
 
-				scopeMetrics = append(scopeMetrics, metricdata.Metrics{
-					Name:        metrics.Name(),
-					Description: metrics.Description(),
-					Unit:        metrics.Unit(),
-					Data: metricdata.Gauge[float64]{
-						DataPoints: dataPoints,
-					},
-				})
+				scopeMetrics = append(scopeMetrics, convertMetrics(metrics, dataPoints))
 			}
 		}
 	}
