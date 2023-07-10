@@ -35,7 +35,7 @@ var (
 	k8sClient           client.Client
 	proxyClient         *apiserver.ProxyClient
 	testEnv             *envtest.Environment
-	telemetryK8sObjects = []client.Object{kitk8s.NewTelemetry("default").K8sObject()}
+	telemetryK8sObjects []client.Object
 )
 
 func TestE2e(t *testing.T) {
@@ -64,6 +64,8 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	telemetryK8sObjects = []client.Object{kitk8s.NewTelemetry("default").Persistent(isOperational()).K8sObject()}
+
 	Expect(kitk8s.CreateObjects(ctx, k8sClient, telemetryK8sObjects...)).To(Succeed())
 
 	proxyClient, err = apiserver.NewProxyClient(testEnv.Config)
@@ -72,12 +74,14 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	Expect(kitk8s.DeleteObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
-	Eventually(func(g Gomega) {
-		var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
-		g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
-		var secret corev1.Secret
-		g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
-	}, timeout, interval).ShouldNot(Succeed())
+	if !isOperational() {
+		Eventually(func(g Gomega) {
+			var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
+			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+			var secret corev1.Secret
+			g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
+		}, timeout, interval).ShouldNot(Succeed())
+	}
 
 	cancel()
 	By("tearing down the test environment")

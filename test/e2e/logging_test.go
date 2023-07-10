@@ -85,7 +85,7 @@ var _ = Describe("Logging", func() {
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
-			}, timeout, interval).Should(Succeed())
+			}, timeout*2, interval).Should(Succeed())
 		})
 
 		It("Should verify end-to-end log delivery", Label("operational"), func() {

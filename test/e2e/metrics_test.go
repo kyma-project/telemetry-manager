@@ -395,7 +395,7 @@ func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 		// Default namespace objects.
 		otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
 		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL)).Persistent(isOperational())
-		metricPipeline := kitmetric.NewPipeline("pipeline", hostSecret.SecretKeyRef("metric-host")).Persistent(isOperational())
+		metricPipeline := kitmetric.NewPipeline(fmt.Sprintf("%s-%s", mockDeploymentName, "pipeline"), hostSecret.SecretKeyRef("metric-host")).Persistent(isOperational())
 		pipelines.Append(metricPipeline.Name())
 
 		objs = append(objs, []client.Object{
