@@ -94,7 +94,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 	var warnMsg []string
 
 	if logPipeline.ContainsCustomPlugin() {
-		helpText := "https://kyma-project.io/docs/kyma/latest/01-overview/main-areas/observability/obsv-04-telemetry-in-kyma/"
+		helpText := "https://kyma-project.io/docs/kyma/latest/01-overview/telemetry/telemetry-02-logs/"
 		msg := fmt.Sprintf("Logpipeline '%s' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: %s", logPipeline.Name, helpText)
 		warnMsg = append(warnMsg, msg)
 	}
