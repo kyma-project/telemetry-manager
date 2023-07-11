@@ -1,4 +1,4 @@
-package builder
+package otlpoutput
 
 import (
 	"context"

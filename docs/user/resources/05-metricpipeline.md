@@ -47,8 +47,12 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
-| **output** (required) | object | Configures the trace receiver of a MetricPipeline. |
-| **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelmetry protocol. |
+| **input**  | object | Configures different inputs to send additional metrics to the metric gateway. |
+| **input.&#x200b;application**  | object | Configures application related scraping. |
+| **input.&#x200b;application.&#x200b;runtime**  | object | Configures runtime scraping (workload-related k8s ). |
+| **input.&#x200b;application.&#x200b;runtime.&#x200b;enabled**  | boolean | Indicates if runtime scraping is enabled. |
+| **output**  | object | Configures the metric gateway. |
+| **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Defines authentication options for the OTLP output |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic**  | object | Activates `Basic` authentication for the destination providing relevant Secrets. |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;password** (required) | object | Contains the basic auth password or a Secret reference. |
@@ -87,7 +91,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
-| **conditions**  | \[\]object | Contains details for the current condition of this MetricPipeline |
+| **conditions**  | \[\]object | Defines the trail of MetricPipeline conditions. |
 | **conditions.&#x200b;lastTransitionTime**  | string |  |
 | **conditions.&#x200b;reason**  | string |  |
 | **conditions.&#x200b;type**  | string |  |

@@ -54,14 +54,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	logparserreconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
-	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
-	tracepipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
-	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	lokilogpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/lokilogpipeline"
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
+	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/resources/lokilogpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
@@ -134,8 +135,8 @@ var (
 )
 
 const (
-	otelImage              = "europe-docker.pkg.dev/kyma-project/dev/tpi/otel-collector:PR-356"
-	overrideConfigMapName  = "telemetry-override-config"
+	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.81.0-aee4f05f"
+	overridesConfigMapName = "telemetry-override-config"
 	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.4-fef25e9c"
 	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20230503-c10c571f"
 
@@ -178,11 +179,18 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups="",namespace=system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",namespace=system,resources=services,verbs=get;list;watch;create;update;patch;delete
 
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",namespace=system,resources=secrets,verbs=create;update;patch;delete
 //+kubebuilder:rbac:groups="",namespace=system,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;
-//+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;
+//+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=nodes/metrics,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=nodes/stats,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=endpoints,verbs=get;list;watch
+//+kubebuilder:rbac:urls=/metrics,verbs=get
+//+kubebuilder:rbac:urls=/metrics/cadvisor,verbs=get
 
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
@@ -449,16 +457,16 @@ func validateFlags() error {
 }
 
 func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.LogPipelineReconciler {
-	config := logpipelinereconciler.Config{
+	config := logpipeline.Config{
 		SectionsConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
 		FilesConfigMap:    types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
 		LuaConfigMap:      types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: telemetryNamespace},
 		ParsersConfigMap:  types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
 		EnvSecret:         types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: telemetryNamespace},
 		DaemonSet:         types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
-		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
+		OverrideConfigMap: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		PipelineDefaults:  createPipelineDefaults(),
-		DaemonSetConfig: logpipelineresources.DaemonSetConfig{
+		DaemonSetConfig: fluentbit.DaemonSetConfig{
 			FluentBitImage:              fluentBitImageVersion,
 			FluentBitConfigPrepperImage: fluentBitConfigPrepperImageVersion,
 			ExporterImage:               fluentBitExporterVersion,
@@ -473,12 +481,12 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 
 	return telemetrycontrollers.NewLogPipelineReconciler(
 		client,
-		logpipelinereconciler.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client}, overridesHandler),
+		logpipeline.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client}, overridesHandler),
 		config)
 }
 
 func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogParserReconciler {
-	config := logparserreconciler.Config{
+	config := logparser.Config{
 		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
 		DaemonSet:        types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 	}
@@ -486,7 +494,7 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 
 	return telemetrycontrollers.NewLogParserReconciler(
 		client,
-		logparserreconciler.NewReconciler(
+		logparser.NewReconciler(
 			client,
 			config,
 			&kubernetes.DaemonSetProber{Client: client},
@@ -498,7 +506,6 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 }
 
 func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
-
 	return logpipelinewebhook.NewValidatingWebhookHandler(
 		client,
 		logpipelinevalidation.NewVariablesValidator(client),
@@ -515,56 +522,72 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 }
 
 func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.TracePipelineReconciler {
-	config := collectorresources.Config{
-		Namespace: telemetryNamespace,
-		BaseName:  "telemetry-trace-collector",
-		Deployment: collectorresources.DeploymentConfig{
-			Image:                traceCollectorImage,
-			PriorityClassName:    traceCollectorPriorityClass,
-			BaseCPULimit:         resource.MustParse(traceCollectorCPULimit),
-			DynamicCPULimit:      resource.MustParse(traceCollectorDynamicCPULimit),
-			BaseMemoryLimit:      resource.MustParse(traceCollectorMemoryLimit),
-			DynamicMemoryLimit:   resource.MustParse(traceCollectorDynamicMemoryLimit),
-			BaseCPURequest:       resource.MustParse(traceCollectorCPURequest),
-			DynamicCPURequest:    resource.MustParse(traceCollectorDynamicCPURequest),
-			BaseMemoryRequest:    resource.MustParse(traceCollectorMemoryRequest),
-			DynamicMemoryRequest: resource.MustParse(traceCollectorDynamicMemoryRequest),
+	config := tracepipeline.Config{
+		Gateway: gateway.Config{
+			Namespace: telemetryNamespace,
+			BaseName:  "telemetry-trace-collector",
+			Deployment: gateway.DeploymentConfig{
+				Image:                traceCollectorImage,
+				PriorityClassName:    traceCollectorPriorityClass,
+				BaseCPULimit:         resource.MustParse(traceCollectorCPULimit),
+				DynamicCPULimit:      resource.MustParse(traceCollectorDynamicCPULimit),
+				BaseMemoryLimit:      resource.MustParse(traceCollectorMemoryLimit),
+				DynamicMemoryLimit:   resource.MustParse(traceCollectorDynamicMemoryLimit),
+				BaseCPURequest:       resource.MustParse(traceCollectorCPURequest),
+				DynamicCPURequest:    resource.MustParse(traceCollectorDynamicCPURequest),
+				BaseMemoryRequest:    resource.MustParse(traceCollectorMemoryRequest),
+				DynamicMemoryRequest: resource.MustParse(traceCollectorDynamicMemoryRequest),
+			},
+			Service: gateway.ServiceConfig{
+				OTLPServiceName: "telemetry-otlp-traces",
+			},
 		},
-		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
-		Service: collectorresources.ServiceConfig{
-			OTLPServiceName: "telemetry-otlp-traces",
-		},
-		MaxPipelines: maxTracePipelines,
+		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
+		MaxPipelines:           maxTracePipelines,
 	}
 	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
 	return telemetrycontrollers.NewTracePipelineReconciler(
 		client,
-		tracepipelinereconciler.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overridesHandler),
+		tracepipeline.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overridesHandler),
 	)
 }
 
 func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.MetricPipelineReconciler {
-	config := collectorresources.Config{
-		Namespace: telemetryNamespace,
-		BaseName:  "telemetry-metric-gateway",
-		Deployment: collectorresources.DeploymentConfig{
-			Image:                metricGatewayImage,
-			PriorityClassName:    metricGatewayPriorityClass,
-			BaseCPULimit:         resource.MustParse(metricGatewayCPULimit),
-			DynamicCPULimit:      resource.MustParse(metricGatewayDynamicCPULimit),
-			BaseMemoryLimit:      resource.MustParse(metricGatewayMemoryLimit),
-			DynamicMemoryLimit:   resource.MustParse(metricGatewayDynamicMemoryLimit),
-			BaseCPURequest:       resource.MustParse(metricGatewayCPURequest),
-			DynamicCPURequest:    resource.MustParse(metricGatewayDynamicCPURequest),
-			BaseMemoryRequest:    resource.MustParse(metricGatewayMemoryRequest),
-			DynamicMemoryRequest: resource.MustParse(metricGatewayDynamicMemoryRequest),
+	config := metricpipeline.Config{
+		Agent: agent.Config{
+			Namespace: telemetryNamespace,
+			BaseName:  "telemetry-metric-agent",
+			DaemonSet: agent.DaemonSetConfig{
+				Image:             metricGatewayImage,
+				PriorityClassName: metricGatewayPriorityClass,
+				CPULimit:          resource.MustParse("1"),
+				MemoryLimit:       resource.MustParse("1Gi"),
+				CPURequest:        resource.MustParse("15m"),
+				MemoryRequest:     resource.MustParse("50Mi"),
+			},
 		},
-		Service: collectorresources.ServiceConfig{
-			OTLPServiceName: "telemetry-otlp-metrics",
+		Gateway: gateway.Config{
+			Namespace: telemetryNamespace,
+			BaseName:  "telemetry-metric-gateway",
+			Deployment: gateway.DeploymentConfig{
+				Image:                metricGatewayImage,
+				PriorityClassName:    metricGatewayPriorityClass,
+				BaseCPULimit:         resource.MustParse(metricGatewayCPULimit),
+				DynamicCPULimit:      resource.MustParse(metricGatewayDynamicCPULimit),
+				BaseMemoryLimit:      resource.MustParse(metricGatewayMemoryLimit),
+				DynamicMemoryLimit:   resource.MustParse(metricGatewayDynamicMemoryLimit),
+				BaseCPURequest:       resource.MustParse(metricGatewayCPURequest),
+				DynamicCPURequest:    resource.MustParse(metricGatewayDynamicCPURequest),
+				BaseMemoryRequest:    resource.MustParse(metricGatewayMemoryRequest),
+				DynamicMemoryRequest: resource.MustParse(metricGatewayDynamicMemoryRequest),
+			},
+			Service: gateway.ServiceConfig{
+				OTLPServiceName: "telemetry-otlp-metrics",
+			},
 		},
-		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
-		MaxPipelines:      maxMetricPipelines,
+		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
+		MaxPipelines:           maxMetricPipelines,
 	}
 
 	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
@@ -599,7 +622,7 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eve
 }
 
 func handleLokiLogPipeline(ctx context.Context, client client.Client) error {
-	lokiLogPipeline := lokilogpipelineresources.MakeLokiLogPipeline()
+	lokiLogPipeline := lokilogpipeline.MakeLokiLogPipeline()
 
 	var lokiService corev1.Service
 	err := client.Get(ctx, types.NamespacedName{Name: "logging-loki", Namespace: "kyma-system"}, &lokiService)

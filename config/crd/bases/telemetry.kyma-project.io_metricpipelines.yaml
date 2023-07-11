@@ -25,7 +25,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: MetricPipeline is the Schema for the metricpipelines API
+        description: MetricPipeline is the Schema for the metricpipelines API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -40,13 +40,30 @@ spec:
           metadata:
             type: object
           spec:
-            description: MetricPipelineSpec defines the desired state of MetricPipeline
+            description: Defines the desired characteristics of MetricPipeline.
             properties:
+              input:
+                description: Configures different inputs to send additional metrics
+                  to the metric gateway.
+                properties:
+                  application:
+                    description: Configures application related scraping.
+                    properties:
+                      runtime:
+                        description: Configures runtime scraping (workload-related
+                          k8s ).
+                        properties:
+                          enabled:
+                            description: Indicates if runtime scraping is enabled.
+                            type: boolean
+                        type: object
+                    type: object
+                type: object
               output:
-                description: Configures the trace receiver of a MetricPipeline.
+                description: Configures the metric gateway.
                 properties:
                   otlp:
-                    description: Defines an output using the OpenTelmetry protocol.
+                    description: Defines an output using the OpenTelemetry protocol.
                     properties:
                       authentication:
                         description: Defines authentication options for the OTLP output
@@ -185,16 +202,15 @@ spec:
                 required:
                 - otlp
                 type: object
-            required:
-            - output
             type: object
           status:
-            description: Defines the observed state of MetricPipeline
+            description: Represents the current information/status of MetricPipeline.
             properties:
               conditions:
+                description: Defines the trail of MetricPipeline conditions.
                 items:
                   description: Contains details for the current condition of this
-                    MetricPipeline
+                    MetricPipeline.
                   properties:
                     lastTransitionTime:
                       format: date-time

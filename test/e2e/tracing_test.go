@@ -20,6 +20,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma"
 	kittrace "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 	kittraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/traces"
@@ -39,6 +40,7 @@ var (
 var _ = Describe("Tracing", func() {
 	Context("When a tracepipeline exists", Ordered, func() {
 		var (
+			pipelines          *kyma.PipelineList
 			urls               *mocks.URLProvider
 			mockNs             = "trace-mocks-single-pipeline"
 			mockDeploymentName = "trace-receiver"
@@ -46,7 +48,8 @@ var _ = Describe("Tracing", func() {
 		)
 
 		BeforeAll(func() {
-			k8sObjects, tracesURLProvider := makeTracingTestK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(mockNs, mockDeploymentName)
+			pipelines = pipelinesProvider
 			urls = tracesURLProvider
 
 			DeferCleanup(func() {
@@ -55,7 +58,7 @@ var _ = Describe("Tracing", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running trace collector deployment", Label("operational"), func() {
+		It("Should have a running trace collector deployment", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, traceCollectorname)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -72,7 +75,7 @@ var _ = Describe("Tracing", func() {
 			}, timeout, interval).Should(Equal(int32(2)))
 		})
 
-		It("Should have a trace backend running", Label("operational"), func() {
+		It("Should have a trace backend running", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
@@ -81,7 +84,7 @@ var _ = Describe("Tracing", func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should be able to get trace collector metrics endpoint", Label("operational"), func() {
+		It("Should be able to get trace collector metrics endpoint", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.Metrics())
 				g.Expect(err).NotTo(HaveOccurred())
@@ -89,11 +92,11 @@ var _ = Describe("Tracing", func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should have a running pipeline", Label("operational"), func() {
-			tracePipelineShouldBeRunning("pipeline")
+		It("Should have a running pipeline", Label(operationalTest), func() {
+			tracePipelineShouldBeRunning(pipelines.First())
 		})
 
-		It("Should verify end-to-end trace delivery", Label("operational"), func() {
+		It("Should verify end-to-end trace delivery", Label(operationalTest), func() {
 			traceID := kittraces.NewTraceID()
 			var spanIDs []pcommon.SpanID
 			for i := 0; i < 100; i++ {
@@ -141,52 +144,53 @@ var _ = Describe("Tracing", func() {
 	})
 
 	Context("When reaching the pipeline limit", Ordered, func() {
-		allPipelines := make(map[string][]client.Object, 0)
+		pipelinesObjects := make(map[string][]client.Object, 0)
+		pipelines := kyma.NewPipelineList()
 
 		BeforeAll(func() {
 			for i := 0; i < maxNumberOfTracePipelines; i++ {
-				pipelineName := fmt.Sprintf("pipeline-%d", i)
-				pipelineObjects := makeBrokenTracePipeline(pipelineName)
-				allPipelines[pipelineName] = pipelineObjects
+				objs, name := makeBrokenTracePipeline(fmt.Sprintf("pipeline-%d", i))
+				pipelines.Append(name)
+				pipelinesObjects[name] = objs
 
-				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipelineObjects...)).Should(Succeed())
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, objs...)).Should(Succeed())
 			}
 
 			DeferCleanup(func() {
-				for _, pipeline := range allPipelines {
-					Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipeline...)).Should(Succeed())
+				for _, objs := range pipelinesObjects {
+					Expect(kitk8s.DeleteObjects(ctx, k8sClient, objs...)).Should(Succeed())
 				}
 			})
 		})
 
 		It("Should have only running pipelines", func() {
-			for pipelineName := range allPipelines {
-				tracePipelineShouldBeRunning(pipelineName)
-				tracePipelineShouldBeDeployed(pipelineName)
+			for _, pipeline := range pipelines.All() {
+				tracePipelineShouldBeRunning(pipeline)
+				tracePipelineShouldBeDeployed(pipeline)
 			}
 		})
 
 		It("Should have a pending pipeline", func() {
 			By("Creating an additional pipeline", func() {
-				newPipelineName := "new-pipeline"
-				newPipeline := makeBrokenTracePipeline(newPipelineName)
-				allPipelines[newPipelineName] = newPipeline
+				newObjs, newName := makeBrokenTracePipeline("exceeding-pipeline")
+				pipelinesObjects[newName] = newObjs
+				pipelines.Append(newName)
 
-				Expect(kitk8s.CreateObjects(ctx, k8sClient, newPipeline...)).Should(Succeed())
-				tracePipelineShouldStayPending(newPipelineName)
-				tracePipelineShouldNotBeDeployed(newPipelineName)
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, newObjs...)).Should(Succeed())
+				tracePipelineShouldStayPending(newName)
+				tracePipelineShouldNotBeDeployed(newName)
 			})
 		})
 
 		It("Should have only running pipeline", func() {
 			By("Deleting a pipeline", func() {
-				deletedPipeline := allPipelines["pipeline-0"]
-				delete(allPipelines, "pipeline-0")
+				deletedPipeline := pipelinesObjects[pipelines.First()]
+				delete(pipelinesObjects, pipelines.First())
 
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, deletedPipeline...)).Should(Succeed())
 
-				for pipelineName := range allPipelines {
-					tracePipelineShouldBeRunning(pipelineName)
+				for _, pipeline := range pipelines.All()[1:] {
+					tracePipelineShouldBeRunning(pipeline)
 				}
 			})
 		})
@@ -194,27 +198,31 @@ var _ = Describe("Tracing", func() {
 
 	Context("When a broken tracepipeline exists", Ordered, func() {
 		var (
+			brokenPipelineName string
+			pipelines          *kyma.PipelineList
 			urls               *mocks.URLProvider
 			mockNs             = "trace-mocks-broken-pipeline"
 			mockDeploymentName = "trace-receiver"
 		)
 
 		BeforeAll(func() {
-			k8sObjects, tracesURLProvider := makeTracingTestK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(mockNs, mockDeploymentName)
+			pipelines = pipelinesProvider
 			urls = tracesURLProvider
-			secondPipeline := makeBrokenTracePipeline("pipeline-1")
+			brokenPipelineObjs, brokenName := makeBrokenTracePipeline("pipeline-1")
+			brokenPipelineName = brokenName
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, secondPipeline...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, brokenPipelineObjs...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, secondPipeline...)).Should(Succeed())
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, brokenPipelineObjs...)).Should(Succeed())
 		})
 
 		It("Should have running pipelines", func() {
-			tracePipelineShouldBeRunning("pipeline")
-			tracePipelineShouldBeRunning("pipeline-1")
+			tracePipelineShouldBeRunning(pipelines.First())
+			tracePipelineShouldBeRunning(brokenPipelineName)
 		})
 
 		It("Should have a trace backend running", func() {
@@ -255,6 +263,7 @@ var _ = Describe("Tracing", func() {
 
 	Context("When multiple tracepipelines exist", Ordered, func() {
 		var (
+			pipelines                   *kyma.PipelineList
 			urls                        *mocks.URLProvider
 			mockNs                      = "trace-mocks-multi-pipeline"
 			primaryMockDeploymentName   = "trace-receiver"
@@ -262,7 +271,8 @@ var _ = Describe("Tracing", func() {
 		)
 
 		BeforeAll(func() {
-			k8sObjects, tracesURLProvider := makeTracingTestK8sObjects(mockNs, primaryMockDeploymentName, auxiliaryMockDeploymentName)
+			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(mockNs, primaryMockDeploymentName, auxiliaryMockDeploymentName)
+			pipelines = pipelinesProvider
 			urls = tracesURLProvider
 
 			DeferCleanup(func() {
@@ -272,8 +282,8 @@ var _ = Describe("Tracing", func() {
 		})
 
 		It("Should have running pipelines", func() {
-			tracePipelineShouldBeRunning("pipeline")
-			tracePipelineShouldBeRunning("pipeline-1")
+			tracePipelineShouldBeRunning(pipelines.First())
+			tracePipelineShouldBeRunning(pipelines.Second())
 		})
 
 		It("Should have a trace backend running", func() {
@@ -363,10 +373,11 @@ func tracePipelineShouldNotBeDeployed(pipelineName string) {
 }
 
 // makeTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) ([]client.Object, *mocks.URLProvider) {
+func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
 	var (
-		objs []client.Object
-		urls = mocks.NewURLProvider()
+		objs      []client.Object
+		pipelines = kyma.NewPipelineList()
+		urls      = mocks.NewURLProvider()
 
 		grpcOTLPPort    = 4317
 		httpMetricsPort = 8888
@@ -389,8 +400,9 @@ func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 
 		// Default namespace objects.
 		otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
-		hostSecret := kitk8s.NewOpaqueSecret(suffixize("trace-rcv-hostname", i), defaultNamespaceName, kitk8s.WithStringData("trace-host", otlpEndpointURL))
-		tracePipeline := kittrace.NewPipeline(suffixize("pipeline", i), hostSecret.SecretKeyRef("trace-host"))
+		hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("trace-host", otlpEndpointURL)).Persistent(isOperational())
+		tracePipeline := kittrace.NewPipeline(fmt.Sprintf("%s-%s", mockDeploymentName, "pipeline"), hostSecret.SecretKeyRef("trace-host")).Persistent(isOperational())
+		pipelines.Append(tracePipeline.Name())
 
 		objs = append(objs, []client.Object{
 			mockBackendConfigMap.K8sObject(),
@@ -413,17 +425,17 @@ func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 
 	objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", traceCollectorBaseName)))
 
-	return objs, urls
+	return objs, urls, pipelines
 }
 
-func makeBrokenTracePipeline(name string) []client.Object {
+func makeBrokenTracePipeline(name string) ([]client.Object, string) {
 	hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname-"+name, defaultNamespaceName, kitk8s.WithStringData("trace-host", "http://unreachable:4317"))
 	tracePipeline := kittrace.NewPipeline(name, hostSecret.SecretKeyRef("trace-host"))
 
 	return []client.Object{
 		hostSecret.K8sObject(),
 		tracePipeline.K8sObject(),
-	}
+	}, tracePipeline.Name()
 }
 
 func sendTraces(ctx context.Context, traces ptrace.Traces, otlpPushURL string) error {

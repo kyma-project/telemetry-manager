@@ -103,7 +103,7 @@ issues:
       linters:
         - govet
     - linters: [ gci ]
-      path: test/e2e/(tracing|metrics)_test.go
+      path: test/e2e/(tracing|metrics|logging)_test.go
     - linters: [ dupl ]
       path: apis/telemetry/v1alpha1/(logparsers|metricpipeline|tracepipeline)_types_test.go
     - linters: [ dupl ]
@@ -111,9 +111,11 @@ issues:
     - linters: [ dupl ]
       path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller(_test)?.go
     - linters: [ dupl ]
+      path: internal/otelcollector/config/builder/metric/agent/config_builder_test.go
+    - linters: [ dupl ]
       path: internal/reconciler/(logpipeline|metricpipeline|tracepipeline)/status_test.go
     - linters: [ dupl ]
-      path: internal/resources/otelcollector/resources_test.go
+      path: internal/resources/otelcollector/gateway/resources_test.go
     - linters: [ dupl ]
       path: internal/kubernetes/utils(_test)?.go
     - linters: [ dupl ]
@@ -127,12 +129,20 @@ issues:
     - linters: [ dupl ]
       path: test/e2e/testkit/otlp/matchers/trace_matchers.go
     - linters: [ dupl ]
+      path: test/e2e/testkit/otlp/matchers/log_matchers.go
+    - linters: [ dupl ]
+      path: test/e2e/testkit/otlp/matchers/log_matchers_test.go
+    - linters: [ dupl ]
+      path: test/e2e/testkit/otlp/matchers/trace_matchers_test.go
+    - linters: [ dupl ]
       path: test/e2e/metrics_test.go
     - linters: [ dupl ]
-      path: test/e2e/tracing_test
+      path: test/e2e/tracing_test.go
     - linters: [ dupl ]
       path: internal/reconciler/tracepipeline/reconciler_test.go
     - linters: [ dupl ]
       path: internal/reconciler/metricpipeline/reconciler_test.go
+    - linters: [ dupl ]
+      path: main.go
     - linters: [ errcheck ]
       path: test/e2e/testkit/otlp/traces/traces.go

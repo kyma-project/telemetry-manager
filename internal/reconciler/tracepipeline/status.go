@@ -59,12 +59,12 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 		return setCondition(ctx, r.Client, &pipeline, pending)
 	}
 
-	openTelemetryReady, err := r.prober.IsReady(ctx, types.NamespacedName{Name: r.config.BaseName, Namespace: r.config.Namespace})
+	gatewayReady, err := r.prober.IsReady(ctx, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace})
 	if err != nil {
 		return err
 	}
 
-	if openTelemetryReady {
+	if gatewayReady {
 		if pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning) {
 			return nil
 		}
