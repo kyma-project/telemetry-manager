@@ -43,7 +43,7 @@ kyma alpha deploy
 2. Install the ModuleTemplate and activate the component:
 ```shell
 kubectl apply -f https://github.com/kyma-project/telemetry-manager/releases/latest/download/template.yaml
-kyma alpha enable module telemetry
+kyma alpha enable module telemetry --channel fast
 ```
 
 3. Verify that a `telemetry-operator` Pod starts up in the `kyma-system` Namespace.
