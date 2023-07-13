@@ -1,3 +1,5 @@
+//go:build e2e
+
 package metrics
 
 import (
@@ -43,13 +45,19 @@ func convertGaugeMetric(metric pmetric.Metric, dataPoints []metricdata.DataPoint
 }
 
 func convertSumMetric(metric pmetric.Metric, dataPoints []metricdata.DataPoint[float64]) metricdata.Metrics {
+	temporality := metricdata.DeltaTemporality
+
+	if metric.Sum().AggregationTemporality() == pmetric.AggregationTemporalityCumulative {
+		temporality = metricdata.CumulativeTemporality
+	}
+
 	return metricdata.Metrics{
 		Name:        metric.Name(),
 		Description: metric.Description(),
 		Unit:        metric.Unit(),
 		Data: metricdata.Sum[float64]{
 			DataPoints:  dataPoints,
-			Temporality: metricdata.Temporality(metric.Sum().AggregationTemporality()),
+			Temporality: temporality,
 		},
 	}
 }

@@ -165,6 +165,7 @@ exporters:
             max_interval: 30s
             max_elapsed_time: 300s
 processors:
+    cumulativetodelta: {}
     batch:
         send_batch_size: 1024
         timeout: 10s
@@ -234,5 +235,27 @@ service:
 		yamlBytes, err := yaml.Marshal(collectorConfig)
 		require.NoError(t, err)
 		require.Equal(t, expected, string(yamlBytes))
+	})
+
+	t.Run("cumulativeToDelta processor inclusion", func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().Build()
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test-delta").WithToDeltaFlag(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test").Build(),
+		})
+		require.NoError(t, err)
+
+		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[0], "memory_limiter")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[1], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[2], "resource")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[3], "batch")
+
+		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-delta")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[0], "memory_limiter")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[1], "k8sattributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[2], "resource")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[3], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[4], "cumulativetodelta")
 	})
 }

@@ -42,6 +42,7 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 		},
 	}
 	return config.ProcessorsConfig{
+		CumulativeToDelta: &config.CumulativeToDeltaConfig{},
 		Batch: &config.BatchProcessorConfig{
 			SendBatchSize:    1024,
 			Timeout:          "10s",

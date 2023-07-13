@@ -1,3 +1,5 @@
+//go:build e2e
+
 package e2e
 
 import (
@@ -134,6 +136,7 @@ var _ = Describe("Metrics", func() {
 
 	Context("When a metricpipeline has toDelta flag active", Ordered, func() {
 		var (
+			pipelines          *kyma.PipelineList
 			urls               *mocks.URLProvider
 			mockDeploymentName = "metric-receiver"
 			mockNs             = "metric-mocks-delta"
@@ -141,8 +144,8 @@ var _ = Describe("Metrics", func() {
 		)
 
 		BeforeAll(func() {
-			k8sObjects, urlProvider := makeMetricsTestK8sObjects(mockNs, []string{mockDeploymentName}, addCumulativeToDeltaConversion)
-
+			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(mockNs, []string{mockDeploymentName}, addCumulativeToDeltaConversion)
+			pipelines = pipelinesProvider
 			urls = urlProvider
 
 			DeferCleanup(func() {
@@ -151,7 +154,7 @@ var _ = Describe("Metrics", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running metric gateway deployment", Label("operational"), func() {
+		It("Should have a running metric gateway deployment", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, metricGatewayName)
 				g.Expect(err).ShouldNot(HaveOccurred())
@@ -159,7 +162,7 @@ var _ = Describe("Metrics", func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should have a metrics backend running", Label("operational"), func() {
+		It("Should have a metrics backend running", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
@@ -168,11 +171,11 @@ var _ = Describe("Metrics", func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should have a running pipeline", Label("operational"), func() {
-			metricPipelineShouldBeRunning("pipeline")
+		It("Should have a running pipeline", Label(operationalTest), func() {
+			metricPipelineShouldBeRunning(pipelines.First())
 		})
 
-		It("Should verify end-to-end metric delivery", Label("operational"), func() {
+		It("Should verify end-to-end metric delivery", Label(operationalTest), func() {
 			builder := kitmetrics.NewBuilder()
 			var cumulativeSums []pmetric.Metric
 

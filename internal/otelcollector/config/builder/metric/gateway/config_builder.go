@@ -35,7 +35,10 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.Metri
 			outputAliases = append(outputAliases, k)
 		}
 		sort.Strings(outputAliases)
-		pipelineConfig := makePipelineConfig(outputAliases)
+
+		processorAliases := getProcessorAliases(&output)
+
+		pipelineConfig := makePipelineConfig(outputAliases, processorAliases)
 		pipelineName := fmt.Sprintf("metrics/%s", pipeline.Name)
 		pipelinesConfig[pipelineName] = pipelineConfig
 
@@ -68,10 +71,10 @@ func makeReceiversConfig() config.ReceiversConfig {
 	}
 }
 
-func makePipelineConfig(outputAliases []string) config.PipelineConfig {
+func makePipelineConfig(outputAliases []string, processorAliases []string) config.PipelineConfig {
 	return config.PipelineConfig{
 		Receivers:  []string{"otlp"},
-		Processors: []string{"memory_limiter", "k8sattributes", "resource", "batch"},
+		Processors: processorAliases,
 		Exporters:  outputAliases,
 	}
 }
@@ -100,4 +103,11 @@ func makeServiceConfig(pipelines config.PipelinesConfig) config.ServiceConfig {
 		},
 		Extensions: []string{"health_check", "pprof"},
 	}
+}
+
+func getProcessorAliases(output *v1alpha1.MetricPipelineOutput) []string {
+	if output.ToDelta {
+		return []string{"memory_limiter", "k8sattributes", "resource", "batch", "cumulativetodelta"}
+	}
+	return []string{"memory_limiter", "k8sattributes", "resource", "batch"}
 }
