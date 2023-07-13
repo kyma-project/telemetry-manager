@@ -324,9 +324,6 @@ func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
     Log_Level warn
     Parsers_File custom_parsers.conf
     Parsers_File dynamic-parsers/parsers.conf
-    HTTP_Server On
-    HTTP_Listen 0.0.0.0
-    HTTP_Port 2020
     storage.path /data/flb-storage/
     storage.metrics on
 
