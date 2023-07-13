@@ -133,7 +133,13 @@ func TestMakeConfigMap(t *testing.T) {
 	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 	cm := MakeConfigMap(name)
 
-	expectedFluentBitMetricInput := `[INPUT]
+	expectedFluentBitMetricConfig := `[OUTPUT]
+    name  prometheus_exporter
+    match internal_metrics
+    host  0.0.0.0
+    port  2020
+
+[INPUT]
     Name fluentbit_metrics
     Tag internal_metrics
     scrape_interval 30`
@@ -144,7 +150,7 @@ func TestMakeConfigMap(t *testing.T) {
 	require.NotEmpty(t, cm.Data["custom_parsers.conf"])
 	require.NotEmpty(t, cm.Data["fluent-bit.conf"])
 	require.NotEmpty(t, cm.Data["loki-labelmap.json"])
-	require.Contains(t, cm.Data["fluent-bit.conf"], expectedFluentBitMetricInput)
+	require.Contains(t, cm.Data["fluent-bit.conf"], expectedFluentBitMetricConfig)
 }
 
 func TestMakeLuaConfigMap(t *testing.T) {
