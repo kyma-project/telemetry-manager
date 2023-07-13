@@ -103,13 +103,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
     match                    log-pipeline.*
     alias                    log-pipeline-stdout
     retry_limit              300
-    storage.total_limit_size 1G
-
-[OUTPUT]
-    name  prometheus_exporter
-    match internal_metrics
-    host  0.0.0.0
-    port  2020`
+    storage.total_limit_size 1G`
 
 	var expectedSecret = make(map[string][]byte)
 	expectedSecret["myKey"] = []byte("value")

@@ -341,6 +341,12 @@ func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
     storage.type  filesystem
     Read_from_Head True
 
+[OUTPUT]
+    name  prometheus_exporter
+    match internal_metrics
+    host  0.0.0.0
+    port  2020
+
 [INPUT]
     Name fluentbit_metrics
     Tag internal_metrics
