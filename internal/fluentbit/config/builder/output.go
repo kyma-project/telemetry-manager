@@ -14,6 +14,7 @@ import (
 // https://docs.fluentbit.io/manual/administration/scheduling-and-retries. We do not want unlimited retries to avoid
 // that malformed logs stay in the buffer forever.
 var retryLimit = "300"
+var prometheusMetricPort = "2020"
 
 func createOutputSection(pipeline *telemetryv1alpha1.LogPipeline, defaults PipelineDefaults) string {
 	output := &pipeline.Spec.Output
@@ -130,4 +131,13 @@ func resolveValue(value telemetryv1alpha1.ValueType, logPipeline string) string 
 		return fmt.Sprintf("${%s}", envvar.FormatEnvVarName(logPipeline, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key))
 	}
 	return ""
+}
+
+func createPrometheusMetricOutput(name string) string {
+	sb := NewOutputSectionBuilder()
+	sb.AddConfigParam("name", "prometheus_exporter")
+	sb.AddConfigParam("match", name)
+	sb.AddConfigParam("host", "0.0.0.0")
+	sb.AddConfigParam("port", prometheusMetricPort)
+	return sb.Build()
 }

@@ -118,6 +118,12 @@ func TestMergeSectionsConfig(t *testing.T) {
     tls                      on
     tls.verify               on
 
+[OUTPUT]
+    name  prometheus_exporter
+    match internal_metrics
+    host  0.0.0.0
+    port  2020
+
 `
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		Spec: telemetryv1alpha1.LogPipelineSpec{
@@ -186,6 +192,12 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     alias                    foo-stdout
     retry_limit              300
     storage.total_limit_size 1G
+
+[OUTPUT]
+    name  prometheus_exporter
+    match internal_metrics
+    host  0.0.0.0
+    port  2020
 
 `
 	logPipeline := &telemetryv1alpha1.LogPipeline{

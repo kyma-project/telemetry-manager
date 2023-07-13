@@ -133,12 +133,18 @@ func TestMakeConfigMap(t *testing.T) {
 	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 	cm := MakeConfigMap(name)
 
+	expectedFluentBitMetricInput := `[INPUT]
+    Name fluentbit_metrics
+    Tag internal_metrics
+    scrape_interval 30`
+
 	require.NotNil(t, cm)
 	require.Equal(t, cm.Name, name.Name)
 	require.Equal(t, cm.Namespace, name.Namespace)
 	require.NotEmpty(t, cm.Data["custom_parsers.conf"])
 	require.NotEmpty(t, cm.Data["fluent-bit.conf"])
 	require.NotEmpty(t, cm.Data["loki-labelmap.json"])
+	require.Contains(t, cm.Data["fluent-bit.conf"], expectedFluentBitMetricInput)
 }
 
 func TestMakeLuaConfigMap(t *testing.T) {

@@ -180,3 +180,17 @@ func TestResolveValueWithSecretKeyRef(t *testing.T) {
 	require.NotEmpty(t, resolved)
 	require.Equal(t, resolved, "${PIPELINE_TEST_NAMESPACE_TEST_NAME_TEST_KEY}")
 }
+
+func TestCreatePrometheusMetricOutput(t *testing.T) {
+	expected := `[OUTPUT]
+    name  prometheus_exporter
+    match foo_metrics
+    host  0.0.0.0
+    port  2020
+
+`
+
+	actual := createPrometheusMetricOutput("foo_metrics")
+	require.NotEmpty(t, actual)
+	require.Equal(t, expected, actual)
+}

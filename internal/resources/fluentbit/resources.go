@@ -261,7 +261,7 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   strconv.Itoa(metricsPort),
 				"prometheus.io/scheme": "http",
-				"prometheus.io/path":   "/api/v1/metrics/prometheus",
+				"prometheus.io/path":   "/metrics",
 			},
 		},
 		Spec: corev1.ServiceSpec{
@@ -343,6 +343,11 @@ func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
     DB /data/flb_kube.db
     storage.type  filesystem
     Read_from_Head True
+
+[INPUT]
+    Name fluentbit_metrics
+    Tag internal_metrics
+    scrape_interval 30
 
 [FILTER]
     Name kubernetes
