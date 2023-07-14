@@ -85,8 +85,8 @@ var _ = Describe("Logging", func() {
 				resp, err := proxyClient.Get(proxyClient.ProxyURLForService("kyma-system", telemetryFluentbitMetricServiceName, "/metrics", 2020))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(SatisfyAll(
-					HasValidPrometheusMetric("fluentbit_uptime")))))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					HasValidPrometheusMetric("fluentbit_uptime"))))
 			}, timeout, interval).Should(Succeed())
 		})
 
