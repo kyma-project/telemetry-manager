@@ -125,17 +125,17 @@ issues:
     - linters: [ dupl ]
       path: internal/webhookcert/server_cert_generator_test.go
     - linters: [ dupl ]
-      path: test/e2e/testkit/otlp/matchers/metric_matchers.go
+      path: test/e2e/testkit/matchers/metric_matchers.go
     - linters: [ dupl ]
-      path: test/e2e/testkit/otlp/matchers/trace_matchers.go
+      path: test/e2e/testkit/matchers/trace_matchers.go
     - linters: [ dupl ]
-      path: test/e2e/testkit/otlp/matchers/log_matchers.go
+      path: test/e2e/testkit/matchers/log_matchers.go
     - linters: [ dupl ]
-      path: test/e2e/testkit/otlp/matchers/log_matchers_test.go
+      path: test/e2e/testkit/matchers/log_matchers_test.go
     - linters: [ dupl ]
-      path: test/e2e/testkit/otlp/matchers/trace_matchers_test.go
+      path: test/e2e/testkit/matchers/trace_matchers_test.go
     - linters: [ dupl ]
-      path: test/e2e/testkit/otlp/matchers/prometheus_matcher_test.go
+      path: test/e2e/testkit/matchers/prometheus_matcher_test.go
     - linters: [ dupl ]
       path: test/e2e/metrics_test.go
     - linters: [ dupl ]
