@@ -17,22 +17,38 @@ import (
 )
 
 func makeReceiversConfig(pipelines []v1alpha1.MetricPipeline) config.ReceiversConfig {
-	enableRuntimeMetrics := false
-	for i := range pipelines {
-		input := pipelines[i].Spec.Input
-		if input.Application.Runtime.Enabled {
-			enableRuntimeMetrics = true
-		}
+	var receiversConfig config.ReceiversConfig
+
+	if enableWorkloadMetricScraping(pipelines) {
+		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
+		receiversConfig.PrometheusAppPods = makePrometheusAppPodsConfig()
 	}
 
-	var receiversConfig config.ReceiversConfig
-	receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
-	receiversConfig.PrometheusAppPods = makePrometheusAppPodsConfig()
-	if enableRuntimeMetrics {
+	if enableRuntimeMetricScraping(pipelines) {
 		receiversConfig.KubeletStats = makeKubeletStatsConfig()
 	}
 
 	return receiversConfig
+}
+
+func enableWorkloadMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if input.Application.Workload.Enabled {
+			return true
+		}
+	}
+	return false
+}
+
+func enableRuntimeMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if input.Application.Runtime.Enabled {
+			return true
+		}
+	}
+	return false
 }
 
 func makeKubeletStatsConfig() *config.KubeletStatsReceiverConfig {
