@@ -21,16 +21,6 @@ Changes proposed in this pull request:
 
 - ...
 
-## PR Type
-
-<!-- Select one option that fits the best. -->
-
-- [ ] New feature *(non-breaking change which adds functionality)*
-- [ ] Bug fix or version bump *(non-breaking change which fixes an issue)*
-- [ ] Documentation update
-- [ ] Refactoring or optimization *(non-functional change)*
-- [ ] Breaking change *(fix or feature that would cause existing functionality not to work as expected)*
-
 ## Related Issues and Documents
 
 <!-- If you refer to a particular issue, provide its number. For example, `Resolves #123`, `Fixes #43`, or `See also #33`. -->
@@ -44,6 +34,7 @@ Related issues:
 - [ ] The PR is linked to a GitHub Issue.
 - [ ] New features have a milestone label set.
 - [ ] New features have defined acceptance criteria in a corresponding GitHub Issue, and all criteria are satisfied with this PR.
+- [ ] The corresponding GitHub Issue has a respective `area` label.
 
 ## Testability
 
@@ -61,7 +52,7 @@ The feature is e2e-tested:
 
 <!--
 Please describe the tests you ran to verify your changes if needed. Provide instructions so we can reproduce. Please also list any relevant details for your test configuration.
--->.
+-->
 Tests conducted for the PR:
 
 - Test description goes here
@@ -73,3 +64,5 @@ Tests conducted for the PR:
 - [ ] The code has sufficient comments, particularly for all hard-to-understand areas.
 - [ ] This PR adds value and shows no feature creep.
 - [ ] I have augmented the test suite that proves my fix is effective or that my feature works.
+- [ ] Adjusted the documentation if the change is user-facing.
+- [ ] The follow-up issues (if any) are linked in the `Related Issues` section.
