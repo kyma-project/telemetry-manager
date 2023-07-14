@@ -59,23 +59,6 @@ func WithCurrentNodeNameEnvVar(envVarName string) PodSpecOption {
 	}
 }
 
-func WithEmptyDirVolume(volumeName, mountPath string, readOnly bool) PodSpecOption {
-	return func(pod *corev1.PodSpec) {
-		pod.Volumes = append(pod.Volumes, corev1.Volume{
-			Name: volumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		})
-
-		pod.Containers[0].VolumeMounts = append(pod.Containers[0].VolumeMounts, corev1.VolumeMount{
-			Name:      volumeName,
-			ReadOnly:  readOnly,
-			MountPath: mountPath,
-		})
-	}
-}
-
 func WithPriorityClass(priorityClassName string) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.PriorityClassName = priorityClassName
