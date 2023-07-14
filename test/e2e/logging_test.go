@@ -27,8 +27,9 @@ import (
 )
 
 var (
-	telemetryFluentbitName   = "telemetry-fluent-bit"
-	telemetryWebhookEndpoint = "telemetry-operator-webhook"
+	telemetryFluentbitName              = "telemetry-fluent-bit"
+	telemetryWebhookEndpoint            = "telemetry-operator-webhook"
+	telemetryFluentbitMetricServiceName = "telemetry-fluent-bit-metrics"
 )
 
 var _ = Describe("Logging", func() {
@@ -77,6 +78,14 @@ var _ = Describe("Logging", func() {
 
 				return true
 			}, timeout, interval).Should(BeTrue())
+		})
+
+		It("Should be able to get fluent-bit metrics endpoint", Label(operationalTest), func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(proxyClient.ProxyURLForService("kyma-system", telemetryFluentbitMetricServiceName, "/metrics", 2020))
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should have a log backend running", Label("operational"), func() {
