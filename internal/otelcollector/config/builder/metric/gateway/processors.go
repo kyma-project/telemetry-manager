@@ -10,7 +10,6 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 		MemoryLimiter: makeMemoryLimiterConfig(),
 		K8sAttributes: makeK8sAttributesProcessorConfig(),
 		Resource:      makeResourceProcessorConfig(),
-		Transform:     makeTransformProcessorConfig(),
 	}
 }
 
@@ -73,20 +72,5 @@ func makeResourceProcessorConfig() *config.ResourceProcessorConfig {
 				Value:  "${KUBERNETES_SERVICE_HOST}",
 			},
 		},
-	}
-}
-
-func makeTransformProcessorConfig() *config.TransformProcessorConfig {
-	deduceServiceName := config.TransformProcessorMetricStatement{
-		Context: "resource",
-		Statements: []string{
-			`set(attributes["service.name"], attributes["k8s.deployment.name"]) where attributes["service.name"] == nil`,
-			`set(attributes["service.name"], attributes["k8s.daemonset.name"]) where attributes["service.name"] == nil`,
-			`set(attributes["service.name"], attributes["k8s.statefulset.name"]) where attributes["service.name"] == nil`,
-		},
-	}
-	return &config.TransformProcessorConfig{
-		ErrorMode:        "ignore",
-		MetricStatements: []config.TransformProcessorMetricStatement{deduceServiceName},
 	}
 }
