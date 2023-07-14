@@ -300,7 +300,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
 	daemonSet := otelagentresources.MakeDaemonSet(r.config.Agent, configHash,
-		common.EnvVarCurrentPodIP, common.EnvVarCurrentNodeName)
+		common.EnvVarCurrentPodIP, common.EnvVarCurrentNodeName, agent.IstioCertDir)
 	if err = controllerutil.SetOwnerReference(pipeline, daemonSet, r.Scheme()); err != nil {
 		return err
 	}
