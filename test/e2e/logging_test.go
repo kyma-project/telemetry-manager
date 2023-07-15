@@ -23,12 +23,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
+	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
 )
 
 var (
-	telemetryFluentbitName   = "telemetry-fluent-bit"
-	telemetryWebhookEndpoint = "telemetry-operator-webhook"
+	telemetryFluentbitName              = "telemetry-fluent-bit"
+	telemetryWebhookEndpoint            = "telemetry-operator-webhook"
+	telemetryFluentbitMetricServiceName = "telemetry-fluent-bit-metrics"
 )
 
 var _ = Describe("Logging", func() {
@@ -95,6 +96,16 @@ var _ = Describe("Logging", func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainLogs())))
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should be able to get fluent-bit metrics endpoint", Label(operationalTest), func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(proxyClient.ProxyURLForService("kyma-system", telemetryFluentbitMetricServiceName, "/metrics", 2020))
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					HasValidPrometheusMetric("fluentbit_uptime"))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
