@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pmetric"
