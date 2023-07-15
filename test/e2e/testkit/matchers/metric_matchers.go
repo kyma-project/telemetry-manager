@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -30,6 +31,36 @@ func HaveMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 		for _, md := range actualMds {
 			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
 		}
+		return actualMetrics, nil
+	}, gomega.ContainElements(expectedMetrics))
+}
+
+func HaveSumMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
+		actualBytes, ok := actual.([]byte)
+		if !ok {
+			return nil, fmt.Errorf("HaveSumMetrics requires a []byte, but got %T", actual)
+		}
+
+		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+		if err != nil {
+			return nil, fmt.Errorf("HaveSumMetrics requires a valid OTLP JSON document: %v", err)
+		}
+
+		var actualMetrics []pmetric.Metric
+		for _, md := range actualMds {
+			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
+		}
+
+		// workaround the difference between metricdata and pmetric temporality formats
+		for _, actualMetric := range actualMetrics {
+			if actualMetric.Sum().AggregationTemporality() == pmetric.AggregationTemporalityCumulative {
+				actualMetric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+				continue
+			}
+			actualMetric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+		}
+
 		return actualMetrics, nil
 	}, gomega.ContainElements(expectedMetrics))
 }
