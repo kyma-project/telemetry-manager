@@ -1,0 +1,5 @@
+resources:
+- ../default
+- crd/telemetry.kyma-project.io_metricpipelines.yaml
+patches:
+  - path: manager_deployment_patch.yaml

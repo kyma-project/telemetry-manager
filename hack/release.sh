@@ -5,6 +5,7 @@ readonly GCP_ACCESS_TOKEN=$(gcloud auth application-default print-access-token)
 
 function create_module() {
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
+    # create module command uses Kustomization files defined in "config/default"
     ${KYMA} alpha create module --name kyma-project.io/module/${MODULE_NAME} --version ${MODULE_VERSION} --channel ${MODULE_CHANNEL} --default-cr ${MODULE_CR_PATH} --registry ${MODULE_REGISTRY} -c oauth2accesstoken:${GCP_ACCESS_TOKEN} --ci
 }
 

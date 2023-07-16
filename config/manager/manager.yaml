@@ -31,6 +31,7 @@ spec:
       - command:
         - /manager
         args:
+        - --enable-metrics=false
         - --cert-dir=/tmp
         - --fluent-bit-cpu-request=100m
         - --fluent-bit-memory-request=50Mi
@@ -43,7 +44,6 @@ spec:
         - --manager-namespace=$(MY_POD_NAMESPACE)
         - --trace-collector-priority-class=telemetry-priority-class
         - --fluent-bit-priority-class-name=telemetry-priority-class-high
-        - --metric-gateway-priority-class=telemetry-priority-class
         image: controller:latest
         name: manager
         securityContext:
