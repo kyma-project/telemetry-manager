@@ -42,7 +42,7 @@ Before connecting Kyma and Dynatrace, create a Dynatrace access token:
 
 ### Create Secret
 
-1. To create a new secret containing your access token. In the following command, replace the {API_TOKEN} placeholder with the previously created token and run it::
+1. To create a new secret containing your access token. In the following command, replace the `{API_TOKEN}` placeholder with the previously created token and run it::
     ```bash
     kubectl -n $DYNATRACE_NS create secret generic dynatrace-token --from-literal="apiToken=Api-Token {API_TOKEN}"
     ```
@@ -72,7 +72,7 @@ This configuration samples 1% of all requests. if you want to change the samplin
 
 #### Create Kyma TracePipeline
 
-1. Replace the {ENVIRONMENT_ID} placeholder with the environment Id of your Dynatrace instance:
+1. Replace the `{ENVIRONMENT_ID}` placeholder with the environment Id of your Dynatrace instance:
     ```bash
     cat <<EOF | kubectl apply -f -
     apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -100,7 +100,7 @@ This configuration samples 1% of all requests. if you want to change the samplin
 
 #### Create Kyma MetricPipeline
 
-1. Replace the {ENVIRONMENT_ID} placeholder with the environment Id of your Dynatrace instance:
+1. Replace the `{ENVIRONMENT_ID}` placeholder with the environment Id of your Dynatrace instance:
     ```bash
     cat <<EOF | kubectl apply -f -
     apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -111,16 +111,16 @@ This configuration samples 1% of all requests. if you want to change the samplin
         output:
             toDelta: true
             otlp:
-            endpoint:
-                value: https://apm.cf.eu12.hana.ondemand.com/e/{ENVIRONMENT_ID}/api/v2/otlp
-            headers:
-                - name: Authorization
-                valueFrom:
-                    secretKeyRef:
-                    name: dynatrace-token
-                    namespace: ${DYNATRACE_NS}
-                    key: apiToken
-            protocol: http
+                endpoint:
+                    value: https://apm.cf.eu12.hana.ondemand.com/e/{ENVIRONMENT_ID}/api/v2/otlp
+                headers:
+                    - name: Authorization
+                    valueFrom:
+                        secretKeyRef:
+                            name: dynatrace-token
+                            namespace: ${DYNATRACE_NS}
+                            key: apiToken
+                protocol: http
     EOF
     ```
 
