@@ -82,16 +82,16 @@ This configuration samples 1% of all requests. if you want to change the samplin
     spec:
         output:
             otlp:
-            endpoint:
-                value: https://apm.cf.eu12.hana.ondemand.com/e/{ENVIRONMENT_ID}/api/v2/otlp
-            headers:
-                - name: Authorization
-                  valueFrom:
-                      secretKeyRef:
-                          name: dynatrace-token
-                          namespace: ${DYNATRACE_NS}
-                          key: apiToken
-            protocol: http
+                endpoint:
+                    value: https://apm.cf.eu12.hana.ondemand.com/e/{ENVIRONMENT_ID}/api/v2/otlp
+                headers:
+                    - name: Authorization
+                      valueFrom:
+                          secretKeyRef:
+                              name: dynatrace-token
+                              namespace: ${DYNATRACE_NS}
+                              key: apiToken
+                protocol: http
     EOF
     ```
 1. To find traces from your Kyma cluster in the Dynatrace UI, go to **Applications & Microservices** > **Distributed traces**.
