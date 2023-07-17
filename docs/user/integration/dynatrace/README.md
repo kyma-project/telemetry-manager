@@ -86,11 +86,11 @@ This configuration samples 1% of all requests. if you want to change the samplin
                 value: https://apm.cf.eu12.hana.ondemand.com/e/{ENVIRONMENT_ID}/api/v2/otlp
             headers:
                 - name: Authorization
-                valueFrom:
-                    secretKeyRef:
-                    name: dynatrace-token
-                    namespace: ${DYNATRACE_NS}
-                    key: apiToken
+                  valueFrom:
+                      secretKeyRef:
+                          name: dynatrace-token
+                          namespace: ${DYNATRACE_NS}
+                          key: apiToken
             protocol: http
     EOF
     ```
@@ -109,17 +109,17 @@ This configuration samples 1% of all requests. if you want to change the samplin
         name: dynatrace
     spec:
         output:
-            toDelta: true
+            convertToDelta: true
             otlp:
                 endpoint:
                     value: https://apm.cf.eu12.hana.ondemand.com/e/{ENVIRONMENT_ID}/api/v2/otlp
                 headers:
                     - name: Authorization
-                    valueFrom:
-                        secretKeyRef:
-                            name: dynatrace-token
-                            namespace: ${DYNATRACE_NS}
-                            key: apiToken
+                      valueFrom:
+                          secretKeyRef:
+                              name: dynatrace-token
+                              namespace: ${DYNATRACE_NS}
+                              key: apiToken
                 protocol: http
     EOF
     ```
