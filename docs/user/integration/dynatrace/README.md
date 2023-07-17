@@ -2,7 +2,7 @@
 
 ## Overview 
 
-The Kyma Telemetry module supports you in integrating with observability backends in a convenient way. This example outlines how to integrate with [Dynatrace](https://www.dynatrace.com) as a backend. With Dynatrace, you can get all your monitoring and tracing data into one observability backend to achieve real Application Performance Management with monitoring data in context.
+The Kyma Telemetry module supports you in integrating with observability backends in a convenient way. The following example outlines how to integrate with [Dynatrace](https://www.dynatrace.com) as a backend. With Dynatrace, you can get all your monitoring and tracing data into one observability backend to achieve real Application Performance Management with monitoring data in context.
 
 ## Prerequisistes 
 
@@ -14,30 +14,35 @@ The Kyma Telemetry module supports you in integrating with observability backend
 
 ### Preparation
 
-1. Export namespace you want to use for dynatrace as a variable. Replace `{NAMESPACE}` placeholder in the following command and run it:
+1. Export your Namespace you want to use for Dynatrace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
 
     ```bash
     export DYNATRACE_NS="{NAMESPACE}"
     ```
-1. If you don't have created a Namespace yet, do it now:
+1. If you haven't created a Namespace yet, do it now:
     ```bash
     kubectl create namespace $DYNATRACE_NS
     ```
 
 ### Create access token
 
-Before connecting Kyma and Dynatrace, we need to create Dynatrace access token first
+Before connecting Kyma and Dynatrace, create a Dynatrace access token:
 
-1. Open the Dynatrace navigation menu and go to the `Manage` > `Access tokens`
-1. Click `Generate new token`
-1. Type the name you want to give to this token, set an axpiration date if you need
-1. Select the following scopes: `Ingest metrics`, `Read metrics`, `Write metrics`, `Ingest OpenTelemetry traces`, `Look up a single trace`, `Access problem and event feed, metrics, and topology`
-1. Click `Generate token`
-1. Copy and save the generated token
+1. In the Dynatrace navigation, go to the **Manage** > **Access tokens** > **Generate new token**.
+1. Type the name you want to give to this token. If needed, set an expiration date.
+1. Select the following scopes:
+   - **Ingest metrics**
+   - **Read metrics**
+   - **Write metrics**
+   - **Ingest OpenTelemetry traces**
+   - **Look up a single trace**
+   - **Access problem and event feed, metrics, and topology**
+1. Click **Generate token**.
+1. Copy and save the generated token.
 
-### Create secret
+### Create Secret
 
-1. Create a new secret containing your access token by calling the following command. Replace {API_TOKEN} with the previously created token:
+1. To create a new secret containing your access token. In the following command, replace the {API_TOKEN} placeholder with the previously created token and run it::
     ```bash
     kubectl -n $DYNATRACE_NS create secret generic dynatrace-token --from-literal="apiToken=Api-Token {API_TOKEN}"
     ```
@@ -46,7 +51,7 @@ Before connecting Kyma and Dynatrace, we need to create Dynatrace access token f
 
 #### Enable Collecting Istio Traces
 
-By default, the tracing feature of the Istio service mesh is disabled to avoid unnecessary resource usage for the case that no TracePipeline is defined. Create a Telemetry custom resource in the istio-system Namespace to enable emitting traces with the kyma-traces Istio extension provider:
+By default, the tracing feature of the Istio service mesh is disabled to save resources for the case that no TracePipeline is defined.  To enable emitting traces with the kyma-traces Istio extension provider, create a Telemetry custom resource in the `istio-system` Namespace:
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -63,11 +68,11 @@ spec:
 EOF
 ```
 
-This configuration samples 1% of all requests. Adjust the randomSamplingPercentage property if you want to use a different sampling rate.
+This configuration samples 1% of all requests. if you want to change the sampling rate, adjust the **randomSamplingPercentage** property.
 
 #### Create Kyma TracePipeline
 
-1. Replace {ENVIRONMENT_ID} with the environment Id of your Dynatrace instance:
+1. Replace the {ENVIRONMENT_ID} placeholder with the environment Id of your Dynatrace instance:
     ```bash
     cat <<EOF | kubectl apply -f -
     apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -89,13 +94,13 @@ This configuration samples 1% of all requests. Adjust the randomSamplingPercenta
             protocol: http
     EOF
     ```
-1. To find traces from your Kyma cluster in the Dynatrace UI, go to `Applications & Microservices` > `Distributed traces`.
+1. To find traces from your Kyma cluster in the Dynatrace UI, go to **Applications & Microservices** > **Distributed traces**.
 
 ### Ingest Metrics
 
 #### Create Kyma MetricPipeline
 
-1. Replace {ENVIRONMENT_ID} with the environment Id of your Dynatrace instance:
+1. Replace the {ENVIRONMENT_ID} placeholder with the environment Id of your Dynatrace instance:
     ```bash
     cat <<EOF | kubectl apply -f -
     apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -119,16 +124,16 @@ This configuration samples 1% of all requests. Adjust the randomSamplingPercenta
     EOF
     ```
 
-## Verifying the results by deploying sample apps
+## Verify the results by deploying sample apps
 
 ### Preparation
 
-1. Export your Namespace as a variable. Replace `{NAMESPACE}` placeholder in the following command and run it:
+1. Export your Namespace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
 
     ```bash
     export KYMA_NS="{NAMESPACE}"
     ```
-1. If you don't have created a Namespace yet, do it now:
+1. If you haven't created a Namespace yet, do it now:
     ```bash
     kubectl create namespace $KYMA_NS
     ```
@@ -138,14 +143,12 @@ This configuration samples 1% of all requests. Adjust the randomSamplingPercenta
     helm repo update
     ```
 
-### Installation
+### Install the Helm chart
 
-Run the Helm upgrade command, which installs the chart if not present yet.
-```bash
-helm upgrade --version 0.22.2 --install --create-namespace -n $KYMA_NS otel open-telemetry/opentelemetry-demo -f ./sample-app/values.yaml
-```
+1. Run the Helm upgrade command, which installs the chart if not present yet.
+   ```bash
+   helm upgrade --version 0.22.2 --install --create-namespace -n $KYMA_NS otel open-telemetry/opentelemetry-demo -f ./sample-app/values.yaml
 
-Port-forward your app to access the frontend:
-```bash
-kubectl -n $KYMA_NS port-forward svc/otel-frontend 8080
-```
+2. To access your application, port-forward it to the frontend:
+   ```bash
+   kubectl -n $KYMA_NS port-forward svc/otel-frontend 8080
