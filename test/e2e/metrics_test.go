@@ -412,7 +412,7 @@ func metricPipelineShouldStayPending(pipelineName string) {
 }
 
 func addCumulativeToDeltaConversion(metricPipeline telemetryv1alpha1.MetricPipeline) {
-	metricPipeline.Spec.Output.ToDelta = true
+	metricPipeline.Spec.Output.ConvertToDelta = true
 }
 
 func metricPipelineShouldBeDeployed(pipelineName string) {

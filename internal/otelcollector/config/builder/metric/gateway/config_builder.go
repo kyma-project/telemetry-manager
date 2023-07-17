@@ -106,7 +106,7 @@ func makeServiceConfig(pipelines config.PipelinesConfig) config.ServiceConfig {
 }
 
 func getProcessorAliases(output *v1alpha1.MetricPipelineOutput) []string {
-	if output.ToDelta {
+	if output.ConvertToDelta {
 		return []string{"memory_limiter", "k8sattributes", "resource", "batch", "cumulativetodelta"}
 	}
 	return []string{"memory_limiter", "k8sattributes", "resource", "batch"}

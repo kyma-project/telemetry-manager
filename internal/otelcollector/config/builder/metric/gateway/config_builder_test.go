@@ -240,7 +240,7 @@ service:
 	t.Run("cumulativeToDelta processor inclusion", func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test-delta").WithToDeltaFlag(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test-delta").WithConvertToDeltaFlag(true).Build(),
 			testutils.NewMetricPipelineBuilder().WithName("test").Build(),
 		})
 		require.NoError(t, err)
