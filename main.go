@@ -212,7 +212,7 @@ func main() {
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 	flag.StringVar(&telemetryNamespace, "manager-namespace", "default", "Namespace of the manager")
 
-	flag.StringVar(&traceCollectorImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceCollectorImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector.")
 	flag.StringVar(&traceCollectorPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorCPULimit, "trace-collector-cpu-limit", "900m", "CPU limit for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorDynamicCPULimit, "trace-collector-dynamic-cpu-limit", "100m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
