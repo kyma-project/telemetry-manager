@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("HasValidPrometheusMetric", func() {
+var _ = Describe("HasValidPrometheusMetric", Label("metrics"), func() {
 	var fileBytes []byte
 
 	Context("with nil input", func() {

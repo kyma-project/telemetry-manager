@@ -34,7 +34,7 @@ var (
 	metricPipelineReconciliationTimeout = 10 * time.Second
 )
 
-var _ = Describe("Metrics", func() {
+var _ = Describe("Metrics", Label("metrics"), func() {
 	Context("When a metricpipeline exists", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList

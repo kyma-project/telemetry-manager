@@ -98,10 +98,46 @@ test: manifests generate fmt vet tidy envtest ## Run tests.
 test-matchers: ginkgo
 	$(GINKGO) run --tags e2e -v ./test/e2e/testkit/matchers
 
+test-matchers-logging: ginkgo
+	$(GINKGO) run --tags e2e -v --label-filter="logging" ./test/e2e/testkit/matchers
+
+test-matchers-tracing: ginkgo
+	$(GINKGO) run --tags e2e -v --label-filter="tracing" ./test/e2e/testkit/matchers
+
+test-matchers-metrics: ginkgo
+	$(GINKGO) run --tags e2e -v --label-filter="metrics" ./test/e2e/testkit/matchers
+
 .PHONY: e2e-test
 e2e-test: ginkgo k3d test-matchers ## Provision k3d cluster and run end-to-end tests.
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml ./test/e2e
+	mkdir -p ${ARTIFACTS}
+	mv junit.xml ${ARTIFACTS}
+	$(K3D) cluster delete kyma
+	$(K3D) registry delete k3d-kyma-registry
+
+.PHONY: e2e-test-logging
+e2e-test-logging: ginkgo k3d test-matchers-logging ## Provision k3d cluster and run end-to-end tests.
+	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
+	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="logging" ./test/e2e
+	mkdir -p ${ARTIFACTS}
+	mv junit.xml ${ARTIFACTS}
+	$(K3D) cluster delete kyma
+	$(K3D) registry delete k3d-kyma-registry
+
+.PHONY: e2e-test-tracing
+e2e-test-tracing: ginkgo k3d test-matchers-tracing ## Provision k3d cluster and run end-to-end tests.
+	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
+	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="tracing" ./test/e2e
+	mkdir -p ${ARTIFACTS}
+	mv junit.xml ${ARTIFACTS}
+	$(K3D) cluster delete kyma
+	$(K3D) registry delete k3d-kyma-registry
+
+.PHONY: e2e-test-metrics
+e2e-test-metrics: ginkgo k3d test-matchers-metrics ## Provision k3d cluster and run end-to-end tests.
+	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
+	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="metrics" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 	$(K3D) cluster delete kyma
