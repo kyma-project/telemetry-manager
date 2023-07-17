@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -73,6 +74,22 @@ func TestMakeDaemonSet(t *testing.T) {
 	require.True(t, reflect.DeepEqual(volMounts, expectedVolMounts))
 }
 
+func TestMakeClusterRole(t *testing.T) {
+	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
+	clusterRole := MakeClusterRole(name)
+	expectedRules := []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"namespaces", "pods"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+	}
+
+	require.NotNil(t, clusterRole)
+	require.Equal(t, clusterRole.Name, name.Name)
+	require.Equal(t, clusterRole.Rules, expectedRules)
+}
+
 func TestMakeMetricsService(t *testing.T) {
 	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 	service := MakeMetricsService(name)
@@ -116,12 +133,24 @@ func TestMakeConfigMap(t *testing.T) {
 	name := types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "telemetry-system"}
 	cm := MakeConfigMap(name)
 
+	expectedFluentBitMetricConfig := `[OUTPUT]
+    name  prometheus_exporter
+    match internal_metrics
+    host  0.0.0.0
+    port  2020
+
+[INPUT]
+    Name fluentbit_metrics
+    Tag internal_metrics
+    scrape_interval 30`
+
 	require.NotNil(t, cm)
 	require.Equal(t, cm.Name, name.Name)
 	require.Equal(t, cm.Namespace, name.Namespace)
 	require.NotEmpty(t, cm.Data["custom_parsers.conf"])
 	require.NotEmpty(t, cm.Data["fluent-bit.conf"])
 	require.NotEmpty(t, cm.Data["loki-labelmap.json"])
+	require.Contains(t, cm.Data["fluent-bit.conf"], expectedFluentBitMetricConfig)
 }
 
 func TestMakeLuaConfigMap(t *testing.T) {

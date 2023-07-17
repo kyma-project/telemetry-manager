@@ -35,8 +35,19 @@ type LoggingExporterConfig struct {
 	Verbosity string `yaml:"verbosity"`
 }
 
+type ReceiversConfig struct {
+	OpenCensus   *EndpointConfig             `yaml:"opencensus,omitempty"`
+	OTLP         *OTLPReceiverConfig         `yaml:"otlp,omitempty"`
+	KubeletStats *KubeletStatsReceiverConfig `yaml:"kubeletstats,omitempty"`
+	HostMetrics  *HostMetricsReceiverConfig  `yaml:"hostmetrics,omitempty"`
+}
+
 type EndpointConfig struct {
 	Endpoint string `yaml:"endpoint,omitempty"`
+}
+
+type OTLPReceiverConfig struct {
+	Protocols ReceiverProtocols `yaml:"protocols,omitempty"`
 }
 
 type ReceiverProtocols struct {
@@ -44,13 +55,23 @@ type ReceiverProtocols struct {
 	GRPC EndpointConfig `yaml:"grpc,omitempty"`
 }
 
-type OTLPReceiverConfig struct {
-	Protocols ReceiverProtocols `yaml:"protocols,omitempty"`
+type MetricGroupType string
+
+const (
+	MetricGroupTypeContainer MetricGroupType = "container"
+	MetricGroupTypePod       MetricGroupType = "pod"
+)
+
+type KubeletStatsReceiverConfig struct {
+	CollectionInterval string            `yaml:"collection_interval,omitempty"`
+	AuthType           string            `yaml:"auth_type,omitempty"`
+	Endpoint           string            `yaml:"endpoint,omitempty"`
+	InsecureSkipVerify bool              `yaml:"insecure_skip_verify,omitempty"`
+	MetricGroups       []MetricGroupType `yaml:"metric_groups,omitempty"`
 }
 
-type ReceiversConfig struct {
-	OpenCensus *EndpointConfig     `yaml:"opencensus,omitempty"`
-	OTLP       *OTLPReceiverConfig `yaml:"otlp,omitempty"`
+type HostMetricsReceiverConfig struct {
+	CollectionInterval string `yaml:"collection_interval,omitempty"`
 }
 
 type BatchProcessorConfig struct {
@@ -111,6 +132,8 @@ type TraceConfig struct {
 	Span []string `yaml:"span"`
 }
 
+type PipelinesConfig map[string]PipelineConfig
+
 type PipelineConfig struct {
 	Receivers  []string `yaml:"receivers"`
 	Processors []string `yaml:"processors"`
@@ -131,13 +154,14 @@ type TelemetryConfig struct {
 }
 
 type ServiceConfig struct {
-	Pipelines  map[string]PipelineConfig `yaml:"pipelines,omitempty"`
-	Telemetry  TelemetryConfig           `yaml:"telemetry,omitempty"`
-	Extensions []string                  `yaml:"extensions,omitempty"`
+	Pipelines  PipelinesConfig `yaml:"pipelines,omitempty"`
+	Telemetry  TelemetryConfig `yaml:"telemetry,omitempty"`
+	Extensions []string        `yaml:"extensions,omitempty"`
 }
 
 type ExtensionsConfig struct {
-	HealthCheck EndpointConfig `yaml:"health_check"`
+	HealthCheck EndpointConfig `yaml:"health_check,omitempty"`
+	Pprof       EndpointConfig `yaml:"pprof,omitempty"`
 }
 
 type Config struct {

@@ -32,6 +32,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/fields"
@@ -53,14 +54,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	logparserreconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
-	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
-	tracepipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
-	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	lokilogpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/lokilogpipeline"
-	collectorresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
+	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/resources/lokilogpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
@@ -94,12 +96,16 @@ var (
 	maxTracePipelines  int
 	maxMetricPipelines int
 
-	traceCollectorImage         string
-	traceCollectorPriorityClass string
-	traceCollectorCPULimit      string
-	traceCollectorMemoryLimit   string
-	traceCollectorCPURequest    string
-	traceCollectorMemoryRequest string
+	traceCollectorImage                string
+	traceCollectorPriorityClass        string
+	traceCollectorCPULimit             string
+	traceCollectorDynamicCPULimit      string
+	traceCollectorMemoryLimit          string
+	traceCollectorDynamicMemoryLimit   string
+	traceCollectorCPURequest           string
+	traceCollectorDynamicCPURequest    string
+	traceCollectorMemoryRequest        string
+	traceCollectorDynamicMemoryRequest string
 
 	fluentBitMemoryBufferLimit         string
 	fluentBitFsBufferLimit             string
@@ -112,12 +118,16 @@ var (
 	fluentBitConfigPrepperImageVersion string
 	fluentBitPriorityClassName         string
 
-	metricGatewayImage         string
-	metricGatewayPriorityClass string
-	metricGatewayCPULimit      string
-	metricGatewayMemoryLimit   string
-	metricGatewayCPURequest    string
-	metricGatewayMemoryRequest string
+	metricGatewayImage                string
+	metricGatewayPriorityClass        string
+	metricGatewayCPULimit             string
+	metricGatewayDynamicCPULimit      string
+	metricGatewayMemoryLimit          string
+	metricGatewayDynamicMemoryLimit   string
+	metricGatewayCPURequest           string
+	metricGatewayDynamicCPURequest    string
+	metricGatewayMemoryRequest        string
+	metricGatewayDynamicMemoryRequest string
 
 	enableTelemetryManagerModule bool
 	enableWebhook                bool
@@ -125,9 +135,9 @@ var (
 )
 
 const (
-	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.79.0-0065b2a5"
-	overrideConfigMapName  = "telemetry-override-config"
-	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.2-0065b2a5"
+	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.81.0-aee4f05f"
+	overridesConfigMapName = "telemetry-override-config"
+	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.4-fef25e9c"
 	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20230503-c10c571f"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
@@ -169,20 +179,30 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups="",namespace=system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",namespace=system,resources=services,verbs=get;list;watch;create;update;patch;delete
 
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 //+kubebuilder:rbac:groups="",namespace=system,resources=secrets,verbs=create;update;patch;delete
 //+kubebuilder:rbac:groups="",namespace=system,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;
-//+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;
+//+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=nodes/metrics,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=nodes/stats,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=endpoints,verbs=get;list;watch
+//+kubebuilder:rbac:urls=/metrics,verbs=get
+//+kubebuilder:rbac:urls=/metrics/cadvisor,verbs=get
 
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,namespace=system,resources=replicasets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch
 
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch
 
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
+
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch
+// +kubebuilder:rbac:groups=networking.k8s.io,namespace=system,resources=networkpolicies,verbs=create;update;patch;delete
 
 func main() {
 	flag.BoolVar(&enableLogging, "enable-logging", true, "Enable configurable logging.")
@@ -194,18 +214,26 @@ func main() {
 
 	flag.StringVar(&traceCollectorImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorCPULimit, "trace-collector-cpu-limit", "1", "CPU limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorMemoryLimit, "trace-collector-memory-limit", "1Gi", "Memory limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceCollectorCPULimit, "trace-collector-cpu-limit", "900m", "CPU limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceCollectorDynamicCPULimit, "trace-collector-dynamic-cpu-limit", "100m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceCollectorMemoryLimit, "trace-collector-memory-limit", "512Mi", "Memory limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceCollectorDynamicMemoryLimit, "trace-collector-dynamic-memory-limit", "512Mi", "Additional memory limit for tracing OpenTelemetry Collector per TracePipeline")
 	flag.StringVar(&traceCollectorCPURequest, "trace-collector-cpu-request", "25m", "CPU request for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceCollectorDynamicCPURequest, "trace-collector-dynamic-cpu-request", "0", "Additional CPU request for tracing OpenTelemetry Collector per TracePipeline")
 	flag.StringVar(&traceCollectorMemoryRequest, "trace-collector-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceCollectorDynamicMemoryRequest, "trace-collector-dynamic-memory-request", "0", "Additional memory request for tracing OpenTelemetry Collector per TracePipeline")
 	flag.IntVar(&maxTracePipelines, "trace-collector-pipelines", 3, "Maximum number of TracePipelines to be created. If 0, no limit is applied.")
 
 	flag.StringVar(&metricGatewayImage, "metric-gateway-image", otelImage, "Image for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayCPULimit, "metric-gateway-cpu-limit", "1", "CPU limit for metrics OpenTelemetry Collector")
-	flag.StringVar(&metricGatewayMemoryLimit, "metric-gateway-memory-limit", "1Gi", "Memory limit for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayCPULimit, "metric-gateway-cpu-limit", "900m", "CPU limit for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayDynamicCPULimit, "metric-gateway-dynamic-cpu-limit", "100m", "Additional CPU limit for metrics OpenTelemetry Collector per MetricPipeline")
+	flag.StringVar(&metricGatewayMemoryLimit, "metric-gateway-memory-limit", "512Mi", "Memory limit for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayDynamicMemoryLimit, "metric-gateway-dynamic-memory-limit", "512Mi", "Additional memory limit for metrics OpenTelemetry Collector per MetricPipeline")
 	flag.StringVar(&metricGatewayCPURequest, "metric-gateway-cpu-request", "25m", "CPU request for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayDynamicCPURequest, "metric-gateway-dynamic-cpu-request", "0", "Additional CPU request for metrics OpenTelemetry Collector per MetricPipeline")
 	flag.StringVar(&metricGatewayMemoryRequest, "metric-gateway-memory-request", "32Mi", "Memory request for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayDynamicMemoryRequest, "metric-gateway-dynamic-memory-request", "0", "Additional memory request for metrics OpenTelemetry Collector per MetricPipeline")
 	flag.IntVar(&maxMetricPipelines, "metric-gateway-pipelines", 3, "Maximum number of MetricPipelines to be created. If 0, no limit is applied.")
 
 	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
@@ -399,19 +427,19 @@ func main() {
 	}
 }
 
-// setupFilteredCache creates filtered cache for the given resources. The controller handles various resource that are namespace scoped, and additionally
-// it handles resources that are cluster scoped (secrets used in pipelines, clusterroles etc). In order to restrict the rights of the controller such that
-// it can only fetch resources from a given namespace only we create a filtered cache.
-
+// setupFilteredCache creates a filtered cache for the given resources. The controller handles various resource that are namespace scoped, and additionally
+// some resources that are cluster scoped (secrets used in pipelines, clusterroles etc.). In order to restrict the rights of the controller to only fetch
+// resources from a given namespace, we create a filtered cache.
 func setupFilteredCache() cache.NewCacheFunc {
 	return cache.BuilderWithOptions(cache.Options{
 		SelectorsByObject: cache.SelectorsByObject{
-			&appsv1.Deployment{}:     {Field: setNamespaceFieldSelector()},
-			&appsv1.ReplicaSet{}:     {Field: setNamespaceFieldSelector()},
-			&appsv1.DaemonSet{}:      {Field: setNamespaceFieldSelector()},
-			&corev1.ConfigMap{}:      {Field: setNamespaceFieldSelector()},
-			&corev1.ServiceAccount{}: {Field: setNamespaceFieldSelector()},
-			&corev1.Service{}:        {Field: setNamespaceFieldSelector()},
+			&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
+			&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
+			&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
+			&corev1.ConfigMap{}:           {Field: setNamespaceFieldSelector()},
+			&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
+			&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
+			&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
 		},
 	})
 }
@@ -429,16 +457,16 @@ func validateFlags() error {
 }
 
 func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.LogPipelineReconciler {
-	config := logpipelinereconciler.Config{
+	config := logpipeline.Config{
 		SectionsConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
 		FilesConfigMap:    types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
 		LuaConfigMap:      types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: telemetryNamespace},
 		ParsersConfigMap:  types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
 		EnvSecret:         types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: telemetryNamespace},
 		DaemonSet:         types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
-		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
+		OverrideConfigMap: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		PipelineDefaults:  createPipelineDefaults(),
-		DaemonSetConfig: logpipelineresources.DaemonSetConfig{
+		DaemonSetConfig: fluentbit.DaemonSetConfig{
 			FluentBitImage:              fluentBitImageVersion,
 			FluentBitConfigPrepperImage: fluentBitConfigPrepperImageVersion,
 			ExporterImage:               fluentBitExporterVersion,
@@ -453,12 +481,12 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 
 	return telemetrycontrollers.NewLogPipelineReconciler(
 		client,
-		logpipelinereconciler.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client}, overridesHandler),
+		logpipeline.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client}, overridesHandler),
 		config)
 }
 
 func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogParserReconciler {
-	config := logparserreconciler.Config{
+	config := logparser.Config{
 		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
 		DaemonSet:        types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 	}
@@ -466,7 +494,7 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 
 	return telemetrycontrollers.NewLogParserReconciler(
 		client,
-		logparserreconciler.NewReconciler(
+		logparser.NewReconciler(
 			client,
 			config,
 			&kubernetes.DaemonSetProber{Client: client},
@@ -478,7 +506,6 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 }
 
 func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
-
 	return logpipelinewebhook.NewValidatingWebhookHandler(
 		client,
 		logpipelinevalidation.NewVariablesValidator(client),
@@ -495,48 +522,72 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 }
 
 func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.TracePipelineReconciler {
-	config := collectorresources.Config{
-		Namespace: telemetryNamespace,
-		BaseName:  "telemetry-trace-collector",
-		Deployment: collectorresources.DeploymentConfig{
-			Image:             traceCollectorImage,
-			PriorityClassName: traceCollectorPriorityClass,
-			CPULimit:          resource.MustParse(traceCollectorCPULimit),
-			MemoryLimit:       resource.MustParse(traceCollectorMemoryLimit),
-			CPURequest:        resource.MustParse(traceCollectorCPURequest),
-			MemoryRequest:     resource.MustParse(traceCollectorMemoryRequest),
+	config := tracepipeline.Config{
+		Gateway: gateway.Config{
+			Namespace: telemetryNamespace,
+			BaseName:  "telemetry-trace-collector",
+			Deployment: gateway.DeploymentConfig{
+				Image:                traceCollectorImage,
+				PriorityClassName:    traceCollectorPriorityClass,
+				BaseCPULimit:         resource.MustParse(traceCollectorCPULimit),
+				DynamicCPULimit:      resource.MustParse(traceCollectorDynamicCPULimit),
+				BaseMemoryLimit:      resource.MustParse(traceCollectorMemoryLimit),
+				DynamicMemoryLimit:   resource.MustParse(traceCollectorDynamicMemoryLimit),
+				BaseCPURequest:       resource.MustParse(traceCollectorCPURequest),
+				DynamicCPURequest:    resource.MustParse(traceCollectorDynamicCPURequest),
+				BaseMemoryRequest:    resource.MustParse(traceCollectorMemoryRequest),
+				DynamicMemoryRequest: resource.MustParse(traceCollectorDynamicMemoryRequest),
+			},
+			Service: gateway.ServiceConfig{
+				OTLPServiceName: "telemetry-otlp-traces",
+			},
 		},
-		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
-		Service: collectorresources.ServiceConfig{
-			OTLPServiceName: "telemetry-otlp-traces",
-		},
-		MaxPipelines: maxTracePipelines,
+		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
+		MaxPipelines:           maxTracePipelines,
 	}
 	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
 	return telemetrycontrollers.NewTracePipelineReconciler(
 		client,
-		tracepipelinereconciler.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overridesHandler),
+		tracepipeline.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overridesHandler),
 	)
 }
 
 func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.MetricPipelineReconciler {
-	config := collectorresources.Config{
-		Namespace: telemetryNamespace,
-		BaseName:  "telemetry-metric-gateway",
-		Deployment: collectorresources.DeploymentConfig{
-			Image:             metricGatewayImage,
-			PriorityClassName: metricGatewayPriorityClass,
-			CPULimit:          resource.MustParse(metricGatewayCPULimit),
-			MemoryLimit:       resource.MustParse(metricGatewayMemoryLimit),
-			CPURequest:        resource.MustParse(metricGatewayCPURequest),
-			MemoryRequest:     resource.MustParse(metricGatewayMemoryRequest),
+	config := metricpipeline.Config{
+		Agent: agent.Config{
+			Namespace: telemetryNamespace,
+			BaseName:  "telemetry-metric-agent",
+			DaemonSet: agent.DaemonSetConfig{
+				Image:             metricGatewayImage,
+				PriorityClassName: metricGatewayPriorityClass,
+				CPULimit:          resource.MustParse("1"),
+				MemoryLimit:       resource.MustParse("1Gi"),
+				CPURequest:        resource.MustParse("15m"),
+				MemoryRequest:     resource.MustParse("50Mi"),
+			},
 		},
-		Service: collectorresources.ServiceConfig{
-			OTLPServiceName: "telemetry-otlp-metrics",
+		Gateway: gateway.Config{
+			Namespace: telemetryNamespace,
+			BaseName:  "telemetry-metric-gateway",
+			Deployment: gateway.DeploymentConfig{
+				Image:                metricGatewayImage,
+				PriorityClassName:    metricGatewayPriorityClass,
+				BaseCPULimit:         resource.MustParse(metricGatewayCPULimit),
+				DynamicCPULimit:      resource.MustParse(metricGatewayDynamicCPULimit),
+				BaseMemoryLimit:      resource.MustParse(metricGatewayMemoryLimit),
+				DynamicMemoryLimit:   resource.MustParse(metricGatewayDynamicMemoryLimit),
+				BaseCPURequest:       resource.MustParse(metricGatewayCPURequest),
+				DynamicCPURequest:    resource.MustParse(metricGatewayDynamicCPURequest),
+				BaseMemoryRequest:    resource.MustParse(metricGatewayMemoryRequest),
+				DynamicMemoryRequest: resource.MustParse(metricGatewayDynamicMemoryRequest),
+			},
+			Service: gateway.ServiceConfig{
+				OTLPServiceName: "telemetry-otlp-metrics",
+			},
 		},
-		OverrideConfigMap: types.NamespacedName{Name: overrideConfigMapName, Namespace: telemetryNamespace},
-		MaxPipelines:      maxMetricPipelines,
+		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
+		MaxPipelines:           maxMetricPipelines,
 	}
 
 	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
@@ -571,7 +622,7 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eve
 }
 
 func handleLokiLogPipeline(ctx context.Context, client client.Client) error {
-	lokiLogPipeline := lokilogpipelineresources.MakeLokiLogPipeline()
+	lokiLogPipeline := lokilogpipeline.MakeLokiLogPipeline()
 
 	var lokiService corev1.Service
 	err := client.Get(ctx, types.NamespacedName{Name: "logging-loki", Namespace: "kyma-system"}, &lokiService)

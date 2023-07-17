@@ -20,9 +20,8 @@ The Telemetry module provides [Fluent Bit](https://fluentbit.io/) as a log agent
 2. Fluent Bit runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per node), detects any new log files in the folder, and tails them using a filesystem buffer for reliability.
 3. Fluent Bit queries the [Kubernetes API Server](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/) for additional Pod metadata, such as Pod annotations and labels.
 4. The Telemetry module configures Fluent Bit with your custom output configuration.
-5. If Kyma's [deprecated](https://kyma-project.io/blog/2022/11/2/loki-deprecation/) logging component is installed, the Telemetry Manager configures the shipment to the in-cluster Loki instance automatically.
-6. As specified in your LogPipeline configuration, Fluent Bit sends the log data to observability systems outside or inside the Kyma cluster. Here, you can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation.
-7. The user accesses the internal and external observability system to analyze and visualize the logs.
+5. As specified in your LogPipeline configuration, Fluent Bit sends the log data to observability systems outside or inside the Kyma cluster. Here, you can use the integration with HTTP to integrate a system directly or with an additional Fluentd installation.
+6. To analyze and visualize your logs, access the internal or external observability system.
 
 ### Pipelines
 
@@ -383,7 +382,7 @@ In the next stage, the [Kubernetes filter](https://docs.fluentbit.io/manual/pipe
       "labels":
       {
           "app": "myApp",
-          "sidecar.istio.io/inject"=>"true",
+          "sidecar.istio.io/inject": "true",
           ...
       }
   }
@@ -449,7 +448,7 @@ Furthermore, the `__kyma__` prefix is used internally by the Telemetry Manager. 
 
 ### Buffer limits
 
-Fluent Bit buffers up to 1 GB of logs if a configured output cannot receive logs. The oldest logs are dropped when the limit is reached.
+Fluent Bit buffers up to 1 GB of logs if a configured output cannot receive logs. The oldest logs are dropped when the limit is reached or after 300 retries.
 
 ### Throughput
 

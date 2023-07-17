@@ -95,6 +95,10 @@ metadata:
     app.kubernetes.io/created-by: telemetry-operator
   name: metricpipeline-sample
 spec:
+  input:
+    application:
+      runtime:
+        enabled: true
   output:
     otlp:
       endpoint:

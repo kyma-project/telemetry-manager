@@ -5,10 +5,50 @@ metadata:
   creationTimestamp: null
   name: operator-manager-role
 rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+- nonResourceURLs:
+  - /metrics/cadvisor
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - ""
   resources:
   - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes/metrics
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes/stats
   verbs:
   - get
   - list
@@ -30,6 +70,14 @@ rules:
   - list
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - admissionregistration.k8s.io
   resources:
   - validatingwebhookconfigurations
@@ -39,6 +87,22 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - operator.kyma-project.io
@@ -266,10 +330,11 @@ rules:
   - update
   - watch
 - apiGroups:
-  - apps
+  - networking.k8s.io
   resources:
-  - replicasets
+  - networkpolicies
   verbs:
-  - get
-  - list
-  - watch
+  - create
+  - delete
+  - patch
+  - update

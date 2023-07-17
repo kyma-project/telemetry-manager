@@ -7,6 +7,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -83,6 +84,25 @@ func CreateIfNotExistsConfigMap(ctx context.Context, c client.Client, desired *c
 
 func CreateOrUpdateConfigMap(ctx context.Context, c client.Client, desired *corev1.ConfigMap) error {
 	var existing corev1.ConfigMap
+	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+
+		return c.Create(ctx, desired)
+	}
+
+	mutated := existing.DeepCopy()
+	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+	if apiequality.Semantic.DeepEqual(mutated, desired) {
+		return nil
+	}
+	return c.Update(ctx, desired)
+}
+
+func CreateOrUpdateNetworkPolicy(ctx context.Context, c client.Client, desired *networkingv1.NetworkPolicy) error {
+	var existing networkingv1.NetworkPolicy
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {

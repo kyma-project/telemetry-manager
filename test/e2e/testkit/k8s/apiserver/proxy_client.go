@@ -53,7 +53,7 @@ func (a ProxyClient) Token() string {
 	return "Bearer " + a.bearerToken
 }
 
-// ProxyURLForService composes a ProxyURLForService for an in-cluster resource.
+// ProxyURLForService composes a proxy url for a service.
 func (a ProxyClient) ProxyURLForService(namespace, service, path string, port int) string {
 	return fmt.Sprintf(
 		`https://0.0.0.0:%d/api/v1/namespaces/%s/services/http:%s:%d/proxy/%s`,
@@ -65,7 +65,19 @@ func (a ProxyClient) ProxyURLForService(namespace, service, path string, port in
 	)
 }
 
-// Get performs an HTTPS request to the in-cluster resource identifiable by ProxyURLForService.
+// ProxyURLForPod composes a proxy url for a pod.
+func (a ProxyClient) ProxyURLForPod(namespace, pod, path string, port int) string {
+	return fmt.Sprintf(
+		`https://0.0.0.0:%d/api/v1/namespaces/%s/pods/http:%s:%d/proxy/%s`,
+		a.apiPort,
+		namespace,
+		pod,
+		port,
+		strings.TrimLeft(path, "/"),
+	)
+}
+
+// Get performs an HTTPS request to the in-cluster resource identifiable by ProxyURLForService or ProxyURLForPod.
 func (a ProxyClient) Get(proxyURL string) (*http.Response, error) {
 	client := &http.Client{Transport: &http.Transport{
 		TLSClientConfig: a.tlsClientConfig,

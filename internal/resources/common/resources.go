@@ -32,14 +32,3 @@ func MakeClusterRoleBinding(name types.NamespacedName) *v1.ClusterRoleBinding {
 	}
 	return &clusterRoleBinding
 }
-
-func MakeClusterRole(name types.NamespacedName) *v1.ClusterRole {
-	clusterRole := v1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
-		Rules: []v1.PolicyRule{{Verbs: []string{"get", "list", "watch"}, APIGroups: []string{""}, Resources: []string{"namespaces", "pods"}}},
-	}
-	return &clusterRole
-}

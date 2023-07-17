@@ -14,6 +14,7 @@ spec:
   template:
     metadata:
       annotations:
+        sidecar.istio.io/inject: "false"
         kubectl.kubernetes.io/default-container: manager
       labels:
         app.kubernetes.io/name: operator
@@ -72,6 +73,8 @@ spec:
             cpu: 5m
             memory: 100Mi
         env:
+        - name: APP_LOG_LEVEL
+          value: "info"
         - name: MY_POD_NAMESPACE
           valueFrom:
             fieldRef:

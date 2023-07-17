@@ -1,3 +1,4 @@
 resources:
-- configmap_opentelemetry_dashboard.yaml
+- configmap_opentelemetry_trace_collector_dashboard.yaml
+- configmap_opentelemetry_metric_gateway_dashboard.yaml
 - configmap_fluentbit_dashboard.yaml

@@ -6,12 +6,13 @@ MODULE_CHANNEL ?= fast
 MODULE_NAME ?= telemetry
 MODULE_CR_PATH ?= ./config/samples/operator_v1alpha1_telemetry.yaml
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.24.1
+ENVTEST_K8S_VERSION = 1.26.1
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
 # Operating system type
 OS_TYPE ?= $(shell uname)
 PROJECT_DIR ?= $(shell pwd)
+ARTIFACTS ?= $(shell pwd)/artifacts
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -57,7 +58,7 @@ lint: lint-manifests
 	go version
 	golangci-lint version
 	GO111MODULE=on golangci-lint run
-	
+
 
 .PHONY: crd-docs-gen
 crd-docs-gen: tablegen ## Generates CRD spec into docs folder
@@ -95,18 +96,32 @@ test: manifests generate fmt vet tidy envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 test-matchers: ginkgo
-	$(GINKGO) run --tags e2e -v ./test/e2e/testkit/otlp/matchers
+	$(GINKGO) run --tags e2e -v ./test/e2e/testkit/matchers
 
 .PHONY: e2e-test
 e2e-test: ginkgo k3d test-matchers ## Provision k3d cluster and run end-to-end tests.
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
-	$(GINKGO) run --tags e2e -v ./test/e2e
+	$(GINKGO) run --tags e2e -v --junit-report=junit.xml ./test/e2e
+	mkdir -p ${ARTIFACTS}
+	mv junit.xml ${ARTIFACTS}
+	$(K3D) cluster delete kyma
+	$(K3D) registry delete k3d-kyma-registry
+
+.PHONY: upgrade-test
+upgrade-test: ginkgo k3d test-matchers ## Provision k3d cluster and run upgrade tests.
+	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/upgrade-test.sh
 	$(K3D) cluster delete kyma
 	$(K3D) registry delete k3d-kyma-registry
 
 .PHONY: e2e-deploy-module
 e2e-deploy-module: kyma kustomize ## Provision a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
 	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/deploy-module.sh
+
+.PHONY:
+e2e-coverage: ginkgo
+	@$(GINKGO) outline --format indent test/e2e/metrics_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
+	@$(GINKGO) outline --format indent test/e2e/tracing_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
+	@$(GINKGO) outline --format indent test/e2e/logging_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
 
 ##@ Build
 
@@ -163,7 +178,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 .PHONY: release
 release: kyma kustomize ## Create module with its image pushed to prod registry and create a github release entry
-	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} IMG=${IMG} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/release.sh
+	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} IMG=${IMG} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} RELEASE_TAG=${RELEASE_TAG} ./hack/release.sh
 
 ##@ Build Dependencies
 
