@@ -62,6 +62,11 @@ spec:
               output:
                 description: Configures the metric gateway.
                 properties:
+                  convertToDelta:
+                    description: Defines whether this MetricPipeline should convert
+                      monotonic, cumulative sum and histogram metrics to monotonic,
+                      delta metrics.
+                    type: boolean
                   otlp:
                     description: Defines an output using the OpenTelemetry protocol.
                     properties:
@@ -194,11 +199,6 @@ spec:
                     required:
                     - endpoint
                     type: object
-                  toDelta:
-                    description: Defines whether this MetricPipeline should convert
-                      monotonic, cumulative sum and histogram metrics to monotonic,
-                      delta metrics.
-                    type: boolean
                 required:
                 - otlp
                 type: object

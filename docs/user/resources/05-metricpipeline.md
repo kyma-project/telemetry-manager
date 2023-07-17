@@ -52,6 +52,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;application.&#x200b;runtime**  | object | Configures runtime scraping (workload-related k8s ). |
 | **input.&#x200b;application.&#x200b;runtime.&#x200b;enabled**  | boolean | Indicates if runtime scraping is enabled. |
 | **output**  | object | Configures the metric gateway. |
+| **output.&#x200b;convertToDelta**  | boolean | Defines whether this MetricPipeline should convert monotonic, cumulative sum and histogram metrics to monotonic, delta metrics. |
 | **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Defines authentication options for the OTLP output |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic**  | object | Activates `Basic` authentication for the destination providing relevant Secrets. |
@@ -85,7 +86,6 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string |  |
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string |  |
 | **output.&#x200b;otlp.&#x200b;protocol**  | string | Defines the OTLP protocol (http or grpc). Default is GRPC. |
-| **output.&#x200b;toDelta**  | boolean | Defines whether this MetricPipeline should convert monotonic, cumulative sum and histogram metrics to monotonic, delta metrics. |
 
 **Status:**
 
