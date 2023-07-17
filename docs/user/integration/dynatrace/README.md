@@ -151,4 +151,4 @@ This configuration samples 1% of all requests. if you want to change the samplin
 
 2. To access your application, port-forward it to the frontend:
    ```bash
-   kubectl -n $KYMA_NS port-forward svc/otel-frontend 8080
+   kubectl -n $KYMA_NS port-forward svc/otel-frontendproxy 8080
