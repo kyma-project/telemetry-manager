@@ -134,7 +134,7 @@ var _ = Describe("Metrics", func() {
 
 	})
 
-	Context("When a metricpipeline has toDelta flag active", Ordered, func() {
+	Context("When a MetricPipeline has toDelta flag active", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
 			urls               *mocks.URLProvider

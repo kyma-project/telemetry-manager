@@ -89,7 +89,7 @@ type MetricPipelineIstioInput struct {
 type MetricPipelineOutput struct {
 	// Defines an output using the OpenTelemetry protocol.
 	Otlp *OtlpOutput `json:"otlp"`
-	// Defines whether this metricpipeline should convert monotonic, cumulative sum and histogram metrics to monotonic, delta metrics.
+	// Defines whether this MetricPipeline should convert monotonic, cumulative sum and histogram metrics to monotonic, delta metrics.
 	ToDelta bool `json:"toDelta,omitempty"`
 }
 

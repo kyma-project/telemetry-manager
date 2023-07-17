@@ -195,7 +195,7 @@ spec:
                     - endpoint
                     type: object
                   toDelta:
-                    description: Defines whether this metricpipeline should convert
+                    description: Defines whether this MetricPipeline should convert
                       monotonic, cumulative sum and histogram metrics to monotonic,
                       delta metrics.
                     type: boolean
