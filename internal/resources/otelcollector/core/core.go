@@ -149,9 +149,6 @@ func MakeCommonPodAnnotations(configHash string) map[string]string {
 	annotations := map[string]string{
 		"checksum/config":         configHash,
 		"sidecar.istio.io/inject": "false",
-		"prometheus.io/scrape":    "true",
-		"prometheus.io/port":      "8888",
-		"prometheus.io/path":      "/metrics",
 	}
 
 	return annotations
