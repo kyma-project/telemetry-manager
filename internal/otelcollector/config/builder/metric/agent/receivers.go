@@ -12,7 +12,6 @@ import (
 	promconfig "github.com/prometheus/prometheus/config"
 	promdiscovery "github.com/prometheus/prometheus/discovery"
 	promk8sdiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
-	promtargetgroup "github.com/prometheus/prometheus/discovery/targetgroup"
 	promlabel "github.com/prometheus/prometheus/model/relabel"
 )
 
@@ -20,7 +19,7 @@ func makeReceiversConfig(pipelines []v1alpha1.MetricPipeline) config.ReceiversCo
 	var receiversConfig config.ReceiversConfig
 
 	if enableWorkloadMetricScraping(pipelines) {
-		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
+		//receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
 		receiversConfig.PrometheusAppPods = makePrometheusAppPodsConfig()
 	}
 
@@ -59,33 +58,6 @@ func makeKubeletStatsConfig() *config.KubeletStatsReceiverConfig {
 		AuthType:           "serviceAccount",
 		Endpoint:           fmt.Sprintf("https://${env:%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
 		MetricGroups:       []config.MetricGroupType{config.MetricGroupTypeContainer, config.MetricGroupTypePod},
-	}
-}
-
-func makePrometheusSelfConfig() *config.PrometheusReceiverConfig {
-	targets := []*promtargetgroup.Group{
-		{
-			Targets: []prommodel.LabelSet{
-				{
-					prommodel.AddressLabel: prommodel.LabelValue(fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortMetrics)),
-				},
-			},
-		},
-	}
-
-	return &config.PrometheusReceiverConfig{
-		Config: promconfig.Config{
-			ScrapeConfigs: []*promconfig.ScrapeConfig{
-				{
-					JobName:          "opentelemetry-collector",
-					ScrapeInterval:   prommodel.Duration(10 * time.Second),
-					HTTPClientConfig: promcommonconfig.DefaultHTTPClientConfig,
-					ServiceDiscoveryConfigs: []promdiscovery.Config{
-						promdiscovery.StaticConfig(targets),
-					},
-				},
-			},
-		},
 	}
 }
 

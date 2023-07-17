@@ -54,7 +54,7 @@ func makeExtensionsConfig() config.ExtensionsConfig {
 func makeServiceConfig() config.ServiceConfig {
 	pipelinesConfig := make(config.PipelinesConfig)
 	pipelinesConfig["metrics"] = config.PipelineConfig{
-		Receivers:  []string{"kubeletstats", "prometheus/self", "prometheus/app-pods"},
+		Receivers:  []string{"kubeletstats", "prometheus/app-pods"},
 		Processors: []string{"resource"},
 		Exporters:  []string{"otlp"},
 	}
