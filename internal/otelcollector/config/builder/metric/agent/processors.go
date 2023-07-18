@@ -14,8 +14,8 @@ func makeProcessorsConfig() ProcessorsConfig {
 				},
 			},
 		},
-		EmittedByRuntime:   makeEmittedByConfig("kubeletstats"),
-		EmittedByWorkloads: makeEmittedByConfig("prometheusreceiver/worloads"),
+		EmittedByRuntime:   makeEmittedByConfig("runtime"),
+		EmittedByWorkloads: makeEmittedByConfig("workloads"),
 	}
 }
 

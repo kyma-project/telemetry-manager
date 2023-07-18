@@ -10,14 +10,44 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
+type inputDescriptor struct {
+	enableRuntimeScraping  bool
+	enableWorkloadScraping bool
+}
+
 func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *Config {
+	inputDesc := inputDescriptor{
+		enableRuntimeScraping:  enableRuntimeMetricScraping(pipelines),
+		enableWorkloadScraping: enableWorkloadMetricScraping(pipelines),
+	}
+
 	return &Config{
-		Receivers:  makeReceiversConfig(pipelines),
+		Receivers:  makeReceiversConfig(inputDesc),
 		Processors: makeProcessorsConfig(),
 		Exporters:  makeExportersConfig(gatewayServiceName),
 		Extensions: makeExtensionsConfig(),
-		Service:    makeServiceConfig(),
+		Service:    makeServiceConfig(inputDesc),
 	}
+}
+
+func enableWorkloadMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if input.Application.Workload.Enabled {
+			return true
+		}
+	}
+	return false
+}
+
+func enableRuntimeMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if input.Application.Runtime.Enabled {
+			return true
+		}
+	}
+	return false
 }
 
 func makeExportersConfig(gatewayServiceName types.NamespacedName) config.ExportersConfig {
@@ -51,15 +81,9 @@ func makeExtensionsConfig() config.ExtensionsConfig {
 	}
 }
 
-func makeServiceConfig() config.ServiceConfig {
-	pipelinesConfig := make(config.PipelinesConfig)
-	pipelinesConfig["metrics"] = config.PipelineConfig{
-		Receivers:  []string{"kubeletstats", "prometheus/self", "prometheus/app-pods"},
-		Processors: []string{"resource"},
-		Exporters:  []string{"otlp"},
-	}
+func makeServiceConfig(inputDesc inputDescriptor) config.ServiceConfig {
 	return config.ServiceConfig{
-		Pipelines: pipelinesConfig,
+		Pipelines: makePipelinesConfig(inputDesc),
 		Telemetry: config.TelemetryConfig{
 			Metrics: config.MetricsConfig{
 				Address: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortMetrics),
@@ -70,4 +94,26 @@ func makeServiceConfig() config.ServiceConfig {
 		},
 		Extensions: []string{"health_check"},
 	}
+}
+
+func makePipelinesConfig(inputDesc inputDescriptor) config.PipelinesConfig {
+	pipelinesConfig := make(config.PipelinesConfig)
+
+	if inputDesc.enableRuntimeScraping {
+		pipelinesConfig["metrics/runtime"] = config.PipelineConfig{
+			Receivers:  []string{"kubeletstats"},
+			Processors: []string{"resource/drop-service-name", "resource/emitted-by-runtime"},
+			Exporters:  []string{"otlp"},
+		}
+	}
+
+	if inputDesc.enableWorkloadScraping {
+		pipelinesConfig["metrics/workloads"] = config.PipelineConfig{
+			Receivers:  []string{"prometheus/self", "prometheus/app-pods"},
+			Processors: []string{"resource/drop-service-name", "resource/emitted-by-workloads"},
+			Exporters:  []string{"otlp"},
+		}
+	}
+
+	return pipelinesConfig
 }

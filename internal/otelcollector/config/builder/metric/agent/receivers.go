@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	promcommonconfig "github.com/prometheus/common/config"
 	prommodel "github.com/prometheus/common/model"
@@ -15,39 +14,19 @@ import (
 	promlabel "github.com/prometheus/prometheus/model/relabel"
 )
 
-func makeReceiversConfig(pipelines []v1alpha1.MetricPipeline) ReceiversConfig {
+func makeReceiversConfig(inputDesc inputDescriptor) ReceiversConfig {
 	var receiversConfig ReceiversConfig
 
-	if enableWorkloadMetricScraping(pipelines) {
+	if inputDesc.enableWorkloadScraping {
 		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
 		receiversConfig.PrometheusAppPods = makePrometheusAppPodsConfig()
 	}
 
-	if enableRuntimeMetricScraping(pipelines) {
+	if inputDesc.enableRuntimeScraping {
 		receiversConfig.KubeletStats = makeKubeletStatsConfig()
 	}
 
 	return receiversConfig
-}
-
-func enableWorkloadMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
-	for i := range pipelines {
-		input := pipelines[i].Spec.Input
-		if input.Application.Workload.Enabled {
-			return true
-		}
-	}
-	return false
-}
-
-func enableRuntimeMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
-	for i := range pipelines {
-		input := pipelines[i].Spec.Input
-		if input.Application.Runtime.Enabled {
-			return true
-		}
-	}
-	return false
 }
 
 func makeKubeletStatsConfig() *KubeletStatsReceiverConfig {
