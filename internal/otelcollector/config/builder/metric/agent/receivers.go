@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	promcommonconfig "github.com/prometheus/common/config"
 	prommodel "github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
@@ -12,6 +11,8 @@ import (
 	promk8sdiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
 	promtargetgroup "github.com/prometheus/prometheus/discovery/targetgroup"
 	promlabel "github.com/prometheus/prometheus/model/relabel"
+
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
 func makeReceiversConfig(inputDesc inputDescriptor) ReceiversConfig {

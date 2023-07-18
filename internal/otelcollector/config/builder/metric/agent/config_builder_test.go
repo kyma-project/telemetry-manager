@@ -89,7 +89,7 @@ processors:
               key: kyma.source
               value: workloads
 exporters:
-    resource/otlp:
+    otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317
         tls:
             insecure: true

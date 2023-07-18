@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"fmt"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"

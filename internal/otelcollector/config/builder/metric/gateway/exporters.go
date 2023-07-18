@@ -3,12 +3,14 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"sort"
+
+	"golang.org/x/exp/maps"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/otlpoutput"
-	"golang.org/x/exp/maps"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sort"
 )
 
 func makeExportersConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.MetricPipeline) (ExportersConfig, common.PipelinesConfig, otlpoutput.EnvVars, error) {
@@ -45,10 +47,10 @@ func makeExportersConfig(ctx context.Context, c client.Reader, pipelines []v1alp
 	return exportersConfig, pipelinesConfig, allVars, nil
 }
 
-func makePipelineConfig(outputAliases []string) common.PipelineConfig {
+func makePipelineConfig(exporterAliases []string) common.PipelineConfig {
 	return common.PipelineConfig{
 		Receivers:  []string{"otlp"},
 		Processors: []string{"memory_limiter", "k8sattributes", "resource", "batch"},
-		Exporters:  outputAliases,
+		Exporters:  exporterAliases,
 	}
 }

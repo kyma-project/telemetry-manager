@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -38,7 +39,6 @@ import (
 	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 	otelgatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"gopkg.in/yaml.v3"
 )
 
 type Config struct {

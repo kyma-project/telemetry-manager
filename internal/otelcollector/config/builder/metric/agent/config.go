@@ -1,8 +1,9 @@
 package agent
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	promconfig "github.com/prometheus/prometheus/config"
+
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
 type Config struct {
@@ -39,11 +40,11 @@ type PrometheusReceiverConfig struct {
 }
 
 type ProcessorsConfig struct {
-	DropServiceName    common.ResourceProcessorConfig `yaml:"resource/drop-service-name"`
-	EmittedByRuntime   common.ResourceProcessorConfig `yaml:"resource/emitted-by-runtime"`
-	EmittedByWorkloads common.ResourceProcessorConfig `yaml:"resource/emitted-by-workloads"`
+	DropServiceName          common.ResourceProcessorConfig `yaml:"resource/drop-service-name"`
+	InsertEmittedByRuntime   common.ResourceProcessorConfig `yaml:"resource/emitted-by-runtime"`
+	InsertEmittedByWorkloads common.ResourceProcessorConfig `yaml:"resource/emitted-by-workloads"`
 }
 
 type ExportersConfig struct {
-	OTLP common.OTLPExporterConfig `yaml:"resource/otlp"`
+	OTLP common.OTLPExporterConfig `yaml:"otlp"`
 }

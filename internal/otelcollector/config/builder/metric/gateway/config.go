@@ -18,6 +18,16 @@ type ReceiversConfig struct {
 
 type ProcessorsConfig struct {
 	common.BaseProcessorsConfig `yaml:",inline"`
+
+	FilterByInput map[string]FilterProcessorConfig `yaml:",inline"`
+}
+
+type FilterProcessorConfig struct {
+	Metrics FilterProcessorMetricConfig `yaml:"metrics"`
+}
+
+type FilterProcessorMetricConfig struct {
+	DataPoint []string `yaml:"datapoint"`
 }
 
 type ExportersConfig map[string]ExporterConfig

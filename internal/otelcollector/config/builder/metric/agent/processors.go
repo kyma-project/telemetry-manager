@@ -14,8 +14,8 @@ func makeProcessorsConfig() ProcessorsConfig {
 				},
 			},
 		},
-		EmittedByRuntime:   makeEmittedByConfig("runtime"),
-		EmittedByWorkloads: makeEmittedByConfig("workloads"),
+		InsertEmittedByRuntime:   makeEmittedByConfig("runtime"),
+		InsertEmittedByWorkloads: makeEmittedByConfig("workloads"),
 	}
 }
 

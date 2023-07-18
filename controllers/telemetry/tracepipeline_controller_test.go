@@ -170,19 +170,19 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 			return validateTracingOwnerReferences(otelCollectorService.OwnerReferences)
 		}, timeout, interval).Should(BeNil())
 
-		Eventually(func() error {
+		Eventually(func() map[string]string {
 			var otelCollectorConfigMap corev1.ConfigMap
 			if err := k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "telemetry-trace-collector",
 				Namespace: "telemetry-system",
 			}, &otelCollectorConfigMap); err != nil {
-				return err
+				return nil
 			}
 			if err := validateTracingOwnerReferences(otelCollectorConfigMap.OwnerReferences); err != nil {
-				return err
+				return nil
 			}
-			return validateCollectorConfig(otelCollectorConfigMap.Data["relay.conf"])
-		}, timeout, interval).Should(BeNil())
+			return otelCollectorConfigMap.Data
+		}, timeout, interval).Should(HaveKey("relay.conf"))
 
 		Eventually(func() error {
 			var otelCollectorSecret corev1.Secret

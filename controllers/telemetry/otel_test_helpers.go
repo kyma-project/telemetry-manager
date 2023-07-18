@@ -22,10 +22,6 @@ func validatePodAnnotations(deployment appsv1.Deployment) error {
 	return nil
 }
 
-func validateCollectorConfig(configData string) error {
-	return nil
-}
-
 func validateSecret(secret corev1.Secret, expectedUsername, expectedPassword string) error {
 	authHeader := secret.Data["BASIC_AUTH_HEADER_DUMMY"]
 	if authHeader == nil {
