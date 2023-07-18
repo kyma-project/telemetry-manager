@@ -32,7 +32,7 @@ var (
 	telemetryFluentbitMetricServiceName = "telemetry-fluent-bit-metrics"
 )
 
-var _ = Describe("Logging", func() {
+var _ = Describe("Logging", Label("logging"), func() {
 	Context("When a logpipeline exists", Ordered, func() {
 		var (
 			urls               *mocks.URLProvider
