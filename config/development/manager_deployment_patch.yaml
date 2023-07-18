@@ -8,18 +8,10 @@ spec:
     spec:
       containers:
       - args:
-        - --enable-metrics=true
         - --cert-dir=/tmp
-        - --fluent-bit-cpu-request=100m
-        - --fluent-bit-memory-request=50Mi
-        - --fluent-bit-denied-filter-plugins=kubernetes,rewrite_tag,multiline
-        - --trace-collector-cpu-limit=1
-        - --trace-collector-memory-limit=1Gi
-        - --trace-collector-cpu-request=25m
-        - --trace-collector-memory-request=32Mi
-        - --validating-webhook-enabled=true
-        - --manager-namespace=$(MY_POD_NAMESPACE)
-        - --trace-collector-priority-class=telemetry-priority-class
+        - --enable-metrics=true
         - --fluent-bit-priority-class-name=telemetry-priority-class-high
         - --metric-gateway-priority-class=telemetry-priority-class
+        - --trace-collector-priority-class=telemetry-priority-class
+        - --validating-webhook-enabled=true
         name: manager
