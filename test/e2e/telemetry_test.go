@@ -25,7 +25,7 @@ var (
 	}
 )
 
-var _ = Describe("Telemetry-module", Ordered, func() {
+var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ordered, func() {
 	Context("After creating Telemetry resources", Ordered, func() {
 		It("Should have ValidatingWebhookConfiguration", func() {
 			Eventually(func(g Gomega) {
@@ -147,7 +147,7 @@ var _ = Describe("Telemetry-module", Ordered, func() {
 
 		It("Should not delete Telemetry when LogPipeline exists", func() {
 			By("Deleting telemetry", func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
+				Expect(kitk8s.ForceDeleteObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
 			})
 
 			Eventually(func(g Gomega) {

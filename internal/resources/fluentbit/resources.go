@@ -261,7 +261,7 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   strconv.Itoa(metricsPort),
 				"prometheus.io/scheme": "http",
-				"prometheus.io/path":   "/api/v1/metrics/prometheus",
+				"prometheus.io/path":   "/metrics",
 			},
 		},
 		Spec: corev1.ServiceSpec{
@@ -324,9 +324,6 @@ func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
     Log_Level warn
     Parsers_File custom_parsers.conf
     Parsers_File dynamic-parsers/parsers.conf
-    HTTP_Server On
-    HTTP_Listen 0.0.0.0
-    HTTP_Port 2020
     storage.path /data/flb-storage/
     storage.metrics on
 
@@ -343,6 +340,17 @@ func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
     DB /data/flb_kube.db
     storage.type  filesystem
     Read_from_Head True
+
+[OUTPUT]
+    name  prometheus_exporter
+    match internal_metrics
+    host  0.0.0.0
+    port  2020
+
+[INPUT]
+    Name fluentbit_metrics
+    Tag internal_metrics
+    scrape_interval 30
 
 [FILTER]
     Name kubernetes

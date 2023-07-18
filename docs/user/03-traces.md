@@ -347,10 +347,10 @@ spec:
 </div>
 
 ### Eventing
-The Kyma [Eventing](https://kyma-project.io/docs/kyma/latest/01-overview/main-areas/eventing/) component dispatches events from an in- or out-cluster backend to your workload. It leverages the [CloudEvents](https://cloudevents.io/) protocol, which natively supports the [W3C Trace Context](https://www.w3.org/TR/trace-context) propagation. That said, the Eventing component already propagates trace context properly but does not enrich a trace with more advanced span data.
+The Kyma [Eventing](https://kyma-project.io/docs/kyma/latest/01-overview/eventing/) component dispatches events from an in- or out-cluster backend to your workload. It leverages the [CloudEvents](https://cloudevents.io/) protocol, which natively supports the [W3C Trace Context](https://www.w3.org/TR/trace-context) propagation. That said, the Eventing component already propagates trace context properly but does not enrich a trace with more advanced span data.
 
 ### Serverless
-By default, all engines for the [Serverless](https://kyma-project.io/docs/kyma/latest/01-overview/main-areas/serverless/) module integrate the [Open Telemetry SDK](https://opentelemetry.io/docs/reference/specification/metrics/sdk/). With that, trace propagation no longer is your concern, because the used middlewares are configured to automatically propagate the context for chained calls. Because the Telemetry endpoints are configured by default, Serverless also reports custom spans for incoming and outgoing requests. With the provided [tooling](https://kyma-project.io/docs/kyma/latest/03-tutorials/00-serverless/svls-12-customize-function-traces/), you can add more spans as part of your Serverless source code.
+By default, all engines for the [Serverless](https://kyma-project.io/docs/kyma/latest/01-overview/serverless/) module integrate the [Open Telemetry SDK](https://opentelemetry.io/docs/reference/specification/metrics/sdk/). With that, trace propagation no longer is your concern, because the used middlewares are configured to automatically propagate the context for chained calls. Because the Telemetry endpoints are configured by default, Serverless also reports custom spans for incoming and outgoing requests. With the provided [tooling](https://kyma-project.io/docs/kyma/latest/03-tutorials/00-serverless/svls-12-customize-function-traces/), you can add more spans as part of your Serverless source code.
 
 ## Limitations
 
@@ -378,8 +378,7 @@ Only one TracePipeline resource at a time is supported at the moment.
 System-related spans reported by Istio are filtered out without the opt-out option. Here are a few examples of such spans:
 - `/healthz` endpoint of a component deployed in the `kyma-system` Namespace
 - `/metrics` endpoint of a component deployed in the `kyma-system` Namespace
-- All outgoing spans reported by Grafana and Jaeger
-- All spans related to Fluent Bit and Loki communication
+- All outgoing spans reported by Grafana
 
 ## Troubleshooting
 
