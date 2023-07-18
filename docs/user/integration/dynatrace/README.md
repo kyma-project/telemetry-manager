@@ -122,6 +122,8 @@ This configuration samples 1% of all requests. if you want to change the samplin
 
 ## Verify the results by deploying sample apps
 
+In order to verify metrics and traces arrival we adapted sample application from [this example](https://github.com/kyma-project/examples/tree/main/trace-demo).
+
 ### Preparation
 
 1. Export your Namespace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
