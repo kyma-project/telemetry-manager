@@ -10,8 +10,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
-func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *config.Config {
-	return &config.Config{
+func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *Config {
+	return &Config{
 		Receivers:  makeReceiversConfig(pipelines),
 		Processors: makeProcessorsConfig(),
 		Exporters:  makeExportersConfig(gatewayServiceName),

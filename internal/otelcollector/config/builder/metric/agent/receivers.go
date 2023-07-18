@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	promcommonconfig "github.com/prometheus/common/config"
 	prommodel "github.com/prometheus/common/model"
@@ -16,8 +15,8 @@ import (
 	promlabel "github.com/prometheus/prometheus/model/relabel"
 )
 
-func makeReceiversConfig(pipelines []v1alpha1.MetricPipeline) config.ReceiversConfig {
-	var receiversConfig config.ReceiversConfig
+func makeReceiversConfig(pipelines []v1alpha1.MetricPipeline) ReceiversConfig {
+	var receiversConfig ReceiversConfig
 
 	if enableWorkloadMetricScraping(pipelines) {
 		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
@@ -51,18 +50,18 @@ func enableRuntimeMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
 	return false
 }
 
-func makeKubeletStatsConfig() *config.KubeletStatsReceiverConfig {
+func makeKubeletStatsConfig() *KubeletStatsReceiverConfig {
 	const collectionInterval = "30s"
 	const portKubelet = 10250
-	return &config.KubeletStatsReceiverConfig{
+	return &KubeletStatsReceiverConfig{
 		CollectionInterval: collectionInterval,
 		AuthType:           "serviceAccount",
 		Endpoint:           fmt.Sprintf("https://${env:%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
-		MetricGroups:       []config.MetricGroupType{config.MetricGroupTypeContainer, config.MetricGroupTypePod},
+		MetricGroups:       []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod},
 	}
 }
 
-func makePrometheusSelfConfig() *config.PrometheusReceiverConfig {
+func makePrometheusSelfConfig() *PrometheusReceiverConfig {
 	targets := []*promtargetgroup.Group{
 		{
 			Targets: []prommodel.LabelSet{
@@ -73,7 +72,7 @@ func makePrometheusSelfConfig() *config.PrometheusReceiverConfig {
 		},
 	}
 
-	return &config.PrometheusReceiverConfig{
+	return &PrometheusReceiverConfig{
 		Config: promconfig.Config{
 			ScrapeConfigs: []*promconfig.ScrapeConfig{
 				{
@@ -89,8 +88,8 @@ func makePrometheusSelfConfig() *config.PrometheusReceiverConfig {
 	}
 }
 
-func makePrometheusAppPodsConfig() *config.PrometheusReceiverConfig {
-	return &config.PrometheusReceiverConfig{
+func makePrometheusAppPodsConfig() *PrometheusReceiverConfig {
+	return &PrometheusReceiverConfig{
 		Config: promconfig.Config{
 			ScrapeConfigs: []*promconfig.ScrapeConfig{
 				{

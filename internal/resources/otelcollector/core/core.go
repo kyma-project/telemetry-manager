@@ -1,14 +1,11 @@
 package core
 
 import (
-	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
-
-	collectorconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 const (
@@ -154,10 +151,7 @@ func MakeCommonPodAnnotations(configHash string) map[string]string {
 	return annotations
 }
 
-func MakeConfigMap(name types.NamespacedName, collectorConfig collectorconfig.Config) *corev1.ConfigMap {
-	bytes, _ := yaml.Marshal(collectorConfig)
-	confYAML := string(bytes)
-
+func MakeConfigMap(name types.NamespacedName, collectorConfig string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -165,7 +159,7 @@ func MakeConfigMap(name types.NamespacedName, collectorConfig collectorconfig.Co
 			Labels:    MakeDefaultLabels(name.Name),
 		},
 		Data: map[string]string{
-			configMapKey: confYAML,
+			configMapKey: collectorConfig,
 		},
 	}
 }

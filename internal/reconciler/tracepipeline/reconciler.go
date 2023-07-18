@@ -38,6 +38,7 @@ import (
 	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 	otelgatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -192,6 +193,12 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}
 
+	var gatewayConfigYAML []byte
+	gatewayConfigYAML, err = yaml.Marshal(gatewayConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal collector config: %w", err)
+	}
+
 	secret := otelgatewayresources.MakeSecret(r.config.Gateway, envVars)
 	if err = controllerutil.SetOwnerReference(pipeline, secret, r.Scheme()); err != nil {
 		return err
@@ -200,7 +207,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector env secret: %w", err)
 	}
 
-	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, *gatewayConfig)
+	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, string(gatewayConfigYAML))
 	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
 		return err
 	}

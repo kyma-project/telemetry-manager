@@ -24,6 +24,7 @@ import (
 	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 	otelgatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -185,6 +186,12 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}
 
+	var gatewayConfigYAML []byte
+	gatewayConfigYAML, err = yaml.Marshal(gatewayConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal collector config: %w", err)
+	}
+
 	secret := otelgatewayresources.MakeSecret(r.config.Gateway, envVars)
 	if err = controllerutil.SetOwnerReference(pipeline, secret, r.Scheme()); err != nil {
 		return err
@@ -193,7 +200,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		return fmt.Errorf("failed to create otel collector env secret: %w", err)
 	}
 
-	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, *gatewayConfig)
+	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, string(gatewayConfigYAML))
 	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
 		return err
 	}
@@ -251,7 +258,7 @@ func makeNetworkPolicyPorts() []intstr.IntOrString {
 }
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Application.Runtime.Enabled || pipeline.Spec.Input.Application.Runtime.Enabled
+	return pipeline.Spec.Input.Application.Runtime.Enabled || pipeline.Spec.Input.Application.Workload.Enabled
 }
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
@@ -289,8 +296,13 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		Namespace: r.config.Gateway.Namespace,
 		Name:      r.config.Gateway.Service.OTLPServiceName,
 	}, allPipelines)
+	var agentConfigYAML []byte
+	agentConfigYAML, err = yaml.Marshal(agentConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal collector config: %w", err)
+	}
 
-	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, *agentConfig)
+	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, string(agentConfigYAML))
 	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
 		return err
 	}
