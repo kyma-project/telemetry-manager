@@ -113,8 +113,6 @@ e2e-test: ginkgo k3d test-matchers ## Provision k3d cluster and run end-to-end t
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
-	$(K3D) cluster delete kyma
-	$(K3D) registry delete k3d-kyma-registry
 
 .PHONY: e2e-test-logging
 e2e-test-logging: ginkgo k3d test-matchers-logging ## Provision k3d cluster and run end-to-end tests.
@@ -122,8 +120,6 @@ e2e-test-logging: ginkgo k3d test-matchers-logging ## Provision k3d cluster and 
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="logging" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
-	$(K3D) cluster delete kyma
-	$(K3D) registry delete k3d-kyma-registry
 
 .PHONY: e2e-test-tracing
 e2e-test-tracing: ginkgo k3d test-matchers-tracing ## Provision k3d cluster and run end-to-end tests.
@@ -131,8 +127,6 @@ e2e-test-tracing: ginkgo k3d test-matchers-tracing ## Provision k3d cluster and 
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="tracing" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
-	$(K3D) cluster delete kyma
-	$(K3D) registry delete k3d-kyma-registry
 
 .PHONY: e2e-test-metrics
 e2e-test-metrics: ginkgo k3d test-matchers-metrics ## Provision k3d cluster and run end-to-end tests.
@@ -140,14 +134,10 @@ e2e-test-metrics: ginkgo k3d test-matchers-metrics ## Provision k3d cluster and 
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="metrics" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
-	$(K3D) cluster delete kyma
-	$(K3D) registry delete k3d-kyma-registry
 
 .PHONY: upgrade-test
 upgrade-test: ginkgo k3d test-matchers ## Provision k3d cluster and run upgrade tests.
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/upgrade-test.sh
-	$(K3D) cluster delete kyma
-	$(K3D) registry delete k3d-kyma-registry
 
 .PHONY: e2e-deploy-module
 e2e-deploy-module: kyma kustomize ## Provision a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
