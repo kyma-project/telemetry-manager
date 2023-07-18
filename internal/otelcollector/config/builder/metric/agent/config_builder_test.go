@@ -53,8 +53,8 @@ service:
             receivers:
                 - kubeletstats
             processors:
-                - resource/drop-service-name
-                - resource/emitted-by-runtime
+                - resource/delete-service-name
+                - resource/insert-input-source-runtime
             exporters:
                 - otlp
     telemetry:
@@ -74,20 +74,15 @@ receivers:
             - container
             - pod
 processors:
-    resource/drop-service-name:
+    resource/delete-service-name:
         attributes:
             - action: delete
               key: service.name
-    resource/emitted-by-runtime:
+    resource/insert-input-source-runtime:
         attributes:
             - action: insert
               key: kyma.source
               value: runtime
-    resource/emitted-by-workloads:
-        attributes:
-            - action: insert
-              key: kyma.source
-              value: workloads
 exporters:
     otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317

@@ -40,9 +40,9 @@ type PrometheusReceiverConfig struct {
 }
 
 type ProcessorsConfig struct {
-	DropServiceName          common.ResourceProcessorConfig `yaml:"resource/drop-service-name"`
-	InsertEmittedByRuntime   common.ResourceProcessorConfig `yaml:"resource/emitted-by-runtime"`
-	InsertEmittedByWorkloads common.ResourceProcessorConfig `yaml:"resource/emitted-by-workloads"`
+	DeleteServiceName          *common.ResourceProcessorConfig `yaml:"resource/delete-service-name,omitempty"`
+	InsertInputSourceRuntime   *common.ResourceProcessorConfig `yaml:"resource/insert-input-source-runtime,omitempty"`
+	InsertInputSourceWorkloads *common.ResourceProcessorConfig `yaml:"resource/insert-input-source-workloads,omitempty"`
 }
 
 type ExportersConfig struct {

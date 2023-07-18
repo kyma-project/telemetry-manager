@@ -18,6 +18,7 @@ func TestReceivers(t *testing.T) {
 		})
 
 		require.Empty(t, collectorConfig.Receivers.KubeletStats)
+		require.Len(t, collectorConfig.Service.Pipelines, 0)
 	})
 
 	t.Run("some pipelines have runtime scraping enabled", func(t *testing.T) {
@@ -30,6 +31,12 @@ func TestReceivers(t *testing.T) {
 		require.Equal(t, "serviceAccount", collectorConfig.Receivers.KubeletStats.AuthType)
 		require.Equal(t, "https://${env:MY_NODE_NAME}:10250", collectorConfig.Receivers.KubeletStats.Endpoint)
 		require.Equal(t, false, collectorConfig.Receivers.KubeletStats.InsecureSkipVerify)
+
+		require.Len(t, collectorConfig.Service.Pipelines, 1)
+		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers, []string{"kubeletstats"})
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/runtime"].Processors, []string{"resource/delete-service-name", "resource/insert-input-source-runtime"})
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters, []string{"otlp"})
 	})
 
 	t.Run("all pipelines have runtime scraping enabled", func(t *testing.T) {
@@ -42,5 +49,11 @@ func TestReceivers(t *testing.T) {
 		require.Equal(t, "serviceAccount", collectorConfig.Receivers.KubeletStats.AuthType)
 		require.Equal(t, "https://${env:MY_NODE_NAME}:10250", collectorConfig.Receivers.KubeletStats.Endpoint)
 		require.Equal(t, false, collectorConfig.Receivers.KubeletStats.InsecureSkipVerify)
+
+		require.Len(t, collectorConfig.Service.Pipelines, 1)
+		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/runtime"].Receivers, []string{"kubeletstats"})
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/runtime"].Processors, []string{"resource/delete-service-name", "resource/insert-input-source-runtime"})
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters, []string{"otlp"})
 	})
 }

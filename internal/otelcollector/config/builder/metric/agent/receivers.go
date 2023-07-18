@@ -15,15 +15,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
-func makeReceiversConfig(inputDesc inputDescriptor) ReceiversConfig {
+func makeReceiversConfig(inputs inputSources) ReceiversConfig {
 	var receiversConfig ReceiversConfig
 
-	if inputDesc.enableWorkloadScraping {
+	if inputs.workloads {
 		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
 		receiversConfig.PrometheusAppPods = makePrometheusAppPodsConfig()
 	}
 
-	if inputDesc.enableRuntimeScraping {
+	if inputs.runtime {
 		receiversConfig.KubeletStats = makeKubeletStatsConfig()
 	}
 

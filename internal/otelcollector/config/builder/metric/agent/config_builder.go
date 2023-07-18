@@ -9,24 +9,24 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
-type inputDescriptor struct {
-	enableRuntimeScraping  bool
-	enableWorkloadScraping bool
+type inputSources struct {
+	runtime   bool
+	workloads bool
 }
 
 func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *Config {
-	inputDesc := inputDescriptor{
-		enableRuntimeScraping:  enableRuntimeMetricScraping(pipelines),
-		enableWorkloadScraping: enableWorkloadMetricScraping(pipelines),
+	inputs := inputSources{
+		runtime:   enableRuntimeMetricScraping(pipelines),
+		workloads: enableWorkloadMetricScraping(pipelines),
 	}
 
 	return &Config{
 		BaseConfig: common.BaseConfig{
 			Extensions: makeExtensionsConfig(),
-			Service:    makeServiceConfig(inputDesc),
+			Service:    makeServiceConfig(inputs),
 		},
-		Receivers:  makeReceiversConfig(inputDesc),
-		Processors: makeProcessorsConfig(),
+		Receivers:  makeReceiversConfig(inputs),
+		Processors: makeProcessorsConfig(inputs),
 		Exporters:  makeExportersConfig(gatewayServiceName),
 	}
 }
@@ -80,9 +80,9 @@ func makeExtensionsConfig() common.ExtensionsConfig {
 	}
 }
 
-func makeServiceConfig(inputDesc inputDescriptor) common.ServiceConfig {
+func makeServiceConfig(inputs inputSources) common.ServiceConfig {
 	return common.ServiceConfig{
-		Pipelines: makePipelinesConfig(inputDesc),
+		Pipelines: makePipelinesConfig(inputs),
 		Telemetry: common.TelemetryConfig{
 			Metrics: common.MetricsConfig{
 				Address: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortMetrics),
@@ -95,21 +95,21 @@ func makeServiceConfig(inputDesc inputDescriptor) common.ServiceConfig {
 	}
 }
 
-func makePipelinesConfig(inputDesc inputDescriptor) common.PipelinesConfig {
+func makePipelinesConfig(inputs inputSources) common.PipelinesConfig {
 	pipelinesConfig := make(common.PipelinesConfig)
 
-	if inputDesc.enableRuntimeScraping {
+	if inputs.runtime {
 		pipelinesConfig["metrics/runtime"] = common.PipelineConfig{
 			Receivers:  []string{"kubeletstats"},
-			Processors: []string{"resource/drop-service-name", "resource/emitted-by-runtime"},
+			Processors: []string{"resource/delete-service-name", "resource/insert-input-source-runtime"},
 			Exporters:  []string{"otlp"},
 		}
 	}
 
-	if inputDesc.enableWorkloadScraping {
+	if inputs.workloads {
 		pipelinesConfig["metrics/workloads"] = common.PipelineConfig{
 			Receivers:  []string{"prometheus/self", "prometheus/app-pods"},
-			Processors: []string{"resource/drop-service-name", "resource/emitted-by-workloads"},
+			Processors: []string{"resource/delete-service-name", "resource/insert-input-source-workloads"},
 			Exporters:  []string{"otlp"},
 		}
 	}
