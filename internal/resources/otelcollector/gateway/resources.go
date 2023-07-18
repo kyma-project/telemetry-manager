@@ -71,7 +71,7 @@ func MakeSecret(config Config, secretData map[string][]byte) *corev1.Secret {
 	}
 }
 
-func MakeDeployment(config Config, configHash string, pipelineCount int, envVarCurrentPodIP, envVarCurrentNode string) *appsv1.Deployment {
+func MakeDeployment(config Config, configHash string, pipelineCount int, envVarPodIP, envVarNodeName string) *appsv1.Deployment {
 	labels := core.MakeDefaultLabels(config.BaseName)
 	annotations := core.MakeCommonPodAnnotations(configHash)
 	resources := makeResourceRequirements(config, pipelineCount)
@@ -80,8 +80,9 @@ func MakeDeployment(config Config, configHash string, pipelineCount int, envVarC
 		core.WithPriorityClass(config.Deployment.PriorityClassName),
 		core.WithResources(resources),
 		core.WithAffinity(affinity),
-		core.WithCurrentPodIPEnvVar(envVarCurrentPodIP),
-		core.WithCurrentNodeNameEnvVar(envVarCurrentNode))
+		core.WithEnvVarFromSource(envVarPodIP, core.FieldPathPodIP),
+		core.WithEnvVarFromSource(envVarNodeName, core.FieldPathNodeName),
+	)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

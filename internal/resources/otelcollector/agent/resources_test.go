@@ -65,4 +65,11 @@ func TestMakeDaemonSet(t *testing.T) {
 	require.False(t, *containerSecurityContext.Privileged, "must not be privileged")
 	require.False(t, *containerSecurityContext.AllowPrivilegeEscalation, "must not escalate to privileged")
 	require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
+
+	envVars := daemonSet.Spec.Template.Spec.Containers[0].Env
+	require.Len(t, envVars, 2)
+	require.Equal(t, envVars[0].Name, "MY_POD_IP")
+	require.Equal(t, envVars[1].Name, "MY_NODE_NAME")
+	require.Equal(t, envVars[0].ValueFrom.FieldRef.FieldPath, "status.podIP")
+	require.Equal(t, envVars[1].ValueFrom.FieldRef.FieldPath, "spec.nodeName")
 }

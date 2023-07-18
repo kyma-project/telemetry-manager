@@ -28,27 +28,18 @@ func WithAffinity(affinity corev1.Affinity) PodSpecOption {
 	}
 }
 
-func WithCurrentPodIPEnvVar(envVarName string) PodSpecOption {
-	return func(pod *corev1.PodSpec) {
-		pod.Containers[0].Env = append(pod.Containers[0].Env, corev1.EnvVar{
-			Name: envVarName,
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath:  "status.podIP",
-					APIVersion: "v1",
-				},
-			},
-		})
-	}
-}
+const (
+	FieldPathPodIP    = "status.podIP"
+	FieldPathNodeName = "spec.nodeName"
+)
 
-func WithCurrentNodeNameEnvVar(envVarName string) PodSpecOption {
+func WithEnvVarFromSource(envVarName, fieldPath string) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.Containers[0].Env = append(pod.Containers[0].Env, corev1.EnvVar{
 			Name: envVarName,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath:  "spec.nodeName",
+					FieldPath:  fieldPath,
 					APIVersion: "v1",
 				},
 			},

@@ -75,7 +75,7 @@ func TestProcessors(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
 		require.NoError(t, err)
 
-		require.Equal(t, len(collectorConfig.Processors.Filter.Traces.Span), 8, "Span filter list size is wrong")
+		require.Equal(t, len(collectorConfig.Processors.SpanFilter.Traces.Span), 8, "Span filter list size is wrong")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (resource.attributes[\"service.name\"] == \"grafana.kyma-system\")", "Grafana span filter egress missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"grafana.kyma-system\")", "Grafana span filter ingress GET missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (IsMatch(attributes[\"http.url\"], \".+/metrics\") == true) and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\")", "/metrics endpoint span filter missing")
