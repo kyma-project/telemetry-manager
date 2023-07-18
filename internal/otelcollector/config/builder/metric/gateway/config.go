@@ -5,13 +5,23 @@ import (
 )
 
 type Config struct {
-	common.BaseConfig
+	common.BaseConfig `yaml:",inline"`
 
-	Receivers  ReceiversConfig         `yaml:"receivers"`
-	Exporters  common.ExportersConfig  `yaml:"exporters"`
-	Processors common.ProcessorsConfig `yaml:"processors"`
+	Receivers  ReceiversConfig  `yaml:"receivers"`
+	Processors ProcessorsConfig `yaml:"processors"`
+	Exporters  ExportersConfig  `yaml:"exporters"`
 }
 
 type ReceiversConfig struct {
-	OTLP *common.OTLPReceiverConfig `yaml:"otlp,omitempty"`
+	OTLP common.OTLPReceiverConfig `yaml:"otlp"`
+}
+
+type ProcessorsConfig struct {
+	common.BaseProcessorsConfig `yaml:",inline"`
+}
+
+type ExportersConfig map[string]ExporterConfig
+
+type ExporterConfig struct {
+	common.BaseGatewayExporterConfig `yaml:",inline"`
 }

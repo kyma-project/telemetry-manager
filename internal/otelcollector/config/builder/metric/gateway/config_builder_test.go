@@ -144,26 +144,39 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-		expected := `receivers:
+		expected := `extensions:
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
+    pprof:
+        endpoint: 127.0.0.1:1777
+service:
+    pipelines:
+        metrics/test:
+            receivers:
+                - otlp
+            processors:
+                - memory_limiter
+                - k8sattributes
+                - resource
+                - batch
+            exporters:
+                - logging/test
+                - otlp/test
+    telemetry:
+        metrics:
+            address: ${MY_POD_IP}:8888
+        logs:
+            level: info
+    extensions:
+        - health_check
+        - pprof
+receivers:
     otlp:
         protocols:
             http:
                 endpoint: ${MY_POD_IP}:4318
             grpc:
                 endpoint: ${MY_POD_IP}:4317
-exporters:
-    logging/test:
-        verbosity: basic
-    otlp/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
-        sending_queue:
-            enabled: true
-            queue_size: 256
-        retry_on_failure:
-            enabled: true
-            initial_interval: 5s
-            max_interval: 30s
-            max_elapsed_time: 300s
 processors:
     batch:
         send_batch_size: 1024
@@ -200,32 +213,19 @@ processors:
             - action: insert
               key: k8s.cluster.name
               value: ${KUBERNETES_SERVICE_HOST}
-extensions:
-    health_check:
-        endpoint: ${MY_POD_IP}:13133
-    pprof:
-        endpoint: 127.0.0.1:1777
-service:
-    pipelines:
-        metrics/test:
-            receivers:
-                - otlp
-            processors:
-                - memory_limiter
-                - k8sattributes
-                - resource
-                - batch
-            exporters:
-                - logging/test
-                - otlp/test
-    telemetry:
-        metrics:
-            address: ${MY_POD_IP}:8888
-        logs:
-            level: info
-    extensions:
-        - health_check
-        - pprof
+exporters:
+    logging/test:
+        verbosity: basic
+    otlp/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
+        sending_queue:
+            enabled: true
+            queue_size: 256
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
 `
 
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithName("test").Build()})

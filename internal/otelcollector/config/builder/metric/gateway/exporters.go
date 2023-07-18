@@ -11,9 +11,9 @@ import (
 	"sort"
 )
 
-func makeExportersConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.MetricPipeline) (common.ExportersConfig, common.PipelinesConfig, otlpoutput.EnvVars, error) {
+func makeExportersConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.MetricPipeline) (ExportersConfig, common.PipelinesConfig, otlpoutput.EnvVars, error) {
 	allVars := make(otlpoutput.EnvVars)
-	exportersConfig := make(common.ExportersConfig)
+	exportersConfig := make(ExportersConfig)
 	pipelinesConfig := make(common.PipelinesConfig)
 
 	queueSize := 256 / len(pipelines)
@@ -30,9 +30,10 @@ func makeExportersConfig(ctx context.Context, c client.Reader, pipelines []v1alp
 		}
 
 		var outputAliases []string
-
-		maps.Copy(exportersConfig, exporterConfig)
-		outputAliases = append(outputAliases, maps.Keys(exporterConfig)...)
+		for k, v := range exporterConfig {
+			exportersConfig[k] = ExporterConfig{BaseGatewayExporterConfig: v}
+			outputAliases = append(outputAliases, k)
+		}
 		sort.Strings(outputAliases)
 		pipelineConfig := makePipelineConfig(outputAliases)
 		pipelineName := fmt.Sprintf("metrics/%s", pipeline.Name)

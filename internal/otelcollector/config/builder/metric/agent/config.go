@@ -6,11 +6,11 @@ import (
 )
 
 type Config struct {
-	common.BaseConfig
+	common.BaseConfig `yaml:",inline"`
 
-	Receivers  ReceiversConfig        `yaml:"receivers"`
-	Processors ProcessorsConfig       `yaml:"processors"`
-	Exporters  common.ExportersConfig `yaml:"exporters"`
+	Receivers  ReceiversConfig  `yaml:"receivers"`
+	Processors ProcessorsConfig `yaml:"processors"`
+	Exporters  ExportersConfig  `yaml:"exporters"`
 }
 
 type ReceiversConfig struct {
@@ -20,11 +20,11 @@ type ReceiversConfig struct {
 }
 
 type KubeletStatsReceiverConfig struct {
-	CollectionInterval string            `yaml:"collection_interval,omitempty"`
-	AuthType           string            `yaml:"auth_type,omitempty"`
-	Endpoint           string            `yaml:"endpoint,omitempty"`
-	InsecureSkipVerify bool              `yaml:"insecure_skip_verify,omitempty"`
-	MetricGroups       []MetricGroupType `yaml:"metric_groups,omitempty"`
+	CollectionInterval string            `yaml:"collection_interval"`
+	AuthType           string            `yaml:"auth_type"`
+	Endpoint           string            `yaml:"endpoint"`
+	InsecureSkipVerify bool              `yaml:"insecure_skip_verify"`
+	MetricGroups       []MetricGroupType `yaml:"metric_groups"`
 }
 
 type MetricGroupType string
@@ -35,11 +35,15 @@ const (
 )
 
 type PrometheusReceiverConfig struct {
-	Config promconfig.Config `yaml:"config,omitempty"`
+	Config promconfig.Config `yaml:"config"`
 }
 
 type ProcessorsConfig struct {
-	DropServiceName    *common.ResourceProcessorConfig `yaml:"resource/drop-service-name,omitempty"`
-	EmittedByRuntime   *common.ResourceProcessorConfig `yaml:"resource/emitted-by-runtime,omitempty"`
-	EmittedByWorkloads *common.ResourceProcessorConfig `yaml:"resource/emitted-by-workloads,omitempty"`
+	DropServiceName    common.ResourceProcessorConfig `yaml:"resource/drop-service-name"`
+	EmittedByRuntime   common.ResourceProcessorConfig `yaml:"resource/emitted-by-runtime"`
+	EmittedByWorkloads common.ResourceProcessorConfig `yaml:"resource/emitted-by-workloads"`
+}
+
+type ExportersConfig struct {
+	OTLP common.OTLPExporterConfig `yaml:"resource/otlp"`
 }

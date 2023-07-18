@@ -4,7 +4,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
-func makeProcessorsConfig() common.ProcessorsConfig {
+func makeProcessorsConfig() ProcessorsConfig {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -41,36 +41,38 @@ func makeProcessorsConfig() common.ProcessorsConfig {
 			},
 		},
 	}
-	return common.ProcessorsConfig{
-		Batch: &common.BatchProcessorConfig{
-			SendBatchSize:    512,
-			Timeout:          "10s",
-			SendBatchMaxSize: 512,
-		},
-		MemoryLimiter: &common.MemoryLimiterConfig{
-			CheckInterval:        "1s",
-			LimitPercentage:      75,
-			SpikeLimitPercentage: 10,
-		},
-		K8sAttributes: &common.K8sAttributesProcessorConfig{
-			AuthType:    "serviceAccount",
-			Passthrough: false,
-			Extract: common.ExtractK8sMetadataConfig{
-				Metadata: k8sAttributes,
+	return ProcessorsConfig{
+		BaseProcessorsConfig: common.BaseProcessorsConfig{
+			Batch: &common.BatchProcessorConfig{
+				SendBatchSize:    512,
+				Timeout:          "10s",
+				SendBatchMaxSize: 512,
 			},
-			PodAssociation: podAssociations,
-		},
-		Resource: &common.ResourceProcessorConfig{
-			Attributes: []common.AttributeAction{
-				{
-					Action: "insert",
-					Key:    "k8s.cluster.name",
-					Value:  "${KUBERNETES_SERVICE_HOST}",
+			MemoryLimiter: &common.MemoryLimiterConfig{
+				CheckInterval:        "1s",
+				LimitPercentage:      75,
+				SpikeLimitPercentage: 10,
+			},
+			K8sAttributes: &common.K8sAttributesProcessorConfig{
+				AuthType:    "serviceAccount",
+				Passthrough: false,
+				Extract: common.ExtractK8sMetadataConfig{
+					Metadata: k8sAttributes,
+				},
+				PodAssociation: podAssociations,
+			},
+			Resource: &common.ResourceProcessorConfig{
+				Attributes: []common.AttributeAction{
+					{
+						Action: "insert",
+						Key:    "k8s.cluster.name",
+						Value:  "${KUBERNETES_SERVICE_HOST}",
+					},
 				},
 			},
 		},
-		Filter: &common.FilterProcessorConfig{
-			Traces: common.TraceConfig{
+		SpanFilter: FilterProcessorConfig{
+			Traces: TraceConfig{
 				Span: makeSpanFilterConfig(),
 			},
 		},

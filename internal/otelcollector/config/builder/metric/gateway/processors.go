@@ -4,12 +4,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
-func makeProcessorsConfig() common.ProcessorsConfig {
-	return common.ProcessorsConfig{
-		Batch:         makeBatchProcessorConfig(),
-		MemoryLimiter: makeMemoryLimiterConfig(),
-		K8sAttributes: makeK8sAttributesProcessorConfig(),
-		Resource:      makeResourceProcessorConfig(),
+func makeProcessorsConfig() ProcessorsConfig {
+	return ProcessorsConfig{
+		BaseProcessorsConfig: common.BaseProcessorsConfig{
+			Batch:         makeBatchProcessorConfig(),
+			MemoryLimiter: makeMemoryLimiterConfig(),
+			K8sAttributes: makeK8sAttributesProcessorConfig(),
+			Resource:      makeResourceProcessorConfig(),
+		},
 	}
 }
 

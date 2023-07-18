@@ -6,7 +6,7 @@ import (
 
 func makeProcessorsConfig() ProcessorsConfig {
 	return ProcessorsConfig{
-		DropServiceName: &common.ResourceProcessorConfig{
+		DropServiceName: common.ResourceProcessorConfig{
 			Attributes: []common.AttributeAction{
 				{
 					Action: "delete",
@@ -19,8 +19,8 @@ func makeProcessorsConfig() ProcessorsConfig {
 	}
 }
 
-func makeEmittedByConfig(value string) *common.ResourceProcessorConfig {
-	return &common.ResourceProcessorConfig{
+func makeEmittedByConfig(value string) common.ResourceProcessorConfig {
+	return common.ResourceProcessorConfig{
 		Attributes: []common.AttributeAction{
 			{
 				Action: "insert",

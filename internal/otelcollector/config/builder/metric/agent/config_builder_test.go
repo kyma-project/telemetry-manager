@@ -16,8 +16,7 @@ func TestMakeAgentConfig(t *testing.T) {
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
 		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
 
-		require.Contains(t, collectorConfig.Exporters, "otlp")
-		actualExporterConfig := collectorConfig.Exporters["otlp"]
+		actualExporterConfig := collectorConfig.Exporters.OTLP
 		require.Equal(t, "metrics.telemetry-system.svc.cluster.local:4317", actualExporterConfig.Endpoint)
 	})
 
@@ -25,8 +24,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		t.Run("otlp exporter endpoint", func(t *testing.T) {
 			collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
 
-			require.Contains(t, collectorConfig.Exporters, "otlp")
-			actualExporterConfig := collectorConfig.Exporters["otlp"]
+			actualExporterConfig := collectorConfig.Exporters.OTLP
 			require.True(t, actualExporterConfig.TLS.Insecure)
 		})
 	})
@@ -46,17 +44,52 @@ func TestMakeAgentConfig(t *testing.T) {
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-		expected := `receivers:
+		expected := `extensions:
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
+service:
+    pipelines:
+        metrics/runtime:
+            receivers:
+                - kubeletstats
+            processors:
+                - resource/drop-service-name
+                - resource/emitted-by-runtime
+            exporters:
+                - otlp
+    telemetry:
+        metrics:
+            address: ${MY_POD_IP}:8888
+        logs:
+            level: info
+    extensions:
+        - health_check
+receivers:
     kubeletstats:
         collection_interval: 30s
         auth_type: serviceAccount
         endpoint: https://${env:MY_NODE_NAME}:10250
-        insecure_skip_verify: true
+        insecure_skip_verify: false
         metric_groups:
             - container
             - pod
+processors:
+    resource/drop-service-name:
+        attributes:
+            - action: delete
+              key: service.name
+    resource/emitted-by-runtime:
+        attributes:
+            - action: insert
+              key: kyma.source
+              value: runtime
+    resource/emitted-by-workloads:
+        attributes:
+            - action: insert
+              key: kyma.source
+              value: workloads
 exporters:
-    otlp:
+    resource/otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317
         tls:
             insecure: true
@@ -68,25 +101,6 @@ exporters:
             initial_interval: 5s
             max_interval: 30s
             max_elapsed_time: 300s
-processors: {}
-extensions:
-    health_check:
-        endpoint: ${MY_POD_IP}:13133
-service:
-    pipelines:
-        metrics:
-            receivers:
-                - kubeletstats
-            processors: []
-            exporters:
-                - otlp
-    telemetry:
-        metrics:
-            address: ${MY_POD_IP}:8888
-        logs:
-            level: info
-    extensions:
-        - health_check
 `
 
 		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build()})

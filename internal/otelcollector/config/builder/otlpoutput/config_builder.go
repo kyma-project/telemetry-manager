@@ -13,7 +13,7 @@ import (
 
 type EnvVars map[string][]byte
 
-func MakeExportersConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, queueSize int) (common.ExportersConfig, EnvVars, error) {
+func MakeExportersConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, queueSize int) (map[string]common.BaseGatewayExporterConfig, EnvVars, error) {
 	envVars, err := makeEnvVars(ctx, c, otlpOutput, pipelineName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
@@ -23,7 +23,7 @@ func MakeExportersConfig(ctx context.Context, c client.Reader, otlpOutput *telem
 	return exportersConfig, envVars, nil
 }
 
-func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte, queueSize int) common.ExportersConfig {
+func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte, queueSize int) map[string]common.BaseGatewayExporterConfig {
 	otlpOutputAlias := getOTLPOutputAlias(otlpOutput, pipelineName)
 	loggingOutputAlias := getLoggingOutputAlias(pipelineName)
 	headers := makeHeaders(otlpOutput, pipelineName)
@@ -50,7 +50,7 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName 
 		Verbosity: "basic",
 	}
 
-	return common.ExportersConfig{
+	return map[string]common.BaseGatewayExporterConfig{
 		otlpOutputAlias:    {OTLPExporterConfig: &otlpExporterConfig},
 		loggingOutputAlias: {LoggingExporterConfig: &loggingExporter},
 	}

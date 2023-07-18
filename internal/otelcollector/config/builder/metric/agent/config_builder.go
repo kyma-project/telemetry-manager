@@ -51,10 +51,9 @@ func enableRuntimeMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
 	return false
 }
 
-func makeExportersConfig(gatewayServiceName types.NamespacedName) common.ExportersConfig {
-	exportersConfig := make(common.ExportersConfig)
-	exportersConfig["otlp"] = common.ExporterConfig{
-		OTLPExporterConfig: &common.OTLPExporterConfig{
+func makeExportersConfig(gatewayServiceName types.NamespacedName) ExportersConfig {
+	return ExportersConfig{
+		OTLP: common.OTLPExporterConfig{
 			Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:%d", gatewayServiceName.Name, gatewayServiceName.Namespace, common.PortOTLPGRPC),
 			TLS: common.TLSConfig{
 				Insecure: true,
@@ -71,7 +70,6 @@ func makeExportersConfig(gatewayServiceName types.NamespacedName) common.Exporte
 			},
 		},
 	}
-	return exportersConfig
 }
 
 func makeExtensionsConfig() common.ExtensionsConfig {

@@ -5,14 +5,34 @@ import (
 )
 
 type Config struct {
-	common.BaseConfig
+	common.BaseConfig `yaml:",inline"`
 
-	Receivers  ReceiversConfig         `yaml:"receivers"`
-	Processors common.ProcessorsConfig `yaml:"processors"`
-	Exporters  common.ExportersConfig  `yaml:"exporters"`
+	Receivers  ReceiversConfig  `yaml:"receivers"`
+	Processors ProcessorsConfig `yaml:"processors"`
+	Exporters  ExportersConfig  `yaml:"exporters"`
 }
 
 type ReceiversConfig struct {
-	OpenCensus *common.EndpointConfig     `yaml:"opencensus,omitempty"`
-	OTLP       *common.OTLPReceiverConfig `yaml:"otlp,omitempty"`
+	OpenCensus common.EndpointConfig     `yaml:"opencensus"`
+	OTLP       common.OTLPReceiverConfig `yaml:"otlp"`
+}
+
+type ProcessorsConfig struct {
+	common.BaseProcessorsConfig `yaml:",inline"`
+
+	SpanFilter FilterProcessorConfig `yaml:"filter"`
+}
+
+type FilterProcessorConfig struct {
+	Traces TraceConfig `yaml:"traces"`
+}
+
+type TraceConfig struct {
+	Span []string `yaml:"span"`
+}
+
+type ExportersConfig map[string]ExporterConfig
+
+type ExporterConfig struct {
+	common.BaseGatewayExporterConfig `yaml:",inline"`
 }

@@ -14,7 +14,7 @@ import (
 
 func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.TracePipeline) (*Config, otlpoutput.EnvVars, error) {
 	allVars := make(otlpoutput.EnvVars)
-	exportersConfig := make(common.ExportersConfig)
+	exportersConfig := make(ExportersConfig)
 	pipelinesConfig := make(common.PipelinesConfig)
 
 	for _, pipeline := range pipelines {
@@ -31,7 +31,7 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.Trace
 
 		var outputAliases []string
 		for k, v := range exporterConfig {
-			exportersConfig[k] = v
+			exportersConfig[k] = ExporterConfig{BaseGatewayExporterConfig: v}
 			outputAliases = append(outputAliases, k)
 		}
 		sort.Strings(outputAliases)
@@ -57,10 +57,10 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.Trace
 
 func makeReceiversConfig() ReceiversConfig {
 	return ReceiversConfig{
-		OpenCensus: &common.EndpointConfig{
+		OpenCensus: common.EndpointConfig{
 			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortOpenCensus),
 		},
-		OTLP: &common.OTLPReceiverConfig{
+		OTLP: common.OTLPReceiverConfig{
 			Protocols: common.ReceiverProtocols{
 				HTTP: common.EndpointConfig{
 					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortOTLPHTTP),

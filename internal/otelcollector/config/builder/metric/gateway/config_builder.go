@@ -29,7 +29,7 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.Metri
 
 func makeReceiversConfig() ReceiversConfig {
 	return ReceiversConfig{
-		OTLP: &common.OTLPReceiverConfig{
+		OTLP: common.OTLPReceiverConfig{
 			Protocols: common.ReceiverProtocols{
 				HTTP: common.EndpointConfig{
 					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortOTLPHTTP),
