@@ -1,13 +1,13 @@
 package agent
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
 func makeProcessorsConfig() ProcessorsConfig {
 	return ProcessorsConfig{
-		DropServiceName: &config.ResourceProcessorConfig{
-			Attributes: []config.AttributeAction{
+		DropServiceName: &common.ResourceProcessorConfig{
+			Attributes: []common.AttributeAction{
 				{
 					Action: "delete",
 					Key:    "service.name",
@@ -19,9 +19,9 @@ func makeProcessorsConfig() ProcessorsConfig {
 	}
 }
 
-func makeEmittedByConfig(value string) *config.ResourceProcessorConfig {
-	return &config.ResourceProcessorConfig{
-		Attributes: []config.AttributeAction{
+func makeEmittedByConfig(value string) *common.ResourceProcessorConfig {
+	return &common.ResourceProcessorConfig{
+		Attributes: []common.AttributeAction{
 			{
 				Action: "insert",
 				Key:    "kyma.source",

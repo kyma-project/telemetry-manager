@@ -8,15 +8,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/otlpoutput"
 )
 
 func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.TracePipeline) (*Config, otlpoutput.EnvVars, error) {
 	allVars := make(otlpoutput.EnvVars)
-	exportersConfig := make(config.ExportersConfig)
-	pipelinesConfig := make(config.PipelinesConfig)
+	exportersConfig := make(common.ExportersConfig)
+	pipelinesConfig := make(common.PipelinesConfig)
 
 	for _, pipeline := range pipelines {
 		if pipeline.DeletionTimestamp != nil {
@@ -46,25 +45,27 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.Trace
 	}
 
 	return &Config{
+		BaseConfig: common.BaseConfig{
+			Service:    makeServiceConfig(pipelinesConfig),
+			Extensions: makeExtensionsConfig(),
+		},
 		Exporters:  exportersConfig,
 		Receivers:  makeReceiversConfig(),
 		Processors: makeProcessorsConfig(),
-		Service:    makeServiceConfig(pipelinesConfig),
-		Extensions: makeExtensionsConfig(),
 	}, allVars, nil
 }
 
 func makeReceiversConfig() ReceiversConfig {
 	return ReceiversConfig{
-		OpenCensus: &config.EndpointConfig{
+		OpenCensus: &common.EndpointConfig{
 			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortOpenCensus),
 		},
-		OTLP: &config.OTLPReceiverConfig{
-			Protocols: config.ReceiverProtocols{
-				HTTP: config.EndpointConfig{
+		OTLP: &common.OTLPReceiverConfig{
+			Protocols: common.ReceiverProtocols{
+				HTTP: common.EndpointConfig{
 					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortOTLPHTTP),
 				},
-				GRPC: config.EndpointConfig{
+				GRPC: common.EndpointConfig{
 					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortOTLPGRPC),
 				},
 			},
@@ -72,33 +73,33 @@ func makeReceiversConfig() ReceiversConfig {
 	}
 }
 
-func makePipelineConfig(outputAliases []string) config.PipelineConfig {
-	return config.PipelineConfig{
+func makePipelineConfig(outputAliases []string) common.PipelineConfig {
+	return common.PipelineConfig{
 		Receivers:  []string{"opencensus", "otlp"},
 		Processors: []string{"memory_limiter", "k8sattributes", "filter", "resource", "batch"},
 		Exporters:  outputAliases,
 	}
 }
 
-func makeExtensionsConfig() config.ExtensionsConfig {
-	return config.ExtensionsConfig{
-		HealthCheck: config.EndpointConfig{
+func makeExtensionsConfig() common.ExtensionsConfig {
+	return common.ExtensionsConfig{
+		HealthCheck: common.EndpointConfig{
 			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortHealthCheck),
 		},
-		Pprof: config.EndpointConfig{
+		Pprof: common.EndpointConfig{
 			Endpoint: fmt.Sprintf("127.0.0.1:%d", common.PortPprof),
 		},
 	}
 }
 
-func makeServiceConfig(pipelines config.PipelinesConfig) config.ServiceConfig {
-	return config.ServiceConfig{
+func makeServiceConfig(pipelines common.PipelinesConfig) common.ServiceConfig {
+	return common.ServiceConfig{
 		Pipelines: pipelines,
-		Telemetry: config.TelemetryConfig{
-			Metrics: config.MetricsConfig{
+		Telemetry: common.TelemetryConfig{
+			Metrics: common.MetricsConfig{
 				Address: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortMetrics),
 			},
-			Logs: config.LoggingConfig{
+			Logs: common.LoggingConfig{
 				Level: "info",
 			},
 		},

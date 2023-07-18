@@ -1,4 +1,20 @@
-package config
+package common
+
+type BaseConfig struct {
+	Extensions ExtensionsConfig `yaml:"extensions"`
+	Service    ServiceConfig    `yaml:"service"`
+}
+
+type ServiceConfig struct {
+	Pipelines  PipelinesConfig `yaml:"pipelines,omitempty"`
+	Telemetry  TelemetryConfig `yaml:"telemetry,omitempty"`
+	Extensions []string        `yaml:"extensions,omitempty"`
+}
+
+type ExtensionsConfig struct {
+	HealthCheck EndpointConfig `yaml:"health_check,omitempty"`
+	Pprof       EndpointConfig `yaml:"pprof,omitempty"`
+}
 
 type TLSConfig struct {
 	Insecure bool `yaml:"insecure"`
@@ -130,15 +146,4 @@ type LoggingConfig struct {
 type TelemetryConfig struct {
 	Metrics MetricsConfig `yaml:"metrics"`
 	Logs    LoggingConfig `yaml:"logs"`
-}
-
-type ServiceConfig struct {
-	Pipelines  PipelinesConfig `yaml:"pipelines,omitempty"`
-	Telemetry  TelemetryConfig `yaml:"telemetry,omitempty"`
-	Extensions []string        `yaml:"extensions,omitempty"`
-}
-
-type ExtensionsConfig struct {
-	HealthCheck EndpointConfig `yaml:"health_check,omitempty"`
-	Pprof       EndpointConfig `yaml:"pprof,omitempty"`
 }

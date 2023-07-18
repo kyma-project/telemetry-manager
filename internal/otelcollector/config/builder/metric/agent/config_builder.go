@@ -6,7 +6,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
@@ -22,11 +21,13 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.Me
 	}
 
 	return &Config{
+		BaseConfig: common.BaseConfig{
+			Extensions: makeExtensionsConfig(),
+			Service:    makeServiceConfig(inputDesc),
+		},
 		Receivers:  makeReceiversConfig(inputDesc),
 		Processors: makeProcessorsConfig(),
 		Exporters:  makeExportersConfig(gatewayServiceName),
-		Extensions: makeExtensionsConfig(),
-		Service:    makeServiceConfig(inputDesc),
 	}
 }
 
@@ -50,19 +51,19 @@ func enableRuntimeMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
 	return false
 }
 
-func makeExportersConfig(gatewayServiceName types.NamespacedName) config.ExportersConfig {
-	exportersConfig := make(config.ExportersConfig)
-	exportersConfig["otlp"] = config.ExporterConfig{
-		OTLPExporterConfig: &config.OTLPExporterConfig{
+func makeExportersConfig(gatewayServiceName types.NamespacedName) common.ExportersConfig {
+	exportersConfig := make(common.ExportersConfig)
+	exportersConfig["otlp"] = common.ExporterConfig{
+		OTLPExporterConfig: &common.OTLPExporterConfig{
 			Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:%d", gatewayServiceName.Name, gatewayServiceName.Namespace, common.PortOTLPGRPC),
-			TLS: config.TLSConfig{
+			TLS: common.TLSConfig{
 				Insecure: true,
 			},
-			SendingQueue: config.SendingQueueConfig{
+			SendingQueue: common.SendingQueueConfig{
 				Enabled:   true,
 				QueueSize: 512,
 			},
-			RetryOnFailure: config.RetryOnFailureConfig{
+			RetryOnFailure: common.RetryOnFailureConfig{
 				Enabled:         true,
 				InitialInterval: "5s",
 				MaxInterval:     "30s",
@@ -73,22 +74,22 @@ func makeExportersConfig(gatewayServiceName types.NamespacedName) config.Exporte
 	return exportersConfig
 }
 
-func makeExtensionsConfig() config.ExtensionsConfig {
-	return config.ExtensionsConfig{
-		HealthCheck: config.EndpointConfig{
+func makeExtensionsConfig() common.ExtensionsConfig {
+	return common.ExtensionsConfig{
+		HealthCheck: common.EndpointConfig{
 			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortHealthCheck),
 		},
 	}
 }
 
-func makeServiceConfig(inputDesc inputDescriptor) config.ServiceConfig {
-	return config.ServiceConfig{
+func makeServiceConfig(inputDesc inputDescriptor) common.ServiceConfig {
+	return common.ServiceConfig{
 		Pipelines: makePipelinesConfig(inputDesc),
-		Telemetry: config.TelemetryConfig{
-			Metrics: config.MetricsConfig{
+		Telemetry: common.TelemetryConfig{
+			Metrics: common.MetricsConfig{
 				Address: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortMetrics),
 			},
-			Logs: config.LoggingConfig{
+			Logs: common.LoggingConfig{
 				Level: "info",
 			},
 		},
@@ -96,11 +97,11 @@ func makeServiceConfig(inputDesc inputDescriptor) config.ServiceConfig {
 	}
 }
 
-func makePipelinesConfig(inputDesc inputDescriptor) config.PipelinesConfig {
-	pipelinesConfig := make(config.PipelinesConfig)
+func makePipelinesConfig(inputDesc inputDescriptor) common.PipelinesConfig {
+	pipelinesConfig := make(common.PipelinesConfig)
 
 	if inputDesc.enableRuntimeScraping {
-		pipelinesConfig["metrics/runtime"] = config.PipelineConfig{
+		pipelinesConfig["metrics/runtime"] = common.PipelineConfig{
 			Receivers:  []string{"kubeletstats"},
 			Processors: []string{"resource/drop-service-name", "resource/emitted-by-runtime"},
 			Exporters:  []string{"otlp"},
@@ -108,7 +109,7 @@ func makePipelinesConfig(inputDesc inputDescriptor) config.PipelinesConfig {
 	}
 
 	if inputDesc.enableWorkloadScraping {
-		pipelinesConfig["metrics/workloads"] = config.PipelineConfig{
+		pipelinesConfig["metrics/workloads"] = common.PipelineConfig{
 			Receivers:  []string{"prometheus/self", "prometheus/app-pods"},
 			Processors: []string{"resource/drop-service-name", "resource/emitted-by-workloads"},
 			Exporters:  []string{"otlp"},

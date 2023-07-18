@@ -1,18 +1,18 @@
 package gateway
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
 type Config struct {
+	common.BaseConfig
+
 	Receivers  ReceiversConfig         `yaml:"receivers"`
-	Exporters  config.ExportersConfig  `yaml:"exporters"`
-	Processors config.ProcessorsConfig `yaml:"processors"`
-	Extensions config.ExtensionsConfig `yaml:"extensions"`
-	Service    config.ServiceConfig    `yaml:"service"`
+	Processors common.ProcessorsConfig `yaml:"processors"`
+	Exporters  common.ExportersConfig  `yaml:"exporters"`
 }
 
 type ReceiversConfig struct {
-	OpenCensus *config.EndpointConfig     `yaml:"opencensus,omitempty"`
-	OTLP       *config.OTLPReceiverConfig `yaml:"otlp,omitempty"`
+	OpenCensus *common.EndpointConfig     `yaml:"opencensus,omitempty"`
+	OTLP       *common.OTLPReceiverConfig `yaml:"otlp,omitempty"`
 }

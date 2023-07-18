@@ -8,12 +8,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
 type EnvVars map[string][]byte
 
-func MakeExportersConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, queueSize int) (config.ExportersConfig, EnvVars, error) {
+func MakeExportersConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, queueSize int) (common.ExportersConfig, EnvVars, error) {
 	envVars, err := makeEnvVars(ctx, c, otlpOutput, pipelineName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
@@ -23,22 +23,22 @@ func MakeExportersConfig(ctx context.Context, c client.Reader, otlpOutput *telem
 	return exportersConfig, envVars, nil
 }
 
-func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte, queueSize int) config.ExportersConfig {
+func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, secretData map[string][]byte, queueSize int) common.ExportersConfig {
 	otlpOutputAlias := getOTLPOutputAlias(otlpOutput, pipelineName)
 	loggingOutputAlias := getLoggingOutputAlias(pipelineName)
 	headers := makeHeaders(otlpOutput, pipelineName)
 	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
-	otlpExporterConfig := config.OTLPExporterConfig{
+	otlpExporterConfig := common.OTLPExporterConfig{
 		Endpoint: fmt.Sprintf("${%s}", otlpEndpointVariable),
 		Headers:  headers,
-		TLS: config.TLSConfig{
+		TLS: common.TLSConfig{
 			Insecure: isInsecureOutput(string(secretData[otlpEndpointVariable])),
 		},
-		SendingQueue: config.SendingQueueConfig{
+		SendingQueue: common.SendingQueueConfig{
 			Enabled:   true,
 			QueueSize: queueSize,
 		},
-		RetryOnFailure: config.RetryOnFailureConfig{
+		RetryOnFailure: common.RetryOnFailureConfig{
 			Enabled:         true,
 			InitialInterval: "5s",
 			MaxInterval:     "30s",
@@ -46,11 +46,11 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName 
 		},
 	}
 
-	loggingExporter := config.LoggingExporterConfig{
+	loggingExporter := common.LoggingExporterConfig{
 		Verbosity: "basic",
 	}
 
-	return config.ExportersConfig{
+	return common.ExportersConfig{
 		otlpOutputAlias:    {OTLPExporterConfig: &otlpExporterConfig},
 		loggingOutputAlias: {LoggingExporterConfig: &loggingExporter},
 	}

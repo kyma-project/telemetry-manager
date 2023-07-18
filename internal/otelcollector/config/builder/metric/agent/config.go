@@ -1,16 +1,16 @@
 package agent
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	promconfig "github.com/prometheus/prometheus/config"
 )
 
 type Config struct {
-	Receivers  ReceiversConfig         `yaml:"receivers"`
-	Processors ProcessorsConfig        `yaml:"processors"`
-	Exporters  config.ExportersConfig  `yaml:"exporters"`
-	Extensions config.ExtensionsConfig `yaml:"extensions"`
-	Service    config.ServiceConfig    `yaml:"service"`
+	common.BaseConfig
+
+	Receivers  ReceiversConfig        `yaml:"receivers"`
+	Processors ProcessorsConfig       `yaml:"processors"`
+	Exporters  common.ExportersConfig `yaml:"exporters"`
 }
 
 type ReceiversConfig struct {
@@ -39,7 +39,7 @@ type PrometheusReceiverConfig struct {
 }
 
 type ProcessorsConfig struct {
-	DropServiceName    *config.ResourceProcessorConfig `yaml:"resource/drop-service-name,omitempty"`
-	EmittedByRuntime   *config.ResourceProcessorConfig `yaml:"resource/emitted-by-runtime,omitempty"`
-	EmittedByWorkloads *config.ResourceProcessorConfig `yaml:"resource/emitted-by-workloads,omitempty"`
+	DropServiceName    *common.ResourceProcessorConfig `yaml:"resource/drop-service-name,omitempty"`
+	EmittedByRuntime   *common.ResourceProcessorConfig `yaml:"resource/emitted-by-runtime,omitempty"`
+	EmittedByWorkloads *common.ResourceProcessorConfig `yaml:"resource/emitted-by-workloads,omitempty"`
 }

@@ -1,10 +1,10 @@
 package gateway
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
-func makeProcessorsConfig() config.ProcessorsConfig {
+func makeProcessorsConfig() common.ProcessorsConfig {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -16,9 +16,9 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 		"k8s.job.name",
 	}
 
-	podAssociations := []config.PodAssociations{
+	podAssociations := []common.PodAssociations{
 		{
-			Sources: []config.PodAssociation{
+			Sources: []common.PodAssociation{
 				{
 					From: "resource_attribute",
 					Name: "k8s.pod.ip",
@@ -26,7 +26,7 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 			},
 		},
 		{
-			Sources: []config.PodAssociation{
+			Sources: []common.PodAssociation{
 				{
 					From: "resource_attribute",
 					Name: "k8s.pod.uid",
@@ -34,34 +34,34 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 			},
 		},
 		{
-			Sources: []config.PodAssociation{
+			Sources: []common.PodAssociation{
 				{
 					From: "connection",
 				},
 			},
 		},
 	}
-	return config.ProcessorsConfig{
-		Batch: &config.BatchProcessorConfig{
+	return common.ProcessorsConfig{
+		Batch: &common.BatchProcessorConfig{
 			SendBatchSize:    512,
 			Timeout:          "10s",
 			SendBatchMaxSize: 512,
 		},
-		MemoryLimiter: &config.MemoryLimiterConfig{
+		MemoryLimiter: &common.MemoryLimiterConfig{
 			CheckInterval:        "1s",
 			LimitPercentage:      75,
 			SpikeLimitPercentage: 10,
 		},
-		K8sAttributes: &config.K8sAttributesProcessorConfig{
+		K8sAttributes: &common.K8sAttributesProcessorConfig{
 			AuthType:    "serviceAccount",
 			Passthrough: false,
-			Extract: config.ExtractK8sMetadataConfig{
+			Extract: common.ExtractK8sMetadataConfig{
 				Metadata: k8sAttributes,
 			},
 			PodAssociation: podAssociations,
 		},
-		Resource: &config.ResourceProcessorConfig{
-			Attributes: []config.AttributeAction{
+		Resource: &common.ResourceProcessorConfig{
+			Attributes: []common.AttributeAction{
 				{
 					Action: "insert",
 					Key:    "k8s.cluster.name",
@@ -69,8 +69,8 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 				},
 			},
 		},
-		Filter: &config.FilterProcessorConfig{
-			Traces: config.TraceConfig{
+		Filter: &common.FilterProcessorConfig{
+			Traces: common.TraceConfig{
 				Span: makeSpanFilterConfig(),
 			},
 		},
