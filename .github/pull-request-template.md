@@ -8,7 +8,7 @@ Before submitting your pull request, please follow these steps:
 2. Read and submit the required Contributor Licence Agreements (https://github.com/kyma-project/community/blob/main/docs/contributing/02-contributing.md).
 3. Test your changes and attach their results to the pull request.
 4. Update the relevant documentation.
-5. Fill in the checklist below.
+5. Fill in the checklists below.
 
 If the pull request requires a decision, follow the [decision-making process](https://github.com/kyma-project/community/blob/main/docs/governance/01-governance.md) and replace the PR template with the [decision record template](https://github.com/kyma-project/community/blob/main/.github/ISSUE_TEMPLATE/decision-record.md).
 -->
@@ -35,6 +35,7 @@ Related issues:
 - [ ] New features have a milestone label set.
 - [ ] New features have defined acceptance criteria in a corresponding GitHub Issue, and all criteria are satisfied with this PR.
 - [ ] The corresponding GitHub Issue has a respective `area` label.
+- [ ] The follow-up issues (if any) are linked in the `Related Issues` section.
 
 ## Testability
 
@@ -55,9 +56,9 @@ Please describe the tests you ran to verify your changes if needed. Provide inst
 -->
 Tests conducted for the PR:
 
-- Test description goes here
+<!-- Test description goes here -->
 
-## Checklist
+## Codebase
 
 - [ ] My code follows the style guidelines of this project.
 - [ ] The code was planned and designed following the defined architecture and the separation of concerns.
@@ -65,4 +66,3 @@ Tests conducted for the PR:
 - [ ] This PR adds value and shows no feature creep.
 - [ ] I have augmented the test suite that proves my fix is effective or that my feature works.
 - [ ] Adjusted the documentation if the change is user-facing.
-- [ ] The follow-up issues (if any) are linked in the `Related Issues` section.
