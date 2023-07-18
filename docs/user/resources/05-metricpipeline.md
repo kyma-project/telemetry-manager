@@ -51,8 +51,8 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;application**  | object | Configures application related scraping. |
 | **input.&#x200b;application.&#x200b;runtime**  | object | Configures runtime scraping (workload-related k8s ). |
 | **input.&#x200b;application.&#x200b;runtime.&#x200b;enabled**  | boolean | Indicates if runtime scraping is enabled. |
-| **input.&#x200b;application.&#x200b;workload**  | object | Configures workload scraping. |
-| **input.&#x200b;application.&#x200b;workload.&#x200b;enabled**  | boolean | Indicates if workload scraping is enabled. Services and pods marked with prometheus.io/scrape=true annotation will be scraped. |
+| **input.&#x200b;application.&#x200b;workloads**  | object | Configures workload scraping. |
+| **input.&#x200b;application.&#x200b;workloads.&#x200b;enabled**  | boolean | Indicates if workload scraping is enabled. Services and pods marked with prometheus.io/scrape=true annotation will be scraped. |
 | **output**  | object | Configures the metric gateway. |
 | **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Defines authentication options for the OTLP output |

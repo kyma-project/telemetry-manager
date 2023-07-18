@@ -70,7 +70,7 @@ type MetricPipelineInput struct {
 // MetricPipelineApplicationInput defines the application input configuration section.
 type MetricPipelineApplicationInput struct {
 	// Configures workload scraping.
-	Workload MetricPipelineWorkloadInput `json:"workload,omitempty"`
+	Workloads MetricPipelineWorkloadInput `json:"workloads,omitempty"`
 	// Configures runtime scraping (workload-related k8s ).
 	Runtime MetricPipelineContainerRuntimeInput `json:"runtime,omitempty"`
 }

@@ -34,7 +34,7 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.Me
 func enableWorkloadMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if input.Application.Workload.Enabled {
+		if input.Application.Workloads.Enabled {
 			return true
 		}
 	}

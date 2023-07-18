@@ -143,7 +143,7 @@ spec:
     application:
       runtime:
         enabled: true
-      workload:
+      workloads:
         enabled: true
   output:
     otlp:
