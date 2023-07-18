@@ -142,11 +142,3 @@ type ExtensionsConfig struct {
 	HealthCheck EndpointConfig `yaml:"health_check,omitempty"`
 	Pprof       EndpointConfig `yaml:"pprof,omitempty"`
 }
-
-type Config struct {
-	Receivers  ReceiversConfig  `yaml:"receivers"`
-	Exporters  ExportersConfig  `yaml:"exporters"`
-	Processors ProcessorsConfig `yaml:"processors"`
-	Extensions ExtensionsConfig `yaml:"extensions"`
-	Service    ServiceConfig    `yaml:"service"`
-}

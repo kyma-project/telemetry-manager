@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/otlpoutput"
 )
 
-func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.TracePipeline) (*config.Config, otlpoutput.EnvVars, error) {
+func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.TracePipeline) (*Config, otlpoutput.EnvVars, error) {
 	allVars := make(otlpoutput.EnvVars)
 	exportersConfig := make(config.ExportersConfig)
 	pipelinesConfig := make(config.PipelinesConfig)
@@ -45,7 +45,7 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.Trace
 		}
 	}
 
-	return &config.Config{
+	return &Config{
 		Exporters:  exportersConfig,
 		Receivers:  makeReceiversConfig(),
 		Processors: makeProcessorsConfig(),
@@ -54,8 +54,8 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.Trace
 	}, allVars, nil
 }
 
-func makeReceiversConfig() config.ReceiversConfig {
-	return config.ReceiversConfig{
+func makeReceiversConfig() ReceiversConfig {
+	return ReceiversConfig{
 		OpenCensus: &config.EndpointConfig{
 			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortOpenCensus),
 		},

@@ -11,13 +11,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/otlpoutput"
 )
 
-func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.MetricPipeline) (*config.Config, otlpoutput.EnvVars, error) {
+func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.MetricPipeline) (*Config, otlpoutput.EnvVars, error) {
 	exportersConfig, pipelinesConfig, allVars, err := makeExportersConfig(ctx, c, pipelines)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return &config.Config{
+	return &Config{
 		Receivers:  makeReceiversConfig(),
 		Processors: makeProcessorsConfig(),
 		Exporters:  exportersConfig,
@@ -26,8 +26,8 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.Metri
 	}, allVars, nil
 }
 
-func makeReceiversConfig() config.ReceiversConfig {
-	return config.ReceiversConfig{
+func makeReceiversConfig() ReceiversConfig {
+	return ReceiversConfig{
 		OTLP: &config.OTLPReceiverConfig{
 			Protocols: config.ReceiverProtocols{
 				HTTP: config.EndpointConfig{
