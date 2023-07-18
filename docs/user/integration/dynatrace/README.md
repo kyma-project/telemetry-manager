@@ -32,11 +32,7 @@ Before connecting Kyma and Dynatrace, create a Dynatrace access token:
 1. Type the name you want to give to this token. If needed, set an expiration date.
 1. Select the following scopes:
    - **Ingest metrics**
-   - **Read metrics**
-   - **Write metrics**
    - **Ingest OpenTelemetry traces**
-   - **Look up a single trace**
-   - **Access problem and event feed, metrics, and topology**
 1. Click **Generate token**.
 1. Copy and save the generated token.
 
