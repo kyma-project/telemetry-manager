@@ -42,9 +42,6 @@ func NewTelemetryReconciler(client client.Client, reconciler *telemetry.Reconcil
 	}
 }
 
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=Telemetries,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=Telemetries/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=Telemetries/finalizers,verbs=update
 func (r *TelemetryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	return r.reconciler.Reconcile(ctx, req)
 }
