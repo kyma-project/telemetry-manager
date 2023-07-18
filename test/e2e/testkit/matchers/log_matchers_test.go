@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ConsistOfNumberOfLogs", func() {
+var _ = Describe("ConsistOfNumberOfLogs", Label("logging"), func() {
 	var fileBytes []byte
 
 	Context("with nil input", func() {
@@ -54,7 +54,7 @@ var _ = Describe("ConsistOfNumberOfLogs", func() {
 
 })
 
-var _ = Describe("ContainLogs", func() {
+var _ = Describe("ContainLogs", Label("logging"), func() {
 	var fileBytes []byte
 
 	Context("with nil input", func() {
@@ -98,7 +98,7 @@ var _ = Describe("ContainLogs", func() {
 	})
 })
 
-var _ = Describe("ContainsLogsWith", func() {
+var _ = Describe("ContainsLogsWith", Label("logging"), func() {
 	var fileBytes []byte
 
 	Context("with nil input", func() {

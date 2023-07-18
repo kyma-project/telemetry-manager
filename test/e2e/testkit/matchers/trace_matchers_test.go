@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ConsistOfSpansWithIDs", func() {
+var _ = Describe("ConsistOfSpansWithIDs", Label("tracing"), func() {
 	var fileBytes []byte
 	var expectedSpansWithIDs []pcommon.SpanID
 
@@ -90,7 +90,7 @@ var _ = Describe("ConsistOfSpansWithIDs", func() {
 	})
 })
 
-var _ = Describe("ConsistOfSpansWithTraceID", func() {
+var _ = Describe("ConsistOfSpansWithTraceID", Label("tracing"), func() {
 	var fileBytes []byte
 	var expectedTraceID pcommon.TraceID
 
@@ -171,7 +171,7 @@ var _ = Describe("ConsistOfSpansWithTraceID", func() {
 	})
 })
 
-var _ = Describe("ConsistOfSpansWithAttributes", func() {
+var _ = Describe("ConsistOfSpansWithAttributes", Label("tracing"), func() {
 	var fileBytes []byte
 	var expectedAttrs pcommon.Map
 
@@ -255,7 +255,7 @@ var _ = Describe("ConsistOfSpansWithAttributes", func() {
 	})
 })
 
-var _ = Describe("ConsistOfNumberOfSpans", func() {
+var _ = Describe("ConsistOfNumberOfSpans", Label("tracing"), func() {
 	var fileBytes []byte
 
 	Context("with nil input", func() {

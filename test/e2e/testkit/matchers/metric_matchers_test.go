@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("HaveGauges", func() {
+var _ = Describe("HaveGauges", Label("metrics"), func() {
 	var fileBytes []byte
 	var expectedMetrics []pmetric.Metric
 
@@ -110,7 +110,7 @@ var _ = Describe("HaveGauges", func() {
 	})
 })
 
-var _ = Describe("HaveNumberOfMetrics", func() {
+var _ = Describe("HaveNumberOfMetrics", Label("metrics"), func() {
 	Context("with nil input", func() {
 		It("should match 0", func() {
 			success, err := HaveNumberOfMetrics(0).Match(nil)

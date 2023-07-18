@@ -37,7 +37,7 @@ var (
 	tracePipelineReconciliationTimeout = 10 * time.Second
 )
 
-var _ = Describe("Tracing", func() {
+var _ = Describe("Tracing", Label("tracing"), func() {
 	Context("When a tracepipeline exists", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
