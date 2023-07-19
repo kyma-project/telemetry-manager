@@ -151,3 +151,8 @@ In order to verify metrics and traces arrival we adapted sample application from
 2. To access your application, port-forward it to the frontend:
    ```bash
    kubectl -n $KYMA_NS port-forward svc/otel-frontendproxy 8080
+
+### Access metrics and traces
+
+1. To access metrics you should open your **Dynatrace Manager** and go to the **Observe and explore** > **Metrics**.
+1. To access traces  you should open your **Dynatrace Manager** and go to the **Applications & Microservices** > **Distributed traces**.
