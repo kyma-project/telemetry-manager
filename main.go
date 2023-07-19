@@ -204,6 +204,8 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch
 // +kubebuilder:rbac:groups=networking.k8s.io,namespace=system,resources=networkpolicies,verbs=create;update;patch;delete
 
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+
 func main() {
 	flag.BoolVar(&enableLogging, "enable-logging", true, "Enable configurable logging.")
 	flag.BoolVar(&enableTracing, "enable-tracing", true, "Enable configurable tracing.")

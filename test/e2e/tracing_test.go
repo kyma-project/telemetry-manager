@@ -28,7 +28,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/matchers"
+	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
 )
 
 var (
@@ -37,7 +37,7 @@ var (
 	tracePipelineReconciliationTimeout = 10 * time.Second
 )
 
-var _ = Describe("Tracing", func() {
+var _ = Describe("Tracing", Label("tracing"), func() {
 	Context("When a tracepipeline exists", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList

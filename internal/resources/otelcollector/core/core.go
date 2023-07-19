@@ -1,21 +1,17 @@
 package core
 
 import (
-	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
-
-	collectorconfig "github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 const (
-	configMapKey            = "relay.conf"
-	configHashAnnotationKey = "checksum/config"
-	collectorUser           = 10001
-	collectorContainerName  = "collector"
+	configMapKey           = "relay.conf"
+	collectorUser          = 10001
+	collectorContainerName = "collector"
 )
 
 func MakeDefaultLabels(baseName string) map[string]string {
@@ -29,6 +25,25 @@ type PodSpecOption = func(pod *corev1.PodSpec)
 func WithAffinity(affinity corev1.Affinity) PodSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.Affinity = &affinity
+	}
+}
+
+const (
+	FieldPathPodIP    = "status.podIP"
+	FieldPathNodeName = "spec.nodeName"
+)
+
+func WithEnvVarFromSource(envVarName, fieldPath string) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.Containers[0].Env = append(pod.Containers[0].Env, corev1.EnvVar{
+			Name: envVarName,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath:  fieldPath,
+					APIVersion: "v1",
+				},
+			},
+		})
 	}
 }
 
@@ -60,25 +75,6 @@ func MakePodSpec(baseName, image string, opts ...PodSpecOption) corev1.PodSpec {
 								Name: baseName,
 							},
 							Optional: pointer.Bool(true),
-						},
-					},
-				},
-				Env: []corev1.EnvVar{
-					{
-						Name: "MY_POD_IP",
-						ValueFrom: &corev1.EnvVarSource{
-							FieldRef: &corev1.ObjectFieldSelector{
-								FieldPath:  "status.podIP",
-								APIVersion: "v1",
-							},
-						},
-					},
-					{
-						Name: "MY_NODE_NAME",
-						ValueFrom: &corev1.EnvVarSource{
-							FieldRef: &corev1.ObjectFieldSelector{
-								FieldPath: "spec.nodeName",
-							},
 						},
 					},
 				},
@@ -137,26 +133,16 @@ func MakePodSpec(baseName, image string, opts ...PodSpecOption) corev1.PodSpec {
 	return pod
 }
 
-func MakePodAnnotations(configHash string) map[string]string {
+func MakeCommonPodAnnotations(configHash string) map[string]string {
 	annotations := map[string]string{
-		configHashAnnotationKey: configHash,
-	}
-
-	defaultAnnotations := map[string]string{
+		"checksum/config":         configHash,
 		"sidecar.istio.io/inject": "false",
-	}
-
-	for k, v := range defaultAnnotations {
-		annotations[k] = v
 	}
 
 	return annotations
 }
 
-func MakeConfigMap(name types.NamespacedName, collectorConfig collectorconfig.Config) *corev1.ConfigMap {
-	bytes, _ := yaml.Marshal(collectorConfig)
-	confYAML := string(bytes)
-
+func MakeConfigMap(name types.NamespacedName, collectorConfig string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -164,7 +150,7 @@ func MakeConfigMap(name types.NamespacedName, collectorConfig collectorconfig.Co
 			Labels:    MakeDefaultLabels(name.Name),
 		},
 		Data: map[string]string{
-			configMapKey: confYAML,
+			configMapKey: collectorConfig,
 		},
 	}
 }

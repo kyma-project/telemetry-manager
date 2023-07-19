@@ -147,7 +147,35 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-		expected := `receivers:
+		expected := `extensions:
+    health_check:
+        endpoint: ${MY_POD_IP}:13133
+    pprof:
+        endpoint: 127.0.0.1:1777
+service:
+    pipelines:
+        traces/test:
+            receivers:
+                - opencensus
+                - otlp
+            processors:
+                - memory_limiter
+                - k8sattributes
+                - filter
+                - resource
+                - batch
+            exporters:
+                - logging/test
+                - otlp/test
+    telemetry:
+        metrics:
+            address: ${MY_POD_IP}:8888
+        logs:
+            level: info
+    extensions:
+        - health_check
+        - pprof
+receivers:
     opencensus:
         endpoint: ${MY_POD_IP}:55678
     otlp:
@@ -156,19 +184,6 @@ func TestMakeConfig(t *testing.T) {
                 endpoint: ${MY_POD_IP}:4318
             grpc:
                 endpoint: ${MY_POD_IP}:4317
-exporters:
-    logging/test:
-        verbosity: basic
-    otlp/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
-        sending_queue:
-            enabled: true
-            queue_size: 256
-        retry_on_failure:
-            enabled: true
-            initial_interval: 5s
-            max_interval: 30s
-            max_elapsed_time: 300s
 processors:
     batch:
         send_batch_size: 512
@@ -216,34 +231,19 @@ processors:
                 - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-otlp-traces\\.kyma-system(\\..*)?:(4318|4317).*") == true)
                 - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-trace-collector-internal\\.kyma-system(\\..*)?:(55678).*") == true)
                 - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (resource.attributes["service.name"] == "telemetry-fluent-bit.kyma-system")
-extensions:
-    health_check:
-        endpoint: ${MY_POD_IP}:13133
-    pprof:
-        endpoint: 127.0.0.1:1777
-service:
-    pipelines:
-        traces/test:
-            receivers:
-                - opencensus
-                - otlp
-            processors:
-                - memory_limiter
-                - k8sattributes
-                - filter
-                - resource
-                - batch
-            exporters:
-                - logging/test
-                - otlp/test
-    telemetry:
-        metrics:
-            address: ${MY_POD_IP}:8888
-        logs:
-            level: info
-    extensions:
-        - health_check
-        - pprof
+exporters:
+    logging/test:
+        verbosity: basic
+    otlp/test:
+        endpoint: ${OTLP_ENDPOINT_TEST}
+        sending_queue:
+            enabled: true
+            queue_size: 256
+        retry_on_failure:
+            enabled: true
+            initial_interval: 5s
+            max_interval: 30s
+            max_elapsed_time: 300s
 `
 
 		collectorConfig, _, err := MakeConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()})
