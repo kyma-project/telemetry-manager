@@ -134,7 +134,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 
 	})
 
-	Context("When a MetricPipeline has toDelta flag active", Ordered, func() {
+	Context("When a MetricPipeline has ConvertToDelta flag active", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
 			urls               *mocks.URLProvider
@@ -154,7 +154,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running metric gateway deployment", Label(operationalTest), func() {
+		It("Should have a running metric gateway deployment", func() {
 			Eventually(func(g Gomega) {
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, metricGatewayName)
 				g.Expect(err).ShouldNot(HaveOccurred())
@@ -162,7 +162,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should have a metrics backend running", Label(operationalTest), func() {
+		It("Should have a metrics backend running", func() {
 			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
@@ -171,11 +171,11 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should have a running pipeline", Label(operationalTest), func() {
+		It("Should have a running pipeline", func() {
 			metricPipelineShouldBeRunning(pipelines.First())
 		})
 
-		It("Should verify end-to-end metric delivery", Label(operationalTest), func() {
+		It("Should verify end-to-end metric delivery", func() {
 			builder := kitmetrics.NewBuilder()
 			var cumulativeSums []pmetric.Metric
 
