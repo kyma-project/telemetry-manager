@@ -13,6 +13,7 @@ import (
 	promlabel "github.com/prometheus/prometheus/model/relabel"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 func makeReceiversConfig(inputs inputSources) ReceiversConfig {
@@ -46,7 +47,7 @@ func makePrometheusSelfConfig() *PrometheusReceiverConfig {
 		{
 			Targets: []prommodel.LabelSet{
 				{
-					prommodel.AddressLabel: prommodel.LabelValue(fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortMetrics)),
+					prommodel.AddressLabel: prommodel.LabelValue(fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.Metrics)),
 				},
 			},
 		},

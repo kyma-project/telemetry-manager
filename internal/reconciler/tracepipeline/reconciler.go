@@ -34,6 +34,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/trace/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
@@ -263,10 +264,10 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 
 func makeNetworkPolicyPorts() []intstr.IntOrString {
 	return []intstr.IntOrString{
-		intstr.FromInt(13133),
-		intstr.FromInt(4317),
-		intstr.FromInt(4318),
-		intstr.FromInt(55678),
-		intstr.FromInt(8888),
+		intstr.FromInt(ports.OTLPHTTP),
+		intstr.FromInt(ports.OTLPGRPC),
+		intstr.FromInt(ports.OpenCensus),
+		intstr.FromInt(ports.Metrics),
+		intstr.FromInt(ports.HealthCheck),
 	}
 }

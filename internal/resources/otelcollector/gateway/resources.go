@@ -11,7 +11,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
+	"strconv"
 )
 
 type Config struct {
@@ -174,14 +176,14 @@ func MakeOTLPService(config Config) *corev1.Service {
 				{
 					Name:       "grpc-collector",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       4317,
-					TargetPort: intstr.FromInt(4317),
+					Port:       ports.OTLPGRPC,
+					TargetPort: intstr.FromInt(ports.OTLPGRPC),
 				},
 				{
 					Name:       "http-collector",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       4318,
-					TargetPort: intstr.FromInt(4318),
+					Port:       ports.OTLPHTTP,
+					TargetPort: intstr.FromInt(ports.OTLPHTTP),
 				},
 			},
 			Selector:        labels,
@@ -201,7 +203,7 @@ func MakeMetricsService(config Config) *corev1.Service {
 			Labels:    labels,
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   "8888",
+				"prometheus.io/port":   strconv.Itoa(ports.Metrics),
 			},
 		},
 		Spec: corev1.ServiceSpec{
@@ -209,8 +211,8 @@ func MakeMetricsService(config Config) *corev1.Service {
 				{
 					Name:       "http-metrics",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       8888,
-					TargetPort: intstr.FromInt(8888),
+					Port:       ports.Metrics,
+					TargetPort: intstr.FromInt(ports.Metrics),
 				},
 			},
 			Selector: labels,
@@ -232,8 +234,8 @@ func MakeOpenCensusService(config Config) *corev1.Service {
 				{
 					Name:       "http-opencensus",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       55678,
-					TargetPort: intstr.FromInt(55678),
+					Port:       ports.OpenCensus,
+					TargetPort: intstr.FromInt(ports.OpenCensus),
 				},
 			},
 			Selector:        labels,

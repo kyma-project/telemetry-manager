@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/otlpoutput"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.TracePipeline) (*Config, otlpoutput.EnvVars, error) {
@@ -58,15 +59,15 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.Trace
 func makeReceiversConfig() ReceiversConfig {
 	return ReceiversConfig{
 		OpenCensus: common.EndpointConfig{
-			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortOpenCensus),
+			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OpenCensus),
 		},
 		OTLP: common.OTLPReceiverConfig{
 			Protocols: common.ReceiverProtocols{
 				HTTP: common.EndpointConfig{
-					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortOTLPHTTP),
+					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP),
 				},
 				GRPC: common.EndpointConfig{
-					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortOTLPGRPC),
+					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
 				},
 			},
 		},
@@ -84,10 +85,10 @@ func makePipelineConfig(outputAliases []string) common.PipelineConfig {
 func makeExtensionsConfig() common.ExtensionsConfig {
 	return common.ExtensionsConfig{
 		HealthCheck: common.EndpointConfig{
-			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortHealthCheck),
+			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.HealthCheck),
 		},
 		Pprof: common.EndpointConfig{
-			Endpoint: fmt.Sprintf("127.0.0.1:%d", common.PortPprof),
+			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
 		},
 	}
 }
@@ -97,7 +98,7 @@ func makeServiceConfig(pipelines common.PipelinesConfig) common.ServiceConfig {
 		Pipelines: pipelines,
 		Telemetry: common.TelemetryConfig{
 			Metrics: common.MetricsConfig{
-				Address: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, common.PortMetrics),
+				Address: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.Metrics),
 			},
 			Logs: common.LoggingConfig{
 				Level: "info",
