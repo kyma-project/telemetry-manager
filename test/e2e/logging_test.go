@@ -151,11 +151,3 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) ([]clie
 
 	return objs, urls
 }
-
-// makeLoggingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeLoggingTestK8sObjects() []client.Object {
-	logPipeline := kitlog.NewPipeline("test")
-	return []client.Object{
-		logPipeline.K8sObject(),
-	}
-}
