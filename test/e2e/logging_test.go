@@ -94,16 +94,15 @@ var _ = Describe("Logging", Label("logging"), func() {
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainLogs())))
 			}, timeout, interval).Should(Succeed())
-
-			It("Should be able to get fluent-bit metrics endpoint", Label(operationalTest), func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(proxyClient.ProxyURLForService("kyma-system", telemetryFluentbitMetricServiceName, "/metrics", 2020))
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-					g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-						HasValidPrometheusMetric("fluentbit_uptime"))))
-				}, timeout, interval).Should(Succeed())
-			})
+		})
+		It("Should be able to get fluent-bit metrics endpoint", Label(operationalTest), func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(proxyClient.ProxyURLForService("kyma-system", telemetryFluentbitMetricServiceName, "/metrics", 2020))
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					HasValidPrometheusMetric("fluentbit_uptime"))))
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 })
