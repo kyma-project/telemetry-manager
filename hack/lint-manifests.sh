@@ -1,26 +1,18 @@
 #!/usr/bin/env bash
 
-readonly OPERATOR_DIR=$1
-readonly CONTROLLER_GEN=$2
-readonly CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-readonly ROOT_PATH="$( cd "${CURRENT_DIR}/../" && pwd )"
+echo "Check that the CRDs manifests and their documentation are up-to-date"
 
-TMP_DIR=$(mktemp -d)
+make manifests
 
-cleanup() {
-    rm -rf "${TMP_DIR}" || true
-}
-
-trap cleanup EXIT SIGINT
-
-echo $ROOT_PATH
-
-$CONTROLLER_GEN rbac:roleName=operator-manager-role crd webhook paths="${OPERATOR_DIR}/..." output:crd:artifacts:config="${TMP_DIR}"
-
-DIFF=$(diff -q $TMP_DIR ${OPERATOR_DIR}/config/crd/bases)
-if [ -n "${DIFF}" ]; then
-    echo -e "${RED}x manifests linting failed${NC}"
-    echo -e "Generated manifests in config/crd/bases are not on par with API types in apis/telemetry/v1alpha1"
-    echo -e "Please run 'make manifests'"
+DIFF=$(git diff)
+if [ -n "${DIFF}" ]; then 
+    echo "ERROR: detected CRDs manifests and/or documentation that need to be updated"
+    echo "
+    To update the CRDs manifests and their documentation run:
+        make manifests
+    in the root of the repository and commit changes.
+    "
     exit 1
 fi
+
+echo "CRDs manifests and their documentation are up-to-date"

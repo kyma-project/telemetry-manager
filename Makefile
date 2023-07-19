@@ -51,8 +51,8 @@ help: ## Display this help.
 lint-autofix: ## Autofix all possible linting errors.
 	golangci-lint run -E goimports --fix
 
-lint-manifests: controller-gen
-	hack/lint-manifests.sh $(PROJECT_DIR) $(CONTROLLER_GEN)
+lint-manifests:
+	hack/lint-manifests.sh
 
 lint: lint-manifests
 	go version
