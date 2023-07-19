@@ -3,16 +3,18 @@
 package e2e
 
 import (
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
+	"net/http"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
+	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
 
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
@@ -84,15 +86,14 @@ var _ = Describe("Logging", Label("logging"), func() {
 		})
 
 		It("Should verify end-to-end log delivery", Label("operational"), func() {
+
 			Eventually(func(g Gomega) {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(urls.MockBackendExport())
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-					g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-						ContainLogs())))
-				}, timeout, interval).Should(Succeed())
-			})
+				resp, err := proxyClient.Get(urls.MockBackendExport())
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					ContainLogs())))
+			}, timeout, interval).Should(Succeed())
 
 			It("Should be able to get fluent-bit metrics endpoint", Label(operationalTest), func() {
 				Eventually(func(g Gomega) {
