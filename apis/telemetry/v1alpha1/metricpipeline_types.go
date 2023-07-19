@@ -59,9 +59,6 @@ type MetricPipelineSpec struct {
 
 	// Configures the metric gateway.
 	Output MetricPipelineOutput `json:"output,omitempty"`
-
-	// Foo string
-	Foo string `json:"foo,omitempty"`
 }
 
 // MetricPipelineInput defines the input configuration section.
