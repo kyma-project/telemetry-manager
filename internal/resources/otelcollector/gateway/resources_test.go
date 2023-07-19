@@ -69,7 +69,7 @@ func TestMakeClusterRole(t *testing.T) {
 }
 
 func TestMakeDeployment(t *testing.T) {
-	deployment := MakeDeployment(config, "123", 1)
+	deployment := MakeDeployment(config, "123", 1, "MY_POD_IP", "MY_NODE_NAME")
 
 	require.NotNil(t, deployment)
 	require.Equal(t, deployment.Name, config.BaseName)
@@ -105,6 +105,13 @@ func TestMakeDeployment(t *testing.T) {
 	require.False(t, *containerSecurityContext.Privileged, "must not be privileged")
 	require.False(t, *containerSecurityContext.AllowPrivilegeEscalation, "must not escalate to privileged")
 	require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
+
+	envVars := deployment.Spec.Template.Spec.Containers[0].Env
+	require.Len(t, envVars, 2)
+	require.Equal(t, envVars[0].Name, "MY_POD_IP")
+	require.Equal(t, envVars[1].Name, "MY_NODE_NAME")
+	require.Equal(t, envVars[0].ValueFrom.FieldRef.FieldPath, "status.podIP")
+	require.Equal(t, envVars[1].ValueFrom.FieldRef.FieldPath, "spec.nodeName")
 }
 
 func TestMakeOTLPService(t *testing.T) {

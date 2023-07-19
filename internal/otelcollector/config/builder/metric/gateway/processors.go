@@ -1,10 +1,37 @@
 package gateway
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
-func makeProcessorsConfig() config.ProcessorsConfig {
+func makeProcessorsConfig() ProcessorsConfig {
+	return ProcessorsConfig{
+		BaseProcessorsConfig: common.BaseProcessorsConfig{
+			Batch:         makeBatchProcessorConfig(),
+			MemoryLimiter: makeMemoryLimiterConfig(),
+			K8sAttributes: makeK8sAttributesProcessorConfig(),
+			Resource:      makeResourceProcessorConfig(),
+		},
+	}
+}
+
+func makeBatchProcessorConfig() *common.BatchProcessorConfig {
+	return &common.BatchProcessorConfig{
+		SendBatchSize:    1024,
+		Timeout:          "10s",
+		SendBatchMaxSize: 1024,
+	}
+}
+
+func makeMemoryLimiterConfig() *common.MemoryLimiterConfig {
+	return &common.MemoryLimiterConfig{
+		CheckInterval:        "1s",
+		LimitPercentage:      75,
+		SpikeLimitPercentage: 10,
+	}
+}
+
+func makeK8sAttributesProcessorConfig() *common.K8sAttributesProcessorConfig {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -16,57 +43,35 @@ func makeProcessorsConfig() config.ProcessorsConfig {
 		"k8s.job.name",
 	}
 
-	podAssociations := []config.PodAssociations{
+	podAssociations := []common.PodAssociations{
 		{
-			Sources: []config.PodAssociation{
-				{
-					From: "resource_attribute",
-					Name: "k8s.pod.ip",
-				},
-			},
+			Sources: []common.PodAssociation{{From: "resource_attribute", Name: "k8s.pod.ip"}},
 		},
 		{
-			Sources: []config.PodAssociation{
-				{
-					From: "resource_attribute",
-					Name: "k8s.pod.uid",
-				},
-			},
+			Sources: []common.PodAssociation{{From: "resource_attribute", Name: "k8s.pod.uid"}},
 		},
 		{
-			Sources: []config.PodAssociation{
-				{
-					From: "connection",
-				},
-			},
+			Sources: []common.PodAssociation{{From: "connection"}},
 		},
 	}
-	return config.ProcessorsConfig{
-		Batch: &config.BatchProcessorConfig{
-			SendBatchSize:    1024,
-			Timeout:          "10s",
-			SendBatchMaxSize: 1024,
+
+	return &common.K8sAttributesProcessorConfig{
+		AuthType:    "serviceAccount",
+		Passthrough: false,
+		Extract: common.ExtractK8sMetadataConfig{
+			Metadata: k8sAttributes,
 		},
-		MemoryLimiter: &config.MemoryLimiterConfig{
-			CheckInterval:        "1s",
-			LimitPercentage:      75,
-			SpikeLimitPercentage: 10,
-		},
-		K8sAttributes: &config.K8sAttributesProcessorConfig{
-			AuthType:    "serviceAccount",
-			Passthrough: false,
-			Extract: config.ExtractK8sMetadataConfig{
-				Metadata: k8sAttributes,
-			},
-			PodAssociation: podAssociations,
-		},
-		Resource: &config.ResourceProcessorConfig{
-			Attributes: []config.AttributeAction{
-				{
-					Action: "insert",
-					Key:    "k8s.cluster.name",
-					Value:  "${KUBERNETES_SERVICE_HOST}",
-				},
+		PodAssociation: podAssociations,
+	}
+}
+
+func makeResourceProcessorConfig() *common.ResourceProcessorConfig {
+	return &common.ResourceProcessorConfig{
+		Attributes: []common.AttributeAction{
+			{
+				Action: "insert",
+				Key:    "k8s.cluster.name",
+				Value:  "${KUBERNETES_SERVICE_HOST}",
 			},
 		},
 	}
