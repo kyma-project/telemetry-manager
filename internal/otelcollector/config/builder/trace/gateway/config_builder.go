@@ -3,14 +3,15 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"sort"
+
+	"golang.org/x/exp/maps"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"golang.org/x/exp/maps"
-	"sort"
 )
 
 func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alpha1.TracePipeline) (*Config, otlpexporter.EnvVars, error) {
@@ -102,12 +103,12 @@ func addComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otl
 	config.Exporters[loggingExporterID] = ExporterConfig{Logging: common.DefaultLoggingExporterConfig()}
 
 	pipelineID := fmt.Sprintf("traces/%s", pipeline.Name)
-	config.Service.Pipelines[pipelineID] = makePipelineConfig(pipeline, otlpExporterID, loggingExporterID)
+	config.Service.Pipelines[pipelineID] = makePipelineConfig(otlpExporterID, loggingExporterID)
 
 	return nil
 }
 
-func makePipelineConfig(pipeline *telemetryv1alpha1.TracePipeline, exporterIDs ...string) common.PipelineConfig {
+func makePipelineConfig(exporterIDs ...string) common.PipelineConfig {
 	sort.Strings(exporterIDs)
 
 	return common.PipelineConfig{

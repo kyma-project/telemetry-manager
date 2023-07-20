@@ -1,12 +1,12 @@
 package otlpexporter
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"context"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
