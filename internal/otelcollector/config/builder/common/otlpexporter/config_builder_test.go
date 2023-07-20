@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-func TestGetOutputTypeHttp(t *testing.T) {
+func TestExporterIDHTTP(t *testing.T) {
 	output := &v1alpha1.OtlpOutput{
 		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
 		Protocol: "http",
@@ -19,7 +19,7 @@ func TestGetOutputTypeHttp(t *testing.T) {
 	require.Equal(t, "otlphttp/test", ExporterID(output, "test"))
 }
 
-func TestGetOutputTypeOtlp(t *testing.T) {
+func TestExporterIDGRPC(t *testing.T) {
 	output := &v1alpha1.OtlpOutput{
 		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
 		Protocol: "grpc",
@@ -28,7 +28,7 @@ func TestGetOutputTypeOtlp(t *testing.T) {
 	require.Equal(t, "otlp/test", ExporterID(output, "test"))
 }
 
-func TestGetOutputTypeDefault(t *testing.T) {
+func TestExorterIDDefault(t *testing.T) {
 	output := &v1alpha1.OtlpOutput{
 		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
@@ -36,7 +36,7 @@ func TestGetOutputTypeDefault(t *testing.T) {
 	require.Equal(t, "otlp/test", ExporterID(output, "test"))
 }
 
-func TestMakeExporterConfig(t *testing.T) {
+func TestMakeConfig(t *testing.T) {
 	output := &v1alpha1.OtlpOutput{
 		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
