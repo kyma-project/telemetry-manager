@@ -14,17 +14,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-type otlpExporterConfigBuilder struct {
-	ctx       context.Context
-	c         client.Reader
-	pipeline  *telemetryv1alpha1.MetricPipeline
-	queueSize int
-}
-
-func (b *otlpExporterConfigBuilder) build() (*common.OTLPExporterConfig, otlpexporter.EnvVars, error) {
-	return otlpexporter.MakeExporterConfig(b.ctx, b.c, b.pipeline.Spec.Output.Otlp, b.pipeline.Name, b.queueSize)
-}
-
 func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alpha1.MetricPipeline) (*Config, otlpexporter.EnvVars, error) {
 	config := &Config{
 		BaseConfig: common.BaseConfig{
@@ -45,12 +34,8 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alp
 			continue
 		}
 
-		if err := addComponentsForMetricPipeline(otlpExporterConfigBuilder{
-			ctx:       ctx,
-			c:         c,
-			pipeline:  &pipeline,
-			queueSize: queueSize,
-		}, &pipeline, config, envVars); err != nil {
+		otlpExporterBuilder := otlpexporter.NewConfigBuilder(c, pipeline.Spec.Output.Otlp, pipeline.Name, queueSize)
+		if err := addComponentsForMetricPipeline(ctx, otlpExporterBuilder, &pipeline, config, envVars); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -99,8 +84,8 @@ func makeServiceConfig() common.ServiceConfig {
 	}
 }
 
-// addComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given MetricPipeline.
-func addComponentsForMetricPipeline(otlpOutputBuilder otlpExporterConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, config *Config, envVars otlpexporter.EnvVars) error {
+// addComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.MetricPipeline.
+func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, config *Config, envVars otlpexporter.EnvVars) error {
 	if enableDropIfInputSourceRuntime(pipeline) {
 		config.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}
@@ -109,7 +94,7 @@ func addComponentsForMetricPipeline(otlpOutputBuilder otlpExporterConfigBuilder,
 		config.Processors.DropIfInputSourceWorkloads = makeDropIfInputSourceWorkloadsConfig()
 	}
 
-	otlpExporterConfig, otlpExporterEnvVars, err := otlpOutputBuilder.build()
+	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)
 	}

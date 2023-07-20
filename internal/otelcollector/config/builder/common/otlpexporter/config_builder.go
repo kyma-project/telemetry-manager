@@ -1,25 +1,41 @@
 package otlpexporter
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"context"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 )
 
 type EnvVars map[string][]byte
 
-func MakeExporterConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, queueSize int) (*common.OTLPExporterConfig, EnvVars, error) {
-	envVars, err := makeEnvVars(ctx, c, otlpOutput, pipelineName)
+type ConfigBuilder struct {
+	reader       client.Reader
+	otlpOutput   *telemetryv1alpha1.OtlpOutput
+	pipelineName string
+	queueSize    int
+}
+
+func NewConfigBuilder(reader client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, queueSize int) *ConfigBuilder {
+	return &ConfigBuilder{
+		reader:       reader,
+		otlpOutput:   otlpOutput,
+		pipelineName: pipelineName,
+		queueSize:    queueSize,
+	}
+}
+
+func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*common.OTLPExporterConfig, EnvVars, error) {
+	envVars, err := makeEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
 	}
 
-	exportersConfig := makeExportersConfig(otlpOutput, pipelineName, envVars, queueSize)
+	exportersConfig := makeExportersConfig(cb.otlpOutput, cb.pipelineName, envVars, cb.queueSize)
 	return exportersConfig, envVars, nil
 }
 

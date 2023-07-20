@@ -41,16 +41,13 @@ func TestMakeExporterConfig(t *testing.T) {
 		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	exporterConfig, envVars, err := MakeExporterConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test", 512)
+	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512)
+	otlpExporterConfig, envVars, err := cb.MakeConfig(context.Background())
 	require.NoError(t, err)
-	require.NotNil(t, exporterConfig)
 	require.NotNil(t, envVars)
 
 	require.NotNil(t, envVars["OTLP_ENDPOINT_TEST"])
 	require.Equal(t, envVars["OTLP_ENDPOINT_TEST"], []byte("otlp-endpoint"))
-
-	require.Contains(t, exporterConfig, "otlp/test")
-	otlpExporterConfig := exporterConfig["otlp/test"]
 
 	require.Equal(t, "${OTLP_ENDPOINT_TEST}", otlpExporterConfig.Endpoint)
 	require.True(t, otlpExporterConfig.SendingQueue.Enabled)
@@ -60,11 +57,6 @@ func TestMakeExporterConfig(t *testing.T) {
 	require.Equal(t, "5s", otlpExporterConfig.RetryOnFailure.InitialInterval)
 	require.Equal(t, "30s", otlpExporterConfig.RetryOnFailure.MaxInterval)
 	require.Equal(t, "300s", otlpExporterConfig.RetryOnFailure.MaxElapsedTime)
-
-	require.Contains(t, exporterConfig, "logging/test")
-	loggingExporterConfig := exporterConfig["logging/test"]
-
-	require.Equal(t, "basic", loggingExporterConfig.Verbosity)
 }
 
 func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
@@ -81,13 +73,11 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 		Headers:  headers,
 	}
 
-	exporterConfig, envVars, err := MakeExporterConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test", 512)
+	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512)
+	otlpExporterConfig, envVars, err := cb.MakeConfig(context.Background())
 	require.NoError(t, err)
-	require.NotNil(t, exporterConfig)
 	require.NotNil(t, envVars)
 
-	require.Contains(t, exporterConfig, "otlp/test")
-	otlpExporterConfig := exporterConfig["otlp/test"]
 	require.Equal(t, 1, len(otlpExporterConfig.Headers))
 	require.Equal(t, "${HEADER_TEST_AUTHORIZATION}", otlpExporterConfig.Headers["Authorization"])
 }
