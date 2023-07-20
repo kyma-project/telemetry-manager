@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/metric/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	otelagentresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
@@ -252,11 +253,11 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 func makeNetworkPolicyPorts() []intstr.IntOrString {
 	return []intstr.IntOrString{
-		intstr.FromInt(13133),
-		intstr.FromInt(4317),
-		intstr.FromInt(4318),
-		intstr.FromInt(55678),
-		intstr.FromInt(8888),
+		intstr.FromInt(ports.OTLPHTTP),
+		intstr.FromInt(ports.OTLPGRPC),
+		intstr.FromInt(ports.OpenCensus),
+		intstr.FromInt(ports.Metrics),
+		intstr.FromInt(ports.HealthCheck),
 	}
 }
 

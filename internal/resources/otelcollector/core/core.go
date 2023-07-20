@@ -6,6 +6,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
+
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 const (
@@ -94,12 +96,12 @@ func MakePodSpec(baseName, image string, opts ...PodSpecOption) corev1.PodSpec {
 				VolumeMounts: []corev1.VolumeMount{{Name: "config", MountPath: "/conf"}},
 				LivenessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.IntOrString{IntVal: 13133}},
+						HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.IntOrString{IntVal: ports.HealthCheck}},
 					},
 				},
 				ReadinessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.IntOrString{IntVal: 13133}},
+						HTTPGet: &corev1.HTTPGetAction{Path: "/", Port: intstr.IntOrString{IntVal: ports.HealthCheck}},
 					},
 				},
 			},
