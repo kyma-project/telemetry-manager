@@ -10,7 +10,20 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/otlpoutput"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"golang.org/x/exp/maps"
+	"sort"
 )
+
+type otlpOutputConfigBuilder struct {
+	ctx       context.Context
+	c         client.Reader
+	pipeline  telemetryv1alpha1.MetricPipeline
+	queueSize int
+}
+
+func (b *otlpOutputConfigBuilder) build() (map[string]common.BaseGatewayExporterConfig, otlpoutput.EnvVars, error) {
+	return otlpoutput.MakeExporterConfigs(b.ctx, b.c, b.pipeline.Spec.Output.Otlp, b.pipeline.Name, b.queueSize)
+}
 
 func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alpha1.MetricPipeline) (*Config, otlpoutput.EnvVars, error) {
 	config := &Config{
@@ -27,6 +40,10 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alp
 	queueSize := 256 / len(pipelines)
 
 	for _, pipeline := range pipelines {
+		if pipeline.DeletionTimestamp != nil {
+			continue
+		}
+
 		err := addComponentsForMetricPipeline(otlpOutputConfigBuilder{
 			ctx:       ctx,
 			c:         c,
@@ -80,4 +97,63 @@ func makeServiceConfig() common.ServiceConfig {
 		},
 		Extensions: []string{"health_check", "pprof"},
 	}
+}
+
+// addComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given MetricPipeline.
+func addComponentsForMetricPipeline(otlpOutputBuilder otlpOutputConfigBuilder, pipeline telemetryv1alpha1.MetricPipeline, config *Config, envVars otlpoutput.EnvVars) error {
+	if enableDropIfInputSourceRuntime(pipeline) {
+		config.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
+	}
+
+	if enableDropIfInputSourceWorkloads(pipeline) {
+		config.Processors.DropIfInputSourceWorkloads = makeDropIfInputSourceWorkloadsConfig()
+	}
+
+	exporterConfigs, pipelineEnvVars, err := otlpOutputBuilder.build()
+	if err != nil {
+		return fmt.Errorf("failed to make exporter config: %w", err)
+	}
+
+	maps.Copy(envVars, pipelineEnvVars)
+	var exporterIDs []string
+	for exporterID, exporterConfig := range exporterConfigs {
+		config.Exporters[exporterID] = ExporterConfig{BaseGatewayExporterConfig: exporterConfig}
+		exporterIDs = append(exporterIDs, exporterID)
+	}
+
+	config.Service.Pipelines[fmt.Sprintf("metrics/%s", pipeline.Name)] = makePipelineConfig(pipeline, exporterIDs)
+
+	return nil
+}
+
+func makePipelineConfig(pipeline telemetryv1alpha1.MetricPipeline, exporterIDs []string) common.PipelineConfig {
+	sort.Strings(exporterIDs)
+
+	processors := []string{"memory_limiter", "k8sattributes", "resource"}
+
+	if enableDropIfInputSourceRuntime(pipeline) {
+		processors = append(processors, "filter/drop-if-input-source-runtime")
+	}
+
+	if enableDropIfInputSourceWorkloads(pipeline) {
+		processors = append(processors, "filter/drop-if-input-source-workloads")
+	}
+
+	processors = append(processors, "batch")
+
+	return common.PipelineConfig{
+		Receivers:  []string{"otlp"},
+		Processors: processors,
+		Exporters:  exporterIDs,
+	}
+}
+
+func enableDropIfInputSourceRuntime(pipeline telemetryv1alpha1.MetricPipeline) bool {
+	appInput := pipeline.Spec.Input.Application
+	return !appInput.Runtime.Enabled
+}
+
+func enableDropIfInputSourceWorkloads(pipeline telemetryv1alpha1.MetricPipeline) bool {
+	appInput := pipeline.Spec.Input.Application
+	return !appInput.Workloads.Enabled
 }

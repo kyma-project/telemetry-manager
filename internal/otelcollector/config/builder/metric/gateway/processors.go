@@ -76,3 +76,23 @@ func makeResourceProcessorConfig() *common.ResourceProcessorConfig {
 		},
 	}
 }
+
+func makeDropIfInputSourceRuntimeConfig() *FilterProcessorConfig {
+	return &FilterProcessorConfig{
+		Metrics: FilterProcessorMetricConfig{
+			DataPoint: []string{
+				"resource.attributes[\"kyma.source\"] == \"runtime\"",
+			},
+		},
+	}
+}
+
+func makeDropIfInputSourceWorkloadsConfig() *FilterProcessorConfig {
+	return &FilterProcessorConfig{
+		Metrics: FilterProcessorMetricConfig{
+			DataPoint: []string{
+				"resource.attributes[\"kyma.source\"] == \"workloads\"",
+			},
+		},
+	}
+}
