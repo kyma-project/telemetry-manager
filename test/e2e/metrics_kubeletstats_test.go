@@ -30,7 +30,7 @@ var (
 	kubeletMetricNames      = []string{"container.cpu.time", "container.cpu.utilization", "container.filesystem.available", "container.filesystem.capacity", "container.filesystem.usage", "container.memory.available", "container.memory.major_page_faults", "container.memory.page_faults", "container.memory.rss", "container.memory.usage", "container.memory.working_set", "k8s.pod.cpu.time", "k8s.pod.cpu.utilization", "k8s.pod.filesystem.available", "k8s.pod.filesystem.capacity", "k8s.pod.filesystem.usage", "k8s.pod.memory.available", "k8s.pod.memory.major_page_faults", "k8s.pod.memory.page_faults", "k8s.pod.memory.rss", "k8s.pod.memory.usage", "k8s.pod.memory.working_set", "k8s.pod.network.errors", "k8s.pod.network.io"}
 )
 
-var _ = Describe("Metrics Kubeletstats", Label("metricskube"), func() {
+var _ = Describe("Metrics Kubeletstats", Label("metrics"), func() {
 	Context("When a metricpipeline exists", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
