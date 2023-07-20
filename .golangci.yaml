@@ -117,6 +117,8 @@ issues:
     - linters: [ dupl ]
       path: internal/otelcollector/config/builder/metric/agent/processors_test.go
     - linters: [ dupl ]
+      path: internal/otelcollector/config/builder/metric/gateway/config_builder_test.go
+    - linters: [ dupl ]
       path: internal/reconciler/(logpipeline|metricpipeline|tracepipeline)/status_test.go
     - linters: [ dupl ]
       path: internal/resources/otelcollector/gateway/resources_test.go

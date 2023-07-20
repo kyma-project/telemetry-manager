@@ -99,25 +99,54 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("single pipeline topology", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithName("test").Build()})
-		require.NoError(t, err)
+		t.Run("with no application inputs enabled", func(t *testing.T) {
+			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithName("test").Build()})
+			require.NoError(t, err)
 
-		require.Contains(t, collectorConfig.Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
-		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
-		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
-		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
-		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[0], "memory_limiter")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[2], "resource")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[3], "batch")
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-workloads", "batch"})
+		})
+
+		t.Run("with workloads input enabled", func(t *testing.T) {
+			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").WithWorkloadsInputOn(true).Build()},
+			)
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "batch"})
+		})
+
+		t.Run("with runtime input enabled", func(t *testing.T) {
+			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").WithRuntimeInputOn(true).Build()},
+			)
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-workloads", "batch"})
+		})
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test-1").Build(),
-			testutils.NewMetricPipelineBuilder().WithName("test-2").Build()},
+			testutils.NewMetricPipelineBuilder().WithName("test-1").WithRuntimeInputOn(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test-2").WithWorkloadsInputOn(true).Build()},
 		)
 		require.NoError(t, err)
 
@@ -128,19 +157,13 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-1"].Exporters, "otlp/test-1")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-1"].Exporters, "logging/test-1")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-1"].Receivers, "otlp")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-1"].Processors[0], "memory_limiter")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-1"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-1"].Processors[2], "resource")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-1"].Processors[3], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-1"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-workloads", "batch"})
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-2"].Exporters, "otlp/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-2"].Exporters, "logging/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-2"].Receivers, "otlp")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-2"].Processors[0], "memory_limiter")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-2"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-2"].Processors[2], "resource")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-2"].Processors[3], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-2"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "batch"})
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
@@ -158,6 +181,8 @@ service:
                 - memory_limiter
                 - k8sattributes
                 - resource
+                - filter/drop-if-input-source-runtime
+                - filter/drop-if-input-source-workloads
                 - batch
             exporters:
                 - logging/test
@@ -213,6 +238,14 @@ processors:
             - action: insert
               key: k8s.cluster.name
               value: ${KUBERNETES_SERVICE_HOST}
+    filter/drop-if-input-source-runtime:
+        metrics:
+            datapoint:
+                - resource.attributes["kyma.source"] == "runtime"
+    filter/drop-if-input-source-workloads:
+        metrics:
+            datapoint:
+                - resource.attributes["kyma.source"] == "workloads"
 exporters:
     logging/test:
         verbosity: basic

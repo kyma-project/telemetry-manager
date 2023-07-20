@@ -1,7 +1,10 @@
 package gateway
 
 import (
+	"fmt"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/metric"
 )
 
 func makeProcessorsConfig() ProcessorsConfig {
@@ -72,6 +75,26 @@ func makeResourceProcessorConfig() *common.ResourceProcessorConfig {
 				Action: "insert",
 				Key:    "k8s.cluster.name",
 				Value:  "${KUBERNETES_SERVICE_HOST}",
+			},
+		},
+	}
+}
+
+func makeDropIfInputSourceRuntimeConfig() *FilterProcessorConfig {
+	return &FilterProcessorConfig{
+		Metrics: FilterProcessorMetricConfig{
+			DataPoint: []string{
+				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourceRuntime),
+			},
+		},
+	}
+}
+
+func makeDropIfInputSourceWorkloadsConfig() *FilterProcessorConfig {
+	return &FilterProcessorConfig{
+		Metrics: FilterProcessorMetricConfig{
+			DataPoint: []string{
+				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourceWorkloads),
 			},
 		},
 	}

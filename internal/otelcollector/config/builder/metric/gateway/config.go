@@ -19,7 +19,8 @@ type ReceiversConfig struct {
 type ProcessorsConfig struct {
 	common.BaseProcessorsConfig `yaml:",inline"`
 
-	FilterByInput map[string]FilterProcessorConfig `yaml:",inline"`
+	DropIfInputSourceRuntime   *FilterProcessorConfig `yaml:"filter/drop-if-input-source-runtime,omitempty"`
+	DropIfInputSourceWorkloads *FilterProcessorConfig `yaml:"filter/drop-if-input-source-workloads,omitempty"`
 }
 
 type FilterProcessorConfig struct {

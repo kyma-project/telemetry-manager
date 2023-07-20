@@ -2,6 +2,7 @@ package agent
 
 import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/metric"
 )
 
 func makeProcessorsConfig(inputs inputSources) ProcessorsConfig {
@@ -11,11 +12,11 @@ func makeProcessorsConfig(inputs inputSources) ProcessorsConfig {
 		processorsConfig.DeleteServiceName = makeDeleteServiceNameConfig()
 
 		if inputs.runtime {
-			processorsConfig.InsertInputSourceRuntime = makeEmittedByConfig("runtime")
+			processorsConfig.InsertInputSourceRuntime = makeEmittedByConfig(metric.InputSourceRuntime)
 		}
 
 		if inputs.workloads {
-			processorsConfig.InsertInputSourceWorkloads = makeEmittedByConfig("workloads")
+			processorsConfig.InsertInputSourceWorkloads = makeEmittedByConfig(metric.InputSourceWorkloads)
 		}
 	}
 
@@ -33,13 +34,13 @@ func makeDeleteServiceNameConfig() *common.ResourceProcessorConfig {
 	}
 }
 
-func makeEmittedByConfig(value string) *common.ResourceProcessorConfig {
+func makeEmittedByConfig(inputSource metric.InputSourceType) *common.ResourceProcessorConfig {
 	return &common.ResourceProcessorConfig{
 		Attributes: []common.AttributeAction{
 			{
 				Action: "insert",
-				Key:    "kyma.source",
-				Value:  value,
+				Key:    metric.InputSourceAttribute,
+				Value:  string(inputSource),
 			},
 		},
 	}
