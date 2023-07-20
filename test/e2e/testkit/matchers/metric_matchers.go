@@ -125,7 +125,7 @@ func unmarshalOTLPJSONMetrics(buf []byte) ([]pmetric.Metrics, error) {
 
 	var metricsUnmarshaler pmetric.JSONUnmarshaler
 	scanner := bufio.NewScanner(bytes.NewReader(buf))
-	// default buffer size causing 'token too long' error, configured new buffer size works for current test data in case of some data slices longer than buffer, buffer size should be adapted accordingly new requirement
+	// default buffer size causing 'token too long' error, buffer size configured for current test scenarios
 	scannerBuffer := make([]byte, 0, 64*1024)
 	scanner.Buffer(scannerBuffer, 1024*1024)
 	for scanner.Scan() {
