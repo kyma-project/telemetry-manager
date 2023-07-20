@@ -1,7 +1,9 @@
 package gateway
 
 import (
+	"fmt"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/metric"
 )
 
 func makeProcessorsConfig() ProcessorsConfig {
@@ -81,7 +83,7 @@ func makeDropIfInputSourceRuntimeConfig() *FilterProcessorConfig {
 	return &FilterProcessorConfig{
 		Metrics: FilterProcessorMetricConfig{
 			DataPoint: []string{
-				"resource.attributes[\"kyma.source\"] == \"runtime\"",
+				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourceRuntime),
 			},
 		},
 	}
@@ -91,7 +93,7 @@ func makeDropIfInputSourceWorkloadsConfig() *FilterProcessorConfig {
 	return &FilterProcessorConfig{
 		Metrics: FilterProcessorMetricConfig{
 			DataPoint: []string{
-				"resource.attributes[\"kyma.source\"] == \"workloads\"",
+				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourceWorkloads),
 			},
 		},
 	}
