@@ -32,7 +32,7 @@ func addComponentsForMetricPipeline(otlpBuilder otlpOutputConfigBuilder, pipelin
 
 	exporterConfigs, pipelineEnvVars, err := otlpBuilder.build()
 	if err != nil {
-		return fmt.Errorf("failed to make exporter config: %exporterConfig", err)
+		return fmt.Errorf("failed to make exporter config: %w", err)
 	}
 
 	maps.Copy(envVars, pipelineEnvVars)
