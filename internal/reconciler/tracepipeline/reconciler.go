@@ -125,6 +125,9 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
 	}
+	if len(deployablePipelines) == 0 {
+		return fmt.Errorf("no trace pipeline ready for deployment")
+	}
 
 	if err = r.reconcileTraceGateway(ctx, pipeline, deployablePipelines); err != nil {
 		return fmt.Errorf("failed to reconcile trace gateway: %w", err)

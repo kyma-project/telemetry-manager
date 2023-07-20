@@ -143,6 +143,39 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		})
 	})
 
+	Context("When tracepipeline with missing secret reference exists", Ordered, func() {
+		hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("trace-host", "http://localhost:4317"))
+		tracePipeline := kittrace.NewPipeline("without-secret", hostSecret.SecretKeyRef("trace-host"))
+
+		BeforeAll(func() {
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, tracePipeline.K8sObject())).Should(Succeed())
+
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, tracePipeline.K8sObject(), hostSecret.K8sObject())).Should(Succeed())
+			})
+		})
+
+		It("Should have pending tracepipeline", func() {
+			tracePipelineShouldStayPending(tracePipeline.Name())
+		})
+
+		It("Should not have trace-collector deployment", func() {
+			Consistently(func(g Gomega) {
+				var deployment appsv1.Deployment
+				key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
+				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
+			}, tracePipelineReconciliationTimeout, interval).ShouldNot(Succeed())
+		})
+
+		It("Should have running tracepipeline", func() {
+			By("Creating missing secret", func() {
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, hostSecret.K8sObject())).Should(Succeed())
+			})
+
+			tracePipelineShouldBeRunning(tracePipeline.Name())
+		})
+	})
+
 	Context("When reaching the pipeline limit", Ordered, func() {
 		pipelinesObjects := make(map[string][]client.Object, 0)
 		pipelines := kyma.NewPipelineList()
