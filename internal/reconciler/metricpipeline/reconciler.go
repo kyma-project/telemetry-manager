@@ -113,7 +113,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
 	if len(deployablePipelines) == 0 {
-		return fmt.Errorf("no trace metric ready for deployment")
+		return fmt.Errorf("no metric pipeline ready for deployment")
 	}
 
 	if err = r.reconcileMetricGateway(ctx, pipeline, deployablePipelines); err != nil {
