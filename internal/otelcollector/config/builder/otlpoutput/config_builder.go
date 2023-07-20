@@ -13,7 +13,7 @@ import (
 
 type EnvVars map[string][]byte
 
-func MakeExporterConfigs(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, queueSize int) (map[string]common.BaseGatewayExporterConfig, EnvVars, error) {
+func MakeExportersConfig(ctx context.Context, c client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, queueSize int) (map[string]common.BaseGatewayExporterConfig, EnvVars, error) {
 	envVars, err := makeEnvVars(ctx, c, otlpOutput, pipelineName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
