@@ -10,7 +10,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/otlpoutput"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
@@ -21,11 +20,11 @@ type otlpOutputConfigBuilder struct {
 	queueSize int
 }
 
-func (b *otlpOutputConfigBuilder) build() (map[string]common.BaseGatewayExporterConfig, otlpoutput.EnvVars, error) {
-	return otlpoutput.MakeExportersConfig(b.ctx, b.c, b.pipeline.Spec.Output.Otlp, b.pipeline.Name, b.queueSize)
+func (b *otlpOutputConfigBuilder) build() (map[string]common.BaseGatewayExporterConfig, otlpexporter.EnvVars, error) {
+	return otlpexporter.MakeExportersConfig(b.ctx, b.c, b.pipeline.Spec.Output.Otlp, b.pipeline.Name, b.queueSize)
 }
 
-func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alpha1.MetricPipeline) (*Config, otlpoutput.EnvVars, error) {
+func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alpha1.MetricPipeline) (*Config, otlpexporter.EnvVars, error) {
 	config := &Config{
 		BaseConfig: common.BaseConfig{
 			Service:    makeServiceConfig(),
@@ -36,7 +35,7 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alp
 		Exporters:  make(ExportersConfig),
 	}
 
-	envVars := make(otlpoutput.EnvVars)
+	envVars := make(otlpexporter.EnvVars)
 	queueSize := 256 / len(pipelines)
 
 	for i := range pipelines {
@@ -100,7 +99,7 @@ func makeServiceConfig() common.ServiceConfig {
 }
 
 // addComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given MetricPipeline.
-func addComponentsForMetricPipeline(otlpOutputBuilder otlpOutputConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, config *Config, envVars otlpoutput.EnvVars) error {
+func addComponentsForMetricPipeline(otlpOutputBuilder otlpOutputConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, config *Config, envVars otlpexporter.EnvVars) error {
 	if enableDropIfInputSourceRuntime(pipeline) {
 		config.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}

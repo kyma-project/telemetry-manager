@@ -9,12 +9,11 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/otlpoutput"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.TracePipeline) (*Config, otlpoutput.EnvVars, error) {
-	allVars := make(otlpoutput.EnvVars)
+func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.TracePipeline) (*Config, otlpexporter.EnvVars, error) {
+	allVars := make(otlpexporter.EnvVars)
 	exportersConfig := make(ExportersConfig)
 	pipelinesConfig := make(common.PipelinesConfig)
 
@@ -25,7 +24,7 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.Trace
 
 		output := pipeline.Spec.Output
 		queueSize := 256 / len(pipelines)
-		exporterConfig, envVars, err := otlpoutput.MakeExportersConfig(ctx, c, output.Otlp, pipeline.Name, queueSize)
+		exporterConfig, envVars, err := otlpexporter.MakeExportersConfig(ctx, c, output.Otlp, pipeline.Name, queueSize)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to make exporter config: %v", err)
 		}
