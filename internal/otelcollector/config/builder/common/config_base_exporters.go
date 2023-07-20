@@ -27,3 +27,7 @@ type RetryOnFailureConfig struct {
 type LoggingExporterConfig struct {
 	Verbosity string `yaml:"verbosity"`
 }
+
+func DefaultLoggingExporterConfig() *LoggingExporterConfig {
+	return &LoggingExporterConfig{Verbosity: "basic"}
+}
