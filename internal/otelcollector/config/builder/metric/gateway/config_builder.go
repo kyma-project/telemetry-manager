@@ -17,7 +17,7 @@ import (
 type otlpOutputConfigBuilder struct {
 	ctx       context.Context
 	c         client.Reader
-	pipeline  telemetryv1alpha1.MetricPipeline
+	pipeline  *telemetryv1alpha1.MetricPipeline
 	queueSize int
 }
 
@@ -39,7 +39,8 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alp
 	envVars := make(otlpoutput.EnvVars)
 	queueSize := 256 / len(pipelines)
 
-	for _, pipeline := range pipelines {
+	for i := range pipelines {
+		pipeline := pipelines[i]
 		if pipeline.DeletionTimestamp != nil {
 			continue
 		}
@@ -47,9 +48,9 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alp
 		err := addComponentsForMetricPipeline(otlpOutputConfigBuilder{
 			ctx:       ctx,
 			c:         c,
-			pipeline:  pipeline,
+			pipeline:  &pipeline,
 			queueSize: queueSize,
-		}, pipeline, config, envVars)
+		}, &pipeline, config, envVars)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -100,7 +101,7 @@ func makeServiceConfig() common.ServiceConfig {
 }
 
 // addComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given MetricPipeline.
-func addComponentsForMetricPipeline(otlpOutputBuilder otlpOutputConfigBuilder, pipeline telemetryv1alpha1.MetricPipeline, config *Config, envVars otlpoutput.EnvVars) error {
+func addComponentsForMetricPipeline(otlpOutputBuilder otlpOutputConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, config *Config, envVars otlpoutput.EnvVars) error {
 	if enableDropIfInputSourceRuntime(pipeline) {
 		config.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}
@@ -126,7 +127,7 @@ func addComponentsForMetricPipeline(otlpOutputBuilder otlpOutputConfigBuilder, p
 	return nil
 }
 
-func makePipelineConfig(pipeline telemetryv1alpha1.MetricPipeline, exporterIDs []string) common.PipelineConfig {
+func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs []string) common.PipelineConfig {
 	sort.Strings(exporterIDs)
 
 	processors := []string{"memory_limiter", "k8sattributes", "resource"}
@@ -148,12 +149,12 @@ func makePipelineConfig(pipeline telemetryv1alpha1.MetricPipeline, exporterIDs [
 	}
 }
 
-func enableDropIfInputSourceRuntime(pipeline telemetryv1alpha1.MetricPipeline) bool {
+func enableDropIfInputSourceRuntime(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	appInput := pipeline.Spec.Input.Application
 	return !appInput.Runtime.Enabled
 }
 
-func enableDropIfInputSourceWorkloads(pipeline telemetryv1alpha1.MetricPipeline) bool {
+func enableDropIfInputSourceWorkloads(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	appInput := pipeline.Spec.Input.Application
 	return !appInput.Workloads.Enabled
 }
