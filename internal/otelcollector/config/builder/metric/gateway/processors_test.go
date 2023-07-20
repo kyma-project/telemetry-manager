@@ -70,4 +70,17 @@ func TestProcessors(t *testing.T) {
 
 		require.Equal(t, "connection", collectorConfig.Processors.K8sAttributes.PodAssociation[2].Sources[0].From)
 	})
+
+	t.Run("drop by input source filter", func(t *testing.T) {
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
+		require.NoError(t, err)
+
+		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceRuntime)
+		require.Len(t, collectorConfig.Processors.DropIfInputSourceRuntime.Metrics.DataPoint, 1)
+		require.Equal(t, "resource.attributes[\"kyma.source\"] == \"runtime\"", collectorConfig.Processors.DropIfInputSourceRuntime.Metrics.DataPoint[0])
+
+		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceWorkloads)
+		require.Len(t, collectorConfig.Processors.DropIfInputSourceWorkloads.Metrics.DataPoint, 1)
+		require.Equal(t, "resource.attributes[\"kyma.source\"] == \"workloads\"", collectorConfig.Processors.DropIfInputSourceWorkloads.Metrics.DataPoint[0])
+	})
 }

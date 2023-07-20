@@ -3,15 +3,15 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"sort"
 
+	"golang.org/x/exp/maps"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/otlpoutput"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"golang.org/x/exp/maps"
-	"sort"
 )
 
 type otlpOutputConfigBuilder struct {
@@ -45,13 +45,12 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alp
 			continue
 		}
 
-		err := addComponentsForMetricPipeline(otlpOutputConfigBuilder{
+		if err := addComponentsForMetricPipeline(otlpOutputConfigBuilder{
 			ctx:       ctx,
 			c:         c,
 			pipeline:  &pipeline,
 			queueSize: queueSize,
-		}, &pipeline, config, envVars)
-		if err != nil {
+		}, &pipeline, config, envVars); err != nil {
 			return nil, nil, err
 		}
 	}
