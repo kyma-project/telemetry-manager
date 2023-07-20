@@ -16,7 +16,7 @@ func TestGetOutputTypeHttp(t *testing.T) {
 		Protocol: "http",
 	}
 
-	require.Equal(t, "otlphttp/test", getOTLPOutputAlias(output, "test"))
+	require.Equal(t, "otlphttp/test", ExporterID(output, "test"))
 }
 
 func TestGetOutputTypeOtlp(t *testing.T) {
@@ -25,7 +25,7 @@ func TestGetOutputTypeOtlp(t *testing.T) {
 		Protocol: "grpc",
 	}
 
-	require.Equal(t, "otlp/test", getOTLPOutputAlias(output, "test"))
+	require.Equal(t, "otlp/test", ExporterID(output, "test"))
 }
 
 func TestGetOutputTypeDefault(t *testing.T) {
@@ -33,7 +33,7 @@ func TestGetOutputTypeDefault(t *testing.T) {
 		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	require.Equal(t, "otlp/test", getOTLPOutputAlias(output, "test"))
+	require.Equal(t, "otlp/test", ExporterID(output, "test"))
 }
 
 func TestMakeExporterConfig(t *testing.T) {
@@ -41,7 +41,7 @@ func TestMakeExporterConfig(t *testing.T) {
 		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	exporterConfig, envVars, err := MakeExportersConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test", 512)
+	exporterConfig, envVars, err := MakeExporterConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test", 512)
 	require.NoError(t, err)
 	require.NotNil(t, exporterConfig)
 	require.NotNil(t, envVars)
@@ -81,7 +81,7 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 		Headers:  headers,
 	}
 
-	exporterConfig, envVars, err := MakeExportersConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test", 512)
+	exporterConfig, envVars, err := MakeExporterConfig(context.Background(), fake.NewClientBuilder().Build(), output, "test", 512)
 	require.NoError(t, err)
 	require.NotNil(t, exporterConfig)
 	require.NotNil(t, envVars)

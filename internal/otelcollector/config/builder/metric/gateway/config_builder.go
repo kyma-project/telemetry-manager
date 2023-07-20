@@ -10,18 +10,19 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-type otlpOutputConfigBuilder struct {
+type otlpExporterConfigBuilder struct {
 	ctx       context.Context
 	c         client.Reader
 	pipeline  *telemetryv1alpha1.MetricPipeline
 	queueSize int
 }
 
-func (b *otlpOutputConfigBuilder) build() (map[string]common.BaseGatewayExporterConfig, otlpexporter.EnvVars, error) {
-	return otlpexporter.MakeExportersConfig(b.ctx, b.c, b.pipeline.Spec.Output.Otlp, b.pipeline.Name, b.queueSize)
+func (b *otlpExporterConfigBuilder) build() (*common.OTLPExporterConfig, otlpexporter.EnvVars, error) {
+	return otlpexporter.MakeExporterConfig(b.ctx, b.c, b.pipeline.Spec.Output.Otlp, b.pipeline.Name, b.queueSize)
 }
 
 func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alpha1.MetricPipeline) (*Config, otlpexporter.EnvVars, error) {
@@ -44,7 +45,7 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alp
 			continue
 		}
 
-		if err := addComponentsForMetricPipeline(otlpOutputConfigBuilder{
+		if err := addComponentsForMetricPipeline(otlpExporterConfigBuilder{
 			ctx:       ctx,
 			c:         c,
 			pipeline:  &pipeline,
@@ -99,7 +100,7 @@ func makeServiceConfig() common.ServiceConfig {
 }
 
 // addComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given MetricPipeline.
-func addComponentsForMetricPipeline(otlpOutputBuilder otlpOutputConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, config *Config, envVars otlpexporter.EnvVars) error {
+func addComponentsForMetricPipeline(otlpOutputBuilder otlpExporterConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, config *Config, envVars otlpexporter.EnvVars) error {
 	if enableDropIfInputSourceRuntime(pipeline) {
 		config.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}
@@ -108,24 +109,26 @@ func addComponentsForMetricPipeline(otlpOutputBuilder otlpOutputConfigBuilder, p
 		config.Processors.DropIfInputSourceWorkloads = makeDropIfInputSourceWorkloadsConfig()
 	}
 
-	exporterConfigs, pipelineEnvVars, err := otlpOutputBuilder.build()
+	otlpExporterConfig, otlpExporterEnvVars, err := otlpOutputBuilder.build()
 	if err != nil {
-		return fmt.Errorf("failed to make exporter config: %w", err)
+		return fmt.Errorf("failed to make otlp exporter config: %w", err)
 	}
 
-	maps.Copy(envVars, pipelineEnvVars)
-	var exporterIDs []string
-	for exporterID, exporterConfig := range exporterConfigs {
-		config.Exporters[exporterID] = ExporterConfig{BaseGatewayExporterConfig: exporterConfig}
-		exporterIDs = append(exporterIDs, exporterID)
-	}
+	maps.Copy(envVars, otlpExporterEnvVars)
 
-	config.Service.Pipelines[fmt.Sprintf("metrics/%s", pipeline.Name)] = makePipelineConfig(pipeline, exporterIDs)
+	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
+	config.Exporters[otlpExporterID] = ExporterConfig{OTLP: otlpExporterConfig}
+
+	loggingExporterID := fmt.Sprintf("logging/%s", pipeline.Name)
+	config.Exporters[loggingExporterID] = ExporterConfig{Logging: &common.LoggingExporterConfig{Verbosity: "basic"}}
+
+	pipelineID := fmt.Sprintf("metrics/%s", pipeline.Name)
+	config.Service.Pipelines[pipelineID] = makePipelineConfig(pipeline, otlpExporterID, loggingExporterID)
 
 	return nil
 }
 
-func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs []string) common.PipelineConfig {
+func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs ...string) common.PipelineConfig {
 	sort.Strings(exporterIDs)
 
 	processors := []string{"memory_limiter", "k8sattributes", "resource"}

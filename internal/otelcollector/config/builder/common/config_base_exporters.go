@@ -1,10 +1,5 @@
 package common
 
-type BaseGatewayExporterConfig struct {
-	*OTLPExporterConfig    `yaml:",inline,omitempty"`
-	*LoggingExporterConfig `yaml:",inline,omitempty"`
-}
-
 type OTLPExporterConfig struct {
 	Endpoint       string               `yaml:"endpoint,omitempty"`
 	Headers        map[string]string    `yaml:"headers,omitempty"`
