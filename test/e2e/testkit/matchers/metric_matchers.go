@@ -54,11 +54,80 @@ func HaveNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
 	}, gomega.Equal(expectedMetricCount))
 }
 
+func ContainMetrics() types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) (int, error) {
+		if actual == nil {
+			return 0, nil
+		}
+
+		actualBytes, ok := actual.([]byte)
+		if !ok {
+			return 0, fmt.Errorf("ContainLogs requires a []byte, but got %T", actual)
+		}
+
+		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+		if err != nil {
+			return 0, fmt.Errorf("ContainMetrics requires a valid OTLP JSON document: %v", err)
+		}
+
+		metricsCount := 0
+		for _, md := range actualMds {
+			metricsCount += len(metrics.AllMetrics(md))
+		}
+		return metricsCount, nil
+	}, gomega.BeNumerically(">", 0))
+}
+
+func HaveMetricNames(expectedMetricNames ...string) types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) ([]string, error) {
+		actualBytes, ok := actual.([]byte)
+		if !ok {
+			return nil, fmt.Errorf("HaveMetricNames requires a []byte, but got %T", actual)
+		}
+
+		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+		if err != nil {
+			return nil, fmt.Errorf("HaveMetricNames requires a valid OTLP JSON document: %v", err)
+		}
+
+		var actualMetricNames []string
+		for _, md := range actualMds {
+			actualMetricNames = append(actualMetricNames, metrics.AllMetricNames(md)...)
+		}
+
+		return actualMetricNames, nil
+	}, gomega.ContainElements(expectedMetricNames))
+}
+
+func HaveAttributes(expectedAttributeNames ...string) types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) ([]string, error) {
+		actualBytes, ok := actual.([]byte)
+		if !ok {
+			return nil, fmt.Errorf("HaveAttributes requires a []byte, but got %T", actual)
+		}
+
+		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+		if err != nil {
+			return nil, fmt.Errorf("HaveAttributes requires a valid OTLP JSON document: %v", err)
+		}
+
+		var actualAttributeNames []string
+		for _, md := range actualMds {
+			actualAttributeNames = append(actualAttributeNames, metrics.AllResourceAttributeNames(md)...)
+		}
+
+		return actualAttributeNames, nil
+	}, gomega.ContainElements(expectedAttributeNames))
+}
+
 func unmarshalOTLPJSONMetrics(buf []byte) ([]pmetric.Metrics, error) {
 	var results []pmetric.Metrics
 
 	var metricsUnmarshaler pmetric.JSONUnmarshaler
 	scanner := bufio.NewScanner(bytes.NewReader(buf))
+	// default buffer size causing 'token too long' error, configured new buffer size works for current test data in case of some data slices longer than buffer, buffer size should be adapted accordingly new requirement
+	scannerBuffer := make([]byte, 0, 64*1024)
+	scanner.Buffer(scannerBuffer, 1024*1024)
 	for scanner.Scan() {
 		td, err := metricsUnmarshaler.UnmarshalMetrics(scanner.Bytes())
 		if err != nil {

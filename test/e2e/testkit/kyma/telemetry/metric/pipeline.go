@@ -63,6 +63,39 @@ func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
 	}
 }
 
+func (p *Pipeline) K8sObjectWithRuntimeEnabled() *telemetry.MetricPipeline {
+	var labels k8s.Labels
+	if p.persistent {
+		labels = k8s.PersistentLabel
+	}
+	labels.Version(version)
+
+	return &telemetry.MetricPipeline{
+		ObjectMeta: k8smeta.ObjectMeta{
+			Name:   p.Name(),
+			Labels: labels,
+		},
+		Spec: telemetry.MetricPipelineSpec{
+			Input: telemetry.MetricPipelineInput{
+				Application: telemetry.MetricPipelineApplicationInput{
+					Runtime: telemetry.MetricPipelineContainerRuntimeInput{
+						Enabled: true,
+					},
+				},
+			},
+			Output: telemetry.MetricPipelineOutput{
+				Otlp: &telemetry.OtlpOutput{
+					Endpoint: telemetry.ValueType{
+						ValueFrom: &telemetry.ValueFromSource{
+							SecretKeyRef: p.secretKeyRef,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func (p *Pipeline) Persistent(persistent bool) *Pipeline {
 	p.persistent = persistent
 
