@@ -25,7 +25,7 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []v1alpha1.Trace
 
 		output := pipeline.Spec.Output
 		queueSize := 256 / len(pipelines)
-		exporterConfig, envVars, err := otlpoutput.MakeExportersConfig(ctx, c, output.Otlp, pipeline.Name, queueSize)
+		exporterConfig, envVars, err := otlpoutput.MakeExporterConfigs(ctx, c, output.Otlp, pipeline.Name, queueSize)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to make exporter config: %v", err)
 		}
