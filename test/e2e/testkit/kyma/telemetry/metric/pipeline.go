@@ -19,6 +19,7 @@ type Pipeline struct {
 	secretKeyRef *telemetry.SecretKeyRef
 	persistent   bool
 	id           string
+	runtime      bool
 }
 
 func NewPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
@@ -44,12 +45,24 @@ func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
 	}
 	labels.Version(version)
 
+	var input telemetry.MetricPipelineInput
+	if p.runtime {
+		input = telemetry.MetricPipelineInput{
+			Application: telemetry.MetricPipelineApplicationInput{
+				Runtime: telemetry.MetricPipelineContainerRuntimeInput{
+					Enabled: true,
+				},
+			},
+		}
+	}
+
 	return &telemetry.MetricPipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
 			Name:   p.Name(),
 			Labels: labels,
 		},
 		Spec: telemetry.MetricPipelineSpec{
+			Input: input,
 			Output: telemetry.MetricPipelineOutput{
 				Otlp: &telemetry.OtlpOutput{
 					Endpoint: telemetry.ValueType{
@@ -62,42 +75,15 @@ func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
 		},
 	}
 }
-
-func (p *Pipeline) K8sObjectWithRuntimeEnabled() *telemetry.MetricPipeline {
-	var labels k8s.Labels
-	if p.persistent {
-		labels = k8s.PersistentLabel
-	}
-	labels.Version(version)
-
-	return &telemetry.MetricPipeline{
-		ObjectMeta: k8smeta.ObjectMeta{
-			Name:   p.Name(),
-			Labels: labels,
-		},
-		Spec: telemetry.MetricPipelineSpec{
-			Input: telemetry.MetricPipelineInput{
-				Application: telemetry.MetricPipelineApplicationInput{
-					Runtime: telemetry.MetricPipelineContainerRuntimeInput{
-						Enabled: true,
-					},
-				},
-			},
-			Output: telemetry.MetricPipelineOutput{
-				Otlp: &telemetry.OtlpOutput{
-					Endpoint: telemetry.ValueType{
-						ValueFrom: &telemetry.ValueFromSource{
-							SecretKeyRef: p.secretKeyRef,
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
+g
 func (p *Pipeline) Persistent(persistent bool) *Pipeline {
 	p.persistent = persistent
+
+	return p
+}
+
+func (p *Pipeline) RuntimeInput(enableRuntime bool) *Pipeline {
+	p.runtime = enableRuntime
 
 	return p
 }
