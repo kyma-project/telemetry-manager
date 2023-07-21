@@ -32,8 +32,8 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/trace/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -221,7 +221,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
 	deployment := otelgatewayresources.MakeDeployment(r.config.Gateway, configHash, len(allPipelines),
-		common.EnvVarCurrentPodIP, common.EnvVarCurrentNodeName)
+		config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName)
 	if err = controllerutil.SetOwnerReference(pipeline, deployment, r.Scheme()); err != nil {
 		return err
 	}

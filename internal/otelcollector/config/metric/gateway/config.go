@@ -1,11 +1,11 @@
 package gateway
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 type Config struct {
-	common.BaseConfig `yaml:",inline"`
+	config.BaseConfig `yaml:",inline"`
 
 	Receivers  ReceiversConfig  `yaml:"receivers"`
 	Processors ProcessorsConfig `yaml:"processors"`
@@ -13,11 +13,11 @@ type Config struct {
 }
 
 type ReceiversConfig struct {
-	OTLP common.OTLPReceiverConfig `yaml:"otlp"`
+	OTLP config.OTLPReceiverConfig `yaml:"otlp"`
 }
 
 type ProcessorsConfig struct {
-	common.BaseProcessorsConfig `yaml:",inline"`
+	config.BaseProcessorsConfig `yaml:",inline"`
 
 	DropIfInputSourceRuntime   *FilterProcessorConfig `yaml:"filter/drop-if-input-source-runtime,omitempty"`
 	DropIfInputSourceWorkloads *FilterProcessorConfig `yaml:"filter/drop-if-input-source-workloads,omitempty"`
@@ -34,6 +34,6 @@ type FilterProcessorMetricConfig struct {
 type ExportersConfig map[string]ExporterConfig
 
 type ExporterConfig struct {
-	OTLP    *common.OTLPExporterConfig    `yaml:",inline,omitempty"`
-	Logging *common.LoggingExporterConfig `yaml:",inline,omitempty"`
+	OTLP    *config.OTLPExporterConfig    `yaml:",inline,omitempty"`
+	Logging *config.LoggingExporterConfig `yaml:",inline,omitempty"`
 }

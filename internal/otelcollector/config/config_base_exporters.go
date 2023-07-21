@@ -1,4 +1,4 @@
-package common
+package config
 
 type OTLPExporterConfig struct {
 	Endpoint       string               `yaml:"endpoint,omitempty"`

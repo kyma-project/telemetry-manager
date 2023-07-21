@@ -3,13 +3,13 @@ package gateway
 import (
 	"fmt"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/metric"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
 func makeProcessorsConfig() ProcessorsConfig {
 	return ProcessorsConfig{
-		BaseProcessorsConfig: common.BaseProcessorsConfig{
+		BaseProcessorsConfig: config.BaseProcessorsConfig{
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 			K8sAttributes: makeK8sAttributesProcessorConfig(),
@@ -18,23 +18,23 @@ func makeProcessorsConfig() ProcessorsConfig {
 	}
 }
 
-func makeBatchProcessorConfig() *common.BatchProcessorConfig {
-	return &common.BatchProcessorConfig{
+func makeBatchProcessorConfig() *config.BatchProcessorConfig {
+	return &config.BatchProcessorConfig{
 		SendBatchSize:    1024,
 		Timeout:          "10s",
 		SendBatchMaxSize: 1024,
 	}
 }
 
-func makeMemoryLimiterConfig() *common.MemoryLimiterConfig {
-	return &common.MemoryLimiterConfig{
+func makeMemoryLimiterConfig() *config.MemoryLimiterConfig {
+	return &config.MemoryLimiterConfig{
 		CheckInterval:        "1s",
 		LimitPercentage:      75,
 		SpikeLimitPercentage: 10,
 	}
 }
 
-func makeK8sAttributesProcessorConfig() *common.K8sAttributesProcessorConfig {
+func makeK8sAttributesProcessorConfig() *config.K8sAttributesProcessorConfig {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -46,31 +46,31 @@ func makeK8sAttributesProcessorConfig() *common.K8sAttributesProcessorConfig {
 		"k8s.job.name",
 	}
 
-	podAssociations := []common.PodAssociations{
+	podAssociations := []config.PodAssociations{
 		{
-			Sources: []common.PodAssociation{{From: "resource_attribute", Name: "k8s.pod.ip"}},
+			Sources: []config.PodAssociation{{From: "resource_attribute", Name: "k8s.pod.ip"}},
 		},
 		{
-			Sources: []common.PodAssociation{{From: "resource_attribute", Name: "k8s.pod.uid"}},
+			Sources: []config.PodAssociation{{From: "resource_attribute", Name: "k8s.pod.uid"}},
 		},
 		{
-			Sources: []common.PodAssociation{{From: "connection"}},
+			Sources: []config.PodAssociation{{From: "connection"}},
 		},
 	}
 
-	return &common.K8sAttributesProcessorConfig{
+	return &config.K8sAttributesProcessorConfig{
 		AuthType:    "serviceAccount",
 		Passthrough: false,
-		Extract: common.ExtractK8sMetadataConfig{
+		Extract: config.ExtractK8sMetadataConfig{
 			Metadata: k8sAttributes,
 		},
 		PodAssociation: podAssociations,
 	}
 }
 
-func makeResourceProcessorConfig() *common.ResourceProcessorConfig {
-	return &common.ResourceProcessorConfig{
-		Attributes: []common.AttributeAction{
+func makeResourceProcessorConfig() *config.ResourceProcessorConfig {
+	return &config.ResourceProcessorConfig{
+		Attributes: []config.AttributeAction{
 			{
 				Action: "insert",
 				Key:    "k8s.cluster.name",

@@ -1,4 +1,4 @@
-package common
+package config
 
 type BaseProcessorsConfig struct {
 	Batch         *BatchProcessorConfig         `yaml:"batch,omitempty"`

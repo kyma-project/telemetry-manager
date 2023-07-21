@@ -1,8 +1,8 @@
 package agent
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/metric"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
 func makeProcessorsConfig(inputs inputSources) ProcessorsConfig {
@@ -23,9 +23,9 @@ func makeProcessorsConfig(inputs inputSources) ProcessorsConfig {
 	return processorsConfig
 }
 
-func makeDeleteServiceNameConfig() *common.ResourceProcessorConfig {
-	return &common.ResourceProcessorConfig{
-		Attributes: []common.AttributeAction{
+func makeDeleteServiceNameConfig() *config.ResourceProcessorConfig {
+	return &config.ResourceProcessorConfig{
+		Attributes: []config.AttributeAction{
 			{
 				Action: "delete",
 				Key:    "service.name",
@@ -34,9 +34,9 @@ func makeDeleteServiceNameConfig() *common.ResourceProcessorConfig {
 	}
 }
 
-func makeEmittedByConfig(inputSource metric.InputSourceType) *common.ResourceProcessorConfig {
-	return &common.ResourceProcessorConfig{
-		Attributes: []common.AttributeAction{
+func makeEmittedByConfig(inputSource metric.InputSourceType) *config.ResourceProcessorConfig {
+	return &config.ResourceProcessorConfig{
+		Attributes: []config.AttributeAction{
 			{
 				Action: "insert",
 				Key:    metric.InputSourceAttribute,

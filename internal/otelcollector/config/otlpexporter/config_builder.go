@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 type EnvVars map[string][]byte
@@ -29,7 +29,7 @@ func NewConfigBuilder(reader client.Reader, otlpOutput *telemetryv1alpha1.OtlpOu
 	}
 }
 
-func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*common.OTLPExporterConfig, EnvVars, error) {
+func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*config.OTLPExporterConfig, EnvVars, error) {
 	envVars, err := makeEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
@@ -39,20 +39,20 @@ func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*common.OTLPExporterCo
 	return exportersConfig, envVars, nil
 }
 
-func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, envVars map[string][]byte, queueSize int) *common.OTLPExporterConfig {
+func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, envVars map[string][]byte, queueSize int) *config.OTLPExporterConfig {
 	headers := makeHeaders(otlpOutput, pipelineName)
 	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
-	otlpExporterConfig := common.OTLPExporterConfig{
+	otlpExporterConfig := config.OTLPExporterConfig{
 		Endpoint: fmt.Sprintf("${%s}", otlpEndpointVariable),
 		Headers:  headers,
-		TLS: common.TLSConfig{
+		TLS: config.TLSConfig{
 			Insecure: isInsecureOutput(string(envVars[otlpEndpointVariable])),
 		},
-		SendingQueue: common.SendingQueueConfig{
+		SendingQueue: config.SendingQueueConfig{
 			Enabled:   true,
 			QueueSize: queueSize,
 		},
-		RetryOnFailure: common.RetryOnFailureConfig{
+		RetryOnFailure: config.RetryOnFailureConfig{
 			Enabled:         true,
 			InitialInterval: "5s",
 			MaxInterval:     "30s",

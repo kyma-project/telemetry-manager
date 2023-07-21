@@ -3,11 +3,11 @@ package agent
 import (
 	promconfig "github.com/prometheus/prometheus/config"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 type Config struct {
-	common.BaseConfig `yaml:",inline"`
+	config.BaseConfig `yaml:",inline"`
 
 	Receivers  ReceiversConfig  `yaml:"receivers"`
 	Processors ProcessorsConfig `yaml:"processors"`
@@ -40,11 +40,11 @@ type PrometheusReceiverConfig struct {
 }
 
 type ProcessorsConfig struct {
-	DeleteServiceName          *common.ResourceProcessorConfig `yaml:"resource/delete-service-name,omitempty"`
-	InsertInputSourceRuntime   *common.ResourceProcessorConfig `yaml:"resource/insert-input-source-runtime,omitempty"`
-	InsertInputSourceWorkloads *common.ResourceProcessorConfig `yaml:"resource/insert-input-source-workloads,omitempty"`
+	DeleteServiceName          *config.ResourceProcessorConfig `yaml:"resource/delete-service-name,omitempty"`
+	InsertInputSourceRuntime   *config.ResourceProcessorConfig `yaml:"resource/insert-input-source-runtime,omitempty"`
+	InsertInputSourceWorkloads *config.ResourceProcessorConfig `yaml:"resource/insert-input-source-workloads,omitempty"`
 }
 
 type ExportersConfig struct {
-	OTLP common.OTLPExporterConfig `yaml:"otlp"`
+	OTLP config.OTLPExporterConfig `yaml:"otlp"`
 }
