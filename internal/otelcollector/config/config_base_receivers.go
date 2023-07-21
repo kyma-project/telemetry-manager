@@ -1,10 +1,10 @@
 package config
 
-type OTLPReceiverConfig struct {
+type OTLPReceiver struct {
 	Protocols ReceiverProtocols `yaml:"protocols,omitempty"`
 }
 
 type ReceiverProtocols struct {
-	HTTP EndpointConfig `yaml:"http,omitempty"`
-	GRPC EndpointConfig `yaml:"grpc,omitempty"`
+	HTTP Endpoint `yaml:"http,omitempty"`
+	GRPC Endpoint `yaml:"grpc,omitempty"`
 }

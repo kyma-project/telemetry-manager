@@ -7,9 +7,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
-func makeProcessorsConfig() ProcessorsConfig {
-	return ProcessorsConfig{
-		BaseProcessorsConfig: config.BaseProcessorsConfig{
+func makeProcessorsConfig() Processors {
+	return Processors{
+		BaseProcessors: config.BaseProcessors{
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 			K8sAttributes: makeK8sAttributesProcessorConfig(),
@@ -18,23 +18,23 @@ func makeProcessorsConfig() ProcessorsConfig {
 	}
 }
 
-func makeBatchProcessorConfig() *config.BatchProcessorConfig {
-	return &config.BatchProcessorConfig{
+func makeBatchProcessorConfig() *config.BatchProcessor {
+	return &config.BatchProcessor{
 		SendBatchSize:    1024,
 		Timeout:          "10s",
 		SendBatchMaxSize: 1024,
 	}
 }
 
-func makeMemoryLimiterConfig() *config.MemoryLimiterConfig {
-	return &config.MemoryLimiterConfig{
+func makeMemoryLimiterConfig() *config.MemoryLimiter {
+	return &config.MemoryLimiter{
 		CheckInterval:        "1s",
 		LimitPercentage:      75,
 		SpikeLimitPercentage: 10,
 	}
 }
 
-func makeK8sAttributesProcessorConfig() *config.K8sAttributesProcessorConfig {
+func makeK8sAttributesProcessorConfig() *config.K8sAttributesProcessor {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -58,18 +58,18 @@ func makeK8sAttributesProcessorConfig() *config.K8sAttributesProcessorConfig {
 		},
 	}
 
-	return &config.K8sAttributesProcessorConfig{
+	return &config.K8sAttributesProcessor{
 		AuthType:    "serviceAccount",
 		Passthrough: false,
-		Extract: config.ExtractK8sMetadataConfig{
+		Extract: config.ExtractK8sMetadata{
 			Metadata: k8sAttributes,
 		},
 		PodAssociation: podAssociations,
 	}
 }
 
-func makeResourceProcessorConfig() *config.ResourceProcessorConfig {
-	return &config.ResourceProcessorConfig{
+func makeResourceProcessorConfig() *config.ResourceProcessor {
+	return &config.ResourceProcessor{
 		Attributes: []config.AttributeAction{
 			{
 				Action: "insert",
@@ -80,9 +80,9 @@ func makeResourceProcessorConfig() *config.ResourceProcessorConfig {
 	}
 }
 
-func makeDropIfInputSourceRuntimeConfig() *FilterProcessorConfig {
-	return &FilterProcessorConfig{
-		Metrics: FilterProcessorMetricConfig{
+func makeDropIfInputSourceRuntimeConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetric{
 			DataPoint: []string{
 				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourceRuntime),
 			},
@@ -90,9 +90,9 @@ func makeDropIfInputSourceRuntimeConfig() *FilterProcessorConfig {
 	}
 }
 
-func makeDropIfInputSourceWorkloadsConfig() *FilterProcessorConfig {
-	return &FilterProcessorConfig{
-		Metrics: FilterProcessorMetricConfig{
+func makeDropIfInputSourceWorkloadsConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetric{
 			DataPoint: []string{
 				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourceWorkloads),
 			},

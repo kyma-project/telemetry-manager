@@ -5,8 +5,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 )
 
-func makeProcessorsConfig(inputs inputSources) ProcessorsConfig {
-	var processorsConfig ProcessorsConfig
+func makeProcessorsConfig(inputs inputSources) Processors {
+	var processorsConfig Processors
 
 	if inputs.runtime || inputs.workloads {
 		processorsConfig.DeleteServiceName = makeDeleteServiceNameConfig()
@@ -23,8 +23,8 @@ func makeProcessorsConfig(inputs inputSources) ProcessorsConfig {
 	return processorsConfig
 }
 
-func makeDeleteServiceNameConfig() *config.ResourceProcessorConfig {
-	return &config.ResourceProcessorConfig{
+func makeDeleteServiceNameConfig() *config.ResourceProcessor {
+	return &config.ResourceProcessor{
 		Attributes: []config.AttributeAction{
 			{
 				Action: "delete",
@@ -34,8 +34,8 @@ func makeDeleteServiceNameConfig() *config.ResourceProcessorConfig {
 	}
 }
 
-func makeEmittedByConfig(inputSource metric.InputSourceType) *config.ResourceProcessorConfig {
-	return &config.ResourceProcessorConfig{
+func makeEmittedByConfig(inputSource metric.InputSourceType) *config.ResourceProcessor {
+	return &config.ResourceProcessor{
 		Attributes: []config.AttributeAction{
 			{
 				Action: "insert",

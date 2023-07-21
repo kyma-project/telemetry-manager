@@ -22,7 +22,7 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.Me
 	}
 
 	return &Config{
-		BaseConfig: config.BaseConfig{
+		Base: config.Base{
 			Extensions: makeExtensionsConfig(),
 			Service:    makeServiceConfig(inputs),
 		},
@@ -52,18 +52,18 @@ func enableRuntimeMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
 	return false
 }
 
-func makeExportersConfig(gatewayServiceName types.NamespacedName) ExportersConfig {
-	return ExportersConfig{
-		OTLP: config.OTLPExporterConfig{
+func makeExportersConfig(gatewayServiceName types.NamespacedName) Exporters {
+	return Exporters{
+		OTLP: config.OTLPExporter{
 			Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:%d", gatewayServiceName.Name, gatewayServiceName.Namespace, ports.OTLPGRPC),
-			TLS: config.TLSConfig{
+			TLS: config.TLS{
 				Insecure: true,
 			},
-			SendingQueue: config.SendingQueueConfig{
+			SendingQueue: config.SendingQueue{
 				Enabled:   true,
 				QueueSize: 512,
 			},
-			RetryOnFailure: config.RetryOnFailureConfig{
+			RetryOnFailure: config.RetryOnFailure{
 				Enabled:         true,
 				InitialInterval: "5s",
 				MaxInterval:     "30s",
@@ -73,22 +73,22 @@ func makeExportersConfig(gatewayServiceName types.NamespacedName) ExportersConfi
 	}
 }
 
-func makeExtensionsConfig() config.ExtensionsConfig {
-	return config.ExtensionsConfig{
-		HealthCheck: config.EndpointConfig{
+func makeExtensionsConfig() config.Extensions {
+	return config.Extensions{
+		HealthCheck: config.Endpoint{
 			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.HealthCheck),
 		},
 	}
 }
 
-func makeServiceConfig(inputs inputSources) config.ServiceConfig {
-	return config.ServiceConfig{
+func makeServiceConfig(inputs inputSources) config.Service {
+	return config.Service{
 		Pipelines: makePipelinesConfig(inputs),
-		Telemetry: config.TelemetryConfig{
-			Metrics: config.MetricsConfig{
+		Telemetry: config.Telemetry{
+			Metrics: config.Metrics{
 				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
 			},
-			Logs: config.LoggingConfig{
+			Logs: config.Logs{
 				Level: "info",
 			},
 		},
@@ -96,11 +96,11 @@ func makeServiceConfig(inputs inputSources) config.ServiceConfig {
 	}
 }
 
-func makePipelinesConfig(inputs inputSources) config.PipelinesConfig {
-	pipelinesConfig := make(config.PipelinesConfig)
+func makePipelinesConfig(inputs inputSources) config.Pipelines {
+	pipelinesConfig := make(config.Pipelines)
 
 	if inputs.runtime {
-		pipelinesConfig["metrics/runtime"] = config.PipelineConfig{
+		pipelinesConfig["metrics/runtime"] = config.Pipeline{
 			Receivers:  []string{"kubeletstats"},
 			Processors: []string{"resource/delete-service-name", "resource/insert-input-source-runtime"},
 			Exporters:  []string{"otlp"},
@@ -108,7 +108,7 @@ func makePipelinesConfig(inputs inputSources) config.PipelinesConfig {
 	}
 
 	if inputs.workloads {
-		pipelinesConfig["metrics/workloads"] = config.PipelineConfig{
+		pipelinesConfig["metrics/workloads"] = config.Pipeline{
 			Receivers:  []string{"prometheus/self", "prometheus/app-pods"},
 			Processors: []string{"resource/delete-service-name", "resource/insert-input-source-workloads"},
 			Exporters:  []string{"otlp"},

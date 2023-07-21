@@ -1,25 +1,25 @@
 package config
 
-type BaseProcessorsConfig struct {
-	Batch         *BatchProcessorConfig         `yaml:"batch,omitempty"`
-	MemoryLimiter *MemoryLimiterConfig          `yaml:"memory_limiter,omitempty"`
-	K8sAttributes *K8sAttributesProcessorConfig `yaml:"k8sattributes,omitempty"`
-	Resource      *ResourceProcessorConfig      `yaml:"resource,omitempty"`
+type BaseProcessors struct {
+	Batch         *BatchProcessor         `yaml:"batch,omitempty"`
+	MemoryLimiter *MemoryLimiter          `yaml:"memory_limiter,omitempty"`
+	K8sAttributes *K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
+	Resource      *ResourceProcessor      `yaml:"resource,omitempty"`
 }
 
-type BatchProcessorConfig struct {
+type BatchProcessor struct {
 	SendBatchSize    int    `yaml:"send_batch_size"`
 	Timeout          string `yaml:"timeout"`
 	SendBatchMaxSize int    `yaml:"send_batch_max_size"`
 }
 
-type MemoryLimiterConfig struct {
+type MemoryLimiter struct {
 	CheckInterval        string `yaml:"check_interval"`
 	LimitPercentage      int    `yaml:"limit_percentage"`
 	SpikeLimitPercentage int    `yaml:"spike_limit_percentage"`
 }
 
-type ExtractK8sMetadataConfig struct {
+type ExtractK8sMetadata struct {
 	Metadata []string `yaml:"metadata"`
 }
 
@@ -32,11 +32,11 @@ type PodAssociations struct {
 	Sources []PodAssociation `yaml:"sources"`
 }
 
-type K8sAttributesProcessorConfig struct {
-	AuthType       string                   `yaml:"auth_type"`
-	Passthrough    bool                     `yaml:"passthrough"`
-	Extract        ExtractK8sMetadataConfig `yaml:"extract"`
-	PodAssociation []PodAssociations        `yaml:"pod_association"`
+type K8sAttributesProcessor struct {
+	AuthType       string             `yaml:"auth_type"`
+	Passthrough    bool               `yaml:"passthrough"`
+	Extract        ExtractK8sMetadata `yaml:"extract"`
+	PodAssociation []PodAssociations  `yaml:"pod_association"`
 }
 
 type AttributeAction struct {
@@ -45,6 +45,6 @@ type AttributeAction struct {
 	Value  string `yaml:"value,omitempty"`
 }
 
-type ResourceProcessorConfig struct {
+type ResourceProcessor struct {
 	Attributes []AttributeAction `yaml:"attributes"`
 }

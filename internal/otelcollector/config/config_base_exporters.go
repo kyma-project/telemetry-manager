@@ -1,33 +1,33 @@
 package config
 
-type OTLPExporterConfig struct {
-	Endpoint       string               `yaml:"endpoint,omitempty"`
-	Headers        map[string]string    `yaml:"headers,omitempty"`
-	TLS            TLSConfig            `yaml:"tls,omitempty"`
-	SendingQueue   SendingQueueConfig   `yaml:"sending_queue,omitempty"`
-	RetryOnFailure RetryOnFailureConfig `yaml:"retry_on_failure,omitempty"`
+type OTLPExporter struct {
+	Endpoint       string            `yaml:"endpoint,omitempty"`
+	Headers        map[string]string `yaml:"headers,omitempty"`
+	TLS            TLS               `yaml:"tls,omitempty"`
+	SendingQueue   SendingQueue      `yaml:"sending_queue,omitempty"`
+	RetryOnFailure RetryOnFailure    `yaml:"retry_on_failure,omitempty"`
 }
 
-type TLSConfig struct {
+type TLS struct {
 	Insecure bool `yaml:"insecure"`
 }
 
-type SendingQueueConfig struct {
+type SendingQueue struct {
 	Enabled   bool `yaml:"enabled"`
 	QueueSize int  `yaml:"queue_size"`
 }
 
-type RetryOnFailureConfig struct {
+type RetryOnFailure struct {
 	Enabled         bool   `yaml:"enabled"`
 	InitialInterval string `yaml:"initial_interval"`
 	MaxInterval     string `yaml:"max_interval"`
 	MaxElapsedTime  string `yaml:"max_elapsed_time"`
 }
 
-type LoggingExporterConfig struct {
+type LoggingExporter struct {
 	Verbosity string `yaml:"verbosity"`
 }
 
-func DefaultLoggingExporterConfig() *LoggingExporterConfig {
-	return &LoggingExporterConfig{Verbosity: "basic"}
+func DefaultLoggingExporter() *LoggingExporter {
+	return &LoggingExporter{Verbosity: "basic"}
 }

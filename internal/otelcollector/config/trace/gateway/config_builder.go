@@ -16,13 +16,13 @@ import (
 
 func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alpha1.TracePipeline) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
-		BaseConfig: config.BaseConfig{
+		Base: config.Base{
 			Service:    makeServiceConfig(),
 			Extensions: makeExtensionsConfig(),
 		},
 		Receivers:  makeReceiversConfig(),
 		Processors: makeProcessorsConfig(),
-		Exporters:  make(ExportersConfig),
+		Exporters:  make(Exporters),
 	}
 
 	envVars := make(otlpexporter.EnvVars)
@@ -43,17 +43,17 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alp
 	return cfg, envVars, nil
 }
 
-func makeReceiversConfig() ReceiversConfig {
-	return ReceiversConfig{
-		OpenCensus: config.EndpointConfig{
+func makeReceiversConfig() Receivers {
+	return Receivers{
+		OpenCensus: config.Endpoint{
 			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OpenCensus),
 		},
-		OTLP: config.OTLPReceiverConfig{
+		OTLP: config.OTLPReceiver{
 			Protocols: config.ReceiverProtocols{
-				HTTP: config.EndpointConfig{
+				HTTP: config.Endpoint{
 					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPHTTP),
 				},
-				GRPC: config.EndpointConfig{
+				GRPC: config.Endpoint{
 					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPGRPC),
 				},
 			},
@@ -61,25 +61,25 @@ func makeReceiversConfig() ReceiversConfig {
 	}
 }
 
-func makeExtensionsConfig() config.ExtensionsConfig {
-	return config.ExtensionsConfig{
-		HealthCheck: config.EndpointConfig{
+func makeExtensionsConfig() config.Extensions {
+	return config.Extensions{
+		HealthCheck: config.Endpoint{
 			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.HealthCheck),
 		},
-		Pprof: config.EndpointConfig{
+		Pprof: config.Endpoint{
 			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
 		},
 	}
 }
 
-func makeServiceConfig() config.ServiceConfig {
-	return config.ServiceConfig{
-		Pipelines: make(config.PipelinesConfig),
-		Telemetry: config.TelemetryConfig{
-			Metrics: config.MetricsConfig{
+func makeServiceConfig() config.Service {
+	return config.Service{
+		Pipelines: make(config.Pipelines),
+		Telemetry: config.Telemetry{
+			Metrics: config.Metrics{
 				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
 			},
-			Logs: config.LoggingConfig{
+			Logs: config.Logs{
 				Level: "info",
 			},
 		},
@@ -97,10 +97,10 @@ func addComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otl
 	maps.Copy(envVars, otlpExporterEnvVars)
 
 	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
-	cfg.Exporters[otlpExporterID] = ExporterConfig{OTLP: otlpExporterConfig}
+	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	loggingExporterID := fmt.Sprintf("logging/%s", pipeline.Name)
-	cfg.Exporters[loggingExporterID] = ExporterConfig{Logging: config.DefaultLoggingExporterConfig()}
+	cfg.Exporters[loggingExporterID] = Exporter{Logging: config.DefaultLoggingExporter()}
 
 	pipelineID := fmt.Sprintf("traces/%s", pipeline.Name)
 	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(otlpExporterID, loggingExporterID)
@@ -108,10 +108,10 @@ func addComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otl
 	return nil
 }
 
-func makePipelineConfig(exporterIDs ...string) config.PipelineConfig {
+func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 	sort.Strings(exporterIDs)
 
-	return config.PipelineConfig{
+	return config.Pipeline{
 		Receivers:  []string{"opencensus", "otlp"},
 		Processors: []string{"memory_limiter", "k8sattributes", "filter", "resource", "batch"},
 		Exporters:  exporterIDs,

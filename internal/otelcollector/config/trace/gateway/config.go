@@ -5,35 +5,35 @@ import (
 )
 
 type Config struct {
-	config.BaseConfig `yaml:",inline"`
+	config.Base `yaml:",inline"`
 
-	Receivers  ReceiversConfig  `yaml:"receivers"`
-	Processors ProcessorsConfig `yaml:"processors"`
-	Exporters  ExportersConfig  `yaml:"exporters"`
+	Receivers  Receivers  `yaml:"receivers"`
+	Processors Processors `yaml:"processors"`
+	Exporters  Exporters  `yaml:"exporters"`
 }
 
-type ReceiversConfig struct {
-	OpenCensus config.EndpointConfig     `yaml:"opencensus"`
-	OTLP       config.OTLPReceiverConfig `yaml:"otlp"`
+type Receivers struct {
+	OpenCensus config.Endpoint     `yaml:"opencensus"`
+	OTLP       config.OTLPReceiver `yaml:"otlp"`
 }
 
-type ProcessorsConfig struct {
-	config.BaseProcessorsConfig `yaml:",inline"`
+type Processors struct {
+	config.BaseProcessors `yaml:",inline"`
 
-	SpanFilter FilterProcessorConfig `yaml:"filter"`
+	SpanFilter FilterProcessor `yaml:"filter"`
 }
 
-type FilterProcessorConfig struct {
-	Traces TraceConfig `yaml:"traces"`
+type FilterProcessor struct {
+	Traces Traces `yaml:"traces"`
 }
 
-type TraceConfig struct {
+type Traces struct {
 	Span []string `yaml:"span"`
 }
 
-type ExportersConfig map[string]ExporterConfig
+type Exporters map[string]Exporter
 
-type ExporterConfig struct {
-	OTLP    *config.OTLPExporterConfig    `yaml:",inline,omitempty"`
-	Logging *config.LoggingExporterConfig `yaml:",inline,omitempty"`
+type Exporter struct {
+	OTLP    *config.OTLPExporter    `yaml:",inline,omitempty"`
+	Logging *config.LoggingExporter `yaml:",inline,omitempty"`
 }

@@ -5,35 +5,35 @@ import (
 )
 
 type Config struct {
-	config.BaseConfig `yaml:",inline"`
+	config.Base `yaml:",inline"`
 
-	Receivers  ReceiversConfig  `yaml:"receivers"`
-	Processors ProcessorsConfig `yaml:"processors"`
-	Exporters  ExportersConfig  `yaml:"exporters"`
+	Receivers  Receivers  `yaml:"receivers"`
+	Processors Processors `yaml:"processors"`
+	Exporters  Exporters  `yaml:"exporters"`
 }
 
-type ReceiversConfig struct {
-	OTLP config.OTLPReceiverConfig `yaml:"otlp"`
+type Receivers struct {
+	OTLP config.OTLPReceiver `yaml:"otlp"`
 }
 
-type ProcessorsConfig struct {
-	config.BaseProcessorsConfig `yaml:",inline"`
+type Processors struct {
+	config.BaseProcessors `yaml:",inline"`
 
-	DropIfInputSourceRuntime   *FilterProcessorConfig `yaml:"filter/drop-if-input-source-runtime,omitempty"`
-	DropIfInputSourceWorkloads *FilterProcessorConfig `yaml:"filter/drop-if-input-source-workloads,omitempty"`
+	DropIfInputSourceRuntime   *FilterProcessor `yaml:"filter/drop-if-input-source-runtime,omitempty"`
+	DropIfInputSourceWorkloads *FilterProcessor `yaml:"filter/drop-if-input-source-workloads,omitempty"`
 }
 
-type FilterProcessorConfig struct {
-	Metrics FilterProcessorMetricConfig `yaml:"metrics"`
+type FilterProcessor struct {
+	Metrics FilterProcessorMetric `yaml:"metrics"`
 }
 
-type FilterProcessorMetricConfig struct {
+type FilterProcessorMetric struct {
 	DataPoint []string `yaml:"datapoint"`
 }
 
-type ExportersConfig map[string]ExporterConfig
+type Exporters map[string]Exporter
 
-type ExporterConfig struct {
-	OTLP    *config.OTLPExporterConfig    `yaml:",inline,omitempty"`
-	Logging *config.LoggingExporterConfig `yaml:",inline,omitempty"`
+type Exporter struct {
+	OTLP    *config.OTLPExporter    `yaml:",inline,omitempty"`
+	Logging *config.LoggingExporter `yaml:",inline,omitempty"`
 }

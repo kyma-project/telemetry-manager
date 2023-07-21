@@ -29,7 +29,7 @@ func NewConfigBuilder(reader client.Reader, otlpOutput *telemetryv1alpha1.OtlpOu
 	}
 }
 
-func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*config.OTLPExporterConfig, EnvVars, error) {
+func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*config.OTLPExporter, EnvVars, error) {
 	envVars, err := makeEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
@@ -39,20 +39,20 @@ func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*config.OTLPExporterCo
 	return exportersConfig, envVars, nil
 }
 
-func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, envVars map[string][]byte, queueSize int) *config.OTLPExporterConfig {
+func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, envVars map[string][]byte, queueSize int) *config.OTLPExporter {
 	headers := makeHeaders(otlpOutput, pipelineName)
 	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
-	otlpExporterConfig := config.OTLPExporterConfig{
+	otlpExporterConfig := config.OTLPExporter{
 		Endpoint: fmt.Sprintf("${%s}", otlpEndpointVariable),
 		Headers:  headers,
-		TLS: config.TLSConfig{
+		TLS: config.TLS{
 			Insecure: isInsecureOutput(string(envVars[otlpEndpointVariable])),
 		},
-		SendingQueue: config.SendingQueueConfig{
+		SendingQueue: config.SendingQueue{
 			Enabled:   true,
 			QueueSize: queueSize,
 		},
-		RetryOnFailure: config.RetryOnFailureConfig{
+		RetryOnFailure: config.RetryOnFailure{
 			Enabled:         true,
 			InitialInterval: "5s",
 			MaxInterval:     "30s",

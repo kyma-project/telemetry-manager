@@ -16,8 +16,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-func makeReceiversConfig(inputs inputSources) ReceiversConfig {
-	var receiversConfig ReceiversConfig
+func makeReceiversConfig(inputs inputSources) Receivers {
+	var receiversConfig Receivers
 
 	if inputs.workloads {
 		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
@@ -31,10 +31,10 @@ func makeReceiversConfig(inputs inputSources) ReceiversConfig {
 	return receiversConfig
 }
 
-func makeKubeletStatsConfig() *KubeletStatsReceiverConfig {
+func makeKubeletStatsConfig() *KubeletStatsReceiver {
 	const collectionInterval = "30s"
 	const portKubelet = 10250
-	return &KubeletStatsReceiverConfig{
+	return &KubeletStatsReceiver{
 		CollectionInterval: collectionInterval,
 		AuthType:           "serviceAccount",
 		Endpoint:           fmt.Sprintf("https://${env:%s}:%d", config.EnvVarCurrentNodeName, portKubelet),
@@ -42,7 +42,7 @@ func makeKubeletStatsConfig() *KubeletStatsReceiverConfig {
 	}
 }
 
-func makePrometheusSelfConfig() *PrometheusReceiverConfig {
+func makePrometheusSelfConfig() *PrometheusReceiver {
 	targets := []*promtargetgroup.Group{
 		{
 			Targets: []prommodel.LabelSet{
@@ -53,7 +53,7 @@ func makePrometheusSelfConfig() *PrometheusReceiverConfig {
 		},
 	}
 
-	return &PrometheusReceiverConfig{
+	return &PrometheusReceiver{
 		Config: promconfig.Config{
 			ScrapeConfigs: []*promconfig.ScrapeConfig{
 				{
@@ -69,8 +69,8 @@ func makePrometheusSelfConfig() *PrometheusReceiverConfig {
 	}
 }
 
-func makePrometheusAppPodsConfig() *PrometheusReceiverConfig {
-	return &PrometheusReceiverConfig{
+func makePrometheusAppPodsConfig() *PrometheusReceiver {
+	return &PrometheusReceiver{
 		Config: promconfig.Config{
 			ScrapeConfigs: []*promconfig.ScrapeConfig{
 				{

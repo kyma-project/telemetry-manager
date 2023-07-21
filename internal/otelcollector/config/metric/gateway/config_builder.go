@@ -16,13 +16,13 @@ import (
 
 func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alpha1.MetricPipeline) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
-		BaseConfig: config.BaseConfig{
+		Base: config.Base{
 			Service:    makeServiceConfig(),
 			Extensions: makeExtensionsConfig(),
 		},
 		Receivers:  makeReceiversConfig(),
 		Processors: makeProcessorsConfig(),
-		Exporters:  make(ExportersConfig),
+		Exporters:  make(Exporters),
 	}
 
 	envVars := make(otlpexporter.EnvVars)
@@ -43,14 +43,14 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alp
 	return cfg, envVars, nil
 }
 
-func makeReceiversConfig() ReceiversConfig {
-	return ReceiversConfig{
-		OTLP: config.OTLPReceiverConfig{
+func makeReceiversConfig() Receivers {
+	return Receivers{
+		OTLP: config.OTLPReceiver{
 			Protocols: config.ReceiverProtocols{
-				HTTP: config.EndpointConfig{
+				HTTP: config.Endpoint{
 					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPHTTP),
 				},
-				GRPC: config.EndpointConfig{
+				GRPC: config.Endpoint{
 					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPGRPC),
 				},
 			},
@@ -58,25 +58,25 @@ func makeReceiversConfig() ReceiversConfig {
 	}
 }
 
-func makeExtensionsConfig() config.ExtensionsConfig {
-	return config.ExtensionsConfig{
-		HealthCheck: config.EndpointConfig{
+func makeExtensionsConfig() config.Extensions {
+	return config.Extensions{
+		HealthCheck: config.Endpoint{
 			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.HealthCheck),
 		},
-		Pprof: config.EndpointConfig{
+		Pprof: config.Endpoint{
 			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
 		},
 	}
 }
 
-func makeServiceConfig() config.ServiceConfig {
-	return config.ServiceConfig{
-		Pipelines: make(config.PipelinesConfig),
-		Telemetry: config.TelemetryConfig{
-			Metrics: config.MetricsConfig{
+func makeServiceConfig() config.Service {
+	return config.Service{
+		Pipelines: make(config.Pipelines),
+		Telemetry: config.Telemetry{
+			Metrics: config.Metrics{
 				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
 			},
-			Logs: config.LoggingConfig{
+			Logs: config.Logs{
 				Level: "info",
 			},
 		},
@@ -102,10 +102,10 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 	maps.Copy(envVars, otlpExporterEnvVars)
 
 	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
-	cfg.Exporters[otlpExporterID] = ExporterConfig{OTLP: otlpExporterConfig}
+	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	loggingExporterID := fmt.Sprintf("logging/%s", pipeline.Name)
-	cfg.Exporters[loggingExporterID] = ExporterConfig{Logging: config.DefaultLoggingExporterConfig()}
+	cfg.Exporters[loggingExporterID] = Exporter{Logging: config.DefaultLoggingExporter()}
 
 	pipelineID := fmt.Sprintf("metrics/%s", pipeline.Name)
 	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(pipeline, otlpExporterID, loggingExporterID)
@@ -113,7 +113,7 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 	return nil
 }
 
-func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs ...string) config.PipelineConfig {
+func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs ...string) config.Pipeline {
 	sort.Strings(exporterIDs)
 
 	processors := []string{"memory_limiter", "k8sattributes", "resource"}
@@ -128,7 +128,7 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 
 	processors = append(processors, "batch")
 
-	return config.PipelineConfig{
+	return config.Pipeline{
 		Receivers:  []string{"otlp"},
 		Processors: processors,
 		Exporters:  exporterIDs,

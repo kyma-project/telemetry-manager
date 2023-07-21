@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-func makeProcessorsConfig() ProcessorsConfig {
+func makeProcessorsConfig() Processors {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -44,27 +44,27 @@ func makeProcessorsConfig() ProcessorsConfig {
 			},
 		},
 	}
-	return ProcessorsConfig{
-		BaseProcessorsConfig: config.BaseProcessorsConfig{
-			Batch: &config.BatchProcessorConfig{
+	return Processors{
+		BaseProcessors: config.BaseProcessors{
+			Batch: &config.BatchProcessor{
 				SendBatchSize:    512,
 				Timeout:          "10s",
 				SendBatchMaxSize: 512,
 			},
-			MemoryLimiter: &config.MemoryLimiterConfig{
+			MemoryLimiter: &config.MemoryLimiter{
 				CheckInterval:        "1s",
 				LimitPercentage:      75,
 				SpikeLimitPercentage: 10,
 			},
-			K8sAttributes: &config.K8sAttributesProcessorConfig{
+			K8sAttributes: &config.K8sAttributesProcessor{
 				AuthType:    "serviceAccount",
 				Passthrough: false,
-				Extract: config.ExtractK8sMetadataConfig{
+				Extract: config.ExtractK8sMetadata{
 					Metadata: k8sAttributes,
 				},
 				PodAssociation: podAssociations,
 			},
-			Resource: &config.ResourceProcessorConfig{
+			Resource: &config.ResourceProcessor{
 				Attributes: []config.AttributeAction{
 					{
 						Action: "insert",
@@ -74,8 +74,8 @@ func makeProcessorsConfig() ProcessorsConfig {
 				},
 			},
 		},
-		SpanFilter: FilterProcessorConfig{
-			Traces: TraceConfig{
+		SpanFilter: FilterProcessor{
+			Traces: Traces{
 				Span: makeSpanFilterConfig(),
 			},
 		},
