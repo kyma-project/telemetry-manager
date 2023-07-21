@@ -133,7 +133,7 @@ var _ = Describe("Metrics Kubeletstats", Label("metrics"), func() {
 	})
 })
 
-// makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
+// makeMetricsAgentTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
 func makeMetricsAgentTestK8sObjects(namespace string, mockDeploymentNames ...string) ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
 	var (
 		objs      []client.Object
