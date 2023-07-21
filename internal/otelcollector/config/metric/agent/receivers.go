@@ -12,12 +12,12 @@ import (
 	promtargetgroup "github.com/prometheus/prometheus/discovery/targetgroup"
 	promlabel "github.com/prometheus/prometheus/model/relabel"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-func makeReceiversConfig(inputs inputSources) ReceiversConfig {
-	var receiversConfig ReceiversConfig
+func makeReceiversConfig(inputs inputSources) Receivers {
+	var receiversConfig Receivers
 
 	if inputs.workloads {
 		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
@@ -31,29 +31,29 @@ func makeReceiversConfig(inputs inputSources) ReceiversConfig {
 	return receiversConfig
 }
 
-func makeKubeletStatsConfig() *KubeletStatsReceiverConfig {
+func makeKubeletStatsConfig() *KubeletStatsReceiver {
 	const collectionInterval = "30s"
 	const portKubelet = 10250
-	return &KubeletStatsReceiverConfig{
+	return &KubeletStatsReceiver{
 		CollectionInterval: collectionInterval,
 		AuthType:           "serviceAccount",
-		Endpoint:           fmt.Sprintf("https://${env:%s}:%d", common.EnvVarCurrentNodeName, portKubelet),
+		Endpoint:           fmt.Sprintf("https://${env:%s}:%d", config.EnvVarCurrentNodeName, portKubelet),
 		MetricGroups:       []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod},
 	}
 }
 
-func makePrometheusSelfConfig() *PrometheusReceiverConfig {
+func makePrometheusSelfConfig() *PrometheusReceiver {
 	targets := []*promtargetgroup.Group{
 		{
 			Targets: []prommodel.LabelSet{
 				{
-					prommodel.AddressLabel: prommodel.LabelValue(fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.Metrics)),
+					prommodel.AddressLabel: prommodel.LabelValue(fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics)),
 				},
 			},
 		},
 	}
 
-	return &PrometheusReceiverConfig{
+	return &PrometheusReceiver{
 		Config: promconfig.Config{
 			ScrapeConfigs: []*promconfig.ScrapeConfig{
 				{
@@ -69,8 +69,8 @@ func makePrometheusSelfConfig() *PrometheusReceiverConfig {
 	}
 }
 
-func makePrometheusAppPodsConfig() *PrometheusReceiverConfig {
-	return &PrometheusReceiverConfig{
+func makePrometheusAppPodsConfig() *PrometheusReceiver {
+	return &PrometheusReceiver{
 		Config: promconfig.Config{
 			ScrapeConfigs: []*promconfig.ScrapeConfig{
 				{
@@ -85,7 +85,7 @@ func makePrometheusAppPodsConfig() *PrometheusReceiverConfig {
 					RelabelConfigs: []*promlabel.Config{
 						{
 							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_node_name"},
-							Regex:        promlabel.MustNewRegexp(fmt.Sprintf("$%s", common.EnvVarCurrentNodeName)),
+							Regex:        promlabel.MustNewRegexp(fmt.Sprintf("$%s", config.EnvVarCurrentNodeName)),
 							Action:       promlabel.Keep,
 						},
 						{

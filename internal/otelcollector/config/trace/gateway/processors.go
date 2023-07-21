@@ -3,11 +3,11 @@ package gateway
 import (
 	"fmt"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-func makeProcessorsConfig() ProcessorsConfig {
+func makeProcessorsConfig() Processors {
 	k8sAttributes := []string{
 		"k8s.pod.name",
 		"k8s.node.name",
@@ -19,9 +19,9 @@ func makeProcessorsConfig() ProcessorsConfig {
 		"k8s.job.name",
 	}
 
-	podAssociations := []common.PodAssociations{
+	podAssociations := []config.PodAssociations{
 		{
-			Sources: []common.PodAssociation{
+			Sources: []config.PodAssociation{
 				{
 					From: "resource_attribute",
 					Name: "k8s.pod.ip",
@@ -29,7 +29,7 @@ func makeProcessorsConfig() ProcessorsConfig {
 			},
 		},
 		{
-			Sources: []common.PodAssociation{
+			Sources: []config.PodAssociation{
 				{
 					From: "resource_attribute",
 					Name: "k8s.pod.uid",
@@ -37,35 +37,35 @@ func makeProcessorsConfig() ProcessorsConfig {
 			},
 		},
 		{
-			Sources: []common.PodAssociation{
+			Sources: []config.PodAssociation{
 				{
 					From: "connection",
 				},
 			},
 		},
 	}
-	return ProcessorsConfig{
-		BaseProcessorsConfig: common.BaseProcessorsConfig{
-			Batch: &common.BatchProcessorConfig{
+	return Processors{
+		BaseProcessors: config.BaseProcessors{
+			Batch: &config.BatchProcessor{
 				SendBatchSize:    512,
 				Timeout:          "10s",
 				SendBatchMaxSize: 512,
 			},
-			MemoryLimiter: &common.MemoryLimiterConfig{
+			MemoryLimiter: &config.MemoryLimiter{
 				CheckInterval:        "1s",
 				LimitPercentage:      75,
 				SpikeLimitPercentage: 10,
 			},
-			K8sAttributes: &common.K8sAttributesProcessorConfig{
+			K8sAttributes: &config.K8sAttributesProcessor{
 				AuthType:    "serviceAccount",
 				Passthrough: false,
-				Extract: common.ExtractK8sMetadataConfig{
+				Extract: config.ExtractK8sMetadata{
 					Metadata: k8sAttributes,
 				},
 				PodAssociation: podAssociations,
 			},
-			Resource: &common.ResourceProcessorConfig{
-				Attributes: []common.AttributeAction{
+			Resource: &config.ResourceProcessor{
+				Attributes: []config.AttributeAction{
 					{
 						Action: "insert",
 						Key:    "k8s.cluster.name",
@@ -74,8 +74,8 @@ func makeProcessorsConfig() ProcessorsConfig {
 				},
 			},
 		},
-		SpanFilter: FilterProcessorConfig{
-			Traces: TraceConfig{
+		SpanFilter: FilterProcessor{
+			Traces: Traces{
 				Span: makeSpanFilterConfig(),
 			},
 		},

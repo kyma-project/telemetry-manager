@@ -1,4 +1,4 @@
-package common
+package config
 
 const (
 	EnvVarCurrentPodIP    = "MY_POD_IP"

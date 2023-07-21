@@ -9,20 +9,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common/otlpexporter"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alpha1.MetricPipeline) (*Config, otlpexporter.EnvVars, error) {
-	config := &Config{
-		BaseConfig: common.BaseConfig{
+	cfg := &Config{
+		Base: config.Base{
 			Service:    makeServiceConfig(),
 			Extensions: makeExtensionsConfig(),
 		},
 		Receivers:  makeReceiversConfig(),
 		Processors: makeProcessorsConfig(),
-		Exporters:  make(ExportersConfig),
+		Exporters:  make(Exporters),
 	}
 
 	envVars := make(otlpexporter.EnvVars)
@@ -35,48 +35,48 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alp
 		}
 
 		otlpExporterBuilder := otlpexporter.NewConfigBuilder(c, pipeline.Spec.Output.Otlp, pipeline.Name, queueSize)
-		if err := addComponentsForMetricPipeline(ctx, otlpExporterBuilder, &pipeline, config, envVars); err != nil {
+		if err := addComponentsForMetricPipeline(ctx, otlpExporterBuilder, &pipeline, cfg, envVars); err != nil {
 			return nil, nil, err
 		}
 	}
 
-	return config, envVars, nil
+	return cfg, envVars, nil
 }
 
-func makeReceiversConfig() ReceiversConfig {
-	return ReceiversConfig{
-		OTLP: common.OTLPReceiverConfig{
-			Protocols: common.ReceiverProtocols{
-				HTTP: common.EndpointConfig{
-					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPHTTP),
+func makeReceiversConfig() Receivers {
+	return Receivers{
+		OTLP: config.OTLPReceiver{
+			Protocols: config.ReceiverProtocols{
+				HTTP: config.Endpoint{
+					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPHTTP),
 				},
-				GRPC: common.EndpointConfig{
-					Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.OTLPGRPC),
+				GRPC: config.Endpoint{
+					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPGRPC),
 				},
 			},
 		},
 	}
 }
 
-func makeExtensionsConfig() common.ExtensionsConfig {
-	return common.ExtensionsConfig{
-		HealthCheck: common.EndpointConfig{
-			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.HealthCheck),
+func makeExtensionsConfig() config.Extensions {
+	return config.Extensions{
+		HealthCheck: config.Endpoint{
+			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.HealthCheck),
 		},
-		Pprof: common.EndpointConfig{
+		Pprof: config.Endpoint{
 			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
 		},
 	}
 }
 
-func makeServiceConfig() common.ServiceConfig {
-	return common.ServiceConfig{
-		Pipelines: make(common.PipelinesConfig),
-		Telemetry: common.TelemetryConfig{
-			Metrics: common.MetricsConfig{
-				Address: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.Metrics),
+func makeServiceConfig() config.Service {
+	return config.Service{
+		Pipelines: make(config.Pipelines),
+		Telemetry: config.Telemetry{
+			Metrics: config.Metrics{
+				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
 			},
-			Logs: common.LoggingConfig{
+			Logs: config.Logs{
 				Level: "info",
 			},
 		},
@@ -85,13 +85,13 @@ func makeServiceConfig() common.ServiceConfig {
 }
 
 // addComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.MetricPipeline.
-func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, config *Config, envVars otlpexporter.EnvVars) error {
+func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
 	if enableDropIfInputSourceRuntime(pipeline) {
-		config.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
+		cfg.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}
 
 	if enableDropIfInputSourceWorkloads(pipeline) {
-		config.Processors.DropIfInputSourceWorkloads = makeDropIfInputSourceWorkloadsConfig()
+		cfg.Processors.DropIfInputSourceWorkloads = makeDropIfInputSourceWorkloadsConfig()
 	}
 
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
@@ -102,18 +102,18 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 	maps.Copy(envVars, otlpExporterEnvVars)
 
 	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
-	config.Exporters[otlpExporterID] = ExporterConfig{OTLP: otlpExporterConfig}
+	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	loggingExporterID := fmt.Sprintf("logging/%s", pipeline.Name)
-	config.Exporters[loggingExporterID] = ExporterConfig{Logging: common.DefaultLoggingExporterConfig()}
+	cfg.Exporters[loggingExporterID] = Exporter{Logging: config.DefaultLoggingExporter()}
 
 	pipelineID := fmt.Sprintf("metrics/%s", pipeline.Name)
-	config.Service.Pipelines[pipelineID] = makePipelineConfig(pipeline, otlpExporterID, loggingExporterID)
+	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(pipeline, otlpExporterID, loggingExporterID)
 
 	return nil
 }
 
-func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs ...string) common.PipelineConfig {
+func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs ...string) config.Pipeline {
 	sort.Strings(exporterIDs)
 
 	processors := []string{"memory_limiter", "k8sattributes", "resource"}
@@ -128,7 +128,7 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 
 	processors = append(processors, "batch")
 
-	return common.PipelineConfig{
+	return config.Pipeline{
 		Receivers:  []string{"otlp"},
 		Processors: processors,
 		Exporters:  exporterIDs,

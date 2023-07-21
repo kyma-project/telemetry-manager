@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/common"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
@@ -22,7 +22,7 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.Me
 	}
 
 	return &Config{
-		BaseConfig: common.BaseConfig{
+		Base: config.Base{
 			Extensions: makeExtensionsConfig(),
 			Service:    makeServiceConfig(inputs),
 		},
@@ -52,18 +52,18 @@ func enableRuntimeMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
 	return false
 }
 
-func makeExportersConfig(gatewayServiceName types.NamespacedName) ExportersConfig {
-	return ExportersConfig{
-		OTLP: common.OTLPExporterConfig{
+func makeExportersConfig(gatewayServiceName types.NamespacedName) Exporters {
+	return Exporters{
+		OTLP: config.OTLPExporter{
 			Endpoint: fmt.Sprintf("%s.%s.svc.cluster.local:%d", gatewayServiceName.Name, gatewayServiceName.Namespace, ports.OTLPGRPC),
-			TLS: common.TLSConfig{
+			TLS: config.TLS{
 				Insecure: true,
 			},
-			SendingQueue: common.SendingQueueConfig{
+			SendingQueue: config.SendingQueue{
 				Enabled:   true,
 				QueueSize: 512,
 			},
-			RetryOnFailure: common.RetryOnFailureConfig{
+			RetryOnFailure: config.RetryOnFailure{
 				Enabled:         true,
 				InitialInterval: "5s",
 				MaxInterval:     "30s",
@@ -73,22 +73,22 @@ func makeExportersConfig(gatewayServiceName types.NamespacedName) ExportersConfi
 	}
 }
 
-func makeExtensionsConfig() common.ExtensionsConfig {
-	return common.ExtensionsConfig{
-		HealthCheck: common.EndpointConfig{
-			Endpoint: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.HealthCheck),
+func makeExtensionsConfig() config.Extensions {
+	return config.Extensions{
+		HealthCheck: config.Endpoint{
+			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.HealthCheck),
 		},
 	}
 }
 
-func makeServiceConfig(inputs inputSources) common.ServiceConfig {
-	return common.ServiceConfig{
+func makeServiceConfig(inputs inputSources) config.Service {
+	return config.Service{
 		Pipelines: makePipelinesConfig(inputs),
-		Telemetry: common.TelemetryConfig{
-			Metrics: common.MetricsConfig{
-				Address: fmt.Sprintf("${%s}:%d", common.EnvVarCurrentPodIP, ports.Metrics),
+		Telemetry: config.Telemetry{
+			Metrics: config.Metrics{
+				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
 			},
-			Logs: common.LoggingConfig{
+			Logs: config.Logs{
 				Level: "info",
 			},
 		},
@@ -96,11 +96,11 @@ func makeServiceConfig(inputs inputSources) common.ServiceConfig {
 	}
 }
 
-func makePipelinesConfig(inputs inputSources) common.PipelinesConfig {
-	pipelinesConfig := make(common.PipelinesConfig)
+func makePipelinesConfig(inputs inputSources) config.Pipelines {
+	pipelinesConfig := make(config.Pipelines)
 
 	if inputs.runtime {
-		pipelinesConfig["metrics/runtime"] = common.PipelineConfig{
+		pipelinesConfig["metrics/runtime"] = config.Pipeline{
 			Receivers:  []string{"kubeletstats"},
 			Processors: []string{"resource/delete-service-name", "resource/insert-input-source-runtime"},
 			Exporters:  []string{"otlp"},
@@ -108,7 +108,7 @@ func makePipelinesConfig(inputs inputSources) common.PipelinesConfig {
 	}
 
 	if inputs.workloads {
-		pipelinesConfig["metrics/workloads"] = common.PipelineConfig{
+		pipelinesConfig["metrics/workloads"] = config.Pipeline{
 			Receivers:  []string{"prometheus/self", "prometheus/app-pods"},
 			Processors: []string{"resource/delete-service-name", "resource/insert-input-source-workloads"},
 			Exporters:  []string{"otlp"},
