@@ -389,6 +389,93 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			}, timeout, interval).Should(Equal(0.0))
 		})
 	})
+	Context("When another pipeline with missing secret reference is created then config is not updated", Ordered, func() {
+		var healthyLogPipeline = &telemetryv1alpha1.LogPipeline{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "telemetry.kyma-project.io/v1alpha1",
+				Kind:       "LogPipeline",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "healthy-logpipeline",
+			},
+			Spec: telemetryv1alpha1.LogPipelineSpec{
+				Input: telemetryv1alpha1.Input{Application: telemetryv1alpha1.ApplicationInput{
+					Namespaces: telemetryv1alpha1.InputNamespaces{
+						System: true}}},
+				Output: telemetryv1alpha1.Output{Custom: FluentBitOutputConfig},
+			},
+		}
+
+		var missingSecretRefLogPipeline = &telemetryv1alpha1.LogPipeline{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "telemetry.kyma-project.io/v1alpha1",
+				Kind:       "LogPipeline",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "missing-secret-ref-logpipeline",
+			},
+			Spec: telemetryv1alpha1.LogPipelineSpec{
+				Output: telemetryv1alpha1.Output{
+					HTTP: &telemetryv1alpha1.HTTPOutput{
+						Host: telemetryv1alpha1.ValueType{
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Name:      "foo",
+									Namespace: "bar",
+									Key:       "host",
+								},
+							},
+						},
+						User: telemetryv1alpha1.ValueType{
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Name:      "foo",
+									Namespace: "bar",
+									Key:       "user",
+								},
+							},
+						},
+						Password: telemetryv1alpha1.ValueType{
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Name:      "foo",
+									Namespace: "bar",
+									Key:       "host",
+								},
+							},
+						},
+						Dedot: false,
+					},
+				},
+			},
+		}
+		It("Creates a healthy logpipeline", func() {
+			Expect(k8sClient.Create(ctx, healthyLogPipeline)).Should(Succeed())
+		})
+
+		It("Creates a logpipeline with missing secret reference", func() {
+			Expect(k8sClient.Create(ctx, missingSecretRefLogPipeline)).Should(Succeed())
+		})
+
+		It("Should create a fluent bit configmap which contains only healthy pipeline", func() {
+			Eventually(func() bool {
+				healthyPipeline := "healthy-logpipeline.conf"
+				unhelathyPipeline := "missing-secret-ref-logpipeline"
+				configMapLookupKey := types.NamespacedName{
+					Name:      testLogPipelineConfig.SectionsConfigMap.Name,
+					Namespace: testLogPipelineConfig.SectionsConfigMap.Namespace,
+				}
+				var fluentBitCm corev1.ConfigMap
+				err := k8sClient.Get(ctx, configMapLookupKey, &fluentBitCm)
+				Expect(err).To(BeNil())
+				Expect(fluentBitCm.Data[healthyPipeline]).NotTo(BeNil())
+
+				fmt.Printf("printing\n %v \n", fluentBitCm.Data[healthyPipeline])
+				Expect(fluentBitCm.Data[unhelathyPipeline]).To(BeEmpty())
+				return true
+			}, timeout, interval).Should(BeTrue())
+		})
+	})
 })
 
 func validateLoggingOwnerReferences(ownerReferences []metav1.OwnerReference) error {
