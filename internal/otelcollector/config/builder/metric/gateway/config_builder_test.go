@@ -24,7 +24,7 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 
 		actualExporterConfig := collectorConfig.Exporters["otlp/test"]
-		require.Equal(t, expectedEndpoint, actualExporterConfig.Endpoint)
+		require.Equal(t, expectedEndpoint, actualExporterConfig.OTLP.Endpoint)
 	})
 
 	t.Run("secure", func(t *testing.T) {
@@ -33,7 +33,7 @@ func TestMakeConfig(t *testing.T) {
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
 		actualExporterConfig := collectorConfig.Exporters["otlp/test"]
-		require.False(t, actualExporterConfig.TLS.Insecure)
+		require.False(t, actualExporterConfig.OTLP.TLS.Insecure)
 	})
 
 	t.Run("insecure", func(t *testing.T) {
@@ -44,7 +44,7 @@ func TestMakeConfig(t *testing.T) {
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-insecure")
 		actualExporterConfig := collectorConfig.Exporters["otlp/test-insecure"]
-		require.True(t, actualExporterConfig.TLS.Insecure)
+		require.True(t, actualExporterConfig.OTLP.TLS.Insecure)
 	})
 
 	t.Run("basic auth", func(t *testing.T) {
@@ -55,7 +55,7 @@ func TestMakeConfig(t *testing.T) {
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-basic-auth")
 		actualExporterConfig := collectorConfig.Exporters["otlp/test-basic-auth"]
-		headers := actualExporterConfig.Headers
+		headers := actualExporterConfig.OTLP.Headers
 
 		authHeader, existing := headers["Authorization"]
 		require.True(t, existing)
@@ -83,7 +83,7 @@ func TestMakeConfig(t *testing.T) {
 	t.Run("single pipeline queue size", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithName("test").Build()})
 		require.NoError(t, err)
-		require.Equal(t, 256, collectorConfig.Exporters["otlp/test"].SendingQueue.QueueSize, "Pipeline should have the full queue size")
+		require.Equal(t, 256, collectorConfig.Exporters["otlp/test"].OTLP.SendingQueue.QueueSize, "Pipeline should have the full queue size")
 	})
 
 	t.Run("multi pipeline queue size", func(t *testing.T) {
@@ -93,9 +93,9 @@ func TestMakeConfig(t *testing.T) {
 			testutils.NewMetricPipelineBuilder().WithName("test-3").Build()},
 		)
 		require.NoError(t, err)
-		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-1"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
-		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-2"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
-		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-3"].SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-1"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-2"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
+		require.Equal(t, 85, collectorConfig.Exporters["otlp/test-3"].OTLP.SendingQueue.QueueSize, "Queue size should be divided by the number of pipelines")
 	})
 
 	t.Run("single pipeline topology", func(t *testing.T) {

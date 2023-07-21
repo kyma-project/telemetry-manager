@@ -34,5 +34,6 @@ type FilterProcessorMetricConfig struct {
 type ExportersConfig map[string]ExporterConfig
 
 type ExporterConfig struct {
-	common.BaseGatewayExporterConfig `yaml:",inline"`
+	OTLP    *common.OTLPExporterConfig    `yaml:",inline,omitempty"`
+	Logging *common.LoggingExporterConfig `yaml:",inline,omitempty"`
 }
