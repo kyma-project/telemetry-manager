@@ -107,6 +107,46 @@ func AllMetrics(md pmetric.Metrics) []pmetric.Metric {
 	return metrics
 }
 
+func AllMetricNames(md pmetric.Metrics) []string {
+	var metricNames []string
+
+	for i := 0; i < md.ResourceMetrics().Len(); i++ {
+		resourceMetrics := md.ResourceMetrics().At(i)
+		for j := 0; j < resourceMetrics.ScopeMetrics().Len(); j++ {
+			scopeMetrics := resourceMetrics.ScopeMetrics().At(j)
+			for k := 0; k < scopeMetrics.Metrics().Len(); k++ {
+				metricNames = append(metricNames, scopeMetrics.Metrics().At(k).Name())
+			}
+		}
+	}
+
+	return makeUnique(metricNames)
+}
+
+func AllResourceAttributeNames(md pmetric.Metrics) []string {
+	var attributes []string
+
+	for i := 0; i < md.ResourceMetrics().Len(); i++ {
+		resourceMetrics := md.ResourceMetrics().At(i)
+		for key := range resourceMetrics.Resource().Attributes().AsRaw() {
+			attributes = append(attributes, key)
+		}
+	}
+	return makeUnique(attributes)
+}
+
+func makeUnique(slice []string) []string {
+	keys := make(map[string]bool)
+	uniqueList := []string{}
+	for _, entry := range slice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			uniqueList = append(uniqueList, entry)
+		}
+	}
+	return uniqueList
+}
+
 func NewHTTPExporter(url string, authProvider httpAuthProvider) (exporter Exporter, err error) {
 	urlSegments, err := neturl.Parse(url)
 	if err != nil {
