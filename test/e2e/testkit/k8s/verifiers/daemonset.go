@@ -1,5 +1,3 @@
-//go:build e2e
-
 package verifiers
 
 import (
@@ -11,17 +9,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func IsDeploymentReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
-	var deployment appsv1.Deployment
-	err := k8sClient.Get(ctx, name, &deployment)
+func IsDaemonSetReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
+	var daemonSet appsv1.DaemonSet
+	err := k8sClient.Get(ctx, name, &daemonSet)
 	if err != nil {
 		return false, err
 	}
 	listOptions := client.ListOptions{
-		LabelSelector: labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels),
+		LabelSelector: labels.SelectorFromSet(daemonSet.Spec.Selector.MatchLabels),
 		Namespace:     name.Namespace,
 	}
-
 	return IsPodReady(ctx, k8sClient, listOptions)
-
 }
