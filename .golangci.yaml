@@ -154,5 +154,9 @@ issues:
       path: internal/reconciler/metricpipeline/reconciler_test.go
     - linters: [ dupl ]
       path: main.go
+    - linters: [ dupl ]
+      path: test/e2e/testkit/k8s/verifiers/daemonset.go
+    - linters: [ dupl ]
+      path: test/e2e/testkit/k8s/verifiers/deployment.go
     - linters: [ errcheck ]
       path: test/e2e/testkit/otlp/traces/traces.go

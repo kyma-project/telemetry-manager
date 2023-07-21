@@ -75,7 +75,7 @@ func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
 		},
 	}
 }
-g
+
 func (p *Pipeline) Persistent(persistent bool) *Pipeline {
 	p.persistent = persistent
 
