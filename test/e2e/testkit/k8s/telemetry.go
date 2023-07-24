@@ -10,12 +10,14 @@ import (
 
 type Telemetry struct {
 	Name       string
+	Namespace  string
 	persistent bool
 }
 
-func NewTelemetry(name string) *Telemetry {
+func NewTelemetry(name, namespace string) *Telemetry {
 	return &Telemetry{
-		Name: name,
+		Name:      name,
+		Namespace: namespace,
 	}
 }
 
@@ -27,8 +29,9 @@ func (s *Telemetry) K8sObject() *operatorv1alpha1.Telemetry {
 
 	return &operatorv1alpha1.Telemetry{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   s.Name,
-			Labels: labels,
+			Name:      s.Name,
+			Namespace: s.Namespace,
+			Labels:    labels,
 		},
 	}
 }

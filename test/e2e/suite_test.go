@@ -64,7 +64,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	telemetryK8sObjects = []client.Object{kitk8s.NewTelemetry("default").Persistent(isOperational()).K8sObject()}
+	telemetryK8sObjects = []client.Object{kitk8s.NewTelemetry("default", "kyma-system").Persistent(isOperational()).K8sObject()}
 
 	Expect(kitk8s.CreateObjects(ctx, k8sClient, telemetryK8sObjects...)).To(Succeed())
 

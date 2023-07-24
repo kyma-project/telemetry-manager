@@ -19,11 +19,14 @@ package operator
 import (
 	"context"
 
+	"github.com/kyma-project/telemetry-manager/internal/setup"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -56,8 +59,37 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				IsController: false}).
 		Watches(
 			&source.Kind{Type: &admissionv1.ValidatingWebhookConfiguration{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &operatorv1alpha1.Telemetry{},
-				IsController: false}).
+			handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
+			builder.WithPredicates(setup.DeleteOrUpdate())).
 		Complete(r)
+}
+
+func (r *TelemetryReconciler) mapWebhook(object client.Object) []reconcile.Request {
+	var telemetries operatorv1alpha1.TelemetryList
+	var requests []reconcile.Request
+
+	webhook, ok := object.(*admissionv1.ValidatingWebhookConfiguration)
+	if !ok {
+		ctrl.Log.Error(nil, "unable to cast object to ValidatingWebhookConfiguration")
+		return requests
+	}
+	if webhook.Name != r.reconciler.WebhookConfig.CertConfig.WebhookName.Name {
+		return requests
+	}
+
+	err := r.List(context.Background(), &telemetries)
+	if err != nil {
+		ctrl.Log.Error(err, "unable to list Telemetry CRs")
+		return requests
+	}
+
+	for _, t := range telemetries.Items {
+		requests = append(requests, reconcile.Request{
+			NamespacedName: client.ObjectKey{
+				Name: t.Name,
+			},
+		})
+	}
+
+	return requests
 }

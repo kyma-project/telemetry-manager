@@ -32,10 +32,6 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
 				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 
-				g.Expect(validatingWebhookConfiguration.OwnerReferences).Should(HaveLen(1))
-				g.Expect(validatingWebhookConfiguration.OwnerReferences[0].Name).Should(Equal("default"))
-				g.Expect(validatingWebhookConfiguration.OwnerReferences[0].Kind).Should(Equal("Telemetry"))
-
 				g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(2))
 
 				logPipelineWebhook := validatingWebhookConfiguration.Webhooks[0]
@@ -88,7 +84,6 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 			var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
-				g.Expect(validatingWebhookConfiguration.OwnerReferences).Should(HaveLen(1))
 				g.Expect(validatingWebhookConfiguration.UID).ShouldNot(Equal(oldUID))
 			}, timeout, interval).Should(Succeed())
 		})
@@ -113,7 +108,8 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 
 	Context("Deleting Telemetry resources", Ordered, func() {
 		telemetryKey := types.NamespacedName{
-			Name: "default",
+			Name:      "default",
+			Namespace: "kyma-system",
 		}
 		k8sLogPipelineObject := makeTestPipelineK8sObjects()
 
@@ -126,7 +122,7 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 		AfterAll(func() {
 			// Re-create Telemetry to have ValidatingWebhookConfiguration for remaining tests
 			Eventually(func(g Gomega) {
-				newTelemetry := []client.Object{kitk8s.NewTelemetry("default").K8sObject()}
+				newTelemetry := []client.Object{kitk8s.NewTelemetry("default", "kyma-system").K8sObject()}
 				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, newTelemetry...)).Should(Succeed())
 			}, timeout, interval).Should(Succeed())
 
