@@ -19,7 +19,6 @@ package operator
 import (
 	"context"
 
-	"github.com/kyma-project/telemetry-manager/internal/setup"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,6 +30,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
+	"github.com/kyma-project/telemetry-manager/internal/setup"
 )
 
 type TelemetryReconciler struct {
