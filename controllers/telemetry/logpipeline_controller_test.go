@@ -467,10 +467,9 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				}
 				var fluentBitCm corev1.ConfigMap
 				err := k8sClient.Get(ctx, configMapLookupKey, &fluentBitCm)
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(HaveOccurred())
 				Expect(fluentBitCm.Data[healthyPipeline]).NotTo(BeNil())
 
-				fmt.Printf("printing\n %v \n", fluentBitCm.Data[healthyPipeline])
 				Expect(fluentBitCm.Data[unhelathyPipeline]).To(BeEmpty())
 				return true
 			}, timeout, interval).Should(BeTrue())

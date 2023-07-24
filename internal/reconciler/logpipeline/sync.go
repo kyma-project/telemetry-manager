@@ -48,12 +48,8 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 	}
 
 	cmKey := pipeline.Name + ".conf"
-	deployable, err := s.isLogPipelineDeployable(ctx, pipeline)
-	if err != nil {
-		return err
-	}
 
-	if !deployable {
+	if !s.isLogPipelineDeployable(ctx, pipeline) {
 		delete(cm.Data, cmKey)
 	} else {
 		newConfig, err := builder.BuildFluentBitConfig(pipeline, s.config.PipelineDefaults)
@@ -166,14 +162,14 @@ func (s *syncer) copySecretData(ctx context.Context, sourceRef telemetryv1alpha1
 }
 
 // isLogPipelineDeployable checks if logpipeline is ready to be rendered into the fluentbit configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func (s *syncer) isLogPipelineDeployable(ctx context.Context, logPipeline *telemetryv1alpha1.LogPipeline) (bool, error) {
+func (s *syncer) isLogPipelineDeployable(ctx context.Context, logPipeline *telemetryv1alpha1.LogPipeline) bool {
 
 	if !logPipeline.GetDeletionTimestamp().IsZero() {
-		return false, nil
+		return false
 	}
 
 	if secretref.ReferencesNonExistentSecret(ctx, s.Client, logPipeline) {
-		return false, nil
+		return false
 	}
-	return true, nil
+	return true
 }
