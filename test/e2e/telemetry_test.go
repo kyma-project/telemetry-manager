@@ -165,6 +165,18 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).ShouldNot(Succeed())
 			}, timeout, interval).Should(Succeed())
 		})
+
+		It("Should not have Webhook and CA bundle", func() {
+			Eventually(func(g Gomega) {
+				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
+				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+			}, timeout, interval).ShouldNot(Succeed())
+
+			Eventually(func(g Gomega) {
+				var secret corev1.Secret
+				g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
+			}, timeout, interval).ShouldNot(Succeed())
+		})
 	})
 })
 
