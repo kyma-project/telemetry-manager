@@ -103,7 +103,7 @@ issues:
       linters:
         - govet
     - linters: [ gci ]
-      path: test/e2e/(tracing|metrics|logging|metrics_kubeletstats|logging_parser|logging_label_annotation|logging_exclude_container)_test.go
+      path: test/e2e/(tracing|metrics|logging|metrics_kubeletstats|logging_parser|logging_label|logging_annotation|logging_exclude_container)_test.go
     - linters: [ dupl ]
       path: apis/telemetry/v1alpha1/(logparsers|metricpipeline|tracepipeline)_types_test.go
     - linters: [ dupl ]
@@ -149,7 +149,9 @@ issues:
     - linters: [ dupl ]
       path: test/e2e/logging_parser_test.go
     - linters: [ dupl ]
-      path: test/e2e/logging_label_annotation_test.go
+      path: test/e2e/logging_annotation_test.go
+    - linters: [ dupl ]
+      path: test/e2e/logging_label_test.go
     - linters: [ dupl ]
       path: test/e2e/logging_exclude_container_test.go
     - linters: [ dupl ]

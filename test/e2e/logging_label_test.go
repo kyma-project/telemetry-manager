@@ -30,7 +30,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 		)
 
 		BeforeAll(func() {
-			k8sObjects, logsURLProvider := makeLogsTestLabelAnnotationK8sObjects(mockNs, mockDeploymentName, false, false)
+			k8sObjects, logsURLProvider := makeLogsLabelTestK8sObjects(mockNs, mockDeploymentName)
 			urls = logsURLProvider
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -68,56 +68,9 @@ var _ = Describe("Logging", Label("logging"), func() {
 		})
 
 	})
-
-	Context("Keep annotations, drop labels", Ordered, func() {
-		var (
-			urls               *mocks.URLProvider
-			mockNs             = "log-mocks-keep-annotation-pipeline"
-			mockDeploymentName = "log-receiver"
-		)
-
-		BeforeAll(func() {
-			k8sObjects, logsURLProvider := makeLogsTestLabelAnnotationK8sObjects(mockNs, mockDeploymentName, true, true)
-			urls = logsURLProvider
-			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-		})
-
-		It("Should have a log backend running", Label("operational"), func() {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout*2, interval).Should(Succeed())
-		})
-
-		It("Should have a log spammer running", Label("operational"), func() {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockDeploymentName + "-spammer", Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout*2, interval).Should(Succeed())
-		})
-
-		It("Should collect only annotations and drop label", Label("operational"), func() {
-			Eventually(func(g Gomega) {
-				time.Sleep(20 * time.Second)
-				resp, err := proxyClient.Get(urls.MockBackendExport())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HasAnnotations(), Not(HasLabels()))))
-			}, timeout, interval).Should(Succeed())
-		})
-
-	})
 })
 
-func makeLogsTestLabelAnnotationK8sObjects(namespace string, mockDeploymentName string, keepAnnotations bool, dropLabels bool) ([]client.Object, *mocks.URLProvider) {
+func makeLogsLabelTestK8sObjects(namespace string, mockDeploymentName string) ([]client.Object, *mocks.URLProvider) {
 	var (
 		objs []client.Object
 		urls = mocks.NewURLProvider()
@@ -146,8 +99,8 @@ func makeLogsTestLabelAnnotationK8sObjects(namespace string, mockDeploymentName 
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
 	logHTTPPipeline := kitlog.NewHTTPPipeline("pipeline-label-annotation-test", hostSecret.SecretKeyRef("log-host"))
-	logHTTPPipeline.KeepAnnotations(keepAnnotations)
-	logHTTPPipeline.DropLabels(dropLabels)
+	logHTTPPipeline.KeepAnnotations(false)
+	logHTTPPipeline.DropLabels(false)
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
