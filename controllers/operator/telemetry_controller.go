@@ -86,7 +86,8 @@ func (r *TelemetryReconciler) mapWebhook(object client.Object) []reconcile.Reque
 	for _, t := range telemetries.Items {
 		requests = append(requests, reconcile.Request{
 			NamespacedName: client.ObjectKey{
-				Name: t.Name,
+				Name:      t.Name,
+				Namespace: t.Namespace,
 			},
 		})
 	}
