@@ -157,7 +157,7 @@ e2e-test-tracing-release: ginkgo k3d test-matchers-tracing ## Provision k3d clus
 	mv junit.xml ${ARTIFACTS}
 
 .PHONY: upgrade-test
-upgrade-test: ginkgo k3d test-matchers ## Provision k3d cluster and run upgrade tests.
+upgrade-test: ginkgo k3d test-matchers-logging test-matchers-tracing ## Provision k3d cluster and run upgrade tests.
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/upgrade-test.sh
 
 .PHONY: e2e-deploy-module
