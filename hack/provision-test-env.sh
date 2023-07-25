@@ -9,5 +9,3 @@ export IMG
 make docker-build
 make docker-push
 kubectl create ns kyma-system
-
-IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
