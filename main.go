@@ -384,7 +384,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if enableWebhook && !enableTelemetryManagerModule {
+	if enableWebhook {
 		// Create own client since manager might not be started while using
 		clientOptions := client.Options{
 			Scheme: scheme,
@@ -402,13 +402,16 @@ func main() {
 		setupLog.Info("Ensured webhook cert")
 
 		// Temporary solution for non-modularized telemetry operator
-		go func() {
-			for range time.Tick(1 * time.Hour) {
-				if ensureErr := webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); ensureErr != nil {
-					setupLog.Error(ensureErr, "Failed to ensure webhook cert")
+		if !enableTelemetryManagerModule {
+			go func() {
+				for range time.Tick(1 * time.Hour) {
+					if ensureErr := webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); ensureErr != nil {
+						setupLog.Error(ensureErr, "Failed to ensure webhook cert")
+					}
+					setupLog.Info("Ensured webhook cert")
 				}
-			}
-		}()
+			}()
+		}
 	}
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

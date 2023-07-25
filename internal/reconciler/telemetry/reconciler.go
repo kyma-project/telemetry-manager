@@ -108,6 +108,10 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 		return nil
 	}
 
+	if !telemetry.DeletionTimestamp.IsZero() {
+		return nil
+	}
+
 	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.WebhookConfig.CertConfig); err != nil {
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
