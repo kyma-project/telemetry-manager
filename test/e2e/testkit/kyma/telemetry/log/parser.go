@@ -1,8 +1,9 @@
 package log
 
 import (
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 type Parser struct {
@@ -17,12 +18,12 @@ func NewParser(name, parser string) *Parser {
 	}
 }
 
-func (p *Parser) K8sObject() *v1alpha1.LogParser {
-	return &v1alpha1.LogParser{
+func (p *Parser) K8sObject() *telemetry.LogParser {
+	return &telemetry.LogParser{
 		ObjectMeta: k8smeta.ObjectMeta{
 			Name: p.name,
 		},
-		Spec: v1alpha1.LogParserSpec{
+		Spec: telemetry.LogParserSpec{
 			Parser: p.parser,
 		},
 	}
