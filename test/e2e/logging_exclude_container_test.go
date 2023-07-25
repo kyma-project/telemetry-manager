@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"net/http"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
