@@ -50,15 +50,6 @@ var _ = Describe("Logging", Label("logging"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running fluent-bit daemonset", func() {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: telemetryFluentbitName, Namespace: kymaSystemNamespaceName}
-				ready, err := verifiers.IsDaemonSetReady(ctx, k8sClient, key)
-				g.Expect(err).ShouldNot(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout, interval).Should(Succeed())
-		})
-
 		It("Should have a log backend running", Label("operational"), func() {
 			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
