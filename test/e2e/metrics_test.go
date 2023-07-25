@@ -134,7 +134,6 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 
 	})
 
-<<<<<<< HEAD
 	Context("When a MetricPipeline has ConvertToDelta flag active", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
