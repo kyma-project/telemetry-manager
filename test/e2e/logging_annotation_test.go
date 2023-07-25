@@ -30,7 +30,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 		)
 
 		BeforeAll(func() {
-			k8sObjects, logsURLProvider := makeLogsTestLabelAnnotationK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects, logsURLProvider := makeLogsAnnotationTestK8sObjects(mockNs, mockDeploymentName)
 			urls = logsURLProvider
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
