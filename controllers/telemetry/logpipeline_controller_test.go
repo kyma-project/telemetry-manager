@@ -390,6 +390,21 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 		})
 	})
 	Context("When another pipeline with missing secret reference is created then config is not updated", Ordered, func() {
+		var pipelineSecret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "foo",
+				Namespace: "default",
+			},
+
+			Data: map[string][]byte{
+				"host":     []byte("http://foo.bar"),
+				"user":     []byte("user"),
+				"password": []byte("pass"),
+			},
+			StringData: nil,
+			Type:       "opaque",
+		}
+
 		var healthyLogPipeline = &telemetryv1alpha1.LogPipeline{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "telemetry.kyma-project.io/v1alpha1",
@@ -421,7 +436,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 							ValueFrom: &telemetryv1alpha1.ValueFromSource{
 								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 									Name:      "foo",
-									Namespace: "bar",
+									Namespace: "default",
 									Key:       "host",
 								},
 							},
@@ -430,7 +445,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 							ValueFrom: &telemetryv1alpha1.ValueFromSource{
 								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 									Name:      "foo",
-									Namespace: "bar",
+									Namespace: "default",
 									Key:       "user",
 								},
 							},
@@ -439,8 +454,8 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 							ValueFrom: &telemetryv1alpha1.ValueFromSource{
 								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 									Name:      "foo",
-									Namespace: "bar",
-									Key:       "host",
+									Namespace: "default",
+									Key:       "password",
 								},
 							},
 						},
@@ -457,23 +472,32 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			Expect(k8sClient.Create(ctx, missingSecretRefLogPipeline)).Should(Succeed())
 		})
 
-		It("Should create a fluent bit configmap which contains only healthy pipeline", func() {
+		It("Should create a fluent bit configmap which contains healthy pipeline", func() {
 			Eventually(func() bool {
-				healthyPipeline := "healthy-logpipeline.conf"
-				unhelathyPipeline := "missing-secret-ref-logpipeline"
-				configMapLookupKey := types.NamespacedName{
-					Name:      testLogPipelineConfig.SectionsConfigMap.Name,
-					Namespace: testLogPipelineConfig.SectionsConfigMap.Namespace,
-				}
-				var fluentBitCm corev1.ConfigMap
-				err := k8sClient.Get(ctx, configMapLookupKey, &fluentBitCm)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(fluentBitCm.Data[healthyPipeline]).NotTo(BeNil())
-
-				Expect(fluentBitCm.Data[unhelathyPipeline]).To(BeEmpty())
-				return true
+				return validateKeyExistsInFluentbitSectionsConf(ctx, "healthy-logpipeline.conf")
 			}, timeout, interval).Should(BeTrue())
 		})
+
+		It("Should not have a unhealthy pipeline in fluent-bit configmap", func() {
+			Eventually(func() bool {
+				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
+			}, timeout, interval).Should(BeFalse())
+		})
+
+		It("Should update config when secret is created", func() {
+			Expect(k8sClient.Create(ctx, pipelineSecret)).Should(Succeed())
+			Eventually(func() bool {
+				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
+			}, timeout, interval).Should(BeTrue())
+		})
+
+		It("Should remove logpipeline from configmap when secret is deleted", func() {
+			Expect(k8sClient.Delete(ctx, pipelineSecret)).Should(Succeed())
+			Eventually(func() bool {
+				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
+			}, timeout, interval).Should(BeFalse())
+		})
+
 	})
 })
 
@@ -490,4 +514,21 @@ func validateLoggingOwnerReferences(ownerReferences []metav1.OwnerReference) err
 	}
 
 	return nil
+}
+
+func validateKeyExistsInFluentbitSectionsConf(ctx context.Context, key string) bool {
+	configMapLookupKey := types.NamespacedName{
+		Name:      testLogPipelineConfig.SectionsConfigMap.Name,
+		Namespace: testLogPipelineConfig.SectionsConfigMap.Namespace,
+	}
+	var fluentBitCm corev1.ConfigMap
+	err := k8sClient.Get(ctx, configMapLookupKey, &fluentBitCm)
+	if err != nil {
+		fmt.Printf("could not get configmap: %s: %s", configMapLookupKey.Name, err.Error())
+		return false
+	}
+	if _, ok := fluentBitCm.Data[key]; !ok {
+		return false
+	}
+	return true
 }
