@@ -13,8 +13,11 @@ type Pipeline struct {
 }
 
 type HTTPPipeline struct {
-	name         string
-	secretKeyRef *telemetry.SecretKeyRef
+	name             string
+	secretKeyRef     *telemetry.SecretKeyRef
+	excludeContainer []string
+	keepAnnotations  bool
+	dropLabels       bool
 }
 
 func NewHTTPPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *HTTPPipeline {
@@ -29,6 +32,22 @@ func NewPipeline(name string) *Pipeline {
 		name: name,
 	}
 }
+
+func (p *HTTPPipeline) WithExcludeContainer(names []string) *HTTPPipeline {
+	p.excludeContainer = names
+	return p
+}
+
+func (p *HTTPPipeline) KeepAnnotations(enable bool) *HTTPPipeline {
+	p.keepAnnotations = enable
+	return p
+}
+
+func (p *HTTPPipeline) DropLabels(enable bool) *HTTPPipeline {
+	p.dropLabels = enable
+	return p
+}
+
 func (p *Pipeline) K8sObject() *telemetry.LogPipeline {
 	return &telemetry.LogPipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
@@ -43,11 +62,27 @@ func (p *Pipeline) K8sObject() *telemetry.LogPipeline {
 }
 
 func (p *HTTPPipeline) K8sObjectHTTP() *telemetry.LogPipeline {
+
+	var input telemetry.Input
+
+	if p.excludeContainer != nil || p.keepAnnotations || p.dropLabels {
+		input = telemetry.Input{
+			Application: telemetry.ApplicationInput{
+				Containers: telemetry.InputContainers{
+					Exclude: p.excludeContainer,
+				},
+				KeepAnnotations: p.keepAnnotations,
+				DropLabels:      p.dropLabels,
+			},
+		}
+	}
+
 	return &telemetry.LogPipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
 			Name: p.name,
 		},
 		Spec: telemetry.LogPipelineSpec{
+			Input: input,
 			Output: telemetry.Output{
 				HTTP: &telemetry.HTTPOutput{
 					Dedot: true,

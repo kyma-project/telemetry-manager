@@ -40,6 +40,7 @@ func ContainLogs() types.GomegaMatcher {
 		}
 
 		actualLogRecords := getAllLogRecords(actualLogs)
+
 		return len(actualLogRecords), nil
 	}, gomega.BeNumerically(">", 0))
 }
@@ -97,6 +98,99 @@ func ContainsLogsWith(namespace, pod, container string) types.GomegaMatcher {
 			}
 
 			if matchPrefixes(tags, filter) {
+				return true, nil
+			}
+		}
+		return false, nil
+	}, gomega.BeTrue())
+}
+
+func ContainsLogsKeyValue(key, value string) types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) (bool, error) {
+
+		actualBytes, ok := actual.([]byte)
+		if !ok {
+			return false, fmt.Errorf("ContainsLogsWith requires a []byte, but got %T", actual)
+		}
+
+		actualLogs, err := unmarshalOTLPJSONLogs(actualBytes)
+		if err != nil {
+			return false, fmt.Errorf("ContainsLogsWith requires a valid OTLP JSON document: %v", err)
+		}
+
+		actualLogRecords := getAllLogRecords(actualLogs)
+
+		for _, lr := range actualLogRecords {
+			attribute, ok := lr.Attributes().AsRaw()[key].(string)
+			if !ok {
+				continue
+			}
+
+			if attribute == value {
+				return true, nil
+			}
+		}
+		return false, nil
+	}, gomega.BeTrue())
+}
+
+func HasAnnotations() types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) (bool, error) {
+
+		actualBytes, ok := actual.([]byte)
+		if !ok {
+			return false, fmt.Errorf("ContainsLogsWith requires a []byte, but got %T", actual)
+		}
+
+		actualLogs, err := unmarshalOTLPJSONLogs(actualBytes)
+		if err != nil {
+			return false, fmt.Errorf("ContainsLogsWith requires a valid OTLP JSON document: %v", err)
+		}
+
+		actualLogRecords := getAllLogRecords(actualLogs)
+
+		for _, lr := range actualLogRecords {
+			attribute, ok := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+			if !ok {
+				continue
+			}
+
+			_, ok = attribute["annotations"]
+
+			if ok {
+				return true, nil
+			}
+		}
+		return false, nil
+	}, gomega.BeTrue())
+}
+
+func HasLabels() types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) (bool, error) {
+
+		actualBytes, ok := actual.([]byte)
+		if !ok {
+			return false, fmt.Errorf("ContainsLogsWith requires a []byte, but got %T", actual)
+		}
+
+		actualLogs, err := unmarshalOTLPJSONLogs(actualBytes)
+		if err != nil {
+			return false, fmt.Errorf("ContainsLogsWith requires a valid OTLP JSON document: %v", err)
+		}
+
+		actualLogRecords := getAllLogRecords(actualLogs)
+
+		for _, lr := range actualLogRecords {
+			attribute, ok := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+			if !ok {
+				continue
+			}
+
+			_, ok = attribute["labels"]
+
+			if ok {
+				fmt.Println(attribute["labels"])
+				fmt.Println(attribute["annotations"])
 				return true, nil
 			}
 		}
@@ -167,6 +261,10 @@ func unmarshalOTLPJSONLogs(buffer []byte) ([]plog.Logs, error) {
 
 	var logsUnmarshaler plog.JSONUnmarshaler
 	scanner := bufio.NewScanner(bytes.NewReader(buffer))
+	// default buffer size causing 'token too long' error, buffer size configured for current test scenarios
+	scannerBuffer := make([]byte, 0, 64*1024)
+	scanner.Buffer(scannerBuffer, 1024*1024)
+
 	for scanner.Scan() {
 		td, err := logsUnmarshaler.UnmarshalLogs(scanner.Bytes())
 		if err != nil {

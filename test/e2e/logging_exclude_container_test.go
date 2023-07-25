@@ -3,36 +3,31 @@
 package e2e
 
 import (
-	"net/http"
-
+	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
+	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
-
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
+	"time"
 
 	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
 )
 
 var _ = Describe("Logging", Label("logging"), func() {
 
-	Context("When a logpipeline exists", Ordered, func() {
+	Context("Container Excludes", Ordered, func() {
 		var (
 			urls               *mocks.URLProvider
-			mockNs             = "log-mocks-single-pipeline"
+			mockNs             = "log-mocks-exclude-container-pipeline"
 			mockDeploymentName = "log-receiver"
 		)
 
 		BeforeAll(func() {
-			k8sObjects, logsURLProvider := makeLogsTestK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects, logsURLProvider := makeLogsTestExcludeContainerK8sObjects(mockNs, mockDeploymentName)
 			urls = logsURLProvider
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -40,35 +35,13 @@ var _ = Describe("Logging", Label("logging"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a healthy webhook", func() {
-			Eventually(func(g Gomega) {
-				var endPoint corev1.Endpoints
-				key := types.NamespacedName{Name: telemetryWebhookEndpoint, Namespace: kymaSystemNamespaceName}
-				g.Expect(k8sClient.Get(ctx, key, &endPoint)).To(Succeed())
-				g.Expect(endPoint.Subsets).NotTo(BeEmpty())
-			}, timeout, interval).Should(Succeed())
-		})
-
 		It("Should have a running fluent-bit daemonset", func() {
-			Eventually(func(g Gomega) bool {
-				var daemonSet appsv1.DaemonSet
+			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: telemetryFluentbitName, Namespace: kymaSystemNamespaceName}
-				g.Expect(k8sClient.Get(ctx, key, &daemonSet)).To(Succeed())
-
-				listOptions := client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(daemonSet.Spec.Selector.MatchLabels),
-					Namespace:     kymaSystemNamespaceName,
-				}
-				var pods corev1.PodList
-				g.Expect(k8sClient.List(ctx, &pods, &listOptions)).To(Succeed())
-				for _, pod := range pods.Items {
-					for _, containerStatus := range pod.Status.ContainerStatuses {
-						g.Expect(containerStatus.State.Running).NotTo(BeNil())
-					}
-				}
-
-				return true
-			}, timeout, interval).Should(BeTrue())
+				ready, err := verifiers.IsDaemonSetReady(ctx, k8sClient, key)
+				g.Expect(err).ShouldNot(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should have a log backend running", Label("operational"), func() {
@@ -80,29 +53,30 @@ var _ = Describe("Logging", Label("logging"), func() {
 			}, timeout*2, interval).Should(Succeed())
 		})
 
-		It("Should verify end-to-end log delivery", Label("operational"), func() {
-
+		It("Should have a log spammer running", Label("operational"), func() {
 			Eventually(func(g Gomega) {
+				key := types.NamespacedName{Name: mockDeploymentName + "-spammer", Namespace: mockNs}
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout*2, interval).Should(Succeed())
+		})
+
+		It("Should not collect any log-spammer logs", Label("operational"), func() {
+			Eventually(func(g Gomega) {
+				time.Sleep(20 * time.Second)
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogs())))
+				g.Expect(resp).ToNot(HaveHTTPBody(SatisfyAll(
+					ContainsLogsWith("", "", "log-spammer"))))
 			}, timeout, interval).Should(Succeed())
 		})
-		It("Should be able to get fluent-bit metrics endpoint", Label(operationalTest), func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(proxyClient.ProxyURLForService("kyma-system", telemetryFluentbitMetricServiceName, "/metrics", 2020))
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HasValidPrometheusMetric("fluentbit_uptime"))))
-			}, timeout, interval).Should(Succeed())
-		})
+
 	})
 })
 
-func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) ([]client.Object, *mocks.URLProvider) {
+func makeLogsTestExcludeContainerK8sObjects(namespace string, mockDeploymentName string) ([]client.Object, *mocks.URLProvider) {
 	var (
 		objs []client.Object
 		urls = mocks.NewURLProvider()
@@ -130,7 +104,8 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) ([]clie
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	logHTTPPipeline := kitlog.NewHTTPPipeline("pipeline-mock-backend", hostSecret.SecretKeyRef("log-host"))
+	logHTTPPipeline := kitlog.NewHTTPPipeline("pipeline-exclude-container", hostSecret.SecretKeyRef("log-host"))
+	logHTTPPipeline.WithExcludeContainer([]string{"log-spammer"})
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
