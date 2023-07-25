@@ -19,7 +19,7 @@ import (
 
 var _ = Describe("Logging", Label("logging"), func() {
 
-	Context("Drop annotations, keep labels", Ordered, func() {
+	Context("Keep labels, drop annotations", Ordered, func() {
 		var (
 			urls               *mocks.URLProvider
 			mockNs             = "log-mocks-keep-label-pipeline"
