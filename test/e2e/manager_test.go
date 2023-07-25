@@ -140,10 +140,20 @@ var _ = Describe("Telemetry-manager", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have an Otel Collector dashboard", Label("logging", "tracing", "metrics"), func() {
+		It("Should have an Otel Collector dashboard", Label("tracing"), func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-otel-collector-grafana-dashboard",
+				Namespace: kymaSystemNamespaceName,
+			}
+			err := k8sClient.Get(ctx, key, &cm)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should have a Metric Gateway dashboard", Label("metrics"), func() {
+			var cm corev1.ConfigMap
+			key := types.NamespacedName{
+				Name:      "telemetry-otel-metric-gateway-grafana-dashboard",
 				Namespace: kymaSystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &cm)
