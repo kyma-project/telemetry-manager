@@ -384,7 +384,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if enableWebhook {
+	if enableWebhook && !enableTelemetryManagerModule {
 		// Create own client since manager might not be started while using
 		clientOptions := client.Options{
 			Scheme: scheme,
