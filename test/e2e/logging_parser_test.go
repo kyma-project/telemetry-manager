@@ -3,14 +3,15 @@
 package e2e
 
 import (
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
+	"net/http"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
+
+	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
+	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
 
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
