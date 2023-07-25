@@ -26,16 +26,20 @@ The roles and responsibilities during the STLC:
 ## Testing Levels
 ​
 ### Functional Tests
-​
+![Test Pyramid](/Volumes/Projects/telemetry-manager-forked/docs/assets/test-pyramid.png)
 Unit and Env tests follow the [Go convention](https://go.dev/doc/tutorial/add-a-test) and reside next to the code they are testing. The unit tests and integration tests are part of one test suite.
 ​
 | Test suite | Testing level | Purpose |
 | --- | --- | --- |
-| Unit (located with the individual source files) | Unit | It tests the units in isolation. This test suite assesses the implementation correctness of the units of business logic. |
-| Env-tests (located with the individual source files) | Integration  (low-level) | It tests the behaviour of the Telemetry Manager in integration with a Kubernetes API server replaced with a test double. This test suite assesses the integration correctness of the Telemetry Manager. |
-| [E2E](/test/e2e) | Acceptance / Integration (high-level) | It tests the usability scenarios of the Telemetry Manager in a cluster. This test suite assesses the functional correctness of the Telemetry Manager. |
-| Operational | System | It validates the operational aspects of the module (successful module upgrades, etc.). |
+| Unit (located along with the individual source files) | Unit | It tests the individual units of application logic in isolation, focusing on the implementation correctness. |
+| Env-tests (located along with the individual source files) | Integration  (low-level) | It tests the behaviour of the Telemetry Controller in integration with local control plane test doubles. This test suite assesses the integration correctness of the Telemetry Controller. |
+| [E2E](/test/e2e) | Acceptance  (high-level) | It tests the usability scenarios of the Telemetry Manager in a cluster. This test suite assesses the functional correctness of the Telemetry Controller. |
+| Operational | System | It validates the operational aspects of the module (successful module upgrades, deletions, etc.). |
+|[E2E integration](https://github.com/kyma-project/telemetry-manager/issues/261#issuecomment-1647336680)|Integration (high-level)|tests the Telemetry Module integration with 3rd party components and modules (with a focus on contract fulfilment).|
 ​
+
+![E2E Test Suites](/Volumes/Projects/telemetry-manager-forked/docs/assets/e2e-test-suites.png)
+
 #### Testing of new functionality
 ​
 Testing a new functionality encompasses two activities: capturing the acceptance criteria for each new functionality and providing the requirements traceability. `Requirement` and `Test Suite` are linked by the Behavioural-Driven Testing DSL of the [Ginkgo](https://onsi.github.io/ginkgo/) testing framework. `User Story` and `Acceptance Criteria` are linked semi-automatically because acceptance criteria are a mandatory part of each user story with new functionality (using the PR-template checklist).
