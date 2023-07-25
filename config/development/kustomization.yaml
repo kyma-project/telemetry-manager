@@ -1,5 +1,34 @@
+# Adds namespace to all resources.
+namespace: kyma-system
+
+# Value of this field is prepended to the
+# names of all resources, e.g. a deployment named
+# "wordpress" becomes "alices-wordpress".
+# Note that it should also match with the prefix (text before '-') of the namespace
+# field above.
+namePrefix: telemetry-
+
+# Labels to add to all resources and selectors.
+labels:
+- includeSelectors: false
+  pairs:
+    control-plane: telemetry-operator
+    app.kubernetes.io/component: telemetry
+    app.kubernetes.io/part-of: kyma
+    app.kubernetes.io/name: telemetry-operator
+    app.kubernetes.io/instance: telemetry-operator
+    app.kubernetes.io/managed-by: kustomize
+
 resources:
-- ../default
+- ../crd
+- ../rbac
+- ../manager
+- ../webhook
+- ../dashboards
+- ../busola
+- ../networking
 - telemetry.kyma-project.io_metricpipelines.yaml
+- configmap_opentelemetry_metric_gateway_dashboard.yaml
+
 patches:
   - path: manager_deployment_patch.yaml
