@@ -279,16 +279,9 @@ exporters:
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[0], "memory_limiter")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[2], "resource")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors[3], "batch")
+		require.Equal(t, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-workloads", "batch"}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-delta")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[0], "memory_limiter")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[2], "resource")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[3], "batch")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors[4], "cumulativetodelta")
+		require.Equal(t, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-workloads", "cumulativetodelta", "batch"}, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors)
 	})
 }
