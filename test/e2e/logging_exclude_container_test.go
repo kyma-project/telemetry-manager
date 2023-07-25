@@ -56,6 +56,16 @@ var _ = Describe("Logging", Label("logging"), func() {
 			}, timeout*2, interval).Should(Succeed())
 		})
 
+		It("Should collect logs", Label("operational"), func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(urls.MockBackendExport())
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					ContainLogs())))
+			}, timeout, interval).Should(Succeed())
+		})
+
 		It("Should not collect any log-spammer logs", Label("operational"), func() {
 			Eventually(func(g Gomega) {
 				time.Sleep(20 * time.Second)

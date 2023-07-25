@@ -90,6 +90,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 					ContainLogs())))
 			}, timeout, interval).Should(Succeed())
 		})
+
 		It("Should be able to get fluent-bit metrics endpoint", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(proxyClient.ProxyURLForService("kyma-system", telemetryFluentbitMetricServiceName, "/metrics", 2020))
