@@ -116,26 +116,26 @@ e2e-test: ginkgo k3d test-matchers ## Provision k3d cluster and run end-to-end t
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
-.PHONY: e2e-test-logging-dev
-e2e-test-logging-dev: ginkgo k3d test-matchers-logging ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
+.PHONY: e2e-test-logging
+e2e-test-logging: ginkgo k3d test-matchers-logging ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
-	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="logging" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
-.PHONY: e2e-test-tracing-dev
-e2e-test-tracing-dev: ginkgo k3d test-matchers-tracing ## Provision k3d cluster, deploy development variant and run end-to-end tracing tests.
+.PHONY: e2e-test-tracing
+e2e-test-tracing: ginkgo k3d test-matchers-tracing ## Provision k3d cluster, deploy development variant and run end-to-end tracing tests.
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
-	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="tracing" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
-.PHONY: e2e-test-metrics-dev
- e2e-test-metrics-dev: ginkgo k3d test-matchers-metrics ## Provision k3d cluster, deploy development variant and run end-to-end metrics tests.
+.PHONY: e2e-test-metrics
+ e2e-test-metrics: ginkgo k3d test-matchers-metrics ## Provision k3d cluster, deploy development variant and run end-to-end metrics tests.
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
-	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="metrics" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
@@ -214,13 +214,13 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 	kubectl delete --ignore-not-found=$(ignore-not-found) -f config/development/telemetry.kyma-project.io_metricpipelines.yaml
 
-.PHONY: deploy-dev
-deploy-dev: manifests kustomize ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
+.PHONY: deploy
+deploy: manifests kustomize ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/development | kubectl apply -f -
 
-.PHONY: undeploy-dev
-undeploy-dev: ## Undeploy resources based on the development variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+.PHONY: undeploy
+undeploy: ## Undeploy resources based on the development variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/development | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-release
