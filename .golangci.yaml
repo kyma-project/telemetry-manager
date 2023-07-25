@@ -147,6 +147,12 @@ issues:
     - linters: [ dupl ]
       path: test/e2e/logging_test.go
     - linters: [ dupl ]
+      path: test/e2e/logging_parser_test.go
+    - linters: [ dupl ]
+      path: test/e2e/logging_label_annotation_test.go
+    - linters: [ dupl ]
+      path: test/e2e/logging_exclude_container_test.go
+    - linters: [ dupl ]
       path: test/e2e/metrics_kubeletstats_test.go
     - linters: [ dupl ]
       path: test/e2e/tracing_test.go
