@@ -23,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
+	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
 )
