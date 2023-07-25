@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -31,7 +32,9 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/builder/trace/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
@@ -123,6 +126,9 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
 	}
+	if len(deployablePipelines) == 0 {
+		return fmt.Errorf("no trace pipeline ready for deployment")
+	}
 
 	if err = r.reconcileTraceGateway(ctx, pipeline, deployablePipelines); err != nil {
 		return fmt.Errorf("failed to reconcile trace gateway: %w", err)
@@ -191,6 +197,12 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to make otel collector config: %v", err)
 	}
 
+	var gatewayConfigYAML []byte
+	gatewayConfigYAML, err = yaml.Marshal(gatewayConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal collector config: %w", err)
+	}
+
 	secret := otelgatewayresources.MakeSecret(r.config.Gateway, envVars)
 	if err = controllerutil.SetOwnerReference(pipeline, secret, r.Scheme()); err != nil {
 		return err
@@ -199,7 +211,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector env secret: %w", err)
 	}
 
-	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, *gatewayConfig)
+	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, string(gatewayConfigYAML))
 	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
 		return err
 	}
@@ -208,7 +220,8 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	deployment := otelgatewayresources.MakeDeployment(r.config.Gateway, configHash, len(allPipelines))
+	deployment := otelgatewayresources.MakeDeployment(r.config.Gateway, configHash, len(allPipelines),
+		config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName)
 	if err = controllerutil.SetOwnerReference(pipeline, deployment, r.Scheme()); err != nil {
 		return err
 	}
@@ -254,10 +267,10 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 
 func makeNetworkPolicyPorts() []intstr.IntOrString {
 	return []intstr.IntOrString{
-		intstr.FromInt(13133),
-		intstr.FromInt(4317),
-		intstr.FromInt(4318),
-		intstr.FromInt(55678),
-		intstr.FromInt(8888),
+		intstr.FromInt(ports.OTLPHTTP),
+		intstr.FromInt(ports.OTLPGRPC),
+		intstr.FromInt(ports.OpenCensus),
+		intstr.FromInt(ports.Metrics),
+		intstr.FromInt(ports.HealthCheck),
 	}
 }

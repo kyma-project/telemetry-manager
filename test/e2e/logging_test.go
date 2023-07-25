@@ -4,24 +4,20 @@ package e2e
 
 import (
 	"net/http"
-	"time"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 
 	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
 )
@@ -90,6 +86,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 		})
 
 		It("Should verify end-to-end log delivery", Label("operational"), func() {
+
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
@@ -98,7 +95,6 @@ var _ = Describe("Logging", Label("logging"), func() {
 					ContainLogs())))
 			}, timeout, interval).Should(Succeed())
 		})
-
 		It("Should be able to get fluent-bit metrics endpoint", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(proxyClient.ProxyURLForService("kyma-system", telemetryFluentbitMetricServiceName, "/metrics", 2020))
@@ -109,55 +105,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 			}, timeout, interval).Should(Succeed())
 		})
 	})
-
-	Context("Handling optional loki logpipeline", Ordered, func() {
-		It("Should have a running loki logpipeline", func() {
-			By("Creating a loki service", func() {
-				lokiService := makeLokiService()
-				Expect(kitk8s.CreateObjects(ctx, k8sClient, lokiService)).Should(Succeed())
-
-				Eventually(func(g Gomega) {
-					var lokiLogPipeline telemetryv1alpha1.LogPipeline
-					key := types.NamespacedName{Name: "loki"}
-					g.Expect(k8sClient.Get(ctx, key, &lokiLogPipeline)).To(Succeed())
-					g.Expect(lokiLogPipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning)).To(BeTrue())
-				}, 2*time.Minute, interval).Should(Succeed())
-			})
-		})
-
-		It("Should delete loki logpipeline", func() {
-			By("Deleting loki service", func() {
-				lokiService := makeLokiService()
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, lokiService)).Should(Succeed())
-
-				Eventually(func(g Gomega) bool {
-					var lokiLogPipeline telemetryv1alpha1.LogPipeline
-					key := types.NamespacedName{Name: "loki"}
-					err := k8sClient.Get(ctx, key, &lokiLogPipeline)
-					return apierrors.IsNotFound(err)
-				}, 2*time.Minute, interval).Should(BeTrue())
-			})
-		})
-	})
 })
-
-func makeLokiService() *corev1.Service {
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "logging-loki",
-			Namespace: kymaSystemNamespaceName,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Port:     3100,
-					Protocol: corev1.ProtocolTCP,
-					Name:     "http-metrics",
-				},
-			},
-		},
-	}
-}
 
 func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) ([]client.Object, *mocks.URLProvider) {
 	var (

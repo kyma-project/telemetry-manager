@@ -6,11 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 func validatePodAnnotations(deployment appsv1.Deployment) error {
@@ -20,24 +17,6 @@ func validatePodAnnotations(deployment appsv1.Deployment) error {
 
 	if value, found := deployment.Spec.Template.ObjectMeta.Annotations["checksum/config"]; !found || value == "" {
 		return fmt.Errorf("configuration hash not found in pod annotations")
-	}
-
-	return nil
-}
-
-func validateCollectorConfig(configData string) error {
-	var collectorConfig config.Config
-	if err := yaml.Unmarshal([]byte(configData), &collectorConfig); err != nil {
-		return err
-	}
-
-	otlpExporterConfig, found := collectorConfig.Exporters["otlp/dummy"]
-	if !found {
-		return fmt.Errorf("otlp exporter not found")
-	}
-
-	if !otlpExporterConfig.TLS.Insecure {
-		return fmt.Errorf("insecure flag not set")
 	}
 
 	return nil

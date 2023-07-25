@@ -1,5 +1,7 @@
 # MetricPipeline
 
+> **Note:** The `metricpipeline.telemetry.kyma-project.io` CustomResourceDefinition is not available yet. To understand the current progress, watch this [epic](https://github.com/kyma-project/kyma/issues/13079).
+
 The `metricpipeline.telemetry.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to filter and ship metric data in Kyma. To get the current CRD and show the output in the YAML format, run this command:
 
 ```bash
@@ -51,6 +53,8 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;application**  | object | Configures application related scraping. |
 | **input.&#x200b;application.&#x200b;runtime**  | object | Configures runtime scraping (workload-related k8s ). |
 | **input.&#x200b;application.&#x200b;runtime.&#x200b;enabled**  | boolean | Indicates if runtime scraping is enabled. |
+| **input.&#x200b;application.&#x200b;workloads**  | object | Configures workload scraping. |
+| **input.&#x200b;application.&#x200b;workloads.&#x200b;enabled**  | boolean | Indicates if workload scraping is enabled. Services and pods marked with prometheus.io/scrape=true annotation will be scraped. |
 | **output**  | object | Configures the metric gateway. |
 | **output.&#x200b;convertToDelta**  | boolean | Defines whether this MetricPipeline should convert monotonic, cumulative sum and histogram metrics to monotonic, delta metrics. |
 | **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelemetry protocol. |

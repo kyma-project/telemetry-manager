@@ -149,3 +149,137 @@ var _ = Describe("HaveNumberOfMetrics", Label("metrics"), func() {
 		})
 	})
 })
+
+var _ = Describe("HaveAttributes", Label("metrics"), func() {
+	var fileBytes []byte
+	var expectedMetricAttributes []string
+
+	BeforeEach(func() {
+		expectedMetricAttributes = []string{"k8s.cluster.name", "k8s.container.name", "k8s.daemonset.name", "k8s.deployment.name", "k8s.namespace.name", "k8s.node.name", "k8s.pod.name", "k8s.pod.uid", "kyma.source"}
+	})
+
+	Context("with nil input", func() {
+		It("should error", func() {
+			success, err := HaveAttributes(expectedMetricAttributes...).Match(nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with input of invalid type", func() {
+		It("should error", func() {
+			success, err := HaveAttributes(expectedMetricAttributes...).Match(struct{}{})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should fail", func() {
+			Expect([]byte{}).ShouldNot(HaveAttributes(expectedMetricAttributes...))
+		})
+	})
+
+	Context("with no attribute matching the expecting attributes", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/have_metrics/no_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail", func() {
+			Expect(fileBytes).ShouldNot(HaveAttributes(expectedMetricAttributes...))
+		})
+	})
+
+	Context("with all attributes matching the expecting attributes", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/kubelet_metrics/kubelet_metrics.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should succeed", func() {
+			Expect(fileBytes).Should(HaveAttributes(expectedMetricAttributes...))
+		})
+	})
+
+	Context("with invalid input", func() {
+		BeforeEach(func() {
+			fileBytes = []byte{1, 2, 3}
+		})
+
+		It("should error", func() {
+			success, err := HaveAttributes(expectedMetricAttributes...).Match(fileBytes)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+})
+
+var _ = Describe("HaveMetricNames", Label("metrics"), func() {
+	var fileBytes []byte
+	var expectedMetricNames []string
+
+	BeforeEach(func() {
+		expectedMetricNames = []string{"container.cpu.time", "container.cpu.utilization", "container.filesystem.available", "container.filesystem.capacity", "container.filesystem.usage", "container.memory.available"}
+	})
+
+	Context("with nil input", func() {
+		It("should error", func() {
+			success, err := HaveMetricNames(expectedMetricNames...).Match(nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with input of invalid type", func() {
+		It("should error", func() {
+			success, err := HaveMetricNames(expectedMetricNames...).Match(struct{}{})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should fail", func() {
+			Expect([]byte{}).ShouldNot(HaveMetricNames(expectedMetricNames...))
+		})
+	})
+
+	Context("with no metric name matching the expecting metric names", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/have_metrics/no_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail", func() {
+			Expect(fileBytes).ShouldNot(HaveMetricNames(expectedMetricNames...))
+		})
+	})
+
+	Context("with all metric names matching the expecting metric names", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/kubelet_metrics/kubelet_metrics.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should succeed", func() {
+			Expect(fileBytes).Should(HaveMetricNames(expectedMetricNames...))
+		})
+	})
+
+	Context("with invalid input", func() {
+		BeforeEach(func() {
+			fileBytes = []byte{1, 2, 3}
+		})
+
+		It("should error", func() {
+			success, err := HaveMetricNames(expectedMetricNames...).Match(fileBytes)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+})

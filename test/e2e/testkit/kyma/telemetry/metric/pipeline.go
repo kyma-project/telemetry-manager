@@ -19,6 +19,7 @@ type Pipeline struct {
 	secretKeyRef *telemetry.SecretKeyRef
 	persistent   bool
 	id           string
+	runtime      bool
 }
 
 func NewPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
@@ -46,12 +47,24 @@ func (p *Pipeline) K8sObject(opts ...PipelineOption) *telemetry.MetricPipeline {
 	}
 	labels.Version(version)
 
+	var input telemetry.MetricPipelineInput
+	if p.runtime {
+		input = telemetry.MetricPipelineInput{
+			Application: telemetry.MetricPipelineApplicationInput{
+				Runtime: telemetry.MetricPipelineContainerRuntimeInput{
+					Enabled: true,
+				},
+			},
+		}
+	}
+
 	metricPipeline := telemetry.MetricPipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
 			Name:   p.Name(),
 			Labels: labels,
 		},
 		Spec: telemetry.MetricPipelineSpec{
+			Input: input,
 			Output: telemetry.MetricPipelineOutput{
 				Otlp: &telemetry.OtlpOutput{
 					Endpoint: telemetry.ValueType{
@@ -73,6 +86,12 @@ func (p *Pipeline) K8sObject(opts ...PipelineOption) *telemetry.MetricPipeline {
 
 func (p *Pipeline) Persistent(persistent bool) *Pipeline {
 	p.persistent = persistent
+
+	return p
+}
+
+func (p *Pipeline) RuntimeInput(enableRuntime bool) *Pipeline {
+	p.runtime = enableRuntime
 
 	return p
 }
