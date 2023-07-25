@@ -37,8 +37,8 @@ var _ = Describe("Logging", Label("logging"), func() {
 	Context("LogParser", Ordered, func() {
 		var (
 			urls               *mocks.URLProvider
-			mockNs             = "log-mocks-parser-pipeline"
-			mockDeploymentName = "log-receiver"
+			mockNs             = "log-parser-mocks"
+			mockDeploymentName = "log-receiver-parser"
 		)
 
 		BeforeAll(func() {
@@ -92,7 +92,7 @@ func makeLogsRegExTestK8sObjects(namespace string, mockDeploymentName string) ([
 		httpLogPort  = 9880
 	)
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, kitk8s.NewNamespace(namespace).K8sObject())
+	objs = append(objs, mocksNamespace.K8sObject())
 
 	//// Mocks namespace objects.
 	mockHTTPBackend := mocks.NewHTTPBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)

@@ -25,8 +25,8 @@ var _ = Describe("Logging", Label("logging"), func() {
 	Context("Container Excludes", Ordered, func() {
 		var (
 			urls               *mocks.URLProvider
-			mockNs             = "log-mocks-exclude-container-pipeline"
-			mockDeploymentName = "log-receiver"
+			mockNs             = "log-exclude-cntnr-mocks"
+			mockDeploymentName = "log-receiver-exclude-container"
 		)
 
 		BeforeAll(func() {
@@ -91,7 +91,7 @@ func makeLogsTestExcludeContainerK8sObjects(namespace string, mockDeploymentName
 		httpLogPort  = 9880
 	)
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, kitk8s.NewNamespace(namespace).K8sObject())
+	objs = append(objs, mocksNamespace.K8sObject())
 
 	//// Mocks namespace objects.
 	mockHTTPBackend := mocks.NewHTTPBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)

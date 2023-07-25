@@ -15,7 +15,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 )
 
@@ -112,7 +111,7 @@ func makeMetricsAgentTestK8sObjects(namespace string, mockDeploymentNames ...str
 	)
 
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, kitk8s.NewNamespace(namespace).K8sObject())
+	objs = append(objs, mocksNamespace.K8sObject())
 
 	for i, mockDeploymentName := range mockDeploymentNames {
 		// Mocks namespace objects.

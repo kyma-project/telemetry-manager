@@ -27,7 +27,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 	Context("When a logpipeline exists", Ordered, func() {
 		var (
 			urls               *mocks.URLProvider
-			mockNs             = "log-mocks-single-pipeline"
+			mockNs             = "log-pipeline-mocks"
 			mockDeploymentName = "log-receiver"
 		)
 
@@ -114,7 +114,7 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) ([]clie
 		httpLogPort  = 9880
 	)
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, kitk8s.NewNamespace(namespace).K8sObject())
+	objs = append(objs, mocksNamespace.K8sObject())
 
 	//// Mocks namespace objects.
 	mockHTTPBackend := mocks.NewHTTPBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)

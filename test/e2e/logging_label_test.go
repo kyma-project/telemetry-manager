@@ -25,8 +25,8 @@ var _ = Describe("Logging", Label("logging"), func() {
 	Context("Keep labels, drop annotations", Ordered, func() {
 		var (
 			urls               *mocks.URLProvider
-			mockNs             = "log-mocks-keep-label-pipeline"
-			mockDeploymentName = "log-receiver"
+			mockNs             = "log-keep-label-mocks"
+			mockDeploymentName = "log-receiver-label"
 		)
 
 		BeforeAll(func() {
@@ -81,7 +81,7 @@ func makeLogsLabelTestK8sObjects(namespace string, mockDeploymentName string) ([
 		httpLogPort  = 9880
 	)
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, kitk8s.NewNamespace(namespace).K8sObject())
+	objs = append(objs, mocksNamespace.K8sObject())
 
 	//// Mocks namespace objects.
 	mockHTTPBackend := mocks.NewHTTPBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)
@@ -98,7 +98,7 @@ func makeLogsLabelTestK8sObjects(namespace string, mockDeploymentName string) ([
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	logHTTPPipeline := kitlog.NewHTTPPipeline("pipeline-label-annotation-test", hostSecret.SecretKeyRef("log-host"))
+	logHTTPPipeline := kitlog.NewHTTPPipeline("pipeline-label-test", hostSecret.SecretKeyRef("log-host"))
 	logHTTPPipeline.KeepAnnotations(false)
 	logHTTPPipeline.DropLabels(false)
 
