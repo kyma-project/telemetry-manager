@@ -13,7 +13,7 @@ import (
 func TestProcessors(t *testing.T) {
 	t.Run("delete service name", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithWorkloadsInputOn(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).Build(),
 		})
 
 		require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
@@ -24,7 +24,7 @@ func TestProcessors(t *testing.T) {
 
 	t.Run("insert input source runtime", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithWorkloadsInputOn(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).Build(),
 		})
 
 		require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
@@ -35,7 +35,7 @@ func TestProcessors(t *testing.T) {
 
 	t.Run("insert input source runtime", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithWorkloadsInputOn(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).Build(),
 		})
 
 		require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
@@ -45,15 +45,15 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "runtime", collectorConfig.Processors.InsertInputSourceRuntime.Attributes[0].Value)
 	})
 
-	t.Run("insert input source workloads", func(t *testing.T) {
+	t.Run("insert input source prometheus", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithWorkloadsInputOn(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).Build(),
 		})
 
-		require.NotNil(t, collectorConfig.Processors.InsertInputSourceWorkloads)
-		require.Len(t, collectorConfig.Processors.InsertInputSourceWorkloads.Attributes, 1)
-		require.Equal(t, "insert", collectorConfig.Processors.InsertInputSourceWorkloads.Attributes[0].Action)
-		require.Equal(t, "kyma.source", collectorConfig.Processors.InsertInputSourceWorkloads.Attributes[0].Key)
-		require.Equal(t, "workloads", collectorConfig.Processors.InsertInputSourceWorkloads.Attributes[0].Value)
+		require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
+		require.Len(t, collectorConfig.Processors.InsertInputSourcePrometheus.Attributes, 1)
+		require.Equal(t, "insert", collectorConfig.Processors.InsertInputSourcePrometheus.Attributes[0].Action)
+		require.Equal(t, "kyma.source", collectorConfig.Processors.InsertInputSourcePrometheus.Attributes[0].Key)
+		require.Equal(t, "prometheus", collectorConfig.Processors.InsertInputSourcePrometheus.Attributes[0].Value)
 	})
 }

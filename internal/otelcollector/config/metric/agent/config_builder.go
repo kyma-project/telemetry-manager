@@ -11,14 +11,14 @@ import (
 )
 
 type inputSources struct {
-	runtime   bool
-	workloads bool
+	runtime    bool
+	prometheus bool
 }
 
 func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *Config {
 	inputs := inputSources{
-		runtime:   enableRuntimeMetricScraping(pipelines),
-		workloads: enableWorkloadMetricScraping(pipelines),
+		runtime:    enableRuntimeMetricScraping(pipelines),
+		prometheus: enablePrometheusMetricScraping(pipelines),
 	}
 
 	return &Config{
@@ -32,10 +32,10 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.Me
 	}
 }
 
-func enableWorkloadMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
+func enablePrometheusMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if input.Application.Workloads.Enabled {
+		if input.Application.Prometheus.Enabled {
 			return true
 		}
 	}
@@ -107,10 +107,10 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 		}
 	}
 
-	if inputs.workloads {
-		pipelinesConfig["metrics/workloads"] = config.Pipeline{
+	if inputs.prometheus {
+		pipelinesConfig["metrics/prometheus"] = config.Pipeline{
 			Receivers:  []string{"prometheus/self", "prometheus/app-pods"},
-			Processors: []string{"resource/delete-service-name", "resource/insert-input-source-workloads"},
+			Processors: []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"},
 			Exporters:  []string{"otlp"},
 		}
 	}

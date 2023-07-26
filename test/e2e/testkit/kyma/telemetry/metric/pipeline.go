@@ -20,7 +20,7 @@ type Pipeline struct {
 	persistent   bool
 	id           string
 	runtime      bool
-	workloads    bool
+	prometheus   bool
 }
 
 func NewPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
@@ -57,8 +57,8 @@ func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
 					Runtime: telemetry.MetricPipelineContainerRuntimeInput{
 						Enabled: p.runtime,
 					},
-					Workloads: telemetry.MetricPipelineWorkloadsInput{
-						Enabled: p.workloads,
+					Prometheus: telemetry.MetricPipelinePrometheusInput{
+						Enabled: p.prometheus,
 					},
 				},
 			},
@@ -87,8 +87,8 @@ func (p *Pipeline) RuntimeInput(enableRuntime bool) *Pipeline {
 	return p
 }
 
-func (p *Pipeline) WorkloadsInput(enableWorkloads bool) *Pipeline {
-	p.workloads = enableWorkloads
+func (p *Pipeline) PrometheusInput(enablePrometheus bool) *Pipeline {
+	p.prometheus = enablePrometheus
 
 	return p
 }

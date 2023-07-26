@@ -18,13 +18,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 )
 
-var _ = Describe("Metrics Workloads Input", Label("metrics"), func() {
+var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 	Context("When a metricpipeline exists", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
 			urls               *mocks.URLProvider
 			mockDeploymentName = "metric-agent-receiver"
-			mocksNs            = "metric-workloads-input"
+			mocksNs            = "metric-prometheus-input"
 			metricGatewayName  = types.NamespacedName{Name: metricAgentGatewayBaseName, Namespace: kymaSystemNamespaceName}
 			metricAgentName    = types.NamespacedName{Name: metricAgentBaseName, Namespace: kymaSystemNamespaceName}
 		)
@@ -116,7 +116,7 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 	// Default namespace objects.
 	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
 	hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
-	metricPipeline := kitmetric.NewPipeline("pipeline-with-workloads-input-enabled", hostSecret.SecretKeyRef("metric-host")).WorkloadsInput(true)
+	metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", hostSecret.SecretKeyRef("metric-host")).PrometheusInput(true)
 	pipelines.Append(metricPipeline.Name())
 
 	objs = append(objs, []client.Object{

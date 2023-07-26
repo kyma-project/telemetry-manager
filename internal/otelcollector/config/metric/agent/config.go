@@ -40,9 +40,9 @@ type PrometheusReceiver struct {
 }
 
 type Processors struct {
-	DeleteServiceName          *config.ResourceProcessor `yaml:"resource/delete-service-name,omitempty"`
-	InsertInputSourceRuntime   *config.ResourceProcessor `yaml:"resource/insert-input-source-runtime,omitempty"`
-	InsertInputSourceWorkloads *config.ResourceProcessor `yaml:"resource/insert-input-source-workloads,omitempty"`
+	DeleteServiceName           *config.ResourceProcessor `yaml:"resource/delete-service-name,omitempty"`
+	InsertInputSourceRuntime    *config.ResourceProcessor `yaml:"resource/insert-input-source-runtime,omitempty"`
+	InsertInputSourcePrometheus *config.ResourceProcessor `yaml:"resource/insert-input-source-prometheus,omitempty"`
 }
 
 type Exporters struct {

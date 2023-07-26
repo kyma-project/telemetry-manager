@@ -19,7 +19,7 @@ import (
 func makeReceiversConfig(inputs inputSources) Receivers {
 	var receiversConfig Receivers
 
-	if inputs.workloads {
+	if inputs.prometheus {
 		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
 		receiversConfig.PrometheusAppPods = makePrometheusAppPodsConfig()
 	}
