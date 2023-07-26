@@ -19,7 +19,6 @@ package logpipeline
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -38,6 +37,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	resources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
 type Config struct {
