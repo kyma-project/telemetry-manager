@@ -18,7 +18,7 @@ type inputSources struct {
 func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *Config {
 	inputs := inputSources{
 		runtime:    enableRuntimeMetricScraping(pipelines),
-		prometheus: enableWorkloadMetricScraping(pipelines),
+		prometheus: enablePrometheusMetricScraping(pipelines),
 	}
 
 	return &Config{
@@ -32,7 +32,7 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.Me
 	}
 }
 
-func enableWorkloadMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
+func enablePrometheusMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
 		if input.Application.Prometheus.Enabled {
