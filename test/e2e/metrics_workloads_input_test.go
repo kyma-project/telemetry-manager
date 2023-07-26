@@ -76,7 +76,7 @@ var _ = Describe("Metrics Workloads Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetricNames(mocks.MetricProviderMetricNames...))))
+					HaveMetricNames(mocks.CustomMetricNames...))))
 			}, timeout, interval).Should(Succeed())
 		})
 
@@ -111,7 +111,7 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-web", httpWebPort)
-	mockMetricProvider := mocks.NewMetricProvider(mocksNamespaceName)
+	mockMetricProvider := mocks.NewCustomMetricProvider(mocksNamespaceName)
 
 	// Default namespace objects.
 	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)

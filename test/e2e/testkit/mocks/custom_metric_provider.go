@@ -6,19 +6,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var MetricProviderMetricNames = []string{"cpu_temperature_celsius", "hd_errors_total"}
+var CustomMetricNames = []string{"cpu_temperature_celsius", "hd_errors_total"}
 
-type MetricProvider struct {
+// CustomMetricProvider represents a workload that exposes dummy metrics in the Prometheus exposition format
+type CustomMetricProvider struct {
 	namespace string
 }
 
-func NewMetricProvider(namespace string) *MetricProvider {
-	return &MetricProvider{
+func NewCustomMetricProvider(namespace string) *CustomMetricProvider {
+	return &CustomMetricProvider{
 		namespace: namespace,
 	}
 }
 
-func (mp *MetricProvider) K8sObject() *corev1.Pod {
+func (mp *CustomMetricProvider) K8sObject() *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sample-metrics",
