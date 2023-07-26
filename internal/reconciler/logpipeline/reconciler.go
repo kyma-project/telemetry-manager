@@ -19,6 +19,7 @@ package logpipeline
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -127,15 +128,21 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		}
 	}()
 
+	var allPipelines telemetryv1alpha1.LogPipelineList
+	if err := r.List(ctx, &allPipelines); err != nil {
+		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %v", err)
+	}
+
 	if err = ensureFinalizers(ctx, r.Client, pipeline); err != nil {
 		return err
 	}
 
-	if err = r.syncer.syncFluentBitConfig(ctx, pipeline); err != nil {
+	deployableLogPipelines := r.getDeployableLogpipelines(ctx, allPipelines.Items)
+	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, allPipelines, deployableLogPipelines); err != nil {
 		return err
 	}
 
-	if err = r.reconcileFluentBit(ctx, pipeline); err != nil {
+	if err = r.reconcileFluentBit(ctx, pipeline, deployableLogPipelines); err != nil {
 		return err
 	}
 
@@ -146,7 +153,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	return err
 }
 
-func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogpipelines []telemetryv1alpha1.LogPipeline) error {
 	serviceAccount := commonresources.MakeServiceAccount(r.config.DaemonSet)
 	if err := controllerutil.SetOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
 		return err
@@ -187,7 +194,7 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
 
-	cm := resources.MakeConfigMap(r.config.DaemonSet)
+	cm := resources.MakeConfigMap(r.config.DaemonSet, deployableLogpipelines)
 	if err := controllerutil.SetOwnerReference(pipeline, cm, r.Scheme()); err != nil {
 		return err
 	}
@@ -292,4 +299,21 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 	}
 
 	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret}), nil
+}
+
+// isLogPipelineDeployable checks if logpipeline is ready to be rendered into the fluentbit configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
+func (r *Reconciler) getDeployableLogpipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.LogPipeline {
+	var deployablePipelines []telemetryv1alpha1.LogPipeline
+	for i := range allPipelines {
+		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
+			continue
+		}
+
+		if secretref.ReferencesNonExistentSecret(ctx, r.Client, &allPipelines[i]) {
+			continue
+		}
+		deployablePipelines = append(deployablePipelines, allPipelines[i])
+	}
+
+	return deployablePipelines
 }
