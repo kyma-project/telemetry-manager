@@ -3,17 +3,14 @@ package logpipeline
 import (
 	"context"
 	"fmt"
-	"strings"
-
-	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type syncer struct {
@@ -22,7 +19,7 @@ type syncer struct {
 }
 
 func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines telemetryv1alpha1.LogPipelineList, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
-	log := logf.FromContext(ctx)
+
 	if err := s.syncSectionsConfigMap(ctx, pipeline, deployableLogPipelines); err != nil {
 		return fmt.Errorf("failed to sync sections: %v", err)
 	}
@@ -31,16 +28,12 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 		return fmt.Errorf("failed to sync mounted files: %v", err)
 	}
 
-	//var allPipelines telemetryv1alpha1.LogPipelineList
-	//if err := s.List(ctx, &allPipelines); err != nil {
-	//	return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %v", err)
-	//}
 	if err := s.syncReferencedSecrets(ctx, &allPipelines); err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			log.V(1).Info(fmt.Sprintf("unable to sync referenced secrets: %v", err))
+		if apierrors.IsNotFound(err) {
+			fmt.Errorf("referenced secret not found: %v", err)
 			return nil
 		}
-		return fmt.Errorf("failed to sync referenced secrets: %v", err)
+		return err
 	}
 
 	return nil
