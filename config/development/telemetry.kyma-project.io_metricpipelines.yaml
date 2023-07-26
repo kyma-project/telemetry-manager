@@ -53,16 +53,15 @@ spec:
                         description: Configures Prometheus scraping.
                         properties:
                           enabled:
-                            description: If enabled, Pods marked with prometheus.io/scrape=true
+                            description: If enabled, Pods marked with `prometheus.io/scrape=true`
                               annotation will be scraped.
                             type: boolean
                         type: object
                       runtime:
-                        description: Configures runtime scraping (workload-related
-                          k8s ).
+                        description: Configures runtime scraping.
                         properties:
                           enabled:
-                            description: If enabled, Kubernetes API server metrics
+                            description: If enabled, workload-related Kubernetes metrics
                               will be scraped.
                             type: boolean
                         type: object

@@ -71,19 +71,19 @@ type MetricPipelineInput struct {
 type MetricPipelineApplicationInput struct {
 	// Configures Prometheus scraping.
 	Prometheus MetricPipelinePrometheusInput `json:"prometheus,omitempty"`
-	// Configures runtime scraping (workload-related k8s ).
+	// Configures runtime scraping.
 	Runtime MetricPipelineContainerRuntimeInput `json:"runtime,omitempty"`
 }
 
 // MetricPipelinePrometheusInput defines the Prometheus scraping section.
 type MetricPipelinePrometheusInput struct {
-	// If enabled, Pods marked with prometheus.io/scrape=true annotation will be scraped.
+	// If enabled, Pods marked with `prometheus.io/scrape=true` annotation will be scraped.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineContainerRuntimeInput defines the runtime scraping section.
 type MetricPipelineContainerRuntimeInput struct {
-	// If enabled, Kubernetes API server metrics will be scraped.
+	// If enabled, workload-related Kubernetes metrics will be scraped.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
