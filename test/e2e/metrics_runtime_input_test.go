@@ -5,8 +5,6 @@ package e2e
 import (
 	"net/http"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -14,8 +12,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
+
+	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var (
