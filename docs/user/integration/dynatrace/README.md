@@ -4,6 +4,8 @@
 
 The Kyma Telemetry module supports you in integrating with observability backends in a convenient way. The following example outlines how to integrate with [Dynatrace](https://www.dynatrace.com) as a backend. With Dynatrace, you can get all your monitoring and tracing data into one observability backend to achieve real Application Performance Management with monitoring data in context. Apart from [installing dynatrace operator](https://github.com/Dynatrace/dynatrace-operator) and leveraging all of the benefits of Dynatrace, you can also integrate custom metrics and traces with Dynatrace which is described in this tutorial.
 
+![overview](../../assets/dynatrace-integration-diagram.svg)
+
 ## Prerequisistes 
 
 - Kyma as the target deployment environment
