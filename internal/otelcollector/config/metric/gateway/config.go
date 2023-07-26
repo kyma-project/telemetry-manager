@@ -19,8 +19,8 @@ type Receivers struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	DropIfInputSourceRuntime   *FilterProcessor `yaml:"filter/drop-if-input-source-runtime,omitempty"`
-	DropIfInputSourceWorkloads *FilterProcessor `yaml:"filter/drop-if-input-source-workloads,omitempty"`
+	DropIfInputSourceRuntime    *FilterProcessor `yaml:"filter/drop-if-input-source-runtime,omitempty"`
+	DropIfInputSourcePrometheus *FilterProcessor `yaml:"filter/drop-if-input-source-prometheus,omitempty"`
 }
 
 type FilterProcessor struct {

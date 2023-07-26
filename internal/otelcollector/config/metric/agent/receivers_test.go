@@ -35,9 +35,9 @@ func TestReceivers(t *testing.T) {
 		require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
 	})
 
-	t.Run("workloads input enabled", func(t *testing.T) {
+	t.Run("prometheus input enabled", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithWorkloadsInputOn(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
 		})
 
 		require.Nil(t, collectorConfig.Receivers.KubeletStats)
