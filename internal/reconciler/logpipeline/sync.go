@@ -3,10 +3,14 @@ package logpipeline
 import (
 	"context"
 	"fmt"
+	"strings"
+
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
@@ -21,7 +25,7 @@ type syncer struct {
 }
 
 func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-
+	log := logf.FromContext(ctx)
 	if err := s.syncSectionsConfigMap(ctx, pipeline); err != nil {
 		return fmt.Errorf("failed to sync sections: %v", err)
 	}
@@ -35,6 +39,10 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %v", err)
 	}
 	if err := s.syncReferencedSecrets(ctx, &allPipelines); err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			log.V(1).Info(fmt.Sprintf("unable to sync referenced secrets: %v", err))
+			return nil
+		}
 		return fmt.Errorf("failed to sync referenced secrets: %v", err)
 	}
 
