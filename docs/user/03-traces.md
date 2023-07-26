@@ -49,7 +49,7 @@ Furthermore, the manager takes care of the full lifecycle of the OTel Collector 
 
 ## Setting up a TracePipeline
 
-In the following steps, you can see how to set up a typical TracePipeline. For an overview of all available attributes, see the [reference document](./resources/04-tracepipeline.md).
+In the following steps, you can see how to set up a typical TracePipeline. Learn more about the available [parameters and attributes](/docs/user/resources/04-tracepipeline.md).
 
 ### Step 1. Create a TracePipeline with an output
 1. To ship traces to a new OTLP output, create a resource file of the kind `TracePipeline`:
@@ -171,7 +171,7 @@ Use the **valueFrom** attribute to map Secret keys as in the following examples:
 <div tabs>
   <details>
     <summary>Basic authentication</summary>
-      
+
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
   kind: TracePipeline
@@ -263,8 +263,8 @@ The Istio module is crucial in distributed tracing because it provides the [ingr
   <summary label="extension-provider">
   Set up extension provider
   </summary>
-    The following example configures all Istio proxies with the `kyma-traces` extension provider, which, by default, reports span data to the trace gateway of the Telemetry module.
-  
+  The following example configures all Istio proxies with the `kyma-traces` extension provider, which, by default, reports span data to the trace gateway of the Telemetry module.
+
   ```yaml
   apiVersion: telemetry.istio.io/v1alpha1
   kind: Telemetry

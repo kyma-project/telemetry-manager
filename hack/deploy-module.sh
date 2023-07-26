@@ -14,6 +14,7 @@ function build_and_push_manager_image() {
 function create_module() {
     export IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/${MODULE_NAME}-manager
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
+    # create module command uses Kustomization files defined in "config/default"
     ${KYMA} alpha create module --name kyma-project.io/module/${MODULE_NAME} --version ${MODULE_VERSION} --channel ${MODULE_CHANNEL} --default-cr ${MODULE_CR_PATH} --registry ${MODULE_REGISTRY} --insecure --ci
 }
 

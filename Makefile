@@ -51,8 +51,8 @@ help: ## Display this help.
 lint-autofix: ## Autofix all possible linting errors.
 	golangci-lint run -E goimports --fix
 
-lint-manifests: controller-gen
-	hack/lint-manifests.sh $(PROJECT_DIR) $(CONTROLLER_GEN)
+lint-manifests:
+	hack/lint-manifests.sh
 
 lint: lint-manifests
 	go version
@@ -66,11 +66,13 @@ crd-docs-gen: tablegen ## Generates CRD spec into docs folder
 	${TABLE_GEN} --crd-filename ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml --md-filename ./docs/user/resources/02-logpipeline.md
 	${TABLE_GEN} --crd-filename ./config/crd/bases/telemetry.kyma-project.io_logparsers.yaml --md-filename ./docs/user/resources/03-logparser.md
 	${TABLE_GEN} --crd-filename ./config/crd/bases/telemetry.kyma-project.io_tracepipelines.yaml --md-filename ./docs/user/resources/04-tracepipeline.md
-	${TABLE_GEN} --crd-filename ./config/crd/bases/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
+	${TABLE_GEN} --crd-filename ./config/development/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=operator-manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+# Move the auto-generated Metricpipeline CRD to the development directory since it is still not ready for release.
+	mv ./config/crd/bases/telemetry.kyma-project.io_metricpipelines.yaml ./config/development/telemetry.kyma-project.io_metricpipelines.yaml
 	$(MAKE) crd-docs-gen
 
 .PHONY: generate
@@ -186,19 +188,21 @@ endif
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+	kubectl apply -f config/development/telemetry.kyma-project.io_metricpipelines.yaml
 
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	kubectl delete --ignore-not-found=$(ignore-not-found) -f config/development/telemetry.kyma-project.io_metricpipelines.yaml
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/development | kubectl apply -f -
 
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(KUSTOMIZE) build config/development | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 ##@ Release Module
 

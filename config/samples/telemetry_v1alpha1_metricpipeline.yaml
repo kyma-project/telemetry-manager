@@ -84,6 +84,50 @@ spec:
   selector:
     app: mock-metric-receiver
 ---
+apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: null
+  name: metric-producer
+spec: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  labels:
+    app: metric-producer
+  name: metric-producer
+  namespace: metric-producer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metric-producer
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      creationTimestamp: null
+      labels:
+        app: metric-producer
+    spec:
+      containers:
+        - image: eu.gcr.io/kyma-project/develop/monitoring-custom-metrics:e56d9645
+          imagePullPolicy: IfNotPresent
+          name: sample-metrics
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          resources:
+            limits:
+              memory: 100Mi
+            requests:
+              memory: 32Mi
+---
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
 metadata:
@@ -98,6 +142,8 @@ spec:
   input:
     application:
       runtime:
+        enabled: true
+      prometheus:
         enabled: true
   output:
     otlp:

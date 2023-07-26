@@ -94,6 +94,7 @@ issues:
     - path: _test\.go
       linters:
         - errcheck
+        - dupl
     - path: _test\.go
       text: "shadow: declaration of \"ctx\" shadows declaration at line ([\\d]+)"
       linters:
@@ -103,47 +104,13 @@ issues:
       linters:
         - govet
     - linters: [ gci ]
-      path: test/e2e/(tracing|metrics|logging)_test.go
+      path: test/e2e/(tracing.*|metrics.*|logging.*)_test.go
     - linters: [ dupl ]
-      path: apis/telemetry/v1alpha1/(logparsers|metricpipeline|tracepipeline)_types_test.go
+      path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller.go
     - linters: [ dupl ]
-      path: apis/telemetry/v1alpha1/secret_refs_test.go
+      path: internal/kubernetes/utils.go
     - linters: [ dupl ]
-      path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller(_test)?.go
-    - linters: [ dupl ]
-      path: internal/otelcollector/config/builder/metric/agent/config_builder_test.go
-    - linters: [ dupl ]
-      path: internal/reconciler/(logpipeline|metricpipeline|tracepipeline)/status_test.go
-    - linters: [ dupl ]
-      path: internal/resources/otelcollector/gateway/resources_test.go
-    - linters: [ dupl ]
-      path: internal/kubernetes/utils(_test)?.go
-    - linters: [ dupl ]
-      path: internal/fluentbit/config/validation_test.go
-    - linters: [ dupl ]
-      path: internal/webhookcert/webhook_cert_test.go
-    - linters: [ dupl ]
-      path: internal/webhookcert/server_cert_generator_test.go
-    - linters: [ dupl ]
-      path: test/e2e/testkit/matchers/metric_matchers.go
-    - linters: [ dupl ]
-      path: test/e2e/testkit/matchers/trace_matchers.go
-    - linters: [ dupl ]
-      path: test/e2e/testkit/matchers/log_matchers.go
-    - linters: [ dupl ]
-      path: test/e2e/testkit/matchers/log_matchers_test.go
-    - linters: [ dupl ]
-      path: test/e2e/testkit/matchers/trace_matchers_test.go
-    - linters: [ dupl ]
-      path: test/e2e/testkit/matchers/prometheus_matcher_test.go
-    - linters: [ dupl ]
-      path: test/e2e/metrics_test.go
-    - linters: [ dupl ]
-      path: test/e2e/tracing_test.go
-    - linters: [ dupl ]
-      path: internal/reconciler/tracepipeline/reconciler_test.go
-    - linters: [ dupl ]
-      path: internal/reconciler/metricpipeline/reconciler_test.go
+      path: test/e2e/testkit/matchers/(log|metric|trace)_matchers.go
     - linters: [ dupl ]
       path: main.go
     - linters: [ errcheck ]

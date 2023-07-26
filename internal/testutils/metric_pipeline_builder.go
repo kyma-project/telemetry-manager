@@ -14,18 +14,16 @@ type MetricPipelineBuilder struct {
 	namespace         string
 	endpoint          string
 	runtimeInputOn    bool
-	istioInputOn      bool
+	prometheusInputOn bool
 	basicAuthUser     string
 	basicAuthPassword string
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 	return &MetricPipelineBuilder{
-		name:           fmt.Sprintf("test-%d", time.Now().Nanosecond()),
-		namespace:      "telemetry-system",
-		endpoint:       "https://localhost",
-		runtimeInputOn: false,
-		istioInputOn:   false,
+		name:      fmt.Sprintf("test-%d", time.Now().Nanosecond()),
+		namespace: "telemetry-system",
+		endpoint:  "https://localhost",
 	}
 }
 
@@ -41,6 +39,11 @@ func (b *MetricPipelineBuilder) WithEndpoint(endpoint string) *MetricPipelineBui
 
 func (b *MetricPipelineBuilder) WithRuntimeInputOn(on bool) *MetricPipelineBuilder {
 	b.runtimeInputOn = on
+	return b
+}
+
+func (b *MetricPipelineBuilder) WithPrometheusInputOn(on bool) *MetricPipelineBuilder {
+	b.prometheusInputOn = on
 	return b
 }
 
@@ -61,6 +64,9 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 				Application: telemetryv1alpha1.MetricPipelineApplicationInput{
 					Runtime: telemetryv1alpha1.MetricPipelineContainerRuntimeInput{
 						Enabled: b.runtimeInputOn,
+					},
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: b.prometheusInputOn,
 					},
 				},
 			},

@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -33,7 +32,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -60,7 +58,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	"github.com/kyma-project/telemetry-manager/internal/resources/lokilogpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
@@ -137,7 +134,7 @@ var (
 const (
 	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.81.0-aee4f05f"
 	overridesConfigMapName = "telemetry-override-config"
-	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.4-fef25e9c"
+	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.7-bcac7090"
 	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20230503-c10c571f"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
@@ -212,7 +209,7 @@ func main() {
 	flag.BoolVar(&enableMetrics, "enable-metrics", true, "Enable configurable metrics.")
 	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
-	flag.StringVar(&telemetryNamespace, "manager-namespace", "default", "Namespace of the manager")
+	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MY_POD_NAMESPACE", "default"), "Namespace of the manager")
 
 	flag.StringVar(&traceCollectorImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceCollectorPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
@@ -240,11 +237,11 @@ func main() {
 
 	flag.StringVar(&fluentBitMemoryBufferLimit, "fluent-bit-memory-buffer-limit", "10M", "Fluent Bit memory buffer limit per log pipeline")
 	flag.StringVar(&fluentBitFsBufferLimit, "fluent-bit-filesystem-buffer-limit", "1G", "Fluent Bit filesystem buffer limit per log pipeline")
-	flag.StringVar(&deniedFilterPlugins, "fluent-bit-denied-filter-plugins", "", "Comma separated list of denied filter plugins even if allowUnsupportedPlugins is enabled. If empty, all filter plugins are allowed.")
+	flag.StringVar(&deniedFilterPlugins, "fluent-bit-denied-filter-plugins", "kubernetes,rewrite_tag,multiline", "Comma separated list of denied filter plugins even if allowUnsupportedPlugins is enabled. If empty, all filter plugins are allowed.")
 	flag.StringVar(&fluentBitCPULimit, "fluent-bit-cpu-limit", "1", "CPU limit for tracing fluent-bit")
 	flag.StringVar(&fluentBitMemoryLimit, "fluent-bit-memory-limit", "1Gi", "Memory limit for fluent-bit")
-	flag.StringVar(&fluentBitCPURequest, "fluent-bit-cpu-request", "400m", "CPU request for fluent-bit")
-	flag.StringVar(&fluentBitMemoryRequest, "fluent-bit-memory-request", "256Mi", "Memory request for fluent-bit")
+	flag.StringVar(&fluentBitCPURequest, "fluent-bit-cpu-request", "100m", "CPU request for fluent-bit")
+	flag.StringVar(&fluentBitMemoryRequest, "fluent-bit-memory-request", "50Mi", "Memory request for fluent-bit")
 	flag.StringVar(&fluentBitImageVersion, "fluent-bit-image", fluentBitImage, "Image for fluent-bit")
 	flag.StringVar(&fluentBitExporterVersion, "fluent-bit-exporter-image", fluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
 	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
@@ -386,17 +383,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Create own client because manager is not yet started
-	clientOptions := client.Options{
-		Scheme: scheme,
-	}
-	k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
-	if err != nil {
-		setupLog.Error(err, "Failed to create client")
-		os.Exit(1)
-	}
-
 	if enableWebhook {
+		// Create own client since manager might not be started while using
+		clientOptions := client.Options{
+			Scheme: scheme,
+		}
+		k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
+		if err != nil {
+			setupLog.Error(err, "Failed to create client")
+			os.Exit(1)
+		}
+
 		if err = webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); err != nil {
 			setupLog.Error(err, "Failed to ensure webhook cert")
 			os.Exit(1)
@@ -412,16 +409,6 @@ func main() {
 			}
 		}()
 	}
-
-	// Ensure reconciliation of the optional Loki LogPipeline
-	go func() {
-		for {
-			if err := handleLokiLogPipeline(context.Background(), k8sClient); err != nil {
-				setupLog.Error(err, "Failed to handle Loki LogPipeline")
-			}
-			time.Sleep(1 * time.Minute)
-		}
-	}()
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "Failed to run manager")
@@ -621,28 +608,4 @@ func parsePlugins(s string) []string {
 
 func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
 	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, webhookConfig))
-}
-
-func handleLokiLogPipeline(ctx context.Context, client client.Client) error {
-	lokiLogPipeline := lokilogpipeline.MakeLokiLogPipeline()
-
-	var lokiService corev1.Service
-	err := client.Get(ctx, types.NamespacedName{Name: "logging-loki", Namespace: "kyma-system"}, &lokiService)
-	if err != nil {
-		// If Loki service doesn't exist in the cluster, we shouldn't deploy Loki LogPipeline
-		// Instead, we should delete the Loki LogPipeline if it already exists from the logging component (old helm chart)
-		if apierrors.IsNotFound(err) {
-			if err := kubernetes.DeleteLokiLogPipeline(ctx, client, lokiLogPipeline); err != nil {
-				return fmt.Errorf("failed to delete Loki LogPipeline: %w", err)
-			}
-			return nil
-		}
-		return err
-	}
-
-	if err := kubernetes.CreateOrUpdateLokiLogPipeline(ctx, client, lokiLogPipeline); err != nil {
-		return fmt.Errorf("failed to create Loki LogPipeline: %w", err)
-	}
-
-	return nil
 }

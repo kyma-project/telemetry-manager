@@ -48,13 +48,18 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func MakeDaemonSet(config Config, configHash string) *appsv1.DaemonSet {
+func MakeDaemonSet(config Config, configHash, envVarPodIP, envVarNodeName string) *appsv1.DaemonSet {
 	labels := core.MakeDefaultLabels(config.BaseName)
-	annotations := core.MakePodAnnotations(configHash)
+
+	annotations := core.MakeCommonPodAnnotations(configHash)
+
 	resources := makeResourceRequirements(config)
 	podSpec := core.MakePodSpec(config.BaseName, config.DaemonSet.Image,
 		core.WithPriorityClass(config.DaemonSet.PriorityClassName),
-		core.WithResources(resources))
+		core.WithResources(resources),
+		core.WithEnvVarFromSource(envVarPodIP, core.FieldPathPodIP),
+		core.WithEnvVarFromSource(envVarNodeName, core.FieldPathNodeName),
+	)
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{

@@ -9,7 +9,7 @@ In order to implement Day-2 operations for a distributed application running in 
 
 Instead of providing a one-size-for-all backend solution, Kyma supports you with instrumenting and shipping your telemetry data in a vendor-neutral way. This way, you can conveniently enable observability for your application by integrating it into your existing or desired backends. Pick your favourite among many observability backends, available either as a service or as a self-manageable solution, that focus on different aspects and scenarios. An enterprise-grade setup demands a central solution outside the cluster, so we recommend in-cluster solutions only for testing purposes.
 
-The Telemetry module focuses exactly on the aspects of instrumentation, collection, and shipment that happen in the runtime and explicitly defocuses on backends. If you want to install lightweight in-cluster backends for demo or development purposes, check the [tutorials](05-tutorials.md).
+The Telemetry module focuses exactly on the aspects of instrumentation, collection, and shipment that happen in the runtime and explicitly defocuses on backends. If you want to install lightweight in-cluster backends for demo or development purposes, check the [Telemetry tutorials](/docs/user/05-tutorials.md).
 
 ## Features
 
@@ -38,30 +38,31 @@ Currently, logs are based on the Fluent Bit protocol. If you're curious about th
 
 The module ships the Telemetry Manager as its core component. The manager implements the Kubernetes controller pattern and manages the whole lifecycle of all other components covered in the module. The manager watches for LogPipeline, TracePipeline, and MetricPipeline resources created by the user. With these, the user describes in a declarative way what data of a signal type to collect and where to ship it.
 If the operator detects a configuration, it rolls out the relevant collector components on demand.
-You can find more details about the manager on the [manager](./01-manager.md) page.
+
+For details, see [Telemetry Manager](/docs/user/01-manager.md).
 
 ### Log Agent
 
 The log agent is based on a [Fluent Bit](https://fluentbit.io/) installation running as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). It reads all containers' logs in the runtime and ships them according to a LogPipeline configuration.
 
-For details, see [Logs](./02-logs.md).
+For details, see [Logs](/docs/user/02-logs.md).
 
 ### Trace Gateway
 
 The trace gateway is based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). It provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the trace signals. According to a TracePipeline configuration, the gateway processes and ships the trace data to a target system.
 
-For details, see [Traces](./03-traces.md).
+For details, see [Traces](/docs/user/03-traces.md).
 
 ### Metric Gateway/Agent
 
 The metric gateway and agent are based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). The gateway provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the metric signals. The agent scrapes annotated Prometheus-based workloads. According to a MetricPipeline configuration, the gateway processes and ships the metric data to a target system.
 
-For details, see [Metrics](./04-metrics.md).
+For details, see [Metrics](/docs/user/04-metrics.md).
 
 ## API / Custom Resource Definitions
 
-- [Telemetry](./resources/01-telemetry.md)
-- [LogPipeline](./resources/02-logpipeline.md)
-- [LogParser](./resources/03-logparser.md)
-- [TracePipeline](./resources/04-tracepipeline.md)
-- [MetricPipeline](./resources/05-metricpipeline.md)
+- [Telemetry](/docs/user/resources/01-telemetry.md)
+- [LogPipeline](/docs/user/resources/02-logpipeline.md)
+- [LogParser](/docs/user/resources/03-logparser.md)
+- [TracePipeline](/docs/user/resources/04-tracepipeline.md)
+- [MetricPipeline](/docs/user/resources/05-metricpipeline.md)

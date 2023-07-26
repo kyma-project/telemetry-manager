@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemetry-operator
+  namespace: kyma-system
+spec:
+  template:
+    spec:
+      containers:
+      - args:
+        - --cert-dir=/tmp
+        - --enable-metrics=true
+        - --fluent-bit-priority-class-name=telemetry-priority-class-high
+        - --metric-gateway-priority-class=telemetry-priority-class
+        - --trace-collector-priority-class=telemetry-priority-class
+        - --validating-webhook-enabled=true
+        name: manager
