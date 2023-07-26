@@ -20,6 +20,7 @@ type Pipeline struct {
 	persistent   bool
 	id           string
 	runtime      bool
+	workloads    bool
 }
 
 func NewPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
@@ -45,24 +46,22 @@ func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
 	}
 	labels.Version(version)
 
-	var input telemetry.MetricPipelineInput
-	if p.runtime {
-		input = telemetry.MetricPipelineInput{
-			Application: telemetry.MetricPipelineApplicationInput{
-				Runtime: telemetry.MetricPipelineContainerRuntimeInput{
-					Enabled: true,
-				},
-			},
-		}
-	}
-
 	return &telemetry.MetricPipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
 			Name:   p.Name(),
 			Labels: labels,
 		},
 		Spec: telemetry.MetricPipelineSpec{
-			Input: input,
+			Input: telemetry.MetricPipelineInput{
+				Application: telemetry.MetricPipelineApplicationInput{
+					Runtime: telemetry.MetricPipelineContainerRuntimeInput{
+						Enabled: p.runtime,
+					},
+					Workloads: telemetry.MetricPipelineWorkloadsInput{
+						Enabled: p.workloads,
+					},
+				},
+			},
 			Output: telemetry.MetricPipelineOutput{
 				Otlp: &telemetry.OtlpOutput{
 					Endpoint: telemetry.ValueType{
@@ -84,6 +83,12 @@ func (p *Pipeline) Persistent(persistent bool) *Pipeline {
 
 func (p *Pipeline) RuntimeInput(enableRuntime bool) *Pipeline {
 	p.runtime = enableRuntime
+
+	return p
+}
+
+func (p *Pipeline) WorkloadsInput(enableWorkloads bool) *Pipeline {
+	p.workloads = enableWorkloads
 
 	return p
 }

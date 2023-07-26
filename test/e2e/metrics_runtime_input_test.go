@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"fmt"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -123,8 +122,8 @@ func makeMetricsRuntmeInputTestK8sObjects(mocksNamespaceName string, mockDeploym
 
 	// Default namespace objects.
 	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
-	hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL)).Persistent(isOperational())
-	metricPipeline := kitmetric.NewPipeline(fmt.Sprintf("%s-%s", mockDeploymentName, "pipeline"), hostSecret.SecretKeyRef("metric-host")).RuntimeInput(true)
+	hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
+	metricPipeline := kitmetric.NewPipeline("pipeline-with-runtime-input-enabled", hostSecret.SecretKeyRef("metric-host")).RuntimeInput(true)
 	pipelines.Append(metricPipeline.Name())
 
 	objs = append(objs, []client.Object{

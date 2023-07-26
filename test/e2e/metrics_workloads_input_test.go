@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"fmt"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -71,23 +70,23 @@ var _ = Describe("Metrics Workloads Input", Label("metrics"), func() {
 			metricPipelineShouldBeRunning(pipelines.First())
 		})
 
-		It("Should verify kubelet metric names", func() {
+		It("Should verify custom metric names", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetricNames(kubeletMetricNames...))))
+					HaveMetricNames(mocks.MetricProviderMetricNames...))))
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should verify kubelet metric attributes", func() {
+		It("Should verify no kubelet metric names", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveAttributes(kubeletMetricAttributes...))))
+					Not(HaveMetricNames(kubeletMetricNames...)))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
@@ -112,17 +111,19 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-web", httpWebPort)
+	mockMetricProvider := mocks.NewMetricProvider(mocksNamespaceName)
 
 	// Default namespace objects.
 	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
-	hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL)).Persistent(isOperational())
-	metricPipeline := kitmetric.NewPipeline(fmt.Sprintf("%s-%s", mockDeploymentName, "pipeline"), hostSecret.SecretKeyRef("metric-host")).RuntimeInput(true)
+	hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
+	metricPipeline := kitmetric.NewPipeline("pipeline-with-workloads-input-enabled", hostSecret.SecretKeyRef("metric-host")).WorkloadsInput(true)
 	pipelines.Append(metricPipeline.Name())
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
 		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
+		mockMetricProvider.K8sObject(),
 		hostSecret.K8sObject(),
 		metricPipeline.K8sObject(),
 	}...)
