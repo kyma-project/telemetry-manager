@@ -196,11 +196,8 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 	}
 
 	cm := resources.MakeConfigMap(r.config.DaemonSet)
-	if len(deployableLogpipelines) == 0 {
-		fluentbitConf := cm.Data["fluent-bit.conf"]
-		fluentbitConf = strings.ReplaceAll(fluentbitConf, "@INCLUDE dynamic/*.conf", "")
-		cm.Data["fluent-bit.conf"] = fluentbitConf
-	}
+
+	cm = updateConfigifNoDeployablePipelines(deployableLogpipelines, cm)
 	if err := controllerutil.SetOwnerReference(pipeline, cm, r.Scheme()); err != nil {
 		return err
 	}
@@ -322,4 +319,15 @@ func (r *Reconciler) getDeployableLogpipelines(ctx context.Context, allPipelines
 	}
 
 	return deployablePipelines
+}
+
+// If there are no deployable pipelines we need to remove '@INCLUDE dynamic/*.conf' as with empty sections configmap the fluent-bit crash loops.
+// This is however a temporary fix and we should generate the whole telemetry configmap based on deployable pipelines.
+func updateConfigifNoDeployablePipelines(deployableLogpipelines []telemetryv1alpha1.LogPipeline, cm *corev1.ConfigMap) *corev1.ConfigMap {
+	if len(deployableLogpipelines) == 0 {
+		fluentbitConf := cm.Data["fluent-bit.conf"]
+		fluentbitConf = strings.ReplaceAll(fluentbitConf, "@INCLUDE dynamic/*.conf", "")
+		cm.Data["fluent-bit.conf"] = fluentbitConf
+	}
+	return cm
 }
