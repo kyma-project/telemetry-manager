@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -194,7 +195,12 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
 
-	cm := resources.MakeConfigMap(r.config.DaemonSet, deployableLogpipelines)
+	cm := resources.MakeConfigMap(r.config.DaemonSet)
+	if len(deployableLogpipelines) == 0 {
+		fluentbitConf := cm.Data["fluent-bit.conf"]
+		fluentbitConf = strings.ReplaceAll(fluentbitConf, "@INCLUDE dynamic/*.conf", "")
+		cm.Data["fluent-bit.conf"] = fluentbitConf
+	}
 	if err := controllerutil.SetOwnerReference(pipeline, cm, r.Scheme()); err != nil {
 		return err
 	}

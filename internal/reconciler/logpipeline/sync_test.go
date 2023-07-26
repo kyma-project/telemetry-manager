@@ -71,7 +71,9 @@ alias foo`,
 				},
 			},
 		}
-		err := sut.syncSectionsConfigMap(context.Background(), pipeline)
+		var deployableLogPipeline []telemetryv1alpha1.LogPipeline
+		deployableLogPipeline = append(deployableLogPipeline, *pipeline)
+		err := sut.syncSectionsConfigMap(context.Background(), pipeline, deployableLogPipeline)
 		require.NoError(t, err)
 
 		var sectionsCm corev1.ConfigMap
@@ -99,14 +101,16 @@ alias foo`,
 				},
 			},
 		}
+		var deployableLogPipeline []telemetryv1alpha1.LogPipeline
+		deployableLogPipeline = append(deployableLogPipeline, *pipeline)
 
-		err := sut.syncSectionsConfigMap(context.Background(), pipeline)
+		err := sut.syncSectionsConfigMap(context.Background(), pipeline, deployableLogPipeline)
 		require.NoError(t, err)
 
 		pipeline.Spec.Output.Custom = `
 name  null
 alias bar`
-		err = sut.syncSectionsConfigMap(context.Background(), pipeline)
+		err = sut.syncSectionsConfigMap(context.Background(), pipeline, deployableLogPipeline)
 		require.NoError(t, err)
 
 		var sectionsCm corev1.ConfigMap
@@ -134,12 +138,14 @@ alias foo`,
 			},
 		}
 
-		err := sut.syncSectionsConfigMap(context.Background(), pipeline)
+		var deployableLogPipeline []telemetryv1alpha1.LogPipeline
+
+		err := sut.syncSectionsConfigMap(context.Background(), pipeline, deployableLogPipeline)
 		require.NoError(t, err)
 
 		now := metav1.Now()
 		pipeline.SetDeletionTimestamp(&now)
-		err = sut.syncSectionsConfigMap(context.Background(), pipeline)
+		err = sut.syncSectionsConfigMap(context.Background(), pipeline, deployableLogPipeline)
 		require.NoError(t, err)
 
 		var sectionsCm corev1.ConfigMap

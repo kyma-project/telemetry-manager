@@ -2,7 +2,6 @@ package fluentbit
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"strconv"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -308,7 +307,7 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 	}
 }
 
-func MakeConfigMap(name types.NamespacedName, deployableLogpipelines []v1alpha1.LogPipeline) *corev1.ConfigMap {
+func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
 	parserConfig := `
 [PARSER]
     Name docker_no_time
@@ -361,7 +360,7 @@ func MakeConfigMap(name types.NamespacedName, deployableLogpipelines []v1alpha1.
     K8S-Logging.Exclude On
     Buffer_Size 1MB
 
-
+@INCLUDE dynamic/*.conf
 `
 	lokiLabelmap := `
   {
@@ -380,9 +379,6 @@ func MakeConfigMap(name types.NamespacedName, deployableLogpipelines []v1alpha1.
     "stream": "stream"
   }
 `
-	if len(deployableLogpipelines) > 0 {
-		fluentBitConfig = fmt.Sprintf("%s,%s\n", fluentBitConfig, "@INCLUDE dynamic/*.conf")
-	}
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
