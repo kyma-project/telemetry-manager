@@ -19,7 +19,7 @@ func NewCustomMetricProvider(namespace string) *CustomMetricProvider {
 	}
 }
 
-func (mp *CustomMetricProvider) K8sObject() *corev1.Pod {
+func (mp *CustomMetricProvider) K8sObject() *corev1.Pod {:w
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sample-metrics",
