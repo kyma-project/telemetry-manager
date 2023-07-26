@@ -16,9 +16,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), func() {
+var _ = Describe("Telemetry-manager", func() {
 	Context("After deploying manifest", func() {
-		It("Should have kyma-system namespace", func() {
+		It("Should have kyma-system namespace", Label("logging", "tracing", "metrics"), func() {
 			var namespace corev1.Namespace
 			key := types.NamespacedName{
 				Name: kymaSystemNamespaceName,
@@ -27,7 +27,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have a running manager deployment", func() {
+		It("Should have a running manager deployment", Label("logging", "tracing", "metrics"), func() {
 			var deployment appsv1.Deployment
 			key := types.NamespacedName{
 				Name:      "telemetry-operator",
@@ -56,7 +56,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			}, timeout, interval).Should(BeTrue())
 		})
 
-		It("Should have a webhook service", func() {
+		It("Should have a webhook service", Label("logging", "tracing", "metrics"), func() {
 			var service corev1.Service
 			key := types.NamespacedName{
 				Name:      "telemetry-operator-webhook",
@@ -74,7 +74,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			}, timeout, interval).ShouldNot(BeEmpty())
 		})
 
-		It("Should have a metrics service", func() {
+		It("Should have a metrics service", Label("logging", "tracing", "metrics"), func() {
 			var service corev1.Service
 			key := types.NamespacedName{
 				Name:      "telemetry-operator-metrics",
@@ -94,7 +94,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			}, timeout, interval).ShouldNot(BeEmpty())
 		})
 
-		It("Should have LogPipelines CRD", func() {
+		It("Should have LogPipelines CRD", Label("logging"), func() {
 			var crd apiextensionsv1.CustomResourceDefinition
 			key := types.NamespacedName{
 				Name: "logpipelines.telemetry.kyma-project.io",
@@ -103,7 +103,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have LogParsers CRD", func() {
+		It("Should have LogParsers CRD", Label("logging"), func() {
 			var crd apiextensionsv1.CustomResourceDefinition
 			key := types.NamespacedName{
 				Name: "logparsers.telemetry.kyma-project.io",
@@ -112,7 +112,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have TracePipelines CRD", func() {
+		It("Should have TracePipelines CRD", Label("tracing"), func() {
 			var crd apiextensionsv1.CustomResourceDefinition
 			key := types.NamespacedName{
 				Name: "tracepipelines.telemetry.kyma-project.io",
@@ -121,7 +121,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have MetricPipelines CRD", func() {
+		It("Should have MetricPipelines CRD", Label("metrics"), func() {
 			var crd apiextensionsv1.CustomResourceDefinition
 			key := types.NamespacedName{
 				Name: "metricpipelines.telemetry.kyma-project.io",
@@ -130,7 +130,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have a Fluent Bit dashboard", func() {
+		It("Should have a Fluent Bit dashboard", Label("logging"), func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-fluent-bit-dashboard-fluent-bit",
@@ -140,7 +140,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have an Otel Collector dashboard", func() {
+		It("Should have an Otel Collector dashboard", Label("tracing"), func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-otel-collector-grafana-dashboard",
@@ -150,7 +150,17 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have a Busola extension for LogParsers CRD", func() {
+		It("Should have a Metric Gateway dashboard", Label("metrics"), func() {
+			var cm corev1.ConfigMap
+			key := types.NamespacedName{
+				Name:      "telemetry-otel-metric-gateway-grafana-dashboard",
+				Namespace: kymaSystemNamespaceName,
+			}
+			err := k8sClient.Get(ctx, key, &cm)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should have a Busola extension for LogParsers CRD", Label("logging"), func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-logparsers",
@@ -160,7 +170,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have a Busola extension for LogPipelines CRD", func() {
+		It("Should have a Busola extension for LogPipelines CRD", Label("logging"), func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-logpipelines",
@@ -170,7 +180,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have a Busola extension for TracePipelines CRD", func() {
+		It("Should have a Busola extension for TracePipelines CRD", Label("tracing"), func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-tracepipelines",
@@ -180,7 +190,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have a Busola extension for Telemetry CRD", func() {
+		It("Should have a Busola extension for Telemetry CRD", Label("logging", "tracing", "metrics"), func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-module",
@@ -190,7 +200,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have a NetworkPolicy", func() {
+		It("Should have a NetworkPolicy", Label("logging", "tracing", "metrics"), func() {
 			var networkPolicy networkingv1.NetworkPolicy
 			key := types.NamespacedName{
 				Name:      "telemetry-operator-pprof-deny-ingress",
@@ -200,7 +210,7 @@ var _ = Describe("Telemetry-manager", Label("logging", "tracing", "metrics"), fu
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have priority class resource created", func() {
+		It("Should have priority class resource created", Label("logging", "tracing", "metrics"), func() {
 			priorityClassNames := []string{"telemetry-priority-class", "telemetry-priority-class-high"}
 			var priorityClass schedulingv1.PriorityClass
 			for _, prioClass := range priorityClassNames {

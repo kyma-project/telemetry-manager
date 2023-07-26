@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: telemetry-operator
-  namespace: kyma-system
+  name: operator
+  namespace: system
 spec:
   template:
     spec:

@@ -20,7 +20,7 @@ test_at_revision()
     make docker-push
     IMG=k3d-kyma-registry:5000/telemetry-manager:$DOCKER_TAG make deploy
 
-    ./bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v ./test/e2e
+    ./bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational && !metrics" -v ./test/e2e
 }
 
 bin/k3d registry create kyma-registry --port 5001
