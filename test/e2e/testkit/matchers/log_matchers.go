@@ -189,8 +189,6 @@ func HasLabels() types.GomegaMatcher {
 			_, ok = attribute["labels"]
 
 			if ok {
-				fmt.Println(attribute["labels"])
-				fmt.Println(attribute["annotations"])
 				return true, nil
 			}
 		}
