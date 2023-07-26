@@ -171,7 +171,7 @@ Use the **valueFrom** attribute to map Secret keys as in the following examples:
 <div tabs>
   <details>
     <summary>Basic authentication</summary>
-      
+
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
   kind: TracePipeline
@@ -263,8 +263,8 @@ The Istio module is crucial in distributed tracing because it provides the [ingr
   <summary label="extension-provider">
   Set up extension provider
   </summary>
-    The following example configures all Istio proxies with the `kyma-traces` extension provider, which, by default, reports span data to the trace gateway of the Telemetry module.
-  
+  The following example configures all Istio proxies with the `kyma-traces` extension provider, which, by default, reports span data to the trace gateway of the Telemetry module.
+
   ```yaml
   apiVersion: telemetry.istio.io/v1alpha1
   kind: Telemetry

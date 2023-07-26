@@ -7,6 +7,6 @@ const (
 type InputSourceType string
 
 const (
-	InputSourceRuntime   InputSourceType = "runtime"
-	InputSourceWorkloads InputSourceType = "workloads"
+	InputSourceRuntime    InputSourceType = "runtime"
+	InputSourcePrometheus InputSourceType = "prometheus"
 )

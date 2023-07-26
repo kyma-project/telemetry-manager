@@ -90,8 +90,8 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 		cfg.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}
 
-	if enableDropIfInputSourceWorkloads(pipeline) {
-		cfg.Processors.DropIfInputSourceWorkloads = makeDropIfInputSourceWorkloadsConfig()
+	if enableDropIfInputSourcePrometheus(pipeline) {
+		cfg.Processors.DropIfInputSourcePrometheus = makeDropIfInputSourcePrometheusConfig()
 	}
 
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
@@ -122,8 +122,8 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 		processors = append(processors, "filter/drop-if-input-source-runtime")
 	}
 
-	if enableDropIfInputSourceWorkloads(pipeline) {
-		processors = append(processors, "filter/drop-if-input-source-workloads")
+	if enableDropIfInputSourcePrometheus(pipeline) {
+		processors = append(processors, "filter/drop-if-input-source-prometheus")
 	}
 
 	if pipeline.Spec.Output.ConvertToDelta {
@@ -144,7 +144,7 @@ func enableDropIfInputSourceRuntime(pipeline *telemetryv1alpha1.MetricPipeline) 
 	return !appInput.Runtime.Enabled
 }
 
-func enableDropIfInputSourceWorkloads(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+func enableDropIfInputSourcePrometheus(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	appInput := pipeline.Spec.Input.Application
-	return !appInput.Workloads.Enabled
+	return !appInput.Prometheus.Enabled
 }

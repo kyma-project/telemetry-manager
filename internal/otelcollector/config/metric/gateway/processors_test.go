@@ -79,8 +79,8 @@ func TestProcessors(t *testing.T) {
 		require.Len(t, collectorConfig.Processors.DropIfInputSourceRuntime.Metrics.DataPoint, 1)
 		require.Equal(t, "resource.attributes[\"kyma.source\"] == \"runtime\"", collectorConfig.Processors.DropIfInputSourceRuntime.Metrics.DataPoint[0])
 
-		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceWorkloads)
-		require.Len(t, collectorConfig.Processors.DropIfInputSourceWorkloads.Metrics.DataPoint, 1)
-		require.Equal(t, "resource.attributes[\"kyma.source\"] == \"workloads\"", collectorConfig.Processors.DropIfInputSourceWorkloads.Metrics.DataPoint[0])
+		require.NotNil(t, collectorConfig.Processors.DropIfInputSourcePrometheus)
+		require.Len(t, collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.DataPoint, 1)
+		require.Equal(t, "resource.attributes[\"kyma.source\"] == \"prometheus\"", collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.DataPoint[0])
 	})
 }

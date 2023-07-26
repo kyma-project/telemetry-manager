@@ -91,11 +91,11 @@ func makeDropIfInputSourceRuntimeConfig() *FilterProcessor {
 	}
 }
 
-func makeDropIfInputSourceWorkloadsConfig() *FilterProcessor {
+func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetric{
 			DataPoint: []string{
-				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourceWorkloads),
+				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourcePrometheus),
 			},
 		},
 	}

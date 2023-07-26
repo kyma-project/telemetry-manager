@@ -51,7 +51,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 			require.Nil(t, collectorConfig.Processors.DeleteServiceName)
 			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourceWorkloads)
+			require.Nil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 0)
 		})
@@ -63,7 +63,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourceWorkloads)
+			require.Nil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
@@ -72,40 +72,40 @@ func TestMakeAgentConfig(t *testing.T) {
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 		})
 
-		t.Run("workloads input enabled", func(t *testing.T) {
+		t.Run("prometheus input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithWorkloadsInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
 			})
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourceWorkloads)
+			require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/workloads")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/workloads"].Receivers)
-			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-workloads"}, collectorConfig.Service.Pipelines["metrics/workloads"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/workloads"].Exporters)
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
+			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
 
 		t.Run("multiple input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithWorkloadsInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).Build(),
 			})
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourceWorkloads)
+			require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 2)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/workloads")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/workloads"].Receivers)
-			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-workloads"}, collectorConfig.Service.Pipelines["metrics/workloads"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/workloads"].Exporters)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/workloads")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/workloads"].Receivers)
-			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-workloads"}, collectorConfig.Service.Pipelines["metrics/workloads"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/workloads"].Exporters)
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
+			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
+			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
 	})
 
@@ -118,7 +118,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 			require.Nil(t, collectorConfig.Processors.DeleteServiceName)
 			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourceWorkloads)
+			require.Nil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 0)
 		})
@@ -131,7 +131,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourceWorkloads)
+			require.Nil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
@@ -148,7 +148,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.Nil(t, collectorConfig.Processors.InsertInputSourceWorkloads)
+			require.Nil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/runtime")
@@ -157,59 +157,59 @@ func TestMakeAgentConfig(t *testing.T) {
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 		})
 
-		t.Run("some pipelines have workloads input enabled", func(t *testing.T) {
+		t.Run("some pipelines have prometheus input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithWorkloadsInputOn(false).Build(),
-				testutils.NewMetricPipelineBuilder().WithWorkloadsInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(false).Build(),
+				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
 			})
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourceWorkloads)
+			require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/workloads")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/workloads"].Receivers)
-			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-workloads"}, collectorConfig.Service.Pipelines["metrics/workloads"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/workloads"].Exporters)
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
+			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
 
-		t.Run("all pipelines have workloads input enabled", func(t *testing.T) {
+		t.Run("all pipelines have prometheus input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithWorkloadsInputOn(true).Build(),
-				testutils.NewMetricPipelineBuilder().WithWorkloadsInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
 			})
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourceWorkloads)
+			require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/workloads")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/workloads"].Receivers)
-			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-workloads"}, collectorConfig.Service.Pipelines["metrics/workloads"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/workloads"].Exporters)
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
+			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
 
 		t.Run("multiple input types enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithWorkloadsInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
 				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
 			})
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
-			require.NotNil(t, collectorConfig.Processors.InsertInputSourceWorkloads)
+			require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
 
 			require.Len(t, collectorConfig.Service.Pipelines, 2)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/workloads")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/workloads"].Receivers)
-			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-workloads"}, collectorConfig.Service.Pipelines["metrics/workloads"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/workloads"].Exporters)
-			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/workloads")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/workloads"].Receivers)
-			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-workloads"}, collectorConfig.Service.Pipelines["metrics/workloads"].Processors)
-			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/workloads"].Exporters)
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
+			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
+			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
 	})
 

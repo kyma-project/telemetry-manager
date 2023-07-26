@@ -14,7 +14,7 @@ type MetricPipelineBuilder struct {
 	namespace         string
 	endpoint          string
 	runtimeInputOn    bool
-	workloadsInputOn  bool
+	prometheusInputOn bool
 	basicAuthUser     string
 	basicAuthPassword string
 	convertToDelta    bool
@@ -43,8 +43,8 @@ func (b *MetricPipelineBuilder) WithRuntimeInputOn(on bool) *MetricPipelineBuild
 	return b
 }
 
-func (b *MetricPipelineBuilder) WithWorkloadsInputOn(on bool) *MetricPipelineBuilder {
-	b.workloadsInputOn = on
+func (b *MetricPipelineBuilder) WithPrometheusInputOn(on bool) *MetricPipelineBuilder {
+	b.prometheusInputOn = on
 	return b
 }
 
@@ -71,8 +71,8 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 					Runtime: telemetryv1alpha1.MetricPipelineContainerRuntimeInput{
 						Enabled: b.runtimeInputOn,
 					},
-					Workloads: telemetryv1alpha1.MetricPipelineWorkloadsInput{
-						Enabled: b.workloadsInputOn,
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: b.prometheusInputOn,
 					},
 				},
 			},

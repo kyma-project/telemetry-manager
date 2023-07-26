@@ -109,12 +109,12 @@ func TestMakeConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
-			require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-workloads", "batch"})
+			require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-prometheus", "batch"})
 		})
 
-		t.Run("with workloads input enabled", func(t *testing.T) {
+		t.Run("with prometheus input enabled", func(t *testing.T) {
 			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithName("test").WithWorkloadsInputOn(true).Build()},
+				testutils.NewMetricPipelineBuilder().WithName("test").WithPrometheusInputOn(true).Build()},
 			)
 			require.NoError(t, err)
 
@@ -139,14 +139,14 @@ func TestMakeConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
-			require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-workloads", "batch"})
+			require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-prometheus", "batch"})
 		})
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test-1").WithRuntimeInputOn(true).Build(),
-			testutils.NewMetricPipelineBuilder().WithName("test-2").WithWorkloadsInputOn(true).Build()},
+			testutils.NewMetricPipelineBuilder().WithName("test-2").WithPrometheusInputOn(true).Build()},
 		)
 		require.NoError(t, err)
 
@@ -157,7 +157,7 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-1"].Exporters, "otlp/test-1")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-1"].Exporters, "logging/test-1")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-1"].Receivers, "otlp")
-		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-1"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-workloads", "batch"})
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-1"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-prometheus", "batch"})
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-2"].Exporters, "otlp/test-2")
@@ -182,7 +182,7 @@ service:
                 - k8sattributes
                 - resource
                 - filter/drop-if-input-source-runtime
-                - filter/drop-if-input-source-workloads
+                - filter/drop-if-input-source-prometheus
                 - batch
             exporters:
                 - logging/test
@@ -243,10 +243,10 @@ processors:
         metrics:
             datapoint:
                 - resource.attributes["kyma.source"] == "runtime"
-    filter/drop-if-input-source-workloads:
+    filter/drop-if-input-source-prometheus:
         metrics:
             datapoint:
-                - resource.attributes["kyma.source"] == "workloads"
+                - resource.attributes["kyma.source"] == "prometheus"
 exporters:
     logging/test:
         verbosity: basic
