@@ -19,7 +19,6 @@ package logpipeline
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -131,7 +130,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	var allPipelines telemetryv1alpha1.LogPipelineList
 	if err := r.List(ctx, &allPipelines); err != nil {
-		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %v", err)
+		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
 	}
 
 	if err = ensureFinalizers(ctx, r.Client, pipeline); err != nil {
@@ -195,9 +194,11 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
 
-	cm := resources.MakeConfigMap(r.config.DaemonSet)
-
-	cm = updateConfigifNoDeployablePipelines(deployableLogpipelines, cm)
+	includeSections := true
+	if len(deployableLogpipelines) == 0 {
+		includeSections = false
+	}
+	cm := resources.MakeConfigMap(r.config.DaemonSet, includeSections)
 	if err := controllerutil.SetOwnerReference(pipeline, cm, r.Scheme()); err != nil {
 		return err
 	}
@@ -319,15 +320,4 @@ func (r *Reconciler) getDeployableLogpipelines(ctx context.Context, allPipelines
 	}
 
 	return deployablePipelines
-}
-
-// If there are no deployable pipelines we need to remove '@INCLUDE dynamic/*.conf' as with empty sections configmap the fluent-bit crash loops.
-// This is however a temporary fix and we should generate the whole telemetry configmap based on deployable pipelines.
-func updateConfigifNoDeployablePipelines(deployableLogpipelines []telemetryv1alpha1.LogPipeline, cm *corev1.ConfigMap) *corev1.ConfigMap {
-	if len(deployableLogpipelines) == 0 {
-		fluentbitConf := cm.Data["fluent-bit.conf"]
-		fluentbitConf = strings.ReplaceAll(fluentbitConf, "@INCLUDE dynamic/*.conf", "")
-		cm.Data["fluent-bit.conf"] = fluentbitConf
-	}
-	return cm
 }
