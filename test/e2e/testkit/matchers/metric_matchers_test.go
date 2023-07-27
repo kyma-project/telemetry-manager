@@ -274,8 +274,10 @@ var _ = Describe("HaveMetricsWithResourceAttributes", Label("metrics"), func() {
 	})
 
 	Context("with empty input", func() {
-		It("should fail", func() {
-			Expect([]byte{}).ShouldNot(HaveMetricsWithResourceAttributes(expectedMetricAttributes...))
+		It("should error", func() {
+			success, err := HaveMetricsWithResourceAttributes(expectedMetricAttributes...).Match([]byte{})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
 		})
 	})
 
