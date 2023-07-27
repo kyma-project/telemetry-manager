@@ -73,6 +73,8 @@ type MetricPipelineApplicationInput struct {
 	Prometheus MetricPipelinePrometheusInput `json:"prometheus,omitempty"`
 	// Configures runtime scraping.
 	Runtime MetricPipelineContainerRuntimeInput `json:"runtime,omitempty"`
+	// Configures istio scraping.
+	Istio MetricPipelineIstioInput `json:"istio,omitempty"`
 }
 
 // MetricPipelinePrometheusInput defines the Prometheus scraping section.

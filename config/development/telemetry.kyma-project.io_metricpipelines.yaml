@@ -49,6 +49,13 @@ spec:
                   application:
                     description: Configures application related scraping.
                     properties:
+                      istio:
+                        description: Configures istio scraping.
+                        properties:
+                          enabled:
+                            description: Indicates if Istio scraping is enabled.
+                            type: boolean
+                        type: object
                       prometheus:
                         description: Configures Prometheus scraping.
                         properties:
