@@ -105,16 +105,16 @@ func HaveMetricNames(expectedMetricNames ...string) types.GomegaMatcher {
 	}, gomega.ContainElements(expectedMetricNames))
 }
 
-func HaveAttributes(expectedAttributeNames ...string) types.GomegaMatcher {
+func HaveResourceAttributes(expectedAttributeNames ...string) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]string, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
-			return nil, fmt.Errorf("HaveAttributes requires a []byte, but got %T", actual)
+			return nil, fmt.Errorf("HaveResourceAttributes requires a []byte, but got %T", actual)
 		}
 
 		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
 		if err != nil {
-			return nil, fmt.Errorf("HaveAttributes requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("HaveResourceAttributes requires a valid OTLP JSON document: %v", err)
 		}
 
 		var actualAttributeNames []string

@@ -249,7 +249,7 @@ var _ = Describe("HaveNumberOfMetrics", Label("metrics"), func() {
 	})
 })
 
-var _ = Describe("HaveAttributes", Label("metrics"), func() {
+var _ = Describe("HaveResourceAttributes", Label("metrics"), func() {
 	var fileBytes []byte
 	var expectedMetricAttributes []string
 
@@ -259,7 +259,7 @@ var _ = Describe("HaveAttributes", Label("metrics"), func() {
 
 	Context("with nil input", func() {
 		It("should error", func() {
-			success, err := HaveAttributes(expectedMetricAttributes...).Match(nil)
+			success, err := HaveResourceAttributes(expectedMetricAttributes...).Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -267,7 +267,7 @@ var _ = Describe("HaveAttributes", Label("metrics"), func() {
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			success, err := HaveAttributes(expectedMetricAttributes...).Match(struct{}{})
+			success, err := HaveResourceAttributes(expectedMetricAttributes...).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -275,7 +275,7 @@ var _ = Describe("HaveAttributes", Label("metrics"), func() {
 
 	Context("with empty input", func() {
 		It("should fail", func() {
-			Expect([]byte{}).ShouldNot(HaveAttributes(expectedMetricAttributes...))
+			Expect([]byte{}).ShouldNot(HaveResourceAttributes(expectedMetricAttributes...))
 		})
 	})
 
@@ -287,7 +287,7 @@ var _ = Describe("HaveAttributes", Label("metrics"), func() {
 		})
 
 		It("should fail", func() {
-			Expect(fileBytes).ShouldNot(HaveAttributes(expectedMetricAttributes...))
+			Expect(fileBytes).ShouldNot(HaveResourceAttributes(expectedMetricAttributes...))
 		})
 	})
 
@@ -299,7 +299,7 @@ var _ = Describe("HaveAttributes", Label("metrics"), func() {
 		})
 
 		It("should succeed", func() {
-			Expect(fileBytes).Should(HaveAttributes(expectedMetricAttributes...))
+			Expect(fileBytes).Should(HaveResourceAttributes(expectedMetricAttributes...))
 		})
 	})
 
@@ -309,7 +309,7 @@ var _ = Describe("HaveAttributes", Label("metrics"), func() {
 		})
 
 		It("should error", func() {
-			success, err := HaveAttributes(expectedMetricAttributes...).Match(fileBytes)
+			success, err := HaveResourceAttributes(expectedMetricAttributes...).Match(fileBytes)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
