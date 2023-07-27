@@ -124,8 +124,6 @@ issues:
     - linters: [ dupl ]
       path: internal/reconciler/tracepipeline/reconciler_test.go
     - linters: [ dupl ]
-      path: internal/reconciler/metricpipeline/reconciler_test.go
-    - linters: [ dupl ]
       path: test/e2e/testkit/matchers/(log|metric|trace)_matchers.go
     - linters: [ dupl ]
       path: main.go
