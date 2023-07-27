@@ -18,18 +18,48 @@ func HaveMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
-			return nil, fmt.Errorf("HaveGauges requires a []byte, but got %T", actual)
+			return nil, fmt.Errorf("HaveMetrics requires a []byte, but got %T", actual)
 		}
 
 		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
 		if err != nil {
-			return nil, fmt.Errorf("HaveGauges requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("HaveMetrics requires a valid OTLP JSON document: %v", err)
 		}
 
 		var actualMetrics []pmetric.Metric
 		for _, md := range actualMds {
 			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
 		}
+		return actualMetrics, nil
+	}, gomega.ContainElements(expectedMetrics))
+}
+
+func HaveSumMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
+		actualBytes, ok := actual.([]byte)
+		if !ok {
+			return nil, fmt.Errorf("HaveSumMetrics requires a []byte, but got %T", actual)
+		}
+
+		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+		if err != nil {
+			return nil, fmt.Errorf("HaveSumMetrics requires a valid OTLP JSON document: %v", err)
+		}
+
+		var actualMetrics []pmetric.Metric
+		for _, md := range actualMds {
+			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
+		}
+
+		// workaround the difference between metricdata and pmetric temporality formats
+		for _, actualMetric := range actualMetrics {
+			if actualMetric.Sum().AggregationTemporality() == pmetric.AggregationTemporalityCumulative {
+				actualMetric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+				continue
+			}
+			actualMetric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+		}
+
 		return actualMetrics, nil
 	}, gomega.ContainElements(expectedMetrics))
 }

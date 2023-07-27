@@ -110,6 +110,105 @@ var _ = Describe("HaveGauges", Label("metrics"), func() {
 	})
 })
 
+var _ = Describe("HaveSumMetrics", Label("metrics"), func() {
+	var fileBytes []byte
+	var expectedMetrics []pmetric.Metric
+
+	BeforeEach(func() {
+		m1 := pmetric.NewMetric()
+		m1.SetName("room_temperature")
+		ts1 := pcommon.NewTimestampFromTime(time.Unix(0, 1682438376750990000))
+		sum1 := m1.SetEmptySum()
+		dp11 := sum1.DataPoints().AppendEmpty()
+		dp11.SetTimestamp(ts1)
+		dp11.SetStartTimestamp(ts1)
+		dp11.SetDoubleValue(0.5)
+		sum1.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+
+		m2 := pmetric.NewMetric()
+		m2.SetName("room_humidity")
+		ts2 := pcommon.NewTimestampFromTime(time.Unix(0, 1682438376750991000))
+		sum2 := m2.SetEmptySum()
+		dp21 := sum2.DataPoints().AppendEmpty()
+		dp21.SetTimestamp(ts2)
+		dp21.SetStartTimestamp(ts2)
+		dp21.SetDoubleValue(3.5)
+		sum2.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+
+		expectedMetrics = []pmetric.Metric{m1, m2}
+	})
+
+	Context("with nil input", func() {
+		It("should error", func() {
+			success, err := HaveSumMetrics(expectedMetrics...).Match(nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with input of invalid type", func() {
+		It("should error", func() {
+			success, err := HaveSumMetrics(expectedMetrics...).Match(struct{}{})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should fail", func() {
+			Expect([]byte{}).ShouldNot(HaveSumMetrics(expectedMetrics...))
+		})
+	})
+
+	Context("with no metrics matching the expecting metrics", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/have_metrics_sum/no_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail", func() {
+			Expect(fileBytes).ShouldNot(HaveSumMetrics(expectedMetrics...))
+		})
+	})
+
+	Context("with some metrics matching the expecting metrics", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/have_metrics_sum/partial_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail", func() {
+			Expect(fileBytes).ShouldNot(HaveSumMetrics(expectedMetrics...))
+		})
+	})
+
+	Context("with all metrics matching the expecting metrics", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/have_metrics_sum/full_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should succeed", func() {
+			Expect(fileBytes).Should(HaveSumMetrics(expectedMetrics...))
+		})
+	})
+
+	Context("with invalid input", func() {
+		BeforeEach(func() {
+			fileBytes = []byte{1, 2, 3}
+		})
+
+		It("should error", func() {
+			success, err := HaveSumMetrics(expectedMetrics...).Match(fileBytes)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+})
+
 var _ = Describe("HaveNumberOfMetrics", Label("metrics"), func() {
 	Context("with nil input", func() {
 		It("should match 0", func() {
