@@ -3,6 +3,7 @@ package telemetry
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -473,29 +474,30 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 		})
 
 		It("Should create a fluent bit configmap which contains healthy pipeline", func() {
-			Eventually(func() bool {
+			Eventually(func() error {
 				return validateKeyExistsInFluentbitSectionsConf(ctx, "healthy-logpipeline.conf")
-			}, timeout, interval).Should(BeTrue())
+			}, timeout, interval).Should(BeNil())
 		})
 
 		It("Should not have a unhealthy pipeline in fluent-bit configmap", func() {
-			Eventually(func() bool {
+			expectedErr := errors.New("did not find the key: missing-secret-ref-logpipeline.conf")
+			Eventually(func() error {
 				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
-			}, timeout, interval).Should(BeFalse())
+			}, timeout, interval).Should(Equal(expectedErr))
 		})
 
 		It("Should update config when secret is created", func() {
 			Expect(k8sClient.Create(ctx, pipelineSecret)).Should(Succeed())
-			Eventually(func() bool {
+			Eventually(func() error {
 				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
-			}, timeout, interval).Should(BeTrue())
+			}, timeout, interval).Should(BeNil())
 		})
 
 		It("Should remove logpipeline from configmap when secret is deleted", func() {
 			Expect(k8sClient.Delete(ctx, pipelineSecret)).Should(Succeed())
-			Eventually(func() bool {
+			Eventually(func() error {
 				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
-			}, timeout, interval).Should(BeFalse())
+			}, timeout, interval).Should(BeNil())
 		})
 
 	})
@@ -516,7 +518,7 @@ func validateLoggingOwnerReferences(ownerReferences []metav1.OwnerReference) err
 	return nil
 }
 
-func validateKeyExistsInFluentbitSectionsConf(ctx context.Context, key string) bool {
+func validateKeyExistsInFluentbitSectionsConf(ctx context.Context, key string) error {
 	configMapLookupKey := types.NamespacedName{
 		Name:      testLogPipelineConfig.SectionsConfigMap.Name,
 		Namespace: testLogPipelineConfig.SectionsConfigMap.Namespace,
@@ -524,11 +526,11 @@ func validateKeyExistsInFluentbitSectionsConf(ctx context.Context, key string) b
 	var fluentBitCm corev1.ConfigMap
 	err := k8sClient.Get(ctx, configMapLookupKey, &fluentBitCm)
 	if err != nil {
-		fmt.Printf("could not get configmap: %s: %s", configMapLookupKey.Name, err.Error())
-		return false
+
+		return fmt.Errorf("could not get configmap: %s: %s", configMapLookupKey.Name, err)
 	}
 	if _, ok := fluentBitCm.Data[key]; !ok {
-		return false
+		return fmt.Errorf("did not find the key: %s", key)
 	}
-	return true
+	return nil
 }
