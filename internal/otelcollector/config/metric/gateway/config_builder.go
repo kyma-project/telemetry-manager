@@ -126,6 +126,10 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 		processors = append(processors, "filter/drop-if-input-source-prometheus")
 	}
 
+	if pipeline.Spec.Output.ConvertToDelta {
+		processors = append(processors, "cumulativetodelta")
+	}
+
 	processors = append(processors, "batch")
 
 	return config.Pipeline{

@@ -19,8 +19,9 @@ type Receivers struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	DropIfInputSourceRuntime    *FilterProcessor `yaml:"filter/drop-if-input-source-runtime,omitempty"`
-	DropIfInputSourcePrometheus *FilterProcessor `yaml:"filter/drop-if-input-source-prometheus,omitempty"`
+	CumulativeToDelta           *CumulativeToDeltaConfig `yaml:"cumulativetodelta,omitempty"`
+	DropIfInputSourceRuntime    *FilterProcessor         `yaml:"filter/drop-if-input-source-runtime,omitempty"`
+	DropIfInputSourcePrometheus *FilterProcessor         `yaml:"filter/drop-if-input-source-prometheus,omitempty"`
 }
 
 type FilterProcessor struct {
@@ -37,3 +38,5 @@ type Exporter struct {
 	OTLP    *config.OTLPExporter    `yaml:",inline,omitempty"`
 	Logging *config.LoggingExporter `yaml:",inline,omitempty"`
 }
+
+type CumulativeToDeltaConfig struct{}

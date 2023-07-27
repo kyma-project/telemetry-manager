@@ -238,6 +238,7 @@ processors:
             - action: insert
               key: k8s.cluster.name
               value: ${KUBERNETES_SERVICE_HOST}
+    cumulativetodelta: {}
     filter/drop-if-input-source-runtime:
         metrics:
             datapoint:
@@ -267,5 +268,20 @@ exporters:
 		yamlBytes, err := yaml.Marshal(collectorConfig)
 		require.NoError(t, err)
 		require.Equal(t, expected, string(yamlBytes))
+	})
+
+	t.Run("cumulativeToDelta processor inclusion", func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().Build()
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test-delta").WithConvertToDeltaFlag(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test").Build(),
+		})
+		require.NoError(t, err)
+
+		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+		require.Equal(t, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-prometheus", "batch"}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
+
+		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-delta")
+		require.Equal(t, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-prometheus", "cumulativetodelta", "batch"}, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors)
 	})
 }

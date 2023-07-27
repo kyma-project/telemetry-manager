@@ -17,6 +17,7 @@ type MetricPipelineBuilder struct {
 	prometheusInputOn bool
 	basicAuthUser     string
 	basicAuthPassword string
+	convertToDelta    bool
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
@@ -53,6 +54,11 @@ func (b *MetricPipelineBuilder) WithBasicAuth(user, password string) *MetricPipe
 	return b
 }
 
+func (b *MetricPipelineBuilder) WithConvertToDeltaFlag(on bool) *MetricPipelineBuilder {
+	b.convertToDelta = on
+	return b
+}
+
 func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 	return telemetryv1alpha1.MetricPipeline{
 		ObjectMeta: metav1.ObjectMeta{
@@ -86,6 +92,7 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 						},
 					},
 				},
+				ConvertToDelta: b.convertToDelta,
 			},
 		},
 	}

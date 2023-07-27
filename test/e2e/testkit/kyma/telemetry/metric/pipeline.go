@@ -39,14 +39,16 @@ func (p *Pipeline) Name() string {
 	return fmt.Sprintf("%s-%s", p.name, p.id)
 }
 
-func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
+type PipelineOption = func(telemetry.MetricPipeline)
+
+func (p *Pipeline) K8sObject(opts ...PipelineOption) *telemetry.MetricPipeline {
 	var labels k8s.Labels
 	if p.persistent {
 		labels = k8s.PersistentLabel
 	}
 	labels.Version(version)
 
-	return &telemetry.MetricPipeline{
+	metricPipeline := telemetry.MetricPipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
 			Name:   p.Name(),
 			Labels: labels,
@@ -73,6 +75,12 @@ func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
 			},
 		},
 	}
+
+	for _, opt := range opts {
+		opt(metricPipeline)
+	}
+
+	return &metricPipeline
 }
 
 func (p *Pipeline) Persistent(persistent bool) *Pipeline {

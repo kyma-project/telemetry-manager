@@ -15,6 +15,7 @@ func makeProcessorsConfig() Processors {
 			K8sAttributes: makeK8sAttributesProcessorConfig(),
 			Resource:      makeResourceProcessorConfig(),
 		},
+		CumulativeToDelta: &CumulativeToDeltaConfig{},
 	}
 }
 
