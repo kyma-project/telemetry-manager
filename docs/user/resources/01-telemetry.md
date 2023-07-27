@@ -15,6 +15,7 @@ apiVersion: operator.kyma-project.io/v1alpha1
 kind: Telemetry
 metadata:
   name: default
+  namespace: kyma-system
 Status:
   Conditions:
     Last Transition Time:  2023-05-23T14:57:11Z
