@@ -210,12 +210,12 @@ var _ = Describe("ContainsLogsKeyValue", Label("logging"), func() {
 	})
 })
 
-var _ = Describe("HasLabels", Label("logging"), func() {
+var _ = Describe("HasKubernetesLabels", Label("logging"), func() {
 	var fileBytes []byte
 
 	Context("with nil input", func() {
 		It("should not match", func() {
-			success, err := HasLabels().Match(nil)
+			success, err := HasKubernetesLabels().Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -223,7 +223,7 @@ var _ = Describe("HasLabels", Label("logging"), func() {
 
 	Context("with empty input", func() {
 		It("should match", func() {
-			success, err := HasLabels().Match([]byte{})
+			success, err := HasKubernetesLabels().Match([]byte{})
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -235,7 +235,7 @@ var _ = Describe("HasLabels", Label("logging"), func() {
 		})
 
 		It("should error", func() {
-			success, err := HasLabels().Match(fileBytes)
+			success, err := HasKubernetesLabels().Match(fileBytes)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -249,17 +249,17 @@ var _ = Describe("HasLabels", Label("logging"), func() {
 		})
 
 		It("should succeed", func() {
-			Expect(fileBytes).Should(HasLabels())
+			Expect(fileBytes).Should(HasKubernetesLabels())
 		})
 	})
 })
 
-var _ = Describe("HasAnnotations", Label("logging"), func() {
+var _ = Describe("HasKubernetesAnnotations", Label("logging"), func() {
 	var fileBytes []byte
 
 	Context("with nil input", func() {
 		It("should not match", func() {
-			success, err := HasAnnotations().Match(nil)
+			success, err := HasKubernetesAnnotations().Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -267,7 +267,7 @@ var _ = Describe("HasAnnotations", Label("logging"), func() {
 
 	Context("with empty input", func() {
 		It("should match", func() {
-			success, err := HasAnnotations().Match([]byte{})
+			success, err := HasKubernetesAnnotations().Match([]byte{})
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -279,7 +279,7 @@ var _ = Describe("HasAnnotations", Label("logging"), func() {
 		})
 
 		It("should error", func() {
-			success, err := HasAnnotations().Match(fileBytes)
+			success, err := HasKubernetesAnnotations().Match(fileBytes)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -293,7 +293,7 @@ var _ = Describe("HasAnnotations", Label("logging"), func() {
 		})
 
 		It("should succeed", func() {
-			Expect(fileBytes).Should(HasAnnotations())
+			Expect(fileBytes).Should(HasKubernetesAnnotations())
 		})
 	})
 })

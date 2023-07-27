@@ -50,7 +50,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a log backend running", Label("operational"), func() {
+		It("Should have a log backend running", func() {
 			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
@@ -59,7 +59,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 			}, timeout*2, interval).Should(Succeed())
 		})
 
-		It("Should have a log spammer running", Label("operational"), func() {
+		It("Should have a log spammer running", func() {
 			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName + "-spammer", Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
@@ -68,7 +68,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 			}, timeout*2, interval).Should(Succeed())
 		})
 
-		It("Should parse the logs using regex", Label(operationalTest), func() {
+		It("Should parse the logs using regex", func() {
 			Eventually(func(g Gomega) {
 				time.Sleep(20 * time.Second)
 				resp, err := proxyClient.Get(urls.MockBackendExport())

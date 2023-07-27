@@ -3,12 +3,12 @@
 package e2e
 
 import (
+	"net/http"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
@@ -21,15 +21,15 @@ import (
 
 var _ = Describe("Logging", Label("logging"), func() {
 
-	Context("Container Excludes", Ordered, func() {
+	Context("Collect Logs", Ordered, func() {
 		var (
 			urls               *mocks.URLProvider
-			mockNs             = "log-exclude-cntnr-mocks"
-			mockDeploymentName = "log-receiver-exclude-container"
+			mockNs             = "log-pipeline-delivery-mocks"
+			mockDeploymentName = "log-receiver"
 		)
 
 		BeforeAll(func() {
-			k8sObjects, logsURLProvider := makeLogsTestExcludeContainerK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects, logsURLProvider := makeLogsDeliveryTestK8sObjects(mockNs, mockDeploymentName)
 			urls = logsURLProvider
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -37,7 +37,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a log backend running", func() {
+		It("Should have a log backend running", Label("operational"), func() {
 			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
@@ -46,16 +46,8 @@ var _ = Describe("Logging", Label("logging"), func() {
 			}, timeout*2, interval).Should(Succeed())
 		})
 
-		It("Should have a log spammer running", func() {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockDeploymentName + "-spammer", Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout*2, interval).Should(Succeed())
-		})
+		It("Should verify end-to-end log delivery", Label("operational"), func() {
 
-		It("Should collect logs", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
@@ -64,21 +56,10 @@ var _ = Describe("Logging", Label("logging"), func() {
 					ContainLogs())))
 			}, timeout, interval).Should(Succeed())
 		})
-
-		It("Should not collect any log-spammer logs", func() {
-			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					Not(ContainsLogsWith("", "", "log-spammer")))))
-			}, 20*time.Second, interval).Should(Succeed())
-		})
-
 	})
 })
 
-func makeLogsTestExcludeContainerK8sObjects(namespace string, mockDeploymentName string) ([]client.Object, *mocks.URLProvider) {
+func makeLogsDeliveryTestK8sObjects(namespace string, mockDeploymentName string) ([]client.Object, *mocks.URLProvider) {
 	var (
 		objs []client.Object
 		urls = mocks.NewURLProvider()
@@ -106,8 +87,7 @@ func makeLogsTestExcludeContainerK8sObjects(namespace string, mockDeploymentName
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	logHTTPPipeline := kitlog.NewHTTPPipeline("pipeline-exclude-container", hostSecret.SecretKeyRef("log-host"))
-	logHTTPPipeline.WithExcludeContainer([]string{"log-spammer"})
+	logHTTPPipeline := kitlog.NewHTTPPipeline("pipeline-mock-http", hostSecret.SecretKeyRef("log-host"))
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),

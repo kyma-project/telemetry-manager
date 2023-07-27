@@ -134,7 +134,7 @@ func ContainsLogsKeyValue(key, value string) types.GomegaMatcher {
 	}, gomega.BeTrue())
 }
 
-func HasAnnotations() types.GomegaMatcher {
+func HasKubernetesAnnotations() types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) (bool, error) {
 
 		actualBytes, ok := actual.([]byte)
@@ -165,7 +165,7 @@ func HasAnnotations() types.GomegaMatcher {
 	}, gomega.BeTrue())
 }
 
-func HasLabels() types.GomegaMatcher {
+func HasKubernetesLabels() types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) (bool, error) {
 
 		actualBytes, ok := actual.([]byte)

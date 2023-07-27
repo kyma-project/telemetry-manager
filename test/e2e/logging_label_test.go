@@ -3,13 +3,12 @@
 package e2e
 
 import (
-	"net/http"
-	"time"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
@@ -38,7 +37,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a log backend running", Label("operational"), func() {
+		It("Should have a log backend running", func() {
 			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
@@ -47,7 +46,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 			}, timeout*2, interval).Should(Succeed())
 		})
 
-		It("Should have a log spammer running", Label("operational"), func() {
+		It("Should have a log spammer running", func() {
 			Eventually(func(g Gomega) {
 				key := types.NamespacedName{Name: mockDeploymentName + "-spammer", Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
@@ -56,14 +55,14 @@ var _ = Describe("Logging", Label("logging"), func() {
 			}, timeout*2, interval).Should(Succeed())
 		})
 
-		It("Should collect only labels and drop annotations", Label("operational"), func() {
-			Eventually(func(g Gomega) {
+		It("Should collect only labels and drop annotations", func() {
+			Consistently(func(g Gomega) {
 				time.Sleep(20 * time.Second)
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HasLabels(), Not(HasAnnotations()))))
+					HasKubernetesLabels(), Not(HasKubernetesAnnotations()))))
 			}, timeout, interval).Should(Succeed())
 		})
 
