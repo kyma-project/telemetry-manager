@@ -26,7 +26,7 @@ data:
     name: Telemetry Module
     category: Observability
     urlPath: telemetries
-    scope: cluster
+    scope: namespace
     description: >-
       {{[Telemetry](https://github.com/kyma-project/telemetry-manager/blob/main/config/crd/bases/operator.kyma-project.io_telemetries.yaml)}}
       is a detailed description of the kind of data and the format used to define a
