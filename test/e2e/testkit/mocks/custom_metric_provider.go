@@ -34,7 +34,7 @@ func (mp *CustomMetricProvider) K8sObject() *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  "sample-metrics",
-					Image: "eu.gcr.io/kyma-project/develop/monitoring-custom-metrics:e56d9645",
+					Image: "ghcr.io/skhalash/examples/monitoring-custom-metrics:3d41736",
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "http",
