@@ -84,7 +84,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetricNames(kubeletMetricNames...))))
+					HaveMetricsWithNames(kubeletMetricNames...))))
 			}, timeout, interval).Should(Succeed())
 		})
 
@@ -94,7 +94,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveResourceAttributes(kubeletMetricResourceAttributes...))))
+					HaveMetricsWithResourceAttributes(kubeletMetricResourceAttributes...))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
