@@ -16,6 +16,7 @@ import (
 	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
 var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
@@ -70,17 +71,28 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			metricPipelineShouldBeRunning(pipelines.First())
 		})
 
-		It("Should verify custom metric names", func() {
+		It("Should verify custom metrics", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetricNames(mocks.CustomMetricNames...))))
+					HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
+						return metric.Name() == "cpu_temperature_celsius" && metric.Type() == pmetric.MetricTypeGauge
+					}),
+					HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
+						return metric.Name() == "hd_errors_total" && metric.Type() == pmetric.MetricTypeSum && metric.Sum().IsMonotonic()
+					}),
+					HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
+						return metric.Name() == "cpu_energy_watt" && metric.Type() == pmetric.MetricTypeHistogram
+					}),
+					HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
+						return metric.Name() == "hw_humidity" && metric.Type() == pmetric.MetricTypeSummary
+					}))))
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should verify no kubelet metric names", func() {
+		It("Should verify no kubelet metrics", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())

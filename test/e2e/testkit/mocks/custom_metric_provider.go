@@ -6,8 +6,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var CustomMetricNames = []string{"cpu_temperature_celsius", "hd_errors_total"}
-
 // CustomMetricProvider represents a workload that exposes dummy metrics in the Prometheus exposition format
 type CustomMetricProvider struct {
 	namespace string
