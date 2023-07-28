@@ -25,7 +25,8 @@ var _ = Describe("Deploying a Telemetry", func() {
 
 		telemetryTestObj := &operatorv1alpha1.Telemetry{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "telemetry",
+				Name:      "telemetry",
+				Namespace: "default",
 			},
 		}
 
@@ -34,7 +35,8 @@ var _ = Describe("Deploying a Telemetry", func() {
 
 			Eventually(func() error {
 				telemetryLookupKey := types.NamespacedName{
-					Name: "telemetry",
+					Name:      "telemetry",
+					Namespace: "default",
 				}
 				var telemetryTestInstance operatorv1alpha1.Telemetry
 				err := k8sClient.Get(ctx, telemetryLookupKey, &telemetryTestInstance)

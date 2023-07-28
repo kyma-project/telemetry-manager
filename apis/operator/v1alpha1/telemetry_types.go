@@ -95,7 +95,6 @@ func (s *TelemetryStatus) WithInstallConditionStatus(status metav1.ConditionStat
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
 // +kubebuilder:printcolumn:name="generation",type="integer",JSONPath=".metadata.generation"
 // +kubebuilder:printcolumn:name="age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="state",type="string",JSONPath=".status.state"

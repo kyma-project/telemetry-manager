@@ -7,6 +7,7 @@ import (
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,7 +41,7 @@ type Reconciler struct {
 	*rest.Config
 	// EventRecorder for creating k8s events
 	record.EventRecorder
-	webhookConfig WebhookConfig
+	WebhookConfig WebhookConfig
 }
 
 func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig WebhookConfig) *Reconciler {
@@ -48,7 +49,7 @@ func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder r
 		Client:        client,
 		Scheme:        scheme,
 		EventRecorder: eventRecorder,
-		webhookConfig: webhookConfig,
+		WebhookConfig: webhookConfig,
 	}
 }
 
@@ -103,16 +104,20 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	if !r.webhookConfig.Enabled {
+	if !r.WebhookConfig.Enabled {
 		return nil
 	}
 
-	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.webhookConfig.CertConfig); err != nil {
+	if !telemetry.DeletionTimestamp.IsZero() {
+		return nil
+	}
+
+	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.WebhookConfig.CertConfig); err != nil {
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
 	var secret corev1.Secret
-	if err := r.Get(ctx, r.webhookConfig.CertConfig.CASecretName, &secret); err != nil {
+	if err := r.Get(ctx, r.WebhookConfig.CertConfig.CASecretName, &secret); err != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
 	}
 	if err := controllerutil.SetOwnerReference(telemetry, &secret, r.Scheme); err != nil {
@@ -123,17 +128,24 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	}
 
 	var webhook admissionv1.ValidatingWebhookConfiguration
-	if err := r.Get(ctx, r.webhookConfig.CertConfig.WebhookName, &webhook); err != nil {
+	if err := r.Get(ctx, r.WebhookConfig.CertConfig.WebhookName, &webhook); err != nil {
 		return fmt.Errorf("failed to get webhook: %w", err)
-	}
-	if err := controllerutil.SetOwnerReference(telemetry, &webhook, r.Scheme); err != nil {
-		return fmt.Errorf("failed to set owner reference for webhook: %w", err)
 	}
 	if err := kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, r.Client, &webhook); err != nil {
 		return fmt.Errorf("failed to update webhook: %w", err)
 	}
 
 	return nil
+}
+
+func (r *Reconciler) deleteWebhook(ctx context.Context) error {
+	webhook := &admissionv1.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: r.WebhookConfig.CertConfig.WebhookName.Name,
+		},
+	}
+
+	return r.Delete(ctx, webhook)
 }
 
 // HandleReadyState checks for the consistency of reconciled resource, by verifying the underlying resources.
@@ -173,6 +185,11 @@ func (r *Reconciler) HandleProcessingState(ctx context.Context, objectInstance *
 
 func (r *Reconciler) HandleDeletingState(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry) error {
 	r.Event(objectInstance, "Normal", "Deleting", "resource deleting")
+
+	err := r.deleteWebhook(ctx)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete webhook: %w", err)
+	}
 
 	// if resources are ready to be deleted, remove finalizer
 	if controllerutil.RemoveFinalizer(objectInstance, finalizer) {

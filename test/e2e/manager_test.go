@@ -101,6 +101,7 @@ var _ = Describe("Telemetry-manager", func() {
 			}
 			err := k8sClient.Get(ctx, key, &crd)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(crd.Spec.Scope).To(Equal(apiextensionsv1.ClusterScoped))
 		})
 
 		It("Should have LogParsers CRD", Label("logging"), func() {
@@ -110,6 +111,7 @@ var _ = Describe("Telemetry-manager", func() {
 			}
 			err := k8sClient.Get(ctx, key, &crd)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(crd.Spec.Scope).To(Equal(apiextensionsv1.ClusterScoped))
 		})
 
 		It("Should have TracePipelines CRD", Label("tracing"), func() {
@@ -119,6 +121,7 @@ var _ = Describe("Telemetry-manager", func() {
 			}
 			err := k8sClient.Get(ctx, key, &crd)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(crd.Spec.Scope).To(Equal(apiextensionsv1.ClusterScoped))
 		})
 
 		It("Should have MetricPipelines CRD", Label("metrics"), func() {
@@ -128,6 +131,17 @@ var _ = Describe("Telemetry-manager", func() {
 			}
 			err := k8sClient.Get(ctx, key, &crd)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(crd.Spec.Scope).To(Equal(apiextensionsv1.ClusterScoped))
+		})
+
+		It("Should have Telemetry CRD", func() {
+			var crd apiextensionsv1.CustomResourceDefinition
+			key := types.NamespacedName{
+				Name: "telemetries.operator.kyma-project.io",
+			}
+			err := k8sClient.Get(ctx, key, &crd)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(crd.Spec.Scope).To(Equal(apiextensionsv1.NamespaceScoped))
 		})
 
 		It("Should have a Fluent Bit dashboard", Label("logging"), func() {

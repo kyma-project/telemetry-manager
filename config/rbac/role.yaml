@@ -90,6 +90,7 @@ rules:
   - validatingwebhookconfigurations
   verbs:
   - create
+  - delete
   - get
   - list
   - patch
@@ -116,27 +117,9 @@ rules:
   resources:
   - telemetries
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
-- apiGroups:
-  - operator.kyma-project.io
-  resources:
-  - telemetries/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - operator.kyma-project.io
-  resources:
-  - telemetries/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
@@ -343,5 +326,31 @@ rules:
   verbs:
   - create
   - delete
+  - patch
+  - update
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - telemetries
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - telemetries/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - operator.kyma-project.io
+  resources:
+  - telemetries/status
+  verbs:
+  - get
   - patch
   - update

@@ -13,7 +13,7 @@ spec:
     listKind: TelemetryList
     plural: telemetries
     singular: telemetry
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.generation
