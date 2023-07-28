@@ -307,7 +307,7 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 	}
 }
 
-func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
+func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.ConfigMap {
 	parserConfig := `
 [PARSER]
     Name docker_no_time
@@ -360,7 +360,6 @@ func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
     K8S-Logging.Exclude On
     Buffer_Size 1MB
 
-@INCLUDE dynamic/*.conf
 `
 	lokiLabelmap := `
   {
@@ -379,6 +378,9 @@ func MakeConfigMap(name types.NamespacedName) *corev1.ConfigMap {
     "stream": "stream"
   }
 `
+	if includeSections {
+		fluentBitConfig = fluentBitConfig + "@INCLUDE dynamic/*.conf" + "\n"
+	}
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{

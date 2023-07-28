@@ -88,7 +88,7 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&source.Kind{Type: &corev1.Secret{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
-			builder.WithPredicates(setup.CreateOrUpdate()),
+			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
 		).Complete(r)
 }
 
