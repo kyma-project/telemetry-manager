@@ -484,7 +484,7 @@ func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames []string, m
 	)
 
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, kitk8s.NewNamespace(namespace).K8sObject())
+	objs = append(objs, mocksNamespace.K8sObject())
 
 	for i, mockDeploymentName := range mockDeploymentNames {
 		// Mocks namespace objects.

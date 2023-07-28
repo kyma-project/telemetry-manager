@@ -48,7 +48,7 @@ var _ = Describe("ConsistOfNumberOfLogs", Label("logging"), func() {
 		})
 
 		It("should succeed", func() {
-			Expect(fileBytes).Should(ConsistOfNumberOfLogs(25))
+			Expect(fileBytes).Should(ConsistOfNumberOfLogs(28))
 		})
 	})
 
@@ -154,6 +154,146 @@ var _ = Describe("ContainsLogsWith", Label("logging"), func() {
 
 		It("should fail with pod", func() {
 			Expect(fileBytes).ShouldNot(ContainsLogsWith("", "not-exist", ""))
+		})
+	})
+})
+
+var _ = Describe("ContainsLogsKeyValue", Label("logging"), func() {
+	var fileBytes []byte
+
+	Context("with nil input", func() {
+		It("should not match", func() {
+			success, err := ContainsLogsKeyValue("mockKey", "mockKey").Match(nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should match", func() {
+			success, err := ContainsLogsKeyValue("mockKey", "mockKey").Match([]byte{})
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with invalid input", func() {
+		BeforeEach(func() {
+			fileBytes = []byte{1, 2, 3}
+		})
+
+		It("should error", func() {
+			success, err := ContainsLogsKeyValue("mockKey", "mockKey").Match(fileBytes)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with having logs", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/have_logs/logs.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should succeed with key value", func() {
+			Expect(fileBytes).Should(ContainsLogsKeyValue("user", "foo"))
+		})
+
+		It("should fail with value", func() {
+			Expect(fileBytes).ShouldNot(ContainsLogsKeyValue("user", "not-exist"))
+		})
+
+		It("should fail with key", func() {
+			Expect(fileBytes).ShouldNot(ContainsLogsKeyValue("key-not-exist", "foo"))
+		})
+	})
+})
+
+var _ = Describe("HasKubernetesLabels", Label("logging"), func() {
+	var fileBytes []byte
+
+	Context("with nil input", func() {
+		It("should not match", func() {
+			success, err := HasKubernetesLabels().Match(nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should match", func() {
+			success, err := HasKubernetesLabels().Match([]byte{})
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with invalid input", func() {
+		BeforeEach(func() {
+			fileBytes = []byte{1, 2, 3}
+		})
+
+		It("should error", func() {
+			success, err := HasKubernetesLabels().Match(fileBytes)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with having logs", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/have_logs/logs.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should succeed", func() {
+			Expect(fileBytes).Should(HasKubernetesLabels())
+		})
+	})
+})
+
+var _ = Describe("HasKubernetesAnnotations", Label("logging"), func() {
+	var fileBytes []byte
+
+	Context("with nil input", func() {
+		It("should not match", func() {
+			success, err := HasKubernetesAnnotations().Match(nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should match", func() {
+			success, err := HasKubernetesAnnotations().Match([]byte{})
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with invalid input", func() {
+		BeforeEach(func() {
+			fileBytes = []byte{1, 2, 3}
+		})
+
+		It("should error", func() {
+			success, err := HasKubernetesAnnotations().Match(fileBytes)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with having logs", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/have_logs/logs.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should succeed", func() {
+			Expect(fileBytes).Should(HasKubernetesAnnotations())
 		})
 	})
 })

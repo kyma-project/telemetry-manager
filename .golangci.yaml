@@ -110,6 +110,20 @@ issues:
     - linters: [ dupl ]
       path: internal/kubernetes/utils.go
     - linters: [ dupl ]
+      path: test/e2e/testkit/matchers/trace_matchers_test.go
+    - linters: [ dupl ]
+      path: test/e2e/testkit/matchers/prometheus_matcher_test.go
+    - linters: [ dupl ]
+      path: test/e2e/metrics_test.go
+    - linters: [ dupl ]
+      path: test/e2e/logging_test.go
+    - linters: [ dupl ]
+      path: test/e2e/metrics_kubeletstats_test.go
+    - linters: [ dupl ]
+      path: test/e2e/tracing_test.go
+    - linters: [ dupl ]
+      path: internal/reconciler/tracepipeline/reconciler_test.go
+    - linters: [ dupl ]
       path: test/e2e/testkit/matchers/(log|metric|trace)_matchers.go
     - linters: [ dupl ]
       path: main.go
