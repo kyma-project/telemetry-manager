@@ -56,4 +56,16 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "kyma.source", collectorConfig.Processors.InsertInputSourcePrometheus.Attributes[0].Key)
 		require.Equal(t, "prometheus", collectorConfig.Processors.InsertInputSourcePrometheus.Attributes[0].Value)
 	})
+
+	t.Run("insert input source istio", func(t *testing.T) {
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithIstioInputOn(true).Build(),
+		})
+
+		require.NotNil(t, collectorConfig.Processors.InsertInputSourceIstio)
+		require.Len(t, collectorConfig.Processors.InsertInputSourceIstio.Attributes, 1)
+		require.Equal(t, "insert", collectorConfig.Processors.InsertInputSourceIstio.Attributes[0].Action)
+		require.Equal(t, "kyma.source", collectorConfig.Processors.InsertInputSourceIstio.Attributes[0].Key)
+		require.Equal(t, "istio", collectorConfig.Processors.InsertInputSourceIstio.Attributes[0].Value)
+	})
 }
