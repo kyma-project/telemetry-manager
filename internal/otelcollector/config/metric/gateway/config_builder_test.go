@@ -141,17 +141,34 @@ func TestMakeConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 			require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-prometheus", "filter/drop-if-input-source-istio", "batch"})
 		})
+
+		t.Run("with istio input enabled", func(t *testing.T) {
+			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").WithIstioInputOn(true).Build()},
+			)
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-prometheus", "batch"})
+		})
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test-1").WithRuntimeInputOn(true).Build(),
-			testutils.NewMetricPipelineBuilder().WithName("test-2").WithPrometheusInputOn(true).Build()},
+			testutils.NewMetricPipelineBuilder().WithName("test-2").WithPrometheusInputOn(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test-3").WithIstioInputOn(true).Build()},
 		)
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-1")
 		require.Contains(t, collectorConfig.Exporters, "otlp/test-2")
+		require.Contains(t, collectorConfig.Exporters, "otlp/test-3")
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-1")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-1"].Exporters, "otlp/test-1")
@@ -164,6 +181,13 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-2"].Exporters, "logging/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-2"].Receivers, "otlp")
 		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-2"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-istio", "batch"})
+
+		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-3")
+		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-3"].Exporters, "otlp/test-3")
+		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-3"].Exporters, "logging/test-3")
+		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-3"].Receivers, "otlp")
+		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-3"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-prometheus", "batch"})
+
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
