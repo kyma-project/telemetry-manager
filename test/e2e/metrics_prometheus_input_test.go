@@ -16,6 +16,7 @@ import (
 	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
+	kitotlpmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
@@ -77,17 +78,26 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
-						return metric.Name() == "cpu_temperature_celsius" && metric.Type() == pmetric.MetricTypeGauge
+					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return m.Name() == "cpu_temperature_celsius" && m.Type() == pmetric.MetricTypeGauge
 					}),
-					HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
-						return metric.Name() == "hd_errors_total" && metric.Type() == pmetric.MetricTypeSum && metric.Sum().IsMonotonic()
+					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						if m.Name() == "hd_errors_total" && m.Type() == pmetric.MetricTypeSum && m.Sum().IsMonotonic() {
+							return kitotlpmetric.AllDataPointsHaveAttributes(m, "device")
+						}
+						return false
 					}),
-					HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
-						return metric.Name() == "cpu_energy_watt" && metric.Type() == pmetric.MetricTypeHistogram
+					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						if m.Name() == "cpu_energy_watt" && m.Type() == pmetric.MetricTypeHistogram {
+							return kitotlpmetric.AllDataPointsHaveAttributes(m, "core")
+						}
+						return false
 					}),
-					HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
-						return metric.Name() == "hw_humidity" && metric.Type() == pmetric.MetricTypeSummary
+					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						if m.Name() == "hw_humidity" && m.Type() == pmetric.MetricTypeSummary {
+							return kitotlpmetric.AllDataPointsHaveAttributes(m, "sensor")
+						}
+						return false
 					}))))
 			}, timeout, interval).Should(Succeed())
 		})

@@ -183,6 +183,46 @@ func makeUnique(slice []string) []string {
 	return uniqueList
 }
 
+func AllDataPointsHaveAttributes(m pmetric.Metric, expectedAttrKeys ...string) bool {
+	var attrsPerDataPoint []pcommon.Map
+
+	switch m.Type() {
+	case pmetric.MetricTypeSum:
+		for i := 0; i < m.Sum().DataPoints().Len(); i++ {
+			attrsPerDataPoint = append(attrsPerDataPoint, m.Sum().DataPoints().At(i).Attributes())
+		}
+	case pmetric.MetricTypeGauge:
+		for i := 0; i < m.Gauge().DataPoints().Len(); i++ {
+			attrsPerDataPoint = append(attrsPerDataPoint, m.Gauge().DataPoints().At(i).Attributes())
+		}
+	case pmetric.MetricTypeHistogram:
+		for i := 0; i < m.Histogram().DataPoints().Len(); i++ {
+			attrsPerDataPoint = append(attrsPerDataPoint, m.Histogram().DataPoints().At(i).Attributes())
+		}
+	case pmetric.MetricTypeSummary:
+		for i := 0; i < m.Summary().DataPoints().Len(); i++ {
+			attrsPerDataPoint = append(attrsPerDataPoint, m.Summary().DataPoints().At(i).Attributes())
+		}
+	}
+
+	for _, attrs := range attrsPerDataPoint {
+		if !hasAttributes(attrs, expectedAttrKeys...) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func hasAttributes(m pcommon.Map, attrKeys ...string) bool {
+	for _, key := range attrKeys {
+		if _, found := m.Get(key); !found {
+			return false
+		}
+	}
+	return true
+}
+
 func NewHTTPExporter(url string, authProvider httpAuthProvider) (exporter Exporter, err error) {
 	urlSegments, err := neturl.Parse(url)
 	if err != nil {
