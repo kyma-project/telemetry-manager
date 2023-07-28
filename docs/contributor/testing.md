@@ -26,7 +26,7 @@ The roles and responsibilities during the STLC:
 ## Testing Levels
 ​
 ### Functional Tests
-![Test Pyramid](/Volumes/Projects/telemetry-manager-forked/docs/assets/test-pyramid.png)
+![Test Pyramid](../assets/test-pyramid.png)
 Unit and Env tests follow the [Go convention](https://go.dev/doc/tutorial/add-a-test) and reside next to the code they are testing. The unit tests and integration tests are part of one test suite.
 ​
 | Test suite | Testing level | Purpose |
@@ -38,7 +38,7 @@ Unit and Env tests follow the [Go convention](https://go.dev/doc/tutorial/add-a-
 |[E2E integration](https://github.com/kyma-project/telemetry-manager/issues/261#issuecomment-1647336680)|Integration (high-level)|tests the Telemetry Module integration with 3rd party components and modules (with a focus on contract fulfilment).|
 ​
 
-![E2E Test Suites](/Volumes/Projects/telemetry-manager-forked/docs/assets/e2e-test-suites.png)
+![E2E Test Suites](../assets/e2e-test-suites.png)
 
 #### Testing of new functionality
 ​
