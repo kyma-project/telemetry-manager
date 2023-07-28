@@ -249,7 +249,7 @@ var _ = Describe("HaveNumberOfMetrics", Label("metrics"), func() {
 	})
 })
 
-var _ = Describe("HaveMetricsWithResourceAttributes", Label("metrics"), func() {
+var _ = Describe("HaveAttributes", Label("metrics"), func() {
 	var fileBytes []byte
 	var expectedMetricAttributes []string
 
@@ -259,7 +259,7 @@ var _ = Describe("HaveMetricsWithResourceAttributes", Label("metrics"), func() {
 
 	Context("with nil input", func() {
 		It("should error", func() {
-			success, err := HaveMetricsWithResourceAttributes(expectedMetricAttributes...).Match(nil)
+			success, err := HaveAttributes(expectedMetricAttributes...).Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -267,17 +267,15 @@ var _ = Describe("HaveMetricsWithResourceAttributes", Label("metrics"), func() {
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			success, err := HaveMetricsWithResourceAttributes(expectedMetricAttributes...).Match(struct{}{})
+			success, err := HaveAttributes(expectedMetricAttributes...).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
 	})
 
 	Context("with empty input", func() {
-		It("should error", func() {
-			success, err := HaveMetricsWithResourceAttributes(expectedMetricAttributes...).Match([]byte{})
-			Expect(err).Should(HaveOccurred())
-			Expect(success).Should(BeFalse())
+		It("should fail", func() {
+			Expect([]byte{}).ShouldNot(HaveAttributes(expectedMetricAttributes...))
 		})
 	})
 
@@ -289,7 +287,7 @@ var _ = Describe("HaveMetricsWithResourceAttributes", Label("metrics"), func() {
 		})
 
 		It("should fail", func() {
-			Expect(fileBytes).ShouldNot(HaveMetricsWithResourceAttributes(expectedMetricAttributes...))
+			Expect(fileBytes).ShouldNot(HaveAttributes(expectedMetricAttributes...))
 		})
 	})
 
@@ -301,7 +299,7 @@ var _ = Describe("HaveMetricsWithResourceAttributes", Label("metrics"), func() {
 		})
 
 		It("should succeed", func() {
-			Expect(fileBytes).Should(HaveMetricsWithResourceAttributes(expectedMetricAttributes...))
+			Expect(fileBytes).Should(HaveAttributes(expectedMetricAttributes...))
 		})
 	})
 
@@ -311,14 +309,14 @@ var _ = Describe("HaveMetricsWithResourceAttributes", Label("metrics"), func() {
 		})
 
 		It("should error", func() {
-			success, err := HaveMetricsWithResourceAttributes(expectedMetricAttributes...).Match(fileBytes)
+			success, err := HaveAttributes(expectedMetricAttributes...).Match(fileBytes)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
 	})
 })
 
-var _ = Describe("HaveMetricsWithNames", Label("metrics"), func() {
+var _ = Describe("HaveMetricNames", Label("metrics"), func() {
 	var fileBytes []byte
 	var expectedMetricNames []string
 
@@ -328,7 +326,7 @@ var _ = Describe("HaveMetricsWithNames", Label("metrics"), func() {
 
 	Context("with nil input", func() {
 		It("should error", func() {
-			success, err := HaveMetricsWithNames(expectedMetricNames...).Match(nil)
+			success, err := HaveMetricNames(expectedMetricNames...).Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -336,7 +334,7 @@ var _ = Describe("HaveMetricsWithNames", Label("metrics"), func() {
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			success, err := HaveMetricsWithNames(expectedMetricNames...).Match(struct{}{})
+			success, err := HaveMetricNames(expectedMetricNames...).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -344,7 +342,7 @@ var _ = Describe("HaveMetricsWithNames", Label("metrics"), func() {
 
 	Context("with empty input", func() {
 		It("should fail", func() {
-			Expect([]byte{}).ShouldNot(HaveMetricsWithNames(expectedMetricNames...))
+			Expect([]byte{}).ShouldNot(HaveMetricNames(expectedMetricNames...))
 		})
 	})
 
@@ -356,7 +354,7 @@ var _ = Describe("HaveMetricsWithNames", Label("metrics"), func() {
 		})
 
 		It("should fail", func() {
-			Expect(fileBytes).ShouldNot(HaveMetricsWithNames(expectedMetricNames...))
+			Expect(fileBytes).ShouldNot(HaveMetricNames(expectedMetricNames...))
 		})
 	})
 
@@ -368,7 +366,7 @@ var _ = Describe("HaveMetricsWithNames", Label("metrics"), func() {
 		})
 
 		It("should succeed", func() {
-			Expect(fileBytes).Should(HaveMetricsWithNames(expectedMetricNames...))
+			Expect(fileBytes).Should(HaveMetricNames(expectedMetricNames...))
 		})
 	})
 
@@ -378,7 +376,7 @@ var _ = Describe("HaveMetricsWithNames", Label("metrics"), func() {
 		})
 
 		It("should error", func() {
-			success, err := HaveMetricsWithNames(expectedMetricNames...).Match(fileBytes)
+			success, err := HaveMetricNames(expectedMetricNames...).Match(fileBytes)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})

@@ -76,7 +76,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetricsWithNames(mocks.CustomMetricNames...))))
+					HaveMetricNames(mocks.CustomMetricNames...))))
 			}, timeout, interval).Should(Succeed())
 		})
 
@@ -86,7 +86,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					Not(HaveMetricsWithNames(kubeletMetricNames...)))))
+					Not(HaveMetricNames(kubeletMetricNames...)))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})

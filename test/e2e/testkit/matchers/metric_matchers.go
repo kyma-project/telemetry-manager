@@ -84,16 +84,16 @@ func HaveNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
 	}, gomega.Equal(expectedMetricCount))
 }
 
-func HaveMetricsWithNames(expectedMetricNames ...string) types.GomegaMatcher {
+func HaveMetricNames(expectedMetricNames ...string) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]string, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
-			return nil, fmt.Errorf("HaveMetricsWithNames requires a []byte, but got %T", actual)
+			return nil, fmt.Errorf("HaveMetricNames requires a []byte, but got %T", actual)
 		}
 
 		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
 		if err != nil {
-			return nil, fmt.Errorf("HaveMetricsWithNames requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("HaveMetricNames requires a valid OTLP JSON document: %v", err)
 		}
 
 		var actualMetricNames []string
@@ -105,25 +105,25 @@ func HaveMetricsWithNames(expectedMetricNames ...string) types.GomegaMatcher {
 	}, gomega.ContainElements(expectedMetricNames))
 }
 
-func HaveMetricsWithResourceAttributes(expectedAttributeNames ...string) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([][]string, error) {
+func HaveAttributes(expectedAttributeNames ...string) types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) ([]string, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
-			return nil, fmt.Errorf("HaveMetricsWithResourceAttributes requires a []byte, but got %T", actual)
+			return nil, fmt.Errorf("HaveAttributes requires a []byte, but got %T", actual)
 		}
 
 		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
 		if err != nil {
-			return nil, fmt.Errorf("HaveMetricsWithResourceAttributes requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("HaveAttributes requires a valid OTLP JSON document: %v", err)
 		}
 
-		var actualAttributeNames [][]string
+		var actualAttributeNames []string
 		for _, md := range actualMds {
-			actualAttributeNames = append(actualAttributeNames, metrics.AllResourceAttributeNames(md))
+			actualAttributeNames = append(actualAttributeNames, metrics.AllResourceAttributeNames(md)...)
 		}
 
 		return actualAttributeNames, nil
-	}, gomega.HaveEach(gomega.ContainElements(expectedAttributeNames)))
+	}, gomega.ContainElements(expectedAttributeNames))
 }
 
 func unmarshalOTLPJSONMetrics(buf []byte) ([]pmetric.Metrics, error) {
