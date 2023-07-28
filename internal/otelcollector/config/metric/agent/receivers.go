@@ -136,6 +136,11 @@ func makePrometheusAppPodsConfig() *PrometheusReceiver {
 							Action:       promlabel.Replace,
 							TargetLabel:  "node",
 						},
+						{
+							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_phase"},
+							Action:       promlabel.Drop,
+							Regex:        promlabel.MustNewRegexp("Pending|Succeeded|Failed"),
+						},
 					},
 				},
 			},
@@ -152,7 +157,7 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 					MetricsPath: "/stats/prometheus",
 					ServiceDiscoveryConfigs: []promdiscovery.Config{
 						&promk8sdiscovery.SDConfig{
-							Role:             promk8sdiscovery.RoleEndpoint,
+							Role:             promk8sdiscovery.RolePod,
 							HTTPClientConfig: promcommonconfig.DefaultHTTPClientConfig,
 						},
 					},
@@ -178,11 +183,6 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 							TargetLabel:  "namespace",
 						},
 						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_service_name"},
-							Action:       promlabel.Replace,
-							TargetLabel:  "service",
-						},
-						{
 							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_name"},
 							Action:       promlabel.Replace,
 							TargetLabel:  "pod",
@@ -191,6 +191,11 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_node_name"},
 							Action:       promlabel.Replace,
 							TargetLabel:  "node",
+						},
+						{
+							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_phase"},
+							Action:       promlabel.Drop,
+							Regex:        promlabel.MustNewRegexp("Pending|Succeeded|Failed"),
 						},
 					},
 					MetricRelabelConfigs: []*promlabel.Config{
