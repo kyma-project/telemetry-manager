@@ -64,6 +64,28 @@ func HaveSumMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 	}, gomega.ContainElements(expectedMetrics))
 }
 
+type MetricPredicate = func(pmetric.Metric) bool
+
+func HaveMetricsThatSatisfy(predicate MetricPredicate) types.GomegaMatcher {
+	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
+		actualBytes, ok := actual.([]byte)
+		if !ok {
+			return nil, fmt.Errorf("HaveMetrics requires a []byte, but got %T", actual)
+		}
+
+		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+		if err != nil {
+			return nil, fmt.Errorf("HaveMetrics requires a valid OTLP JSON document: %v", err)
+		}
+
+		var actualMetrics []pmetric.Metric
+		for _, md := range actualMds {
+			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
+		}
+		return actualMetrics, nil
+	}, gomega.ContainElements(gomega.Satisfy(predicate)))
+}
+
 func HaveNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) (int, error) {
 		actualBytes, ok := actual.([]byte)
