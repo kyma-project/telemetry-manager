@@ -2,7 +2,7 @@
 
 ## Overview
 
-Telemetry Manager is a Kubernetes operator that fulfils the [Kyma module interface](https://github.com/kyma-project/community/tree/main/concepts/modularization). It provides APIs for a managed agent/gateway setup for log, trace, and metric ingestion and dispatching into 3rd-party backend systems, in order to reduce the pain of orchestrating such setup on your own. Read more on the [usage](./docs/usage/README.md) of the module as well as general [design and strategy](https://github.com/kyma-project/community/blob/main/concepts/observability-strategy/strategy.md) behind the module.
+Telemetry Manager is a Kubernetes operator that fulfils the [Kyma module interface](https://github.com/kyma-project/community/tree/main/concepts/modularization). It provides APIs for a managed agent/gateway setup for log, trace, and metric ingestion and dispatching into 3rd-party backend systems, in order to reduce the pain of orchestrating such setup on your own. Read more on the [usage](./docs/user/README.md) of the module as well as general [design and strategy](https://github.com/kyma-project/community/blob/main/concepts/observability-strategy/strategy.md) behind the module.
 
 ### Logs
 
