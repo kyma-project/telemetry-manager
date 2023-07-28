@@ -50,10 +50,12 @@ spec:
                     description: Configures application related scraping.
                     properties:
                       istio:
-                        description: Configures istio scraping.
+                        description: Configures istio-proxy metrics scraping.
                         properties:
                           enabled:
-                            description: Indicates if Istio scraping is enabled.
+                            description: If enabled, metric for istio-proxy containers
+                              will be scraped from pods that have had the istio-proxy
+                              sidecar injected.
                             type: boolean
                         type: object
                       prometheus:

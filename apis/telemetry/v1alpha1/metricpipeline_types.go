@@ -73,7 +73,7 @@ type MetricPipelineApplicationInput struct {
 	Prometheus MetricPipelinePrometheusInput `json:"prometheus,omitempty"`
 	// Configures runtime scraping.
 	Runtime MetricPipelineContainerRuntimeInput `json:"runtime,omitempty"`
-	// Configures istio scraping.
+	// Configures istio-proxy metrics scraping.
 	Istio MetricPipelineIstioInput `json:"istio,omitempty"`
 }
 
@@ -91,7 +91,7 @@ type MetricPipelineContainerRuntimeInput struct {
 
 // MetricPipelineIstioInput defines the Istio scraping section.
 type MetricPipelineIstioInput struct {
-	// Indicates if Istio scraping is enabled.
+	// If enabled, metric for istio-proxy containers will be scraped from pods that have had the istio-proxy sidecar injected.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
