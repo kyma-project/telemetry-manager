@@ -153,8 +153,9 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 		Config: promconfig.Config{
 			ScrapeConfigs: []*promconfig.ScrapeConfig{
 				{
-					JobName:     "istio-proxy",
-					MetricsPath: "/stats/prometheus",
+					JobName:        "istio-proxy",
+					MetricsPath:    "/stats/prometheus",
+					ScrapeInterval: prommodel.Duration(10 * time.Second),
 					ServiceDiscoveryConfigs: []promdiscovery.Config{
 						&promk8sdiscovery.SDConfig{
 							Role:             promk8sdiscovery.RolePod,

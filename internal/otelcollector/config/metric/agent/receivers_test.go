@@ -49,4 +49,15 @@ func TestReceivers(t *testing.T) {
 		require.Len(t, collectorConfig.Receivers.PrometheusAppPods.Config.ScrapeConfigs, 1)
 		require.Len(t, collectorConfig.Receivers.PrometheusAppPods.Config.ScrapeConfigs[0].ServiceDiscoveryConfigs, 1)
 	})
+
+	t.Run("istio input enabled", func(t *testing.T) {
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithIstioInputOn(true).Build(),
+		})
+
+		require.Nil(t, collectorConfig.Receivers.KubeletStats)
+		require.NotNil(t, collectorConfig.Receivers.PrometheusIstio)
+		require.Len(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs, 1)
+		require.Len(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs[0].ServiceDiscoveryConfigs, 1)
+	})
 }
