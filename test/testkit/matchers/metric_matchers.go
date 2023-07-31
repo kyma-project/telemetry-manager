@@ -11,7 +11,7 @@ import (
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
+	"github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
 func HaveMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {

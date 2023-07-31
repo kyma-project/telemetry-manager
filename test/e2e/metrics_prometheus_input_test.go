@@ -10,12 +10,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma"
-	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
 )
 
 var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {

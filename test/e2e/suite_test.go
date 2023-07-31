@@ -16,8 +16,8 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/apiserver"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

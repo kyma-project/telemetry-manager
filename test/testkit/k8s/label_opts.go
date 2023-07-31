@@ -3,7 +3,7 @@
 package k8s
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 )
 
 type Labels map[string]string

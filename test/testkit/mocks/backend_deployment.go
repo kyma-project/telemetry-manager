@@ -8,8 +8,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
 const (
