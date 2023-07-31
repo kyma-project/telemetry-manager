@@ -10,6 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"go.opentelemetry.io/collector/pdata/pmetric"
+
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma"
@@ -17,7 +19,6 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
 	kitotlpmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
-	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
 var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
