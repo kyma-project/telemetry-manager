@@ -211,7 +211,6 @@ var _ = Describe("HaveSumMetrics", Label("metrics"), func() {
 
 var _ = Describe("HaveMetricsThatSatisfy", Label("metrics"), func() {
 	var fileBytes []byte
-	//var expectedMetrics []pmetric.Metric
 
 	BeforeEach(func() {
 	})
