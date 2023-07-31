@@ -6,6 +6,43 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type MetricType string
+
+const (
+	MetricTypeGauge     MetricType = "Gauge"
+	MetricTypeCounter   MetricType = "Counter"
+	MetricTypeHistogram MetricType = "Histogram"
+	MetricTypeSummary   MetricType = "Summary"
+)
+
+type CustomMetric struct {
+	Type   MetricType
+	Name   string
+	Labels []string
+}
+
+var (
+	CustomMetricCPUTemperature CustomMetric = CustomMetric{
+		Type: MetricTypeGauge,
+		Name: "cpu_temperature_celsius",
+	}
+	CustomMetricHardDiskErrorsTotal CustomMetric = CustomMetric{
+		Type:   MetricTypeCounter,
+		Name:   "hd_errors_total",
+		Labels: []string{"device"},
+	}
+	CustomMetricCPUEnergyHistogram CustomMetric = CustomMetric{
+		Type:   MetricTypeHistogram,
+		Name:   "cpu_energy_watt",
+		Labels: []string{"core"},
+	}
+	CustomMetricHardwareHumidity CustomMetric = CustomMetric{
+		Type:   MetricTypeHistogram,
+		Name:   "hw_humidity",
+		Labels: []string{"sensor"},
+	}
+)
+
 // CustomMetricProvider represents a workload that exposes dummy metrics in the Prometheus exposition format
 type CustomMetricProvider struct {
 	namespace string

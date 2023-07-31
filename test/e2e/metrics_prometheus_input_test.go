@@ -74,29 +74,36 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		})
 
 		It("Should verify custom metrics", func() {
+			metricTypeMap := map[mocks.MetricType]pmetric.MetricType{
+				mocks.MetricTypeCounter:   pmetric.MetricTypeSum,
+				mocks.MetricTypeGauge:     pmetric.MetricTypeGauge,
+				mocks.MetricTypeHistogram: pmetric.MetricTypeHistogram,
+				mocks.MetricTypeSummary:   pmetric.MetricTypeSummary,
+			}
+
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return m.Name() == "cpu_temperature_celsius" && m.Type() == pmetric.MetricTypeGauge
+						return m.Name() == mocks.CustomMetricCPUTemperature.Name && m.Type() == metricTypeMap[mocks.CustomMetricCPUTemperature.Type]
 					}),
 					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						if m.Name() == "hd_errors_total" && m.Type() == pmetric.MetricTypeSum && m.Sum().IsMonotonic() {
-							return kitotlpmetric.AllDataPointsHaveAttributes(m, "device")
+						if m.Name() == mocks.CustomMetricHardDiskErrorsTotal.Name && m.Type() == metricTypeMap[mocks.CustomMetricHardDiskErrorsTotal.Type] && m.Sum().IsMonotonic() {
+							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricHardDiskErrorsTotal.Labels...)
 						}
 						return false
 					}),
 					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						if m.Name() == "cpu_energy_watt" && m.Type() == pmetric.MetricTypeHistogram {
-							return kitotlpmetric.AllDataPointsHaveAttributes(m, "core")
+						if m.Name() == mocks.CustomMetricCPUEnergyHistogram.Name && m.Type() == metricTypeMap[mocks.CustomMetricCPUEnergyHistogram.Type] {
+							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricCPUEnergyHistogram.Labels...)
 						}
 						return false
 					}),
 					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						if m.Name() == "hw_humidity" && m.Type() == pmetric.MetricTypeSummary {
-							return kitotlpmetric.AllDataPointsHaveAttributes(m, "sensor")
+						if m.Name() == mocks.CustomMetricHardwareHumidity.Name && m.Type() == metricTypeMap[mocks.CustomMetricHardwareHumidity.Type] {
+							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricHardwareHumidity.Labels...)
 						}
 						return false
 					}))))
