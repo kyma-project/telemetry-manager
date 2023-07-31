@@ -91,7 +91,7 @@ type MetricPipelineContainerRuntimeInput struct {
 
 // MetricPipelineIstioInput defines the Istio scraping section.
 type MetricPipelineIstioInput struct {
-	// If enabled, metric for istio-proxy containers will be scraped from pods that have had the istio-proxy sidecar injected.
+	// If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
