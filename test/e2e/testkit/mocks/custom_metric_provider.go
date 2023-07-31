@@ -37,7 +37,7 @@ var (
 		Labels: []string{"core"},
 	}
 	CustomMetricHardwareHumidity = CustomMetric{
-		Type:   MetricTypeHistogram,
+		Type:   MetricTypeSummary,
 		Name:   "hw_humidity",
 		Labels: []string{"sensor"},
 	}
