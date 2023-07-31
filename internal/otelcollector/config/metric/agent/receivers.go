@@ -28,6 +28,10 @@ func makeReceiversConfig(inputs inputSources) Receivers {
 		receiversConfig.KubeletStats = makeKubeletStatsConfig()
 	}
 
+	if inputs.istio {
+		receiversConfig.PrometheusIstio = makePrometheusIstioConfig()
+	}
+
 	return receiversConfig
 }
 
@@ -131,6 +135,75 @@ func makePrometheusAppPodsConfig() *PrometheusReceiver {
 							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_node_name"},
 							Action:       promlabel.Replace,
 							TargetLabel:  "node",
+						},
+						{
+							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_phase"},
+							Action:       promlabel.Drop,
+							Regex:        promlabel.MustNewRegexp("Pending|Succeeded|Failed"),
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func makePrometheusIstioConfig() *PrometheusReceiver {
+	return &PrometheusReceiver{
+		Config: promconfig.Config{
+			ScrapeConfigs: []*promconfig.ScrapeConfig{
+				{
+					JobName:        "istio-proxy",
+					MetricsPath:    "/stats/prometheus",
+					ScrapeInterval: prommodel.Duration(10 * time.Second),
+					ServiceDiscoveryConfigs: []promdiscovery.Config{
+						&promk8sdiscovery.SDConfig{
+							Role:             promk8sdiscovery.RolePod,
+							HTTPClientConfig: promcommonconfig.DefaultHTTPClientConfig,
+						},
+					},
+					RelabelConfigs: []*promlabel.Config{
+						{
+							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_node_name"},
+							Regex:        promlabel.MustNewRegexp(fmt.Sprintf("$%s", config.EnvVarCurrentNodeName)),
+							Action:       promlabel.Keep,
+						},
+						{
+							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_container_name"},
+							Action:       promlabel.Keep,
+							Regex:        promlabel.MustNewRegexp("istio-proxy"),
+						},
+						{
+							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_container_port_name"},
+							Action:       promlabel.Keep,
+							Regex:        promlabel.MustNewRegexp("http-envoy-prom"),
+						},
+						{
+							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_namespace"},
+							Action:       promlabel.Replace,
+							TargetLabel:  "namespace",
+						},
+						{
+							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_name"},
+							Action:       promlabel.Replace,
+							TargetLabel:  "pod",
+						},
+						{
+							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_node_name"},
+							Action:       promlabel.Replace,
+							TargetLabel:  "node",
+						},
+						{
+							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_phase"},
+							Action:       promlabel.Drop,
+							Regex:        promlabel.MustNewRegexp("Pending|Succeeded|Failed"),
+						},
+					},
+					MetricRelabelConfigs: []*promlabel.Config{
+						{
+							SourceLabels: []prommodel.LabelName{"__name__"},
+							Regex:        promlabel.MustNewRegexp("istio_.*"),
+							Action:       promlabel.Keep,
 						},
 					},
 				},

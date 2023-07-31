@@ -94,6 +94,10 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 		cfg.Processors.DropIfInputSourcePrometheus = makeDropIfInputSourcePrometheusConfig()
 	}
 
+	if enableDropIfInputSourceIstio(pipeline) {
+		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
+	}
+
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to make otlp exporter config: %w", err)
@@ -130,6 +134,10 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 		processors = append(processors, "cumulativetodelta")
 	}
 
+	if enableDropIfInputSourceIstio(pipeline) {
+		processors = append(processors, "filter/drop-if-input-source-istio")
+	}
+
 	processors = append(processors, "batch")
 
 	return config.Pipeline{
@@ -147,4 +155,9 @@ func enableDropIfInputSourceRuntime(pipeline *telemetryv1alpha1.MetricPipeline) 
 func enableDropIfInputSourcePrometheus(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	appInput := pipeline.Spec.Input.Application
 	return !appInput.Prometheus.Enabled
+}
+
+func enableDropIfInputSourceIstio(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	appInput := pipeline.Spec.Input.Application
+	return !appInput.Istio.Enabled
 }
