@@ -53,8 +53,8 @@ spec:
                         description: Configures istio-proxy metrics scraping.
                         properties:
                           enabled:
-                            description: If enabled, metric for istio-proxy containers
-                              will be scraped from pods that have had the istio-proxy
+                            description: If enabled, metrics for istio-proxy containers
+                              are scraped from Pods that have had the istio-proxy
                               sidecar injected.
                             type: boolean
                         type: object
