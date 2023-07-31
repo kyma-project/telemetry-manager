@@ -22,21 +22,21 @@ type CustomMetric struct {
 }
 
 var (
-	CustomMetricCPUTemperature CustomMetric = CustomMetric{
+	CPUTemperature = CustomMetric{
 		Type: MetricTypeGauge,
 		Name: "cpu_temperature_celsius",
 	}
-	CustomMetricHardDiskErrorsTotal CustomMetric = CustomMetric{
+	CustomMetricHardDiskErrorsTotal = CustomMetric{
 		Type:   MetricTypeCounter,
 		Name:   "hd_errors_total",
 		Labels: []string{"device"},
 	}
-	CustomMetricCPUEnergyHistogram CustomMetric = CustomMetric{
+	CustomMetricCPUEnergyHistogram = CustomMetric{
 		Type:   MetricTypeHistogram,
 		Name:   "cpu_energy_watt",
 		Labels: []string{"core"},
 	}
-	CustomMetricHardwareHumidity CustomMetric = CustomMetric{
+	CustomMetricHardwareHumidity = CustomMetric{
 		Type:   MetricTypeHistogram,
 		Name:   "hw_humidity",
 		Labels: []string{"sensor"},
