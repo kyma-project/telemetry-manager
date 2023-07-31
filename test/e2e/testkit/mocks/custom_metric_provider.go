@@ -22,7 +22,7 @@ type CustomMetric struct {
 }
 
 var (
-	CPUTemperature = CustomMetric{
+	CustomMetricCPUTemperature = CustomMetric{
 		Type: MetricTypeGauge,
 		Name: "cpu_temperature_celsius",
 	}
