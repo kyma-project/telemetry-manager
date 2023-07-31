@@ -211,15 +211,13 @@ var _ = Describe("HaveSumMetrics", Label("metrics"), func() {
 
 var _ = Describe("HaveMetricsThatSatisfy", Label("metrics"), func() {
 	var fileBytes []byte
-
-	BeforeEach(func() {
-	})
+	var alwaysTrue = func(metric pmetric.Metric) bool {
+		return true
+	}
 
 	Context("with nil input", func() {
 		It("should error", func() {
-			success, err := HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
-				return true
-			}).Match(nil)
+			success, err := HaveMetricsThatSatisfy(alwaysTrue).Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -227,9 +225,7 @@ var _ = Describe("HaveMetricsThatSatisfy", Label("metrics"), func() {
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			success, err := HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
-				return true
-			}).Match(struct{}{})
+			success, err := HaveMetricsThatSatisfy(alwaysTrue).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -237,9 +233,7 @@ var _ = Describe("HaveMetricsThatSatisfy", Label("metrics"), func() {
 
 	Context("with empty input", func() {
 		It("should fail", func() {
-			Expect([]byte{}).ShouldNot(HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
-				return true
-			}))
+			Expect([]byte{}).ShouldNot(HaveMetricsThatSatisfy(alwaysTrue))
 		})
 	})
 
