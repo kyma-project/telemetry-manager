@@ -209,6 +209,80 @@ var _ = Describe("HaveSumMetrics", Label("metrics"), func() {
 	})
 })
 
+var _ = Describe("HaveMetricsThatSatisfy", Label("metrics"), func() {
+	var fileBytes []byte
+	var alwaysTrue = func(metric pmetric.Metric) bool {
+		return true
+	}
+
+	Context("with nil input", func() {
+		It("should error", func() {
+			success, err := HaveMetricsThatSatisfy(alwaysTrue).Match(nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with input of invalid type", func() {
+		It("should error", func() {
+			success, err := HaveMetricsThatSatisfy(alwaysTrue).Match(struct{}{})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should fail", func() {
+			Expect([]byte{}).ShouldNot(HaveMetricsThatSatisfy(alwaysTrue))
+		})
+	})
+
+	Context("with no metrics matching the predicate", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/have_metrics/full_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail", func() {
+			Expect(fileBytes).ShouldNot(HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
+				return metric.Type() == pmetric.MetricTypeHistogram || metric.Type() == pmetric.MetricTypeSum
+			}))
+		})
+	})
+
+	Context("with some metrics matching the predicate", func() {
+		BeforeEach(func() {
+			var err error
+			fileBytes, err = os.ReadFile("testdata/have_metrics/full_match.jsonl")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should succeed", func() {
+			Expect(fileBytes).Should(HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
+				return metric.Type() == pmetric.MetricTypeGauge
+			}))
+			Expect(fileBytes).Should(HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
+				return metric.Name() == "room_temperature"
+			}))
+		})
+	})
+
+	Context("with invalid input", func() {
+		BeforeEach(func() {
+			fileBytes = []byte{1, 2, 3}
+		})
+
+		It("should error", func() {
+			success, err := HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
+				return true
+			}).Match(fileBytes)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+})
+
 var _ = Describe("HaveNumberOfMetrics", Label("metrics"), func() {
 	Context("with nil input", func() {
 		It("should match 0", func() {

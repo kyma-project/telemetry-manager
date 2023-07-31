@@ -115,7 +115,7 @@ spec:
         app: metric-producer
     spec:
       containers:
-        - image: eu.gcr.io/kyma-project/develop/monitoring-custom-metrics:e56d9645
+        - image: ghcr.io/skhalash/examples/monitoring-custom-metrics:3d41736
           imagePullPolicy: IfNotPresent
           name: sample-metrics
           ports:
