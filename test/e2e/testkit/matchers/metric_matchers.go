@@ -70,12 +70,12 @@ func HaveMetricsThatSatisfy(predicate MetricPredicate) types.GomegaMatcher {
 	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
 		actualBytes, ok := actual.([]byte)
 		if !ok {
-			return nil, fmt.Errorf("HaveMetrics requires a []byte, but got %T", actual)
+			return nil, fmt.Errorf("HaveMetricsThatSatisfy requires a []byte, but got %T", actual)
 		}
 
 		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
 		if err != nil {
-			return nil, fmt.Errorf("HaveMetrics requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("HaveMetricsThatSatisfy requires a valid OTLP JSON document: %v", err)
 		}
 
 		var actualMetrics []pmetric.Metric
