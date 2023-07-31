@@ -100,3 +100,13 @@ func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
 		},
 	}
 }
+
+func makeDropIfInputSourceIstioConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetric{
+			DataPoint: []string{
+				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourceIstio),
+			},
+		},
+	}
+}

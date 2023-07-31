@@ -13,12 +13,14 @@ import (
 type inputSources struct {
 	runtime    bool
 	prometheus bool
+	istio      bool
 }
 
 func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *Config {
 	inputs := inputSources{
 		runtime:    enableRuntimeMetricScraping(pipelines),
 		prometheus: enablePrometheusMetricScraping(pipelines),
+		istio:      enableIstioMetricScraping(pipelines),
 	}
 
 	return &Config{
@@ -46,6 +48,16 @@ func enableRuntimeMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
 		if input.Application.Runtime.Enabled {
+			return true
+		}
+	}
+	return false
+}
+
+func enableIstioMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
+	for i := range pipelines {
+		input := pipelines[i].Spec.Input
+		if input.Application.Istio.Enabled {
 			return true
 		}
 	}
@@ -111,6 +123,14 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 		pipelinesConfig["metrics/prometheus"] = config.Pipeline{
 			Receivers:  []string{"prometheus/self", "prometheus/app-pods"},
 			Processors: []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"},
+			Exporters:  []string{"otlp"},
+		}
+	}
+
+	if inputs.istio {
+		pipelinesConfig["metrics/istio"] = config.Pipeline{
+			Receivers:  []string{"prometheus/istio"},
+			Processors: []string{"resource/delete-service-name", "resource/insert-input-source-istio"},
 			Exporters:  []string{"otlp"},
 		}
 	}

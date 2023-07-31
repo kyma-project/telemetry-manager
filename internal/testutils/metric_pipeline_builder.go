@@ -15,6 +15,7 @@ type MetricPipelineBuilder struct {
 	endpoint          string
 	runtimeInputOn    bool
 	prometheusInputOn bool
+	istioInputOn      bool
 	basicAuthUser     string
 	basicAuthPassword string
 	convertToDelta    bool
@@ -48,6 +49,11 @@ func (b *MetricPipelineBuilder) WithPrometheusInputOn(on bool) *MetricPipelineBu
 	return b
 }
 
+func (b *MetricPipelineBuilder) WithIstioInputOn(on bool) *MetricPipelineBuilder {
+	b.istioInputOn = on
+	return b
+}
+
 func (b *MetricPipelineBuilder) WithBasicAuth(user, password string) *MetricPipelineBuilder {
 	b.basicAuthUser = user
 	b.basicAuthPassword = password
@@ -73,6 +79,9 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 					},
 					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
 						Enabled: b.prometheusInputOn,
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: b.istioInputOn,
 					},
 				},
 			},

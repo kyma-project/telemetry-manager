@@ -18,6 +18,7 @@ type Receivers struct {
 	KubeletStats      *KubeletStatsReceiver `yaml:"kubeletstats,omitempty"`
 	PrometheusSelf    *PrometheusReceiver   `yaml:"prometheus/self,omitempty"`
 	PrometheusAppPods *PrometheusReceiver   `yaml:"prometheus/app-pods,omitempty"`
+	PrometheusIstio   *PrometheusReceiver   `yaml:"prometheus/istio,omitempty"`
 }
 
 type KubeletStatsReceiver struct {
@@ -43,6 +44,7 @@ type Processors struct {
 	DeleteServiceName           *config.ResourceProcessor `yaml:"resource/delete-service-name,omitempty"`
 	InsertInputSourceRuntime    *config.ResourceProcessor `yaml:"resource/insert-input-source-runtime,omitempty"`
 	InsertInputSourcePrometheus *config.ResourceProcessor `yaml:"resource/insert-input-source-prometheus,omitempty"`
+	InsertInputSourceIstio      *config.ResourceProcessor `yaml:"resource/insert-input-source-istio,omitempty"`
 }
 
 type Exporters struct {

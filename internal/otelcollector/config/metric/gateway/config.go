@@ -22,6 +22,7 @@ type Processors struct {
 	CumulativeToDelta           *CumulativeToDeltaConfig `yaml:"cumulativetodelta,omitempty"`
 	DropIfInputSourceRuntime    *FilterProcessor         `yaml:"filter/drop-if-input-source-runtime,omitempty"`
 	DropIfInputSourcePrometheus *FilterProcessor         `yaml:"filter/drop-if-input-source-prometheus,omitempty"`
+	DropIfInputSourceIstio      *FilterProcessor         `yaml:"filter/drop-if-input-source-istio,omitempty"`
 }
 
 type FilterProcessor struct {

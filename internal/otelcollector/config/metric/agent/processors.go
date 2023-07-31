@@ -8,7 +8,7 @@ import (
 func makeProcessorsConfig(inputs inputSources) Processors {
 	var processorsConfig Processors
 
-	if inputs.runtime || inputs.prometheus {
+	if inputs.runtime || inputs.prometheus || inputs.istio {
 		processorsConfig.DeleteServiceName = makeDeleteServiceNameConfig()
 
 		if inputs.runtime {
@@ -17,6 +17,10 @@ func makeProcessorsConfig(inputs inputSources) Processors {
 
 		if inputs.prometheus {
 			processorsConfig.InsertInputSourcePrometheus = makeEmittedByConfig(metric.InputSourcePrometheus)
+		}
+
+		if inputs.istio {
+			processorsConfig.InsertInputSourceIstio = makeEmittedByConfig(metric.InputSourceIstio)
 		}
 	}
 

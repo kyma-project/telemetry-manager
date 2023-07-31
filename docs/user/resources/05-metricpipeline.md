@@ -51,6 +51,8 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | ---- | ----------- | ---- |
 | **input**  | object | Configures different inputs to send additional metrics to the metric gateway. |
 | **input.&#x200b;application**  | object | Configures application related scraping. |
+| **input.&#x200b;application.&#x200b;istio**  | object | Configures istio-proxy metrics scraping. |
+| **input.&#x200b;application.&#x200b;istio.&#x200b;enabled**  | boolean | If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected. |
 | **input.&#x200b;application.&#x200b;prometheus**  | object | Configures Prometheus scraping. |
 | **input.&#x200b;application.&#x200b;prometheus.&#x200b;enabled**  | boolean | If enabled, Pods marked with `prometheus.io/scrape=true` annotation will be scraped. |
 | **input.&#x200b;application.&#x200b;runtime**  | object | Configures runtime scraping. |
