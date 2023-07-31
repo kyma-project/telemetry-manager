@@ -10,12 +10,15 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"go.opentelemetry.io/collector/pdata/pmetric"
+
 	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
+	kitotlpmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
 )
 
 var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
@@ -70,17 +73,44 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			metricPipelineShouldBeRunning(pipelines.First())
 		})
 
-		It("Should verify custom metric names", func() {
+		It("Should verify custom metrics", func() {
+			metricTypeMap := map[mocks.MetricType]pmetric.MetricType{
+				mocks.MetricTypeCounter:   pmetric.MetricTypeSum,
+				mocks.MetricTypeGauge:     pmetric.MetricTypeGauge,
+				mocks.MetricTypeHistogram: pmetric.MetricTypeHistogram,
+				mocks.MetricTypeSummary:   pmetric.MetricTypeSummary,
+			}
+
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetricNames(mocks.CustomMetricNames...))))
+					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return m.Name() == mocks.CustomMetricCPUTemperature.Name && m.Type() == metricTypeMap[mocks.CustomMetricCPUTemperature.Type]
+					}),
+					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						if m.Name() == mocks.CustomMetricHardDiskErrorsTotal.Name && m.Type() == metricTypeMap[mocks.CustomMetricHardDiskErrorsTotal.Type] && m.Sum().IsMonotonic() {
+							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricHardDiskErrorsTotal.Labels...)
+						}
+						return false
+					}),
+					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						if m.Name() == mocks.CustomMetricCPUEnergyHistogram.Name && m.Type() == metricTypeMap[mocks.CustomMetricCPUEnergyHistogram.Type] {
+							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricCPUEnergyHistogram.Labels...)
+						}
+						return false
+					}),
+					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						if m.Name() == mocks.CustomMetricHardwareHumidity.Name && m.Type() == metricTypeMap[mocks.CustomMetricHardwareHumidity.Type] {
+							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricHardwareHumidity.Labels...)
+						}
+						return false
+					}))))
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should verify no kubelet metric names", func() {
+		It("Should verify no kubelet metrics", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())

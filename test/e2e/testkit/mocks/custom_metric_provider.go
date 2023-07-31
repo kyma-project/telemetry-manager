@@ -6,7 +6,42 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var CustomMetricNames = []string{"cpu_temperature_celsius", "hd_errors_total"}
+type MetricType string
+
+const (
+	MetricTypeGauge     MetricType = "Gauge"
+	MetricTypeCounter   MetricType = "Counter"
+	MetricTypeHistogram MetricType = "Histogram"
+	MetricTypeSummary   MetricType = "Summary"
+)
+
+type CustomMetric struct {
+	Type   MetricType
+	Name   string
+	Labels []string
+}
+
+var (
+	CustomMetricCPUTemperature = CustomMetric{
+		Type: MetricTypeGauge,
+		Name: "cpu_temperature_celsius",
+	}
+	CustomMetricHardDiskErrorsTotal = CustomMetric{
+		Type:   MetricTypeCounter,
+		Name:   "hd_errors_total",
+		Labels: []string{"device"},
+	}
+	CustomMetricCPUEnergyHistogram = CustomMetric{
+		Type:   MetricTypeHistogram,
+		Name:   "cpu_energy_watt",
+		Labels: []string{"core"},
+	}
+	CustomMetricHardwareHumidity = CustomMetric{
+		Type:   MetricTypeSummary,
+		Name:   "hw_humidity",
+		Labels: []string{"sensor"},
+	}
+)
 
 // CustomMetricProvider represents a workload that exposes dummy metrics in the Prometheus exposition format
 type CustomMetricProvider struct {
@@ -34,7 +69,7 @@ func (mp *CustomMetricProvider) K8sObject() *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  "sample-metrics",
-					Image: "eu.gcr.io/kyma-project/develop/monitoring-custom-metrics:e56d9645",
+					Image: "ghcr.io/skhalash/examples/monitoring-custom-metrics:3d41736",
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "http",
