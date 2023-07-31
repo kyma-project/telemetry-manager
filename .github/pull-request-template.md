@@ -60,7 +60,7 @@ Tests conducted for the PR:
 
 ## Codebase
 
-- [ ] My code follows the style guidelines of this project.
+- [ ] My code follows the [Effective Go](https://go.dev/doc/effective_go) style guidelines.
 - [ ] The code was planned and designed following the defined architecture and the separation of concerns.
 - [ ] The code has sufficient comments, particularly for all hard-to-understand areas.
 - [ ] This PR adds value and shows no feature creep.
