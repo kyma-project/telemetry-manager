@@ -1,37 +1,48 @@
 //go:build e2e
 
-package k8s
+package mocks
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
-type Service struct {
+type ExternalBackendService struct {
 	testkit.PortRegistry
 
 	name      string
 	namespace string
 }
 
-func NewService(name, namespace string) *Service {
-	return &Service{
+func NewExternalBackendService(name, namespace string) *ExternalBackendService {
+	return &ExternalBackendService{
 		name:         name,
 		namespace:    namespace,
 		PortRegistry: testkit.NewPortRegistry(),
 	}
 }
 
-func (s *Service) WithPort(name string, port int) *Service {
+func (s *ExternalBackendService) OTLPEndpointURL(port int) string {
+	return fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", s.name, s.namespace, port)
+}
+
+func (s *ExternalBackendService) Host() string {
+	return fmt.Sprintf("%s.%s.svc.cluster.local", s.name, s.namespace)
+}
+
+func (s *ExternalBackendService) WithPort(name string, port int) *ExternalBackendService {
 	s.PortRegistry.AddPort(name, port)
 	return s
 }
 
-func (s *Service) K8sObject(labelOpts ...testkit.OptFunc) *corev1.Service {
-	labels := ProcessLabelOptions(labelOpts...)
+func (s *ExternalBackendService) K8sObject(labelOpts ...testkit.OptFunc) *corev1.Service {
+	labels := k8s.ProcessLabelOptions(labelOpts...)
 
 	ports := make([]corev1.ServicePort, 0)
 	for name, port := range s.PortRegistry.Ports {

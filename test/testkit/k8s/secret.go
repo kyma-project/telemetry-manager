@@ -8,7 +8,7 @@ import (
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 )
 
 type Secret struct {
