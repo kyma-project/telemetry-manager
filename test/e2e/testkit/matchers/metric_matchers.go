@@ -15,13 +15,8 @@ import (
 )
 
 func HaveMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("HaveMetrics requires a []byte, but got %T", actual)
-		}
-
-		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+	return gomega.WithTransform(func(fileBytes []byte) ([]pmetric.Metric, error) {
+		actualMds, err := unmarshalOTLPJSONMetrics(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("HaveMetrics requires a valid OTLP JSON document: %v", err)
 		}
@@ -35,13 +30,8 @@ func HaveMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 }
 
 func HaveSumMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("HaveSumMetrics requires a []byte, but got %T", actual)
-		}
-
-		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+	return gomega.WithTransform(func(fileBytes []byte) ([]pmetric.Metric, error) {
+		actualMds, err := unmarshalOTLPJSONMetrics(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("HaveSumMetrics requires a valid OTLP JSON document: %v", err)
 		}
@@ -67,13 +57,8 @@ func HaveSumMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 type MetricPredicate = func(pmetric.Metric) bool
 
 func HaveMetricsThatSatisfy(predicate MetricPredicate) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("HaveMetricsThatSatisfy requires a []byte, but got %T", actual)
-		}
-
-		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+	return gomega.WithTransform(func(fileBytes []byte) ([]pmetric.Metric, error) {
+		actualMds, err := unmarshalOTLPJSONMetrics(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("HaveMetricsThatSatisfy requires a valid OTLP JSON document: %v", err)
 		}
@@ -87,13 +72,8 @@ func HaveMetricsThatSatisfy(predicate MetricPredicate) types.GomegaMatcher {
 }
 
 func HaveNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) (int, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return 0, fmt.Errorf("HaveNumberOfMetrics requires a []byte, but got %T", actual)
-		}
-
-		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+	return gomega.WithTransform(func(fileBytes []byte) (int, error) {
+		actualMds, err := unmarshalOTLPJSONMetrics(fileBytes)
 		if err != nil {
 			return 0, fmt.Errorf("HaveNumberOfMetrics requires a valid OTLP JSON document: %v", err)
 		}
@@ -107,13 +87,8 @@ func HaveNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
 }
 
 func HaveMetricNames(expectedMetricNames ...string) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]string, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("HaveMetricNames requires a []byte, but got %T", actual)
-		}
-
-		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+	return gomega.WithTransform(func(fileBytes []byte) ([]string, error) {
+		actualMds, err := unmarshalOTLPJSONMetrics(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("HaveMetricNames requires a valid OTLP JSON document: %v", err)
 		}
@@ -128,13 +103,8 @@ func HaveMetricNames(expectedMetricNames ...string) types.GomegaMatcher {
 }
 
 func HaveAttributes(expectedAttributeNames ...string) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]string, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("HaveAttributes requires a []byte, but got %T", actual)
-		}
-
-		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+	return gomega.WithTransform(func(fileBytes []byte) ([]string, error) {
+		actualMds, err := unmarshalOTLPJSONMetrics(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("HaveAttributes requires a valid OTLP JSON document: %v", err)
 		}

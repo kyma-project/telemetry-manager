@@ -24,17 +24,8 @@ type ResourceTags struct {
 }
 
 func ContainLogs() types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) (int, error) {
-		if actual == nil {
-			return 0, nil
-		}
-
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return 0, fmt.Errorf("ContainLogs requires a []byte, but got %T", actual)
-		}
-
-		actualLogs, err := unmarshalOTLPJSONLogs(actualBytes)
+	return gomega.WithTransform(func(fileBytes []byte) (int, error) {
+		actualLogs, err := unmarshalOTLPJSONLogs(fileBytes)
 		if err != nil {
 			return 0, fmt.Errorf("ContainLogs requires a valid OTLP JSON document: %v", err)
 		}
@@ -46,17 +37,8 @@ func ContainLogs() types.GomegaMatcher {
 }
 
 func ConsistOfNumberOfLogs(count int) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) (int, error) {
-		if actual == nil {
-			return 0, nil
-		}
-
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return 0, fmt.Errorf("ConsistOfNumberOfLogs requires a []byte, but got %T", actual)
-		}
-
-		actualLogs, err := unmarshalOTLPJSONLogs(actualBytes)
+	return gomega.WithTransform(func(fileBytes []byte) (int, error) {
+		actualLogs, err := unmarshalOTLPJSONLogs(fileBytes)
 		if err != nil {
 			return 0, fmt.Errorf("ConsistOfNumberOfLogs requires a valid OTLP JSON document: %v", err)
 		}
@@ -68,25 +50,19 @@ func ConsistOfNumberOfLogs(count int) types.GomegaMatcher {
 }
 
 func ContainsLogsWith(namespace, pod, container string) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) (bool, error) {
-		filter := ResourceTags{
-			Namespace: namespace,
-			Pod:       pod,
-			Container: container,
-		}
-
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return false, fmt.Errorf("ContainsLogsWith requires a []byte, but got %T", actual)
-		}
-
-		actualLogs, err := unmarshalOTLPJSONLogs(actualBytes)
+	return gomega.WithTransform(func(fileBytes []byte) (bool, error) {
+		actualLogs, err := unmarshalOTLPJSONLogs(fileBytes)
 		if err != nil {
 			return false, fmt.Errorf("ContainsLogsWith requires a valid OTLP JSON document: %v", err)
 		}
 
 		actualLogRecords := getAllLogRecords(actualLogs)
 
+		filter := ResourceTags{
+			Namespace: namespace,
+			Pod:       pod,
+			Container: container,
+		}
 		for _, lr := range actualLogRecords {
 			attributes, ok := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
 			if !ok {

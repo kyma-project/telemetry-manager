@@ -14,13 +14,8 @@ import (
 )
 
 func ConsistOfSpansWithIDs(expectedSpanIDs []pcommon.SpanID) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]pcommon.SpanID, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("ConsistOfSpansWithIDs requires a []byte, but got %T", actual)
-		}
-
-		actualTraces, err := unmarshalOTLPJSONTraces(actualBytes)
+	return gomega.WithTransform(func(fileBytes []byte) ([]pcommon.SpanID, error) {
+		actualTraces, err := unmarshalOTLPJSONTraces(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("ConsistOfSpansWithIDs requires a valid OTLP JSON document: %v", err)
 		}
@@ -36,17 +31,8 @@ func ConsistOfSpansWithIDs(expectedSpanIDs []pcommon.SpanID) types.GomegaMatcher
 }
 
 func ConsistOfNumberOfSpans(count int) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) (int, error) {
-		if actual == nil {
-			return 0, nil
-		}
-
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return 0, fmt.Errorf("ConsistOfNumberOfSpans requires a []byte, but got %T", actual)
-		}
-
-		actualTraces, err := unmarshalOTLPJSONTraces(actualBytes)
+	return gomega.WithTransform(func(fileBytes []byte) (int, error) {
+		actualTraces, err := unmarshalOTLPJSONTraces(fileBytes)
 		if err != nil {
 			return 0, fmt.Errorf("ConsistOfNumberOfSpans requires a valid OTLP JSON document: %v", err)
 		}
@@ -57,13 +43,8 @@ func ConsistOfNumberOfSpans(count int) types.GomegaMatcher {
 }
 
 func ConsistOfSpansWithTraceID(expectedTraceID pcommon.TraceID) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]pcommon.TraceID, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("ConsistOfSpansWithTraceID requires a []byte, but got %T", actual)
-		}
-
-		actualTraces, err := unmarshalOTLPJSONTraces(actualBytes)
+	return gomega.WithTransform(func(fileBytes []byte) ([]pcommon.TraceID, error) {
+		actualTraces, err := unmarshalOTLPJSONTraces(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("ConsistOfSpansWithTraceID requires a valid OTLP JSON document: %v", err)
 		}
@@ -79,13 +60,8 @@ func ConsistOfSpansWithTraceID(expectedTraceID pcommon.TraceID) types.GomegaMatc
 }
 
 func ConsistOfSpansWithAttributes(expectedAttrs pcommon.Map) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]map[string]any, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("ConsistOfSpansWithAttributes requires a []byte, but got %T", actual)
-		}
-
-		actualTraces, err := unmarshalOTLPJSONTraces(actualBytes)
+	return gomega.WithTransform(func(fileBytes []byte) ([]map[string]any, error) {
+		actualTraces, err := unmarshalOTLPJSONTraces(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("ConsistOfSpansWithAttributes requires a valid OTLP JSON document: %v", err)
 		}
