@@ -196,7 +196,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveSumMetrics(cumulativeSums...))))
+					HaveMetrics(cumulativeSums...))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})

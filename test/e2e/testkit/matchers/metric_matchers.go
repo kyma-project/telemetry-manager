@@ -16,7 +16,7 @@ import (
 
 func HaveMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) ([]pmetric.Metric, error) {
-		actualMds, err := unmarshalOTLPJSONMetrics(fileBytes)
+		actualMds, err := extractMetricsData(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("HaveMetrics requires a valid OTLP JSON document: %v", err)
 		}
@@ -29,36 +29,11 @@ func HaveMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 	}, gomega.ContainElements(expectedMetrics))
 }
 
-func HaveSumMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
-	return gomega.WithTransform(func(fileBytes []byte) ([]pmetric.Metric, error) {
-		actualMds, err := unmarshalOTLPJSONMetrics(fileBytes)
-		if err != nil {
-			return nil, fmt.Errorf("HaveSumMetrics requires a valid OTLP JSON document: %v", err)
-		}
-
-		var actualMetrics []pmetric.Metric
-		for _, md := range actualMds {
-			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
-		}
-
-		// workaround the difference between metricdata and pmetric temporality formats
-		for _, actualMetric := range actualMetrics {
-			if actualMetric.Sum().AggregationTemporality() == pmetric.AggregationTemporalityCumulative {
-				actualMetric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
-				continue
-			}
-			actualMetric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
-		}
-
-		return actualMetrics, nil
-	}, gomega.ContainElements(expectedMetrics))
-}
-
 type MetricPredicate = func(pmetric.Metric) bool
 
 func HaveMetricsThatSatisfy(predicate MetricPredicate) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) ([]pmetric.Metric, error) {
-		actualMds, err := unmarshalOTLPJSONMetrics(fileBytes)
+		actualMds, err := extractMetricsData(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("HaveMetricsThatSatisfy requires a valid OTLP JSON document: %v", err)
 		}
@@ -73,7 +48,7 @@ func HaveMetricsThatSatisfy(predicate MetricPredicate) types.GomegaMatcher {
 
 func HaveNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) (int, error) {
-		actualMds, err := unmarshalOTLPJSONMetrics(fileBytes)
+		actualMds, err := extractMetricsData(fileBytes)
 		if err != nil {
 			return 0, fmt.Errorf("HaveNumberOfMetrics requires a valid OTLP JSON document: %v", err)
 		}
@@ -88,7 +63,7 @@ func HaveNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
 
 func HaveMetricNames(expectedMetricNames ...string) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) ([]string, error) {
-		actualMds, err := unmarshalOTLPJSONMetrics(fileBytes)
+		actualMds, err := extractMetricsData(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("HaveMetricNames requires a valid OTLP JSON document: %v", err)
 		}
@@ -104,7 +79,7 @@ func HaveMetricNames(expectedMetricNames ...string) types.GomegaMatcher {
 
 func HaveAttributes(expectedAttributeNames ...string) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) ([]string, error) {
-		actualMds, err := unmarshalOTLPJSONMetrics(fileBytes)
+		actualMds, err := extractMetricsData(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("HaveAttributes requires a valid OTLP JSON document: %v", err)
 		}
@@ -116,6 +91,17 @@ func HaveAttributes(expectedAttributeNames ...string) types.GomegaMatcher {
 
 		return actualAttributeNames, nil
 	}, gomega.ContainElements(expectedAttributeNames))
+}
+
+func extractMetricsData(fileBytes []byte) ([]pmetric.Metrics, error) {
+	actualMds, err := unmarshalOTLPJSONMetrics(fileBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	applyAggregationWorkaround(actualMds)
+
+	return actualMds, nil
 }
 
 func unmarshalOTLPJSONMetrics(buf []byte) ([]pmetric.Metrics, error) {
@@ -139,4 +125,16 @@ func unmarshalOTLPJSONMetrics(buf []byte) ([]pmetric.Metrics, error) {
 	}
 
 	return results, nil
+}
+
+func applyAggregationWorkaround(mds []pmetric.Metrics) {
+	for _, md := range mds {
+		for _, metric := range metrics.AllMetrics(md) {
+			if metric.Sum().AggregationTemporality() == pmetric.AggregationTemporalityCumulative {
+				metric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+			} else {
+				metric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+			}
+		}
+	}
 }
