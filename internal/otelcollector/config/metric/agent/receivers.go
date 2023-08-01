@@ -121,6 +121,16 @@ func makePrometheusAppPodsConfig() *PrometheusReceiver {
 							Action:       promlabel.Drop,
 							Regex:        promlabel.MustNewRegexp("Pending|Succeeded|Failed"),
 						},
+						{
+							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_container_init"},
+							Action:       promlabel.Drop,
+							Regex:        promlabel.MustNewRegexp("(true)"),
+						},
+						{
+							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_container_name"},
+							Action:       promlabel.Drop,
+							Regex:        promlabel.MustNewRegexp("(istio-proxy)"),
+						},
 					},
 				},
 			},
