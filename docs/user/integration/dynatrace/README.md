@@ -156,5 +156,5 @@ In order to verify metrics and traces arrival we adapted sample application from
 
 ### Access metrics and traces
 
-1. To access metrics you should open your **Dynatrace Manager** and go to the **Observe and explore** > **Metrics**.
-1. To access traces  you should open your **Dynatrace Manager** and go to the **Applications & Microservices** > **Distributed traces**.
+1. To access metrics, open your **Dynatrace Manager** and go to **Observe and explore** > **Metrics**.
+1. To access traces, open your **Dynatrace Manager** and go to **Applications & Microservices** > **Distributed traces**.
