@@ -93,11 +93,6 @@ func makePrometheusAppPodsConfig() *PrometheusReceiver {
 							Action:       promlabel.Keep,
 						},
 						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_namespace"},
-							Regex:        promlabel.MustNewRegexp("(kyma-system|kube-system)"),
-							Action:       promlabel.Drop,
-						},
-						{
 							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_annotation_prometheus_io_scrape"},
 							Regex:        promlabel.MustNewRegexp("true"),
 							Action:       promlabel.Keep,
@@ -120,21 +115,6 @@ func makePrometheusAppPodsConfig() *PrometheusReceiver {
 							Regex:        promlabel.MustNewRegexp("([^:]+)(?::\\d+)?;(\\d+)"),
 							Replacement:  "$$1:$$2",
 							TargetLabel:  "__address__",
-						},
-						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_namespace"},
-							Action:       promlabel.Replace,
-							TargetLabel:  "namespace",
-						},
-						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_name"},
-							Action:       promlabel.Replace,
-							TargetLabel:  "pod",
-						},
-						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_node_name"},
-							Action:       promlabel.Replace,
-							TargetLabel:  "node",
 						},
 						{
 							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_phase"},
@@ -177,21 +157,6 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_container_port_name"},
 							Action:       promlabel.Keep,
 							Regex:        promlabel.MustNewRegexp("http-envoy-prom"),
-						},
-						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_namespace"},
-							Action:       promlabel.Replace,
-							TargetLabel:  "namespace",
-						},
-						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_name"},
-							Action:       promlabel.Replace,
-							TargetLabel:  "pod",
-						},
-						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_node_name"},
-							Action:       promlabel.Replace,
-							TargetLabel:  "node",
 						},
 						{
 							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_phase"},
