@@ -7,7 +7,7 @@ import (
 	"github.com/prometheus/common/expfmt"
 )
 
-func HasValidPrometheusMetric(metricName string) types.GomegaMatcher {
+func ContainValidPrometheusMetric(metricName string) types.GomegaMatcher {
 	return gomega.WithTransform(func(responseBodyBytes []byte) (bool, error) {
 		var parser expfmt.TextParser
 		mf, err := parser.TextToMetricFamilies(bytes.NewReader(responseBodyBytes))

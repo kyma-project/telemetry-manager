@@ -3,18 +3,14 @@
 package matchers
 
 import (
-	"os"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("HasValidPrometheusMetric", Label("metrics"), func() {
-	var fileBytes []byte
-
+var _ = Describe("ContainValidPrometheusMetric", Label("metrics"), func() {
 	Context("with nil input", func() {
 		It("should fail", func() {
-			success, err := HasValidPrometheusMetric("foo_metric").Match(nil)
+			success, err := ContainValidPrometheusMetric("foo_metric").Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -22,33 +18,30 @@ var _ = Describe("HasValidPrometheusMetric", Label("metrics"), func() {
 
 	Context("with empty input", func() {
 		It("should fail", func() {
-			success, err := HasValidPrometheusMetric("foo_metric").Match([]byte{})
+			success, err := ContainValidPrometheusMetric("foo_metric").Match([]byte{})
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
 	})
 
 	Context("with invalid input", func() {
-		BeforeEach(func() {
-			fileBytes = []byte{1, 2, 3}
-		})
-
 		It("should fail", func() {
-			success, err := HasValidPrometheusMetric("foo_metric").Match(fileBytes)
+			success, err := ContainValidPrometheusMetric("foo_metric").Match([]byte{1, 2, 3})
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
 	})
 
 	Context("with having metrics", func() {
-		BeforeEach(func() {
-			var err error
-			fileBytes, err = os.ReadFile("testdata/prometheus/metrics.txt")
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("should succeed", func() {
-			Expect(fileBytes).Should(HasValidPrometheusMetric("fluentbit_uptime"))
+			fileBytes := `
+# HELP fluentbit_uptime Number of seconds that Fluent Bit has been running.
+# TYPE fluentbit_uptime counter
+fluentbit_uptime{hostname="telemetry-fluent-bit-dglkf"} 5489
+# HELP fluentbit_input_bytes_total Number of input bytes.
+# TYPE fluentbit_input_bytes_total counter
+fluentbit_input_bytes_total{name="tele-tail"} 5217998`
+			Expect([]byte(fileBytes)).Should(ContainValidPrometheusMetric("fluentbit_uptime"))
 		})
 	})
 })

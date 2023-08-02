@@ -74,7 +74,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HasValidPrometheusMetric("fluentbit_uptime"))))
+					ContainValidPrometheusMetric("fluentbit_uptime"))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
