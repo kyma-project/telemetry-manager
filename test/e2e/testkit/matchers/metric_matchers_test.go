@@ -3,45 +3,17 @@
 package matchers
 
 import (
-	"os"
-	"time"
-
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
+	kitmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("HaveGauges", Label("metrics"), func() {
-	var fileBytes []byte
-	var expectedMetrics []pmetric.Metric
-
-	BeforeEach(func() {
-		m1 := pmetric.NewMetric()
-		m1.SetName("room_temperature")
-		ts1 := pcommon.NewTimestampFromTime(time.Unix(0, 1682438376750990000))
-		gauge1 := m1.SetEmptyGauge()
-		dp11 := gauge1.DataPoints().AppendEmpty()
-		dp11.SetTimestamp(ts1)
-		dp11.SetStartTimestamp(ts1)
-		dp11.SetDoubleValue(0.5)
-
-		m2 := pmetric.NewMetric()
-		m2.SetName("room_humidity")
-		ts2 := pcommon.NewTimestampFromTime(time.Unix(0, 1682438376750991000))
-		gauge2 := m2.SetEmptyGauge()
-		dp21 := gauge2.DataPoints().AppendEmpty()
-		dp21.SetTimestamp(ts2)
-		dp21.SetStartTimestamp(ts2)
-		dp21.SetDoubleValue(3.5)
-
-		expectedMetrics = []pmetric.Metric{m1, m2}
-	})
-
+var _ = Describe("ContainMetrics", Label("metrics"), func() {
 	Context("with nil input", func() {
 		It("should error", func() {
-			success, err := HaveMetrics(expectedMetrics...).Match(nil)
+			success, err := ContainMetrics(kitmetrics.NewGauge()).Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -49,7 +21,7 @@ var _ = Describe("HaveGauges", Label("metrics"), func() {
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			success, err := HaveMetrics(expectedMetrics...).Match(struct{}{})
+			success, err := ContainMetrics(kitmetrics.NewGauge()).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -57,68 +29,63 @@ var _ = Describe("HaveGauges", Label("metrics"), func() {
 
 	Context("with empty input", func() {
 		It("should fail", func() {
-			Expect([]byte{}).ShouldNot(HaveMetrics(expectedMetrics...))
+			Expect([]byte{}).ShouldNot(ContainMetrics(kitmetrics.NewGauge()))
 		})
 	})
 
-	Context("with no metrics matching the expecting metrics", func() {
-		BeforeEach(func() {
-			var err error
-			fileBytes, err = os.ReadFile("testdata/have_metrics/no_match.jsonl")
-			Expect(err).NotTo(HaveOccurred())
-		})
-
+	Context("with no metrics matching the expected metrics", func() {
 		It("should fail", func() {
-			Expect(fileBytes).ShouldNot(HaveMetrics(expectedMetrics...))
+			md := pmetric.NewMetrics()
+			metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
+			metrics.AppendEmpty().SetEmptyGauge()
+
+			Expect(mustMarshalMetrics(md)).ShouldNot(ContainMetrics(kitmetrics.NewGauge()))
 		})
 	})
 
 	Context("with some metrics matching the expecting metrics", func() {
-		BeforeEach(func() {
-			var err error
-			fileBytes, err = os.ReadFile("testdata/have_metrics/partial_match.jsonl")
-			Expect(err).NotTo(HaveOccurred())
-		})
+		It("should succeed", func() {
+			md := pmetric.NewMetrics()
+			metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
+			gauge1 := kitmetrics.NewGauge()
+			gauge1.CopyTo(metrics.AppendEmpty())
+			gauge2 := kitmetrics.NewGauge()
+			gauge2.CopyTo(metrics.AppendEmpty())
 
-		It("should fail", func() {
-			Expect(fileBytes).ShouldNot(HaveMetrics(expectedMetrics...))
+			Expect(mustMarshalMetrics(md)).Should(ContainMetrics(gauge1))
 		})
 	})
 
-	Context("with all metrics matching the expecting metrics", func() {
-		BeforeEach(func() {
-			var err error
-			fileBytes, err = os.ReadFile("testdata/have_metrics/full_match.jsonl")
-			Expect(err).NotTo(HaveOccurred())
-		})
-
+	Context("with all metrics matching the expected metrics", func() {
 		It("should succeed", func() {
-			Expect(fileBytes).Should(HaveMetrics(expectedMetrics...))
+			md := pmetric.NewMetrics()
+			metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
+			gauge1 := kitmetrics.NewGauge()
+			gauge1.CopyTo(metrics.AppendEmpty())
+			gauge2 := kitmetrics.NewGauge()
+			gauge2.CopyTo(metrics.AppendEmpty())
+
+			Expect(mustMarshalMetrics(md)).Should(ContainMetrics(gauge1, gauge2))
 		})
 	})
 
 	Context("with invalid input", func() {
-		BeforeEach(func() {
-			fileBytes = []byte{1, 2, 3}
-		})
-
 		It("should error", func() {
-			success, err := HaveMetrics(expectedMetrics...).Match(fileBytes)
+			success, err := ContainMetrics(kitmetrics.NewGauge()).Match([]byte{1, 2, 3})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
 	})
 })
 
-var _ = Describe("HaveMetricsThatSatisfy", Label("metrics"), func() {
-	var fileBytes []byte
+var _ = Describe("ContainMetricsThatSatisfy", Label("metrics"), func() {
 	var alwaysTrue = func(metric pmetric.Metric) bool {
 		return true
 	}
 
 	Context("with nil input", func() {
 		It("should error", func() {
-			success, err := HaveMetricsThatSatisfy(alwaysTrue).Match(nil)
+			success, err := ContainMetricsThatSatisfy(alwaysTrue).Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -126,7 +93,7 @@ var _ = Describe("HaveMetricsThatSatisfy", Label("metrics"), func() {
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			success, err := HaveMetricsThatSatisfy(alwaysTrue).Match(struct{}{})
+			success, err := ContainMetricsThatSatisfy(alwaysTrue).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -134,60 +101,56 @@ var _ = Describe("HaveMetricsThatSatisfy", Label("metrics"), func() {
 
 	Context("with empty input", func() {
 		It("should fail", func() {
-			Expect([]byte{}).ShouldNot(HaveMetricsThatSatisfy(alwaysTrue))
+			Expect([]byte{}).ShouldNot(ContainMetricsThatSatisfy(alwaysTrue))
 		})
 	})
 
 	Context("with no metrics matching the predicate", func() {
-		BeforeEach(func() {
-			var err error
-			fileBytes, err = os.ReadFile("testdata/have_metrics/full_match.jsonl")
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("should fail", func() {
-			Expect(fileBytes).ShouldNot(HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
+			md := pmetric.NewMetrics()
+			metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
+			gauge := kitmetrics.NewGauge()
+			gauge.CopyTo(metrics.AppendEmpty())
+
+			Expect(mustMarshalMetrics(md)).ShouldNot(ContainMetricsThatSatisfy(func(metric pmetric.Metric) bool {
 				return metric.Type() == pmetric.MetricTypeHistogram || metric.Type() == pmetric.MetricTypeSum
 			}))
 		})
 	})
 
 	Context("with some metrics matching the predicate", func() {
-		BeforeEach(func() {
-			var err error
-			fileBytes, err = os.ReadFile("testdata/have_metrics/full_match.jsonl")
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("should succeed", func() {
-			Expect(fileBytes).Should(HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
+			md := pmetric.NewMetrics()
+			metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
+			gauge := kitmetrics.NewGauge()
+			gauge.CopyTo(metrics.AppendEmpty())
+			sum := kitmetrics.NewCumulativeSum()
+			sum.CopyTo(metrics.AppendEmpty())
+
+			Expect(mustMarshalMetrics(md)).Should(ContainMetricsThatSatisfy(func(metric pmetric.Metric) bool {
 				return metric.Type() == pmetric.MetricTypeGauge
 			}))
-			Expect(fileBytes).Should(HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
-				return metric.Name() == "room_temperature"
+			Expect(mustMarshalMetrics(md)).Should(ContainMetricsThatSatisfy(func(metric pmetric.Metric) bool {
+				return metric.Name() == gauge.Name()
 			}))
 		})
 	})
 
 	Context("with invalid input", func() {
-		BeforeEach(func() {
-			fileBytes = []byte{1, 2, 3}
-		})
-
 		It("should error", func() {
-			success, err := HaveMetricsThatSatisfy(func(metric pmetric.Metric) bool {
+			success, err := ContainMetricsThatSatisfy(func(metric pmetric.Metric) bool {
 				return true
-			}).Match(fileBytes)
+			}).Match([]byte{1, 2, 3})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
 	})
 })
 
-var _ = Describe("HaveNumberOfMetrics", Label("metrics"), func() {
+var _ = Describe("ConsistOfNumberOfMetrics", Label("metrics"), func() {
 	Context("with nil input", func() {
 		It("should match 0", func() {
-			success, err := HaveNumberOfMetrics(0).Match(nil)
+			success, err := ConsistOfNumberOfMetrics(0).Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -196,7 +159,7 @@ var _ = Describe("HaveNumberOfMetrics", Label("metrics"), func() {
 	Context("with empty input", func() {
 		var emptyMetrics []pmetric.Metric
 		It("should match 0", func() {
-			success, err := HaveNumberOfMetrics(0).Match(emptyMetrics)
+			success, err := ConsistOfNumberOfMetrics(0).Match(emptyMetrics)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -204,37 +167,30 @@ var _ = Describe("HaveNumberOfMetrics", Label("metrics"), func() {
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			success, err := HaveNumberOfMetrics(0).Match(struct{}{})
+			success, err := ConsistOfNumberOfMetrics(0).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
 	})
 
 	Context("with having metrics", func() {
-		var fileBytes []byte
-		BeforeEach(func() {
-			var err error
-			fileBytes, err = os.ReadFile("testdata/have_metrics/full_match.jsonl")
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("should succeed", func() {
-			Expect(fileBytes).Should(HaveNumberOfMetrics(2))
+			md := pmetric.NewMetrics()
+			metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
+			gauge := kitmetrics.NewGauge()
+			gauge.CopyTo(metrics.AppendEmpty())
+			sum := kitmetrics.NewCumulativeSum()
+			sum.CopyTo(metrics.AppendEmpty())
+
+			Expect(mustMarshalMetrics(md)).Should(ConsistOfNumberOfMetrics(2))
 		})
 	})
 })
 
-var _ = Describe("HaveAttributes", Label("metrics"), func() {
-	var fileBytes []byte
-	var expectedMetricAttributes []string
-
-	BeforeEach(func() {
-		expectedMetricAttributes = []string{"k8s.cluster.name", "k8s.container.name", "k8s.daemonset.name", "k8s.deployment.name", "k8s.namespace.name", "k8s.node.name", "k8s.pod.name", "k8s.pod.uid", "kyma.source"}
-	})
-
+var _ = Describe("ConsistOfMetricsWithResourceAttributes", Label("metrics"), func() {
 	Context("with nil input", func() {
 		It("should error", func() {
-			success, err := HaveAttributes(expectedMetricAttributes...).Match(nil)
+			success, err := ConsistOfMetricsWithResourceAttributes("k8s.cluster.name").Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -242,66 +198,78 @@ var _ = Describe("HaveAttributes", Label("metrics"), func() {
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			success, err := HaveAttributes(expectedMetricAttributes...).Match(struct{}{})
+			success, err := ConsistOfMetricsWithResourceAttributes("k8s.cluster.name").Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
 	})
 
 	Context("with empty input", func() {
-		It("should fail", func() {
-			Expect([]byte{}).ShouldNot(HaveAttributes(expectedMetricAttributes...))
+		It("should error", func() {
+			success, err := ConsistOfMetricsWithResourceAttributes("k8s.cluster.name").Match([]byte{})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
 		})
 	})
 
 	Context("with no attribute matching the expecting attributes", func() {
-		BeforeEach(func() {
-			var err error
-			fileBytes, err = os.ReadFile("testdata/have_metrics/no_match.jsonl")
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("should fail", func() {
-			Expect(fileBytes).ShouldNot(HaveAttributes(expectedMetricAttributes...))
+			md := pmetric.NewMetrics()
+			rm := md.ResourceMetrics().AppendEmpty()
+			attrs := rm.Resource().Attributes()
+			attrs.PutStr("k8s.cluster.name", "cluster-01")
+			attrs.PutStr("k8s.deployment.name", "nginx")
+			metrics := rm.ScopeMetrics().AppendEmpty().Metrics()
+			kitmetrics.NewGauge().CopyTo(metrics.AppendEmpty())
+			kitmetrics.NewCumulativeSum().CopyTo(metrics.AppendEmpty())
+
+			Expect(mustMarshalMetrics(md)).ShouldNot(ConsistOfMetricsWithResourceAttributes("k8s.container.name"))
 		})
 	})
 
-	Context("with all attributes matching the expecting attributes", func() {
-		BeforeEach(func() {
-			var err error
-			fileBytes, err = os.ReadFile("testdata/kubelet_metrics/kubelet_metrics.jsonl")
-			Expect(err).NotTo(HaveOccurred())
-		})
+	Context("with some attribute matching the expecting attributes", func() {
+		It("should fail", func() {
+			md := pmetric.NewMetrics()
+			rm := md.ResourceMetrics().AppendEmpty()
+			attrs := rm.Resource().Attributes()
+			attrs.PutStr("k8s.cluster.name", "cluster-01")
+			attrs.PutStr("k8s.deployment.name", "nginx")
+			metrics := rm.ScopeMetrics().AppendEmpty().Metrics()
+			kitmetrics.NewGauge().CopyTo(metrics.AppendEmpty())
+			kitmetrics.NewCumulativeSum().CopyTo(metrics.AppendEmpty())
 
+			Expect(mustMarshalMetrics(md)).ShouldNot(ConsistOfMetricsWithResourceAttributes("k8s.deployment.name"))
+		})
+	})
+
+	Context("with no attribute matching the expecting attributes", func() {
 		It("should succeed", func() {
-			Expect(fileBytes).Should(HaveAttributes(expectedMetricAttributes...))
+			md := pmetric.NewMetrics()
+			rm := md.ResourceMetrics().AppendEmpty()
+			attrs := rm.Resource().Attributes()
+			attrs.PutStr("k8s.cluster.name", "cluster-01")
+			attrs.PutStr("k8s.deployment.name", "nginx")
+			metrics := rm.ScopeMetrics().AppendEmpty().Metrics()
+			kitmetrics.NewGauge().CopyTo(metrics.AppendEmpty())
+			kitmetrics.NewCumulativeSum().CopyTo(metrics.AppendEmpty())
+
+			Expect(mustMarshalMetrics(md)).Should(ConsistOfMetricsWithResourceAttributes("k8s.cluster.name", "k8s.deployment.name"))
 		})
 	})
 
 	Context("with invalid input", func() {
-		BeforeEach(func() {
-			fileBytes = []byte{1, 2, 3}
-		})
-
 		It("should error", func() {
-			success, err := HaveAttributes(expectedMetricAttributes...).Match(fileBytes)
+			success, err := ConsistOfMetricsWithResourceAttributes("k8s.cluster.name").Match([]byte{1, 2, 3})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
 	})
 })
 
-var _ = Describe("HaveMetricNames", Label("metrics"), func() {
-	var fileBytes []byte
-	var expectedMetricNames []string
-
-	BeforeEach(func() {
-		expectedMetricNames = []string{"container.cpu.time", "container.cpu.utilization", "container.filesystem.available", "container.filesystem.capacity", "container.filesystem.usage", "container.memory.available"}
-	})
-
+var _ = Describe("ContainMetricsWithNames", Label("metrics"), func() {
 	Context("with nil input", func() {
 		It("should error", func() {
-			success, err := HaveMetricNames(expectedMetricNames...).Match(nil)
+			success, err := ContainMetricsWithNames("container.cpu.time").Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -309,7 +277,7 @@ var _ = Describe("HaveMetricNames", Label("metrics"), func() {
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			success, err := HaveMetricNames(expectedMetricNames...).Match(struct{}{})
+			success, err := ContainMetricsWithNames("container.cpu.time").Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -317,43 +285,50 @@ var _ = Describe("HaveMetricNames", Label("metrics"), func() {
 
 	Context("with empty input", func() {
 		It("should fail", func() {
-			Expect([]byte{}).ShouldNot(HaveMetricNames(expectedMetricNames...))
+			Expect([]byte{}).ShouldNot(ContainMetricsWithNames("container.cpu.time"))
 		})
 	})
 
 	Context("with no metric name matching the expecting metric names", func() {
-		BeforeEach(func() {
-			var err error
-			fileBytes, err = os.ReadFile("testdata/have_metrics/no_match.jsonl")
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("should fail", func() {
-			Expect(fileBytes).ShouldNot(HaveMetricNames(expectedMetricNames...))
+			md := pmetric.NewMetrics()
+			metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
+			gauge1 := kitmetrics.NewGauge(kitmetrics.WithName("container.cpu.time"))
+			gauge1.CopyTo(metrics.AppendEmpty())
+			gauge2 := kitmetrics.NewGauge(kitmetrics.WithName("container.cpu.utilization"))
+			gauge2.CopyTo(metrics.AppendEmpty())
+
+			Expect(mustMarshalMetrics(md)).ShouldNot(ContainMetricsWithNames("container.filesystem.available"))
 		})
 	})
 
 	Context("with all metric names matching the expecting metric names", func() {
-		BeforeEach(func() {
-			var err error
-			fileBytes, err = os.ReadFile("testdata/kubelet_metrics/kubelet_metrics.jsonl")
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("should succeed", func() {
-			Expect(fileBytes).Should(HaveMetricNames(expectedMetricNames...))
+			md := pmetric.NewMetrics()
+			metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
+			gauge1 := kitmetrics.NewGauge(kitmetrics.WithName("container.cpu.time"))
+			gauge1.CopyTo(metrics.AppendEmpty())
+			gauge2 := kitmetrics.NewGauge(kitmetrics.WithName("container.cpu.utilization"))
+			gauge2.CopyTo(metrics.AppendEmpty())
+
+			Expect(mustMarshalMetrics(md)).Should(ContainMetricsWithNames("container.cpu.time", "container.cpu.utilization"))
 		})
 	})
 
 	Context("with invalid input", func() {
-		BeforeEach(func() {
-			fileBytes = []byte{1, 2, 3}
-		})
-
 		It("should error", func() {
-			success, err := HaveMetricNames(expectedMetricNames...).Match(fileBytes)
+			success, err := ContainMetricsWithNames("container.cpu.time").Match([]byte{1, 2, 3})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
 	})
 })
+
+func mustMarshalMetrics(md pmetric.Metrics) []byte {
+	var marshaler pmetric.JSONMarshaler
+	bytes, err := marshaler.MarshalMetrics(md)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}

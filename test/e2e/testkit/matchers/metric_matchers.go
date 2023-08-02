@@ -14,11 +14,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
 )
 
-func HaveMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
+// ContainMetrics succeeds if the filexporter output file contains the metrics passed into the matcher. The ordering of the elements does not matter.
+func ContainMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) ([]pmetric.Metric, error) {
 		actualMds, err := extractMetricsData(fileBytes)
 		if err != nil {
-			return nil, fmt.Errorf("HaveMetrics requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("ContainMetrics requires a valid OTLP JSON document: %v", err)
 		}
 
 		var actualMetrics []pmetric.Metric
@@ -31,11 +32,12 @@ func HaveMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
 
 type MetricPredicate = func(pmetric.Metric) bool
 
-func HaveMetricsThatSatisfy(predicate MetricPredicate) types.GomegaMatcher {
+// ContainMetricsThatSatisfy succeeds if the filexporter output file contains metrics that satisfy the predicate passed into the matcher. The ordering of the elements does not matter.
+func ContainMetricsThatSatisfy(predicate MetricPredicate) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) ([]pmetric.Metric, error) {
 		actualMds, err := extractMetricsData(fileBytes)
 		if err != nil {
-			return nil, fmt.Errorf("HaveMetricsThatSatisfy requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("ContainMetricsThatSatisfy requires a valid OTLP JSON document: %v", err)
 		}
 
 		var actualMetrics []pmetric.Metric
@@ -46,11 +48,12 @@ func HaveMetricsThatSatisfy(predicate MetricPredicate) types.GomegaMatcher {
 	}, gomega.ContainElements(gomega.Satisfy(predicate)))
 }
 
-func HaveNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
+// ConsistOfNumberOfMetrics succeeds if the filexporter output file has the expected number of metrics.
+func ConsistOfNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) (int, error) {
 		actualMds, err := extractMetricsData(fileBytes)
 		if err != nil {
-			return 0, fmt.Errorf("HaveNumberOfMetrics requires a valid OTLP JSON document: %v", err)
+			return 0, fmt.Errorf("ConsistOfNumberOfMetrics requires a valid OTLP JSON document: %v", err)
 		}
 		metricsCount := 0
 		for _, md := range actualMds {
@@ -61,11 +64,12 @@ func HaveNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
 	}, gomega.Equal(expectedMetricCount))
 }
 
-func HaveMetricNames(expectedMetricNames ...string) types.GomegaMatcher {
+// ContainMetricsWithNames succeeds if the filexporter output file contains metrics with names passed into the matcher. The ordering of the elements does not matter.
+func ContainMetricsWithNames(expectedMetricNames ...string) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) ([]string, error) {
 		actualMds, err := extractMetricsData(fileBytes)
 		if err != nil {
-			return nil, fmt.Errorf("HaveMetricNames requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("ContainMetricsWithNames requires a valid OTLP JSON document: %v", err)
 		}
 
 		var actualMetricNames []string
@@ -77,20 +81,20 @@ func HaveMetricNames(expectedMetricNames ...string) types.GomegaMatcher {
 	}, gomega.ContainElements(expectedMetricNames))
 }
 
-func HaveAttributes(expectedAttributeNames ...string) types.GomegaMatcher {
-	return gomega.WithTransform(func(fileBytes []byte) ([]string, error) {
+func ConsistOfMetricsWithResourceAttributes(expectedAttributeNames ...string) types.GomegaMatcher {
+	return gomega.WithTransform(func(fileBytes []byte) ([][]string, error) {
 		actualMds, err := extractMetricsData(fileBytes)
 		if err != nil {
-			return nil, fmt.Errorf("HaveAttributes requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("ConsistOfMetricsWithResourceAttributes requires a valid OTLP JSON document: %v", err)
 		}
 
-		var actualAttributeNames []string
+		var actualAttributeNames [][]string
 		for _, md := range actualMds {
-			actualAttributeNames = append(actualAttributeNames, metrics.AllResourceAttributeNames(md)...)
+			actualAttributeNames = append(actualAttributeNames, metrics.AllResourceAttributeNames(md))
 		}
 
 		return actualAttributeNames, nil
-	}, gomega.ContainElements(expectedAttributeNames))
+	}, gomega.HaveEach(gomega.ConsistOf(expectedAttributeNames)))
 }
 
 func extractMetricsData(fileBytes []byte) ([]pmetric.Metrics, error) {

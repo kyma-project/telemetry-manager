@@ -108,7 +108,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetrics(gauges...))))
+					ContainMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 		})
 
@@ -196,7 +196,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetrics(cumulativeSums...))))
+					ContainMetrics(cumulativeSums...))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
@@ -347,7 +347,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetrics(gauges...))))
+					ContainMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
@@ -410,8 +410,8 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveNumberOfMetrics(len(gauges)),
-					HaveMetrics(gauges...))))
+					ConsistOfNumberOfMetrics(len(gauges)),
+					ContainMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 
 			Eventually(func(g Gomega) {
@@ -419,8 +419,8 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveNumberOfMetrics(len(gauges)),
-					HaveMetrics(gauges...))))
+					ConsistOfNumberOfMetrics(len(gauges)),
+					ContainMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})

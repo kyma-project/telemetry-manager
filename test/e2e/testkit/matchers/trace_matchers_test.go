@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/traces"
+	kittraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/traces"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
@@ -14,7 +14,7 @@ import (
 var _ = Describe("ConsistOfSpansWithIDs", Label("tracing"), func() {
 	Context("with nil input", func() {
 		It("should error", func() {
-			success, err := ConsistOfSpansWithIDs(traces.NewSpanID()).Match(nil)
+			success, err := ConsistOfSpansWithIDs(kittraces.NewSpanID()).Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -22,7 +22,7 @@ var _ = Describe("ConsistOfSpansWithIDs", Label("tracing"), func() {
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			success, err := ConsistOfSpansWithIDs(traces.NewSpanID()).Match(struct{}{})
+			success, err := ConsistOfSpansWithIDs(kittraces.NewSpanID()).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -30,7 +30,7 @@ var _ = Describe("ConsistOfSpansWithIDs", Label("tracing"), func() {
 
 	Context("with empty input", func() {
 		It("should fail", func() {
-			Expect([]byte{}).ShouldNot(ConsistOfSpansWithIDs(traces.NewSpanID()))
+			Expect([]byte{}).ShouldNot(ConsistOfSpansWithIDs(kittraces.NewSpanID()))
 		})
 	})
 
@@ -38,24 +38,24 @@ var _ = Describe("ConsistOfSpansWithIDs", Label("tracing"), func() {
 		It("should fail", func() {
 			td := ptrace.NewTraces()
 			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
-			spans.AppendEmpty().SetSpanID(traces.NewSpanID())
-			spans.AppendEmpty().SetSpanID(traces.NewSpanID())
-			spans.AppendEmpty().SetSpanID(traces.NewSpanID())
+			spans.AppendEmpty().SetSpanID(kittraces.NewSpanID())
+			spans.AppendEmpty().SetSpanID(kittraces.NewSpanID())
+			spans.AppendEmpty().SetSpanID(kittraces.NewSpanID())
 
-			Expect(mustMarshalTraces(td)).ShouldNot(ConsistOfSpansWithIDs(traces.NewSpanID(), traces.NewSpanID(), traces.NewSpanID()))
+			Expect(mustMarshalTraces(td)).ShouldNot(ConsistOfSpansWithIDs(kittraces.NewSpanID(), kittraces.NewSpanID(), kittraces.NewSpanID()))
 		})
 	})
 
 	Context("with some spans containing the span IDs", func() {
 		It("should fail", func() {
-			matchingSpanID := traces.NewSpanID()
+			matchingSpanID := kittraces.NewSpanID()
 			td := ptrace.NewTraces()
 			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
 			spans.AppendEmpty().SetSpanID(matchingSpanID)
-			spans.AppendEmpty().SetSpanID(traces.NewSpanID())
-			spans.AppendEmpty().SetSpanID(traces.NewSpanID())
+			spans.AppendEmpty().SetSpanID(kittraces.NewSpanID())
+			spans.AppendEmpty().SetSpanID(kittraces.NewSpanID())
 
-			nonMatchingSpanID := traces.NewSpanID()
+			nonMatchingSpanID := kittraces.NewSpanID()
 
 			Expect(mustMarshalTraces(td)).ShouldNot(ConsistOfSpansWithIDs(matchingSpanID, nonMatchingSpanID))
 		})
@@ -63,7 +63,7 @@ var _ = Describe("ConsistOfSpansWithIDs", Label("tracing"), func() {
 
 	Context("with all spans containing only the span IDs", func() {
 		It("should succeed", func() {
-			matchingSpanIDs := []pcommon.SpanID{traces.NewSpanID(), traces.NewSpanID(), traces.NewSpanID()}
+			matchingSpanIDs := []pcommon.SpanID{kittraces.NewSpanID(), kittraces.NewSpanID(), kittraces.NewSpanID()}
 			td := ptrace.NewTraces()
 			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
 			spans.AppendEmpty().SetSpanID(matchingSpanIDs[2])
@@ -76,7 +76,7 @@ var _ = Describe("ConsistOfSpansWithIDs", Label("tracing"), func() {
 
 	Context("with invalid input", func() {
 		It("should error", func() {
-			success, err := ConsistOfSpansWithIDs(traces.NewSpanID()).Match([]byte{1, 2, 3})
+			success, err := ConsistOfSpansWithIDs(kittraces.NewSpanID()).Match([]byte{1, 2, 3})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -86,7 +86,7 @@ var _ = Describe("ConsistOfSpansWithIDs", Label("tracing"), func() {
 var _ = Describe("ConsistOfSpansWithTraceID", Label("tracing"), func() {
 	Context("with nil input", func() {
 		It("should error", func() {
-			success, err := ConsistOfSpansWithTraceID(traces.NewTraceID()).Match(nil)
+			success, err := ConsistOfSpansWithTraceID(kittraces.NewTraceID()).Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -94,7 +94,7 @@ var _ = Describe("ConsistOfSpansWithTraceID", Label("tracing"), func() {
 
 	Context("with input of invalid type", func() {
 		It("should error", func() {
-			success, err := ConsistOfSpansWithTraceID(traces.NewTraceID()).Match(struct{}{})
+			success, err := ConsistOfSpansWithTraceID(kittraces.NewTraceID()).Match(struct{}{})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -102,7 +102,7 @@ var _ = Describe("ConsistOfSpansWithTraceID", Label("tracing"), func() {
 
 	Context("with empty input", func() {
 		It("should error", func() {
-			success, err := ConsistOfSpansWithTraceID(traces.NewTraceID()).Match([]byte{})
+			success, err := ConsistOfSpansWithTraceID(kittraces.NewTraceID()).Match([]byte{})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -112,22 +112,22 @@ var _ = Describe("ConsistOfSpansWithTraceID", Label("tracing"), func() {
 		It("should fail", func() {
 			td := ptrace.NewTraces()
 			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
-			spans.AppendEmpty().SetTraceID(traces.NewTraceID())
-			spans.AppendEmpty().SetTraceID(traces.NewTraceID())
-			spans.AppendEmpty().SetTraceID(traces.NewTraceID())
+			spans.AppendEmpty().SetTraceID(kittraces.NewTraceID())
+			spans.AppendEmpty().SetTraceID(kittraces.NewTraceID())
+			spans.AppendEmpty().SetTraceID(kittraces.NewTraceID())
 
-			Expect(mustMarshalTraces(td)).ShouldNot(ConsistOfSpansWithTraceID(traces.NewTraceID()))
+			Expect(mustMarshalTraces(td)).ShouldNot(ConsistOfSpansWithTraceID(kittraces.NewTraceID()))
 		})
 	})
 
 	Context("with some spans having the trace ID", func() {
 		It("should fail", func() {
-			matchingTraceID := traces.NewTraceID()
+			matchingTraceID := kittraces.NewTraceID()
 			td := ptrace.NewTraces()
 			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
 			spans.AppendEmpty().SetTraceID(matchingTraceID)
-			spans.AppendEmpty().SetTraceID(traces.NewTraceID())
-			spans.AppendEmpty().SetTraceID(traces.NewTraceID())
+			spans.AppendEmpty().SetTraceID(kittraces.NewTraceID())
+			spans.AppendEmpty().SetTraceID(kittraces.NewTraceID())
 
 			Expect(mustMarshalTraces(td)).ShouldNot(ConsistOfSpansWithTraceID(matchingTraceID))
 		})
@@ -135,7 +135,7 @@ var _ = Describe("ConsistOfSpansWithTraceID", Label("tracing"), func() {
 
 	Context("with all spans having the trace ID", func() {
 		It("should succeed", func() {
-			matchingTraceID := traces.NewTraceID()
+			matchingTraceID := kittraces.NewTraceID()
 			td := ptrace.NewTraces()
 			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
 			spans.AppendEmpty().SetTraceID(matchingTraceID)
@@ -148,7 +148,7 @@ var _ = Describe("ConsistOfSpansWithTraceID", Label("tracing"), func() {
 
 	Context("with invalid input", func() {
 		It("should error", func() {
-			success, err := ConsistOfSpansWithTraceID(traces.NewTraceID()).Match([]byte{1, 2, 3})
+			success, err := ConsistOfSpansWithTraceID(kittraces.NewTraceID()).Match([]byte{1, 2, 3})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
