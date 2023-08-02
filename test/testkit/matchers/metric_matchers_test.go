@@ -5,7 +5,7 @@ package matchers
 import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
+	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
