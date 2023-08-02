@@ -19,13 +19,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma"
-	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
 var (

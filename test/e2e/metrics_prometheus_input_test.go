@@ -12,13 +12,13 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma"
-	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
-	kitotlpmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	kitotlpmetric "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
 var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {

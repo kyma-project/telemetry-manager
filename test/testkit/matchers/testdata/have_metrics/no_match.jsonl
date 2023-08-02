@@ -1,0 +1,1 @@
+{"resourceMetrics":[{"resource":{},"scopeMetrics":[{"scope":{},"metrics":[{"name":"room_temperature","gauge":{"dataPoints":[{"startTimeUnixNano":"1682438376750990000","timeUnixNano":"1682438376750990000","asDouble":0.0}]}},{"name":"room_humidity","gauge":{"dataPoints":[{"startTimeUnixNano":"1682438376750991000","timeUnixNano":"1682438376750991000","asDouble":1.0}]}}]}]}]}

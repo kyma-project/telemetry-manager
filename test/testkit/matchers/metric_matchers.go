@@ -11,7 +11,7 @@ import (
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
+	"github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
 // ContainMetrics succeeds if the filexporter output file contains the metrics passed into the matcher. The ordering of the elements does not matter.

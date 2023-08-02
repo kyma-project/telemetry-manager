@@ -241,6 +241,23 @@ func TestMakeAgentConfig(t *testing.T) {
         endpoint: ${MY_POD_IP}:13133
 service:
     pipelines:
+        metrics/istio:
+            receivers:
+                - prometheus/istio
+            processors:
+                - resource/delete-service-name
+                - resource/insert-input-source-istio
+            exporters:
+                - otlp
+        metrics/prometheus:
+            receivers:
+                - prometheus/self
+                - prometheus/app-pods
+            processors:
+                - resource/delete-service-name
+                - resource/insert-input-source-prometheus
+            exporters:
+                - otlp
         metrics/runtime:
             receivers:
                 - kubeletstats
@@ -265,6 +282,93 @@ receivers:
         metric_groups:
             - container
             - pod
+    prometheus/self:
+        config:
+            global: {}
+            scrape_configs:
+                - job_name: opentelemetry-collector
+                  honor_timestamps: false
+                  scrape_interval: 10s
+                  follow_redirects: true
+                  enable_http2: true
+                  static_configs:
+                    - targets:
+                        - ${MY_POD_IP}:8888
+    prometheus/app-pods:
+        config:
+            global: {}
+            scrape_configs:
+                - job_name: app-pods
+                  honor_timestamps: false
+                  scrape_interval: 10s
+                  follow_redirects: false
+                  enable_http2: false
+                  relabel_configs:
+                    - source_labels: [__meta_kubernetes_pod_node_name]
+                      regex: $MY_NODE_NAME
+                      action: keep
+                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+                      regex: "true"
+                      action: keep
+                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+                      regex: (https?)
+                      target_label: __scheme__
+                      action: replace
+                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+                      regex: (.+)
+                      target_label: __metrics_path__
+                      action: replace
+                    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+                      regex: ([^:]+)(?::\d+)?;(\d+)
+                      target_label: __address__
+                      replacement: $$1:$$2
+                      action: replace
+                    - source_labels: [__meta_kubernetes_pod_phase]
+                      regex: Pending|Succeeded|Failed
+                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_container_init]
+                      regex: (true)
+                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_container_name]
+                      regex: (istio-proxy)
+                      action: drop
+                  kubernetes_sd_configs:
+                    - role: pod
+                      kubeconfig_file: ""
+                      follow_redirects: true
+                      enable_http2: true
+    prometheus/istio:
+        config:
+            global: {}
+            scrape_configs:
+                - job_name: istio-proxy
+                  honor_timestamps: false
+                  scrape_interval: 10s
+                  metrics_path: /stats/prometheus
+                  follow_redirects: false
+                  enable_http2: false
+                  relabel_configs:
+                    - source_labels: [__meta_kubernetes_pod_node_name]
+                      regex: $MY_NODE_NAME
+                      action: keep
+                    - source_labels: [__meta_kubernetes_pod_container_name]
+                      regex: istio-proxy
+                      action: keep
+                    - source_labels: [__meta_kubernetes_pod_container_port_name]
+                      regex: http-envoy-prom
+                      action: keep
+                    - source_labels: [__meta_kubernetes_pod_phase]
+                      regex: Pending|Succeeded|Failed
+                      action: drop
+                  metric_relabel_configs:
+                    - source_labels: [__name__]
+                      regex: istio_.*
+                      action: keep
+                  kubernetes_sd_configs:
+                    - role: pod
+                      kubeconfig_file: ""
+                      follow_redirects: true
+                      enable_http2: true
 processors:
     resource/delete-service-name:
         attributes:
@@ -275,6 +379,16 @@ processors:
             - action: insert
               key: kyma.source
               value: runtime
+    resource/insert-input-source-prometheus:
+        attributes:
+            - action: insert
+              key: kyma.source
+              value: prometheus
+    resource/insert-input-source-istio:
+        attributes:
+            - action: insert
+              key: kyma.source
+              value: istio
 exporters:
     otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317
@@ -290,7 +404,9 @@ exporters:
             max_elapsed_time: 300s
 `
 
-		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build()})
+		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).WithIstioInputOn(true).Build(),
+		})
 
 		yamlBytes, err := yaml.Marshal(collectorConfig)
 		require.NoError(t, err)

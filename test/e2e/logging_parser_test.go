@@ -11,13 +11,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	kitlog "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/log"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
 
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
 var (

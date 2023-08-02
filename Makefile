@@ -98,16 +98,16 @@ test: manifests generate fmt vet tidy envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 test-matchers: ginkgo
-	$(GINKGO) run --tags e2e -v ./test/e2e/testkit/matchers
+	$(GINKGO) run --tags e2e -v ./test/testkit/matchers
 
 test-matchers-logging: ginkgo
-	$(GINKGO) run --tags e2e -v --label-filter="logging" ./test/e2e/testkit/matchers
+	$(GINKGO) run --tags e2e -v --label-filter="logging" ./test/testkit/matchers
 
 test-matchers-tracing: ginkgo
-	$(GINKGO) run --tags e2e -v --label-filter="tracing" ./test/e2e/testkit/matchers
+	$(GINKGO) run --tags e2e -v --label-filter="tracing" ./test/testkit/matchers
 
 test-matchers-metrics: ginkgo
-	$(GINKGO) run --tags e2e -v --label-filter="metrics" ./test/e2e/testkit/matchers
+	$(GINKGO) run --tags e2e -v --label-filter="metrics" ./test/testkit/matchers
 
 .PHONY: e2e-test
 e2e-test: ginkgo k3d test-matchers ## Provision k3d cluster and run end-to-end tests.
