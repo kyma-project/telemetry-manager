@@ -1,15 +1,22 @@
 
 # Kyma Telemetry Module
 
+## What is Telemetry?
+
 Fundamentally, ["Observability"](https://opentelemetry.io/docs/concepts/observability-primer/) is a measure of how well the application's external outputs can reflect the internal states of single components. The insights that an application and the surrounding infrastructure expose are displayed in the form of metrics, traces, and logs - collectively, that's called "telemetry" or ["signals"](https://opentelemetry.io/docs/concepts/signals/). These can be exposed by employing modern instrumentation.
 
-In order to implement Day-2 operations for a distributed application running in a container runtime, the single components of an application must expose these signals by employing modern instrumentation. Furthermore, the signals must be collected and enriched with the infrastructural metadata in order to ship them to a target system.
+## Stages of Observability
 
-![Stages of Observability](./assets/general-stages.drawio.svg)
+![Stages of Observability](./assets/telemetry-stages.drawio.svg)
 
-Instead of providing a one-size-for-all backend solution, Kyma supports you with instrumenting and shipping your telemetry data in a vendor-neutral way. This way, you can conveniently enable observability for your application by integrating it into your existing or desired backends. Pick your favourite among many observability backends, available either as a service or as a self-manageable solution, that focus on different aspects and scenarios. An enterprise-grade setup demands a central solution outside the cluster, so we recommend in-cluster solutions only for testing purposes.
+1. In order to implement Day-2 operations for a distributed application running in a container runtime, the single components of an application must expose these signals by employing modern instrumentation.
+2. Furthermore, the signals must be collected and enriched with the infrastructural metadata in order to ship them to a target system.
+3. Instead of providing a one-size-for-all backend solution, Kyma supports you with instrumenting and shipping your telemetry data in a vendor-neutral way. 
+4. This way, you can conveniently enable observability for your application by integrating it into your existing or desired backends. Pick your favourite among many observability backends, available either as a service or as a self-manageable solution, that focus on different aspects and scenarios.
 
-The Telemetry module focuses exactly on the aspects of instrumentation, collection, and shipment that happen in the runtime and explicitly defocuses on backends. If you want to install lightweight in-cluster backends for demo or development purposes, check the [Telemetry tutorials](/docs/user/05-tutorials.md).
+Kyma's Telemetry module focuses exactly on the aspects of instrumentation, collection, and shipment that happen in the runtime and explicitly defocuses on backends.
+
+> **TIP:** An enterprise-grade setup demands a central solution outside the cluster, so we recommend in-cluster solutions only for testing purposes. If you want to install lightweight in-cluster backends for demo or development purposes, check the [Telemetry tutorials](/docs/user/05-tutorials.md).
 
 ## Features
 
@@ -32,12 +39,12 @@ Currently, logs are based on the Fluent Bit protocol. If you're curious about th
 
 ## Components
 
-![Components](./assets/general-components.drawio.svg)
+![Components](./assets/telemetry-components.drawio.svg)
 
 ### Telemetry Manager
 
-The module ships the Telemetry Manager as its core component. The manager implements the Kubernetes controller pattern and manages the whole lifecycle of all other components covered in the module. The manager watches for LogPipeline, TracePipeline, and MetricPipeline resources created by the user. With these, the user describes in a declarative way what data of a signal type to collect and where to ship it.
-If the operator detects a configuration, it rolls out the relevant collector components on demand.
+Kyma's Telemetry module ships the Telemetry Manager as its core component. The manager implements the Kubernetes controller pattern and manages the whole lifecycle of all other components covered in the module. The manager watches for LogPipeline, TracePipeline, and MetricPipeline resources created by the user. With these, the user describes in a declarative way what data of a signal type to collect and where to ship it.
+If the manager detects a configuration, it rolls out the relevant collector components on demand.
 
 For details, see [Telemetry Manager](/docs/user/01-manager.md).
 
