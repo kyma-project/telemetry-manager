@@ -13,7 +13,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-func ConsistOfSpansWithIDs(expectedSpanIDs []pcommon.SpanID) types.GomegaMatcher {
+// ConsistOfSpansWithIDs succeeds if the filexporter output file consists of spans with precisely the span ids passed into the matcher. The ordering of the elements does not matter.
+func ConsistOfSpansWithIDs(expectedSpanIDs ...pcommon.SpanID) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) ([]pcommon.SpanID, error) {
 		actualTraces, err := unmarshalOTLPJSONTraces(fileBytes)
 		if err != nil {
@@ -30,18 +31,7 @@ func ConsistOfSpansWithIDs(expectedSpanIDs []pcommon.SpanID) types.GomegaMatcher
 	}, gomega.ConsistOf(expectedSpanIDs))
 }
 
-func ConsistOfNumberOfSpans(count int) types.GomegaMatcher {
-	return gomega.WithTransform(func(fileBytes []byte) (int, error) {
-		actualTraces, err := unmarshalOTLPJSONTraces(fileBytes)
-		if err != nil {
-			return 0, fmt.Errorf("ConsistOfNumberOfSpans requires a valid OTLP JSON document: %v", err)
-		}
-
-		actualSpans := getAllSpans(actualTraces)
-		return len(actualSpans), nil
-	}, gomega.Equal(count))
-}
-
+// ConsistOfSpansWithTraceID succeeds if the filexporter output file consists of spans with precisely the trace id passed into the matcher.
 func ConsistOfSpansWithTraceID(expectedTraceID pcommon.TraceID) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) ([]pcommon.TraceID, error) {
 		actualTraces, err := unmarshalOTLPJSONTraces(fileBytes)
@@ -57,6 +47,18 @@ func ConsistOfSpansWithTraceID(expectedTraceID pcommon.TraceID) types.GomegaMatc
 		}
 		return actualTraceIDs, nil
 	}, gomega.HaveEach(expectedTraceID))
+}
+
+func ConsistOfNumberOfSpans(count int) types.GomegaMatcher {
+	return gomega.WithTransform(func(fileBytes []byte) (int, error) {
+		actualTraces, err := unmarshalOTLPJSONTraces(fileBytes)
+		if err != nil {
+			return 0, fmt.Errorf("ConsistOfNumberOfSpans requires a valid OTLP JSON document: %v", err)
+		}
+
+		actualSpans := getAllSpans(actualTraces)
+		return len(actualSpans), nil
+	}, gomega.Equal(count))
 }
 
 func ConsistOfSpansWithAttributes(expectedAttrs pcommon.Map) types.GomegaMatcher {
