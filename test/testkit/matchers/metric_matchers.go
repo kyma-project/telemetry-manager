@@ -103,7 +103,7 @@ func extractMetricsData(fileBytes []byte) ([]pmetric.Metrics, error) {
 		return nil, err
 	}
 
-	applyAggregationWorkaround(actualMds)
+	applyTemporalityWorkaround(actualMds)
 
 	return actualMds, nil
 }
@@ -131,7 +131,10 @@ func unmarshalOTLPJSONMetrics(buf []byte) ([]pmetric.Metrics, error) {
 	return results, nil
 }
 
-func applyAggregationWorkaround(mds []pmetric.Metrics) {
+// applyTemporalityWorkaround flips temporality os a Sum metric. The reason for that is the inconsistency
+// between the metricdata package (https://github.com/open-telemetry/opentelemetry-go/blob/main/sdk/metric/metricdata/temporality.go)
+// and the pmetric package (https://github.com/open-telemetry/opentelemetry-collector/blob/main/pdata/pmetric/aggregation_temporality.go)
+func applyTemporalityWorkaround(mds []pmetric.Metrics) {
 	for _, md := range mds {
 		for _, metric := range metrics.AllMetrics(md) {
 			if metric.Type() != pmetric.MetricTypeSum {

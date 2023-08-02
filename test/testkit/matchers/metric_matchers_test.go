@@ -69,6 +69,18 @@ var _ = Describe("ContainMetrics", Label("metrics"), func() {
 		})
 	})
 
+	Context("with cumulative sum metrics matching the expected metrics with flipped temporality", func() {
+		It("should succeed", func() {
+			md := pmetric.NewMetrics()
+			metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
+			sum := kitmetrics.NewCumulativeSum()
+			sum.CopyTo(metrics.AppendEmpty())
+
+			applyTemporalityWorkaround([]pmetric.Metrics{md})
+			Expect(mustMarshalMetrics(md)).Should(ContainMetrics(sum))
+		})
+	})
+
 	Context("with invalid input", func() {
 		It("should error", func() {
 			success, err := ContainMetrics(kitmetrics.NewGauge()).Match([]byte{1, 2, 3})
