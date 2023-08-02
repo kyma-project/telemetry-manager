@@ -13,18 +13,16 @@ var _ = Describe("ConsistOfNumberOfLogs", Label("logging"), func() {
 	var fileBytes []byte
 
 	Context("with nil input", func() {
-		It("should match 0", func() {
+		It("should error", func() {
 			success, err := ConsistOfNumberOfLogs(0).Match(nil)
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(success).Should(BeTrue())
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
 		})
 	})
 
 	Context("with empty input", func() {
-		It("should match 0", func() {
-			success, err := ConsistOfNumberOfLogs(0).Match([]byte{})
-			Expect(err).ShouldNot(HaveOccurred())
-			Expect(success).Should(BeTrue())
+		It("should succeed", func() {
+			Expect([]byte{}).Should(ConsistOfNumberOfLogs(0))
 		})
 	})
 
@@ -60,7 +58,7 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 	Context("with nil input", func() {
 		It("should not match", func() {
 			success, err := ContainLogs().Match(nil)
-			Expect(err).ShouldNot(HaveOccurred())
+			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
 	})

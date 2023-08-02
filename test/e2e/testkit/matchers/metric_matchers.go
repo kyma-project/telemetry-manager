@@ -130,6 +130,10 @@ func unmarshalOTLPJSONMetrics(buf []byte) ([]pmetric.Metrics, error) {
 func applyAggregationWorkaround(mds []pmetric.Metrics) {
 	for _, md := range mds {
 		for _, metric := range metrics.AllMetrics(md) {
+			if metric.Type() != pmetric.MetricTypeSum {
+				continue
+			}
+
 			if metric.Sum().AggregationTemporality() == pmetric.AggregationTemporalityCumulative {
 				metric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
 			} else {
