@@ -76,7 +76,8 @@ var _ = Describe("ContainMetrics", Label("metrics"), func() {
 			sum := kitmetrics.NewCumulativeSum()
 			sum.CopyTo(metrics.AppendEmpty())
 
-			applyTemporalityWorkaround([]pmetric.Metrics{md})
+			sum.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+
 			Expect(mustMarshalMetrics(md)).Should(ContainMetrics(sum))
 		})
 	})
