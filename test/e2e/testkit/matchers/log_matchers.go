@@ -117,20 +117,22 @@ func ConsistOfLogsWithKubernetesLabels() types.GomegaMatcher {
 		}
 
 		actualLogRecords := getAllLogRecords(actualLogs)
+		if len(actualLogRecords) == 0 {
+			return false, nil
+		}
 
 		for _, lr := range actualLogRecords {
-			attribute, ok := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
-			if !ok {
+			k8sAttributes, hasKubernetes := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+			if !hasKubernetes {
 				return false, nil
 			}
 
-			_, ok = attribute["labels"]
-
-			if ok {
-				return true, nil
+			_, hasLabels := k8sAttributes["labels"]
+			if !hasLabels {
+				return false, nil
 			}
 		}
-		return false, nil
+		return true, nil
 	}, gomega.BeTrue())
 }
 
@@ -143,20 +145,22 @@ func ConsistOfLogsWithKubernetesAnnotations() types.GomegaMatcher {
 		}
 
 		actualLogRecords := getAllLogRecords(actualLogs)
+		if len(actualLogRecords) == 0 {
+			return false, nil
+		}
 
 		for _, lr := range actualLogRecords {
-			attribute, ok := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
-			if !ok {
+			k8sAttributes, hasKubernetes := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+			if !hasKubernetes {
 				return false, nil
 			}
 
-			_, ok = attribute["annotations"]
-
-			if ok {
-				return true, nil
+			_, hasAnnotations := k8sAttributes["annotations"]
+			if !hasAnnotations {
+				return false, nil
 			}
 		}
-		return false, nil
+		return true, nil
 	}, gomega.BeTrue())
 }
 

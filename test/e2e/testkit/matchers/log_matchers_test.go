@@ -176,7 +176,7 @@ var _ = Describe("ContainsLogsWithAttribute", Label("logging"), func() {
 	})
 
 	Context("with empty input", func() {
-		It("should match", func() {
+		It("should not match", func() {
 			success, err := ContainsLogsWithAttribute("mockKey", "mockKey").Match([]byte{})
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).Should(BeFalse())
@@ -231,7 +231,7 @@ var _ = Describe("ConsistOfLogsWithKubernetesLabels", Label("logging"), func() {
 	})
 
 	Context("with empty input", func() {
-		It("should match", func() {
+		It("should not match", func() {
 			success, err := ConsistOfLogsWithKubernetesLabels().Match([]byte{})
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).Should(BeFalse())
@@ -246,12 +246,28 @@ var _ = Describe("ConsistOfLogsWithKubernetesLabels", Label("logging"), func() {
 		})
 	})
 
-	Context("with having logs", func() {
+	Context("with having some logs with labels", func() {
 		It("should succeed", func() {
 			ld := plog.NewLogs()
 			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 			k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
-			k8sAttrs.PutEmptyMap("labels").PutStr("prometheus.io/scrape", "true")
+			k8sAttrs.PutEmptyMap("labels").PutStr("env", "prod")
+
+			logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
+
+			Expect(mustMarshalLogs(ld)).ShouldNot(ConsistOfLogsWithKubernetesLabels())
+		})
+	})
+
+	Context("with having only logs with labels", func() {
+		It("should succeed", func() {
+			ld := plog.NewLogs()
+			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
+			k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
+			k8sAttrs.PutEmptyMap("labels").PutStr("env", "prod")
+
+			k8sAttrs = logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
+			k8sAttrs.PutEmptyMap("labels").PutStr("version", "1")
 
 			Expect(mustMarshalLogs(ld)).Should(ConsistOfLogsWithKubernetesLabels())
 		})
@@ -278,7 +294,7 @@ var _ = Describe("ConsistOfLogsWithKubernetesAnnotations", Label("logging"), fun
 	})
 
 	Context("with empty input", func() {
-		It("should match", func() {
+		It("should not match", func() {
 			success, err := ConsistOfLogsWithKubernetesAnnotations().Match([]byte{})
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).Should(BeFalse())
@@ -293,12 +309,28 @@ var _ = Describe("ConsistOfLogsWithKubernetesAnnotations", Label("logging"), fun
 		})
 	})
 
-	Context("with having logs", func() {
+	Context("with having some logs with annotations", func() {
 		It("should succeed", func() {
 			ld := plog.NewLogs()
 			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 			k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
-			k8sAttrs.PutEmptyMap("annotations").PutStr("env", "prod")
+			k8sAttrs.PutEmptyMap("annotations").PutStr("prometheus.io/scrape", "true")
+
+			logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
+
+			Expect(mustMarshalLogs(ld)).ShouldNot(ConsistOfLogsWithKubernetesAnnotations())
+		})
+	})
+
+	Context("with having only logs with annotations", func() {
+		It("should succeed", func() {
+			ld := plog.NewLogs()
+			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
+			k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
+			k8sAttrs.PutEmptyMap("annotations").PutStr("prometheus.io/scrape", "true")
+
+			k8sAttrs = logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
+			k8sAttrs.PutEmptyMap("annotations").PutStr("prometheus.io/scrape", "false")
 
 			Expect(mustMarshalLogs(ld)).Should(ConsistOfLogsWithKubernetesAnnotations())
 		})
