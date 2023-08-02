@@ -155,134 +155,145 @@ var _ = Describe("ConsistOfSpansWithTraceID", Label("tracing"), func() {
 	})
 })
 
-//var _ = Describe("ConsistOfSpansWithAttributes", Label("tracing"), func() {
-//	var fileBytes []byte
-//	var expectedAttrs pcommon.Map
-//
-//	BeforeEach(func() {
-//		expectedAttrs = pcommon.NewMap()
-//		expectedAttrs.PutStr("strKey", "strValue")
-//		expectedAttrs.PutInt("intKey", 1)
-//		expectedAttrs.PutBool("boolKey", true)
-//	})
-//
-//	Context("with nil input", func() {
-//		It("should error", func() {
-//			success, err := ConsistOfSpansWithAttributes(expectedAttrs).Match(fileBytes)
-//			Expect(err).Should(HaveOccurred())
-//			Expect(success).Should(BeFalse())
-//		})
-//	})
-//
-//	Context("with input of invalid type", func() {
-//		It("should error", func() {
-//			success, err := ConsistOfSpansWithAttributes(expectedAttrs).Match(struct{}{})
-//			Expect(err).Should(HaveOccurred())
-//			Expect(success).Should(BeFalse())
-//		})
-//	})
-//
-//	Context("with empty input", func() {
-//		It("should error", func() {
-//			success, err := ConsistOfSpansWithAttributes(expectedAttrs).Match([]byte{})
-//			Expect(err).Should(HaveOccurred())
-//			Expect(success).Should(BeFalse())
-//		})
-//	})
-//
-//	Context("with no spans having the attributes", func() {
-//		BeforeEach(func() {
-//			var err error
-//			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_attributes/no_match.jsonl")
-//			Expect(err).NotTo(HaveOccurred())
-//		})
-//
-//		It("should fail", func() {
-//			Expect(fileBytes).ShouldNot(ConsistOfSpansWithAttributes(expectedAttrs))
-//		})
-//	})
-//
-//	Context("with some spans having the attributes", func() {
-//		BeforeEach(func() {
-//			var err error
-//			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_attributes/partial_match.jsonl")
-//			Expect(err).NotTo(HaveOccurred())
-//		})
-//
-//		It("should fail", func() {
-//			Expect(fileBytes).ShouldNot(ConsistOfSpansWithAttributes(expectedAttrs))
-//		})
-//	})
-//
-//	Context("with all spans having the attributes", func() {
-//		BeforeEach(func() {
-//			var err error
-//			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_attributes/full_match.jsonl")
-//			Expect(err).NotTo(HaveOccurred())
-//		})
-//
-//		It("should succeed", func() {
-//			Expect(fileBytes).Should(ConsistOfSpansWithAttributes(expectedAttrs))
-//		})
-//	})
-//
-//	Context("with invalid input", func() {
-//		BeforeEach(func() {
-//			fileBytes = []byte{1, 2, 3}
-//		})
-//
-//		It("should error", func() {
-//			success, err := ConsistOfSpansWithAttributes(expectedAttrs).Match(fileBytes)
-//			Expect(err).Should(HaveOccurred())
-//			Expect(success).Should(BeFalse())
-//		})
-//	})
-//})
+var _ = Describe("ConsistOfSpansWithAttributes", Label("tracing"), func() {
+	Context("with nil input", func() {
+		It("should error", func() {
+			success, err := ConsistOfSpansWithAttributes(pcommon.NewMap()).Match(nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
 
-//var _ = Describe("ConsistOfNumberOfSpans", Label("tracing"), func() {
-//	var fileBytes []byte
-//
-//	Context("with nil input", func() {
-//		It("should match 0", func() {
-//			success, err := ConsistOfNumberOfSpans(0).Match(nil)
-//			Expect(err).ShouldNot(HaveOccurred())
-//			Expect(success).Should(BeTrue())
-//		})
-//	})
-//
-//	Context("with empty input", func() {
-//		It("should match 0", func() {
-//			success, err := ConsistOfNumberOfSpans(0).Match([]byte{})
-//			Expect(err).ShouldNot(HaveOccurred())
-//			Expect(success).Should(BeTrue())
-//		})
-//	})
-//
-//	Context("with invalid input", func() {
-//		BeforeEach(func() {
-//			fileBytes = []byte{1, 2, 3}
-//		})
-//
-//		It("should error", func() {
-//			success, err := ConsistOfNumberOfSpans(0).Match(fileBytes)
-//			Expect(err).Should(HaveOccurred())
-//			Expect(success).Should(BeFalse())
-//		})
-//	})
-//
-//	Context("with having spans", func() {
-//		BeforeEach(func() {
-//			var err error
-//			fileBytes, err = os.ReadFile("testdata/consist_of_spans_with_attributes/full_match.jsonl")
-//			Expect(err).NotTo(HaveOccurred())
-//		})
-//
-//		It("should succeed", func() {
-//			Expect(fileBytes).Should(ConsistOfNumberOfSpans(3))
-//		})
-//	})
-//
-//})
+	Context("with input of invalid type", func() {
+		It("should error", func() {
+			success, err := ConsistOfSpansWithAttributes(pcommon.NewMap()).Match(struct{}{})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should error", func() {
+			success, err := ConsistOfSpansWithAttributes(pcommon.NewMap()).Match([]byte{})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with no spans having the attributes", func() {
+		It("should fail", func() {
+			td := ptrace.NewTraces()
+			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
+			spans.AppendEmpty().Attributes().PutStr("http.url", "foo")
+			spans.AppendEmpty().Attributes().PutStr("http.url", "bar")
+			spans.AppendEmpty().Attributes().PutStr("http.url", "baz")
+
+			expectedAttrs := pcommon.NewMap()
+			expectedAttrs.PutStr("http.method", "GET")
+			Expect(mustMarshalTraces(td)).ShouldNot(ConsistOfSpansWithAttributes(expectedAttrs))
+		})
+	})
+
+	Context("with some spans having the attributes", func() {
+		It("should fail", func() {
+			td := ptrace.NewTraces()
+			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
+			spans.AppendEmpty().Attributes().PutStr("http.url", "foo")
+			spans.AppendEmpty().Attributes().PutStr("http.url", "bar")
+			spans.AppendEmpty().Attributes().PutStr("http.url", "baz")
+
+			expectedAttrs := pcommon.NewMap()
+			expectedAttrs.PutStr("http.url", "foo")
+			Expect(mustMarshalTraces(td)).ShouldNot(ConsistOfSpansWithAttributes(expectedAttrs))
+		})
+	})
+
+	Context("with all spans having only the expected attributes", func() {
+		It("should succeed", func() {
+			td := ptrace.NewTraces()
+			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
+			spans.AppendEmpty().Attributes().PutStr("http.url", "foo")
+			spans.AppendEmpty().Attributes().PutStr("http.url", "foo")
+			spans.AppendEmpty().Attributes().PutStr("http.url", "foo")
+
+			expectedAttrs := pcommon.NewMap()
+			expectedAttrs.PutStr("http.url", "foo")
+			Expect(mustMarshalTraces(td)).Should(ConsistOfSpansWithAttributes(expectedAttrs))
+		})
+	})
+
+	Context("with all spans containing the expected and some other attributes", func() {
+		It("should succeed", func() {
+			td := ptrace.NewTraces()
+			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
+			attrs := spans.AppendEmpty().Attributes()
+			attrs.PutStr("http.url", "foo")
+			attrs.PutStr("http.method", "GET")
+			spans.AppendEmpty().Attributes().PutStr("http.url", "foo")
+			spans.AppendEmpty().Attributes().PutStr("http.url", "foo")
+
+			expectedAttrs := pcommon.NewMap()
+			expectedAttrs.PutStr("http.url", "foo")
+			Expect(mustMarshalTraces(td)).ShouldNot(ConsistOfSpansWithAttributes(expectedAttrs))
+		})
+	})
+
+	Context("with invalid input", func() {
+		It("should error", func() {
+			success, err := ConsistOfSpansWithAttributes(pcommon.NewMap()).Match([]byte{1, 2, 3})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+})
+
+var _ = Describe("ConsistOfNumberOfSpans", Label("tracing"), func() {
+	Context("with nil input", func() {
+		It("should match 0", func() {
+			success, err := ConsistOfNumberOfSpans(0).Match(nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should match 0", func() {
+			success, err := ConsistOfNumberOfSpans(0).Match([]byte{})
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(success).Should(BeTrue())
+		})
+	})
+
+	Context("with invalid input", func() {
+		It("should error", func() {
+			success, err := ConsistOfNumberOfSpans(0).Match([]byte{1, 2, 3})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with not matching number of spans", func() {
+		It("should succeed", func() {
+			td := ptrace.NewTraces()
+			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
+			spans.AppendEmpty()
+			spans.AppendEmpty()
+
+			Expect(mustMarshalTraces(td)).ShouldNot(ConsistOfNumberOfSpans(3))
+		})
+	})
+
+	Context("with matching number of spans", func() {
+		It("should succeed", func() {
+			td := ptrace.NewTraces()
+			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
+			spans.AppendEmpty()
+			spans.AppendEmpty()
+
+			Expect(mustMarshalTraces(td)).Should(ConsistOfNumberOfSpans(2))
+		})
+	})
+})
 
 func mustMarshalTraces(td ptrace.Traces) []byte {
 	var marshaler ptrace.JSONMarshaler

@@ -13,15 +13,15 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-// ConsistOfSpansWithIDs succeeds if the filexporter output file consists of spans with precisely the span ids passed into the matcher. The ordering of the elements does not matter.
+// ConsistOfSpansWithIDs succeeds if the filexporter output file consists of spans only with the span ids passed into the matcher. The ordering of the elements does not matter.
 func ConsistOfSpansWithIDs(expectedSpanIDs ...pcommon.SpanID) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) ([]pcommon.SpanID, error) {
-		actualTraces, err := unmarshalOTLPJSONTraces(fileBytes)
+		actualTds, err := unmarshalOTLPJSONTraces(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("ConsistOfSpansWithIDs requires a valid OTLP JSON document: %v", err)
 		}
 
-		actualSpans := getAllSpans(actualTraces)
+		actualSpans := getAllSpans(actualTds)
 
 		var actualSpanIDs []pcommon.SpanID
 		for _, span := range actualSpans {
@@ -31,15 +31,15 @@ func ConsistOfSpansWithIDs(expectedSpanIDs ...pcommon.SpanID) types.GomegaMatche
 	}, gomega.ConsistOf(expectedSpanIDs))
 }
 
-// ConsistOfSpansWithTraceID succeeds if the filexporter output file consists of spans with precisely the trace id passed into the matcher.
+// ConsistOfSpansWithTraceID succeeds if the filexporter output file only consists of spans the trace id passed into the matcher.
 func ConsistOfSpansWithTraceID(expectedTraceID pcommon.TraceID) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) ([]pcommon.TraceID, error) {
-		actualTraces, err := unmarshalOTLPJSONTraces(fileBytes)
+		actualTds, err := unmarshalOTLPJSONTraces(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("ConsistOfSpansWithTraceID requires a valid OTLP JSON document: %v", err)
 		}
 
-		actualSpans := getAllSpans(actualTraces)
+		actualSpans := getAllSpans(actualTds)
 
 		var actualTraceIDs []pcommon.TraceID
 		for _, span := range actualSpans {
@@ -49,26 +49,15 @@ func ConsistOfSpansWithTraceID(expectedTraceID pcommon.TraceID) types.GomegaMatc
 	}, gomega.HaveEach(expectedTraceID))
 }
 
-func ConsistOfNumberOfSpans(count int) types.GomegaMatcher {
-	return gomega.WithTransform(func(fileBytes []byte) (int, error) {
-		actualTraces, err := unmarshalOTLPJSONTraces(fileBytes)
-		if err != nil {
-			return 0, fmt.Errorf("ConsistOfNumberOfSpans requires a valid OTLP JSON document: %v", err)
-		}
-
-		actualSpans := getAllSpans(actualTraces)
-		return len(actualSpans), nil
-	}, gomega.Equal(count))
-}
-
+// ConsistOfSpansWithAttributes succeeds if the filexporter output file consists of spans only with the span attributes passed into the matcher.
 func ConsistOfSpansWithAttributes(expectedAttrs pcommon.Map) types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) ([]map[string]any, error) {
-		actualTraces, err := unmarshalOTLPJSONTraces(fileBytes)
+		actualTds, err := unmarshalOTLPJSONTraces(fileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("ConsistOfSpansWithAttributes requires a valid OTLP JSON document: %v", err)
 		}
 
-		actualSpans := getAllSpans(actualTraces)
+		actualSpans := getAllSpans(actualTds)
 
 		var actualAttrs []map[string]any
 		for _, span := range actualSpans {
@@ -76,6 +65,19 @@ func ConsistOfSpansWithAttributes(expectedAttrs pcommon.Map) types.GomegaMatcher
 		}
 		return actualAttrs, nil
 	}, gomega.HaveEach(gomega.Equal(expectedAttrs.AsRaw())))
+}
+
+// ConsistOfNumberOfSpans succeeds if the filexporter output file has the expected number of spans.
+func ConsistOfNumberOfSpans(expectedNumber int) types.GomegaMatcher {
+	return gomega.WithTransform(func(fileBytes []byte) (int, error) {
+		actualTds, err := unmarshalOTLPJSONTraces(fileBytes)
+		if err != nil {
+			return 0, fmt.Errorf("ConsistOfNumberOfSpans requires a valid OTLP JSON document: %v", err)
+		}
+
+		actualSpans := getAllSpans(actualTds)
+		return len(actualSpans), nil
+	}, gomega.Equal(expectedNumber))
 }
 
 func getAllSpans(traces []ptrace.Traces) []ptrace.Span {
