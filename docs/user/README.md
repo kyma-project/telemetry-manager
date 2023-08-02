@@ -5,8 +5,6 @@
 
 Fundamentally, ["Observability"](https://opentelemetry.io/docs/concepts/observability-primer/) is a measure of how well the application's external outputs can reflect the internal states of single components. The insights that an application and the surrounding infrastructure expose are displayed in the form of metrics, traces, and logs - collectively, that's called "telemetry" or ["signals"](https://opentelemetry.io/docs/concepts/signals/). These can be exposed by employing modern instrumentation.
 
-## Stages of Observability
-
 ![Stages of Observability](./assets/telemetry-stages.drawio.svg)
 
 1. In order to implement Day-2 operations for a distributed application running in a container runtime, the single components of an application must expose these signals by employing modern instrumentation.
@@ -35,7 +33,6 @@ The Telemetry module focuses only on the signals of application logs, distribute
 Supported integration scenarios are neutral to the vendor of the target system.
 
 Currently, logs are based on the Fluent Bit protocol. If you're curious about the progress to switch to the vendor-neutral OTLP protocol, follow this [epic](https://github.com/kyma-project/kyma/issues/16307).
-
 
 ## Components
 
