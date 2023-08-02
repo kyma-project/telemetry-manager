@@ -3,12 +3,13 @@
 package matchers
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
-	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+
+	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("ConsistOfSpansWithIDs", Label("tracing"), func() {

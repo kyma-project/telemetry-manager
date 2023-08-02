@@ -2,6 +2,7 @@ package matchers
 
 import (
 	"bytes"
+
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"github.com/prometheus/common/expfmt"
