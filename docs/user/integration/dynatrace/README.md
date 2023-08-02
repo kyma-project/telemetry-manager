@@ -9,7 +9,7 @@ The Kyma Telemetry module supports you in integrating with observability backend
 ## Prerequisistes 
 
 - Kyma as the target deployment environment
-- Dynatrace account with permissions to create new access tokens
+- Dynatrace environment with permissions to create new access tokens
 - Helm 3.x if you want to deploy open-telemetry sample application
 - Deploy [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator) (Recommended)
 
