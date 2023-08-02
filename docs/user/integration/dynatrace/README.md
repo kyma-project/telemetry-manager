@@ -2,7 +2,8 @@
 
 ## Overview 
 
-The Kyma Telemetry module supports you in integrating with observability backends in a convenient way. The following example outlines how to integrate with [Dynatrace](https://www.dynatrace.com) as a backend. With Dynatrace, you can get all your monitoring and tracing data into one observability backend to achieve real Application Performance Management with monitoring data in context. Apart from [installing Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator) and leveraging all of the benefits of Dynatrace, you can also integrate custom metrics and traces with Dynatrace.
+The Kyma Telemetry module supports you in integrating with observability backends in a convenient way. The following example outlines how to integrate with [Dynatrace](https://www.dynatrace.com) as a backend. With Dynatrace, you can get all your monitoring and tracing data into one observability backend to achieve real Application Performance Management with monitoring data in context. Apart from [installing Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator) and leveraging all of the benefits of Dynatrace, you can also integrate custom metrics and traces with Dynatrace. 
+This tutorial covers only operations with traces and metrics, but not with logs.
 
 ![overview](../../assets/dynatrace-integration-diagram.svg)
 
@@ -11,7 +12,7 @@ The Kyma Telemetry module supports you in integrating with observability backend
 - Kyma as the target deployment environment
 - Dynatrace environment with permissions to create new access tokens
 - Helm 3.x if you want to deploy open-telemetry sample application
-- Deploy [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator) (Recommended)
+- Deploy [Dynatrace Operator](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-k8s/quickstart) (Recommended)
 
 ## Installation
 
@@ -82,7 +83,7 @@ This configuration samples 1% of all requests. if you want to change the samplin
         output:
             otlp:
                 endpoint:
-                    value: https://apm.cf.eu12.hana.ondemand.com/e/{ENVIRONMENT_ID}/api/v2/otlp
+                    value: https://{ENVIRONMENT_ID}.live.dynatrace.com/api/v2/otlp
                 headers:
                     - name: Authorization
                       valueFrom:
@@ -93,13 +94,17 @@ This configuration samples 1% of all requests. if you want to change the samplin
                 protocol: http
     EOF
     ```
+
+    If you manage Dynatrace yourself, the link to the Dynatrace API endpoint is `https://{YOUR_DOMAIN}/e/{ENVIRONMENT_ID}/api/v2/otlp`
 1. To find traces from your Kyma cluster in the Dynatrace UI, go to **Applications & Microservices** > **Distributed traces**.
 
 ### Ingest Metrics
 
+> **Note:** `MetricPipeline` feature is not available yet. To understand the current progress, watch this [epic](https://github.com/kyma-project/kyma/issues/13079).
+
 #### Create Kyma MetricPipeline
 
-1. Replace the `{ENVIRONMENT_ID}` placeholder with the environment Id of your Dynatrace instance:
+1. Replace the `{ENVIRONMENT_ID}` placeholder with the environment Id of Dynatrace SaaS:
     ```bash
     cat <<EOF | kubectl apply -f -
     apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -111,7 +116,7 @@ This configuration samples 1% of all requests. if you want to change the samplin
             convertToDelta: true
             otlp:
                 endpoint:
-                    value: https://apm.cf.eu12.hana.ondemand.com/e/{ENVIRONMENT_ID}/api/v2/otlp
+                    value: https://{ENVIRONMENT_ID}.live.dynatrace.com/api/v2/otlp
                 headers:
                     - name: Authorization
                       valueFrom:
@@ -122,6 +127,8 @@ This configuration samples 1% of all requests. if you want to change the samplin
                 protocol: http
     EOF
     ```
+
+    If you manage Dynatrace yourself, the link to the Dynatrace API endpoint is `https://{YOUR_DOMAIN}/e/{ENVIRONMENT_ID}/api/v2/otlp`
 
 ## Verify the results by deploying sample apps
 
