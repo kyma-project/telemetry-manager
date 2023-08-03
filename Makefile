@@ -178,7 +178,7 @@ e2e-coverage: ginkgo
 
 .PHONY: e2e-test-istio
 e2e-test-istio: ginkgo k3d ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
-	#K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
+	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
 	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="istio" ./test/integration
