@@ -115,7 +115,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ConsistOfSpansWithIDs(spanIDs),
+					ConsistOfSpansWithIDs(spanIDs...),
 					ConsistOfSpansWithTraceID(traceID),
 					ConsistOfSpansWithAttributes(attrs))))
 			}, timeout, interval).Should(Succeed())
@@ -286,7 +286,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ConsistOfSpansWithIDs(spanIDs),
+					ConsistOfSpansWithIDs(spanIDs...),
 					ConsistOfSpansWithTraceID(traceID),
 					ConsistOfSpansWithAttributes(attrs))))
 			}, timeout, interval).Should(Succeed())
@@ -345,7 +345,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ConsistOfNumberOfSpans(len(spanIDs)),
-					ConsistOfSpansWithIDs(spanIDs),
+					ConsistOfSpansWithIDs(spanIDs...),
 					ConsistOfSpansWithTraceID(traceID),
 					ConsistOfSpansWithAttributes(attrs))))
 			}, timeout, interval).Should(Succeed())
@@ -356,7 +356,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ConsistOfNumberOfSpans(len(spanIDs)),
-					ConsistOfSpansWithIDs(spanIDs),
+					ConsistOfSpansWithIDs(spanIDs...),
 					ConsistOfSpansWithTraceID(traceID),
 					ConsistOfSpansWithAttributes(attrs))))
 			}, timeout, interval).Should(Succeed())
