@@ -108,12 +108,12 @@ func ContainsLogsWithAttribute(key, value string) types.GomegaMatcher {
 	}, gomega.BeTrue())
 }
 
-// ConsistOfLogsWithKubernetesLabels succeeds if the filexporter output file only consists of logs with Kubernetes annotations.
-func ConsistOfLogsWithKubernetesLabels() types.GomegaMatcher {
+// ContainsLogsWithKubernetesLabels succeeds if the filexporter output file contains any logs with Kubernetes labels.
+func ContainsLogsWithKubernetesLabels() types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) (bool, error) {
 		actualLogs, err := unmarshalOTLPJSONLogs(fileBytes)
 		if err != nil {
-			return false, fmt.Errorf("ConsistOfLogsWithKubernetesLabels requires a valid OTLP JSON document: %v", err)
+			return false, fmt.Errorf("ContainsLogsWithKubernetesLabels requires a valid OTLP JSON document: %v", err)
 		}
 
 		actualLogRecords := getAllLogRecords(actualLogs)
@@ -124,20 +124,20 @@ func ConsistOfLogsWithKubernetesLabels() types.GomegaMatcher {
 		for _, lr := range actualLogRecords {
 			k8sAttributes, hasKubernetes := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
 			if !hasKubernetes {
-				return false, nil
+				continue
 			}
 
 			_, hasLabels := k8sAttributes["labels"]
-			if !hasLabels {
-				return false, nil
+			if hasLabels {
+				return true, nil
 			}
 		}
-		return true, nil
+		return false, nil
 	}, gomega.BeTrue())
 }
 
-// ConsistOfLogsWithKubernetesAnnotations succeeds if the filexporter output file only consists of logs with Kubernetes annotations.
-func ConsistOfLogsWithKubernetesAnnotations() types.GomegaMatcher {
+// ContainsLogsWithKubernetesAnnotations succeeds if the filexporter output file contains any logs with Kubernetes annotations.
+func ContainsLogsWithKubernetesAnnotations() types.GomegaMatcher {
 	return gomega.WithTransform(func(fileBytes []byte) (bool, error) {
 		actualLogs, err := unmarshalOTLPJSONLogs(fileBytes)
 		if err != nil {
@@ -152,15 +152,15 @@ func ConsistOfLogsWithKubernetesAnnotations() types.GomegaMatcher {
 		for _, lr := range actualLogRecords {
 			k8sAttributes, hasKubernetes := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
 			if !hasKubernetes {
-				return false, nil
+				continue
 			}
 
 			_, hasAnnotations := k8sAttributes["annotations"]
-			if !hasAnnotations {
-				return false, nil
+			if hasAnnotations {
+				return true, nil
 			}
 		}
-		return true, nil
+		return false, nil
 	}, gomega.BeTrue())
 }
 
