@@ -167,10 +167,10 @@ var _ = Describe("ContainLogsWithKubernetesAttributes", Label("logging"), func()
 	})
 })
 
-var _ = Describe("ContainsLogsWithAttribute", Label("logging"), func() {
+var _ = Describe("ContainLogsWithAttribute", Label("logging"), func() {
 	Context("with nil input", func() {
 		It("should not match", func() {
-			success, err := ContainsLogsWithAttribute("mockKey", "mockKey").Match(nil)
+			success, err := ContainLogsWithAttribute("mockKey", "mockKey").Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -178,7 +178,7 @@ var _ = Describe("ContainsLogsWithAttribute", Label("logging"), func() {
 
 	Context("with empty input", func() {
 		It("should not match", func() {
-			success, err := ContainsLogsWithAttribute("mockKey", "mockKey").Match([]byte{})
+			success, err := ContainLogsWithAttribute("mockKey", "mockKey").Match([]byte{})
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -186,7 +186,7 @@ var _ = Describe("ContainsLogsWithAttribute", Label("logging"), func() {
 
 	Context("with invalid input", func() {
 		It("should error", func() {
-			success, err := ContainsLogsWithAttribute("mockKey", "mockKey").Match([]byte{1, 2, 3})
+			success, err := ContainLogsWithAttribute("mockKey", "mockKey").Match([]byte{1, 2, 3})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -199,7 +199,7 @@ var _ = Describe("ContainsLogsWithAttribute", Label("logging"), func() {
 			logs.AppendEmpty().Attributes().PutStr("user", "foo")
 			logs.AppendEmpty().Attributes().PutStr("user", "bar")
 
-			Expect(mustMarshalLogs(ld)).Should(ContainsLogsWithAttribute("user", "foo"))
+			Expect(mustMarshalLogs(ld)).Should(ContainLogsWithAttribute("user", "foo"))
 		})
 
 		It("should fail with value", func() {
@@ -208,7 +208,7 @@ var _ = Describe("ContainsLogsWithAttribute", Label("logging"), func() {
 			logs.AppendEmpty().Attributes().PutStr("user", "foo")
 			logs.AppendEmpty().Attributes().PutStr("user", "bar")
 
-			Expect(mustMarshalLogs(ld)).ShouldNot(ContainsLogsWithAttribute("user", "not-exist"))
+			Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogsWithAttribute("user", "not-exist"))
 		})
 
 		It("should fail with key", func() {
@@ -217,15 +217,15 @@ var _ = Describe("ContainsLogsWithAttribute", Label("logging"), func() {
 			logs.AppendEmpty().Attributes().PutStr("user", "foo")
 			logs.AppendEmpty().Attributes().PutStr("user", "bar")
 
-			Expect(mustMarshalLogs(ld)).ShouldNot(ContainsLogsWithAttribute("key-not-exist", "foo"))
+			Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogsWithAttribute("key-not-exist", "foo"))
 		})
 	})
 })
 
-var _ = Describe("ContainsLogsWithKubernetesLabels", Label("logging"), func() {
+var _ = Describe("ContainLogsWithKubernetesLabels", Label("logging"), func() {
 	Context("with nil input", func() {
 		It("should not match", func() {
-			success, err := ContainsLogsWithKubernetesLabels().Match(nil)
+			success, err := ContainLogsWithKubernetesLabels().Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -233,7 +233,7 @@ var _ = Describe("ContainsLogsWithKubernetesLabels", Label("logging"), func() {
 
 	Context("with empty input", func() {
 		It("should not match", func() {
-			success, err := ContainsLogsWithKubernetesLabels().Match([]byte{})
+			success, err := ContainLogsWithKubernetesLabels().Match([]byte{})
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -241,7 +241,7 @@ var _ = Describe("ContainsLogsWithKubernetesLabels", Label("logging"), func() {
 
 	Context("with invalid input", func() {
 		It("should error", func() {
-			success, err := ContainsLogsWithKubernetesLabels().Match([]byte{1, 2, 3})
+			success, err := ContainLogsWithKubernetesLabels().Match([]byte{1, 2, 3})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -256,7 +256,7 @@ var _ = Describe("ContainsLogsWithKubernetesLabels", Label("logging"), func() {
 
 			logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 
-			Expect(mustMarshalLogs(ld)).Should(ContainsLogsWithKubernetesLabels())
+			Expect(mustMarshalLogs(ld)).Should(ContainLogsWithKubernetesLabels())
 		})
 	})
 
@@ -270,7 +270,7 @@ var _ = Describe("ContainsLogsWithKubernetesLabels", Label("logging"), func() {
 			k8sAttrs = logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 			k8sAttrs.PutEmptyMap("labels").PutStr("version", "1")
 
-			Expect(mustMarshalLogs(ld)).Should(ContainsLogsWithKubernetesLabels())
+			Expect(mustMarshalLogs(ld)).Should(ContainLogsWithKubernetesLabels())
 		})
 	})
 
@@ -280,15 +280,15 @@ var _ = Describe("ContainsLogsWithKubernetesLabels", Label("logging"), func() {
 			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 			logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 
-			Expect(mustMarshalLogs(ld)).ShouldNot(ContainsLogsWithKubernetesLabels())
+			Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogsWithKubernetesLabels())
 		})
 	})
 })
 
-var _ = Describe("ContainsLogsWithKubernetesAnnotations", Label("logging"), func() {
+var _ = Describe("ContainLogsWithKubernetesAnnotations", Label("logging"), func() {
 	Context("with nil input", func() {
 		It("should not match", func() {
-			success, err := ContainsLogsWithKubernetesAnnotations().Match(nil)
+			success, err := ContainLogsWithKubernetesAnnotations().Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -296,7 +296,7 @@ var _ = Describe("ContainsLogsWithKubernetesAnnotations", Label("logging"), func
 
 	Context("with empty input", func() {
 		It("should not match", func() {
-			success, err := ContainsLogsWithKubernetesAnnotations().Match([]byte{})
+			success, err := ContainLogsWithKubernetesAnnotations().Match([]byte{})
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -304,7 +304,7 @@ var _ = Describe("ContainsLogsWithKubernetesAnnotations", Label("logging"), func
 
 	Context("with invalid input", func() {
 		It("should error", func() {
-			success, err := ContainsLogsWithKubernetesAnnotations().Match([]byte{1, 2, 3})
+			success, err := ContainLogsWithKubernetesAnnotations().Match([]byte{1, 2, 3})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -319,7 +319,7 @@ var _ = Describe("ContainsLogsWithKubernetesAnnotations", Label("logging"), func
 
 			logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 
-			Expect(mustMarshalLogs(ld)).Should(ContainsLogsWithKubernetesAnnotations())
+			Expect(mustMarshalLogs(ld)).Should(ContainLogsWithKubernetesAnnotations())
 		})
 	})
 
@@ -333,7 +333,7 @@ var _ = Describe("ContainsLogsWithKubernetesAnnotations", Label("logging"), func
 			k8sAttrs = logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 			k8sAttrs.PutEmptyMap("annotations").PutStr("prometheus.io/scrape", "false")
 
-			Expect(mustMarshalLogs(ld)).Should(ContainsLogsWithKubernetesAnnotations())
+			Expect(mustMarshalLogs(ld)).Should(ContainLogsWithKubernetesAnnotations())
 		})
 	})
 
@@ -343,7 +343,7 @@ var _ = Describe("ContainsLogsWithKubernetesAnnotations", Label("logging"), func
 			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 			logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 
-			Expect(mustMarshalLogs(ld)).ShouldNot(ContainsLogsWithKubernetesAnnotations())
+			Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogsWithKubernetesAnnotations())
 		})
 	})
 })

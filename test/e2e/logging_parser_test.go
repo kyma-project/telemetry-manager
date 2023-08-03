@@ -75,7 +75,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainsLogsWithAttribute("user", "foo"), ContainsLogsWithAttribute("pass", "bar"))))
+					ContainLogsWithAttribute("user", "foo"), ContainLogsWithAttribute("pass", "bar"))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})

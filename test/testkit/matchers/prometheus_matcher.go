@@ -8,10 +8,10 @@ import (
 	"github.com/prometheus/common/expfmt"
 )
 
-func ContainValidPrometheusMetric(metricName string) types.GomegaMatcher {
-	return gomega.WithTransform(func(responseBodyBytes []byte) (bool, error) {
+func ContainPrometheusMetric(metricName string) types.GomegaMatcher {
+	return gomega.WithTransform(func(responseBody []byte) (bool, error) {
 		var parser expfmt.TextParser
-		mf, err := parser.TextToMetricFamilies(bytes.NewReader(responseBodyBytes))
+		mf, err := parser.TextToMetricFamilies(bytes.NewReader(responseBody))
 
 		if err != nil {
 			// ignore duplicate metrics parsing error and try extract metric
