@@ -35,7 +35,7 @@ func NewPipeline(name string) *Pipeline {
 }
 
 func (p *HTTPPipeline) WithIncludeContainer(names []string) *HTTPPipeline {
-	p.excludeContainer = names
+	p.includeContainer = names
 	return p
 }
 
