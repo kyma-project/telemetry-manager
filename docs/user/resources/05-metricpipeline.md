@@ -51,11 +51,14 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | ---- | ----------- | ---- |
 | **input**  | object | Configures different inputs to send additional metrics to the metric gateway. |
 | **input.&#x200b;application**  | object | Configures application related scraping. |
-| **input.&#x200b;application.&#x200b;runtime**  | object | Configures runtime scraping (workload-related k8s ). |
-| **input.&#x200b;application.&#x200b;runtime.&#x200b;enabled**  | boolean | Indicates if runtime scraping is enabled. |
-| **input.&#x200b;application.&#x200b;workloads**  | object | Configures workload scraping. |
-| **input.&#x200b;application.&#x200b;workloads.&#x200b;enabled**  | boolean | Indicates if workload scraping is enabled. Services and pods marked with prometheus.io/scrape=true annotation will be scraped. |
+| **input.&#x200b;application.&#x200b;istio**  | object | Configures istio-proxy metrics scraping. |
+| **input.&#x200b;application.&#x200b;istio.&#x200b;enabled**  | boolean | If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected. |
+| **input.&#x200b;application.&#x200b;prometheus**  | object | Configures Prometheus scraping. |
+| **input.&#x200b;application.&#x200b;prometheus.&#x200b;enabled**  | boolean | If enabled, Pods marked with `prometheus.io/scrape=true` annotation will be scraped. |
+| **input.&#x200b;application.&#x200b;runtime**  | object | Configures runtime scraping. |
+| **input.&#x200b;application.&#x200b;runtime.&#x200b;enabled**  | boolean | If enabled, workload-related Kubernetes metrics will be scraped. |
 | **output**  | object | Configures the metric gateway. |
+| **output.&#x200b;convertToDelta**  | boolean | Defines whether this MetricPipeline should convert monotonic, cumulative sum and histogram metrics to monotonic, delta metrics. |
 | **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Defines authentication options for the OTLP output |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic**  | object | Activates `Basic` authentication for the destination providing relevant Secrets. |

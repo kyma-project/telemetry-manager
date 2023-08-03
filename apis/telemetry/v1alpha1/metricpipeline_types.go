@@ -69,27 +69,29 @@ type MetricPipelineInput struct {
 
 // MetricPipelineApplicationInput defines the application input configuration section.
 type MetricPipelineApplicationInput struct {
-	// Configures workload scraping.
-	Workloads MetricPipelineWorkloadsInput `json:"workloads,omitempty"`
-	// Configures runtime scraping (workload-related k8s ).
+	// Configures Prometheus scraping.
+	Prometheus MetricPipelinePrometheusInput `json:"prometheus,omitempty"`
+	// Configures runtime scraping.
 	Runtime MetricPipelineContainerRuntimeInput `json:"runtime,omitempty"`
+	// Configures istio-proxy metrics scraping.
+	Istio MetricPipelineIstioInput `json:"istio,omitempty"`
 }
 
-// MetricPipelineWorkloadsInput defines the workload scraping section.
-type MetricPipelineWorkloadsInput struct {
-	// Indicates if workload scraping is enabled. Services and pods marked with prometheus.io/scrape=true annotation will be scraped.
+// MetricPipelinePrometheusInput defines the Prometheus scraping section.
+type MetricPipelinePrometheusInput struct {
+	// If enabled, Pods marked with `prometheus.io/scrape=true` annotation will be scraped.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
-// MetricPipelineContainerRuntimeInput defines the runtime scraping (kubelet, node metrics) section.
+// MetricPipelineContainerRuntimeInput defines the runtime scraping section.
 type MetricPipelineContainerRuntimeInput struct {
-	// Indicates if runtime scraping is enabled.
+	// If enabled, workload-related Kubernetes metrics will be scraped.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineIstioInput defines the Istio scraping section.
 type MetricPipelineIstioInput struct {
-	// Indicates if Istio scraping is enabled.
+	// If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
@@ -97,6 +99,8 @@ type MetricPipelineIstioInput struct {
 type MetricPipelineOutput struct {
 	// Defines an output using the OpenTelemetry protocol.
 	Otlp *OtlpOutput `json:"otlp"`
+	// Defines whether this MetricPipeline should convert monotonic, cumulative sum and histogram metrics to monotonic, delta metrics.
+	ConvertToDelta bool `json:"convertToDelta,omitempty"`
 }
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.

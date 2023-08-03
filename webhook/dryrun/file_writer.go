@@ -60,10 +60,11 @@ func (f *fileWriterImpl) preparePipelineDryRun(ctx context.Context, workDir stri
 func (f *fileWriterImpl) writeConfig(ctx context.Context, basePath string) error {
 	var cm v1.ConfigMap
 	var err error
+	includeSection := true
 	err = f.client.Get(ctx, f.config.FluentBitConfigMapName, &cm)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			newCm := resources.MakeConfigMap(f.config.FluentBitConfigMapName)
+			newCm := resources.MakeConfigMap(f.config.FluentBitConfigMapName, includeSection)
 			cm = *newCm
 		} else {
 			return err

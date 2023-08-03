@@ -18,17 +18,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma"
-	kittrace "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/trace"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
-	kittraces "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/traces"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
 )
 
 var (
@@ -116,7 +115,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ConsistOfSpansWithIDs(spanIDs),
+					ConsistOfSpansWithIDs(spanIDs...),
 					ConsistOfSpansWithTraceID(traceID),
 					ConsistOfSpansWithAttributes(attrs))))
 			}, timeout, interval).Should(Succeed())
@@ -287,7 +286,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ConsistOfSpansWithIDs(spanIDs),
+					ConsistOfSpansWithIDs(spanIDs...),
 					ConsistOfSpansWithTraceID(traceID),
 					ConsistOfSpansWithAttributes(attrs))))
 			}, timeout, interval).Should(Succeed())
@@ -346,7 +345,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ConsistOfNumberOfSpans(len(spanIDs)),
-					ConsistOfSpansWithIDs(spanIDs),
+					ConsistOfSpansWithIDs(spanIDs...),
 					ConsistOfSpansWithTraceID(traceID),
 					ConsistOfSpansWithAttributes(attrs))))
 			}, timeout, interval).Should(Succeed())
@@ -357,7 +356,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ConsistOfNumberOfSpans(len(spanIDs)),
-					ConsistOfSpansWithIDs(spanIDs),
+					ConsistOfSpansWithIDs(spanIDs...),
 					ConsistOfSpansWithTraceID(traceID),
 					ConsistOfSpansWithAttributes(attrs))))
 			}, timeout, interval).Should(Succeed())
@@ -419,7 +418,7 @@ func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 	)
 
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, kitk8s.NewNamespace(namespace).K8sObject())
+	objs = append(objs, mocksNamespace.K8sObject())
 
 	for i, mockDeploymentName := range mockDeploymentNames {
 		//// Mocks namespace objects.

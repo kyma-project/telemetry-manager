@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -33,7 +32,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -60,7 +58,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	"github.com/kyma-project/telemetry-manager/internal/resources/lokilogpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
@@ -137,7 +134,7 @@ var (
 const (
 	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.81.0-aee4f05f"
 	overridesConfigMapName = "telemetry-override-config"
-	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.4-fef25e9c"
+	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.7-bcac7090"
 	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20230503-c10c571f"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
@@ -172,9 +169,10 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=metricpipelines/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=telemetry.kyma-project.io,resources=metricpipelines/finalizers,verbs=update
 
-//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries/finalizers,verbs=update
+//+kubebuilder:rbac:groups=operator.kyma-project.io,namespace=system,resources=telemetries,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=operator.kyma-project.io,namespace=system,resources=telemetries/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=operator.kyma-project.io,namespace=system,resources=telemetries/finalizers,verbs=update
+//+kubebuilder:rbac:groups=operator.kyma-project.io,resources=telemetries,verbs=get;list;watch
 
 //+kubebuilder:rbac:groups="",namespace=system,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",namespace=system,resources=services,verbs=get;list;watch;create;update;patch;delete
@@ -196,7 +194,7 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 //+kubebuilder:rbac:groups=apps,namespace=system,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch
 
-//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch
+//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
 
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
@@ -386,17 +384,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Create own client because manager is not yet started
-	clientOptions := client.Options{
-		Scheme: scheme,
-	}
-	k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
-	if err != nil {
-		setupLog.Error(err, "Failed to create client")
-		os.Exit(1)
-	}
-
 	if enableWebhook {
+		// Create own client since manager might not be started while using
+		clientOptions := client.Options{
+			Scheme: scheme,
+		}
+		k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
+		if err != nil {
+			setupLog.Error(err, "Failed to create client")
+			os.Exit(1)
+		}
+
 		if err = webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); err != nil {
 			setupLog.Error(err, "Failed to ensure webhook cert")
 			os.Exit(1)
@@ -404,24 +402,17 @@ func main() {
 		setupLog.Info("Ensured webhook cert")
 
 		// Temporary solution for non-modularized telemetry operator
-		go func() {
-			for range time.Tick(1 * time.Hour) {
-				if ensureErr := webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); ensureErr != nil {
-					setupLog.Error(ensureErr, "Failed to ensure webhook cert")
+		if !enableTelemetryManagerModule {
+			go func() {
+				for range time.Tick(1 * time.Hour) {
+					if ensureErr := webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); ensureErr != nil {
+						setupLog.Error(ensureErr, "Failed to ensure webhook cert")
+					}
+					setupLog.Info("Ensured webhook cert")
 				}
-			}
-		}()
-	}
-
-	// Ensure reconciliation of the optional Loki LogPipeline
-	go func() {
-		for {
-			if err := handleLokiLogPipeline(context.Background(), k8sClient); err != nil {
-				setupLog.Error(err, "Failed to handle Loki LogPipeline")
-			}
-			time.Sleep(1 * time.Minute)
+			}()
 		}
-	}()
+	}
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "Failed to run manager")
@@ -621,28 +612,4 @@ func parsePlugins(s string) []string {
 
 func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
 	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, webhookConfig))
-}
-
-func handleLokiLogPipeline(ctx context.Context, client client.Client) error {
-	lokiLogPipeline := lokilogpipeline.MakeLokiLogPipeline()
-
-	var lokiService corev1.Service
-	err := client.Get(ctx, types.NamespacedName{Name: "logging-loki", Namespace: "kyma-system"}, &lokiService)
-	if err != nil {
-		// If Loki service doesn't exist in the cluster, we shouldn't deploy Loki LogPipeline
-		// Instead, we should delete the Loki LogPipeline if it already exists from the logging component (old helm chart)
-		if apierrors.IsNotFound(err) {
-			if err := kubernetes.DeleteLokiLogPipeline(ctx, client, lokiLogPipeline); err != nil {
-				return fmt.Errorf("failed to delete Loki LogPipeline: %w", err)
-			}
-			return nil
-		}
-		return err
-	}
-
-	if err := kubernetes.CreateOrUpdateLokiLogPipeline(ctx, client, lokiLogPipeline); err != nil {
-		return fmt.Errorf("failed to create Loki LogPipeline: %w", err)
-	}
-
-	return nil
 }

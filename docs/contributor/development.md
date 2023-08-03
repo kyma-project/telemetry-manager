@@ -62,7 +62,7 @@ For development, use the following commands:
   make docker-build
   make docker-push
   kubectl create ns kyma-system
-  make deploy
+  make deploy-dev
   ```
 
 - Clean up everything

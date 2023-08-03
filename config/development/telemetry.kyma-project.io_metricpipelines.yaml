@@ -49,21 +49,29 @@ spec:
                   application:
                     description: Configures application related scraping.
                     properties:
-                      runtime:
-                        description: Configures runtime scraping (workload-related
-                          k8s ).
+                      istio:
+                        description: Configures istio-proxy metrics scraping.
                         properties:
                           enabled:
-                            description: Indicates if runtime scraping is enabled.
+                            description: If enabled, metrics for istio-proxy containers
+                              are scraped from Pods that have had the istio-proxy
+                              sidecar injected.
                             type: boolean
                         type: object
-                      workloads:
-                        description: Configures workload scraping.
+                      prometheus:
+                        description: Configures Prometheus scraping.
                         properties:
                           enabled:
-                            description: Indicates if workload scraping is enabled.
-                              Services and pods marked with prometheus.io/scrape=true
+                            description: If enabled, Pods marked with `prometheus.io/scrape=true`
                               annotation will be scraped.
+                            type: boolean
+                        type: object
+                      runtime:
+                        description: Configures runtime scraping.
+                        properties:
+                          enabled:
+                            description: If enabled, workload-related Kubernetes metrics
+                              will be scraped.
                             type: boolean
                         type: object
                     type: object
@@ -71,6 +79,11 @@ spec:
               output:
                 description: Configures the metric gateway.
                 properties:
+                  convertToDelta:
+                    description: Defines whether this MetricPipeline should convert
+                      monotonic, cumulative sum and histogram metrics to monotonic,
+                      delta metrics.
+                    type: boolean
                   otlp:
                     description: Defines an output using the OpenTelemetry protocol.
                     properties:

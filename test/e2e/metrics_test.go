@@ -19,13 +19,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/k8s/verifiers"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma"
-	kitmetric "github.com/kyma-project/telemetry-manager/test/e2e/testkit/kyma/telemetry/metric"
-	. "github.com/kyma-project/telemetry-manager/test/e2e/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/e2e/testkit/mocks"
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/e2e/testkit/otlp/metrics"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
 var (
@@ -45,7 +45,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		)
 
 		BeforeAll(func() {
-			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(mockNs, []string{mockDeploymentName})
 			pipelines = pipelinesProvider
 			urls = urlProvider
 
@@ -101,14 +101,14 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 				gauges = append(gauges, gauge)
 				builder.WithMetric(gauge)
 			}
-			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
+			Expect(sendGaugeMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetrics(gauges...))))
+					ContainMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 		})
 
@@ -132,6 +132,73 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
+	})
+
+	Context("When a MetricPipeline has ConvertToDelta flag active", Ordered, func() {
+		var (
+			pipelines          *kyma.PipelineList
+			urls               *mocks.URLProvider
+			mockDeploymentName = "metric-receiver"
+			mockNs             = "metric-mocks-delta"
+			metricGatewayName  = types.NamespacedName{Name: metricGatewayBaseName, Namespace: kymaSystemNamespaceName}
+		)
+
+		BeforeAll(func() {
+			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(mockNs, []string{mockDeploymentName}, addCumulativeToDeltaConversion)
+			pipelines = pipelinesProvider
+			urls = urlProvider
+
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			})
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have a running metric gateway deployment", func() {
+			Eventually(func(g Gomega) {
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, metricGatewayName)
+				g.Expect(err).ShouldNot(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should have a metrics backend running", func() {
+			Eventually(func(g Gomega) {
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(ready).To(BeTrue())
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should have a running pipeline", func() {
+			metricPipelineShouldBeRunning(pipelines.First())
+		})
+
+		It("Should verify end-to-end metric delivery", func() {
+			builder := kitmetrics.NewBuilder()
+			var cumulativeSums []pmetric.Metric
+
+			for i := 0; i < 50; i++ {
+				sum := kitmetrics.NewCumulativeSum()
+				cumulativeSums = append(cumulativeSums, sum)
+				builder.WithMetric(sum)
+			}
+
+			Expect(sendSumMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
+
+			for i := 0; i < len(cumulativeSums); i++ {
+				cumulativeSums[i].Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+			}
+
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(urls.MockBackendExport())
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					ContainMetrics(cumulativeSums...))))
+			}, timeout, interval).Should(Succeed())
+		})
 	})
 
 	Context("When metricpipeline with missing secret reference exists", Ordered, func() {
@@ -229,7 +296,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		)
 
 		BeforeAll(func() {
-			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(mockNs, []string{mockDeploymentName})
 			pipelines = pipelinesProvider
 			urls = urlProvider
 			brokenPipelineObjs, brokenName := makeBrokenMetricPipeline("pipeline-1")
@@ -273,14 +340,14 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 				gauges = append(gauges, gauge)
 				builder.WithMetric(gauge)
 			}
-			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).Should(Succeed())
+			Expect(sendGaugeMetrics(context.Background(), builder.Build(), urls.OTLPPush())).Should(Succeed())
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetrics(gauges...))))
+					ContainMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
@@ -295,7 +362,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		)
 
 		BeforeAll(func() {
-			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(mockNs, primaryMockDeploymentName, auxiliaryMockDeploymentName)
+			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(mockNs, []string{primaryMockDeploymentName, auxiliaryMockDeploymentName})
 			pipelines = pipelinesProvider
 			urls = urlProvider
 
@@ -336,15 +403,15 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 				gauges = append(gauges, gauge)
 				builder.WithMetric(gauge)
 			}
-			Expect(sendMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
+			Expect(sendGaugeMetrics(context.Background(), builder.Build(), urls.OTLPPush())).To(Succeed())
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveNumberOfMetrics(len(gauges)),
-					HaveMetrics(gauges...))))
+					ConsistOfNumberOfMetrics(len(gauges)),
+					ContainMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 
 			Eventually(func(g Gomega) {
@@ -352,8 +419,8 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveNumberOfMetrics(len(gauges)),
-					HaveMetrics(gauges...))))
+					ConsistOfNumberOfMetrics(len(gauges)),
+					ContainMetrics(gauges...))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
@@ -375,6 +442,10 @@ func metricPipelineShouldStayPending(pipelineName string) {
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)).To(BeFalse())
 	}, metricPipelineReconciliationTimeout, interval).Should(Succeed())
+}
+
+func addCumulativeToDeltaConversion(metricPipeline telemetryv1alpha1.MetricPipeline) {
+	metricPipeline.Spec.Output.ConvertToDelta = true
 }
 
 func metricPipelineShouldBeDeployed(pipelineName string) {
@@ -400,7 +471,7 @@ func metricPipelineShouldNotBeDeployed(pipelineName string) {
 }
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames ...string) ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
+func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames []string, metricPipelineOptions ...kitmetric.PipelineOption) ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
 	var (
 		objs      []client.Object
 		pipelines = kyma.NewPipelineList()
@@ -413,7 +484,7 @@ func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 	)
 
 	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, kitk8s.NewNamespace(namespace).K8sObject())
+	objs = append(objs, mocksNamespace.K8sObject())
 
 	for i, mockDeploymentName := range mockDeploymentNames {
 		// Mocks namespace objects.
@@ -436,7 +507,7 @@ func makeMetricsTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 			mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 			mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 			hostSecret.K8sObject(),
-			metricPipeline.K8sObject(),
+			metricPipeline.K8sObject(metricPipelineOptions...),
 		}...)
 
 		urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), i)
@@ -465,12 +536,20 @@ func makeBrokenMetricPipeline(name string) ([]client.Object, string) {
 	}, metricPipeline.Name()
 }
 
-func sendMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL string) error {
+func sendGaugeMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL string) error {
 	sender, err := kitmetrics.NewHTTPExporter(otlpPushURL, proxyClient)
 	if err != nil {
 		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)
 	}
-	return sender.Export(ctx, metrics)
+	return sender.ExportGaugeMetrics(ctx, metrics)
+}
+
+func sendSumMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL string) error {
+	sender, err := kitmetrics.NewHTTPExporter(otlpPushURL, proxyClient)
+	if err != nil {
+		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)
+	}
+	return sender.ExportSumMetrics(ctx, metrics)
 }
 
 func suffixize(name string, idx int) string {

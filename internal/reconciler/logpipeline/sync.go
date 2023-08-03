@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
@@ -19,8 +21,11 @@ type syncer struct {
 	config Config
 }
 
-func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	if err := s.syncSectionsConfigMap(ctx, pipeline); err != nil {
+func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines telemetryv1alpha1.LogPipelineList, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
+
+	log := logf.FromContext(ctx)
+
+	if err := s.syncSectionsConfigMap(ctx, pipeline, deployableLogPipelines); err != nil {
 		return fmt.Errorf("failed to sync sections: %v", err)
 	}
 
@@ -28,26 +33,26 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 		return fmt.Errorf("failed to sync mounted files: %v", err)
 	}
 
-	var allPipelines telemetryv1alpha1.LogPipelineList
-	if err := s.List(ctx, &allPipelines); err != nil {
-		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %v", err)
-	}
-
 	if err := s.syncReferencedSecrets(ctx, &allPipelines); err != nil {
-		return fmt.Errorf("failed to sync referenced secrets: %v", err)
+		if apierrors.IsNotFound(err) {
+			log.V(1).Info(fmt.Sprintf("referenced secret not found: %v", err))
+			return nil
+		}
+		return err
 	}
 
 	return nil
 }
 
-func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployablePipelines []telemetryv1alpha1.LogPipeline) error {
 	cm, err := utils.GetOrCreateConfigMap(ctx, s, s.config.SectionsConfigMap)
 	if err != nil {
 		return fmt.Errorf("unable to get section configmap: %w", err)
 	}
 
 	cmKey := pipeline.Name + ".conf"
-	if pipeline.DeletionTimestamp != nil {
+
+	if !isLogPipelineDeployable(deployablePipelines, pipeline) {
 		delete(cm.Data, cmKey)
 	} else {
 		newConfig, err := builder.BuildFluentBitConfig(pipeline, s.config.PipelineDefaults)
@@ -157,4 +162,14 @@ func (s *syncer) copySecretData(ctx context.Context, sourceRef telemetryv1alpha1
 		sourceRef.Key,
 		sourceRef.Name,
 		sourceRef.Namespace)
+}
+
+// isLogPipelineDeployable checks if logpipeline is ready to be rendered into the fluentbit configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
+func isLogPipelineDeployable(allPipelines []telemetryv1alpha1.LogPipeline, logPipeline *telemetryv1alpha1.LogPipeline) bool {
+	for i := range allPipelines {
+		if allPipelines[i].Name == logPipeline.Name {
+			return true
+		}
+	}
+	return false
 }
