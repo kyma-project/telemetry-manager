@@ -4,7 +4,7 @@ Some quality aspects are covered by automated verification, so you must locally 
 
 ## CRD generation
 
-The API of the operator is realized by Kubernetes CRDs defined in the [apis](/apis/) folder as Golang source code. To install the CRDs later using Kustomize together with the operator deployment, you must generate proper Kubernetes [manifest files](/config/crd/bases/). Also, you must update the [user documentation](./resources/). 
+The API of the Telemetry Manager is realized by Kubernetes CRDs defined in the [apis](/apis/) folder as Golang source code. To install the CRDs later using Kustomize together with the Telemetry Manager deployment, you must generate proper Kubernetes [manifest files](/config/crd/bases/). Also, you must update the [user documentation](./resources/).
 
 To achieve both aspects, call:
 ```shell

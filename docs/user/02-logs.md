@@ -40,7 +40,7 @@ This approach assures a reliable buffer management and isolation of pipelines, w
 
 ### Telemetry Manager
 
-The LogPipeline resource is managed by the Telemetry Manager, a typical Kubernetes operator responsible for managing the custom parts of the Fluent Bit configuration.
+The LogPipeline resource is managed by the Telemetry Manager, a typical Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) responsible for managing the custom parts of the Fluent Bit configuration.
 
 ![Manager resources](./assets/logging-resources.drawio.svg)
 
@@ -175,7 +175,7 @@ spec:
 ```
 > **NOTE:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 labels job=fluentbit, container=$kubernetes['container_name'], namespace=$kubernetes['namespace_name'], pod=$kubernetes['pod_name'], node=$kubernetes['host'], app=$kubernetes['labels']['app'],app=$kubernetes['labels']['app.kubernetes.io/name']
- The Telemetry Operator supports different types of [Fluent Bit filter](https://docs.fluentbit.io/manual/concepts/data-pipeline/filter). The example uses the [grep](https://docs.fluentbit.io/manual/pipeline/filters/grep) and the [record_modifier](https://docs.fluentbit.io/manual/pipeline/filters/record-modifier) filter.
+ The Telemetry Manager supports different types of [Fluent Bit filter](https://docs.fluentbit.io/manual/concepts/data-pipeline/filter). The example uses the [grep](https://docs.fluentbit.io/manual/pipeline/filters/grep) and the [record_modifier](https://docs.fluentbit.io/manual/pipeline/filters/record-modifier) filter.
 
 - The first filter keeps all log records that have the `kubernetes.labels.app` attribute set with the value `my-deployment`; all other logs are discarded. The `kubernetes` attribute is available for every log record. See [Kubernetes filter (metadata)](#stage-3-kubernetes-filter-metadata) for more details.
 - The second filter drops all log records fulfilling the given rule. Here, typical Namespaces are dropped based on the `kubernetes` attribute.

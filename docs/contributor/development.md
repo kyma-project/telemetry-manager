@@ -51,7 +51,7 @@ For development, use the following commands:
   make uninstall
   ```
 
-- Run the operator locally (uses current kubeconfig context)
+- Run the Telemetry Manager locally (uses current kubeconfig context)
   ```bash
   make run
   ```

@@ -34,13 +34,13 @@ The Telemetry module provides an in-cluster central deployment of an [OTel Colle
 The OTel Collector comes with a [concept](https://opentelemetry.io/docs/collector/configuration/) of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together. Kyma's TracePipeline provides a hardened setup of an OTel Collector and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
 - Supportability - all features are tested and supported
 - Migratability - smooth migration experiences when switching underlying technologies or architectures
-- Native Kubernetes support - API provided by Kyma allows for an easy integration with Secrets, for example, served by the SAP BTP Operator. The Telemetry Operator takes care of the full lifecycle.
+- Native Kubernetes support - API provided by Kyma allows for an easy integration with Secrets, for example, served by the SAP BTP Operator. The Telemetry Manager takes care of the full lifecycle.
 - Focus - the user doesn't need to understand underlying concepts
 
 The downside is that only a limited set of features is available. If you want to avoid this downside, bring your own collector setup. The current feature set focuses on providing the full configurability of backends integrated by OTLP. As a next step, meaningful filter options will be provided, especially head- and tail-based sampling configurations.
 
 ### Telemetry Manager
-The TracePipeline resource is managed by the Telemetry Manager, a typical Kubernetes operator responsible for managing the custom parts of the OTel Collector configuration.
+The TracePipeline resource is managed by the Telemetry Manager, a typical Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) responsible for managing the custom parts of the OTel Collector configuration.
 
 ![Manager resources](./assets/tracing-resources.drawio.svg)
 

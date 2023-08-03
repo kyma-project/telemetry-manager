@@ -40,16 +40,16 @@ Currently, logs are based on the Fluent Bit protocol. If you're curious about th
 
 ### Telemetry Manager
 
-Kyma's Telemetry module ships the Telemetry Manager as its core component. The manager implements the Kubernetes controller pattern and manages the whole lifecycle of all other components covered in the module. The manager watches for LogPipeline, TracePipeline, and MetricPipeline resources created by the user. With these, the user describes in a declarative way what data of a signal type to collect and where to ship it.
+Kyma's Telemetry module ships the Telemetry Manager as its core component. Telemetry Manager is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that implements the Kubernetes controller pattern and manages the whole lifecycle of all other components covered in the module. The manager watches for LogPipeline, TracePipeline, and MetricPipeline resources created by the user. With these, the user describes in a declarative way what data of a signal type to collect and where to ship it.
 If the manager detects a configuration, it rolls out the relevant collector components on demand.
 
-For details, see [Telemetry Manager](/docs/user/01-manager.md).
+For more information, see [Telemetry Manager](/docs/user/01-manager.md).
 
 ### Log Agent
 
 The log agent is based on a [Fluent Bit](https://fluentbit.io/) installation running as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). It reads all containers' logs in the runtime and ships them according to a LogPipeline configuration.
 
-For details, see [Logs](/docs/user/02-logs.md).
+For more information, see [Logs](/docs/user/02-logs.md).
 
 ### Trace Gateway
 
@@ -61,7 +61,7 @@ For details, see [Traces](/docs/user/03-traces.md).
 
 The metric gateway and agent are based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). The gateway provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the metric signals. The agent scrapes annotated Prometheus-based workloads. According to a MetricPipeline configuration, the gateway processes and ships the metric data to a target system.
 
-For details, see [Metrics](/docs/user/04-metrics.md).
+For more information, see [Metrics](/docs/user/04-metrics.md).
 
 ## API / Custom Resource Definitions
 
