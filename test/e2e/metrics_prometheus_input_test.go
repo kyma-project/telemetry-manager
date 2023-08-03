@@ -86,22 +86,22 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
 						return m.Name() == mocks.CustomMetricCPUTemperature.Name && m.Type() == metricTypeMap[mocks.CustomMetricCPUTemperature.Type]
 					}),
-					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
 						if m.Name() == mocks.CustomMetricHardDiskErrorsTotal.Name && m.Type() == metricTypeMap[mocks.CustomMetricHardDiskErrorsTotal.Type] && m.Sum().IsMonotonic() {
 							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricHardDiskErrorsTotal.Labels...)
 						}
 						return false
 					}),
-					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
 						if m.Name() == mocks.CustomMetricCPUEnergyHistogram.Name && m.Type() == metricTypeMap[mocks.CustomMetricCPUEnergyHistogram.Type] {
 							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricCPUEnergyHistogram.Labels...)
 						}
 						return false
 					}),
-					HaveMetricsThatSatisfy(func(m pmetric.Metric) bool {
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
 						if m.Name() == mocks.CustomMetricHardwareHumidity.Name && m.Type() == metricTypeMap[mocks.CustomMetricHardwareHumidity.Type] {
 							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricHardwareHumidity.Labels...)
 						}
@@ -116,7 +116,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					Not(HaveMetricNames(kubeletMetricNames...)))))
+					Not(ContainMetricsWithNames(kubeletMetricNames...)))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})

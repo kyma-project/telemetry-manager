@@ -11,145 +11,105 @@ import (
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
+	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
-func HaveMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("HaveMetrics requires a []byte, but got %T", actual)
-		}
-
-		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+// ContainMetrics succeeds if the filexporter output file contains the metrics passed into the matcher. The ordering of the elements does not matter.
+func ContainMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlMetrics []byte) ([]pmetric.Metric, error) {
+		mds, err := extractMetrics(jsonlMetrics)
 		if err != nil {
-			return nil, fmt.Errorf("HaveMetrics requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("ContainMetrics requires a valid OTLP JSON document: %v", err)
 		}
 
-		var actualMetrics []pmetric.Metric
-		for _, md := range actualMds {
-			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
+		var metrics []pmetric.Metric
+		for _, md := range mds {
+			metrics = append(metrics, kitmetrics.AllMetrics(md)...)
 		}
-		return actualMetrics, nil
-	}, gomega.ContainElements(expectedMetrics))
-}
-
-func HaveSumMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("HaveSumMetrics requires a []byte, but got %T", actual)
-		}
-
-		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
-		if err != nil {
-			return nil, fmt.Errorf("HaveSumMetrics requires a valid OTLP JSON document: %v", err)
-		}
-
-		var actualMetrics []pmetric.Metric
-		for _, md := range actualMds {
-			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
-		}
-
-		// workaround the difference between metricdata and pmetric temporality formats
-		for _, actualMetric := range actualMetrics {
-			if actualMetric.Sum().AggregationTemporality() == pmetric.AggregationTemporalityCumulative {
-				actualMetric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
-				continue
-			}
-			actualMetric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
-		}
-
-		return actualMetrics, nil
+		return metrics, nil
 	}, gomega.ContainElements(expectedMetrics))
 }
 
 type MetricPredicate = func(pmetric.Metric) bool
 
-func HaveMetricsThatSatisfy(predicate MetricPredicate) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]pmetric.Metric, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("HaveMetricsThatSatisfy requires a []byte, but got %T", actual)
-		}
-
-		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+// ContainMetricsThatSatisfy succeeds if the filexporter output file contains metrics that satisfy the predicate passed into the matcher. The ordering of the elements does not matter.
+func ContainMetricsThatSatisfy(predicate MetricPredicate) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlMetrics []byte) ([]pmetric.Metric, error) {
+		mds, err := extractMetrics(jsonlMetrics)
 		if err != nil {
-			return nil, fmt.Errorf("HaveMetricsThatSatisfy requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("ContainMetricsThatSatisfy requires a valid OTLP JSON document: %v", err)
 		}
 
-		var actualMetrics []pmetric.Metric
-		for _, md := range actualMds {
-			actualMetrics = append(actualMetrics, metrics.AllMetrics(md)...)
+		var metrics []pmetric.Metric
+		for _, md := range mds {
+			metrics = append(metrics, kitmetrics.AllMetrics(md)...)
 		}
-		return actualMetrics, nil
+		return metrics, nil
 	}, gomega.ContainElements(gomega.Satisfy(predicate)))
 }
 
-func HaveNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) (int, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return 0, fmt.Errorf("HaveNumberOfMetrics requires a []byte, but got %T", actual)
-		}
-
-		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+// ConsistOfNumberOfMetrics succeeds if the filexporter output file has the expected number of metrics.
+func ConsistOfNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlMetrics []byte) (int, error) {
+		mds, err := extractMetrics(jsonlMetrics)
 		if err != nil {
-			return 0, fmt.Errorf("HaveNumberOfMetrics requires a valid OTLP JSON document: %v", err)
+			return 0, fmt.Errorf("ConsistOfNumberOfMetrics requires a valid OTLP JSON document: %v", err)
 		}
-		metricsCount := 0
-		for _, md := range actualMds {
-			metricsCount += len(metrics.AllMetrics(md))
+		metricCount := 0
+		for _, md := range mds {
+			metricCount += len(kitmetrics.AllMetrics(md))
 		}
 
-		return metricsCount, nil
+		return metricCount, nil
 	}, gomega.Equal(expectedMetricCount))
 }
 
-func HaveMetricNames(expectedMetricNames ...string) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]string, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("HaveMetricNames requires a []byte, but got %T", actual)
-		}
-
-		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+// ContainMetricsWithNames succeeds if the filexporter output file contains metrics with names passed into the matcher. The ordering of the elements does not matter.
+func ContainMetricsWithNames(expectedMetricNames ...string) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlMetrics []byte) ([]string, error) {
+		mds, err := extractMetrics(jsonlMetrics)
 		if err != nil {
-			return nil, fmt.Errorf("HaveMetricNames requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("ContainMetricsWithNames requires a valid OTLP JSON document: %v", err)
 		}
 
-		var actualMetricNames []string
-		for _, md := range actualMds {
-			actualMetricNames = append(actualMetricNames, metrics.AllMetricNames(md)...)
+		var metricNames []string
+		for _, md := range mds {
+			metricNames = append(metricNames, kitmetrics.AllMetricNames(md)...)
 		}
 
-		return actualMetricNames, nil
+		return metricNames, nil
 	}, gomega.ContainElements(expectedMetricNames))
 }
 
-func HaveAttributes(expectedAttributeNames ...string) types.GomegaMatcher {
-	return gomega.WithTransform(func(actual interface{}) ([]string, error) {
-		actualBytes, ok := actual.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("HaveAttributes requires a []byte, but got %T", actual)
-		}
-
-		actualMds, err := unmarshalOTLPJSONMetrics(actualBytes)
+func ConsistOfMetricsWithResourceAttributes(expectedAttributeNames ...string) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlMetrics []byte) ([][]string, error) {
+		mds, err := extractMetrics(jsonlMetrics)
 		if err != nil {
-			return nil, fmt.Errorf("HaveAttributes requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("ConsistOfMetricsWithResourceAttributes requires a valid OTLP JSON document: %v", err)
 		}
 
-		var actualAttributeNames []string
-		for _, md := range actualMds {
-			actualAttributeNames = append(actualAttributeNames, metrics.AllResourceAttributeNames(md)...)
+		var attributeNames [][]string
+		for _, md := range mds {
+			attributeNames = append(attributeNames, kitmetrics.AllResourceAttributeNames(md))
 		}
 
-		return actualAttributeNames, nil
-	}, gomega.ContainElements(expectedAttributeNames))
+		return attributeNames, nil
+	}, gomega.HaveEach(gomega.ConsistOf(expectedAttributeNames)))
 }
 
-func unmarshalOTLPJSONMetrics(buf []byte) ([]pmetric.Metrics, error) {
-	var results []pmetric.Metrics
+func extractMetrics(fileBytes []byte) ([]pmetric.Metrics, error) {
+	mds, err := unmarshalMetrics(fileBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	applyTemporalityWorkaround(mds)
+
+	return mds, nil
+}
+
+func unmarshalMetrics(buf []byte) ([]pmetric.Metrics, error) {
+	var mds []pmetric.Metrics
 
 	var metricsUnmarshaler pmetric.JSONUnmarshaler
 	scanner := bufio.NewScanner(bytes.NewReader(buf))
@@ -162,11 +122,30 @@ func unmarshalOTLPJSONMetrics(buf []byte) ([]pmetric.Metrics, error) {
 			return nil, fmt.Errorf("failed to unmarshall metrics: %v", err)
 		}
 
-		results = append(results, td)
+		mds = append(mds, td)
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("failed to read metrics: %v", err)
 	}
 
-	return results, nil
+	return mds, nil
+}
+
+// applyTemporalityWorkaround flips temporality os a Sum metric. The reason for that is the inconsistency
+// between the metricdata package (https://github.com/open-telemetry/opentelemetry-go/blob/main/sdk/metric/metricdata/temporality.go)
+// and the pmetric package (https://github.com/open-telemetry/opentelemetry-collector/blob/main/pdata/pmetric/aggregation_temporality.go)
+func applyTemporalityWorkaround(mds []pmetric.Metrics) {
+	for _, md := range mds {
+		for _, metric := range kitmetrics.AllMetrics(md) {
+			if metric.Type() != pmetric.MetricTypeSum {
+				continue
+			}
+
+			if metric.Sum().AggregationTemporality() == pmetric.AggregationTemporalityCumulative {
+				metric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+			} else {
+				metric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+			}
+		}
+	}
 }
