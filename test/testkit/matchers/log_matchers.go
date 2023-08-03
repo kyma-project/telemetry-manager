@@ -104,6 +104,30 @@ func WithAttributeKeyValue(expectedKey, expectedValue string) LogFilter {
 	}
 }
 
+func WithKubernetesLabels() LogFilter {
+	return func(lr *plog.LogRecord) (bool, error) {
+		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+		if !hasKubernetesAttrs {
+			return false, nil
+		}
+
+		_, hasLabels := kubernetesAttrs["labels"]
+		return hasLabels, nil
+	}
+}
+
+func WithKubernetesAnnotations() LogFilter {
+	return func(lr *plog.LogRecord) (bool, error) {
+		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+		if !hasKubernetesAttrs {
+			return false, nil
+		}
+
+		_, hasLabels := kubernetesAttrs["annotations"]
+		return hasLabels, nil
+	}
+}
+
 // ContainLogs succeeds if the filexporter output file contains any logs with the Kubernetes attributes passed into the matcher.
 func ContainLogs(filters ...LogFilter) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonlLogs []byte) (bool, error) {
@@ -126,62 +150,6 @@ func ContainLogs(filters ...LogFilter) types.GomegaMatcher {
 				if match {
 					return true, nil
 				}
-			}
-		}
-		return false, nil
-	}, gomega.BeTrue())
-}
-
-// ContainLogsWithKubernetesLabels succeeds if the filexporter output file contains any logs with Kubernetes labels.
-func ContainLogsWithKubernetesLabels() types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlLogs []byte) (bool, error) {
-		logs, err := unmarshalLogs(jsonlLogs)
-		if err != nil {
-			return false, fmt.Errorf("ContainLogsWithKubernetesLabels requires a valid OTLP JSON document: %v", err)
-		}
-
-		logRecords := getAllLogRecords(logs)
-		if len(logRecords) == 0 {
-			return false, nil
-		}
-
-		for _, lr := range logRecords {
-			k8sAttributes, hasKubernetes := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
-			if !hasKubernetes {
-				continue
-			}
-
-			_, hasLabels := k8sAttributes["labels"]
-			if hasLabels {
-				return true, nil
-			}
-		}
-		return false, nil
-	}, gomega.BeTrue())
-}
-
-// ContainLogsWithKubernetesAnnotations succeeds if the filexporter output file contains any logs with Kubernetes annotations.
-func ContainLogsWithKubernetesAnnotations() types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlLogs []byte) (bool, error) {
-		logs, err := unmarshalLogs(jsonlLogs)
-		if err != nil {
-			return false, fmt.Errorf("ContainLogs requires a valid OTLP JSON document: %v", err)
-		}
-
-		logRecords := getAllLogRecords(logs)
-		if len(logRecords) == 0 {
-			return false, nil
-		}
-
-		for _, lr := range logRecords {
-			k8sAttributes, hasKubernetes := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
-			if !hasKubernetes {
-				continue
-			}
-
-			_, hasAnnotations := k8sAttributes["annotations"]
-			if hasAnnotations {
-				return true, nil
 			}
 		}
 		return false, nil
