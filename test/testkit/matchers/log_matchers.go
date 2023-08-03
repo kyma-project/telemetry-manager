@@ -53,8 +53,8 @@ func ContainLogs() types.GomegaMatcher {
 
 // ContainLogsWithKubernetesAttributes succeeds if the filexporter output file contains any logs with the Kubernetes attributes passed into the matcher.
 func ContainLogsWithKubernetesAttributes(namespace, pod, container string) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonLogs []byte) (bool, error) {
-		lds, err := unmarshalLogs(jsonLogs)
+	return gomega.WithTransform(func(jsonlLogs []byte) (bool, error) {
+		lds, err := unmarshalLogs(jsonlLogs)
 		if err != nil {
 			return false, fmt.Errorf("ContainLogsWithKubernetesAttributes requires a valid OTLP JSON document: %v", err)
 		}
