@@ -81,7 +81,7 @@ func WithContainer(expectedContainer string) LogFilter {
 		if !hasKubernetesAttrs {
 			return false, nil
 		}
-		container, hasContainer := kubernetesAttrs[tagNamespace]
+		container, hasContainer := kubernetesAttrs[tagContainer]
 		if !hasContainer {
 			return false, nil
 		}
@@ -90,6 +90,17 @@ func WithContainer(expectedContainer string) LogFilter {
 			return false, nil
 		}
 		return strings.HasPrefix(containerStr, expectedContainer), nil
+	}
+}
+
+func WithAttributeKeyValue(expectedKey, expectedValue string) LogFilter {
+	return func(lr *plog.LogRecord) (bool, error) {
+		attr, hasAttr := lr.Attributes().AsRaw()[expectedKey].(string)
+		if !hasAttr {
+			return false, nil
+		}
+
+		return attr == expectedValue, nil
 	}
 }
 
@@ -115,30 +126,6 @@ func ContainLogs(filters ...LogFilter) types.GomegaMatcher {
 				if match {
 					return true, nil
 				}
-			}
-		}
-		return false, nil
-	}, gomega.BeTrue())
-}
-
-// ContainLogsWithAttribute succeeds if the filexporter output file contains any logs with the string attribute passed into the matcher.
-func ContainLogsWithAttribute(key, value string) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlLogs []byte) (bool, error) {
-		logs, err := unmarshalLogs(jsonlLogs)
-		if err != nil {
-			return false, fmt.Errorf("ContainLogsWithAttribute requires a valid OTLP JSON document: %v", err)
-		}
-
-		logRecords := getAllLogRecords(logs)
-
-		for _, lr := range logRecords {
-			attribute, ok := lr.Attributes().AsRaw()[key].(string)
-			if !ok {
-				continue
-			}
-
-			if attribute == value {
-				return true, nil
 			}
 		}
 		return false, nil
