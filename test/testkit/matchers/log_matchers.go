@@ -37,47 +37,84 @@ func ConsistOfNumberOfLogs(count int) types.GomegaMatcher {
 	}, gomega.Equal(count))
 }
 
-// ContainLogs succeeds if the filexporter output file has any logs.
-func ContainLogs() types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlLogs []byte) (int, error) {
-		lds, err := unmarshalLogs(jsonlLogs)
-		if err != nil {
-			return 0, fmt.Errorf("ContainLogs requires a valid OTLP JSON document: %v", err)
+type LogFilter func(lr *plog.LogRecord) (bool, error)
+
+func WithNamespace(expectedNamespace string) LogFilter {
+	return func(lr *plog.LogRecord) (bool, error) {
+		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+		if !hasKubernetesAttrs {
+			return false, nil
 		}
-
-		logRecords := getAllLogRecords(lds)
-
-		return len(logRecords), nil
-	}, gomega.BeNumerically(">", 0))
+		namespace, hasNamespace := kubernetesAttrs[tagNamespace]
+		if !hasNamespace {
+			return false, nil
+		}
+		namespaceStr, isStr := namespace.(string)
+		if !isStr {
+			return false, nil
+		}
+		return strings.HasPrefix(namespaceStr, expectedNamespace), nil
+	}
 }
 
-// ContainLogsWithKubernetesAttributes succeeds if the filexporter output file contains any logs with the Kubernetes attributes passed into the matcher.
-func ContainLogsWithKubernetesAttributes(namespace, pod, container string) types.GomegaMatcher {
+func WithPod(expectedPod string) LogFilter {
+	return func(lr *plog.LogRecord) (bool, error) {
+		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+		if !hasKubernetesAttrs {
+			return false, nil
+		}
+		pod, hasPod := kubernetesAttrs[tagPod]
+		if !hasPod {
+			return false, nil
+		}
+		podStr, isStr := pod.(string)
+		if !isStr {
+			return false, nil
+		}
+		return strings.HasPrefix(podStr, expectedPod), nil
+	}
+}
+
+func WithContainer(expectedContainer string) LogFilter {
+	return func(lr *plog.LogRecord) (bool, error) {
+		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+		if !hasKubernetesAttrs {
+			return false, nil
+		}
+		container, hasContainer := kubernetesAttrs[tagNamespace]
+		if !hasContainer {
+			return false, nil
+		}
+		containerStr, isStr := container.(string)
+		if !isStr {
+			return false, nil
+		}
+		return strings.HasPrefix(containerStr, expectedContainer), nil
+	}
+}
+
+// ContainLogs succeeds if the filexporter output file contains any logs with the Kubernetes attributes passed into the matcher.
+func ContainLogs(filters ...LogFilter) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonlLogs []byte) (bool, error) {
 		lds, err := unmarshalLogs(jsonlLogs)
 		if err != nil {
-			return false, fmt.Errorf("ContainLogsWithKubernetesAttributes requires a valid OTLP JSON document: %v", err)
+			return false, fmt.Errorf("ContainLogs requires a valid OTLP JSON document: %v", err)
 		}
 
 		logRecords := getAllLogRecords(lds)
-
-		filter := ResourceTags{
-			Namespace: namespace,
-			Pod:       pod,
-			Container: container,
-		}
 		for _, lr := range logRecords {
-			attributes, hasKubernetes := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
-			if !hasKubernetes {
-				continue
-			}
-			tags, err := extractTags(attributes)
-			if err != nil {
-				return false, fmt.Errorf("LogRecord has invalid or malformed attributes: %v", err)
+			if len(filters) == 0 {
+				return true, nil
 			}
 
-			if matchPrefixes(tags, filter) {
-				return true, nil
+			for _, filter := range filters {
+				match, filterErr := filter(&lr)
+				if filterErr != nil {
+					return false, filterErr
+				}
+				if match {
+					return true, nil
+				}
 			}
 		}
 		return false, nil
@@ -141,7 +178,7 @@ func ContainLogsWithKubernetesAnnotations() types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonlLogs []byte) (bool, error) {
 		logs, err := unmarshalLogs(jsonlLogs)
 		if err != nil {
-			return false, fmt.Errorf("ContainLogsWithKubernetesAttributes requires a valid OTLP JSON document: %v", err)
+			return false, fmt.Errorf("ContainLogs requires a valid OTLP JSON document: %v", err)
 		}
 
 		logRecords := getAllLogRecords(logs)
@@ -162,46 +199,6 @@ func ContainLogsWithKubernetesAnnotations() types.GomegaMatcher {
 		}
 		return false, nil
 	}, gomega.BeTrue())
-}
-
-func matchPrefixes(logRecordTags, filter ResourceTags) bool {
-	if filter.Namespace != "" && !strings.HasPrefix(logRecordTags.Namespace, filter.Namespace) {
-		return false
-	}
-
-	if filter.Pod != "" && !strings.HasPrefix(logRecordTags.Pod, filter.Pod) {
-		return false
-	}
-
-	if filter.Container != "" && !strings.HasPrefix(logRecordTags.Container, filter.Container) {
-		return false
-	}
-
-	return true
-}
-
-func extractTags(attrs map[string]any) (tags ResourceTags, err error) {
-	for k, v := range attrs {
-		if k != tagNamespace && k != tagPod && k != tagContainer {
-			continue
-		}
-
-		tagValue, ok := v.(string)
-		if !ok {
-			return tags, fmt.Errorf("an attribute %s is malformed", k)
-		}
-
-		switch k {
-		case tagNamespace:
-			tags.Namespace = tagValue
-		case tagPod:
-			tags.Pod = tagValue
-		case tagContainer:
-			tags.Container = tagValue
-		}
-	}
-
-	return tags, nil
 }
 
 func getAllLogRecords(lds []plog.Logs) []plog.LogRecord {
