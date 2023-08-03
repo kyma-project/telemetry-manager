@@ -59,3 +59,7 @@ func (p *URLProvider) SetMetricPodUrl(url string) *URLProvider {
 	p.metricPod = url
 	return p
 }
+
+func (p *URLProvider) MetricPodUrl() string {
+	return p.metricPod
+}
