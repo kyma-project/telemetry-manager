@@ -14,6 +14,7 @@ import (
 
 	"fmt"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
 )
 
@@ -35,7 +36,7 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 			k8sObjects, urlProvider := makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs)
 			urls = urlProvider
 			DeferCleanup(func() {
-				//Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
@@ -52,7 +53,6 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 
 		It("Should have sample app running", func() {
 			Eventually(func(g Gomega) {
-				//key := types.NamespacedName{Name: "sample-metrics", Namespace: sampleAppNs}
 				listOptions := client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(map[string]string{"app": "sample-mterics"}),
 					Namespace:     sampleAppNs,
@@ -65,15 +65,15 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MetricPodUrl())
+				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					ContainLogs(),
+				)))
 			}, timeout, interval).Should(Succeed())
-
 		})
-
 	})
-
 })
 
 func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) ([]client.Object, *mocks.URLProvider) {
@@ -105,8 +105,7 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	logHTTPPipeline := kitlog.NewHTTPPipeline("pipeline-istio-access-logs", hostSecret.SecretKeyRef("log-host"))
-	logHTTPPipeline.WithIncludeContainer([]string{"istio-proxy"})
+	istioAccessLogsPipeline := kitlog.NewHTTPPipeline("pipeline-istio-access-logs", hostSecret.SecretKeyRef("log-host")).WithIncludeContainer([]string{"istio-proxy"})
 
 	// Abusing metrics provider for istio access logs
 	sampleApp := mocks.NewCustomMetricProvider(sampleAppNs)
@@ -118,7 +117,7 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		sampleApp.K8sObject(),
 		hostSecret.K8sObject(),
-		logHTTPPipeline.K8sObjectHTTP(),
+		istioAccessLogsPipeline.K8sObjectHTTP(),
 	}...)
 	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockHTTPBackend.Name(), telemetryDataFilename, httpWebPort), 0)
 	urls.SetMetricPodUrl(proxyClient.ProxyURLForPod(sampleAppNs, "sample-metrics", "/metrics/", 8080))
