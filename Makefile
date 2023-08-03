@@ -7,12 +7,14 @@ MODULE_NAME ?= telemetry
 MODULE_CR_PATH ?= ./config/samples/operator_v1alpha1_telemetry.yaml
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.26.1
+ISTIO_VERSION ?= 0.2.1
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
 # Operating system type
 OS_TYPE ?= $(shell uname)
 PROJECT_DIR ?= $(shell pwd)
 ARTIFACTS ?= $(shell pwd)/artifacts
+
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -103,6 +105,9 @@ test-matchers: ginkgo
 test-matchers-logging: ginkgo
 	$(GINKGO) run --tags e2e -v --label-filter="logging" ./test/testkit/matchers
 
+test-matchers-istio-access-logs: ginkgo
+	$(GINKGO) run --tags e2e -v --label-filter="istio-access-logs" ./test/testkit/matchers
+
 test-matchers-tracing: ginkgo
 	$(GINKGO) run --tags e2e -v --label-filter="tracing" ./test/testkit/matchers
 
@@ -170,6 +175,15 @@ e2e-coverage: ginkgo
 	@$(GINKGO) outline --format indent test/e2e/tracing_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
 	@$(GINKGO) outline --format indent test/e2e/logging_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
 
+
+.PHONY: e2e-test-istio
+e2e-test-istio: ginkgo k3d ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
+	#K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
+	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="istio" ./test/integration
+	mkdir -p ${ARTIFACTS}
+	mv junit.xml ${ARTIFACTS}
 ##@ Build
 
 .PHONY: build

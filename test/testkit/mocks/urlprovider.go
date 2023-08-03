@@ -6,6 +6,7 @@ type URLProvider struct {
 	metrics   string
 	pipelines map[int]map[string]string
 	otlpPush  string
+	metricPod string
 }
 
 func NewURLProvider() *URLProvider {
@@ -52,4 +53,9 @@ func (p *URLProvider) SetMockBackendExportAt(url string, idx int) *URLProvider {
 
 func (p *URLProvider) MockBackendExportAt(idx int) string {
 	return p.pipelines[idx]["mockBackendExport"]
+}
+
+func (p *URLProvider) SetMetricPodUrl(url string) *URLProvider {
+	p.metricPod = url
+	return p
 }

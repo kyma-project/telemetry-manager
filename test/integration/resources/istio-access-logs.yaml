@@ -1,0 +1,9 @@
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: access-config
+  namespace: sample
+spec:
+  accessLogging:
+    - providers:
+        - name: stdout-json
