@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"strings"
 )
@@ -85,53 +86,60 @@ func WithContainer(expectedContainer string) LogFilter {
 
 func WithAttributeKeyValue(expectedKey, expectedValue string) LogFilter {
 	return func(lr *plog.LogRecord) bool {
-		attr, hasAttr := lr.Attributes().AsRaw()[expectedKey].(string)
-		if !hasAttr {
+		attr, hasAttr := lr.Attributes().Get(expectedKey)
+		if !hasAttr || attr.Type() != pcommon.ValueTypeStr {
 			return false
 		}
 
-		return attr == expectedValue
+		return attr.Str() == expectedValue
 	}
 }
 
 func WithKubernetesLabels() LogFilter {
 	return func(lr *plog.LogRecord) bool {
-		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 		if !hasKubernetesAttrs {
 			return false
 		}
 
-		_, hasLabels := kubernetesAttrs["labels"]
+		_, hasLabels := kubernetesAttrs.Get("labels")
 		return hasLabels
 	}
 }
 
 func WithKubernetesAnnotations() LogFilter {
 	return func(lr *plog.LogRecord) bool {
-		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 		if !hasKubernetesAttrs {
 			return false
 		}
 
-		_, hasLabels := kubernetesAttrs["annotations"]
-		return hasLabels
+		_, hasAnnotations := kubernetesAttrs.Get("annotations")
+		return hasAnnotations
 	}
 }
 
 func getKubernetesAttributeValue(lr *plog.LogRecord, attrKey string) (string, bool) {
-	kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+	kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 	if !hasKubernetesAttrs {
 		return "", false
 	}
-	untypedAttrValue, hasAttr := kubernetesAttrs[attrKey]
-	if !hasAttr {
+
+	attrValue, hasAttr := kubernetesAttrs.Get(attrKey)
+	if !hasAttr || attrValue.Type() != pcommon.ValueTypeStr {
 		return "", false
 	}
-	attrValue, isStr := untypedAttrValue.(string)
-	if !isStr {
-		return "", false
+
+	return attrValue.Str(), true
+}
+
+func getKubernetesAttributes(lr *plog.LogRecord) (pcommon.Map, bool) {
+	const kubernetesAttrKey = "kubernetes"
+	kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().Get(kubernetesAttrKey)
+	if !hasKubernetesAttrs || kubernetesAttrs.Type() != pcommon.ValueTypeMap {
+		return pcommon.NewMap(), false
 	}
-	return attrValue, true
+	return kubernetesAttrs.Map(), true
 }
 
 func getAllLogRecords(lds []plog.Logs) []plog.LogRecord {
