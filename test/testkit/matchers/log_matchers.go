@@ -4,24 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"strings"
-
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/plog"
+	"strings"
 )
-
-const (
-	tagNamespace = "namespace_name"
-	tagPod       = "pod_name"
-	tagContainer = "container_name"
-)
-
-type ResourceTags struct {
-	Namespace string
-	Pod       string
-	Container string
-}
 
 // ConsistOfNumberOfLogs succeeds if the filexporter output file has the expected number of logs.
 func ConsistOfNumberOfLogs(count int) types.GomegaMatcher {
@@ -39,57 +26,60 @@ func ConsistOfNumberOfLogs(count int) types.GomegaMatcher {
 
 type LogFilter func(lr *plog.LogRecord) bool
 
+// ContainLogs succeeds if the filexporter output file contains any logs with the Kubernetes attributes passed into the matcher.
+func ContainLogs(filters ...LogFilter) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlLogs []byte) (bool, error) {
+		lds, err := unmarshalLogs(jsonlLogs)
+		if err != nil {
+			return false, fmt.Errorf("ContainLogs requires a valid OTLP JSON document: %v", err)
+		}
+
+		logRecords := getAllLogRecords(lds)
+		for _, lr := range logRecords {
+			if len(filters) == 0 {
+				return true, nil
+			}
+
+			for _, filter := range filters {
+				if filter(&lr) {
+					return true, nil
+				}
+			}
+		}
+		return false, nil
+	}, gomega.BeTrue())
+}
+
 func WithNamespace(expectedNamespace string) LogFilter {
 	return func(lr *plog.LogRecord) bool {
-		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
-		if !hasKubernetesAttrs {
+		const namespaceAttrKey = "namespace_name"
+		namespace, exists := getKubernetesAttributeValue(lr, namespaceAttrKey)
+		if !exists {
 			return false
 		}
-		namespace, hasNamespace := kubernetesAttrs[tagNamespace]
-		if !hasNamespace {
-			return false
-		}
-		namespaceStr, isStr := namespace.(string)
-		if !isStr {
-			return false
-		}
-		return strings.HasPrefix(namespaceStr, expectedNamespace)
+		return strings.HasPrefix(namespace, expectedNamespace)
 	}
 }
 
 func WithPod(expectedPod string) LogFilter {
 	return func(lr *plog.LogRecord) bool {
-		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
-		if !hasKubernetesAttrs {
+		const podAttrKey = "pod_name"
+		pod, exists := getKubernetesAttributeValue(lr, podAttrKey)
+		if !exists {
 			return false
 		}
-		pod, hasPod := kubernetesAttrs[tagPod]
-		if !hasPod {
-			return false
-		}
-		podStr, isStr := pod.(string)
-		if !isStr {
-			return false
-		}
-		return strings.HasPrefix(podStr, expectedPod)
+		return strings.HasPrefix(pod, expectedPod)
 	}
 }
 
 func WithContainer(expectedContainer string) LogFilter {
 	return func(lr *plog.LogRecord) bool {
-		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
-		if !hasKubernetesAttrs {
+		const containerAttrKey = "container_name"
+		container, exists := getKubernetesAttributeValue(lr, containerAttrKey)
+		if !exists {
 			return false
 		}
-		container, hasContainer := kubernetesAttrs[tagContainer]
-		if !hasContainer {
-			return false
-		}
-		containerStr, isStr := container.(string)
-		if !isStr {
-			return false
-		}
-		return strings.HasPrefix(containerStr, expectedContainer)
+		return strings.HasPrefix(container, expectedContainer)
 	}
 }
 
@@ -128,28 +118,20 @@ func WithKubernetesAnnotations() LogFilter {
 	}
 }
 
-// ContainLogs succeeds if the filexporter output file contains any logs with the Kubernetes attributes passed into the matcher.
-func ContainLogs(filters ...LogFilter) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlLogs []byte) (bool, error) {
-		lds, err := unmarshalLogs(jsonlLogs)
-		if err != nil {
-			return false, fmt.Errorf("ContainLogs requires a valid OTLP JSON document: %v", err)
-		}
-
-		logRecords := getAllLogRecords(lds)
-		for _, lr := range logRecords {
-			if len(filters) == 0 {
-				return true, nil
-			}
-
-			for _, filter := range filters {
-				if filter(&lr) {
-					return true, nil
-				}
-			}
-		}
-		return false, nil
-	}, gomega.BeTrue())
+func getKubernetesAttributeValue(lr *plog.LogRecord, attrKey string) (string, bool) {
+	kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
+	if !hasKubernetesAttrs {
+		return "", false
+	}
+	untypedAttrValue, hasAttr := kubernetesAttrs[attrKey]
+	if !hasAttr {
+		return "", false
+	}
+	attrValue, isStr := untypedAttrValue.(string)
+	if !isStr {
+		return "", false
+	}
+	return attrValue, true
 }
 
 func getAllLogRecords(lds []plog.Logs) []plog.LogRecord {
