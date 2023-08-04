@@ -29,7 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
@@ -62,44 +61,32 @@ func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&telemetryv1alpha1.LogPipeline{}).
 		Watches(
-			&source.Kind{Type: &appsv1.DaemonSet{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.LogPipeline{},
-				IsController: false}).
+			&appsv1.DaemonSet{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{})).
 		Watches(
-			&source.Kind{Type: &corev1.Service{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.LogPipeline{},
-				IsController: false}).
+			&corev1.Service{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{})).
 		Watches(
-			&source.Kind{Type: &corev1.ConfigMap{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.LogPipeline{},
-				IsController: false}).
+			&corev1.ConfigMap{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{})).
 		Watches(
-			&source.Kind{Type: &corev1.ServiceAccount{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.LogPipeline{},
-				IsController: false}).
+			&corev1.ServiceAccount{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{})).
 		Watches(
-			&source.Kind{Type: &rbacv1.ClusterRole{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.LogPipeline{},
-				IsController: false}).
+			&rbacv1.ClusterRole{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{})).
 		Watches(
-			&source.Kind{Type: &rbacv1.ClusterRoleBinding{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.LogPipeline{},
-				IsController: false}).
+			&rbacv1.ClusterRoleBinding{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{})).
 		Watches(
-			&source.Kind{Type: &corev1.Secret{}},
+			&corev1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
 		).
 		Complete(r)
 }
 
-func (r *LogPipelineReconciler) mapSecret(object client.Object) []reconcile.Request {
+func (r *LogPipelineReconciler) mapSecret(ctx context.Context, object client.Object) []reconcile.Request {
 	var pipelines telemetryv1alpha1.LogPipelineList
 	var requests []reconcile.Request
 	err := r.List(context.Background(), &pipelines)

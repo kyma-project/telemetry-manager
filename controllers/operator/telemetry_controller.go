@@ -26,7 +26,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
@@ -53,18 +52,16 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&operatorv1alpha1.Telemetry{}).
 		Watches(
-			&source.Kind{Type: &corev1.Secret{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &operatorv1alpha1.Telemetry{},
-				IsController: false}).
+			&corev1.Secret{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &operatorv1alpha1.Telemetry{})).
 		Watches(
-			&source.Kind{Type: &admissionv1.ValidatingWebhookConfiguration{}},
+			&admissionv1.ValidatingWebhookConfiguration{},
 			handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
 			builder.WithPredicates(setup.DeleteOrUpdate())).
 		Complete(r)
 }
 
-func (r *TelemetryReconciler) mapWebhook(object client.Object) []reconcile.Request {
+func (r *TelemetryReconciler) mapWebhook(ctx context.Context, object client.Object) []reconcile.Request {
 	var telemetries operatorv1alpha1.TelemetryList
 	var requests []reconcile.Request
 
