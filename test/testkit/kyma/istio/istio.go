@@ -22,12 +22,3 @@ var AccessLogAttributeKeys = []string{
 	"downstream_remote_address",
 	"route_name",
 }
-
-/*
-	Missing attributes as they are null
-	"connection_termination_details",
-	"upstream_transport_failure_reason"
-	"requested_server_name"
-	"traceparent"
-	"tracestate"
-*/

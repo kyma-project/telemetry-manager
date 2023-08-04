@@ -16,10 +16,9 @@ import (
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
 
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
 var _ = Describe("Istio access logs", Label("istio"), func() {
@@ -36,7 +35,7 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 			urls = urlProvider
 			logPipelineName = logPipeline
 			DeferCleanup(func() {
-				//Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
