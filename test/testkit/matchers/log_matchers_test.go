@@ -79,7 +79,7 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 		})
 	})
 
-	Context("with having logs", func() {
+	Context("with having some logs", func() {
 		It("should succeed", func() {
 			ld := plog.NewLogs()
 			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
@@ -89,57 +89,57 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 		})
 	})
 
-	Context("should succeed with namespace", func() {
-		ld := plog.NewLogs()
-		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
-		k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
-		k8sAttrs.PutStr("namespace_name", "log-mocks-single-pipeline")
+	Context("with log filter", func() {
+		Context("should succeed with namespace", func() {
+			ld := plog.NewLogs()
+			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
+			k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
+			k8sAttrs.PutStr("namespace_name", "log-mocks-single-pipeline")
 
-		Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithNamespace("log-mocks-single-pipeline")))
-	})
+			Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithNamespace("log-mocks-single-pipeline")))
+		})
 
-	It("should succeed with pod", func() {
-		ld := plog.NewLogs()
-		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
-		k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
-		k8sAttrs.PutStr("namespace_name", "log-mocks-single-pipeline")
-		k8sAttrs.PutStr("pod_name", "log-receiver")
+		It("should succeed with pod", func() {
+			ld := plog.NewLogs()
+			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
+			k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
+			k8sAttrs.PutStr("namespace_name", "log-mocks-single-pipeline")
+			k8sAttrs.PutStr("pod_name", "log-receiver")
 
-		Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithNamespace("log-mocks-single-pipeline"), WithPod("log-receiver")))
-	})
+			Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithNamespace("log-mocks-single-pipeline"), WithPod("log-receiver")))
+		})
 
-	It("should succeed with container", func() {
-		ld := plog.NewLogs()
-		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
-		k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
-		k8sAttrs.PutStr("namespace_name", "log-mocks-single-pipeline")
-		k8sAttrs.PutStr("container_name", "fluentd")
+		It("should succeed with container", func() {
+			ld := plog.NewLogs()
+			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
+			k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
+			k8sAttrs.PutStr("namespace_name", "log-mocks-single-pipeline")
+			k8sAttrs.PutStr("container_name", "fluentd")
 
-		Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithNamespace("log-mocks-single-pipeline"), WithContainer("fluentd")))
-	})
+			Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithNamespace("log-mocks-single-pipeline"), WithContainer("fluentd")))
+		})
 
-	It("should fail with namespace", func() {
-		ld := plog.NewLogs()
-		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
-		k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
-		k8sAttrs.PutStr("namespace", "log-mocks-single-pipeline")
-		k8sAttrs.PutStr("pod", "log-receiver")
+		It("should fail with namespace", func() {
+			ld := plog.NewLogs()
+			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
+			k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
+			k8sAttrs.PutStr("namespace", "log-mocks-single-pipeline")
+			k8sAttrs.PutStr("pod", "log-receiver")
 
-		Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithNamespace("not-exist")))
-	})
+			Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithNamespace("not-exist")))
+		})
 
-	It("should fail with pod", func() {
-		ld := plog.NewLogs()
-		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
-		k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
-		k8sAttrs.PutStr("namespace", "log-mocks-single-pipeline")
-		k8sAttrs.PutStr("pod", "log-receiver")
+		It("should fail with pod", func() {
+			ld := plog.NewLogs()
+			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
+			k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
+			k8sAttrs.PutStr("namespace", "log-mocks-single-pipeline")
+			k8sAttrs.PutStr("pod", "log-receiver")
 
-		Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithPod("not-exist")))
-	})
+			Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithPod("not-exist")))
+		})
 
-	Context("with having logs", func() {
-		It("should succeed with key value", func() {
+		It("should succeed with attribute key value", func() {
 			ld := plog.NewLogs()
 			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 			logs.AppendEmpty().Attributes().PutStr("user", "foo")
@@ -148,7 +148,7 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 			Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithAttributeKeyValue("user", "foo")))
 		})
 
-		It("should fail with value", func() {
+		It("should fail if no matching value", func() {
 			ld := plog.NewLogs()
 			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 			logs.AppendEmpty().Attributes().PutStr("user", "foo")
@@ -157,7 +157,7 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 			Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithAttributeKeyValue("user", "value-not-exist")))
 		})
 
-		It("should fail with key", func() {
+		It("should fail if no matching key", func() {
 			ld := plog.NewLogs()
 			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 			logs.AppendEmpty().Attributes().PutStr("user", "foo")
@@ -165,10 +165,8 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 
 			Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithAttributeKeyValue("key-not-exist", "foo")))
 		})
-	})
 
-	Context("with having some logs with labels", func() {
-		It("should succeed", func() {
+		It("should succeed if some logs have labels", func() {
 			ld := plog.NewLogs()
 			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 			k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
@@ -178,34 +176,16 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 
 			Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithKubernetesLabels()))
 		})
-	})
 
-	Context("with having only logs with labels", func() {
-		It("should succeed", func() {
-			ld := plog.NewLogs()
-			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
-			k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
-			k8sAttrs.PutEmptyMap("labels").PutStr("env", "prod")
-
-			k8sAttrs = logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
-			k8sAttrs.PutEmptyMap("labels").PutStr("version", "1")
-
-			Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithKubernetesLabels()))
-		})
-	})
-
-	Context("with having no logs", func() {
-		It("should fail", func() {
+		It("should fail if no logs have labels", func() {
 			ld := plog.NewLogs()
 			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 			logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 
 			Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithKubernetesLabels()))
 		})
-	})
 
-	Context("with having some logs with annotations", func() {
-		It("should succeed", func() {
+		It("should succeed if some logs have annotations", func() {
 			ld := plog.NewLogs()
 			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 			k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
@@ -215,24 +195,8 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 
 			Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithKubernetesAnnotations()))
 		})
-	})
 
-	Context("with having only logs with annotations", func() {
-		It("should succeed", func() {
-			ld := plog.NewLogs()
-			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
-			k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
-			k8sAttrs.PutEmptyMap("annotations").PutStr("prometheus.io/scrape", "true")
-
-			k8sAttrs = logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
-			k8sAttrs.PutEmptyMap("annotations").PutStr("prometheus.io/scrape", "false")
-
-			Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithKubernetesAnnotations()))
-		})
-	})
-
-	Context("with having no logs", func() {
-		It("should fail", func() {
+		It("should fail if no logs have annotations", func() {
 			ld := plog.NewLogs()
 			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 			logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
