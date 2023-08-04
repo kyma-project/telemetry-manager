@@ -16,9 +16,10 @@ import (
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
 
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
 var _ = Describe("Istio access logs", Label("istio"), func() {

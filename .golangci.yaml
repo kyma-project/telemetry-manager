@@ -105,6 +105,8 @@ issues:
         - govet
     - linters: [ gci ]
       path: test/e2e/(tracing.*|metrics.*|logging.*)_test.go
+    - linters: [ gci ]
+      path: test/integration/.*_test.go
     - linters: [ dupl ]
       path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller.go
     - linters: [ dupl ]
