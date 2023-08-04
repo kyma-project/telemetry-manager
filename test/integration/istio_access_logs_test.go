@@ -3,7 +3,6 @@
 package integration
 
 import (
-	"fmt"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	"net/http"
 
@@ -75,12 +74,8 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MetricPodURL())
-				fmt.Printf("resp: %v\n", resp.Body)
-				fmt.Printf("err: %v\n", err)
-
-				//g.Expect(err).NotTo(HaveOccurred())
-				//g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				_, err := proxyClient.Get(urls.MetricPodURL())
+				g.Expect(err).NotTo(HaveOccurred())
 			}, timeout, interval).Should(Succeed())
 		})
 
@@ -143,6 +138,5 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 	}...)
 	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockHTTPBackend.Name(), telemetryDataFilename, httpWebPort), 0)
 	urls.SetMetricPodURL(proxyClient.ProxyURLForPod(sampleAppNs, "sample-metrics", "/metrics/", 8080))
-	fmt.Printf("Metric pod URL: %v", urls.MetricPodURL())
 	return objs, urls, istioAccessLogsPipeline.Name()
 }
