@@ -157,6 +157,24 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 			Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithAttributeKeyValue("user", "value-not-exist")))
 		})
 
+		It("should succeed with attribute key", func() {
+			ld := plog.NewLogs()
+			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
+			logs.AppendEmpty().Attributes().PutStr("user", "foo")
+			logs.AppendEmpty().Attributes().PutStr("user", "bar")
+
+			Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithAttributeKey("user")))
+		})
+
+		It("should fail if not matching attribute key", func() {
+			ld := plog.NewLogs()
+			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
+			logs.AppendEmpty().Attributes().PutStr("user", "foo")
+			logs.AppendEmpty().Attributes().PutStr("user", "bar")
+
+			Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithAttributeKey("user_does_not_exist")))
+		})
+
 		It("should fail if no matching key", func() {
 			ld := plog.NewLogs()
 			logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()

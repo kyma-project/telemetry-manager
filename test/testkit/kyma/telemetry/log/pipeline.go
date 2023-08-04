@@ -21,6 +21,10 @@ type HTTPPipeline struct {
 	dropLabels       bool
 }
 
+func (p *HTTPPipeline) Name() string {
+	return p.name
+}
+
 func NewHTTPPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *HTTPPipeline {
 	return &HTTPPipeline{
 		name:         name,

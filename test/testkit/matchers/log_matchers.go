@@ -95,6 +95,13 @@ func WithAttributeKeyValue(expectedKey, expectedValue string) LogFilter {
 	}
 }
 
+func WithAttributeKey(expectedKey string) LogFilter {
+	return func(lr *plog.LogRecord) bool {
+		_, hasAttr := lr.Attributes().AsRaw()[expectedKey].(string)
+		return hasAttr
+	}
+}
+
 func WithKubernetesLabels() LogFilter {
 	return func(lr *plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
