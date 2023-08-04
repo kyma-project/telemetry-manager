@@ -3,7 +3,6 @@
 package integration
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	"net/http"
 
 	"k8s.io/apimachinery/pkg/labels"
@@ -13,12 +12,14 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
 
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
 var _ = Describe("Istio access logs", Label("istio"), func() {
@@ -52,7 +53,7 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 		It("Should have sample app running", func() {
 			Eventually(func(g Gomega) {
 				listOptions := client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(map[string]string{"app": "sample-mterics"}),
+					LabelSelector: labels.SelectorFromSet(map[string]string{"app": "sample-metrics"}),
 					Namespace:     sampleAppNs,
 				}
 				ready, err := verifiers.IsPodReady(ctx, k8sClient, listOptions)
@@ -62,14 +63,12 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 		})
 
 		It("Should have the log pipeline running", func() {
-			Eventually(func(g Gomega) {
-				Eventually(func(g Gomega) bool {
-					var pipeline telemetryv1alpha1.LogPipeline
-					key := types.NamespacedName{Name: logPipelineName}
-					g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-					return pipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning)
-				}, timeout, interval).Should(BeTrue())
-			})
+			Eventually(func(g Gomega) bool {
+				var pipeline telemetryv1alpha1.LogPipeline
+				key := types.NamespacedName{Name: logPipelineName}
+				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+				return pipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning)
+			}, timeout, interval).Should(BeTrue())
 		})
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {
