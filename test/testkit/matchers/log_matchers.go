@@ -98,8 +98,8 @@ func WithAttributeKeyValue(expectedKey, expectedValue string) LogFilter {
 
 func WithAttributeKeys(expectedKeys ...string) LogFilter {
 	return func(lr plog.LogRecord) bool {
-		for _, rec := range expectedKeys {
-			_, hasAttr := lr.Attributes().Get(rec)
+		for _, k := range expectedKeys {
+			_, hasAttr := lr.Attributes().Get(k)
 			if !hasAttr {
 				return false
 			}
