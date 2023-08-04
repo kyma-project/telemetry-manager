@@ -4,24 +4,20 @@ package integration
 
 import (
 	"fmt"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
-	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"net/http"
+
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
+	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
-)
 
-var (
-	telemetryFluentbitName              = "telemetry-fluent-bit"
-	telemetryWebhookEndpoint            = "telemetry-operator-webhook"
-	telemetryFluentbitMetricServiceName = "telemetry-fluent-bit-metrics"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Istio access logs", Label("istio"), func() {
@@ -77,7 +73,7 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MetricPodUrl())
+				resp, err := proxyClient.Get(urls.MetricPodURL())
 				fmt.Printf("resp: %v\n", resp.Body)
 				fmt.Printf("err: %v\n", err)
 
@@ -100,7 +96,7 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 })
 
 func verifyIstioLog(g Gomega, resp *http.Response) bool {
-	fmt.Printf("reponse: %v", resp.Body)
+	fmt.Printf("response: %v", resp.Body)
 	return true
 }
 
@@ -148,7 +144,7 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 		istioAccessLogsPipeline.K8sObjectHTTP(),
 	}...)
 	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockHTTPBackend.Name(), telemetryDataFilename, httpWebPort), 0)
-	urls.SetMetricPodUrl(proxyClient.ProxyURLForPod(sampleAppNs, "sample-metrics", "/metrics/", 8080))
-	fmt.Printf("Metric pod URL: %v", urls.MetricPodUrl())
+	urls.SetMetricPodURL(proxyClient.ProxyURLForPod(sampleAppNs, "sample-metrics", "/metrics/", 8080))
+	fmt.Printf("Metric pod URL: %v", urls.MetricPodURL())
 	return objs, urls, istioAccessLogsPipeline.Name()
 }

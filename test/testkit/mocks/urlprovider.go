@@ -55,11 +55,11 @@ func (p *URLProvider) MockBackendExportAt(idx int) string {
 	return p.pipelines[idx]["mockBackendExport"]
 }
 
-func (p *URLProvider) SetMetricPodUrl(url string) *URLProvider {
+func (p *URLProvider) SetMetricPodURL(url string) *URLProvider {
 	p.metricPod = url
 	return p
 }
 
-func (p *URLProvider) MetricPodUrl() string {
+func (p *URLProvider) MetricPodURL() string {
 	return p.metricPod
 }

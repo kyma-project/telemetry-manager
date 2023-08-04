@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"strings"
+
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
-	"strings"
 )
 
 // ConsistOfNumberOfLogs succeeds if the filexporter output file has the expected number of logs.
@@ -25,7 +26,7 @@ func ConsistOfNumberOfLogs(count int) types.GomegaMatcher {
 	}, gomega.Equal(count))
 }
 
-type LogFilter func(lr *plog.LogRecord) bool
+type LogFilter func(lr plog.LogRecord) bool
 
 // ContainLogs succeeds if the filexporter output file contains any logs with the Kubernetes attributes passed into the matcher.
 func ContainLogs(filters ...LogFilter) types.GomegaMatcher {
@@ -42,7 +43,7 @@ func ContainLogs(filters ...LogFilter) types.GomegaMatcher {
 			}
 
 			for _, filter := range filters {
-				if filter(&lr) {
+				if filter(lr) {
 					return true, nil
 				}
 			}
@@ -52,7 +53,7 @@ func ContainLogs(filters ...LogFilter) types.GomegaMatcher {
 }
 
 func WithNamespace(expectedNamespace string) LogFilter {
-	return func(lr *plog.LogRecord) bool {
+	return func(lr plog.LogRecord) bool {
 		const namespaceAttrKey = "namespace_name"
 		namespace, exists := getKubernetesAttributeValue(lr, namespaceAttrKey)
 		if !exists {
@@ -63,7 +64,7 @@ func WithNamespace(expectedNamespace string) LogFilter {
 }
 
 func WithPod(expectedPod string) LogFilter {
-	return func(lr *plog.LogRecord) bool {
+	return func(lr plog.LogRecord) bool {
 		const podAttrKey = "pod_name"
 		pod, exists := getKubernetesAttributeValue(lr, podAttrKey)
 		if !exists {
@@ -74,7 +75,7 @@ func WithPod(expectedPod string) LogFilter {
 }
 
 func WithContainer(expectedContainer string) LogFilter {
-	return func(lr *plog.LogRecord) bool {
+	return func(lr plog.LogRecord) bool {
 		const containerAttrKey = "container_name"
 		container, exists := getKubernetesAttributeValue(lr, containerAttrKey)
 		if !exists {
@@ -85,7 +86,7 @@ func WithContainer(expectedContainer string) LogFilter {
 }
 
 func WithAttributeKeyValue(expectedKey, expectedValue string) LogFilter {
-	return func(lr *plog.LogRecord) bool {
+	return func(lr plog.LogRecord) bool {
 		attr, hasAttr := lr.Attributes().Get(expectedKey)
 		if !hasAttr || attr.Type() != pcommon.ValueTypeStr {
 			return false
@@ -95,15 +96,20 @@ func WithAttributeKeyValue(expectedKey, expectedValue string) LogFilter {
 	}
 }
 
-func WithAttributeKey(expectedKey string) LogFilter {
-	return func(lr *plog.LogRecord) bool {
-		_, hasAttr := lr.Attributes().AsRaw()[expectedKey].(string)
-		return hasAttr
+func WithAttributeKeys(expectedKeys ...string) LogFilter {
+	return func(lr plog.LogRecord) bool {
+		for _, rec := range expectedKeys {
+			_, hasAttr := lr.Attributes().Get(rec)
+			if !hasAttr {
+				return false
+			}
+		}
+		return true
 	}
 }
 
 func WithKubernetesLabels() LogFilter {
-	return func(lr *plog.LogRecord) bool {
+	return func(lr plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 		if !hasKubernetesAttrs {
 			return false
@@ -115,7 +121,7 @@ func WithKubernetesLabels() LogFilter {
 }
 
 func WithKubernetesAnnotations() LogFilter {
-	return func(lr *plog.LogRecord) bool {
+	return func(lr plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 		if !hasKubernetesAttrs {
 			return false
@@ -126,7 +132,7 @@ func WithKubernetesAnnotations() LogFilter {
 	}
 }
 
-func getKubernetesAttributeValue(lr *plog.LogRecord, attrKey string) (string, bool) {
+func getKubernetesAttributeValue(lr plog.LogRecord, attrKey string) (string, bool) {
 	kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 	if !hasKubernetesAttrs {
 		return "", false
@@ -140,7 +146,7 @@ func getKubernetesAttributeValue(lr *plog.LogRecord, attrKey string) (string, bo
 	return attrValue.Str(), true
 }
 
-func getKubernetesAttributes(lr *plog.LogRecord) (pcommon.Map, bool) {
+func getKubernetesAttributes(lr plog.LogRecord) (pcommon.Map, bool) {
 	const kubernetesAttrKey = "kubernetes"
 	kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().Get(kubernetesAttrKey)
 	if !hasKubernetesAttrs || kubernetesAttrs.Type() != pcommon.ValueTypeMap {

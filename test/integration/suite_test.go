@@ -4,11 +4,11 @@ package integration
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/types"
 	"testing"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -31,9 +31,8 @@ const (
 )
 
 var (
-	webhookName                = "validation.webhook.telemetry.kyma-project.io"
-	telemetryTestK8SObjectName = "telemetry-test"
-	webhookCertSecret          = types.NamespacedName{
+	webhookName       = "validation.webhook.telemetry.kyma-project.io"
+	webhookCertSecret = types.NamespacedName{
 		Name:      "telemetry-webhook-cert",
 		Namespace: kymaSystemNamespaceName,
 	}
