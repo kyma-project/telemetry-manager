@@ -1,6 +1,6 @@
 package istio
 
-var AccessLogAttributeKeys []string {
+var AccessLogAttributeKeys = []string{
 	"method",
 	"path",
 	"protocol",
@@ -12,11 +12,11 @@ var AccessLogAttributeKeys []string {
 	"bytes_received",
 	"bytes_sent",
 	"duration",
-	"upstream_service_time"
+	"upstream_service_time",
 	"x_forwarded_for",
 	"user_agent",
 	"request_id",
-	"authority"
+	"authority",
 	"upstream_host",
 	"upstream_cluster",
 	"upstream_local_address",
@@ -25,5 +25,5 @@ var AccessLogAttributeKeys []string {
 	"requested_server_name",
 	"route_name",
 	"traceparent",
-	"tracestate"
+	"tracestate",
 }

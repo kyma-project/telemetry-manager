@@ -163,7 +163,7 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 			logs.AppendEmpty().Attributes().PutStr("user", "foo")
 			logs.AppendEmpty().Attributes().PutStr("user", "bar")
 
-			Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithAttributeKey("user")))
+			Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithAttributeKeys("user")))
 		})
 
 		It("should fail if not matching attribute key", func() {
@@ -172,7 +172,7 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 			logs.AppendEmpty().Attributes().PutStr("user", "foo")
 			logs.AppendEmpty().Attributes().PutStr("user", "bar")
 
-			Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithAttributeKey("user_does_not_exist")))
+			Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithAttributeKeys("user_does_not_exist")))
 		})
 
 		It("should fail if no matching key", func() {

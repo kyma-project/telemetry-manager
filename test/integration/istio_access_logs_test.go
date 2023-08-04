@@ -4,6 +4,7 @@ package integration
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	"net/http"
 
 	"k8s.io/apimachinery/pkg/labels"
@@ -16,6 +17,7 @@ import (
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
 
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -34,7 +36,7 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 			urls = urlProvider
 			logPipelineName = logPipeline
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				//Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
@@ -88,17 +90,13 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(verifyIstioLog(g, resp)).To(BeTrue())
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					ContainLogs(WithAttributeKeys(istio.AccessLogAttributeKeys...)))))
 			}, timeout, interval).Should(Succeed())
 		})
 
 	})
 })
-
-func verifyIstioLog(g Gomega, resp *http.Response) bool {
-	fmt.Printf("response: %v", resp.Body)
-	return true
-}
 
 func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) ([]client.Object, *mocks.URLProvider, string) {
 	var (

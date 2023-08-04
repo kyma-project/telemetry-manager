@@ -101,6 +101,7 @@ func WithAttributeKeys(expectedKeys ...string) LogFilter {
 		for _, rec := range expectedKeys {
 			_, hasAttr := lr.Attributes().Get(rec)
 			if !hasAttr {
+				fmt.Printf("Attr: %v not found", rec)
 				return false
 			}
 		}
