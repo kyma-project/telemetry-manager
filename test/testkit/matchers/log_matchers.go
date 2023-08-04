@@ -29,7 +29,7 @@ func ConsistOfNumberOfLogs(count int) types.GomegaMatcher {
 type LogFilter func(lr plog.LogRecord) bool
 
 // ContainLogs succeeds if the filexporter output file contains any logs with the Kubernetes attributes passed into the matcher.
-func ContainLogs(filters ...LogFilter) types.GomegaMatcher {
+func ContainLogs(f LogFilter) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonlLogs []byte) (bool, error) {
 		lds, err := unmarshalLogs(jsonlLogs)
 		if err != nil {
@@ -38,18 +38,18 @@ func ContainLogs(filters ...LogFilter) types.GomegaMatcher {
 
 		logRecords := getAllLogRecords(lds)
 		for _, lr := range logRecords {
-			if len(filters) == 0 {
+			if f(lr) {
 				return true, nil
-			}
-
-			for _, filter := range filters {
-				if filter(lr) {
-					return true, nil
-				}
 			}
 		}
 		return false, nil
 	}, gomega.BeTrue())
+}
+
+func Any() LogFilter {
+	return func(plog.LogRecord) bool {
+		return true
+	}
 }
 
 func WithNamespace(expectedNamespace string) LogFilter {

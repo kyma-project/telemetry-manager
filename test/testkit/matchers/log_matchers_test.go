@@ -56,7 +56,7 @@ var _ = Describe("ConsistOfNumberOfLogs", Label("logging"), func() {
 var _ = Describe("ContainLogs", Label("logging"), func() {
 	Context("with nil input", func() {
 		It("should not match", func() {
-			success, err := ContainLogs().Match(nil)
+			success, err := ContainLogs(Any()).Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -64,7 +64,7 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 
 	Context("with empty input", func() {
 		It("should match", func() {
-			success, err := ContainLogs().Match([]byte{})
+			success, err := ContainLogs(Any()).Match([]byte{})
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -72,7 +72,7 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 
 	Context("with invalid input", func() {
 		It("should error", func() {
-			success, err := ContainLogs().Match([]byte{1, 2, 3})
+			success, err := ContainLogs(Any()).Match([]byte{1, 2, 3})
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -83,7 +83,7 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 		logs.AppendEmpty()
 
-		Expect(mustMarshalLogs(ld)).Should(ContainLogs())
+		Expect(mustMarshalLogs(ld)).Should(ContainLogs(Any()))
 	})
 
 	It("should succeed if JSONL logs contain logs that satisfy filter functions", func() {
@@ -91,9 +91,8 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 		k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 		k8sAttrs.PutStr("namespace_name", "log-mocks-single-pipeline")
-		k8sAttrs.PutStr("pod_name", "log-receiver")
 
-		Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithNamespace("log-mocks-single-pipeline"), WithPod("log-receiver")))
+		Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithNamespace("log-mocks-single-pipeline")))
 	})
 
 	It("should fail if JSONL logs do not contain logs that satisfy  filter functions", func() {
@@ -101,9 +100,8 @@ var _ = Describe("ContainLogs", Label("logging"), func() {
 		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 		k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 		k8sAttrs.PutStr("namespace_name", "log-mocks-single-pipeline")
-		k8sAttrs.PutStr("pod_name", "log-receiver")
 
-		Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithNamespace("unknown"), WithPod("unknown")))
+		Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithNamespace("unknown")))
 	})
 })
 

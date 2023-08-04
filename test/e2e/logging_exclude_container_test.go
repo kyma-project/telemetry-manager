@@ -62,7 +62,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogs())))
+					ContainLogs(Any()))))
 			}, timeout, interval).Should(Succeed())
 		})
 
