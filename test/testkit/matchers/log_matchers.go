@@ -37,94 +37,94 @@ func ConsistOfNumberOfLogs(count int) types.GomegaMatcher {
 	}, gomega.Equal(count))
 }
 
-type LogFilter func(lr *plog.LogRecord) (bool, error)
+type LogFilter func(lr *plog.LogRecord) bool
 
 func WithNamespace(expectedNamespace string) LogFilter {
-	return func(lr *plog.LogRecord) (bool, error) {
+	return func(lr *plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
 		if !hasKubernetesAttrs {
-			return false, nil
+			return false
 		}
 		namespace, hasNamespace := kubernetesAttrs[tagNamespace]
 		if !hasNamespace {
-			return false, nil
+			return false
 		}
 		namespaceStr, isStr := namespace.(string)
 		if !isStr {
-			return false, nil
+			return false
 		}
-		return strings.HasPrefix(namespaceStr, expectedNamespace), nil
+		return strings.HasPrefix(namespaceStr, expectedNamespace)
 	}
 }
 
 func WithPod(expectedPod string) LogFilter {
-	return func(lr *plog.LogRecord) (bool, error) {
+	return func(lr *plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
 		if !hasKubernetesAttrs {
-			return false, nil
+			return false
 		}
 		pod, hasPod := kubernetesAttrs[tagPod]
 		if !hasPod {
-			return false, nil
+			return false
 		}
 		podStr, isStr := pod.(string)
 		if !isStr {
-			return false, nil
+			return false
 		}
-		return strings.HasPrefix(podStr, expectedPod), nil
+		return strings.HasPrefix(podStr, expectedPod)
 	}
 }
 
 func WithContainer(expectedContainer string) LogFilter {
-	return func(lr *plog.LogRecord) (bool, error) {
+	return func(lr *plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
 		if !hasKubernetesAttrs {
-			return false, nil
+			return false
 		}
 		container, hasContainer := kubernetesAttrs[tagContainer]
 		if !hasContainer {
-			return false, nil
+			return false
 		}
 		containerStr, isStr := container.(string)
 		if !isStr {
-			return false, nil
+			return false
 		}
-		return strings.HasPrefix(containerStr, expectedContainer), nil
+		return strings.HasPrefix(containerStr, expectedContainer)
 	}
 }
 
 func WithAttributeKeyValue(expectedKey, expectedValue string) LogFilter {
-	return func(lr *plog.LogRecord) (bool, error) {
+	return func(lr *plog.LogRecord) bool {
 		attr, hasAttr := lr.Attributes().AsRaw()[expectedKey].(string)
 		if !hasAttr {
-			return false, nil
+			return false
 		}
 
-		return attr == expectedValue, nil
+		return attr == expectedValue
 	}
 }
 
 func WithKubernetesLabels() LogFilter {
-	return func(lr *plog.LogRecord) (bool, error) {
+	return func(lr *plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
 		if !hasKubernetesAttrs {
-			return false, nil
+			return false
 		}
 
 		_, hasLabels := kubernetesAttrs["labels"]
-		return hasLabels, nil
+		return hasLabels
 	}
 }
 
 func WithKubernetesAnnotations() LogFilter {
-	return func(lr *plog.LogRecord) (bool, error) {
+	return func(lr *plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().AsRaw()["kubernetes"].(map[string]any)
 		if !hasKubernetesAttrs {
-			return false, nil
+			return false
 		}
 
 		_, hasLabels := kubernetesAttrs["annotations"]
-		return hasLabels, nil
+		return hasLabels
 	}
 }
 
@@ -143,11 +143,7 @@ func ContainLogs(filters ...LogFilter) types.GomegaMatcher {
 			}
 
 			for _, filter := range filters {
-				match, filterErr := filter(&lr)
-				if filterErr != nil {
-					return false, filterErr
-				}
-				if match {
+				if filter(&lr) {
 					return true, nil
 				}
 			}
