@@ -100,7 +100,7 @@ This configuration samples 1% of all requests. if you want to change the samplin
 
 ### Ingest Metrics
 
-> **Note:** `MetricPipeline` feature is not available yet. To understand the current progress, watch this [epic](https://github.com/kyma-project/kyma/issues/13079).
+> **NOTE:** The `MetricPipeline` feature is still under development. To understand the current progress, watch this [epic](https://github.com/kyma-project/kyma/issues/13079).
 
 #### Create Kyma MetricPipeline
 
