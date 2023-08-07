@@ -1,10 +1,7 @@
 package matchers
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/onsi/gomega"
@@ -174,31 +171,9 @@ func getAllLogRecords(lds []plog.Logs) []plog.LogRecord {
 	return logRecords
 }
 
-func unmarshalLogs(buffer []byte) ([]plog.Logs, error) {
-	var lds []plog.Logs
-
-	var logsUnmarshaler plog.JSONUnmarshaler
-
-	// User bufio.Reader instead of bufio.Scanner to handle very long lines gracefully
-	reader := bufio.NewReader(bytes.NewReader(buffer))
-	for {
-		line, readerErr := reader.ReadBytes('\n')
-		if readerErr != nil && readerErr != io.EOF {
-			return nil, fmt.Errorf("failed to read line: %v", readerErr)
-		}
-
-		if len(line) > 0 {
-			ld, err := logsUnmarshaler.UnmarshalLogs(line)
-			if err != nil {
-				return nil, fmt.Errorf("failed to unmarshal logs: %v", readerErr)
-			}
-			lds = append(lds, ld)
-		}
-
-		if readerErr == io.EOF {
-			break
-		}
-	}
-
-	return lds, nil
+func unmarshalLogs(jsonlLogs []byte) ([]plog.Logs, error) {
+	return unmarshalSignals[plog.Logs](jsonlLogs, func(buf []byte) (plog.Logs, error) {
+		var unmarshaler plog.JSONUnmarshaler
+		return unmarshaler.UnmarshalLogs(buf)
+	})
 }
