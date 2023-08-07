@@ -45,13 +45,9 @@ func makePrometheusSelfConfig() *PrometheusReceiver {
 				{
 					JobName:        "opentelemetry-collector",
 					ScrapeInterval: 10 * time.Second,
-					ServiceDiscoveryConfigs: []DiscoveryConfig{
+					StaticDiscoveryConfigs: []StaticDiscoveryConfig{
 						{
-							Static: []StaticDiscoveryConfig{
-								{
-									Targets: []string{fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics)},
-								},
-							},
+							Targets: []string{fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics)},
 						},
 					},
 				},
@@ -67,13 +63,9 @@ func makePrometheusAppPodsConfig() *PrometheusReceiver {
 				{
 					JobName:        "app-pods",
 					ScrapeInterval: 10 * time.Second,
-					ServiceDiscoveryConfigs: []DiscoveryConfig{
+					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
 						{
-							Kubernetes: []KubernetesDiscoveryConfig{
-								{
-									Role: RolePod,
-								},
-							},
+							Role: RolePod,
 						},
 					},
 					RelabelConfigs: []RelabelConfig{
@@ -136,13 +128,9 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 					JobName:        "istio-proxy",
 					MetricsPath:    "/stats/prometheus",
 					ScrapeInterval: 10 * time.Second,
-					ServiceDiscoveryConfigs: []DiscoveryConfig{
+					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
 						{
-							Kubernetes: []KubernetesDiscoveryConfig{
-								{
-									Role: RolePod,
-								},
-							},
+							Role: RolePod,
 						},
 					},
 					RelabelConfigs: []RelabelConfig{

@@ -44,17 +44,14 @@ type PrometheusConfig struct {
 }
 
 type ScrapeConfig struct {
-	JobName                 string            `yaml:"job_name"`
-	MetricsPath             string            `yaml:"metrics_path,omitempty"`
-	ScrapeInterval          time.Duration     `yaml:"scrape_interval,omitempty"`
-	ServiceDiscoveryConfigs []DiscoveryConfig `yaml:"-"`
-	RelabelConfigs          []RelabelConfig   `yaml:"relabel_configs,omitempty"`
-	MetricRelabelConfigs    []RelabelConfig   `yaml:"metric_relabel_configs,omitempty"`
-}
+	JobName              string          `yaml:"job_name"`
+	ScrapeInterval       time.Duration   `yaml:"scrape_interval,omitempty"`
+	MetricsPath          string          `yaml:"metrics_path,omitempty"`
+	RelabelConfigs       []RelabelConfig `yaml:"relabel_configs,omitempty"`
+	MetricRelabelConfigs []RelabelConfig `yaml:"metric_relabel_configs,omitempty"`
 
-type DiscoveryConfig struct {
-	Static     []StaticDiscoveryConfig     `yaml:"static_configs,omitempty"`
-	Kubernetes []KubernetesDiscoveryConfig `yaml:"kubernetes_sd_configs,omitempty"`
+	StaticDiscoveryConfigs     []StaticDiscoveryConfig     `yaml:"static_configs,omitempty"`
+	KubernetesDiscoveryConfigs []KubernetesDiscoveryConfig `yaml:"kubernetes_sd_configs,omitempty"`
 }
 
 type StaticDiscoveryConfig struct {
