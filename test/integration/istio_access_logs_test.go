@@ -79,7 +79,6 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 		})
 
 		It("Should verify istio logs are present", func() {
-
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
@@ -88,7 +87,6 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 					ContainLogs(WithAttributeKeys(istio.AccessLogAttributeKeys...)))))
 			}, timeout, interval).Should(Succeed())
 		})
-
 	})
 })
 
