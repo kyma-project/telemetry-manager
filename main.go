@@ -305,7 +305,17 @@ func main() {
 		LeaderElectionNamespace: telemetryNamespace,
 		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
 		CertDir:                 certDir,
-		NewCache:                setupFilteredCache(),
+		Cache: cache.Options{
+			ByObject: map[client.Object]cache.ByObject{
+				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
+				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
+				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
+				&corev1.ConfigMap{}:           {Field: setNamespaceFieldSelector()},
+				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
+				&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
+				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
+			},
+		},
 	})
 
 	if err != nil {
@@ -418,23 +428,6 @@ func main() {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
 	}
-}
-
-// setupFilteredCache creates a filtered cache for the given resources. The controller handles various resource that are namespace scoped, and additionally
-// some resources that are cluster scoped (secrets used in pipelines, clusterroles etc.). In order to restrict the rights of the controller to only fetch
-// resources from a given namespace, we create a filtered cache.
-func setupFilteredCache() cache.NewCacheFunc {
-	return cache.BuilderWithOptions(cache.Options{
-		SelectorsByObject: cache.SelectorsByObject{
-			&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
-			&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
-			&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
-			&corev1.ConfigMap{}:           {Field: setNamespaceFieldSelector()},
-			&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
-			&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
-			&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
-		},
-	})
 }
 
 func setNamespaceFieldSelector() fields.Selector {
