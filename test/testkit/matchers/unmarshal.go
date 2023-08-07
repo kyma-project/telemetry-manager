@@ -30,6 +30,7 @@ func unmarshalSignals[T plog.Logs | pmetric.Metrics | ptrace.Traces](jsonlSignal
 			allSignals = append(allSignals, signals)
 		}
 
+		//check the io.EOF error after checking the line since both can be returned simultaneously
 		if readerErr == io.EOF {
 			break
 		}
