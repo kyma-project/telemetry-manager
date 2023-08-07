@@ -10,6 +10,7 @@ import (
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
+	"io"
 )
 
 // ConsistOfNumberOfLogs succeeds if the filexporter output file has the expected number of logs.
@@ -177,22 +178,26 @@ func unmarshalLogs(buffer []byte) ([]plog.Logs, error) {
 	var lds []plog.Logs
 
 	var logsUnmarshaler plog.JSONUnmarshaler
-	scanner := bufio.NewScanner(bytes.NewReader(buffer))
-	// default buffer size causing 'token too long' error, buffer size configured for current test scenarios
-	scannerBuffer := make([]byte, 0, 64*1024)
-	scanner.Buffer(scannerBuffer, 1024*1024)
 
-	for scanner.Scan() {
-		td, err := logsUnmarshaler.UnmarshalLogs(scanner.Bytes())
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshall logs: %v", err)
+	// User bufio.Reader instead of bufio.Scanner to handle very long lines gracefully
+	reader := bufio.NewReader(bytes.NewReader(buffer))
+	for {
+		line, readerErr := reader.ReadBytes('\n')
+		if readerErr != nil && readerErr != io.EOF {
+			return nil, fmt.Errorf("failed to read line: %v", readerErr)
 		}
 
-		lds = append(lds, td)
-	}
+		if len(line) > 0 {
+			ld, err := logsUnmarshaler.UnmarshalLogs(line)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal logs: %v", readerErr)
+			}
+			lds = append(lds, ld)
+		}
 
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("failed to read logs: %v", err)
+		if readerErr == io.EOF {
+			break
+		}
 	}
 
 	return lds, nil
