@@ -10,7 +10,7 @@ Fundamentally, ["Observability"](https://opentelemetry.io/docs/concepts/observab
 1. In order to implement Day-2 operations for a distributed application running in a container runtime, the single components of an application must expose these signals by employing modern instrumentation.
 2. Furthermore, the signals must be collected and enriched with the infrastructural metadata in order to ship them to a target system.
 3. Instead of providing a one-size-for-all backend solution, Kyma supports you with instrumenting and shipping your telemetry data in a vendor-neutral way.
-4. This way, you can conveniently enable observability for your application by integrating it into your existing or desired backends. Pick your favourite among many observability backends, available either as a service or as a self-manageable solution, that focus on different aspects and scenarios.
+4. This way, you can conveniently enable observability for your application by integrating it into your existing or desired backends. Pick your favorite among many observability backends, available either as a service or as a self-manageable solution, that focus on different aspects and scenarios.
 
 Kyma's Telemetry module focuses exactly on the aspects of instrumentation, collection, and shipment that happen in the runtime and explicitly defocuses on backends.
 
@@ -20,7 +20,7 @@ Kyma's Telemetry module focuses exactly on the aspects of instrumentation, colle
 
 To support telemetry for your applications, Kyma's Telemetry module provides the following features:
 
-- Guidance for the instrumentation: Based on [Open Telemetry](https://opentelemetry.io/), you get community samples how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) in nearly every programming language.
+- Guidance for the instrumentation: Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) in nearly every programming language.
 - Tooling for collection, filtering, and shipment: Based on the [Open Telemetry Collector](https://opentelemetry.io/docs/collector/), you can configure basic pipelines to filter and ship telemetry data.
 - Integration in a vendor-neutral way to a vendor-specific observability system: Based on the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/reference/specification/protocol/), you can integrate backend systems.
 - Opt-out from features for advanced scenarios: At any time, you can opt out for each data type, and use custom tooling to collect and ship the telemetry data.
@@ -40,7 +40,7 @@ Currently, logs are based on the Fluent Bit protocol. If you're curious about th
 
 ### Telemetry Manager
 
-Kyma's Telemetry module ships the Telemetry Manager as its core component. Telemetry Manager is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that implements the Kubernetes controller pattern and manages the whole lifecycle of all other components covered in the module. The manager watches for LogPipeline, TracePipeline, and MetricPipeline resources created by the user. With these, the user describes in a declarative way what data of a signal type to collect and where to ship it.
+Kyma's Telemetry module ships Telemetry Manager as its core component. Telemetry Manager is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that implements the Kubernetes controller pattern and manages the whole lifecycle of all other components covered in the module. The manager watches for LogPipeline, TracePipeline, and MetricPipeline resources created by the user. With these, the user describes in a declarative way what data of a signal type to collect and where to ship it.
 If the manager detects a configuration, it rolls out the relevant collector components on demand.
 
 For more information, see [Telemetry Manager](/docs/user/01-manager.md).
