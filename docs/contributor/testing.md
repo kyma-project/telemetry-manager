@@ -33,7 +33,7 @@ Unit and Env tests follow the [Go convention](https://go.dev/doc/tutorial/add-a-
 | --- | --- | --- |
 | Unit (located along with the individual source files) | Unit | It tests the individual units of application logic in isolation, focusing on the implementation correctness. |
 | Env-tests (located along with the individual source files) | Integration  (low-level) | It tests the behaviour of the Telemetry Controller in integration with local control plane test doubles. This test suite assesses the integration correctness of the Telemetry Controller. |
-| [E2E Acceptance](/test/e2e) | Acceptance  (high-level) | It tests the usability scenarios of the Telemetry Manager in a cluster. This test suite assesses the functional correctness of the Telemetry Controller. |
+| [E2E Acceptance](/test/e2e) | Acceptance  (high-level) | It tests the usability scenarios of Telemetry Manager in a cluster. This test suite assesses the functional correctness of the Telemetry Controller. |
 | E2E Operational | System | It validates the operational aspects of the module (successful module upgrades, deletions, etc.). |
 | [E2E integration](https://github.com/kyma-project/telemetry-manager/issues/261#issuecomment-1647336680) |Integration (high-level)|tests the Telemetry Module integration with 3rd party components and modules (with a focus on contract fulfilment).|
 ​
