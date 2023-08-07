@@ -176,8 +176,8 @@ e2e-coverage: ginkgo
 	@$(GINKGO) outline --format indent test/e2e/logging_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
 
 
-.PHONY: e2e-test-istio
-e2e-test-istio: ginkgo k3d ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
+.PHONY: integration-test-istio
+integration-test-istio: ginkgo k3d ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
 	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
