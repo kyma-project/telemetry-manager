@@ -2,9 +2,7 @@ package agent
 
 import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	prommodel "github.com/prometheus/common/model"
-	promdiscovery "github.com/prometheus/prometheus/discovery"
-	promlabel "github.com/prometheus/prometheus/model/relabel"
+	"time"
 )
 
 type Config struct {
@@ -42,17 +40,54 @@ type PrometheusReceiver struct {
 }
 
 type PrometheusConfig struct {
-	ScrapeConfigs []ScrapeConfig
+	ScrapeConfigs []ScrapeConfig `yaml:"scrape_configs,omitempty"`
 }
 
 type ScrapeConfig struct {
-	JobName                 string
-	MetricsPath             string
-	ScrapeInterval          prommodel.Duration
-	ServiceDiscoveryConfigs []promdiscovery.Config
-	RelabelConfigs          []*promlabel.Config
-	MetricRelabelConfigs    []*promlabel.Config
+	JobName                 string            `yaml:"job_name"`
+	MetricsPath             string            `yaml:"metrics_path,omitempty"`
+	ScrapeInterval          time.Duration     `yaml:"scrape_interval,omitempty"`
+	ServiceDiscoveryConfigs []DiscoveryConfig `yaml:"-"`
+	RelabelConfigs          []RelabelConfig   `yaml:"relabel_configs,omitempty"`
+	MetricRelabelConfigs    []RelabelConfig   `yaml:"metric_relabel_configs,omitempty"`
 }
+
+type DiscoveryConfig struct {
+	Static     []StaticDiscoveryConfig     `yaml:"static_configs,omitempty"`
+	Kubernetes []KubernetesDiscoveryConfig `yaml:"kubernetes_sd_configs,omitempty"`
+}
+
+type StaticDiscoveryConfig struct {
+	Targets []string `yaml:"targets"`
+}
+
+type KubernetesDiscoveryConfig struct {
+	Role Role `yaml:"role"`
+}
+
+type Role string
+
+const (
+	RolePod Role = "pod"
+)
+
+type RelabelConfig struct {
+	SourceLabels []string      `yaml:"source_labels,flow,omitempty"`
+	Separator    string        `yaml:"separator,omitempty"`
+	Regex        string        `yaml:"regex,omitempty"`
+	Modulus      uint64        `yaml:"modulus,omitempty"`
+	TargetLabel  string        `yaml:"target_label,omitempty"`
+	Replacement  string        `yaml:"replacement,omitempty"`
+	Action       RelabelAction `yaml:"action,omitempty"`
+}
+
+type RelabelAction string
+
+const (
+	Replace RelabelAction = "replace"
+	Keep    RelabelAction = "keep"
+	Drop    RelabelAction = "drop"
+)
 
 type Processors struct {
 	DeleteServiceName           *config.ResourceProcessor `yaml:"resource/delete-service-name,omitempty"`
