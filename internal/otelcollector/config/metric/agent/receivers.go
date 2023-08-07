@@ -6,7 +6,6 @@ import (
 
 	promcommonconfig "github.com/prometheus/common/config"
 	prommodel "github.com/prometheus/common/model"
-	promconfig "github.com/prometheus/prometheus/config"
 	promdiscovery "github.com/prometheus/prometheus/discovery"
 	promk8sdiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
 	promtargetgroup "github.com/prometheus/prometheus/discovery/targetgroup"
@@ -58,12 +57,11 @@ func makePrometheusSelfConfig() *PrometheusReceiver {
 	}
 
 	return &PrometheusReceiver{
-		Config: promconfig.Config{
-			ScrapeConfigs: []*promconfig.ScrapeConfig{
+		Config: PrometheusConfig{
+			ScrapeConfigs: []ScrapeConfig{
 				{
-					JobName:          "opentelemetry-collector",
-					ScrapeInterval:   prommodel.Duration(10 * time.Second),
-					HTTPClientConfig: promcommonconfig.DefaultHTTPClientConfig,
+					JobName:        "opentelemetry-collector",
+					ScrapeInterval: prommodel.Duration(10 * time.Second),
 					ServiceDiscoveryConfigs: []promdiscovery.Config{
 						promdiscovery.StaticConfig(targets),
 					},
@@ -75,8 +73,8 @@ func makePrometheusSelfConfig() *PrometheusReceiver {
 
 func makePrometheusAppPodsConfig() *PrometheusReceiver {
 	return &PrometheusReceiver{
-		Config: promconfig.Config{
-			ScrapeConfigs: []*promconfig.ScrapeConfig{
+		Config: PrometheusConfig{
+			ScrapeConfigs: []ScrapeConfig{
 				{
 					JobName:        "app-pods",
 					ScrapeInterval: prommodel.Duration(10 * time.Second),
@@ -140,8 +138,8 @@ func makePrometheusAppPodsConfig() *PrometheusReceiver {
 
 func makePrometheusIstioConfig() *PrometheusReceiver {
 	return &PrometheusReceiver{
-		Config: promconfig.Config{
-			ScrapeConfigs: []*promconfig.ScrapeConfig{
+		Config: PrometheusConfig{
+			ScrapeConfigs: []ScrapeConfig{
 				{
 					JobName:        "istio-proxy",
 					MetricsPath:    "/stats/prometheus",

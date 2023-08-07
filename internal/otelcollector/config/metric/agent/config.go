@@ -1,9 +1,10 @@
 package agent
 
 import (
-	promconfig "github.com/prometheus/prometheus/config"
-
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	prommodel "github.com/prometheus/common/model"
+	promdiscovery "github.com/prometheus/prometheus/discovery"
+	promlabel "github.com/prometheus/prometheus/model/relabel"
 )
 
 type Config struct {
@@ -37,7 +38,20 @@ const (
 )
 
 type PrometheusReceiver struct {
-	Config promconfig.Config `yaml:"config"`
+	Config PrometheusConfig `yaml:"config"`
+}
+
+type PrometheusConfig struct {
+	ScrapeConfigs []ScrapeConfig
+}
+
+type ScrapeConfig struct {
+	JobName                 string
+	MetricsPath             string
+	ScrapeInterval          prommodel.Duration
+	ServiceDiscoveryConfigs []promdiscovery.Config
+	RelabelConfigs          []*promlabel.Config
+	MetricRelabelConfigs    []*promlabel.Config
 }
 
 type Processors struct {
