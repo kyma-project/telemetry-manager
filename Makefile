@@ -111,41 +111,41 @@ provision-test-env:
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
 
 .PHONY: e2e-test
-e2e-test: ginkgo k3d | provision-test-env ## Provision k3d cluster and run end-to-end tests.
+e2e-test: ginkgo k3d  | test-matchers provision-test-env ## Provision k3d cluster and run end-to-end tests.
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
 .PHONY: e2e-test-logging
-e2e-test-logging: ginkgo k3d | provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
+e2e-test-logging: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="logging" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
 .PHONY: e2e-test-tracing
-e2e-test-tracing: ginkgo k3d | provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end tracing tests.
+e2e-test-tracing: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end tracing tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="tracing" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
 .PHONY: e2e-test-metrics
- e2e-test-metrics: ginkgo k3d | provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end metrics tests.
+ e2e-test-metrics: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end metrics tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="metrics" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
 .PHONY: e2e-test-logging-release
-e2e-test-logging-release: ginkgo k3d | provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end logging tests.
+e2e-test-logging-release: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end logging tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="logging" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
 .PHONY: e2e-test-tracing-release
-e2e-test-tracing-release: ginkgo k3d | provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end tracing tests.
+e2e-test-tracing-release: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end tracing tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="tracing" ./test/e2e
 	mkdir -p ${ARTIFACTS}
@@ -167,7 +167,7 @@ e2e-coverage: ginkgo
 
 
 .PHONY: integration-test-istio
-integration-test-istio: ginkgo k3d | provision-test-env ## Provision k3d cluster, deploy development variant and run integration tests with istio.
+integration-test-istio: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run integration tests with istio.
 	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="istio" ./test/integration
