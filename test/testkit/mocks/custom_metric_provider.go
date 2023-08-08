@@ -59,6 +59,9 @@ func (mp *CustomMetricProvider) K8sObject() *corev1.Pod {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sample-metrics",
 			Namespace: mp.namespace,
+			Labels: map[string]string{
+				"app": "sample-mterics",
+			},
 			Annotations: map[string]string{
 				"prometheus.io/path":   "/metrics",
 				"prometheus.io/port":   "8080",
