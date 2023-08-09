@@ -1,44 +1,36 @@
 package mocks
 
 import (
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-type MetricType string
-
-const (
-	MetricTypeGauge     MetricType = "Gauge"
-	MetricTypeCounter   MetricType = "Counter"
-	MetricTypeHistogram MetricType = "Histogram"
-	MetricTypeSummary   MetricType = "Summary"
-)
-
 type CustomMetric struct {
-	Type   MetricType
+	Type   pmetric.MetricType
 	Name   string
 	Labels []string
 }
 
 var (
 	CustomMetricCPUTemperature = CustomMetric{
-		Type: MetricTypeGauge,
+		Type: pmetric.MetricTypeGauge,
 		Name: "cpu_temperature_celsius",
 	}
 	CustomMetricHardDiskErrorsTotal = CustomMetric{
-		Type:   MetricTypeCounter,
+		Type:   pmetric.MetricTypeSum,
 		Name:   "hd_errors_total",
 		Labels: []string{"device"},
 	}
 	CustomMetricCPUEnergyHistogram = CustomMetric{
-		Type:   MetricTypeHistogram,
+		Type:   pmetric.MetricTypeHistogram,
 		Name:   "cpu_energy_watt",
 		Labels: []string{"core"},
 	}
 	CustomMetricHardwareHumidity = CustomMetric{
-		Type:   MetricTypeSummary,
+		Type:   pmetric.MetricTypeSummary,
 		Name:   "hw_humidity",
 		Labels: []string{"sensor"},
 	}
@@ -84,8 +76,9 @@ func (mp *MetricProducer) Pod() *MetricProducerPod {
 	}
 }
 
-func (p *MetricProducerPod) WithPrometheusAnnotations() {
+func (p *MetricProducerPod) WithPrometheusAnnotations() *MetricProducerPod {
 	p.annotations = prometheusAnnotations
+	return p
 }
 
 func (p *MetricProducerPod) K8sObject() *corev1.Pod {
@@ -128,8 +121,9 @@ func (mp *MetricProducer) Service() *MetricProducerService {
 	}
 }
 
-func (s *MetricProducerService) WithPrometheusAnnotations() {
+func (s *MetricProducerService) WithPrometheusAnnotations() *MetricProducerService {
 	s.annotations = prometheusAnnotations
+	return s
 }
 
 func (s *MetricProducerService) K8sObject() *corev1.Service {

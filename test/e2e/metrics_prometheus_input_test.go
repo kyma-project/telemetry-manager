@@ -21,7 +21,7 @@ import (
 	kitotlpmetric "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
-var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
+var _ = Describe("Metrics Prometheus Input", Label("metrics-new"), func() {
 	Context("When a metricpipeline exists", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
@@ -73,39 +73,48 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			metricPipelineShouldBeRunning(pipelines.First())
 		})
 
-		It("Should verify custom metrics", func() {
-			metricTypeMap := map[mocks.MetricType]pmetric.MetricType{
-				mocks.MetricTypeCounter:   pmetric.MetricTypeSum,
-				mocks.MetricTypeGauge:     pmetric.MetricTypeGauge,
-				mocks.MetricTypeHistogram: pmetric.MetricTypeHistogram,
-				mocks.MetricTypeSummary:   pmetric.MetricTypeSummary,
-			}
-
+		It("Should verify custom metric scraping via annotated pods", func() {
 			Eventually(func(g Gomega) {
+				hasServiceLabel := false
+
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return m.Name() == mocks.CustomMetricCPUTemperature.Name && m.Type() == metricTypeMap[mocks.CustomMetricCPUTemperature.Type]
+						return equal(m, mocks.CustomMetricCPUTemperature, hasServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						if m.Name() == mocks.CustomMetricHardDiskErrorsTotal.Name && m.Type() == metricTypeMap[mocks.CustomMetricHardDiskErrorsTotal.Type] && m.Sum().IsMonotonic() {
-							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricHardDiskErrorsTotal.Labels...)
-						}
-						return false
+						return equal(m, mocks.CustomMetricCPUEnergyHistogram, hasServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						if m.Name() == mocks.CustomMetricCPUEnergyHistogram.Name && m.Type() == metricTypeMap[mocks.CustomMetricCPUEnergyHistogram.Type] {
-							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricCPUEnergyHistogram.Labels...)
-						}
-						return false
+						return equal(m, mocks.CustomMetricHardwareHumidity, hasServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						if m.Name() == mocks.CustomMetricHardwareHumidity.Name && m.Type() == metricTypeMap[mocks.CustomMetricHardwareHumidity.Type] {
-							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricHardwareHumidity.Labels...)
-						}
-						return false
+						return equal(m, mocks.CustomMetricHardDiskErrorsTotal, hasServiceLabel)
+					}))))
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should verify custom metric scraping via annotated services", func() {
+			Eventually(func(g Gomega) {
+				hasServiceLabel := true
+
+				resp, err := proxyClient.Get(urls.MockBackendExport())
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return equal(m, mocks.CustomMetricCPUTemperature, hasServiceLabel)
+					}),
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return equal(m, mocks.CustomMetricCPUEnergyHistogram, hasServiceLabel)
+					}),
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return equal(m, mocks.CustomMetricHardwareHumidity, hasServiceLabel)
+					}),
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return equal(m, mocks.CustomMetricHardDiskErrorsTotal, hasServiceLabel)
 					}))))
 			}, timeout, interval).Should(Succeed())
 		})
@@ -153,8 +162,8 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 		mockBackendConfigMap.K8sObject(),
 		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		mockMetricProducer.Pod().K8sObject(),
-		mockMetricProducer.Service().K8sObject(),
+		mockMetricProducer.Pod().WithPrometheusAnnotations().K8sObject(),
+		mockMetricProducer.Service().WithPrometheusAnnotations().K8sObject(),
 		hostSecret.K8sObject(),
 		metricPipeline.K8sObject(),
 	}...)
@@ -162,4 +171,19 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 	urls.SetMockBackendExport(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort))
 
 	return objs, urls, pipelines
+}
+
+func equal(actual pmetric.Metric, expected mocks.CustomMetric, hasServiceLabel bool) bool {
+	if hasServiceLabel {
+		if actual.Name() == expected.Name && actual.Type() == expected.Type {
+			attrs := []string{"service"}
+			attrs = append(attrs, expected.Labels...)
+			return kitotlpmetric.AllDataPointsContainAttributes(actual, attrs...)
+		}
+		return false
+	}
+	if actual.Name() == expected.Name && actual.Type() == expected.Type {
+		return kitotlpmetric.AllDataPointsContainAttributes(actual, expected.Labels...) && kitotlpmetric.NoDataPointsContainAttributes(actual, "service")
+	}
+	return false
 }

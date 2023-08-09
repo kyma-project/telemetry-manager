@@ -183,7 +183,29 @@ func makeUnique(slice []string) []string {
 	return uniqueList
 }
 
-func AllDataPointsHaveAttributes(m pmetric.Metric, expectedAttrKeys ...string) bool {
+func AllDataPointsContainAttributes(m pmetric.Metric, expectedAttrKeys ...string) bool {
+	attrsPerDataPoint := getAttributesPerDataPoint(m)
+	for _, attrs := range attrsPerDataPoint {
+		if !containsAllAttributes(attrs, expectedAttrKeys...) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func NoDataPointsContainAttributes(m pmetric.Metric, expectedAttrKeys ...string) bool {
+	attrsPerDataPoint := getAttributesPerDataPoint(m)
+	for _, attrs := range attrsPerDataPoint {
+		if !containsNoneOfAttributes(attrs, expectedAttrKeys...) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func getAttributesPerDataPoint(m pmetric.Metric) []pcommon.Map {
 	var attrsPerDataPoint []pcommon.Map
 
 	switch m.Type() {
@@ -205,18 +227,21 @@ func AllDataPointsHaveAttributes(m pmetric.Metric, expectedAttrKeys ...string) b
 		}
 	}
 
-	for _, attrs := range attrsPerDataPoint {
-		if !hasAttributes(attrs, expectedAttrKeys...) {
+	return attrsPerDataPoint
+}
+
+func containsAllAttributes(m pcommon.Map, attrKeys ...string) bool {
+	for _, key := range attrKeys {
+		if _, found := m.Get(key); !found {
 			return false
 		}
 	}
-
 	return true
 }
 
-func hasAttributes(m pcommon.Map, attrKeys ...string) bool {
+func containsNoneOfAttributes(m pcommon.Map, attrKeys ...string) bool {
 	for _, key := range attrKeys {
-		if _, found := m.Get(key); !found {
+		if _, found := m.Get(key); found {
 			return false
 		}
 	}
