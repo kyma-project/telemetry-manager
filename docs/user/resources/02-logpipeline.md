@@ -55,7 +55,7 @@ status:
     type: Running
 ```
 
-For further examples, see [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples).
+For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
 
 ## Custom resource parameters
 
