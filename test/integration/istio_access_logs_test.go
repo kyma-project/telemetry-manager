@@ -122,7 +122,7 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 	istioAccessLogsPipeline := kitlog.NewHTTPPipeline("pipeline-istio-access-logs", hostSecret.SecretKeyRef("log-host")).WithIncludeContainer([]string{"istio-proxy"})
 
 	// Abusing metrics provider for istio access logs
-	sampleApp := mocks.NewCustomMetricProvider(sampleAppNs)
+	sampleApp := mocks.NewMetricProducer(sampleAppNs)
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
