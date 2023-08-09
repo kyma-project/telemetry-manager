@@ -2,9 +2,9 @@
 
 ## Pausing/Unpausing reconciliations
 
-You must pause reconciliations to be able to debug the pipelines and, for example, try out a different pipeline configuration or a different OTel configuration. To pause/unpause reconciliations, follow the following process.
+You must pause reconciliations to be able to debug the pipelines and, for example, try out a different pipeline configuration or a different OTel configuration. To pause/unpause reconciliations, follow these steps:
 
-1. Create an overriding `telemetry-override-config` ConfigMap in the operators Namespace.
+1. Create an overriding `telemetry-override-config` ConfigMap in the operator's Namespace.
 2. Perform debugging operations.
 3. Remove the created ConfigMap.
 4. To reset the debug actions, perform a restart of Telemetry Manager.

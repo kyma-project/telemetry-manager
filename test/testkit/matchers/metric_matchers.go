@@ -3,8 +3,6 @@
 package matchers
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 
 	"github.com/onsi/gomega"
@@ -108,27 +106,11 @@ func extractMetrics(fileBytes []byte) ([]pmetric.Metrics, error) {
 	return mds, nil
 }
 
-func unmarshalMetrics(buf []byte) ([]pmetric.Metrics, error) {
-	var mds []pmetric.Metrics
-
-	var metricsUnmarshaler pmetric.JSONUnmarshaler
-	scanner := bufio.NewScanner(bytes.NewReader(buf))
-	// default buffer size causing 'token too long' error, buffer size configured for current test scenarios
-	scannerBuffer := make([]byte, 0, 64*1024)
-	scanner.Buffer(scannerBuffer, 1024*1024)
-	for scanner.Scan() {
-		td, err := metricsUnmarshaler.UnmarshalMetrics(scanner.Bytes())
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshall metrics: %v", err)
-		}
-
-		mds = append(mds, td)
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("failed to read metrics: %v", err)
-	}
-
-	return mds, nil
+func unmarshalMetrics(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
+	return unmarshalSignals[pmetric.Metrics](jsonlMetrics, func(buf []byte) (pmetric.Metrics, error) {
+		var unmarshaler pmetric.JSONUnmarshaler
+		return unmarshaler.UnmarshalMetrics(buf)
+	})
 }
 
 // applyTemporalityWorkaround flips temporality os a Sum metric. The reason for that is the inconsistency

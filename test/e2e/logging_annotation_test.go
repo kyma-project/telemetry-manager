@@ -63,10 +63,11 @@ var _ = Describe("Logging", Label("logging"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogsWithKubernetesAnnotations(), Not(ContainLogsWithKubernetesLabels()))))
+					ContainLogs(WithKubernetesAnnotations()),
+					Not(ContainLogs(WithKubernetesLabels())),
+				)))
 			}, timeout, interval).Should(Succeed())
 		})
-
 	})
 })
 

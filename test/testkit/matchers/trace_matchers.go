@@ -3,8 +3,6 @@
 package matchers
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 
 	"github.com/onsi/gomega"
@@ -98,22 +96,9 @@ func getAllSpans(tds []ptrace.Traces) []ptrace.Span {
 	return spans
 }
 
-func unmarshalTraces(buf []byte) ([]ptrace.Traces, error) {
-	var tds []ptrace.Traces
-
-	var tracesUnmarshaler ptrace.JSONUnmarshaler
-	scanner := bufio.NewScanner(bytes.NewReader(buf))
-	for scanner.Scan() {
-		td, err := tracesUnmarshaler.UnmarshalTraces(scanner.Bytes())
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshall traces: %v", err)
-		}
-
-		tds = append(tds, td)
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("failed to read traces: %v", err)
-	}
-
-	return tds, nil
+func unmarshalTraces(jsonlTraces []byte) ([]ptrace.Traces, error) {
+	return unmarshalSignals[ptrace.Traces](jsonlTraces, func(buf []byte) (ptrace.Traces, error) {
+		var unmarshaler ptrace.JSONUnmarshaler
+		return unmarshaler.UnmarshalTraces(buf)
+	})
 }
