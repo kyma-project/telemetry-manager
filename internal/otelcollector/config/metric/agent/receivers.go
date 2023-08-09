@@ -14,6 +14,7 @@ func makeReceiversConfig(inputs inputSources) Receivers {
 	if inputs.prometheus {
 		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
 		receiversConfig.PrometheusAppPods = makePrometheusAppPodsConfig()
+		receiversConfig.PrometheusAppServices = makePrometheusAppServicesConfig()
 	}
 
 	if inputs.runtime {
@@ -112,6 +113,65 @@ func makePrometheusAppPodsConfig() *PrometheusReceiver {
 							SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
 							Action:       Drop,
 							Regex:        "(istio-proxy)",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func makePrometheusAppServicesConfig() *PrometheusReceiver {
+	return &PrometheusReceiver{
+		Config: PrometheusConfig{
+			ScrapeConfigs: []ScrapeConfig{
+				{
+					JobName:        "app-services",
+					ScrapeInterval: 10 * time.Second,
+					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
+						{
+							Role: RoleEndpoints,
+						},
+					},
+					RelabelConfigs: []RelabelConfig{
+						{
+							SourceLabels: []string{"__meta_kubernetes_endpoint_node_name"},
+							Regex:        fmt.Sprintf("$%s", config.EnvVarCurrentNodeName),
+							Action:       Keep,
+						},
+						{
+							SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scrape"},
+							Regex:        "true",
+							Action:       Keep,
+						},
+						{
+							SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scheme"},
+							Action:       Replace,
+							Regex:        "(https?)",
+							TargetLabel:  "__scheme__",
+						},
+						{
+							SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_path"},
+							Action:       Replace,
+							Regex:        "(.+)",
+							TargetLabel:  "__metrics_path__",
+						},
+						{
+							SourceLabels: []string{"__address__", "__meta_kubernetes_service_annotation_prometheus_io_port"},
+							Action:       Replace,
+							Regex:        "([^:]+)(?::\\d+)?;(\\d+)",
+							Replacement:  "$$1:$$2",
+							TargetLabel:  "__address__",
+						},
+						{
+							SourceLabels: []string{"__meta_kubernetes_pod_phase"},
+							Action:       Drop,
+							Regex:        "Pending|Succeeded|Failed",
+						},
+						{
+							SourceLabels: []string{"__meta_kubernetes_service_name"},
+							Action:       Replace,
+							TargetLabel:  "service",
 						},
 					},
 				},

@@ -15,10 +15,11 @@ type Config struct {
 }
 
 type Receivers struct {
-	KubeletStats      *KubeletStatsReceiver `yaml:"kubeletstats,omitempty"`
-	PrometheusSelf    *PrometheusReceiver   `yaml:"prometheus/self,omitempty"`
-	PrometheusAppPods *PrometheusReceiver   `yaml:"prometheus/app-pods,omitempty"`
-	PrometheusIstio   *PrometheusReceiver   `yaml:"prometheus/istio,omitempty"`
+	KubeletStats          *KubeletStatsReceiver `yaml:"kubeletstats,omitempty"`
+	PrometheusSelf        *PrometheusReceiver   `yaml:"prometheus/self,omitempty"`
+	PrometheusAppPods     *PrometheusReceiver   `yaml:"prometheus/app-pods,omitempty"`
+	PrometheusAppServices *PrometheusReceiver   `yaml:"prometheus/app-services,omitempty"`
+	PrometheusIstio       *PrometheusReceiver   `yaml:"prometheus/istio,omitempty"`
 }
 
 type KubeletStatsReceiver struct {
@@ -66,7 +67,8 @@ type KubernetesDiscoveryConfig struct {
 type Role string
 
 const (
-	RolePod Role = "pod"
+	RolePod       Role = "pod"
+	RoleEndpoints      = "endpoints"
 )
 
 type RelabelConfig struct {

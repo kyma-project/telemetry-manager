@@ -87,46 +87,60 @@ spec:
 apiVersion: v1
 kind: Namespace
 metadata:
-  creationTimestamp: null
-  name: metric-producer
-spec: {}
+  name: metric-provider
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
   labels:
-    app: metric-producer
-  name: metric-producer
-  namespace: metric-producer
+    app: metric-provider
+  name: metric-provider
+  namespace: metric-provider
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: metric-producer
+      app: metric-provider
   template:
     metadata:
-      annotations:
-        prometheus.io/path: /metrics
-        prometheus.io/port: "8080"
-        prometheus.io/scrape: "true"
-      creationTimestamp: null
       labels:
-        app: metric-producer
+        app: metric-provider
     spec:
       containers:
         - image: ghcr.io/skhalash/examples/monitoring-custom-metrics:3d41736
           imagePullPolicy: IfNotPresent
-          name: sample-metrics
+          name: metric-provider
           ports:
             - containerPort: 8080
-              name: http
+              name: http-metrics
               protocol: TCP
           resources:
             limits:
               memory: 100Mi
             requests:
               memory: 32Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "8080"
+    prometheus.io/scrape: "true"
+  labels:
+    app: metric-provider
+  name: metric-provider
+  namespace: metric-provider
+spec:
+  ports:
+    - name: http-metrics
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: metric-provider
+  type: ClusterIP
 ---
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
