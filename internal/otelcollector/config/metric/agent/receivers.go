@@ -4,14 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	promcommonconfig "github.com/prometheus/common/config"
-	prommodel "github.com/prometheus/common/model"
-	promconfig "github.com/prometheus/prometheus/config"
-	promdiscovery "github.com/prometheus/prometheus/discovery"
-	promk8sdiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
-	promtargetgroup "github.com/prometheus/prometheus/discovery/targetgroup"
-	promlabel "github.com/prometheus/prometheus/model/relabel"
-
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
@@ -47,25 +39,16 @@ func makeKubeletStatsConfig() *KubeletStatsReceiver {
 }
 
 func makePrometheusSelfConfig() *PrometheusReceiver {
-	targets := []*promtargetgroup.Group{
-		{
-			Targets: []prommodel.LabelSet{
-				{
-					prommodel.AddressLabel: prommodel.LabelValue(fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics)),
-				},
-			},
-		},
-	}
-
 	return &PrometheusReceiver{
-		Config: promconfig.Config{
-			ScrapeConfigs: []*promconfig.ScrapeConfig{
+		Config: PrometheusConfig{
+			ScrapeConfigs: []ScrapeConfig{
 				{
-					JobName:          "opentelemetry-collector",
-					ScrapeInterval:   prommodel.Duration(10 * time.Second),
-					HTTPClientConfig: promcommonconfig.DefaultHTTPClientConfig,
-					ServiceDiscoveryConfigs: []promdiscovery.Config{
-						promdiscovery.StaticConfig(targets),
+					JobName:        "opentelemetry-collector",
+					ScrapeInterval: 10 * time.Second,
+					StaticDiscoveryConfigs: []StaticDiscoveryConfig{
+						{
+							Targets: []string{fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics)},
+						},
 					},
 				},
 			},
@@ -75,61 +58,60 @@ func makePrometheusSelfConfig() *PrometheusReceiver {
 
 func makePrometheusAppPodsConfig() *PrometheusReceiver {
 	return &PrometheusReceiver{
-		Config: promconfig.Config{
-			ScrapeConfigs: []*promconfig.ScrapeConfig{
+		Config: PrometheusConfig{
+			ScrapeConfigs: []ScrapeConfig{
 				{
 					JobName:        "app-pods",
-					ScrapeInterval: prommodel.Duration(10 * time.Second),
-					ServiceDiscoveryConfigs: []promdiscovery.Config{
-						&promk8sdiscovery.SDConfig{
-							Role:             promk8sdiscovery.RolePod,
-							HTTPClientConfig: promcommonconfig.DefaultHTTPClientConfig,
+					ScrapeInterval: 10 * time.Second,
+					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
+						{
+							Role: RolePod,
 						},
 					},
-					RelabelConfigs: []*promlabel.Config{
+					RelabelConfigs: []RelabelConfig{
 						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_node_name"},
-							Regex:        promlabel.MustNewRegexp(fmt.Sprintf("$%s", config.EnvVarCurrentNodeName)),
-							Action:       promlabel.Keep,
+							SourceLabels: []string{"__meta_kubernetes_pod_node_name"},
+							Regex:        fmt.Sprintf("$%s", config.EnvVarCurrentNodeName),
+							Action:       Keep,
 						},
 						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_annotation_prometheus_io_scrape"},
-							Regex:        promlabel.MustNewRegexp("true"),
-							Action:       promlabel.Keep,
+							SourceLabels: []string{"__meta_kubernetes_pod_annotation_prometheus_io_scrape"},
+							Regex:        "true",
+							Action:       Keep,
 						},
 						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_annotation_prometheus_io_scheme"},
-							Action:       promlabel.Replace,
-							Regex:        promlabel.MustNewRegexp("(https?)"),
+							SourceLabels: []string{"__meta_kubernetes_pod_annotation_prometheus_io_scheme"},
+							Action:       Replace,
+							Regex:        "(https?)",
 							TargetLabel:  "__scheme__",
 						},
 						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_annotation_prometheus_io_path"},
-							Action:       promlabel.Replace,
-							Regex:        promlabel.MustNewRegexp("(.+)"),
+							SourceLabels: []string{"__meta_kubernetes_pod_annotation_prometheus_io_path"},
+							Action:       Replace,
+							Regex:        "(.+)",
 							TargetLabel:  "__metrics_path__",
 						},
 						{
-							SourceLabels: []prommodel.LabelName{"__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"},
-							Action:       promlabel.Replace,
-							Regex:        promlabel.MustNewRegexp("([^:]+)(?::\\d+)?;(\\d+)"),
+							SourceLabels: []string{"__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"},
+							Action:       Replace,
+							Regex:        "([^:]+)(?::\\d+)?;(\\d+)",
 							Replacement:  "$$1:$$2",
 							TargetLabel:  "__address__",
 						},
 						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_phase"},
-							Action:       promlabel.Drop,
-							Regex:        promlabel.MustNewRegexp("Pending|Succeeded|Failed"),
+							SourceLabels: []string{"__meta_kubernetes_pod_phase"},
+							Action:       Drop,
+							Regex:        "Pending|Succeeded|Failed",
 						},
 						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_container_init"},
-							Action:       promlabel.Drop,
-							Regex:        promlabel.MustNewRegexp("(true)"),
+							SourceLabels: []string{"__meta_kubernetes_pod_container_init"},
+							Action:       Drop,
+							Regex:        "(true)",
 						},
 						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_container_name"},
-							Action:       promlabel.Drop,
-							Regex:        promlabel.MustNewRegexp("(istio-proxy)"),
+							SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
+							Action:       Drop,
+							Regex:        "(istio-proxy)",
 						},
 					},
 				},
@@ -140,45 +122,44 @@ func makePrometheusAppPodsConfig() *PrometheusReceiver {
 
 func makePrometheusIstioConfig() *PrometheusReceiver {
 	return &PrometheusReceiver{
-		Config: promconfig.Config{
-			ScrapeConfigs: []*promconfig.ScrapeConfig{
+		Config: PrometheusConfig{
+			ScrapeConfigs: []ScrapeConfig{
 				{
 					JobName:        "istio-proxy",
 					MetricsPath:    "/stats/prometheus",
-					ScrapeInterval: prommodel.Duration(10 * time.Second),
-					ServiceDiscoveryConfigs: []promdiscovery.Config{
-						&promk8sdiscovery.SDConfig{
-							Role:             promk8sdiscovery.RolePod,
-							HTTPClientConfig: promcommonconfig.DefaultHTTPClientConfig,
+					ScrapeInterval: 10 * time.Second,
+					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
+						{
+							Role: RolePod,
 						},
 					},
-					RelabelConfigs: []*promlabel.Config{
+					RelabelConfigs: []RelabelConfig{
 						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_node_name"},
-							Regex:        promlabel.MustNewRegexp(fmt.Sprintf("$%s", config.EnvVarCurrentNodeName)),
-							Action:       promlabel.Keep,
+							SourceLabels: []string{"__meta_kubernetes_pod_node_name"},
+							Regex:        fmt.Sprintf("$%s", config.EnvVarCurrentNodeName),
+							Action:       Keep,
 						},
 						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_container_name"},
-							Action:       promlabel.Keep,
-							Regex:        promlabel.MustNewRegexp("istio-proxy"),
+							SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
+							Action:       Keep,
+							Regex:        "istio-proxy",
 						},
 						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_container_port_name"},
-							Action:       promlabel.Keep,
-							Regex:        promlabel.MustNewRegexp("http-envoy-prom"),
+							SourceLabels: []string{"__meta_kubernetes_pod_container_port_name"},
+							Action:       Keep,
+							Regex:        "http-envoy-prom",
 						},
 						{
-							SourceLabels: []prommodel.LabelName{"__meta_kubernetes_pod_phase"},
-							Action:       promlabel.Drop,
-							Regex:        promlabel.MustNewRegexp("Pending|Succeeded|Failed"),
+							SourceLabels: []string{"__meta_kubernetes_pod_phase"},
+							Action:       Drop,
+							Regex:        "Pending|Succeeded|Failed",
 						},
 					},
-					MetricRelabelConfigs: []*promlabel.Config{
+					MetricRelabelConfigs: []RelabelConfig{
 						{
-							SourceLabels: []prommodel.LabelName{"__name__"},
-							Regex:        promlabel.MustNewRegexp("istio_.*"),
-							Action:       promlabel.Keep,
+							SourceLabels: []string{"__name__"},
+							Regex:        "istio_.*",
+							Action:       Keep,
 						},
 					},
 				},

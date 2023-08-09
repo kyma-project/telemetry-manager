@@ -284,25 +284,17 @@ receivers:
             - pod
     prometheus/self:
         config:
-            global: {}
             scrape_configs:
                 - job_name: opentelemetry-collector
-                  honor_timestamps: false
                   scrape_interval: 10s
-                  follow_redirects: true
-                  enable_http2: true
                   static_configs:
                     - targets:
                         - ${MY_POD_IP}:8888
     prometheus/app-pods:
         config:
-            global: {}
             scrape_configs:
                 - job_name: app-pods
-                  honor_timestamps: false
                   scrape_interval: 10s
-                  follow_redirects: false
-                  enable_http2: false
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_pod_node_name]
                       regex: $MY_NODE_NAME
@@ -334,19 +326,12 @@ receivers:
                       action: drop
                   kubernetes_sd_configs:
                     - role: pod
-                      kubeconfig_file: ""
-                      follow_redirects: true
-                      enable_http2: true
     prometheus/istio:
         config:
-            global: {}
             scrape_configs:
                 - job_name: istio-proxy
-                  honor_timestamps: false
                   scrape_interval: 10s
                   metrics_path: /stats/prometheus
-                  follow_redirects: false
-                  enable_http2: false
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_pod_node_name]
                       regex: $MY_NODE_NAME
@@ -366,9 +351,6 @@ receivers:
                       action: keep
                   kubernetes_sd_configs:
                     - role: pod
-                      kubeconfig_file: ""
-                      follow_redirects: true
-                      enable_http2: true
 processors:
     resource/delete-service-name:
         attributes:
@@ -409,6 +391,7 @@ exporters:
 		})
 
 		yamlBytes, err := yaml.Marshal(collectorConfig)
+
 		require.NoError(t, err)
 		require.Equal(t, expected, string(yamlBytes))
 	})
