@@ -68,7 +68,7 @@ type Role string
 
 const (
 	RolePod       Role = "pod"
-	RoleEndpoints      = "endpoints"
+	RoleEndpoints Role = "endpoints"
 )
 
 type RelabelConfig struct {

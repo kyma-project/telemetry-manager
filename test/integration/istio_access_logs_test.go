@@ -130,7 +130,7 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 		mockFluentDConfigMap.K8sObjectFluentDConfig(),
 		mockBackendDeployment.K8sObjectHTTP(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
-		sampleApp.K8sObject(),
+		sampleApp.Pod().K8sObject(),
 		hostSecret.K8sObject(),
 		istioAccessLogsPipeline.K8sObjectHTTP(),
 	}...)
