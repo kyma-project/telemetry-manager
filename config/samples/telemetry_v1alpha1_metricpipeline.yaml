@@ -110,7 +110,7 @@ spec:
       containers:
         - image: ghcr.io/skhalash/examples/monitoring-custom-metrics:3d41736
           imagePullPolicy: IfNotPresent
-          name: metric-producer
+          name: sample-metrics
           ports:
             - containerPort: 8080
               name: http-metrics

@@ -92,7 +92,7 @@ func (p *Pod) K8sObject() *corev1.Pod {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:  baseName,
+					Name:  "sample-metrics",
 					Image: "ghcr.io/skhalash/examples/monitoring-custom-metrics:3d41736",
 					Ports: []corev1.ContainerPort{
 						{
