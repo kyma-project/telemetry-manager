@@ -20,6 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 )
 
 var _ = Describe("Istio access logs", Label("istio"), func() {
@@ -122,7 +123,7 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 	istioAccessLogsPipeline := kitlog.NewHTTPPipeline("pipeline-istio-access-logs", hostSecret.SecretKeyRef("log-host")).WithIncludeContainer([]string{"istio-proxy"})
 
 	// Abusing metrics provider for istio access logs
-	sampleApp := mocks.NewMetricProducer(sampleAppNs)
+	sampleApp := metricproducer.New(sampleAppNs)
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),

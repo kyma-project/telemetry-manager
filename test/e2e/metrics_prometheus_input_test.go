@@ -18,6 +18,7 @@ import (
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 	kitotlpmetric "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
@@ -80,16 +81,16 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics-new"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, mocks.CustomMetricCPUTemperature, withoutServiceLabel)
+						return metricsEqual(m, metricproducer.MetricCPUTemperature, withoutServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, mocks.CustomMetricCPUEnergyHistogram, withoutServiceLabel)
+						return metricsEqual(m, metricproducer.MetricCPUEnergyHistogram, withoutServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, mocks.CustomMetricHardwareHumidity, withoutServiceLabel)
+						return metricsEqual(m, metricproducer.MetricHardwareHumidity, withoutServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, mocks.CustomMetricHardDiskErrorsTotal, withoutServiceLabel)
+						return metricsEqual(m, metricproducer.MetricHardDiskErrorsTotal, withoutServiceLabel)
 					}))))
 			}, timeout, interval).Should(Succeed())
 		})
@@ -101,16 +102,16 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics-new"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, mocks.CustomMetricCPUTemperature, withServiceLabel)
+						return metricsEqual(m, metricproducer.MetricCPUTemperature, withServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, mocks.CustomMetricCPUEnergyHistogram, withServiceLabel)
+						return metricsEqual(m, metricproducer.MetricCPUEnergyHistogram, withServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, mocks.CustomMetricHardwareHumidity, withServiceLabel)
+						return metricsEqual(m, metricproducer.MetricHardwareHumidity, withServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, mocks.CustomMetricHardDiskErrorsTotal, withServiceLabel)
+						return metricsEqual(m, metricproducer.MetricHardDiskErrorsTotal, withServiceLabel)
 					}))))
 			}, timeout, interval).Should(Succeed())
 		})
@@ -146,7 +147,7 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-web", httpWebPort)
-	mockMetricProducer := mocks.NewMetricProducer(mocksNamespaceName)
+	mockMetricProducer := metricproducer.New(mocksNamespaceName)
 
 	// Default namespace objects.
 	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
@@ -176,7 +177,7 @@ const (
 	withoutServiceLabel
 )
 
-func metricsEqual(actual pmetric.Metric, expected mocks.CustomMetric, comparisonMode comparisonMode) bool {
+func metricsEqual(actual pmetric.Metric, expected metricproducer.Metric, comparisonMode comparisonMode) bool {
 	if actual.Name() != expected.Name || actual.Type() != expected.Type {
 		return false
 	}

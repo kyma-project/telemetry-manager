@@ -1,4 +1,4 @@
-package mocks
+package metricproducer
 
 import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -8,34 +8,34 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-type CustomMetric struct {
+type Metric struct {
 	Type   pmetric.MetricType
 	Name   string
 	Labels []string
 }
 
 var (
-	CustomMetricCPUTemperature = CustomMetric{
+	MetricCPUTemperature = Metric{
 		Type: pmetric.MetricTypeGauge,
 		Name: "cpu_temperature_celsius",
 	}
-	CustomMetricHardDiskErrorsTotal = CustomMetric{
+	MetricHardDiskErrorsTotal = Metric{
 		Type:   pmetric.MetricTypeSum,
 		Name:   "hd_errors_total",
 		Labels: []string{"device"},
 	}
-	CustomMetricCPUEnergyHistogram = CustomMetric{
+	MetricCPUEnergyHistogram = Metric{
 		Type:   pmetric.MetricTypeHistogram,
 		Name:   "cpu_energy_watt",
 		Labels: []string{"core"},
 	}
-	CustomMetricHardwareHumidity = CustomMetric{
+	MetricHardwareHumidity = Metric{
 		Type:   pmetric.MetricTypeSummary,
 		Name:   "hw_humidity",
 		Labels: []string{"sensor"},
 	}
 
-	metricProducerName    = "metric-producer"
+	baseName              = "metric-producer"
 	prometheusAnnotations = map[string]string{
 		"prometheus.io/path":   "/metrics",
 		"prometheus.io/port":   "8080",
@@ -54,37 +54,37 @@ type MetricProducer struct {
 	namespace string
 }
 
-type MetricProducerPod struct {
+type Pod struct {
 	namespace   string
 	annotations map[string]string
 }
 
-type MetricProducerService struct {
+type Service struct {
 	namespace   string
 	annotations map[string]string
 }
 
-func NewMetricProducer(namespace string) *MetricProducer {
+func New(namespace string) *MetricProducer {
 	return &MetricProducer{
 		namespace: namespace,
 	}
 }
 
-func (mp *MetricProducer) Pod() *MetricProducerPod {
-	return &MetricProducerPod{
+func (mp *MetricProducer) Pod() *Pod {
+	return &Pod{
 		namespace: mp.namespace,
 	}
 }
 
-func (p *MetricProducerPod) WithPrometheusAnnotations() *MetricProducerPod {
+func (p *Pod) WithPrometheusAnnotations() *Pod {
 	p.annotations = prometheusAnnotations
 	return p
 }
 
-func (p *MetricProducerPod) K8sObject() *corev1.Pod {
+func (p *Pod) K8sObject() *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        metricProducerName,
+			Name:        baseName,
 			Namespace:   p.namespace,
 			Labels:      selectorLabels,
 			Annotations: p.annotations,
@@ -92,7 +92,7 @@ func (p *MetricProducerPod) K8sObject() *corev1.Pod {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:  metricProducerName,
+					Name:  baseName,
 					Image: "ghcr.io/skhalash/examples/monitoring-custom-metrics:3d41736",
 					Ports: []corev1.ContainerPort{
 						{
@@ -115,21 +115,21 @@ func (p *MetricProducerPod) K8sObject() *corev1.Pod {
 	}
 }
 
-func (mp *MetricProducer) Service() *MetricProducerService {
-	return &MetricProducerService{
+func (mp *MetricProducer) Service() *Service {
+	return &Service{
 		namespace: mp.namespace,
 	}
 }
 
-func (s *MetricProducerService) WithPrometheusAnnotations() *MetricProducerService {
+func (s *Service) WithPrometheusAnnotations() *Service {
 	s.annotations = prometheusAnnotations
 	return s
 }
 
-func (s *MetricProducerService) K8sObject() *corev1.Service {
+func (s *Service) K8sObject() *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        metricProducerName,
+			Name:        baseName,
 			Namespace:   s.namespace,
 			Annotations: s.annotations,
 			Labels:      selectorLabels,
