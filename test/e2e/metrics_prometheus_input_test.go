@@ -22,7 +22,7 @@ import (
 	kitotlpmetric "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
-var _ = Describe("Metrics Prometheus Input", Label("metrics-new"), func() {
+var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 	Context("When a metricpipeline exists", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
