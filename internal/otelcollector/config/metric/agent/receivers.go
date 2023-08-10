@@ -114,11 +114,6 @@ func makePrometheusAppPodsConfig() *PrometheusReceiver {
 							Action:       Drop,
 							Regex:        "(istio-proxy)",
 						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
-							Action:       Replace,
-							TargetLabel:  "container",
-						},
 					},
 				},
 			},
@@ -178,11 +173,6 @@ func makePrometheusAppServicesConfig() *PrometheusReceiver {
 							Action:       Replace,
 							TargetLabel:  "service",
 						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
-							Action:       Replace,
-							TargetLabel:  "container",
-						},
 					},
 				},
 			},
@@ -223,11 +213,6 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 							SourceLabels: []string{"__meta_kubernetes_pod_phase"},
 							Action:       Drop,
 							Regex:        "Pending|Succeeded|Failed",
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
-							Action:       Replace,
-							TargetLabel:  "container",
 						},
 					},
 					MetricRelabelConfigs: []RelabelConfig{
