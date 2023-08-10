@@ -75,46 +75,42 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics-new"), func() {
 
 		It("Should verify custom metric scraping via annotated pods", func() {
 			Eventually(func(g Gomega) {
-				hasServiceLabel := false
-
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return equal(m, mocks.CustomMetricCPUTemperature, hasServiceLabel)
+						return metricsEqual(m, mocks.CustomMetricCPUTemperature, withoutServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return equal(m, mocks.CustomMetricCPUEnergyHistogram, hasServiceLabel)
+						return metricsEqual(m, mocks.CustomMetricCPUEnergyHistogram, withoutServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return equal(m, mocks.CustomMetricHardwareHumidity, hasServiceLabel)
+						return metricsEqual(m, mocks.CustomMetricHardwareHumidity, withoutServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return equal(m, mocks.CustomMetricHardDiskErrorsTotal, hasServiceLabel)
+						return metricsEqual(m, mocks.CustomMetricHardDiskErrorsTotal, withoutServiceLabel)
 					}))))
 			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should verify custom metric scraping via annotated services", func() {
 			Eventually(func(g Gomega) {
-				hasServiceLabel := true
-
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return equal(m, mocks.CustomMetricCPUTemperature, hasServiceLabel)
+						return metricsEqual(m, mocks.CustomMetricCPUTemperature, withServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return equal(m, mocks.CustomMetricCPUEnergyHistogram, hasServiceLabel)
+						return metricsEqual(m, mocks.CustomMetricCPUEnergyHistogram, withServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return equal(m, mocks.CustomMetricHardwareHumidity, hasServiceLabel)
+						return metricsEqual(m, mocks.CustomMetricHardwareHumidity, withServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return equal(m, mocks.CustomMetricHardDiskErrorsTotal, hasServiceLabel)
+						return metricsEqual(m, mocks.CustomMetricHardDiskErrorsTotal, withServiceLabel)
 					}))))
 			}, timeout, interval).Should(Succeed())
 		})
@@ -173,17 +169,25 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 	return objs, urls, pipelines
 }
 
-func equal(actual pmetric.Metric, expected mocks.CustomMetric, hasServiceLabel bool) bool {
-	if hasServiceLabel {
-		if actual.Name() == expected.Name && actual.Type() == expected.Type {
-			attrs := []string{"service"}
-			attrs = append(attrs, expected.Labels...)
-			return kitotlpmetric.AllDataPointsContainAttributes(actual, attrs...)
-		}
+type comparisonMode int
+
+const (
+	withServiceLabel comparisonMode = iota
+	withoutServiceLabel
+)
+
+func metricsEqual(actual pmetric.Metric, expected mocks.CustomMetric, comparisonMode comparisonMode) bool {
+	if actual.Name() != expected.Name || actual.Type() != expected.Type {
 		return false
 	}
-	if actual.Name() == expected.Name && actual.Type() == expected.Type {
-		return kitotlpmetric.AllDataPointsContainAttributes(actual, expected.Labels...) && kitotlpmetric.NoDataPointsContainAttributes(actual, "service")
+
+	switch comparisonMode {
+	case withServiceLabel:
+		return kitotlpmetric.AllDataPointsContainAttributes(actual, append(expected.Labels, "service")...)
+	case withoutServiceLabel:
+		return kitotlpmetric.AllDataPointsContainAttributes(actual, expected.Labels...) &&
+			kitotlpmetric.NoDataPointsContainAttributes(actual, "service")
+	default:
+		return false
 	}
-	return false
 }
