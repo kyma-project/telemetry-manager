@@ -164,6 +164,11 @@ func makePrometheusAppServicesConfig() *PrometheusReceiver {
 							TargetLabel:  "__address__",
 						},
 						{
+							SourceLabels: []string{"__meta_kubernetes_pod_phase"},
+							Action:       Drop,
+							Regex:        "Pending|Succeeded|Failed",
+						},
+						{
 							SourceLabels: []string{"__meta_kubernetes_pod_container_init"},
 							Action:       Drop,
 							Regex:        "(true)",
@@ -172,11 +177,6 @@ func makePrometheusAppServicesConfig() *PrometheusReceiver {
 							SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
 							Action:       Drop,
 							Regex:        "(istio-proxy)",
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_phase"},
-							Action:       Drop,
-							Regex:        "Pending|Succeeded|Failed",
 						},
 						{
 							SourceLabels: []string{"__meta_kubernetes_service_name"},

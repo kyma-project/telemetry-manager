@@ -83,7 +83,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
@@ -121,7 +121,7 @@ func TestMakeAgentConfig(t *testing.T) {
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-runtime"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/istio")
@@ -191,7 +191,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
@@ -208,7 +208,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
@@ -229,7 +229,7 @@ func TestMakeAgentConfig(t *testing.T) {
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-runtime"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
@@ -354,6 +354,12 @@ receivers:
                       action: replace
                     - source_labels: [__meta_kubernetes_pod_phase]
                       regex: Pending|Succeeded|Failed
+                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_container_init]
+                      regex: (true)
+                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_container_name]
+                      regex: (istio-proxy)
                       action: drop
                     - source_labels: [__meta_kubernetes_service_name]
                       target_label: service
