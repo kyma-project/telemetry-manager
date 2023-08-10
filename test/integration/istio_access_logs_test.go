@@ -135,6 +135,6 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 		istioAccessLogsPipeline.K8sObjectHTTP(),
 	}...)
 	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockHTTPBackend.Name(), telemetryDataFilename, httpWebPort), 0)
-	urls.SetMetricPodURL(proxyClient.ProxyURLForPod(sampleAppNs, "sample-metrics", "/metrics/", 8080))
+	urls.SetMetricPodURL(proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
 	return objs, urls, istioAccessLogsPipeline.Name()
 }

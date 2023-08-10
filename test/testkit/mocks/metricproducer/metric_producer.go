@@ -6,6 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"strconv"
 )
 
 type Metric struct {
@@ -35,23 +36,36 @@ var (
 		Labels: []string{"sensor"},
 	}
 
+	metricsPort           = 8080
+	metricsPortName       = "http-metrics"
+	metricsEndpoint       = "/metrics"
 	baseName              = "metric-producer"
 	prometheusAnnotations = map[string]string{
-		"prometheus.io/path":   "/metrics",
-		"prometheus.io/port":   "8080",
+		"prometheus.io/path":   metricsEndpoint,
+		"prometheus.io/port":   strconv.Itoa(metricsPort),
 		"prometheus.io/scrape": "true",
 		"prometheus.io/scheme": "http",
 	}
 	selectorLabels = map[string]string{
 		"app": "sample-metrics",
 	}
-	metricsPort     int32 = 8080
-	metricsPortName       = "http-metrics"
 )
 
 // MetricProducer represents a workload that exposes dummy metrics in the Prometheus exposition format
 type MetricProducer struct {
 	namespace string
+}
+
+func (mp *MetricProducer) Name() string {
+	return baseName
+}
+
+func (mp *MetricProducer) MetricsEndpoint() string {
+	return metricsEndpoint
+}
+
+func (mp *MetricProducer) MetricsPort() int {
+	return metricsPort
 }
 
 type Pod struct {
@@ -97,7 +111,7 @@ func (p *Pod) K8sObject() *corev1.Pod {
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          metricsPortName,
-							ContainerPort: metricsPort,
+							ContainerPort: int32(metricsPort),
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
@@ -139,7 +153,7 @@ func (s *Service) K8sObject() *corev1.Service {
 				{
 					Name:       metricsPortName,
 					Protocol:   corev1.ProtocolTCP,
-					Port:       metricsPort,
+					Port:       int32(metricsPort),
 					TargetPort: intstr.FromString(metricsPortName),
 				},
 			},
