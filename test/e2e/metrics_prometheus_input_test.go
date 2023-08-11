@@ -79,6 +79,8 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
+				// targets discovered via annotated pods must have no service label
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
 						return metricsEqual(m, metricproducer.MetricCPUTemperature, withoutServiceLabel)
@@ -101,6 +103,8 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
+					// targets discovered via annotated service must have the service label
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
 						return metricsEqual(m, metricproducer.MetricCPUTemperature, withServiceLabel)
 					}),
