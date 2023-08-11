@@ -6,7 +6,7 @@ apiVersion: telemetry.istio.io/v1alpha1
 kind: Telemetry
 metadata:
   name: access-config
-  namespace: sample
+  namespace: istio-system
 spec:
   accessLogging:
     - providers:
@@ -15,7 +15,7 @@ EOF
 }
 
 function is_istio_telemetry_apply_successful() {
-  kubectl get telemetries.telemetry.istio.io access-config -n sample &> /dev/null
+  kubectl get telemetries.telemetry.istio.io access-config -n istio-system &> /dev/null
   return $?
 }
 
@@ -46,8 +46,6 @@ function ensure_istio_telemetry() {
 function main() {
   kubectl apply -f https://github.com/kyma-project/istio/releases/download/$ISTIO_VERSION/istio-manager.yaml
   kubectl apply -f https://github.com/kyma-project/istio/releases/download/$ISTIO_VERSION/istio-default-cr.yaml
-  kubectl create namespace sample
-  kubectl label namespace sample istio-injection=enabled
   ensure_istio_telemetry
 }
 
