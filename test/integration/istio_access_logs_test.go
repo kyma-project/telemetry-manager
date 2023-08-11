@@ -102,8 +102,10 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 	)
 
 	mocksNamespace := kitk8s.NewNamespace(mockNs)
-
 	objs = append(objs, mocksNamespace.K8sObject())
+
+	appNamespace := kitk8s.NewNamespace(sampleAppNs, kitk8s.WithIstioInjection())
+	objs = append(objs, appNamespace.K8sObject())
 
 	//// Mocks namespace objects.
 	mockHTTPBackend := mocks.NewHTTPBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)
