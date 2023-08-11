@@ -67,8 +67,8 @@ type KubernetesDiscoveryConfig struct {
 type Role string
 
 const (
-	RolePod       Role = "pod"
 	RoleEndpoints Role = "endpoints"
+	RolePod       Role = "pod"
 )
 
 type RelabelConfig struct {

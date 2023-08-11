@@ -8,6 +8,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
+const scrapeInterval = 10 * time.Second
+
 func makeReceiversConfig(inputs inputSources) Receivers {
 	var receiversConfig Receivers
 
@@ -45,7 +47,7 @@ func makePrometheusSelfConfig() *PrometheusReceiver {
 			ScrapeConfigs: []ScrapeConfig{
 				{
 					JobName:        "opentelemetry-collector",
-					ScrapeInterval: 10 * time.Second,
+					ScrapeInterval: scrapeInterval,
 					StaticDiscoveryConfigs: []StaticDiscoveryConfig{
 						{
 							Targets: []string{fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics)},
@@ -62,58 +64,18 @@ func makePrometheusAppPodsConfig() *PrometheusReceiver {
 		Config: PrometheusConfig{
 			ScrapeConfigs: []ScrapeConfig{
 				{
-					JobName:        "app-pods",
-					ScrapeInterval: 10 * time.Second,
-					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
-						{
-							Role: RolePod,
-						},
-					},
+					JobName:                    "app-pods",
+					ScrapeInterval:             scrapeInterval,
+					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
 					RelabelConfigs: []RelabelConfig{
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_node_name"},
-							Regex:        fmt.Sprintf("$%s", config.EnvVarCurrentNodeName),
-							Action:       Keep,
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_annotation_prometheus_io_scrape"},
-							Regex:        "true",
-							Action:       Keep,
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_annotation_prometheus_io_scheme"},
-							Action:       Replace,
-							Regex:        "(https?)",
-							TargetLabel:  "__scheme__",
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_annotation_prometheus_io_path"},
-							Action:       Replace,
-							Regex:        "(.+)",
-							TargetLabel:  "__metrics_path__",
-						},
-						{
-							SourceLabels: []string{"__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"},
-							Action:       Replace,
-							Regex:        "([^:]+)(?::\\d+)?;(\\d+)",
-							Replacement:  "$$1:$$2",
-							TargetLabel:  "__address__",
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_phase"},
-							Action:       Drop,
-							Regex:        "Pending|Succeeded|Failed",
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_container_init"},
-							Action:       Drop,
-							Regex:        "(true)",
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
-							Action:       Drop,
-							Regex:        "(istio-proxy)",
-						},
+						keepRunningOnSameNode(NodeAffiliatedPod),
+						keepAnnotated(AnnotatedPod),
+						replaceScheme(AnnotatedPod),
+						replaceMetricPath(AnnotatedPod),
+						replaceAddress(AnnotatedPod),
+						dropNonRunningPods(),
+						dropInitContainers(),
+						dropIstioProxyContainer(),
 					},
 				},
 			},
@@ -126,63 +88,19 @@ func makePrometheusAppServicesConfig() *PrometheusReceiver {
 		Config: PrometheusConfig{
 			ScrapeConfigs: []ScrapeConfig{
 				{
-					JobName:        "app-services",
-					ScrapeInterval: 10 * time.Second,
-					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
-						{
-							Role: RoleEndpoints,
-						},
-					},
+					JobName:                    "app-services",
+					ScrapeInterval:             scrapeInterval,
+					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RoleEndpoints}},
 					RelabelConfigs: []RelabelConfig{
-						{
-							SourceLabels: []string{"__meta_kubernetes_endpoint_node_name"},
-							Regex:        fmt.Sprintf("$%s", config.EnvVarCurrentNodeName),
-							Action:       Keep,
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scrape"},
-							Regex:        "true",
-							Action:       Keep,
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scheme"},
-							Action:       Replace,
-							Regex:        "(https?)",
-							TargetLabel:  "__scheme__",
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_path"},
-							Action:       Replace,
-							Regex:        "(.+)",
-							TargetLabel:  "__metrics_path__",
-						},
-						{
-							SourceLabels: []string{"__address__", "__meta_kubernetes_service_annotation_prometheus_io_port"},
-							Action:       Replace,
-							Regex:        "([^:]+)(?::\\d+)?;(\\d+)",
-							Replacement:  "$$1:$$2",
-							TargetLabel:  "__address__",
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_phase"},
-							Action:       Drop,
-							Regex:        "Pending|Succeeded|Failed",
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_container_init"},
-							Action:       Drop,
-							Regex:        "(true)",
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
-							Action:       Drop,
-							Regex:        "(istio-proxy)",
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_service_name"},
-							Action:       Replace,
-							TargetLabel:  "service",
-						},
+						keepRunningOnSameNode(NodeAffiliatedEndpoint),
+						keepAnnotated(AnnotatedService),
+						replaceScheme(AnnotatedService),
+						replaceMetricPath(AnnotatedService),
+						replaceAddress(AnnotatedService),
+						dropNonRunningPods(),
+						dropInitContainers(),
+						dropIstioProxyContainer(),
+						replaceService(),
 					},
 				},
 			},
@@ -195,35 +113,15 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 		Config: PrometheusConfig{
 			ScrapeConfigs: []ScrapeConfig{
 				{
-					JobName:        "istio-proxy",
-					MetricsPath:    "/stats/prometheus",
-					ScrapeInterval: 10 * time.Second,
-					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{
-						{
-							Role: RolePod,
-						},
-					},
+					JobName:                    "istio-proxy",
+					MetricsPath:                "/stats/prometheus",
+					ScrapeInterval:             scrapeInterval,
+					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
 					RelabelConfigs: []RelabelConfig{
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_node_name"},
-							Regex:        fmt.Sprintf("$%s", config.EnvVarCurrentNodeName),
-							Action:       Keep,
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
-							Action:       Keep,
-							Regex:        "istio-proxy",
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_container_port_name"},
-							Action:       Keep,
-							Regex:        "http-envoy-prom",
-						},
-						{
-							SourceLabels: []string{"__meta_kubernetes_pod_phase"},
-							Action:       Drop,
-							Regex:        "Pending|Succeeded|Failed",
-						},
+						keepRunningOnSameNode(NodeAffiliatedPod),
+						keepIstioProxyContainer(),
+						keepContainerWithEnvoyPort(),
+						dropNonRunningPods(),
 					},
 					MetricRelabelConfigs: []RelabelConfig{
 						{
