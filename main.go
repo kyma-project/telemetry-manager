@@ -611,5 +611,6 @@ func parsePlugins(s string) []string {
 }
 
 func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
-	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, webhookConfig))
+	lcCond := telemetry.NewLogCollectorConditions(client, kubernetes.DaemonSetProber{Client: client}, types.NamespacedName{Name: fluentBitDaemonSet, Namespace: "kyma-system"})
+	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, webhookConfig, lcCond))
 }

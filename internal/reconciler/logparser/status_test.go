@@ -2,6 +2,7 @@ package logparser
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -49,7 +50,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: parserName}, &updatedParser)
 		require.Len(t, updatedParser.Status.Conditions, 1)
 		require.Equal(t, updatedParser.Status.Conditions[0].Type, telemetryv1alpha1.LogParserPending)
-		require.Equal(t, updatedParser.Status.Conditions[0].Reason, reasonFluentBitDSNotReady)
+		require.Equal(t, updatedParser.Status.Conditions[0].Reason, reconciler.ReasonFluentBitDSNotReady)
 	})
 
 	t.Run("should add running condition if fluent bit becomes ready", func(t *testing.T) {
@@ -60,7 +61,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			Status: telemetryv1alpha1.LogParserStatus{
 				Conditions: []telemetryv1alpha1.LogParserCondition{
-					{Reason: reasonFluentBitDSNotReady, Type: telemetryv1alpha1.LogParserPending},
+					{Reason: reconciler.ReasonFluentBitDSNotReady, Type: telemetryv1alpha1.LogParserPending},
 				},
 			},
 		}
@@ -85,9 +86,9 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: parserName}, &updatedParser)
 		require.Len(t, updatedParser.Status.Conditions, 2)
 		require.Equal(t, updatedParser.Status.Conditions[0].Type, telemetryv1alpha1.LogParserPending)
-		require.Equal(t, updatedParser.Status.Conditions[0].Reason, reasonFluentBitDSNotReady)
+		require.Equal(t, updatedParser.Status.Conditions[0].Reason, reconciler.ReasonFluentBitDSNotReady)
 		require.Equal(t, updatedParser.Status.Conditions[1].Type, telemetryv1alpha1.LogParserRunning)
-		require.Equal(t, updatedParser.Status.Conditions[1].Reason, reasonFluentBitDSReady)
+		require.Equal(t, updatedParser.Status.Conditions[1].Reason, reconciler.ReasonFluentBitDSReady)
 	})
 
 	t.Run("should reset conditions and add pending if fluent bit becomes not ready again", func(t *testing.T) {
@@ -98,8 +99,8 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			Status: telemetryv1alpha1.LogParserStatus{
 				Conditions: []telemetryv1alpha1.LogParserCondition{
-					{Reason: reasonFluentBitDSNotReady, Type: telemetryv1alpha1.LogParserPending},
-					{Reason: reasonFluentBitDSReady, Type: telemetryv1alpha1.LogParserRunning},
+					{Reason: reconciler.ReasonFluentBitDSNotReady, Type: telemetryv1alpha1.LogParserPending},
+					{Reason: reconciler.ReasonFluentBitDSReady, Type: telemetryv1alpha1.LogParserRunning},
 				},
 			},
 		}
@@ -124,6 +125,6 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: parserName}, &updatedParser)
 		require.Len(t, updatedParser.Status.Conditions, 1)
 		require.Equal(t, updatedParser.Status.Conditions[0].Type, telemetryv1alpha1.LogParserPending)
-		require.Equal(t, updatedParser.Status.Conditions[0].Reason, reasonFluentBitDSNotReady)
+		require.Equal(t, updatedParser.Status.Conditions[0].Reason, reconciler.ReasonFluentBitDSNotReady)
 	})
 }

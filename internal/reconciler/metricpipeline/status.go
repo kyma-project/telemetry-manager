@@ -3,6 +3,7 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -11,13 +12,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
-)
-
-const (
-	reasonMetricGatewayDeploymentNotReady = "MetricGatewayDeploymentNotReady"
-	reasonMetricGatewayDeploymentReady    = "MetricGatewayDeploymentReady"
-	reasonReferencedSecretMissingReason   = "ReferencedSecretMissing"
-	reasonWaitingForLock                  = "WaitingForLock"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lockAcquired bool) error {
@@ -37,7 +31,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 	}
 
 	if !lockAcquired {
-		pending := telemetryv1alpha1.NewMetricPipelineCondition(reasonWaitingForLock, telemetryv1alpha1.MetricPipelinePending)
+		pending := telemetryv1alpha1.NewMetricPipelineCondition(reconciler.ReasonWaitingForLock, telemetryv1alpha1.MetricPipelinePending)
 
 		if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
 			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))
@@ -49,7 +43,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, &pipeline)
 	if referencesNonExistentSecret {
-		pending := telemetryv1alpha1.NewMetricPipelineCondition(reasonReferencedSecretMissingReason, telemetryv1alpha1.MetricPipelinePending)
+		pending := telemetryv1alpha1.NewMetricPipelineCondition(reconciler.ReasonReferencedSecretMissingReason, telemetryv1alpha1.MetricPipelinePending)
 
 		if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
 			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))
@@ -69,11 +63,11 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 			return nil
 		}
 
-		running := telemetryv1alpha1.NewMetricPipelineCondition(reasonMetricGatewayDeploymentReady, telemetryv1alpha1.MetricPipelineRunning)
+		running := telemetryv1alpha1.NewMetricPipelineCondition(reconciler.ReasonMetricGatewayDeploymentReady, telemetryv1alpha1.MetricPipelineRunning)
 		return setCondition(ctx, r.Client, &pipeline, running)
 	}
 
-	pending := telemetryv1alpha1.NewMetricPipelineCondition(reasonMetricGatewayDeploymentNotReady, telemetryv1alpha1.MetricPipelinePending)
+	pending := telemetryv1alpha1.NewMetricPipelineCondition(reconciler.ReasonMetricGatewayDeploymentNotReady, telemetryv1alpha1.MetricPipelinePending)
 
 	if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
 		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))

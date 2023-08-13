@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	"strings"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -296,4 +297,21 @@ func GetOrCreateSecret(ctx context.Context, c client.Client, name types.Namespac
 		}
 	}
 	return corev1.Secret{}, err
+}
+
+func podStatus(podsList []corev1.Pod) (string, error) {
+	for _, p := range podsList {
+		for _, c := range p.Status.ContainerStatuses {
+			if c.State.Waiting != nil && c.State.Waiting.Reason == "CrashLoopBackOff" {
+				return reconciler.ReasonFluentBitPodCrashBackLooping, nil
+			}
+		}
+		if p.Status.Phase == corev1.PodPending {
+			return reconciler.ReasonFluentBitDSNotReady, nil
+		}
+		if p.Status.Phase == corev1.PodRunning {
+			return reconciler.ReasonFluentBitDSReady, nil
+		}
+	}
+	return reconciler.ReasonPodStatusUnknown, nil
 }

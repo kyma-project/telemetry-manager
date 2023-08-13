@@ -65,6 +65,22 @@ type TelemetryStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// add other fields to status subresource here
+	//Endpoints endpoints
+}
+
+type endpoints struct {
+	Traces  traceEndpoints
+	Metrics metricEndpoints
+}
+
+type traceEndpoints struct {
+	GRPC string
+	HTTP string
+}
+
+type metricEndpoints struct {
+	GRPC string
+	HTTP string
 }
 
 func (s *TelemetryStatus) WithState(state State) *TelemetryStatus {

@@ -41,15 +41,19 @@ type Reconciler struct {
 	*rest.Config
 	// EventRecorder for creating k8s events
 	record.EventRecorder
-	WebhookConfig WebhookConfig
+	WebhookConfig                  WebhookConfig
+	LogCollectorConditionProber    conditionsProber
+	TraceCollectorConditionProber  conditionsProber
+	MetricCollectorConditionProber conditionsProber
 }
 
-func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig WebhookConfig) *Reconciler {
+func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig WebhookConfig, prober conditionsProber) *Reconciler {
 	return &Reconciler{
-		Client:        client,
-		Scheme:        scheme,
-		EventRecorder: eventRecorder,
-		WebhookConfig: webhookConfig,
+		Client:                      client,
+		Scheme:                      scheme,
+		EventRecorder:               eventRecorder,
+		WebhookConfig:               webhookConfig,
+		LogCollectorConditionProber: prober,
 	}
 }
 
@@ -62,6 +66,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		logger.Info(req.NamespacedName.String() + " got deleted!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
+	r.updateConditions(ctx, r.LogCollectorConditionProber, &objectInstance)
 
 	instanceIsBeingDeleted := !objectInstance.GetDeletionTimestamp().IsZero()
 

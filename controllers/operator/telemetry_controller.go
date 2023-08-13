@@ -18,7 +18,7 @@ package operator
 
 import (
 	"context"
-
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -61,6 +61,10 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&source.Kind{Type: &admissionv1.ValidatingWebhookConfiguration{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
 			builder.WithPredicates(setup.DeleteOrUpdate())).
+		Watches(
+			&source.Kind{Type: &v1alpha1.LogPipeline{}},
+			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryResource),
+			builder.WithPredicates(setup.DeleteOrUpdate())).
 		Complete(r)
 }
 
@@ -74,6 +78,34 @@ func (r *TelemetryReconciler) mapWebhook(object client.Object) []reconcile.Reque
 		return requests
 	}
 	if webhook.Name != r.reconciler.WebhookConfig.CertConfig.WebhookName.Name {
+		return requests
+	}
+
+	err := r.List(context.Background(), &telemetries)
+	if err != nil {
+		ctrl.Log.Error(err, "unable to list Telemetry CRs")
+		return requests
+	}
+
+	for _, t := range telemetries.Items {
+		requests = append(requests, reconcile.Request{
+			NamespacedName: client.ObjectKey{
+				Name:      t.Name,
+				Namespace: t.Namespace,
+			},
+		})
+	}
+
+	return requests
+}
+
+func (r *TelemetryReconciler) mapTelemetryResource(object client.Object) []reconcile.Request {
+	var telemetries operatorv1alpha1.TelemetryList
+	var requests []reconcile.Request
+
+	_, ok := object.(*v1alpha1.LogPipeline)
+	if !ok {
+		ctrl.Log.Error(nil, "unable to cast object to telemetry resource")
 		return requests
 	}
 

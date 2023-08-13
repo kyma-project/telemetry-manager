@@ -3,6 +3,7 @@ package logparser
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -10,11 +11,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-)
-
-const (
-	reasonFluentBitDSNotReady = "FluentBitDaemonSetNotReady"
-	reasonFluentBitDSReady    = "FluentBitDaemonSetReady"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error {
@@ -42,11 +38,11 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 			return nil
 		}
 
-		running := telemetryv1alpha1.NewLogParserCondition(reasonFluentBitDSReady, telemetryv1alpha1.LogParserRunning)
+		running := telemetryv1alpha1.NewLogParserCondition(reconciler.ReasonFluentBitDSReady, telemetryv1alpha1.LogParserRunning)
 		return setCondition(ctx, r.Client, &parser, running)
 	}
 
-	pending := telemetryv1alpha1.NewLogParserCondition(reasonFluentBitDSNotReady, telemetryv1alpha1.LogParserPending)
+	pending := telemetryv1alpha1.NewLogParserCondition(reconciler.ReasonFluentBitDSNotReady, telemetryv1alpha1.LogParserPending)
 
 	if parser.Status.HasCondition(telemetryv1alpha1.LogParserRunning) {
 		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", parser.Name, pending.Type))
