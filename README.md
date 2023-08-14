@@ -54,4 +54,4 @@ See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 ## Licensing
 
-This project is licensed under the Apache Software License, version 2.0 except as noted otherwise in the [LICENSE](./LICENSE) file.
+See the [LICENSE](./LICENSE) file.
