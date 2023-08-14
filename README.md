@@ -26,13 +26,13 @@ The metric controller creates an [OpenTelemetry Collector](https://opentelemetry
 
 For more information, see [Dynamic Monitoring Backend Configuration](https://github.com/kyma-project/community/tree/main/concepts/observability-strategy/configurable-monitoring).
 
-## Usage
-
-See the [user documentation](./docs/user/README.md).
-
 ## Installation
 
 See the [installation instruction](./docs/contributor/installation.md).
+
+## Usage
+
+See the [user documentation](./docs/user/README.md).
 
 ## Development
 
@@ -43,10 +43,17 @@ For details, see:
 - [Release process](./docs/contributor/releasing.md)
 - [Governance checks like linting](./docs/contributor/governance.md)
 
-## License
-
-This project is licensed under the Apache Software License, version 2.0 except as noted otherwise in the [LICENSE](./LICENSE) file.
-
 ## Contributing
+<!--- mandatory section - do not change this! --->
 
-To contribute to this project, follow the general [Kyma project contributing](https://github.com/kyma-project/community/blob/main/docs/contributing/02-contributing.md) guidelines.
+See the [CONTRIBUTING](./CONTRIBUTING.md) file.
+
+## Code of Conduct
+<!--- mandatory section - do not change this! --->
+
+See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+
+## Licensing
+<!--- mandatory section - do not change this! --->
+
+See the [LICENSE](./LICENSE) file.
