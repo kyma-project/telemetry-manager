@@ -89,7 +89,7 @@ func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *LogPipelineReconciler) mapSecret(ctx context.Context, object client.Object) []reconcile.Request {
 	var pipelines telemetryv1alpha1.LogPipelineList
 	var requests []reconcile.Request
-	err := r.List(context.Background(), &pipelines)
+	err := r.List(ctx, &pipelines)
 	if err != nil {
 		ctrl.Log.Error(err, "Secret UpdateEvent: fetching LogPipelineList failed!", err.Error())
 		return requests
