@@ -26,13 +26,13 @@ The metric controller creates an [OpenTelemetry Collector](https://opentelemetry
 
 For more information, see [Dynamic Monitoring Backend Configuration](https://github.com/kyma-project/community/tree/main/concepts/observability-strategy/configurable-monitoring).
 
-## Usage
-
-See the [user documentation](./docs/user/README.md).
-
 ## Installation
 
 See the [installation instruction](./docs/contributor/installation.md).
+
+## Usage
+
+See the [user documentation](./docs/user/README.md).
 
 ## Development
 
