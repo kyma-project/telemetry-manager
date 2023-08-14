@@ -64,7 +64,7 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&source.Kind{Type: &v1alpha1.LogPipeline{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryResource),
-			builder.WithPredicates(setup.DeleteOrUpdate())).
+			builder.WithPredicates(setup.CreateOrUpdateOrDelete())).
 		Complete(r)
 }
 
@@ -103,9 +103,13 @@ func (r *TelemetryReconciler) mapTelemetryResource(object client.Object) []recon
 	var telemetries operatorv1alpha1.TelemetryList
 	var requests []reconcile.Request
 
-	_, ok := object.(*v1alpha1.LogPipeline)
+	lp, ok := object.(*v1alpha1.LogPipeline)
 	if !ok {
 		ctrl.Log.Error(nil, "unable to cast object to telemetry resource")
+		return requests
+	}
+
+	if len(lp.Status.Conditions) == 0 {
 		return requests
 	}
 

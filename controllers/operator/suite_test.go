@@ -18,6 +18,8 @@ package operator
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"path/filepath"
 	"testing"
@@ -101,7 +103,8 @@ var _ = BeforeSuite(func() {
 		Enabled: false,
 	}
 	client := mgr.GetClient()
-	telemetryReconciler := telemetry.NewReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"), webhookConfig)
+	lcCond := telemetry.NewLogCollectorConditions(client, kubernetes.DaemonSetProber{Client: client}, types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"})
+	telemetryReconciler := telemetry.NewReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"), webhookConfig, lcCond)
 	err = telemetryReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 

@@ -41,15 +41,15 @@ func (l *logCollectorConditions) isComponentHealthy(ctx context.Context) (*metav
 	if len(logpipelines.Items) == 0 {
 		return buildTelemetryConditions(reconciler.ReasonNoPipelineDeployed), nil
 	}
-	if allLogPipelinesAreReady(logpipelines.Items) {
-		return buildTelemetryConditions(reconciler.ReasonFluentBitDSReady), nil
+
+	// Try to get the status of the log collector via the pipelines
+	status := validateLogPipeline(logpipelines.Items)
+	if status != reconciler.ReasonFluentBitDSNotReady {
+		return buildTelemetryConditions(status), nil
 	}
 
-	if missingSecret(logpipelines.Items) {
-		return buildTelemetryConditions(reconciler.ReasonReferencedSecretMissing), nil
-	}
-
-	status, err := l.dsProber.Status(ctx, l.componentName)
+	// if logpipelines are still pending check if they are in crashback loop or the pods of daemon set are starting up
+	status, err = l.dsProber.Status(ctx, l.componentName)
 	if err != nil {
 		return &metav1.Condition{}, fmt.Errorf("failed to get status of telemetry fluent bit: %w", err)
 	}
@@ -57,22 +57,20 @@ func (l *logCollectorConditions) isComponentHealthy(ctx context.Context) (*metav
 
 }
 
-func allLogPipelinesAreReady(logPipeines []v1alpha1.LogPipeline) bool {
+func validateLogPipeline(logPipeines []v1alpha1.LogPipeline) string {
 	for _, l := range logPipeines {
-		if l.Status.Conditions[0].Type == v1alpha1.LogPipelinePending {
-			return false
+		conditions := l.Status.Conditions
+		if len(conditions) == 0 {
+			return reconciler.ReasonFluentBitDSNotReady
+		}
+		if conditions[len(conditions)-1].Reason == reconciler.ReasonReferencedSecretMissingReason {
+			return reconciler.ReasonReferencedSecretMissingReason
+		}
+		if conditions[len(conditions)-1].Type == v1alpha1.LogPipelinePending {
+			return reconciler.ReasonFluentBitDSNotReady
 		}
 	}
-	return true
-}
-
-func missingSecret(logPipeines []v1alpha1.LogPipeline) bool {
-	for _, l := range logPipeines {
-		if l.Status.Conditions[0].Type == v1alpha1.LogPipelinePending && l.Status.Conditions[0].Reason == reconciler.ReasonReferencedSecretMissingReason {
-			return true
-		}
-	}
-	return false
+	return reconciler.ReasonFluentBitDSReady
 }
 
 func buildTelemetryConditions(reason string) *metav1.Condition {
@@ -81,13 +79,13 @@ func buildTelemetryConditions(reason string) *metav1.Condition {
 			Type:    "LogCollectorIsHealthy",
 			Status:  "True",
 			Reason:  reason,
-			Message: conditions[reason],
+			Message: reconciler.Conditions[reason],
 		}
 	}
 	return &metav1.Condition{
 		Type:    "LogCollectorIsHealthy",
 		Status:  "False",
 		Reason:  reason,
-		Message: "",
+		Message: reconciler.Conditions[reason],
 	}
 }
