@@ -44,8 +44,9 @@ For details, see:
 - [Governance checks like linting](./docs/contributor/governance.md)
 
 ## Contributing
+<!--- mandatory section - do not change this! --->
 
-To contribute to this project, follow the general [Kyma project contributing](https://github.com/kyma-project/community/blob/main/docs/contributing/02-contributing.md) guidelines.
+See the [CONTRIBUTING](./CONTRIBUTING) file.
 
 ## Code of Conduct
 <!--- mandatory section - do not change this! --->
@@ -53,5 +54,6 @@ To contribute to this project, follow the general [Kyma project contributing](ht
 See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 ## Licensing
+<!--- mandatory section - do not change this! --->
 
 See the [LICENSE](./LICENSE) file.
