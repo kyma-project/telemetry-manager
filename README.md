@@ -43,10 +43,15 @@ For details, see:
 - [Release process](./docs/contributor/releasing.md)
 - [Governance checks like linting](./docs/contributor/governance.md)
 
-## License
-
-This project is licensed under the Apache Software License, version 2.0 except as noted otherwise in the [LICENSE](./LICENSE) file.
-
 ## Contributing
 
 To contribute to this project, follow the general [Kyma project contributing](https://github.com/kyma-project/community/blob/main/docs/contributing/02-contributing.md) guidelines.
+
+## Code of Conduct
+<!--- mandatory section - do not change this! --->
+
+See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+
+## Licensing
+
+This project is licensed under the Apache Software License, version 2.0 except as noted otherwise in the [LICENSE](./LICENSE) file.
