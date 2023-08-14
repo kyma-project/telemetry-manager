@@ -46,7 +46,7 @@ For details, see:
 ## Contributing
 <!--- mandatory section - do not change this! --->
 
-See the [CONTRIBUTING](./CONTRIBUTING) file.
+See the [CONTRIBUTING](./CONTRIBUTING.md) file.
 
 ## Code of Conduct
 <!--- mandatory section - do not change this! --->
