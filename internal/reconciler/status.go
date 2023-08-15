@@ -1,5 +1,7 @@
 package reconciler
 
+import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 const (
 	ReasonNoPipelineDeployed           = "NoPipelineDeployed"
 	ReasonFluentBitDSNotReady          = "FluentBitDaemonSetNotReady"
@@ -14,10 +16,6 @@ const (
 
 	ReasonTraceCollectorDeploymentNotReady = "TraceCollectorDeploymentNotReady"
 	ReasonTraceCollectorDeploymentReady    = "TraceCollectorDeploymentReady"
-
-	ReasonPodStatusUnknown   = "PodStatusUnknown"
-	ReasonDeploymentReady    = "DeploymentReady"
-	ReasonDeploymentNotReady = "DeploymentNotReady"
 )
 
 var Conditions = map[string]string{
@@ -34,8 +32,16 @@ var Conditions = map[string]string{
 
 	ReasonTraceCollectorDeploymentNotReady: "Trace collector is deployment not ready",
 	ReasonTraceCollectorDeploymentReady:    "Trace collector deployment is ready",
-
-	ReasonPodStatusUnknown:   "Pod status is unknown",
-	ReasonDeploymentReady:    "Deployment is ready",
-	ReasonDeploymentNotReady: "Deployment is not ready",
 }
+
+const (
+	LogConditionType    = "Logging"
+	MetricConditionType = "Metrics"
+	TraceConditionType  = "Tracing"
+)
+
+const (
+	ConditionStatusTrue    metav1.ConditionStatus = "True"
+	ConditionStatusFalse   metav1.ConditionStatus = "False"
+	ConditionStatusUnknown metav1.ConditionStatus = "Unknown"
+)

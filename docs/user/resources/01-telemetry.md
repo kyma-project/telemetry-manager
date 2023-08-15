@@ -52,12 +52,12 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt) |
 | **endpoints**  | object | add other fields to status subresource here |
-| **endpoints.&#x200b;metricEndpoints**  | object |  |
-| **endpoints.&#x200b;metricEndpoints.&#x200b;metricGRPC**  | string |  |
-| **endpoints.&#x200b;metricEndpoints.&#x200b;metricHTTP**  | string |  |
-| **endpoints.&#x200b;traceEndpoints**  | object |  |
-| **endpoints.&#x200b;traceEndpoints.&#x200b;traceGRPC**  | string |  |
-| **endpoints.&#x200b;traceEndpoints.&#x200b;traceHTTP**  | string |  |
+| **endpoints.&#x200b;metrics**  | object |  |
+| **endpoints.&#x200b;metrics.&#x200b;grpc**  | string |  |
+| **endpoints.&#x200b;metrics.&#x200b;http**  | string |  |
+| **endpoints.&#x200b;traces**  | object |  |
+| **endpoints.&#x200b;traces.&#x200b;grpc**  | string |  |
+| **endpoints.&#x200b;traces.&#x200b;http**  | string |  |
 | **state** (required) | string | State signifies current state of Module CR. Value can be one of ("Ready", "Processing", "Error", "Deleting"). |
 
 <!-- TABLE-END -->

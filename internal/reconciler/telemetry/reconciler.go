@@ -57,12 +57,12 @@ type Reconciler struct {
 	// EventRecorder for creating k8s events
 	record.EventRecorder
 	TelemetryConfig                Config
-	LogCollectorConditionProber    conditionsProber
-	TraceCollectorConditionProber  conditionsProber
-	MetricCollectorConditionProber conditionsProber
+	LogCollectorConditionProber    ConditionsProber
+	TraceCollectorConditionProber  ConditionsProber
+	MetricCollectorConditionProber ConditionsProber
 }
 
-func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, config Config, logProber, traceProber, metricProber conditionsProber) *Reconciler {
+func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, config Config, logProber, traceProber, metricProber ConditionsProber) *Reconciler {
 	return &Reconciler{
 		Client:                         client,
 		Scheme:                         scheme,
@@ -83,14 +83,24 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		logger.Info(req.NamespacedName.String() + " got deleted!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	logger.Info(fmt.Sprintf("Getting the status: %v\n", objectInstance.Status))
+	//logger.Info(fmt.Sprintf("Getting the status: %v\n", objectInstance.Status))
 
-	r.updateConditions(ctx, r.LogCollectorConditionProber, &objectInstance)
-	//r.updateConditions(ctx, r.MetricCollectorConditionProber, &objectInstance)
-	r.updateConditions(ctx, r.TraceCollectorConditionProber, &objectInstance)
+	if err := r.updateConditions(ctx, r.LogCollectorConditionProber, &objectInstance); err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+	if err := r.updateConditions(ctx, r.MetricCollectorConditionProber, &objectInstance); err != nil {
+		return ctrl.Result{}, err
+	}
+	if err := r.updateConditions(ctx, r.TraceCollectorConditionProber, &objectInstance); err != nil {
+		return ctrl.Result{}, err
+	}
 
-	r.updateEndpoints(ctx, r.MetricCollectorConditionProber, &objectInstance)
-	r.updateEndpoints(ctx, r.TraceCollectorConditionProber, &objectInstance)
+	if err := r.updateEndpoints(ctx, r.MetricCollectorConditionProber, &objectInstance); err != nil {
+		return ctrl.Result{}, err
+	}
+	if err := r.updateEndpoints(ctx, r.TraceCollectorConditionProber, &objectInstance); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	instanceIsBeingDeleted := !objectInstance.GetDeletionTimestamp().IsZero()
 

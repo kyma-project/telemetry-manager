@@ -24,11 +24,11 @@ func NewTraceCollector(client client.Client, componentName types.NamespacedName)
 	}
 }
 
-func (t *traceCollectorConditions) name() string {
+func (t *traceCollectorConditions) Name() string {
 	return t.componentName.Name
 }
 
-func (t *traceCollectorConditions) isComponentHealthy(ctx context.Context) (*metav1.Condition, error) {
+func (t *traceCollectorConditions) IsComponentHealthy(ctx context.Context) (*metav1.Condition, error) {
 	tracePipelines, err := t.getPipelines(ctx)
 	if err != nil {
 		return &metav1.Condition{}, err
@@ -43,7 +43,7 @@ func (t *traceCollectorConditions) isComponentHealthy(ctx context.Context) (*met
 
 }
 
-func (t *traceCollectorConditions) endpoints(ctx context.Context, config Config, endpoints operatorV1alpha1.Endpoints) (operatorV1alpha1.Endpoints, error) {
+func (t *traceCollectorConditions) Endpoints(ctx context.Context, config Config, endpoints operatorV1alpha1.Endpoints) (operatorV1alpha1.Endpoints, error) {
 	tracePipelines, err := t.getPipelines(ctx)
 	traceEndpoints := operatorV1alpha1.TraceEndpoints{}
 	if err != nil {
@@ -88,15 +88,15 @@ func (t *traceCollectorConditions) validateTracePipeline(tracePipeines []v1alpha
 func (t *traceCollectorConditions) buildTelemetryConditions(reason string) *metav1.Condition {
 	if reason == reconciler.ReasonTraceCollectorDeploymentReady || reason == reconciler.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
-			Type:    "TraceCollectorIsHealthy",
-			Status:  "True",
+			Type:    reconciler.TraceConditionType,
+			Status:  reconciler.ConditionStatusTrue,
 			Reason:  reason,
 			Message: reconciler.Conditions[reason],
 		}
 	}
 	return &metav1.Condition{
-		Type:    "TraceCollectorIsHealthy",
-		Status:  "False",
+		Type:    reconciler.TraceConditionType,
+		Status:  reconciler.ConditionStatusFalse,
 		Reason:  reason,
 		Message: reconciler.Conditions[reason],
 	}

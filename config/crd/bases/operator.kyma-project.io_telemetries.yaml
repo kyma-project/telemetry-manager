@@ -122,18 +122,18 @@ spec:
               endpoints:
                 description: add other fields to status subresource here
                 properties:
-                  metricEndpoints:
+                  metrics:
                     properties:
-                      metricGRPC:
+                      grpc:
                         type: string
-                      metricHTTP:
+                      http:
                         type: string
                     type: object
-                  traceEndpoints:
+                  traces:
                     properties:
-                      traceGRPC:
+                      grpc:
                         type: string
-                      traceHTTP:
+                      http:
                         type: string
                     type: object
                 type: object

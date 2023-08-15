@@ -22,11 +22,11 @@ func NewLogCollectorConditions(client client.Client, componentName types.Namespa
 		componentName: componentName,
 	}
 }
-func (l *logCollectorConditions) name() string {
+func (l *logCollectorConditions) Name() string {
 	return l.componentName.Name
 }
 
-func (l *logCollectorConditions) isComponentHealthy(ctx context.Context) (*metav1.Condition, error) {
+func (l *logCollectorConditions) IsComponentHealthy(ctx context.Context) (*metav1.Condition, error) {
 	var logpipelines v1alpha1.LogPipelineList
 	err := l.client.List(ctx, &logpipelines)
 	if err != nil {
@@ -42,18 +42,9 @@ func (l *logCollectorConditions) isComponentHealthy(ctx context.Context) (*metav
 
 }
 
-func (l *logCollectorConditions) endpoints(ctx context.Context, config Config, endpoints operatorV1alpha1.Endpoints) (operatorV1alpha1.Endpoints, error) {
+func (l *logCollectorConditions) Endpoints(ctx context.Context, config Config, endpoints operatorV1alpha1.Endpoints) (operatorV1alpha1.Endpoints, error) {
 	return endpoints, nil
 }
-
-//func (l *logCollectorConditions) getPipelines(ctx context.Context) (v1alpha1.MetricPipelineList, error) {
-//	var metricPipelines v1alpha1.MetricPipelineList
-//	err := l.client.List(ctx, &metricPipelines)
-//	if err != nil {
-//		return v1alpha1.MetricPipelineList{}, fmt.Errorf("failed to get all mertic pipelines while syncing conditions: %w", err)
-//	}
-//	return metricPipelines, nil
-//}
 
 func (l *logCollectorConditions) validateLogPipeline(logPipeines []v1alpha1.LogPipeline) string {
 	for _, l := range logPipeines {
@@ -74,15 +65,15 @@ func (l *logCollectorConditions) validateLogPipeline(logPipeines []v1alpha1.LogP
 func (l *logCollectorConditions) buildTelemetryConditions(reason string) *metav1.Condition {
 	if reason == reconciler.ReasonFluentBitDSReady || reason == reconciler.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
-			Type:    "LogCollectorIsHealthy",
-			Status:  "True",
+			Type:    reconciler.LogConditionType,
+			Status:  reconciler.ConditionStatusTrue,
 			Reason:  reason,
 			Message: reconciler.Conditions[reason],
 		}
 	}
 	return &metav1.Condition{
-		Type:    "LogCollectorIsHealthy",
-		Status:  "False",
+		Type:    reconciler.LogConditionType,
+		Status:  reconciler.ConditionStatusFalse,
 		Reason:  reason,
 		Message: reconciler.Conditions[reason],
 	}

@@ -24,11 +24,11 @@ func NewMetricCollector(client client.Client, componentName types.NamespacedName
 	}
 }
 
-func (m *metricCollectorConditions) name() string {
+func (m *metricCollectorConditions) Name() string {
 	return m.componentName.Name
 }
 
-func (m *metricCollectorConditions) isComponentHealthy(ctx context.Context) (*metav1.Condition, error) {
+func (m *metricCollectorConditions) IsComponentHealthy(ctx context.Context) (*metav1.Condition, error) {
 	metricPipelines, err := m.getPipelines(ctx)
 	if err != nil {
 		return &metav1.Condition{}, err
@@ -43,7 +43,7 @@ func (m *metricCollectorConditions) isComponentHealthy(ctx context.Context) (*me
 	return m.buildTelemetryConditions(status), nil
 }
 
-func (m *metricCollectorConditions) endpoints(ctx context.Context, config Config, endpoints operatorV1alpha1.Endpoints) (operatorV1alpha1.Endpoints, error) {
+func (m *metricCollectorConditions) Endpoints(ctx context.Context, config Config, endpoints operatorV1alpha1.Endpoints) (operatorV1alpha1.Endpoints, error) {
 	metricPipelines, err := m.getPipelines(ctx)
 	metricEndpoints := operatorV1alpha1.MetricEndpoints{}
 	if err != nil {
@@ -88,15 +88,15 @@ func (m *metricCollectorConditions) validateMetricPipeline(metricPipelines []v1a
 func (m *metricCollectorConditions) buildTelemetryConditions(reason string) *metav1.Condition {
 	if reason == reconciler.ReasonMetricGatewayDeploymentReady || reason == reconciler.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
-			Type:    "MetricCollerctorIsHealthy",
-			Status:  "True",
+			Type:    reconciler.MetricConditionType,
+			Status:  reconciler.ConditionStatusTrue,
 			Reason:  reason,
 			Message: reconciler.Conditions[reason],
 		}
 	}
 	return &metav1.Condition{
-		Type:    "MetricCollerctorIsHealthy",
-		Status:  "False",
+		Type:    reconciler.MetricConditionType,
+		Status:  reconciler.ConditionStatusFalse,
 		Reason:  reason,
 		Message: reconciler.Conditions[reason],
 	}
