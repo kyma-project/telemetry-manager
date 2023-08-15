@@ -3,8 +3,9 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	operatorV1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -13,17 +14,12 @@ import (
 
 type metricCollectorConditions struct {
 	client        client.Client
-	dpProber      kubernetes.DeploymentProber
 	componentName types.NamespacedName
 }
-type DeploymentProber interface {
-	Status(ctx context.Context, name types.NamespacedName) (string, error)
-}
 
-func NewMetricCollector(client client.Client, dpProber kubernetes.DeploymentProber, componentName types.NamespacedName) *metricCollectorConditions {
+func NewMetricCollector(client client.Client, componentName types.NamespacedName) *metricCollectorConditions {
 	return &metricCollectorConditions{
 		client:        client,
-		dpProber:      dpProber,
 		componentName: componentName,
 	}
 }
@@ -33,30 +29,75 @@ func (m *metricCollectorConditions) name() string {
 }
 
 func (m *metricCollectorConditions) isComponentHealthy(ctx context.Context) (*metav1.Condition, error) {
+	metricPipelines, err := m.getPipelines(ctx)
+	if err != nil {
+		return &metav1.Condition{}, err
+	}
+
+	if len(metricPipelines.Items) == 0 {
+		return m.buildTelemetryConditions(reconciler.ReasonNoPipelineDeployed), nil
+	}
+
+	// Try to get the status of the metric collector via the pipelines
+	status := m.validateMetricPipeline(metricPipelines.Items)
+	return m.buildTelemetryConditions(status), nil
+}
+
+func (m *metricCollectorConditions) endpoints(ctx context.Context, config Config, endpoints operatorV1alpha1.Endpoints) (operatorV1alpha1.Endpoints, error) {
+	metricPipelines, err := m.getPipelines(ctx)
+	metricEndpoints := operatorV1alpha1.MetricEndpoints{}
+	if err != nil {
+		return endpoints, err
+	}
+	if len(metricPipelines.Items) == 0 {
+		endpoints.Metrics = metricEndpoints
+		return endpoints, nil
+	}
+	metricEndpoints.HTTP = fmt.Sprintf("http://%s.%s:%d", config.MetricConfig.ServiceName, config.MetricConfig.Namespace, ports.OTLPHTTP)
+	metricEndpoints.GRPC = fmt.Sprintf("http://%s.%s:%d", config.MetricConfig.ServiceName, config.MetricConfig.Namespace, ports.OTLPGRPC)
+	endpoints.Metrics = metricEndpoints
+
+	return endpoints, nil
+}
+
+func (m *metricCollectorConditions) getPipelines(ctx context.Context) (v1alpha1.MetricPipelineList, error) {
 	var metricPipelines v1alpha1.MetricPipelineList
 	err := m.client.List(ctx, &metricPipelines)
 	if err != nil {
-		return &metav1.Condition{}, fmt.Errorf("failed to get all metric pipelines while syncing conditions: %w", err)
+		return v1alpha1.MetricPipelineList{}, fmt.Errorf("failed to get all mertic pipelines while syncing conditions: %w", err)
 	}
-	if len(metricPipelines.Items) == 0 {
-		return buildTelemetryConditions(reconciler.ReasonNoPipelineDeployed), nil
-	}
-	if allMetricPipelinesAreReady(metricPipelines.Items) {
-		return buildTelemetryConditions(reconciler.ReasonMetricGatewayDeploymentReady), nil
-	}
-
-	status, err := m.dpProber.Status(ctx, m.componentName)
-	if err != nil {
-		return &metav1.Condition{}, fmt.Errorf("failed to get status of telemetry fluent bit: %w", err)
-	}
-	return buildTelemetryConditions(status), nil
+	return metricPipelines, nil
 }
 
-func allMetricPipelinesAreReady(metricPipeines []v1alpha1.MetricPipeline) bool {
-	for _, l := range metricPipeines {
-		if l.Status.Conditions[0].Type == v1alpha1.MetricPipelinePending {
-			return false
+func (m *metricCollectorConditions) validateMetricPipeline(metricPipelines []v1alpha1.MetricPipeline) string {
+	for _, m := range metricPipelines {
+		conditions := m.Status.Conditions
+		if len(conditions) == 0 {
+			return reconciler.ReasonMetricGatewayDeploymentNotReady
+		}
+		if conditions[len(conditions)-1].Reason == reconciler.ReasonReferencedSecretMissingReason {
+			return reconciler.ReasonReferencedSecretMissingReason
+		}
+		if conditions[len(conditions)-1].Type == v1alpha1.MetricPipelinePending {
+			return reconciler.ReasonMetricGatewayDeploymentNotReady
 		}
 	}
-	return true
+	return reconciler.ReasonMetricGatewayDeploymentReady
+}
+
+func (m *metricCollectorConditions) buildTelemetryConditions(reason string) *metav1.Condition {
+	if reason == reconciler.ReasonMetricGatewayDeploymentReady || reason == reconciler.ReasonNoPipelineDeployed {
+		return &metav1.Condition{
+			Type:    "MetricCollerctorIsHealthy",
+			Status:  "True",
+			Reason:  reason,
+			Message: reconciler.Conditions[reason],
+		}
+	}
+	return &metav1.Condition{
+		Type:    "MetricCollerctorIsHealthy",
+		Status:  "False",
+		Reason:  reason,
+		Message: reconciler.Conditions[reason],
+	}
 }

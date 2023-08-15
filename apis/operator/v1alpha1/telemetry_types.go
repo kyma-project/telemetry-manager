@@ -65,22 +65,22 @@ type TelemetryStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// add other fields to status subresource here
-	//Endpoints endpoints
+	Endpoints Endpoints `json:"endpoints,omitempty"`
 }
 
-type endpoints struct {
-	Traces  traceEndpoints
-	Metrics metricEndpoints
+type Endpoints struct {
+	Traces  TraceEndpoints  `json:"traces,omitempty"`
+	Metrics MetricEndpoints `json:"metrics,omitempty"`
 }
 
-type traceEndpoints struct {
-	GRPC string
-	HTTP string
+type TraceEndpoints struct {
+	GRPC string `json:"grpc,omitempty"`
+	HTTP string `json:"http,omitempty"`
 }
 
-type metricEndpoints struct {
-	GRPC string
-	HTTP string
+type MetricEndpoints struct {
+	GRPC string `json:"grpc,omitempty"`
+	HTTP string `json:"http,omitempty"`
 }
 
 func (s *TelemetryStatus) WithState(state State) *TelemetryStatus {
@@ -90,7 +90,7 @@ func (s *TelemetryStatus) WithState(state State) *TelemetryStatus {
 
 func (s *TelemetryStatus) WithInstallConditionStatus(status metav1.ConditionStatus, objGeneration int64) *TelemetryStatus {
 	if s.Conditions == nil {
-		s.Conditions = make([]metav1.Condition, 0, 1)
+		s.Conditions = make([]metav1.Condition, 0, 4)
 	}
 
 	condition := meta.FindStatusCondition(s.Conditions, ConditionTypeInstallation)

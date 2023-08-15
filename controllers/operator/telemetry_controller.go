@@ -77,7 +77,7 @@ func (r *TelemetryReconciler) mapWebhook(object client.Object) []reconcile.Reque
 		ctrl.Log.Error(nil, "unable to cast object to ValidatingWebhookConfiguration")
 		return requests
 	}
-	if webhook.Name != r.reconciler.WebhookConfig.CertConfig.WebhookName.Name {
+	if webhook.Name != r.reconciler.TelemetryConfig.Webhook.CertConfig.WebhookName.Name {
 		return requests
 	}
 

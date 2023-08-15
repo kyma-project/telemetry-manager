@@ -3,8 +3,6 @@ package kubernetes
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sort"
 
 	v1 "k8s.io/api/apps/v1"
@@ -48,40 +46,6 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 
 	isReady := replicaSet.Status.ReadyReplicas >= desiredReplicas
 	return isReady, nil
-}
-
-func (dp *DeploymentProber) Status(ctx context.Context, name types.NamespacedName) (string, error) {
-	var d v1.Deployment
-	if err := dp.Get(ctx, name, &d); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s Deployment: %w", name.Namespace, name.Name, err)
-	}
-	if *d.Spec.Replicas == d.Status.ReadyReplicas {
-		return reconciler.ReasonDeploymentReady, nil
-	}
-	listOps := &client.ListOptions{
-		LabelSelector: k8slabels.SelectorFromSet(d.Spec.Selector.MatchLabels),
-		Namespace:     d.Namespace,
-	}
-	var podsList *corev1.PodList
-	if err := dp.List(ctx, podsList, listOps); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return reconciler.ReasonDeploymentNotReady, fmt.Errorf("failed to get pods for %s/%s: %w", name.Namespace, name.Name, err)
-		}
-	}
-	if len(podsList.Items) != 0 {
-		return podStatus(podsList.Items)
-	}
-	//for _, p := range podsList.Items {
-	//	for _, c := range p.Status.ContainerStatuses {
-	//		if c.State.Waiting != nil && c.State.Waiting.Reason == "CrashLoopBackOff" {
-	//			return reconciler.ReasonFluentBitPodCrashBackLooping, nil
-	//		}
-	//	}
-	//	if p.Status.Phase == corev1.PodPending {
-	//		return reconciler.ReasonFluentBitDSNotReady, nil
-	//	}
-	//}
-	return reconciler.ReasonDeploymentNotReady, nil
 }
 
 func getLatestReplicaSet(deployment *v1.Deployment, allReplicaSets *v1.ReplicaSetList) *v1.ReplicaSet {

@@ -30,6 +30,21 @@ const (
 	fieldOwner      = "telemetry.kyma-project.io/owner"
 )
 
+type Config struct {
+	TraceConfig  TraceConfig
+	MetricConfig MetricConfig
+	Webhook      WebhookConfig
+}
+
+type TraceConfig struct {
+	ServiceName string
+	Namespace   string
+}
+
+type MetricConfig struct {
+	ServiceName string
+	Namespace   string
+}
 type WebhookConfig struct {
 	Enabled    bool
 	CertConfig webhookcert.Config
@@ -41,19 +56,21 @@ type Reconciler struct {
 	*rest.Config
 	// EventRecorder for creating k8s events
 	record.EventRecorder
-	WebhookConfig                  WebhookConfig
+	TelemetryConfig                Config
 	LogCollectorConditionProber    conditionsProber
 	TraceCollectorConditionProber  conditionsProber
 	MetricCollectorConditionProber conditionsProber
 }
 
-func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig WebhookConfig, prober conditionsProber) *Reconciler {
+func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, config Config, logProber, traceProber, metricProber conditionsProber) *Reconciler {
 	return &Reconciler{
-		Client:                      client,
-		Scheme:                      scheme,
-		EventRecorder:               eventRecorder,
-		WebhookConfig:               webhookConfig,
-		LogCollectorConditionProber: prober,
+		Client:                         client,
+		Scheme:                         scheme,
+		EventRecorder:                  eventRecorder,
+		TelemetryConfig:                config,
+		LogCollectorConditionProber:    logProber,
+		TraceCollectorConditionProber:  traceProber,
+		MetricCollectorConditionProber: metricProber,
 	}
 }
 
@@ -66,8 +83,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		logger.Info(req.NamespacedName.String() + " got deleted!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	logger.Info(fmt.Sprintf("Getting the status: %v\n", objectInstance.Status))
 
 	r.updateConditions(ctx, r.LogCollectorConditionProber, &objectInstance)
+	//r.updateConditions(ctx, r.MetricCollectorConditionProber, &objectInstance)
+	r.updateConditions(ctx, r.TraceCollectorConditionProber, &objectInstance)
+
+	r.updateEndpoints(ctx, r.MetricCollectorConditionProber, &objectInstance)
+	r.updateEndpoints(ctx, r.TraceCollectorConditionProber, &objectInstance)
 
 	instanceIsBeingDeleted := !objectInstance.GetDeletionTimestamp().IsZero()
 
@@ -110,7 +133,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	if !r.WebhookConfig.Enabled {
+	if !r.TelemetryConfig.Webhook.Enabled {
 		return nil
 	}
 
@@ -118,12 +141,12 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 		return nil
 	}
 
-	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.WebhookConfig.CertConfig); err != nil {
+	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.TelemetryConfig.Webhook.CertConfig); err != nil {
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
 	var secret corev1.Secret
-	if err := r.Get(ctx, r.WebhookConfig.CertConfig.CASecretName, &secret); err != nil {
+	if err := r.Get(ctx, r.TelemetryConfig.Webhook.CertConfig.CASecretName, &secret); err != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
 	}
 	if err := controllerutil.SetOwnerReference(telemetry, &secret, r.Scheme); err != nil {
@@ -134,7 +157,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	}
 
 	var webhook admissionv1.ValidatingWebhookConfiguration
-	if err := r.Get(ctx, r.WebhookConfig.CertConfig.WebhookName, &webhook); err != nil {
+	if err := r.Get(ctx, r.TelemetryConfig.Webhook.CertConfig.WebhookName, &webhook); err != nil {
 		return fmt.Errorf("failed to get webhook: %w", err)
 	}
 	if err := kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, r.Client, &webhook); err != nil {
@@ -147,7 +170,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 func (r *Reconciler) deleteWebhook(ctx context.Context) error {
 	webhook := &admissionv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: r.WebhookConfig.CertConfig.WebhookName.Name,
+			Name: r.TelemetryConfig.Webhook.CertConfig.WebhookName.Name,
 		},
 	}
 

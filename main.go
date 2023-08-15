@@ -139,6 +139,11 @@ const (
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
+
+	metricGateway         = "telemetry-metric-gateway"
+	metricOtlpServiceName = "telemetry-otlp-metrics"
+
+	traceOtlpServiceName = "telemetry-otlp-traces"
 )
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
@@ -532,7 +537,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 				DynamicMemoryRequest: resource.MustParse(traceCollectorDynamicMemoryRequest),
 			},
 			Service: gateway.ServiceConfig{
-				OTLPServiceName: "telemetry-otlp-traces",
+				OTLPServiceName: traceOtlpServiceName,
 			},
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
@@ -576,7 +581,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 				DynamicMemoryRequest: resource.MustParse(metricGatewayDynamicMemoryRequest),
 			},
 			Service: gateway.ServiceConfig{
-				OTLPServiceName: "telemetry-otlp-metrics",
+				OTLPServiceName: metricOtlpServiceName,
 			},
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
@@ -611,6 +616,19 @@ func parsePlugins(s string) []string {
 }
 
 func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
-	lcCond := telemetry.NewLogCollectorConditions(client, kubernetes.DaemonSetProber{Client: client}, types.NamespacedName{Name: fluentBitDaemonSet, Namespace: "kyma-system"})
-	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, webhookConfig, lcCond))
+	lcCond := telemetry.NewLogCollectorConditions(client, types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace})
+	mcCond := telemetry.NewMetricCollector(client, types.NamespacedName{Name: metricGateway, Namespace: telemetryNamespace})
+	tcCond := telemetry.NewTraceCollector(client, types.NamespacedName{Name: "telemetry-trace-collector", Namespace: telemetryNamespace})
+	config := telemetry.Config{
+		TraceConfig: telemetry.TraceConfig{
+			ServiceName: traceOtlpServiceName,
+			Namespace:   telemetryNamespace,
+		},
+		MetricConfig: telemetry.MetricConfig{
+			ServiceName: metricOtlpServiceName,
+			Namespace:   telemetryNamespace,
+		},
+		Webhook: webhookConfig,
+	}
+	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, config, lcCond, tcCond, mcCond))
 }

@@ -119,6 +119,24 @@ spec:
                   - type
                   type: object
                 type: array
+              endpoints:
+                description: add other fields to status subresource here
+                properties:
+                  metricEndpoints:
+                    properties:
+                      metricGRPC:
+                        type: string
+                      metricHTTP:
+                        type: string
+                    type: object
+                  traceEndpoints:
+                    properties:
+                      traceGRPC:
+                        type: string
+                      traceHTTP:
+                        type: string
+                    type: object
+                type: object
               state:
                 description: State signifies current state of Module CR. Value can
                   be one of ("Ready", "Processing", "Error", "Deleting").

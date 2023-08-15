@@ -32,7 +32,7 @@ spec:
         - /manager
         args:
         - --cert-dir=/tmp
-        - --enable-metrics=false
+        - --enable-metrics=true
         - --fluent-bit-priority-class-name=telemetry-priority-class-high
         - --trace-collector-priority-class=telemetry-priority-class
         - --validating-webhook-enabled=true

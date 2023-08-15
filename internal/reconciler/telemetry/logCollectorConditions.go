@@ -3,8 +3,8 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	operatorV1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -13,18 +13,12 @@ import (
 
 type logCollectorConditions struct {
 	client        client.Client
-	dsProber      kubernetes.DaemonSetProber
 	componentName types.NamespacedName
 }
 
-type DaemonSetProber interface {
-	Status(ctx context.Context, name types.NamespacedName) (string, error)
-}
-
-func NewLogCollectorConditions(client client.Client, dsProber kubernetes.DaemonSetProber, componentName types.NamespacedName) *logCollectorConditions {
+func NewLogCollectorConditions(client client.Client, componentName types.NamespacedName) *logCollectorConditions {
 	return &logCollectorConditions{
 		client:        client,
-		dsProber:      dsProber,
 		componentName: componentName,
 	}
 }
@@ -39,25 +33,29 @@ func (l *logCollectorConditions) isComponentHealthy(ctx context.Context) (*metav
 		return &metav1.Condition{}, fmt.Errorf("failed to get all log pipelines while syncing conditions: %w", err)
 	}
 	if len(logpipelines.Items) == 0 {
-		return buildTelemetryConditions(reconciler.ReasonNoPipelineDeployed), nil
+		return l.buildTelemetryConditions(reconciler.ReasonNoPipelineDeployed), nil
 	}
 
 	// Try to get the status of the log collector via the pipelines
-	status := validateLogPipeline(logpipelines.Items)
-	if status != reconciler.ReasonFluentBitDSNotReady {
-		return buildTelemetryConditions(status), nil
-	}
-
-	// if logpipelines are still pending check if they are in crashback loop or the pods of daemon set are starting up
-	status, err = l.dsProber.Status(ctx, l.componentName)
-	if err != nil {
-		return &metav1.Condition{}, fmt.Errorf("failed to get status of telemetry fluent bit: %w", err)
-	}
-	return buildTelemetryConditions(status), nil
+	status := l.validateLogPipeline(logpipelines.Items)
+	return l.buildTelemetryConditions(status), nil
 
 }
 
-func validateLogPipeline(logPipeines []v1alpha1.LogPipeline) string {
+func (l *logCollectorConditions) endpoints(ctx context.Context, config Config, endpoints operatorV1alpha1.Endpoints) (operatorV1alpha1.Endpoints, error) {
+	return endpoints, nil
+}
+
+//func (l *logCollectorConditions) getPipelines(ctx context.Context) (v1alpha1.MetricPipelineList, error) {
+//	var metricPipelines v1alpha1.MetricPipelineList
+//	err := l.client.List(ctx, &metricPipelines)
+//	if err != nil {
+//		return v1alpha1.MetricPipelineList{}, fmt.Errorf("failed to get all mertic pipelines while syncing conditions: %w", err)
+//	}
+//	return metricPipelines, nil
+//}
+
+func (l *logCollectorConditions) validateLogPipeline(logPipeines []v1alpha1.LogPipeline) string {
 	for _, l := range logPipeines {
 		conditions := l.Status.Conditions
 		if len(conditions) == 0 {
@@ -73,7 +71,7 @@ func validateLogPipeline(logPipeines []v1alpha1.LogPipeline) string {
 	return reconciler.ReasonFluentBitDSReady
 }
 
-func buildTelemetryConditions(reason string) *metav1.Condition {
+func (l *logCollectorConditions) buildTelemetryConditions(reason string) *metav1.Condition {
 	if reason == reconciler.ReasonFluentBitDSReady || reason == reconciler.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
 			Type:    "LogCollectorIsHealthy",

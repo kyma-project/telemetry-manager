@@ -18,7 +18,6 @@ package operator
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"path/filepath"
@@ -102,9 +101,22 @@ var _ = BeforeSuite(func() {
 	webhookConfig := telemetry.WebhookConfig{
 		Enabled: false,
 	}
+	config := telemetry.Config{
+		TraceConfig: telemetry.TraceConfig{
+			ServiceName: "traceFoo",
+			Namespace:   "kyma-system",
+		},
+		MetricConfig: telemetry.MetricConfig{
+			ServiceName: "metricFoo",
+			Namespace:   "kyma-system",
+		},
+		Webhook: webhookConfig,
+	}
 	client := mgr.GetClient()
-	lcCond := telemetry.NewLogCollectorConditions(client, kubernetes.DaemonSetProber{Client: client}, types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"})
-	telemetryReconciler := telemetry.NewReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"), webhookConfig, lcCond)
+	lcCond := telemetry.NewLogCollectorConditions(client, types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"})
+	mcCond := telemetry.NewMetricCollector(client, types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"})
+	tcCond := telemetry.NewTraceCollector(client, types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"})
+	telemetryReconciler := telemetry.NewReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"), config, lcCond, mcCond, tcCond)
 	err = telemetryReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
