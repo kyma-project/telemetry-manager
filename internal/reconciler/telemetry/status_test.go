@@ -2,10 +2,8 @@ package telemetry
 
 import (
 	"context"
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
+	"testing"
+
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +11,11 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
+
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
 )
 
 func initReconciler() *Reconciler {

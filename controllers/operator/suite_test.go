@@ -18,7 +18,6 @@ package operator
 
 import (
 	"context"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 
 	. "github.com/onsi/ginkgo/v2"

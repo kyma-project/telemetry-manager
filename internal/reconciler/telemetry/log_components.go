@@ -3,25 +3,17 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 )
 
 type logComponentsHealthChecker struct {
 	client client.Client
 }
-
-//func NewLogCollectorConditions(client client.Client, componentName types.NamespacedName) *logComponentsHealthChecker {
-//	return &logComponentsHealthChecker{
-//		client:        client,
-//		componentName: componentName,
-//	}
-//}
-//func (l *logComponentsHealthChecker) Name() string {
-//	return l.componentName.Name
-//}
 
 func (l *logComponentsHealthChecker) check(ctx context.Context) (*metav1.Condition, error) {
 	var logpipelines v1alpha1.LogPipelineList
@@ -38,10 +30,6 @@ func (l *logComponentsHealthChecker) check(ctx context.Context) (*metav1.Conditi
 	return l.buildTelemetryConditions(status), nil
 
 }
-
-//func (l *logComponentsHealthChecker) Endpoints(ctx context.Context, config Config, endpoints operatorV1alpha1.Endpoints) (operatorV1alpha1.Endpoints, error) {
-//	return endpoints, nil
-//}
 
 func (l *logComponentsHealthChecker) validateLogPipeline(logPipeines []v1alpha1.LogPipeline) string {
 	for _, l := range logPipeines {

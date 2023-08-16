@@ -2,7 +2,6 @@ package logparser
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -14,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser/mocks"
 )
 

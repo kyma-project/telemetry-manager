@@ -3,7 +3,6 @@ package tracepipeline
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -11,6 +10,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 

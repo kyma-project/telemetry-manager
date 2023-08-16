@@ -3,13 +3,15 @@ package telemetry
 import (
 	"context"
 	"fmt"
+
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 //go:generate mockery --name ComponentHealthChecker --filename conditions_prober.go
@@ -86,9 +88,6 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config) (*opera
 	var metricPipelines v1alpha1.MetricPipelineList
 	err := r.Client.List(ctx, &metricPipelines)
 	if err != nil {
-		if _, ok := err.(*meta.NoKindMatchError); ok {
-			return nil, nil
-		}
 		return nil, fmt.Errorf("failed to get all mertic pipelines while syncing conditions: %w", err)
 	}
 	if len(metricPipelines.Items) == 0 {
