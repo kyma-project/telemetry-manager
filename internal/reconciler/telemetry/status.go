@@ -30,10 +30,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, obj *operatorv1alpha1.Tel
 			return err
 		}
 	}
-	if err := r.updateEndpoints(ctx, obj); err != nil {
-		return err
-	}
-	return nil
+	return r.updateEndpoints(ctx, obj)
 }
 
 func (r *Reconciler) updateConditions(ctx context.Context, compName string, cp ComponentHealthChecker, obj *operatorv1alpha1.Telemetry) error {
@@ -91,7 +88,7 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config) (*opera
 		return nil, fmt.Errorf("failed to get all mertic pipelines while syncing conditions: %w", err)
 	}
 	if len(metricPipelines.Items) == 0 {
-		return nil, nil
+		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
 	return makeOTLPEndpoints(config.MetricConfig.ServiceName, config.MetricConfig.Namespace), nil
@@ -104,7 +101,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operat
 		return nil, fmt.Errorf("failed to get all trace pipelines while syncing conditions: %w", err)
 	}
 	if len(tracePipelines.Items) == 0 {
-		return nil, nil
+		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
 	return makeOTLPEndpoints(config.TraceConfig.ServiceName, config.TraceConfig.Namespace), nil

@@ -299,11 +299,7 @@ func (r *Reconciler) checkLogPipelineExist(ctx context.Context) bool {
 func (r *Reconciler) checkMetricPipelineCRExist(ctx context.Context) bool {
 	var metricPipelineList telemetryv1alpha1.MetricPipelineList
 	err := r.List(ctx, &metricPipelineList)
-	if err != nil {
-		//no kind found
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func (r *Reconciler) checkTracePipelinesExist(ctx context.Context) bool {
