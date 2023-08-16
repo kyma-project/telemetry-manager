@@ -48,6 +48,10 @@ const (
 	// StateDeleting signifies Module CR is being deleted. This is the state that is used
 	// when a deletionTimestamp was detected and Finalizers are picked up.
 	StateDeleting State = "Deleting"
+
+	// StateWarning signifies specified resource has been deployed, but cannot be used due to misconfiguration,
+	// usually it means that user interaction is required.
+	StateWarning State = "Warning"
 )
 
 // TelemetrySpec defines the desired state of Telemetry
@@ -65,6 +69,7 @@ type TelemetryStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	// Endpoints for trace and metric gateway
+	// +nullable
 	Endpoints Endpoints `json:"endpoints,omitempty"`
 	// add other fields to status subresource here
 }
@@ -138,8 +143,8 @@ func init() {
 // Status defines the observed state of Module CR.
 type Status struct {
 	// State signifies current state of Module CR.
-	// Value can be one of ("Ready", "Processing", "Error", "Deleting").
+	// Value can be one of ("Ready", "Processing", "Error", "Deleting", "Warning").
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=Processing;Deleting;Ready;Error
+	// +kubebuilder:validation:Enum=Processing;Deleting;Ready;Error;Warning
 	State State `json:"state"`
 }

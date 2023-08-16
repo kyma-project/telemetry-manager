@@ -69,10 +69,6 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&source.Kind{Type: &v1alpha1.TracePipeline{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryResource),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete())).
-		Watches(
-			&source.Kind{Type: &v1alpha1.MetricPipeline{}},
-			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryResource),
-			builder.WithPredicates(setup.CreateOrUpdateOrDelete())).
 		Complete(r)
 }
 
@@ -142,10 +138,6 @@ func telemetrySubResource(object client.Object) bool {
 
 	tp, ok := object.(*v1alpha1.TracePipeline)
 	if ok && len(tp.Status.Conditions) == 0 {
-		return true
-	}
-	mp, ok := object.(*v1alpha1.MetricPipeline)
-	if ok && len(mp.Status.Conditions) == 0 {
 		return true
 	}
 

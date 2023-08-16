@@ -3,7 +3,6 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	"time"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -58,7 +57,7 @@ type Reconciler struct {
 	// EventRecorder for creating k8s events
 	record.EventRecorder
 	TelemetryConfig Config
-	healthCheckers  map[string]componentHealthChecker
+	healthCheckers  map[string]ComponentHealthChecker
 }
 
 func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, config Config) *Reconciler {
@@ -67,7 +66,7 @@ func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder r
 		Scheme:          scheme,
 		EventRecorder:   eventRecorder,
 		TelemetryConfig: config,
-		healthCheckers: map[string]componentHealthChecker{
+		healthCheckers: map[string]ComponentHealthChecker{
 			"Log Components":     &logComponentsHealthChecker{client: client},
 			"Trace Components":   &traceComponentsHealthChecker{client: client},
 			"Metrics Components": &metricComponentsHealthChecker{client: client},
@@ -125,6 +124,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{Requeue: true}, r.HandleErrorState(ctx, &objectInstance)
 	case operatorv1alpha1.StateReady:
 		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleReadyState(ctx, &objectInstance)
+	case operatorv1alpha1.StateWarning:
+		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleErrorState(ctx, &objectInstance)
+
 	}
 
 	return ctrl.Result{}, nil
@@ -266,7 +268,7 @@ func (r *Reconciler) serverSideApply(ctx context.Context, obj client.Object) err
 func (r *Reconciler) customResourceExist(ctx context.Context) bool {
 	return r.checkLogParserExist(ctx) ||
 		r.checkLogPipelineExist(ctx) ||
-		r.checkMetricPipelinesExist(ctx) ||
+		r.checkMetricPipelineCRExist(ctx) ||
 		r.checkTracePipelinesExist(ctx)
 }
 
@@ -294,17 +296,14 @@ func (r *Reconciler) checkLogPipelineExist(ctx context.Context) bool {
 	return len(pipelineList.Items) > 0
 }
 
-func (r *Reconciler) checkMetricPipelinesExist(ctx context.Context) bool {
+func (r *Reconciler) checkMetricPipelineCRExist(ctx context.Context) bool {
 	var metricPipelineList telemetryv1alpha1.MetricPipelineList
-	if err := r.List(ctx, &metricPipelineList); err != nil {
+	err := r.List(ctx, &metricPipelineList)
+	if err != nil {
 		//no kind found
-		if _, ok := err.(*meta.NoKindMatchError); ok {
-			return false
-		}
-		return true
+		return false
 	}
-
-	return len(metricPipelineList.Items) > 0
+	return true
 }
 
 func (r *Reconciler) checkTracePipelinesExist(ctx context.Context) bool {
@@ -318,16 +317,4 @@ func (r *Reconciler) checkTracePipelinesExist(ctx context.Context) bool {
 	}
 
 	return len(tracePipelineList.Items) > 0
-}
-
-func (r *Reconciler) updateTelemetryCRState(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry) error {
-	operatorState := operatorv1alpha1.Status{State: "Ready"}
-	for _, cond := range objectInstance.Status.Conditions {
-		if cond.Status == reconciler.ConditionStatusFalse {
-			operatorState.State = "Warning"
-		}
-	}
-	objectInstance.Status.Status = operatorState
-
-	return r.setStatusForObjectInstance(ctx, objectInstance, &objectInstance.Status)
 }

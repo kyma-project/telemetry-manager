@@ -121,6 +121,7 @@ spec:
                 type: array
               endpoints:
                 description: Endpoints for trace and metric gateway
+                nullable: true
                 properties:
                   metrics:
                     properties:
@@ -139,12 +140,13 @@ spec:
                 type: object
               state:
                 description: State signifies current state of Module CR. Value can
-                  be one of ("Ready", "Processing", "Error", "Deleting").
+                  be one of ("Ready", "Processing", "Error", "Deleting", "Warning").
                 enum:
                 - Processing
                 - Deleting
                 - Ready
                 - Error
+                - Warning
                 type: string
             required:
             - state

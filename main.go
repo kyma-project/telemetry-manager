@@ -299,7 +299,6 @@ func main() {
 	}()
 
 	syncPeriod := 1 * time.Hour
-
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		SyncPeriod:              &syncPeriod,
 		Scheme:                  scheme,
