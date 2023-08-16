@@ -18,7 +18,6 @@ package operator
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"path/filepath"
 	"testing"
@@ -62,7 +61,7 @@ var _ = BeforeSuite(func() {
 	ctx, cancel = context.WithCancel(context.TODO())
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases"), filepath.Join("..", "..", "config", "development")},
 		ErrorIfCRDPathMissing: true,
 	}
 
@@ -113,10 +112,8 @@ var _ = BeforeSuite(func() {
 		Webhook: webhookConfig,
 	}
 	client := mgr.GetClient()
-	lcCond := telemetry.NewLogCollectorConditions(client, types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"})
-	mcCond := telemetry.NewMetricCollector(client, types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"})
-	tcCond := telemetry.NewTraceCollector(client, types.NamespacedName{Name: "telemetry-fluent-bit", Namespace: "kyma-system"})
-	telemetryReconciler := telemetry.NewReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"), config, lcCond, mcCond, tcCond)
+
+	telemetryReconciler := telemetry.NewReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"), config)
 	err = telemetryReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 

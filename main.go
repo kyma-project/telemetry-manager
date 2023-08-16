@@ -616,9 +616,6 @@ func parsePlugins(s string) []string {
 }
 
 func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
-	lcCond := telemetry.NewLogCollectorConditions(client, types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace})
-	mcCond := telemetry.NewMetricCollector(client, types.NamespacedName{Name: metricGateway, Namespace: telemetryNamespace})
-	tcCond := telemetry.NewTraceCollector(client, types.NamespacedName{Name: "telemetry-trace-collector", Namespace: telemetryNamespace})
 	config := telemetry.Config{
 		TraceConfig: telemetry.TraceConfig{
 			ServiceName: traceOtlpServiceName,
@@ -630,5 +627,5 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eve
 		},
 		Webhook: webhookConfig,
 	}
-	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, config, lcCond, tcCond, mcCond))
+	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, config))
 }

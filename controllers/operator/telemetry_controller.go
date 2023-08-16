@@ -65,6 +65,14 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&source.Kind{Type: &v1alpha1.LogPipeline{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryResource),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete())).
+		Watches(
+			&source.Kind{Type: &v1alpha1.TracePipeline{}},
+			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryResource),
+			builder.WithPredicates(setup.CreateOrUpdateOrDelete())).
+		Watches(
+			&source.Kind{Type: &v1alpha1.MetricPipeline{}},
+			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryResource),
+			builder.WithPredicates(setup.CreateOrUpdateOrDelete())).
 		Complete(r)
 }
 
@@ -103,13 +111,7 @@ func (r *TelemetryReconciler) mapTelemetryResource(object client.Object) []recon
 	var telemetries operatorv1alpha1.TelemetryList
 	var requests []reconcile.Request
 
-	lp, ok := object.(*v1alpha1.LogPipeline)
-	if !ok {
-		ctrl.Log.Error(nil, "unable to cast object to telemetry resource")
-		return requests
-	}
-
-	if len(lp.Status.Conditions) == 0 {
+	if !telemetrySubResource(object) {
 		return requests
 	}
 
@@ -129,4 +131,26 @@ func (r *TelemetryReconciler) mapTelemetryResource(object client.Object) []recon
 	}
 
 	return requests
+}
+
+func telemetrySubResource(object client.Object) bool {
+	var ok bool
+	lp, ok := object.(*v1alpha1.LogPipeline)
+	if ok && len(lp.Status.Conditions) == 0 {
+		return true
+	}
+
+	tp, ok := object.(*v1alpha1.TracePipeline)
+	if ok && len(tp.Status.Conditions) == 0 {
+		return true
+	}
+	mp, ok := object.(*v1alpha1.MetricPipeline)
+	if ok && len(mp.Status.Conditions) == 0 {
+		return true
+	}
+
+	ctrl.Log.Error(nil, "unable to cast object to log pipeline, trace pipeline or metric pipeline")
+
+	return false
+
 }

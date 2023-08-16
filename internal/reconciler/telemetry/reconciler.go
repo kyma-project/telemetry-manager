@@ -3,6 +3,7 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	"time"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -56,21 +57,21 @@ type Reconciler struct {
 	*rest.Config
 	// EventRecorder for creating k8s events
 	record.EventRecorder
-	TelemetryConfig                Config
-	LogCollectorConditionProber    ConditionsProber
-	TraceCollectorConditionProber  ConditionsProber
-	MetricCollectorConditionProber ConditionsProber
+	TelemetryConfig Config
+	healthCheckers  map[string]componentHealthChecker
 }
 
-func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, config Config, logProber, traceProber, metricProber ConditionsProber) *Reconciler {
+func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, config Config) *Reconciler {
 	return &Reconciler{
-		Client:                         client,
-		Scheme:                         scheme,
-		EventRecorder:                  eventRecorder,
-		TelemetryConfig:                config,
-		LogCollectorConditionProber:    logProber,
-		TraceCollectorConditionProber:  traceProber,
-		MetricCollectorConditionProber: metricProber,
+		Client:          client,
+		Scheme:          scheme,
+		EventRecorder:   eventRecorder,
+		TelemetryConfig: config,
+		healthCheckers: map[string]componentHealthChecker{
+			"Log Components":     &logComponentsHealthChecker{client: client},
+			"Trace Components":   &traceComponentsHealthChecker{client: client},
+			"Metrics Components": &metricComponentsHealthChecker{client: client},
+		},
 	}
 }
 
@@ -85,21 +86,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 	//logger.Info(fmt.Sprintf("Getting the status: %v\n", objectInstance.Status))
 
-	if err := r.updateConditions(ctx, r.LogCollectorConditionProber, &objectInstance); err != nil {
+	if err := r.updateStatus(ctx, &objectInstance); err != nil {
 		return ctrl.Result{Requeue: true}, err
-	}
-	if err := r.updateConditions(ctx, r.MetricCollectorConditionProber, &objectInstance); err != nil {
-		return ctrl.Result{}, err
-	}
-	if err := r.updateConditions(ctx, r.TraceCollectorConditionProber, &objectInstance); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if err := r.updateEndpoints(ctx, r.MetricCollectorConditionProber, &objectInstance); err != nil {
-		return ctrl.Result{}, err
-	}
-	if err := r.updateEndpoints(ctx, r.TraceCollectorConditionProber, &objectInstance); err != nil {
-		return ctrl.Result{}, err
 	}
 
 	instanceIsBeingDeleted := !objectInstance.GetDeletionTimestamp().IsZero()
@@ -330,4 +318,16 @@ func (r *Reconciler) checkTracePipelinesExist(ctx context.Context) bool {
 	}
 
 	return len(tracePipelineList.Items) > 0
+}
+
+func (r *Reconciler) updateTelemetryCRState(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry) error {
+	operatorState := operatorv1alpha1.Status{State: "Ready"}
+	for _, cond := range objectInstance.Status.Conditions {
+		if cond.Status == reconciler.ConditionStatusFalse {
+			operatorState.State = "Warning"
+		}
+	}
+	objectInstance.Status.Status = operatorState
+
+	return r.setStatusForObjectInstance(ctx, objectInstance, &objectInstance.Status)
 }
