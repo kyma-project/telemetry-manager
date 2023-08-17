@@ -37,14 +37,16 @@ type Config struct {
 }
 
 type TraceConfig struct {
-	ServiceName string
-	Namespace   string
+	OTLPServiceName string
+	Namespace       string
 }
 
 type MetricConfig struct {
-	ServiceName string
-	Namespace   string
+	Enabled         bool
+	OTLPServiceName string
+	Namespace       string
 }
+
 type WebhookConfig struct {
 	Enabled    bool
 	CertConfig webhookcert.Config

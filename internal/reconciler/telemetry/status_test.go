@@ -25,12 +25,12 @@ func initReconciler(fakeClient client.Client) *Reconciler {
 
 	config := Config{
 		TraceConfig: TraceConfig{
-			ServiceName: "trace-otlp-svc",
-			Namespace:   "default",
+			OTLPServiceName: "trace-otlp-svc",
+			Namespace:       "default",
 		},
 		MetricConfig: MetricConfig{
-			ServiceName: "metric-otlp-svc",
-			Namespace:   "default",
+			OTLPServiceName: "metric-otlp-svc",
+			Namespace:       "default",
 		},
 		Webhook: WebhookConfig{Enabled: false},
 	}

@@ -105,12 +105,12 @@ var _ = BeforeSuite(func() {
 	}
 	config := telemetry.Config{
 		TraceConfig: telemetry.TraceConfig{
-			ServiceName: "traceFoo",
-			Namespace:   "kyma-system",
+			OTLPServiceName: "traceFoo",
+			Namespace:       "kyma-system",
 		},
 		MetricConfig: telemetry.MetricConfig{
-			ServiceName: "metricFoo",
-			Namespace:   "kyma-system",
+			OTLPServiceName: "metricFoo",
+			Namespace:       "kyma-system",
 		},
 		Webhook: webhookConfig,
 	}

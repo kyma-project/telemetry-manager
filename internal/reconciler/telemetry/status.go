@@ -95,7 +95,7 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, conditi
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
-	return makeOTLPEndpoints(config.MetricConfig.ServiceName, config.MetricConfig.Namespace), nil
+	return makeOTLPEndpoints(config.MetricConfig.OTLPServiceName, config.MetricConfig.Namespace), nil
 }
 
 func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, conditions *[]metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {
@@ -112,7 +112,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, conditio
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
-	return makeOTLPEndpoints(config.TraceConfig.ServiceName, config.TraceConfig.Namespace), nil
+	return makeOTLPEndpoints(config.TraceConfig.OTLPServiceName, config.TraceConfig.Namespace), nil
 }
 
 func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndpoints {
