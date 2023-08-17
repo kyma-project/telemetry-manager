@@ -1,5 +1,3 @@
-//go:build e2e
-
 package apiserver
 
 import (
@@ -12,15 +10,10 @@ import (
 	"k8s.io/client-go/transport"
 )
 
-const (
-	// An API-server proxy port used by external clients to access in-cluster resources.
-	defaultAPIPort = 6550
-)
-
 type ProxyClient struct {
 	bearerToken     string
 	tlsClientConfig *tls.Config
-	apiPort         int
+	apiUrl          string
 }
 
 // NewProxyClient returns a provider for all HTTPS-related authentication information to be used
@@ -41,7 +34,7 @@ func NewProxyClient(config *rest.Config) (*ProxyClient, error) {
 	return &ProxyClient{
 		bearerToken:     transportConfig.BearerToken,
 		tlsClientConfig: tlsClientConfig,
-		apiPort:         defaultAPIPort,
+		apiUrl:          config.Host,
 	}, nil
 }
 
@@ -56,8 +49,8 @@ func (a ProxyClient) Token() string {
 // ProxyURLForService composes a proxy url for a service.
 func (a ProxyClient) ProxyURLForService(namespace, service, path string, port int) string {
 	return fmt.Sprintf(
-		`https://0.0.0.0:%d/api/v1/namespaces/%s/services/http:%s:%d/proxy/%s`,
-		a.apiPort,
+		`%s/api/v1/namespaces/%s/services/http:%s:%d/proxy/%s`,
+		a.apiUrl,
 		namespace,
 		service,
 		port,
@@ -68,8 +61,8 @@ func (a ProxyClient) ProxyURLForService(namespace, service, path string, port in
 // ProxyURLForPod composes a proxy url for a pod.
 func (a ProxyClient) ProxyURLForPod(namespace, pod, path string, port int) string {
 	return fmt.Sprintf(
-		`https://0.0.0.0:%d/api/v1/namespaces/%s/pods/http:%s:%d/proxy/%s`,
-		a.apiPort,
+		`%s/api/v1/namespaces/%s/pods/http:%s:%d/proxy/%s`,
+		a.apiUrl,
 		namespace,
 		pod,
 		port,

@@ -1,5 +1,3 @@
-//go:build e2e
-
 package kyma
 
 // PipelineList is an adapter over the list of pipelines names.
