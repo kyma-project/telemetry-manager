@@ -1,5 +1,3 @@
-//go:build e2e
-
 package mocks
 
 type URLProvider struct {

@@ -100,11 +100,7 @@ test: manifests generate fmt vet tidy envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 test-matchers: ginkgo
-	$(GINKGO) run --tags e2e -v ./test/testkit/matchers
-	$(GINKGO) run --tags e2e -v --label-filter="logging" ./test/testkit/matchers
-	$(GINKGO) run --tags e2e -v --label-filter="istio-access-logs" ./test/testkit/matchers
-	$(GINKGO) run --tags e2e -v --label-filter="tracing" ./test/testkit/matchers
-	$(GINKGO) run --tags e2e -v --label-filter="metrics" ./test/testkit/matchers
+	$(GINKGO) run -v ./test/testkit/matchers
 
 .PHONY: provision-test-env
 provision-test-env:
@@ -170,9 +166,10 @@ e2e-coverage: ginkgo
 integration-test-istio: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run integration tests with istio.
 	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
-	$(GINKGO) run --tags e2e -v --junit-report=junit.xml --label-filter="istio" ./test/integration
+	$(GINKGO) run --tags istio -v --junit-report=junit.xml ./test/integration/istio
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
+
 ##@ Build
 
 .PHONY: build
