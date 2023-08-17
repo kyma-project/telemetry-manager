@@ -15,8 +15,8 @@ type ComponentHealthChecker struct {
 	mock.Mock
 }
 
-// check provides a mock function with given fields: ctx
-func (_m *ComponentHealthChecker) check(ctx context.Context) (*v1.Condition, error) {
+// Check provides a mock function with given fields: ctx
+func (_m *ComponentHealthChecker) Check(ctx context.Context) (*v1.Condition, error) {
 	ret := _m.Called(ctx)
 
 	var r0 *v1.Condition

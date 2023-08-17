@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"k8s.io/client-go/rest"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -10,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -18,11 +20,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
 )
 
-func initReconciler() *Reconciler {
+func initReconciler(fakeClient client.Client) *Reconciler {
 	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
 	config := Config{
 		TraceConfig: TraceConfig{
 			ServiceName: "trace-otlp-svc",
@@ -35,33 +35,379 @@ func initReconciler() *Reconciler {
 		Webhook: WebhookConfig{Enabled: false},
 	}
 
-	return NewReconciler(fakeClient, scheme, record.NewFakeRecorder(100), config)
+	return &Reconciler{
+		Client:          fakeClient,
+		Scheme:          scheme,
+		Config:          &rest.Config{},
+		EventRecorder:   record.NewFakeRecorder(100),
+		TelemetryConfig: config,
+		HealthCheckers:  nil,
+	}
 }
 
-func TestUpdateConditions(t *testing.T) {
+func TestUpdateConditions_NoPipelines(t *testing.T) {
 	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+	_ = operatorv1alpha1.AddToScheme(scheme)
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
 	obj := operatorv1alpha1.Telemetry{
-		TypeMeta:   metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{},
-		Spec:       operatorv1alpha1.TelemetrySpec{},
-		Status:     operatorv1alpha1.TelemetryStatus{},
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default",
+			Namespace: "default",
+		},
+		Spec: operatorv1alpha1.TelemetrySpec{},
 	}
 
-	proberStub := &mocks.ComponentHealthChecker{}
-	condition := metav1.Condition{
-		Type:               "Logging",
-		Status:             "True",
-		ObservedGeneration: 1,
-		Reason:             reconciler.ReasonNoPipelineDeployed,
-		Message:            reconciler.Conditions[reconciler.ReasonNoPipelineDeployed],
-	}
-	proberStub.On("check", mock.Anything, mock.Anything).Return(&condition, nil)
-	proberStub.On("check", mock.Anything, mock.Anything).Return(&condition, nil)
-	proberStub.On("check", mock.Anything, mock.Anything).Return(&condition, nil)
+	err := fakeClient.Create(ctx, &obj)
+	require.NoError(t, err)
+	rc := initReconciler(fakeClient)
 
-	rc := initReconciler()
-	rc.updateStatus(ctx, &obj)
+	mockLogCompHealthChecker := &mocks.ComponentHealthChecker{}
+	mockTraceCompHealthChecker := &mocks.ComponentHealthChecker{}
+	mockMetricCompHealthChecker := &mocks.ComponentHealthChecker{}
+	compHealthChecker := map[string]ComponentHealthChecker{
+		"Log Components":     mockLogCompHealthChecker,
+		"Trace Components":   mockTraceCompHealthChecker,
+		"Metrics Components": mockMetricCompHealthChecker,
+	}
+
+	rc.HealthCheckers = compHealthChecker
+
+	mockLogCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
+	mockTraceCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
+	mockMetricCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
+
+	err = rc.updateStatus(ctx, &obj)
+	require.NoError(t, err)
 	conditions := obj.Status.Conditions
-	require.Len(t, conditions, 1)
+	require.Len(t, conditions, 3)
+	endpoints := obj.Status.Endpoints
+	expectedEndpoint := operatorv1alpha1.Endpoints{
+		Traces:  &operatorv1alpha1.OTLPEndpoints{},
+		Metrics: &operatorv1alpha1.OTLPEndpoints{},
+	}
+	require.Equal(t, endpoints, expectedEndpoint)
+}
 
+func TestUpdateConditions_LogPipelinePending(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+	_ = operatorv1alpha1.AddToScheme(scheme)
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	obj := operatorv1alpha1.Telemetry{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default",
+			Namespace: "default",
+		},
+		Spec: operatorv1alpha1.TelemetrySpec{},
+	}
+
+	err := fakeClient.Create(ctx, &obj)
+	require.NoError(t, err)
+	rc := initReconciler(fakeClient)
+
+	mockLogCompHealthChecker := &mocks.ComponentHealthChecker{}
+	mockTraceCompHealthChecker := &mocks.ComponentHealthChecker{}
+	mockMetricCompHealthChecker := &mocks.ComponentHealthChecker{}
+	compHealthChecker := map[string]ComponentHealthChecker{
+		"Log Components":     mockLogCompHealthChecker,
+		"Trace Components":   mockTraceCompHealthChecker,
+		"Metrics Components": mockMetricCompHealthChecker,
+	}
+
+	rc.HealthCheckers = compHealthChecker
+	mockLogCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusFalse, reconciler.ReasonFluentBitDSNotReady), nil)
+	mockTraceCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
+	mockMetricCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
+
+	err = rc.updateStatus(ctx, &obj)
+	require.NoError(t, err)
+	conditions := obj.Status.Conditions
+	for _, c := range conditions {
+		if c.Type == "Logging" {
+			require.Equal(t, c.Reason, reconciler.ReasonFluentBitDSNotReady)
+		}
+	}
+}
+
+func TestUpdateConditions_TracePipelineRunning(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+	_ = operatorv1alpha1.AddToScheme(scheme)
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	obj := operatorv1alpha1.Telemetry{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default",
+			Namespace: "default",
+		},
+		Spec: operatorv1alpha1.TelemetrySpec{},
+	}
+
+	traceObj := telemetryv1alpha1.TracePipeline{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "foo",
+		},
+		Spec: telemetryv1alpha1.TracePipelineSpec{},
+	}
+
+	err := fakeClient.Create(ctx, &obj)
+	require.NoError(t, err)
+
+	err = fakeClient.Create(ctx, &traceObj)
+	require.NoError(t, err)
+
+	rc := initReconciler(fakeClient)
+
+	mockLogCompHealthChecker := &mocks.ComponentHealthChecker{}
+	mockTraceCompHealthChecker := &mocks.ComponentHealthChecker{}
+	mockMetricCompHealthChecker := &mocks.ComponentHealthChecker{}
+	compHealthChecker := map[string]ComponentHealthChecker{
+		"Log Components":     mockLogCompHealthChecker,
+		"Trace Components":   mockTraceCompHealthChecker,
+		"Metrics Components": mockMetricCompHealthChecker,
+	}
+
+	rc.HealthCheckers = compHealthChecker
+
+	mockLogCompHealthChecker.On("Check", mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusTrue, reconciler.ReasonFluentBitDSReady), nil)
+	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusTrue, reconciler.ReasonTraceCollectorDeploymentReady), nil)
+	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
+
+	err = rc.updateStatus(ctx, &obj)
+	require.NoError(t, err)
+	conditions := obj.Status.Conditions
+	for _, c := range conditions {
+		if c.Type == "Tracing" {
+			require.Equal(t, c.Reason, reconciler.ReasonTraceCollectorDeploymentReady)
+		}
+	}
+	endpoints := obj.Status.Endpoints
+	require.Equal(t, endpoints.Traces.GRPC, "http://trace-otlp-svc.default:4317")
+	require.Equal(t, endpoints.Traces.HTTP, "http://trace-otlp-svc.default:4318")
+}
+
+func TestUpdateConditions_MetricPipelineRunning(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+	_ = operatorv1alpha1.AddToScheme(scheme)
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	obj := operatorv1alpha1.Telemetry{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default",
+			Namespace: "default",
+		},
+		Spec: operatorv1alpha1.TelemetrySpec{},
+	}
+
+	metricObj := telemetryv1alpha1.MetricPipeline{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "foo",
+		},
+		Spec: telemetryv1alpha1.MetricPipelineSpec{},
+	}
+
+	err := fakeClient.Create(ctx, &obj)
+	require.NoError(t, err)
+
+	err = fakeClient.Create(ctx, &metricObj)
+	require.NoError(t, err)
+
+	rc := initReconciler(fakeClient)
+
+	mockLogCompHealthChecker := &mocks.ComponentHealthChecker{}
+	mockTraceCompHealthChecker := &mocks.ComponentHealthChecker{}
+	mockMetricCompHealthChecker := &mocks.ComponentHealthChecker{}
+	compHealthChecker := map[string]ComponentHealthChecker{
+		"Log Components":     mockLogCompHealthChecker,
+		"Trace Components":   mockTraceCompHealthChecker,
+		"Metrics Components": mockMetricCompHealthChecker,
+	}
+
+	rc.HealthCheckers = compHealthChecker
+
+	mockLogCompHealthChecker.On("Check", mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusTrue, reconciler.ReasonFluentBitDSReady), nil)
+	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusFalse, reconciler.ReasonNoPipelineDeployed), nil)
+	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusTrue, reconciler.ReasonMetricGatewayDeploymentReady), nil)
+
+	err = rc.updateStatus(ctx, &obj)
+	require.NoError(t, err)
+	conditions := obj.Status.Conditions
+	for _, c := range conditions {
+		if c.Type == "Metrics" {
+			require.Equal(t, c.Reason, reconciler.ReasonMetricGatewayDeploymentReady)
+		}
+	}
+	endpoints := obj.Status.Endpoints
+	require.Equal(t, endpoints.Metrics.GRPC, "http://metric-otlp-svc.default:4317")
+	require.Equal(t, endpoints.Metrics.HTTP, "http://metric-otlp-svc.default:4318")
+	require.Equal(t, endpoints.Traces.GRPC, "")
+	require.Equal(t, endpoints.Traces.HTTP, "")
+}
+
+func TestUpdateConditions_TracePipelinePending(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+	_ = operatorv1alpha1.AddToScheme(scheme)
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	obj := operatorv1alpha1.Telemetry{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default",
+			Namespace: "default",
+		},
+		Spec: operatorv1alpha1.TelemetrySpec{},
+	}
+
+	traceObj := telemetryv1alpha1.TracePipeline{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "foo",
+		},
+		Spec: telemetryv1alpha1.TracePipelineSpec{},
+	}
+
+	err := fakeClient.Create(ctx, &obj)
+	require.NoError(t, err)
+
+	err = fakeClient.Create(ctx, &traceObj)
+	require.NoError(t, err)
+
+	rc := initReconciler(fakeClient)
+
+	mockLogCompHealthChecker := &mocks.ComponentHealthChecker{}
+	mockTraceCompHealthChecker := &mocks.ComponentHealthChecker{}
+	mockMetricCompHealthChecker := &mocks.ComponentHealthChecker{}
+	compHealthChecker := map[string]ComponentHealthChecker{
+		"Log Components":     mockLogCompHealthChecker,
+		"Trace Components":   mockTraceCompHealthChecker,
+		"Metrics Components": mockMetricCompHealthChecker,
+	}
+
+	rc.HealthCheckers = compHealthChecker
+
+	mockLogCompHealthChecker.On("Check", mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusTrue, reconciler.ReasonFluentBitDSReady), nil)
+	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusFalse, reconciler.ReasonTraceCollectorDeploymentNotReady), nil)
+	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
+
+	err = rc.updateStatus(ctx, &obj)
+	require.NoError(t, err)
+	conditions := obj.Status.Conditions
+	for _, c := range conditions {
+		if c.Type == "Tracing" {
+			require.Equal(t, c.Reason, reconciler.ReasonTraceCollectorDeploymentNotReady)
+		}
+	}
+	endpoints := obj.Status.Endpoints
+	require.Equal(t, endpoints.Traces.GRPC, "")
+	require.Equal(t, endpoints.Traces.HTTP, "")
+}
+
+func TestUpdateConditions_CheckWarningState(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = telemetryv1alpha1.AddToScheme(scheme)
+	_ = operatorv1alpha1.AddToScheme(scheme)
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	obj := operatorv1alpha1.Telemetry{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "default",
+			Namespace: "default",
+		},
+		Spec: operatorv1alpha1.TelemetrySpec{},
+	}
+
+	traceObj := telemetryv1alpha1.LogPipeline{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "foo",
+		},
+		Spec: telemetryv1alpha1.LogPipelineSpec{},
+	}
+
+	err := fakeClient.Create(ctx, &obj)
+	require.NoError(t, err)
+
+	err = fakeClient.Create(ctx, &traceObj)
+	require.NoError(t, err)
+
+	rc := initReconciler(fakeClient)
+
+	mockLogCompHealthChecker := &mocks.ComponentHealthChecker{}
+	mockTraceCompHealthChecker := &mocks.ComponentHealthChecker{}
+	mockMetricCompHealthChecker := &mocks.ComponentHealthChecker{}
+	compHealthChecker := map[string]ComponentHealthChecker{
+		"Log Components":     mockLogCompHealthChecker,
+		"Trace Components":   mockTraceCompHealthChecker,
+		"Metrics Components": mockMetricCompHealthChecker,
+	}
+
+	rc.HealthCheckers = compHealthChecker
+
+	mockLogCompHealthChecker.On("Check", mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusFalse, reconciler.ReasonReferencedSecretMissing), nil)
+	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusFalse, reconciler.ReasonTraceCollectorDeploymentNotReady), nil)
+	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
+
+	err = rc.updateStatus(ctx, &obj)
+	require.NoError(t, err)
+	conditions := obj.Status.Conditions
+	for _, c := range conditions {
+		if c.Type == "Tracing" {
+			require.Equal(t, c.Reason, reconciler.ReasonTraceCollectorDeploymentNotReady)
+		}
+	}
+	endpoints := obj.Status.Endpoints
+	require.Equal(t, endpoints.Traces.GRPC, "")
+	require.Equal(t, endpoints.Traces.HTTP, "")
+}
+
+func getLoggingCondition(status metav1.ConditionStatus, reason string) *metav1.Condition {
+	return &metav1.Condition{
+		Type:               "Logging",
+		Status:             status,
+		ObservedGeneration: 1,
+		Reason:             reason,
+		Message:            reconciler.Conditions[reason],
+	}
+}
+func getMetricCondition(status metav1.ConditionStatus, reason string) *metav1.Condition {
+	return &metav1.Condition{
+		Type:               "Metrics",
+		Status:             status,
+		ObservedGeneration: 1,
+		Reason:             reason,
+		Message:            reconciler.Conditions[reason],
+	}
+}
+func getTraceCondition(status metav1.ConditionStatus, reason string) *metav1.Condition {
+	return &metav1.Condition{
+		Type:               "Tracing",
+		Status:             status,
+		ObservedGeneration: 1,
+		Reason:             reason,
+		Message:            reconciler.Conditions[reason],
+	}
 }

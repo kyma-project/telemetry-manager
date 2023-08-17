@@ -15,7 +15,7 @@ type metricComponentsHealthChecker struct {
 	client client.Client
 }
 
-func (m *metricComponentsHealthChecker) check(ctx context.Context) (*metav1.Condition, error) {
+func (m *metricComponentsHealthChecker) Check(ctx context.Context) (*metav1.Condition, error) {
 	var metricPipelines v1alpha1.MetricPipelineList
 	err := m.client.List(ctx, &metricPipelines)
 	if err != nil {

@@ -16,11 +16,11 @@ import (
 
 //go:generate mockery --name ComponentHealthChecker --filename conditions_prober.go
 type ComponentHealthChecker interface {
-	check(ctx context.Context) (*metav1.Condition, error)
+	Check(ctx context.Context) (*metav1.Condition, error)
 }
 
 func (r *Reconciler) updateStatus(ctx context.Context, obj *operatorv1alpha1.Telemetry) error {
-	for component, healthChecker := range r.healthCheckers {
+	for component, healthChecker := range r.HealthCheckers {
 		// skip metric pipeline if metrics are not enabled
 		if !r.checkMetricPipelineCRExist(ctx) && component == "Metrics Components" {
 			continue
@@ -34,7 +34,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, obj *operatorv1alpha1.Tel
 }
 
 func (r *Reconciler) updateConditions(ctx context.Context, compName string, cp ComponentHealthChecker, obj *operatorv1alpha1.Telemetry) error {
-	newCondition, err := cp.check(ctx)
+	newCondition, err := cp.Check(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to update conditions for: %v, %w", compName, err)
 	}
@@ -52,13 +52,13 @@ func (r *Reconciler) updateEndpoints(ctx context.Context, obj *operatorv1alpha1.
 	var err error
 
 	if r.checkMetricPipelineCRExist(ctx) {
-		metricEndpoints, err = r.metricEndpoints(ctx, r.TelemetryConfig)
+		metricEndpoints, err = r.metricEndpoints(ctx, r.TelemetryConfig, &obj.Status.Conditions)
 		if err != nil {
 			logf.Error(err, "Unable to update metric endpoints")
 		}
 	}
 
-	traceEndpoints, err := r.traceEndpoints(ctx, r.TelemetryConfig)
+	traceEndpoints, err := r.traceEndpoints(ctx, r.TelemetryConfig, &obj.Status.Conditions)
 	if err != nil {
 		logf.Error(err, "Unable to update trace endpoints")
 	}
@@ -81,7 +81,7 @@ func (r *Reconciler) state(obj *operatorv1alpha1.Telemetry) operatorv1alpha1.Sta
 	return state
 }
 
-func (r *Reconciler) metricEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
+func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, conditions *[]metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {
 	var metricPipelines v1alpha1.MetricPipelineList
 	err := r.Client.List(ctx, &metricPipelines)
 	if err != nil {
@@ -91,16 +91,24 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config) (*opera
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
+	if !checkComponentConditionIsHealthy(reconciler.MetricConditionType, conditions) {
+		return &operatorv1alpha1.OTLPEndpoints{}, nil
+	}
+
 	return makeOTLPEndpoints(config.MetricConfig.ServiceName, config.MetricConfig.Namespace), nil
 }
 
-func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
+func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, conditions *[]metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {
 	var tracePipelines v1alpha1.TracePipelineList
 	err := r.Client.List(ctx, &tracePipelines)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all trace pipelines while syncing conditions: %w", err)
 	}
 	if len(tracePipelines.Items) == 0 {
+		return &operatorv1alpha1.OTLPEndpoints{}, nil
+	}
+
+	if !checkComponentConditionIsHealthy(reconciler.TraceConditionType, conditions) {
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
@@ -113,4 +121,13 @@ func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndp
 		GRPC: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPGRPC),
 	}
 
+}
+
+func checkComponentConditionIsHealthy(condType string, conditions *[]metav1.Condition) bool {
+	for _, c := range *conditions {
+		if c.Type == condType && c.Status == reconciler.ConditionStatusTrue {
+			return true
+		}
+	}
+	return false
 }

@@ -15,7 +15,7 @@ type traceComponentsHealthChecker struct {
 	client client.Client
 }
 
-func (t *traceComponentsHealthChecker) check(ctx context.Context) (*metav1.Condition, error) {
+func (t *traceComponentsHealthChecker) Check(ctx context.Context) (*metav1.Condition, error) {
 	var tracePipelines v1alpha1.TracePipelineList
 	err := t.client.List(ctx, &tracePipelines)
 	if err != nil {

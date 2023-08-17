@@ -57,7 +57,7 @@ type Reconciler struct {
 	// EventRecorder for creating k8s events
 	record.EventRecorder
 	TelemetryConfig Config
-	healthCheckers  map[string]ComponentHealthChecker
+	HealthCheckers  map[string]ComponentHealthChecker
 }
 
 func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, config Config) *Reconciler {
@@ -66,7 +66,7 @@ func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder r
 		Scheme:          scheme,
 		EventRecorder:   eventRecorder,
 		TelemetryConfig: config,
-		healthCheckers: map[string]ComponentHealthChecker{
+		HealthCheckers: map[string]ComponentHealthChecker{
 			"Log Components":     &logComponentsHealthChecker{client: client},
 			"Trace Components":   &traceComponentsHealthChecker{client: client},
 			"Metrics Components": &metricComponentsHealthChecker{client: client},
@@ -83,7 +83,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		logger.Info(req.NamespacedName.String() + " got deleted!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	//logger.Info(fmt.Sprintf("Getting the status: %v\n", objectInstance.Status))
 
 	if err := r.updateStatus(ctx, &objectInstance); err != nil {
 		return ctrl.Result{Requeue: true}, err
@@ -91,7 +90,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	instanceIsBeingDeleted := !objectInstance.GetDeletionTimestamp().IsZero()
 
-	// check if deletionTimestamp is set, retry until it gets deleted
+	// Check if deletionTimestamp is set, retry until it gets deleted
 	status := getStatusFromTelemetry(&objectInstance)
 
 	if instanceIsBeingDeleted &&

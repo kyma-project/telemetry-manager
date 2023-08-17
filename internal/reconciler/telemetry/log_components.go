@@ -15,7 +15,7 @@ type logComponentsHealthChecker struct {
 	client client.Client
 }
 
-func (l *logComponentsHealthChecker) check(ctx context.Context) (*metav1.Condition, error) {
+func (l *logComponentsHealthChecker) Check(ctx context.Context) (*metav1.Condition, error) {
 	var logpipelines v1alpha1.LogPipelineList
 	err := l.client.List(ctx, &logpipelines)
 	if err != nil {
