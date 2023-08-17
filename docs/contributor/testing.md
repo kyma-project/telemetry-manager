@@ -26,19 +26,19 @@ The roles and responsibilities during the STLC:
 ## Testing Levels
 ​
 ### Functional Tests
-![Test Pyramid](../assets/test-pyramid.png)
+![Test Pyramid](assets/test-pyramid.png)
 Unit and Env tests follow the [Go convention](https://go.dev/doc/tutorial/add-a-test) and reside next to the code they are testing. The unit tests and integration tests are part of one test suite.
 ​
 | Test suite | Testing level | Purpose |
 | --- | --- | --- |
 | Unit (located along with the individual source files) | Unit | It tests the individual units of application logic in isolation, focusing on the implementation correctness. |
 | Env-tests (located along with the individual source files) | Integration  (low-level) | It tests the behaviour of the Telemetry Controller in integration with local control plane test doubles. This test suite assesses the integration correctness of the Telemetry Controller. |
-| [E2E Acceptance](/test/e2e) | Acceptance  (high-level) | It tests the usability scenarios of Telemetry Manager in a cluster. This test suite assesses the functional correctness of Telemetry Controller. |
+| [E2E Acceptance](../../test/e2e) | Acceptance  (high-level) | It tests the usability scenarios of Telemetry Manager in a cluster. This test suite assesses the functional correctness of Telemetry Controller. |
 | E2E Operational | System | It validates the operational aspects of the module (successful module upgrades, deletions, etc.). |
 | [E2E integration](https://github.com/kyma-project/telemetry-manager/issues/261#issuecomment-1647336680) |Integration (high-level)|tests the Telemetry Module integration with 3rd party components and modules (with a focus on contract fulfilment).|
 ​
 
-![E2E Test Suites](../assets/e2e-test-suites.png)
+![E2E Test Suites](assets/e2e-test-suites.png)
 
 #### Testing of new functionality
 ​
@@ -62,7 +62,7 @@ The current functional coverage is auditable by listing the existing Acceptance 
 ​
 Most of the source code quality prerequisites are checked automatically in the following ways:
 ​
-* The code-style requirements are collected and stored as a [configuration](./governance.md#linters-in-action) for the fine-grained static analysis linters.
+* The code-style requirements are collected and stored as a [configuration](governance.md#linters-in-action) for the fine-grained static analysis linters.
 * The cognitive and cyclomatic complexity quality gateways are agreed upon and imposed using static analysis linters.
 * Static code checks are implemented using [golangci-lint](https://golangci-lint.run).
 * The Continuous Integration pipeline for each PR controls the violations of static code rules.

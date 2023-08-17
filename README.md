@@ -7,7 +7,7 @@
 
 ## Overview
 
-[Telemetry Manager](./docs/user/01-manager.md) is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that fulfils the [Kyma module interface](https://github.com/kyma-project/community/tree/main/concepts/modularization). It provides APIs for a managed agent/gateway setup for log, trace, and metric ingestion and dispatching into 3rd-party backend systems, in order to reduce the pain of orchestrating such setup on your own. Read more on the [usage](./docs/user/README.md) of the module as well as general [design and strategy](https://github.com/kyma-project/community/blob/main/concepts/observability-strategy/strategy.md) behind the module.
+[Telemetry Manager](docs/user/01-manager.md) is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that fulfils the [Kyma module interface](https://github.com/kyma-project/community/tree/main/concepts/modularization). It provides APIs for a managed agent/gateway setup for log, trace, and metric ingestion and dispatching into 3rd-party backend systems, in order to reduce the pain of orchestrating such setup on your own. Read more on the [usage](docs/user/README.md) of the module as well as general [design and strategy](https://github.com/kyma-project/community/blob/main/concepts/observability-strategy/strategy.md) behind the module.
 
 ### Logs
 
@@ -29,25 +29,25 @@ For more information, see [Dynamic Monitoring Backend Configuration](https://git
 
 ## Installation
 
-See the [installation instruction](./docs/contributor/installation.md).
+See the [installation instruction](docs/contributor/installation.md).
 
 ## Usage
 
-See the [user documentation](./docs/user/README.md).
+See the [user documentation](docs/user/README.md).
 
 ## Development
 
 For details, see:
-- [Available commands for building/linting/installation](./docs/contributor/development.md)
-- [Testing strategy](./docs/contributor/testing.md)
-- [Troubleshooting and debugging](./docs/contributor/troubleshooting.md)
-- [Release process](./docs/contributor/releasing.md)
-- [Governance checks like linting](./docs/contributor/governance.md)
+- [Available commands for building/linting/installation](docs/contributor/development.md)
+- [Testing strategy](docs/contributor/testing.md)
+- [Troubleshooting and debugging](docs/contributor/troubleshooting.md)
+- [Release process](docs/contributor/releasing.md)
+- [Governance checks like linting](docs/contributor/governance.md)
 
 ## Contributing
 <!--- mandatory section - do not change this! --->
 
-See the [CONTRIBUTING](./CONTRIBUTING.md) file.
+See the [CONTRIBUTING](CONTRIBUTING.md) file.
 
 ## Code of Conduct
 <!--- mandatory section - do not change this! --->
@@ -57,4 +57,4 @@ See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 ## Licensing
 <!--- mandatory section - do not change this! --->
 
-See the [LICENSE](./LICENSE) file.
+See the [LICENSE](LICENSE) file.
