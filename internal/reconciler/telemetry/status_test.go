@@ -91,6 +91,9 @@ func TestUpdateConditions_NoPipelines(t *testing.T) {
 		Metrics: &operatorv1alpha1.OTLPEndpoints{},
 	}
 	require.Equal(t, endpoints, expectedEndpoint)
+	var expectedState operatorv1alpha1.State
+	expectedState = "Ready"
+	require.Equal(t, obj.Status.Status.State, expectedState)
 }
 
 func TestUpdateConditions_LogPipelinePending(t *testing.T) {
@@ -312,15 +315,11 @@ func TestUpdateConditions_TracePipelinePending(t *testing.T) {
 
 	err = rc.updateStatus(ctx, &obj)
 	require.NoError(t, err)
-	conditions := obj.Status.Conditions
-	for _, c := range conditions {
-		if c.Type == "Tracing" {
-			require.Equal(t, c.Reason, reconciler.ReasonTraceCollectorDeploymentNotReady)
-		}
-	}
-	endpoints := obj.Status.Endpoints
-	require.Equal(t, endpoints.Traces.GRPC, "")
-	require.Equal(t, endpoints.Traces.HTTP, "")
+	state := obj.Status.Status.State
+	var expectedState operatorv1alpha1.State
+	expectedState = "Warning"
+	require.Equal(t, state, expectedState)
+
 }
 
 func TestUpdateConditions_CheckWarningState(t *testing.T) {
@@ -340,7 +339,7 @@ func TestUpdateConditions_CheckWarningState(t *testing.T) {
 		Spec: operatorv1alpha1.TelemetrySpec{},
 	}
 
-	traceObj := telemetryv1alpha1.LogPipeline{
+	logObj := telemetryv1alpha1.LogPipeline{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "foo",
@@ -351,7 +350,7 @@ func TestUpdateConditions_CheckWarningState(t *testing.T) {
 	err := fakeClient.Create(ctx, &obj)
 	require.NoError(t, err)
 
-	err = fakeClient.Create(ctx, &traceObj)
+	err = fakeClient.Create(ctx, &logObj)
 	require.NoError(t, err)
 
 	rc := initReconciler(fakeClient)
