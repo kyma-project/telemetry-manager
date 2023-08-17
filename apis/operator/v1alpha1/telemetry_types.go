@@ -91,7 +91,7 @@ func (s *TelemetryStatus) WithState(state State) *TelemetryStatus {
 
 func (s *TelemetryStatus) WithInstallConditionStatus(status metav1.ConditionStatus, objGeneration int64) *TelemetryStatus {
 	if s.Conditions == nil {
-		s.Conditions = make([]metav1.Condition, 0, 4)
+		s.Conditions = []metav1.Condition{}
 	}
 
 	condition := meta.FindStatusCondition(s.Conditions, ConditionTypeInstallation)
