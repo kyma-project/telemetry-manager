@@ -1,4 +1,4 @@
-//go:build istio
+//go:build e2e
 
 package e2e
 
