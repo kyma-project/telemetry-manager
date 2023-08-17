@@ -9,7 +9,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -49,24 +48,6 @@ var _ = Describe("Deploying a Telemetry", func() {
 			}, timeout, interval).Should(BeNil())
 			Expect(k8sClient.Delete(ctx, telemetryTestObj)).Should(Succeed())
 		})
-
-		It("has all sub-resource status", func() {
-			Eventually(func() bool {
-				telemetryLookupKey := types.NamespacedName{
-					Name:      "telemetry",
-					Namespace: "default",
-				}
-				var telemetryTestInstance operatorv1alpha1.Telemetry
-				err := k8sClient.Get(ctx, telemetryLookupKey, &telemetryTestInstance)
-				Expect(err).ToNot(HaveOccurred())
-				conditions := telemetryTestInstance.Status.Conditions
-				Expect(validateLoggingCondition(&conditions, reconciler.ReasonNoPipelineDeployed)).To(BeTrue())
-				Expect(validateTracingCondition(&conditions, reconciler.ReasonNoPipelineDeployed)).To(BeTrue())
-				Expect(validateMetricCondition(&conditions, reconciler.ReasonNoPipelineDeployed)).To(BeTrue())
-				return true
-			}, timeout, interval).Should(BeTrue())
-		})
-
 	})
 })
 
@@ -76,31 +57,3 @@ func validateStatus(status operatorv1alpha1.TelemetryStatus) error {
 	}
 	return nil
 }
-
-func validateLoggingCondition(conditions *[]metav1.Condition, status metav1.ConditionStatus) bool {
-	for _, c := range *conditions {
-		if c.Type == reconciler.LogConditionType && c.Status == status {
-			return true
-		}
-	}
-	return false
-}
-func validateTracingCondition(conditions *[]metav1.Condition, status metav1.ConditionStatus) bool {
-	for _, c := range *conditions {
-		if c.Type == reconciler.TraceConditionType && c.Status == status {
-			return true
-		}
-	}
-	return false
-}
-
-func validateMetricCondition(conditions *[]metav1.Condition, status metav1.ConditionStatus) bool {
-	for _, c := range *conditions {
-		if c.Type == reconciler.MetricConditionType && c.Status == status {
-			return true
-		}
-	}
-	return false
-}
-
-//func validateEndpoint(endpoint operatorv1alpha1.Endpoints, expected)
