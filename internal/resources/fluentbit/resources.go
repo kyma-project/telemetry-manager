@@ -344,6 +344,17 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
     storage.type  filesystem
     Read_from_Head True
 
+[INPUT]
+    Name tail
+    Path /null.log
+    Tag null.*
+    Alias null-tail
+
+[OUTPUT]
+    Name null
+    Match null.*
+    Alias null-null
+
 [FILTER]
     Name kubernetes
     Match tele.*
