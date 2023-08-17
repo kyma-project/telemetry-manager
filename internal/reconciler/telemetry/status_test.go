@@ -2,8 +2,9 @@ package telemetry
 
 import (
 	"context"
-	"k8s.io/client-go/rest"
 	"testing"
+
+	"k8s.io/client-go/rest"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
