@@ -21,6 +21,12 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
+var (
+	telemetryFluentbitName              = "telemetry-fluent-bit"
+	telemetryWebhookEndpoint            = "telemetry-operator-webhook"
+	telemetryFluentbitMetricServiceName = "telemetry-fluent-bit-metrics"
+)
+
 var _ = Describe("Logging", Label("logging"), func() {
 
 	Context("When a logpipeline exists", Ordered, func() {
