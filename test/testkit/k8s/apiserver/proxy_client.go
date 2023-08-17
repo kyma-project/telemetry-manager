@@ -13,7 +13,7 @@ import (
 type ProxyClient struct {
 	bearerToken     string
 	tlsClientConfig *tls.Config
-	apiUrl          string
+	apiURL          string
 }
 
 // NewProxyClient returns a provider for all HTTPS-related authentication information to be used
@@ -34,7 +34,7 @@ func NewProxyClient(config *rest.Config) (*ProxyClient, error) {
 	return &ProxyClient{
 		bearerToken:     transportConfig.BearerToken,
 		tlsClientConfig: tlsClientConfig,
-		apiUrl:          config.Host,
+		apiURL:          config.Host,
 	}, nil
 }
 
@@ -50,7 +50,7 @@ func (a ProxyClient) Token() string {
 func (a ProxyClient) ProxyURLForService(namespace, service, path string, port int) string {
 	return fmt.Sprintf(
 		`%s/api/v1/namespaces/%s/services/http:%s:%d/proxy/%s`,
-		a.apiUrl,
+		a.apiURL,
 		namespace,
 		service,
 		port,
@@ -62,7 +62,7 @@ func (a ProxyClient) ProxyURLForService(namespace, service, path string, port in
 func (a ProxyClient) ProxyURLForPod(namespace, pod, path string, port int) string {
 	return fmt.Sprintf(
 		`%s/api/v1/namespaces/%s/pods/http:%s:%d/proxy/%s`,
-		a.apiUrl,
+		a.apiURL,
 		namespace,
 		pod,
 		port,
