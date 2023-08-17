@@ -129,5 +129,11 @@ issues:
       path: test/testkit/matchers/(log|metric|trace)_matchers.go
     - linters: [ dupl ]
       path: main.go
+    - linters: [ dupl ]
+      path: internal/reconciler/telemetry/metric_components.go
+    - linters: [ dupl ]
+      path: internal/reconciler/telemetry/trace_components.go
+    - linters: [ dupl ]
+      path: internal/reconciler/telemetry/status.go
     - linters: [ errcheck ]
       path: test/testkit/otlp/traces/traces.go
