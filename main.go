@@ -600,11 +600,11 @@ func parsePlugins(s string) []string {
 
 func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
 	config := telemetry.Config{
-		TraceConfig: telemetry.TraceConfig{
+		Traces: telemetry.TracesConfig{
 			OTLPServiceName: traceOTLPServiceName,
 			Namespace:       telemetryNamespace,
 		},
-		MetricConfig: telemetry.MetricConfig{
+		Metrics: telemetry.MetricsConfig{
 			Enabled:         enableMetrics,
 			OTLPServiceName: metricOTLPServiceName,
 			Namespace:       telemetryNamespace,

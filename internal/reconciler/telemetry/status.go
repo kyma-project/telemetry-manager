@@ -20,7 +20,7 @@ type ComponentHealthChecker interface {
 }
 
 func (r *Reconciler) updateStatus(ctx context.Context, obj *operatorv1alpha1.Telemetry) error {
-	for component, healthChecker := range r.HealthCheckers {
+	for component, healthChecker := range r.healthCheckers {
 		// skip metric pipeline if metrics are not enabled
 		if !r.checkMetricPipelineCRExist(ctx) && component == "Metrics Components" {
 			continue
@@ -52,13 +52,13 @@ func (r *Reconciler) updateEndpoints(ctx context.Context, obj *operatorv1alpha1.
 	var err error
 
 	if r.checkMetricPipelineCRExist(ctx) {
-		metricEndpoints, err = r.metricEndpoints(ctx, r.TelemetryConfig, &obj.Status.Conditions)
+		metricEndpoints, err = r.metricEndpoints(ctx, r.config, &obj.Status.Conditions)
 		if err != nil {
 			logf.Error(err, "Unable to update metric endpoints")
 		}
 	}
 
-	traceEndpoints, err := r.traceEndpoints(ctx, r.TelemetryConfig, &obj.Status.Conditions)
+	traceEndpoints, err := r.traceEndpoints(ctx, r.config, &obj.Status.Conditions)
 	if err != nil {
 		logf.Error(err, "Unable to update trace endpoints")
 	}
@@ -95,7 +95,7 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, conditi
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
-	return makeOTLPEndpoints(config.MetricConfig.OTLPServiceName, config.MetricConfig.Namespace), nil
+	return makeOTLPEndpoints(config.Metrics.OTLPServiceName, config.Metrics.Namespace), nil
 }
 
 func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, conditions *[]metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {
@@ -112,7 +112,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, conditio
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
-	return makeOTLPEndpoints(config.TraceConfig.OTLPServiceName, config.TraceConfig.Namespace), nil
+	return makeOTLPEndpoints(config.Traces.OTLPServiceName, config.Traces.Namespace), nil
 }
 
 func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndpoints {

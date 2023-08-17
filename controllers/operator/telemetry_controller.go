@@ -74,7 +74,7 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			handler.EnqueueRequestsFromMapFunc(r.mapTracePipeline),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete()))
 
-	if r.config.MetricConfig.Enabled {
+	if r.config.Metrics.Enabled {
 		b.Watches(
 			&source.Kind{Type: &v1alpha1.MetricPipeline{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapMetricPipeline),

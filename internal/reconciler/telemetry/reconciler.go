@@ -31,17 +31,17 @@ const (
 )
 
 type Config struct {
-	TraceConfig  TraceConfig
-	MetricConfig MetricConfig
-	Webhook      WebhookConfig
+	Traces  TracesConfig
+	Metrics MetricsConfig
+	Webhook WebhookConfig
 }
 
-type TraceConfig struct {
+type TracesConfig struct {
 	OTLPServiceName string
 	Namespace       string
 }
 
-type MetricConfig struct {
+type MetricsConfig struct {
 	Enabled         bool
 	OTLPServiceName string
 	Namespace       string
@@ -58,17 +58,17 @@ type Reconciler struct {
 	*rest.Config
 	// EventRecorder for creating k8s events
 	record.EventRecorder
-	TelemetryConfig Config
-	HealthCheckers  map[string]ComponentHealthChecker
+	config         Config
+	healthCheckers map[string]ComponentHealthChecker
 }
 
 func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, config Config) *Reconciler {
 	return &Reconciler{
-		Client:          client,
-		Scheme:          scheme,
-		EventRecorder:   eventRecorder,
-		TelemetryConfig: config,
-		HealthCheckers: map[string]ComponentHealthChecker{
+		Client:        client,
+		Scheme:        scheme,
+		EventRecorder: eventRecorder,
+		config:        config,
+		healthCheckers: map[string]ComponentHealthChecker{
 			"Log Components":     &logComponentsHealthChecker{client: client},
 			"Trace Components":   &traceComponentsHealthChecker{client: client},
 			"Metrics Components": &metricComponentsHealthChecker{client: client},
@@ -134,7 +134,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	if !r.TelemetryConfig.Webhook.Enabled {
+	if !r.config.Webhook.Enabled {
 		return nil
 	}
 
@@ -142,12 +142,12 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 		return nil
 	}
 
-	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.TelemetryConfig.Webhook.CertConfig); err != nil {
+	if err := webhookcert.EnsureCertificate(ctx, r.Client, r.config.Webhook.CertConfig); err != nil {
 		return fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
 	var secret corev1.Secret
-	if err := r.Get(ctx, r.TelemetryConfig.Webhook.CertConfig.CASecretName, &secret); err != nil {
+	if err := r.Get(ctx, r.config.Webhook.CertConfig.CASecretName, &secret); err != nil {
 		return fmt.Errorf("failed to get secret: %w", err)
 	}
 	if err := controllerutil.SetOwnerReference(telemetry, &secret, r.Scheme); err != nil {
@@ -158,7 +158,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	}
 
 	var webhook admissionv1.ValidatingWebhookConfiguration
-	if err := r.Get(ctx, r.TelemetryConfig.Webhook.CertConfig.WebhookName, &webhook); err != nil {
+	if err := r.Get(ctx, r.config.Webhook.CertConfig.WebhookName, &webhook); err != nil {
 		return fmt.Errorf("failed to get webhook: %w", err)
 	}
 	if err := kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, r.Client, &webhook); err != nil {
@@ -171,7 +171,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 func (r *Reconciler) deleteWebhook(ctx context.Context) error {
 	webhook := &admissionv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: r.TelemetryConfig.Webhook.CertConfig.WebhookName.Name,
+			Name: r.config.Webhook.CertConfig.WebhookName.Name,
 		},
 	}
 

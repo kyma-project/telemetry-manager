@@ -24,11 +24,11 @@ func initReconciler(fakeClient client.Client) *Reconciler {
 	scheme := runtime.NewScheme()
 
 	config := Config{
-		TraceConfig: TraceConfig{
+		Traces: TracesConfig{
 			OTLPServiceName: "trace-otlp-svc",
 			Namespace:       "default",
 		},
-		MetricConfig: MetricConfig{
+		Metrics: MetricsConfig{
 			OTLPServiceName: "metric-otlp-svc",
 			Namespace:       "default",
 		},
@@ -36,12 +36,12 @@ func initReconciler(fakeClient client.Client) *Reconciler {
 	}
 
 	return &Reconciler{
-		Client:          fakeClient,
-		Scheme:          scheme,
-		Config:          &rest.Config{},
-		EventRecorder:   record.NewFakeRecorder(100),
-		TelemetryConfig: config,
-		HealthCheckers:  nil,
+		Client:         fakeClient,
+		Scheme:         scheme,
+		Config:         &rest.Config{},
+		EventRecorder:  record.NewFakeRecorder(100),
+		config:         config,
+		healthCheckers: nil,
 	}
 }
 
@@ -75,7 +75,7 @@ func TestUpdateConditions_NoPipelines(t *testing.T) {
 		"Metrics Components": mockMetricCompHealthChecker,
 	}
 
-	rc.HealthCheckers = compHealthChecker
+	rc.healthCheckers = compHealthChecker
 
 	mockLogCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
 	mockTraceCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
@@ -125,7 +125,7 @@ func TestUpdateConditions_LogPipelinePending(t *testing.T) {
 		"Metrics Components": mockMetricCompHealthChecker,
 	}
 
-	rc.HealthCheckers = compHealthChecker
+	rc.healthCheckers = compHealthChecker
 	mockLogCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusFalse, reconciler.ReasonFluentBitDSNotReady), nil)
 	mockTraceCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
 	mockMetricCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
@@ -182,7 +182,7 @@ func TestUpdateConditions_TracePipelineRunning(t *testing.T) {
 		"Metrics Components": mockMetricCompHealthChecker,
 	}
 
-	rc.HealthCheckers = compHealthChecker
+	rc.healthCheckers = compHealthChecker
 
 	mockLogCompHealthChecker.On("Check", mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusTrue, reconciler.ReasonFluentBitDSReady), nil)
 	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusTrue, reconciler.ReasonTraceCollectorDeploymentReady), nil)
@@ -243,7 +243,7 @@ func TestUpdateConditions_MetricPipelineRunning(t *testing.T) {
 		"Metrics Components": mockMetricCompHealthChecker,
 	}
 
-	rc.HealthCheckers = compHealthChecker
+	rc.healthCheckers = compHealthChecker
 
 	mockLogCompHealthChecker.On("Check", mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusTrue, reconciler.ReasonFluentBitDSReady), nil)
 	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusFalse, reconciler.ReasonNoPipelineDeployed), nil)
@@ -306,7 +306,7 @@ func TestUpdateConditions_TracePipelinePending(t *testing.T) {
 		"Metrics Components": mockMetricCompHealthChecker,
 	}
 
-	rc.HealthCheckers = compHealthChecker
+	rc.healthCheckers = compHealthChecker
 
 	mockLogCompHealthChecker.On("Check", mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusTrue, reconciler.ReasonFluentBitDSReady), nil)
 	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusFalse, reconciler.ReasonTraceCollectorDeploymentNotReady), nil)
@@ -362,7 +362,7 @@ func TestUpdateConditions_CheckWarningState(t *testing.T) {
 		"Metrics Components": mockMetricCompHealthChecker,
 	}
 
-	rc.HealthCheckers = compHealthChecker
+	rc.healthCheckers = compHealthChecker
 
 	mockLogCompHealthChecker.On("Check", mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusFalse, reconciler.ReasonReferencedSecretMissing), nil)
 	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusFalse, reconciler.ReasonTraceCollectorDeploymentNotReady), nil)
