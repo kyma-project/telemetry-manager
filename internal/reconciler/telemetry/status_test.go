@@ -85,8 +85,8 @@ func TestUpdateConditions_NoPipelines(t *testing.T) {
 	require.NoError(t, err)
 	conditions := obj.Status.Conditions
 	require.Len(t, conditions, 3)
-	endpoints := obj.Status.Endpoints
-	expectedEndpoint := operatorv1alpha1.Endpoints{
+	endpoints := obj.Status.GatewayEndpoints
+	expectedEndpoint := operatorv1alpha1.GatewayEndpoints{
 		Traces:  &operatorv1alpha1.OTLPEndpoints{},
 		Metrics: &operatorv1alpha1.OTLPEndpoints{},
 	}
@@ -196,7 +196,7 @@ func TestUpdateConditions_TracePipelineRunning(t *testing.T) {
 			require.Equal(t, c.Reason, reconciler.ReasonTraceCollectorDeploymentReady)
 		}
 	}
-	endpoints := obj.Status.Endpoints
+	endpoints := obj.Status.GatewayEndpoints
 	require.Equal(t, endpoints.Traces.GRPC, "http://trace-otlp-svc.default:4317")
 	require.Equal(t, endpoints.Traces.HTTP, "http://trace-otlp-svc.default:4318")
 }
@@ -257,7 +257,7 @@ func TestUpdateConditions_MetricPipelineRunning(t *testing.T) {
 			require.Equal(t, c.Reason, reconciler.ReasonMetricGatewayDeploymentReady)
 		}
 	}
-	endpoints := obj.Status.Endpoints
+	endpoints := obj.Status.GatewayEndpoints
 	require.Equal(t, endpoints.Metrics.GRPC, "http://metric-otlp-svc.default:4317")
 	require.Equal(t, endpoints.Metrics.HTTP, "http://metric-otlp-svc.default:4318")
 	require.Equal(t, endpoints.Traces.GRPC, "")
@@ -376,7 +376,7 @@ func TestUpdateConditions_CheckWarningState(t *testing.T) {
 			require.Equal(t, c.Reason, reconciler.ReasonTraceCollectorDeploymentNotReady)
 		}
 	}
-	endpoints := obj.Status.Endpoints
+	endpoints := obj.Status.GatewayEndpoints
 	require.Equal(t, endpoints.Traces.GRPC, "")
 	require.Equal(t, endpoints.Traces.HTTP, "")
 }

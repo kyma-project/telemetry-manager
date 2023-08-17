@@ -63,7 +63,7 @@ func (r *Reconciler) updateEndpoints(ctx context.Context, obj *operatorv1alpha1.
 		logf.Error(err, "Unable to update trace endpoints")
 	}
 
-	obj.Status.Endpoints = operatorv1alpha1.Endpoints{
+	obj.Status.GatewayEndpoints = operatorv1alpha1.GatewayEndpoints{
 		Traces:  traceEndpoints,
 		Metrics: metricEndpoints,
 	}

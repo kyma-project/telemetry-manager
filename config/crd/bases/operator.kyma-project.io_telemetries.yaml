@@ -120,7 +120,7 @@ spec:
                   type: object
                 type: array
               endpoints:
-                description: Endpoints for trace and metric gateway
+                description: GatewayEndpoints for trace and metric gateway
                 nullable: true
                 properties:
                   metrics:

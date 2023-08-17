@@ -68,13 +68,13 @@ type TelemetryStatus struct {
 	// If all Conditions are met, State is expected to be in StateReady.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	// Endpoints for trace and metric gateway
+	// GatewayEndpoints for trace and metric gateway
 	// +nullable
-	Endpoints Endpoints `json:"endpoints,omitempty"`
+	GatewayEndpoints GatewayEndpoints `json:"endpoints,omitempty"`
 	// add other fields to status subresource here
 }
 
-type Endpoints struct {
+type GatewayEndpoints struct {
 	Traces  *OTLPEndpoints `json:"traces,omitempty"`
 	Metrics *OTLPEndpoints `json:"metrics,omitempty"`
 }
