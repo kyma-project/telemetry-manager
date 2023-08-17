@@ -37,8 +37,8 @@ func (l *logComponentsChecker) determineReason(logPipelines []v1alpha1.LogPipeli
 			return reconciler.ReasonFluentBitDSNotReady
 		}
 		lastCondition := conditions[len(conditions)-1]
-		if lastCondition.Reason == reconciler.ReasonReferencedSecretMissingReason {
-			return reconciler.ReasonReferencedSecretMissingReason
+		if lastCondition.Reason == reconciler.ReasonReferencedSecretMissing {
+			return reconciler.ReasonReferencedSecretMissing
 		}
 		if lastCondition.Type == v1alpha1.LogPipelinePending {
 			return reconciler.ReasonFluentBitDSNotReady
@@ -50,15 +50,15 @@ func (l *logComponentsChecker) determineReason(logPipelines []v1alpha1.LogPipeli
 func (l *logComponentsChecker) createConditionFromReason(reason string) *metav1.Condition {
 	if reason == reconciler.ReasonFluentBitDSReady || reason == reconciler.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
-			Type:    reconciler.LogConditionType,
-			Status:  reconciler.ConditionStatusTrue,
+			Type:    logComponentsHealthyConditionType,
+			Status:  metav1.ConditionTrue,
 			Reason:  reason,
 			Message: reconciler.Conditions[reason],
 		}
 	}
 	return &metav1.Condition{
-		Type:    reconciler.LogConditionType,
-		Status:  reconciler.ConditionStatusFalse,
+		Type:    logComponentsHealthyConditionType,
+		Status:  metav1.ConditionFalse,
 		Reason:  reason,
 		Message: reconciler.Conditions[reason],
 	}

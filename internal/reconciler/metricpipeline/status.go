@@ -43,7 +43,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, &pipeline)
 	if referencesNonExistentSecret {
-		pending := telemetryv1alpha1.NewMetricPipelineCondition(reconciler.ReasonReferencedSecretMissingReason, telemetryv1alpha1.MetricPipelinePending)
+		pending := telemetryv1alpha1.NewMetricPipelineCondition(reconciler.ReasonReferencedSecretMissing, telemetryv1alpha1.MetricPipelinePending)
 
 		if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
 			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))

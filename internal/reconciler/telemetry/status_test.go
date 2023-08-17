@@ -69,17 +69,12 @@ func TestUpdateConditions_NoPipelines(t *testing.T) {
 	mockLogCompHealthChecker := &mocks.ComponentHealthChecker{}
 	mockTraceCompHealthChecker := &mocks.ComponentHealthChecker{}
 	mockMetricCompHealthChecker := &mocks.ComponentHealthChecker{}
-	compHealthChecker := map[string]ComponentHealthChecker{
-		"Log Components":     mockLogCompHealthChecker,
-		"Trace Components":   mockTraceCompHealthChecker,
-		"Metrics Components": mockMetricCompHealthChecker,
-	}
 
-	rc.healthCheckers = compHealthChecker
+	rc.healthCheckers = []ComponentHealthChecker{mockLogCompHealthChecker, mockTraceCompHealthChecker, mockMetricCompHealthChecker}
 
-	mockLogCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
-	mockTraceCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
-	mockMetricCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
+	mockLogCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(makeLoggingCondition(metav1.ConditionTrue, reconciler.ReasonNoPipelineDeployed), nil)
+	mockTraceCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(makeTraceCondition(metav1.ConditionTrue, reconciler.ReasonNoPipelineDeployed), nil)
+	mockMetricCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(makeMetricCondition(metav1.ConditionTrue, reconciler.ReasonNoPipelineDeployed), nil)
 
 	err = rc.updateStatus(ctx, &obj)
 	require.NoError(t, err)
@@ -119,16 +114,11 @@ func TestUpdateConditions_LogPipelinePending(t *testing.T) {
 	mockLogCompHealthChecker := &mocks.ComponentHealthChecker{}
 	mockTraceCompHealthChecker := &mocks.ComponentHealthChecker{}
 	mockMetricCompHealthChecker := &mocks.ComponentHealthChecker{}
-	compHealthChecker := map[string]ComponentHealthChecker{
-		"Log Components":     mockLogCompHealthChecker,
-		"Trace Components":   mockTraceCompHealthChecker,
-		"Metrics Components": mockMetricCompHealthChecker,
-	}
+	rc.healthCheckers = []ComponentHealthChecker{mockLogCompHealthChecker, mockTraceCompHealthChecker, mockMetricCompHealthChecker}
 
-	rc.healthCheckers = compHealthChecker
-	mockLogCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusFalse, reconciler.ReasonFluentBitDSNotReady), nil)
-	mockTraceCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
-	mockMetricCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
+	mockLogCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(makeLoggingCondition(metav1.ConditionFalse, reconciler.ReasonFluentBitDSNotReady), nil)
+	mockTraceCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(makeTraceCondition(metav1.ConditionTrue, reconciler.ReasonNoPipelineDeployed), nil)
+	mockMetricCompHealthChecker.On("Check", mock.Anything, mock.Anything).Return(makeMetricCondition(metav1.ConditionTrue, reconciler.ReasonNoPipelineDeployed), nil)
 
 	err = rc.updateStatus(ctx, &obj)
 	require.NoError(t, err)
@@ -176,24 +166,18 @@ func TestUpdateConditions_TracePipelineRunning(t *testing.T) {
 	mockLogCompHealthChecker := &mocks.ComponentHealthChecker{}
 	mockTraceCompHealthChecker := &mocks.ComponentHealthChecker{}
 	mockMetricCompHealthChecker := &mocks.ComponentHealthChecker{}
-	compHealthChecker := map[string]ComponentHealthChecker{
-		"Log Components":     mockLogCompHealthChecker,
-		"Trace Components":   mockTraceCompHealthChecker,
-		"Metrics Components": mockMetricCompHealthChecker,
-	}
+	rc.healthCheckers = []ComponentHealthChecker{mockLogCompHealthChecker, mockTraceCompHealthChecker, mockMetricCompHealthChecker}
 
-	rc.healthCheckers = compHealthChecker
-
-	mockLogCompHealthChecker.On("Check", mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusTrue, reconciler.ReasonFluentBitDSReady), nil)
-	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusTrue, reconciler.ReasonTraceCollectorDeploymentReady), nil)
-	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
+	mockLogCompHealthChecker.On("Check", mock.Anything).Return(makeLoggingCondition(metav1.ConditionTrue, reconciler.ReasonFluentBitDSReady), nil)
+	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(makeTraceCondition(metav1.ConditionTrue, reconciler.ReasonTraceGatewayDeploymentReady), nil)
+	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(makeMetricCondition(metav1.ConditionTrue, reconciler.ReasonNoPipelineDeployed), nil)
 
 	err = rc.updateStatus(ctx, &obj)
 	require.NoError(t, err)
 	conditions := obj.Status.Conditions
 	for _, c := range conditions {
 		if c.Type == "Tracing" {
-			require.Equal(t, c.Reason, reconciler.ReasonTraceCollectorDeploymentReady)
+			require.Equal(t, c.Reason, reconciler.ReasonTraceGatewayDeploymentReady)
 		}
 	}
 	endpoints := obj.Status.GatewayEndpoints
@@ -237,17 +221,11 @@ func TestUpdateConditions_MetricPipelineRunning(t *testing.T) {
 	mockLogCompHealthChecker := &mocks.ComponentHealthChecker{}
 	mockTraceCompHealthChecker := &mocks.ComponentHealthChecker{}
 	mockMetricCompHealthChecker := &mocks.ComponentHealthChecker{}
-	compHealthChecker := map[string]ComponentHealthChecker{
-		"Log Components":     mockLogCompHealthChecker,
-		"Trace Components":   mockTraceCompHealthChecker,
-		"Metrics Components": mockMetricCompHealthChecker,
-	}
+	rc.healthCheckers = []ComponentHealthChecker{mockLogCompHealthChecker, mockTraceCompHealthChecker, mockMetricCompHealthChecker}
 
-	rc.healthCheckers = compHealthChecker
-
-	mockLogCompHealthChecker.On("Check", mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusTrue, reconciler.ReasonFluentBitDSReady), nil)
-	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusFalse, reconciler.ReasonNoPipelineDeployed), nil)
-	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusTrue, reconciler.ReasonMetricGatewayDeploymentReady), nil)
+	mockLogCompHealthChecker.On("Check", mock.Anything).Return(makeLoggingCondition(metav1.ConditionTrue, reconciler.ReasonFluentBitDSReady), nil)
+	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(makeTraceCondition(metav1.ConditionFalse, reconciler.ReasonNoPipelineDeployed), nil)
+	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(makeMetricCondition(metav1.ConditionTrue, reconciler.ReasonMetricGatewayDeploymentReady), nil)
 
 	err = rc.updateStatus(ctx, &obj)
 	require.NoError(t, err)
@@ -300,17 +278,11 @@ func TestUpdateConditions_TracePipelinePending(t *testing.T) {
 	mockLogCompHealthChecker := &mocks.ComponentHealthChecker{}
 	mockTraceCompHealthChecker := &mocks.ComponentHealthChecker{}
 	mockMetricCompHealthChecker := &mocks.ComponentHealthChecker{}
-	compHealthChecker := map[string]ComponentHealthChecker{
-		"Log Components":     mockLogCompHealthChecker,
-		"Trace Components":   mockTraceCompHealthChecker,
-		"Metrics Components": mockMetricCompHealthChecker,
-	}
+	rc.healthCheckers = []ComponentHealthChecker{mockLogCompHealthChecker, mockTraceCompHealthChecker, mockMetricCompHealthChecker}
 
-	rc.healthCheckers = compHealthChecker
-
-	mockLogCompHealthChecker.On("Check", mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusTrue, reconciler.ReasonFluentBitDSReady), nil)
-	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusFalse, reconciler.ReasonTraceCollectorDeploymentNotReady), nil)
-	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
+	mockLogCompHealthChecker.On("Check", mock.Anything).Return(makeLoggingCondition(metav1.ConditionTrue, reconciler.ReasonFluentBitDSReady), nil)
+	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(makeTraceCondition(metav1.ConditionFalse, reconciler.ReasonTraceGatewayDeploymentNotReady), nil)
+	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(makeMetricCondition(metav1.ConditionTrue, reconciler.ReasonNoPipelineDeployed), nil)
 
 	err = rc.updateStatus(ctx, &obj)
 	require.NoError(t, err)
@@ -356,24 +328,18 @@ func TestUpdateConditions_CheckWarningState(t *testing.T) {
 	mockLogCompHealthChecker := &mocks.ComponentHealthChecker{}
 	mockTraceCompHealthChecker := &mocks.ComponentHealthChecker{}
 	mockMetricCompHealthChecker := &mocks.ComponentHealthChecker{}
-	compHealthChecker := map[string]ComponentHealthChecker{
-		"Log Components":     mockLogCompHealthChecker,
-		"Trace Components":   mockTraceCompHealthChecker,
-		"Metrics Components": mockMetricCompHealthChecker,
-	}
+	rc.healthCheckers = []ComponentHealthChecker{mockLogCompHealthChecker, mockTraceCompHealthChecker, mockMetricCompHealthChecker}
 
-	rc.healthCheckers = compHealthChecker
-
-	mockLogCompHealthChecker.On("Check", mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusFalse, reconciler.ReasonReferencedSecretMissing), nil)
-	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusFalse, reconciler.ReasonTraceCollectorDeploymentNotReady), nil)
-	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusFalse, reconciler.ReasonReferencedSecretMissing), nil)
+	mockLogCompHealthChecker.On("Check", mock.Anything).Return(makeLoggingCondition(metav1.ConditionFalse, reconciler.ReasonReferencedSecretMissing), nil)
+	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(makeTraceCondition(metav1.ConditionFalse, reconciler.ReasonTraceGatewayDeploymentNotReady), nil)
+	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(makeMetricCondition(metav1.ConditionFalse, reconciler.ReasonReferencedSecretMissing), nil)
 
 	err = rc.updateStatus(ctx, &obj)
 	require.NoError(t, err)
 	conditions := obj.Status.Conditions
 	for _, c := range conditions {
 		if c.Type == "Tracing" {
-			require.Equal(t, c.Reason, reconciler.ReasonTraceCollectorDeploymentNotReady)
+			require.Equal(t, c.Reason, reconciler.ReasonTraceGatewayDeploymentNotReady)
 		}
 	}
 	endpoints := obj.Status.GatewayEndpoints
@@ -381,7 +347,7 @@ func TestUpdateConditions_CheckWarningState(t *testing.T) {
 	require.Equal(t, endpoints.Traces.HTTP, "")
 }
 
-func getLoggingCondition(status metav1.ConditionStatus, reason string) *metav1.Condition {
+func makeLoggingCondition(status metav1.ConditionStatus, reason string) *metav1.Condition {
 	return &metav1.Condition{
 		Type:               "Logging",
 		Status:             status,
@@ -390,7 +356,7 @@ func getLoggingCondition(status metav1.ConditionStatus, reason string) *metav1.C
 		Message:            reconciler.Conditions[reason],
 	}
 }
-func getMetricCondition(status metav1.ConditionStatus, reason string) *metav1.Condition {
+func makeMetricCondition(status metav1.ConditionStatus, reason string) *metav1.Condition {
 	return &metav1.Condition{
 		Type:               "Metrics",
 		Status:             status,
@@ -399,7 +365,7 @@ func getMetricCondition(status metav1.ConditionStatus, reason string) *metav1.Co
 		Message:            reconciler.Conditions[reason],
 	}
 }
-func getTraceCondition(status metav1.ConditionStatus, reason string) *metav1.Condition {
+func makeTraceCondition(status metav1.ConditionStatus, reason string) *metav1.Condition {
 	return &metav1.Condition{
 		Type:               "Tracing",
 		Status:             status,

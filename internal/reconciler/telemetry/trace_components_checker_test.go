@@ -22,7 +22,7 @@ func TestTracePipelineMissingSecret(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	tc := traceComponentsChecker{client: fakeClient}
-	metricObj := getTracePipeline("foo", telemetryv1alpha1.TracePipelinePending, reconciler.ReasonReferencedSecretMissing)
+	metricObj := makeTracePipeline("foo", telemetryv1alpha1.TracePipelinePending, reconciler.ReasonReferencedSecretMissing)
 
 	err := fakeClient.Create(ctx, &metricObj)
 	require.NoError(t, err)
@@ -30,8 +30,8 @@ func TestTracePipelineMissingSecret(t *testing.T) {
 	cond, err := tc.Check(ctx)
 	require.NoError(t, err)
 	expectedCond := &metav1.Condition{
-		Type:    reconciler.TraceConditionType,
-		Status:  reconciler.ConditionStatusFalse,
+		Type:    "TraceComponentsHealthy",
+		Status:  "True",
 		Reason:  reconciler.ReasonReferencedSecretMissing,
 		Message: "One or more referenced secrets are missing",
 	}
@@ -47,8 +47,8 @@ func TestMultipleTracePipelineOnePending(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	tc := traceComponentsChecker{client: fakeClient}
-	traceObj0 := getTracePipeline("foo", telemetryv1alpha1.TracePipelinePending, reconciler.ReasonMetricGatewayDeploymentNotReady)
-	traceObj1 := getTracePipeline("bar", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
+	traceObj0 := makeTracePipeline("foo", telemetryv1alpha1.TracePipelinePending, reconciler.ReasonMetricGatewayDeploymentNotReady)
+	traceObj1 := makeTracePipeline("bar", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
 
 	err := fakeClient.Create(ctx, &traceObj0)
 	require.NoError(t, err)
@@ -58,9 +58,9 @@ func TestMultipleTracePipelineOnePending(t *testing.T) {
 	cond, err := tc.Check(ctx)
 	require.NoError(t, err)
 	expectedCond := &metav1.Condition{
-		Type:    reconciler.TraceConditionType,
-		Status:  reconciler.ConditionStatusFalse,
-		Reason:  reconciler.ReasonTraceCollectorDeploymentNotReady,
+		Type:    "TraceComponentsHealthy",
+		Status:  "True",
+		Reason:  "TraceCollectorDeploymentNotReady",
 		Message: "Trace collector is deployment not ready",
 	}
 	require.Equal(t, cond, expectedCond)
@@ -76,8 +76,8 @@ func TestAllTracePipelinesHealthy(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	tc := traceComponentsChecker{client: fakeClient}
 
-	traceObj0 := getTracePipeline("foo", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
-	traceObj1 := getTracePipeline("bar", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
+	traceObj0 := makeTracePipeline("foo", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
+	traceObj1 := makeTracePipeline("bar", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
 
 	err := fakeClient.Create(ctx, &traceObj0)
 	require.NoError(t, err)
@@ -87,9 +87,9 @@ func TestAllTracePipelinesHealthy(t *testing.T) {
 	cond, err := tc.Check(ctx)
 	require.NoError(t, err)
 	expectedCond := &metav1.Condition{
-		Type:    reconciler.TraceConditionType,
-		Status:  reconciler.ConditionStatusTrue,
-		Reason:  reconciler.ReasonTraceCollectorDeploymentReady,
+		Type:    "TraceComponentsHealthy",
+		Status:  "True",
+		Reason:  "TraceCollectorDeploymentReady",
 		Message: "Trace collector deployment is ready",
 	}
 	require.Equal(t, cond, expectedCond)
@@ -104,8 +104,8 @@ func TestMultipleTracePipelinesOneLock(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	tc := traceComponentsChecker{client: fakeClient}
 
-	traceObj0 := getTracePipeline("foo", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
-	traceObj1 := getTracePipeline("bar", telemetryv1alpha1.TracePipelinePending, reconciler.ReasonWaitingForLock)
+	traceObj0 := makeTracePipeline("foo", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
+	traceObj1 := makeTracePipeline("bar", telemetryv1alpha1.TracePipelinePending, reconciler.ReasonWaitingForLock)
 
 	err := fakeClient.Create(ctx, &traceObj0)
 	require.NoError(t, err)
@@ -115,16 +115,16 @@ func TestMultipleTracePipelinesOneLock(t *testing.T) {
 	cond, err := tc.Check(ctx)
 	require.NoError(t, err)
 	expectedCond := &metav1.Condition{
-		Type:    reconciler.TraceConditionType,
-		Status:  reconciler.ConditionStatusTrue,
-		Reason:  reconciler.ReasonTraceCollectorDeploymentReady,
+		Type:    "TraceComponentsHealthy",
+		Status:  "True",
+		Reason:  "TraceCollectorDeploymentNotReady",
 		Message: "Trace collector deployment is ready",
 	}
 	require.Equal(t, cond, expectedCond)
 
 }
 
-func getTracePipeline(name string, state telemetryv1alpha1.TracePipelineConditionType, reason string) telemetryv1alpha1.TracePipeline {
+func makeTracePipeline(name string, state telemetryv1alpha1.TracePipelineConditionType, reason string) telemetryv1alpha1.TracePipeline {
 	return telemetryv1alpha1.TracePipeline{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{

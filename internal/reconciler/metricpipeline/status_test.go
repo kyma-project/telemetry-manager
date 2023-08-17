@@ -174,7 +174,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonReferencedSecretMissingReason)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonReferencedSecretMissing)
 	})
 
 	t.Run("should add running condition if referenced secret exists and metric gateway deployment is ready", func(t *testing.T) {

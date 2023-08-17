@@ -11,7 +11,12 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+)
+
+const (
+	logComponentsHealthyConditionType    = "LogComponentsHealthy"
+	traceComponentsHealthyConditionType  = "TraceComponentsHealthy"
+	metricComponentsHealthyConditionType = "MetricComponentsHealthy"
 )
 
 //go:generate mockery --name ComponentHealthChecker --filename component_health_checker.go
@@ -45,7 +50,7 @@ func (r *Reconciler) nextState(obj *operatorv1alpha1.Telemetry) operatorv1alpha1
 	var state operatorv1alpha1.State
 	state = "Ready"
 	for _, c := range conditions {
-		if c.Status == reconciler.ConditionStatusFalse {
+		if c.Status == metav1.ConditionFalse {
 			state = "Warning"
 		}
 	}
@@ -87,7 +92,7 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, conditi
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
-	if !checkComponentConditionIsHealthy(reconciler.MetricConditionType, conditions) {
+	if !checkComponentConditionIsHealthy(metricComponentsHealthyConditionType, conditions) {
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
@@ -104,7 +109,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, conditio
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
-	if !checkComponentConditionIsHealthy(reconciler.TraceConditionType, conditions) {
+	if !checkComponentConditionIsHealthy(traceComponentsHealthyConditionType, conditions) {
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
@@ -121,7 +126,7 @@ func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndp
 
 func checkComponentConditionIsHealthy(condType string, conditions *[]metav1.Condition) bool {
 	for _, c := range *conditions {
-		if c.Type == condType && c.Status == reconciler.ConditionStatusTrue {
+		if c.Type == condType && c.Status == metav1.ConditionTrue {
 			return true
 		}
 	}

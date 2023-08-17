@@ -39,7 +39,7 @@ func (t *traceComponentsChecker) determineReason(tracePipelines []v1alpha1.Trace
 	for _, pipeline := range tracePipelines {
 		conditions := pipeline.Status.Conditions
 		if len(conditions) == 0 {
-			return reconciler.ReasonTraceCollectorDeploymentNotReady
+			return reconciler.ReasonTraceGatewayDeploymentNotReady
 		}
 
 		lastCondition := conditions[len(conditions)-1]
@@ -47,28 +47,28 @@ func (t *traceComponentsChecker) determineReason(tracePipelines []v1alpha1.Trace
 			// Skip the case when user has deployed more than supported pipelines
 			continue
 		}
-		if lastCondition.Reason == reconciler.ReasonReferencedSecretMissingReason {
-			return reconciler.ReasonReferencedSecretMissingReason
+		if lastCondition.Reason == reconciler.ReasonReferencedSecretMissing {
+			return reconciler.ReasonReferencedSecretMissing
 		}
 		if lastCondition.Type == v1alpha1.TracePipelinePending {
-			return reconciler.ReasonTraceCollectorDeploymentNotReady
+			return reconciler.ReasonTraceGatewayDeploymentNotReady
 		}
 	}
-	return reconciler.ReasonTraceCollectorDeploymentReady
+	return reconciler.ReasonTraceGatewayDeploymentReady
 }
 
 func (t *traceComponentsChecker) createConditionFromReason(reason string) *metav1.Condition {
-	if reason == reconciler.ReasonTraceCollectorDeploymentReady || reason == reconciler.ReasonNoPipelineDeployed {
+	if reason == reconciler.ReasonTraceGatewayDeploymentReady || reason == reconciler.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
-			Type:    reconciler.TraceConditionType,
-			Status:  reconciler.ConditionStatusTrue,
+			Type:    traceComponentsHealthyConditionType,
+			Status:  metav1.ConditionTrue,
 			Reason:  reason,
 			Message: reconciler.Conditions[reason],
 		}
 	}
 	return &metav1.Condition{
-		Type:    reconciler.TraceConditionType,
-		Status:  reconciler.ConditionStatusFalse,
+		Type:    traceComponentsHealthyConditionType,
+		Status:  metav1.ConditionFalse,
 		Reason:  reason,
 		Message: reconciler.Conditions[reason],
 	}

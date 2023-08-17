@@ -63,11 +63,11 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 			return nil
 		}
 
-		running := telemetryv1alpha1.NewTracePipelineCondition(reconciler.ReasonTraceCollectorDeploymentReady, telemetryv1alpha1.TracePipelineRunning)
+		running := telemetryv1alpha1.NewTracePipelineCondition(reconciler.ReasonTraceGatewayDeploymentReady, telemetryv1alpha1.TracePipelineRunning)
 		return setCondition(ctx, r.Client, &pipeline, running)
 	}
 
-	pending := telemetryv1alpha1.NewTracePipelineCondition(reconciler.ReasonTraceCollectorDeploymentNotReady, telemetryv1alpha1.TracePipelinePending)
+	pending := telemetryv1alpha1.NewTracePipelineCondition(reconciler.ReasonTraceGatewayDeploymentNotReady, telemetryv1alpha1.TracePipelinePending)
 
 	if pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning) {
 		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))

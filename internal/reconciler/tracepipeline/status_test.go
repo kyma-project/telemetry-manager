@@ -54,7 +54,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonTraceCollectorDeploymentNotReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonTraceGatewayDeploymentNotReady)
 	})
 
 	t.Run("should add running condition if trace collector deployment is ready", func(t *testing.T) {
@@ -87,7 +87,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelineRunning)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonTraceCollectorDeploymentReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonTraceGatewayDeploymentReady)
 	})
 
 	t.Run("should reset conditions and add pending condition if trace collector deployment becomes not ready again", func(t *testing.T) {
@@ -104,8 +104,8 @@ func TestUpdateStatus(t *testing.T) {
 				}},
 			Status: telemetryv1alpha1.TracePipelineStatus{
 				Conditions: []telemetryv1alpha1.TracePipelineCondition{
-					{Reason: reconciler.ReasonTraceCollectorDeploymentNotReady, Type: telemetryv1alpha1.TracePipelinePending},
-					{Reason: reconciler.ReasonTraceCollectorDeploymentReady, Type: telemetryv1alpha1.TracePipelineRunning},
+					{Reason: reconciler.ReasonTraceGatewayDeploymentNotReady, Type: telemetryv1alpha1.TracePipelinePending},
+					{Reason: reconciler.ReasonTraceGatewayDeploymentReady, Type: telemetryv1alpha1.TracePipelineRunning},
 				},
 			},
 		}
@@ -126,7 +126,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonTraceCollectorDeploymentNotReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonTraceGatewayDeploymentNotReady)
 	})
 
 	t.Run("should reset conditions and add pending condition if some referenced secret does not exist anymore", func(t *testing.T) {
@@ -137,8 +137,8 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			Status: telemetryv1alpha1.TracePipelineStatus{
 				Conditions: []telemetryv1alpha1.TracePipelineCondition{
-					{Reason: reconciler.ReasonTraceCollectorDeploymentNotReady, Type: telemetryv1alpha1.TracePipelinePending},
-					{Reason: reconciler.ReasonTraceCollectorDeploymentReady, Type: telemetryv1alpha1.TracePipelineRunning},
+					{Reason: reconciler.ReasonTraceGatewayDeploymentNotReady, Type: telemetryv1alpha1.TracePipelinePending},
+					{Reason: reconciler.ReasonTraceGatewayDeploymentReady, Type: telemetryv1alpha1.TracePipelineRunning},
 				},
 			},
 			Spec: telemetryv1alpha1.TracePipelineSpec{
@@ -174,7 +174,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonReferencedSecretMissingReason)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonReferencedSecretMissing)
 	})
 
 	t.Run("should add running condition if referenced secret exists and trace collector deployment is ready", func(t *testing.T) {
@@ -224,7 +224,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelineRunning)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonTraceCollectorDeploymentReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonTraceGatewayDeploymentReady)
 	})
 
 	t.Run("should add pending condition if waiting for lock", func(t *testing.T) {
@@ -292,6 +292,6 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonTraceCollectorDeploymentNotReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonTraceGatewayDeploymentNotReady)
 	})
 }

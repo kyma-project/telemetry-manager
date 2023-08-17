@@ -42,8 +42,8 @@ func (m *metricComponentsChecker) determineReason(metricPipelines []v1alpha1.Met
 			// Skip the case when user has deployed more than supported pipelines
 			continue
 		}
-		if lastCondition.Reason == reconciler.ReasonReferencedSecretMissingReason {
-			return reconciler.ReasonReferencedSecretMissingReason
+		if lastCondition.Reason == reconciler.ReasonReferencedSecretMissing {
+			return reconciler.ReasonReferencedSecretMissing
 		}
 		if lastCondition.Type == v1alpha1.MetricPipelinePending {
 			return reconciler.ReasonMetricGatewayDeploymentNotReady
@@ -55,15 +55,15 @@ func (m *metricComponentsChecker) determineReason(metricPipelines []v1alpha1.Met
 func (m *metricComponentsChecker) createConditionFromReason(reason string) *metav1.Condition {
 	if reason == reconciler.ReasonMetricGatewayDeploymentReady || reason == reconciler.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
-			Type:    reconciler.MetricConditionType,
-			Status:  reconciler.ConditionStatusTrue,
+			Type:    metricComponentsHealthyConditionType,
+			Status:  metav1.ConditionTrue,
 			Reason:  reason,
 			Message: reconciler.Conditions[reason],
 		}
 	}
 	return &metav1.Condition{
-		Type:    reconciler.MetricConditionType,
-		Status:  reconciler.ConditionStatusFalse,
+		Type:    metricComponentsHealthyConditionType,
+		Status:  metav1.ConditionFalse,
 		Reason:  reason,
 		Message: reconciler.Conditions[reason],
 	}

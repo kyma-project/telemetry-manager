@@ -22,7 +22,7 @@ func TestMetricPipelineMissingSecret(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	mc := metricComponentsChecker{client: fakeClient}
-	metricObj := getMetricPipeline("foo", telemetryv1alpha1.MetricPipelinePending, reconciler.ReasonReferencedSecretMissing)
+	metricObj := makeMetricPipeline("foo", telemetryv1alpha1.MetricPipelinePending, reconciler.ReasonReferencedSecretMissing)
 
 	err := fakeClient.Create(ctx, &metricObj)
 	require.NoError(t, err)
@@ -30,9 +30,9 @@ func TestMetricPipelineMissingSecret(t *testing.T) {
 	cond, err := mc.Check(ctx)
 	require.NoError(t, err)
 	expectedCond := &metav1.Condition{
-		Type:    reconciler.MetricConditionType,
-		Status:  reconciler.ConditionStatusFalse,
-		Reason:  reconciler.ReasonReferencedSecretMissing,
+		Type:    "MetricComponentsHealthy",
+		Status:  "False",
+		Reason:  "ReferencedSecretMissing",
 		Message: "One or more referenced secrets are missing",
 	}
 	require.Equal(t, cond, expectedCond)
@@ -47,8 +47,8 @@ func TestMultipleMetricPipelineOnePending(t *testing.T) {
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	mc := metricComponentsChecker{client: fakeClient}
-	metricObj0 := getMetricPipeline("foo", telemetryv1alpha1.MetricPipelinePending, reconciler.ReasonMetricGatewayDeploymentNotReady)
-	metricObj1 := getMetricPipeline("bar", telemetryv1alpha1.MetricPipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
+	metricObj0 := makeMetricPipeline("foo", telemetryv1alpha1.MetricPipelinePending, reconciler.ReasonMetricGatewayDeploymentNotReady)
+	metricObj1 := makeMetricPipeline("bar", telemetryv1alpha1.MetricPipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
 
 	err := fakeClient.Create(ctx, &metricObj0)
 	require.NoError(t, err)
@@ -58,9 +58,9 @@ func TestMultipleMetricPipelineOnePending(t *testing.T) {
 	cond, err := mc.Check(ctx)
 	require.NoError(t, err)
 	expectedCond := &metav1.Condition{
-		Type:    reconciler.MetricConditionType,
-		Status:  reconciler.ConditionStatusFalse,
-		Reason:  reconciler.ReasonMetricGatewayDeploymentNotReady,
+		Type:    "MetricComponentsHealthy",
+		Status:  "False",
+		Reason:  "MetricGatewayDeploymentNotReady",
 		Message: "Metric gateway deployment is not ready",
 	}
 	require.Equal(t, cond, expectedCond)
@@ -76,8 +76,8 @@ func TestAllMetricPipelinesHealthy(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	mc := metricComponentsChecker{client: fakeClient}
 
-	metricObj0 := getMetricPipeline("foo", telemetryv1alpha1.MetricPipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
-	metricObj1 := getMetricPipeline("bar", telemetryv1alpha1.MetricPipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
+	metricObj0 := makeMetricPipeline("foo", telemetryv1alpha1.MetricPipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
+	metricObj1 := makeMetricPipeline("bar", telemetryv1alpha1.MetricPipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
 
 	err := fakeClient.Create(ctx, &metricObj0)
 	require.NoError(t, err)
@@ -87,9 +87,9 @@ func TestAllMetricPipelinesHealthy(t *testing.T) {
 	cond, err := mc.Check(ctx)
 	require.NoError(t, err)
 	expectedCond := &metav1.Condition{
-		Type:    reconciler.MetricConditionType,
-		Status:  reconciler.ConditionStatusTrue,
-		Reason:  reconciler.ReasonMetricGatewayDeploymentReady,
+		Type:    "MetricComponentsHealthy",
+		Status:  "True",
+		Reason:  "MetricGatewayDeploymentReady",
 		Message: "Metric gateway deployment is ready",
 	}
 	require.Equal(t, cond, expectedCond)
@@ -105,8 +105,8 @@ func TestMultipleMetricPipelinesOneLock(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 	mc := metricComponentsChecker{client: fakeClient}
 
-	metricObj0 := getMetricPipeline("foo", telemetryv1alpha1.MetricPipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
-	metricObj1 := getMetricPipeline("bar", telemetryv1alpha1.MetricPipelinePending, reconciler.ReasonWaitingForLock)
+	metricObj0 := makeMetricPipeline("foo", telemetryv1alpha1.MetricPipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
+	metricObj1 := makeMetricPipeline("bar", telemetryv1alpha1.MetricPipelinePending, reconciler.ReasonWaitingForLock)
 
 	err := fakeClient.Create(ctx, &metricObj0)
 	require.NoError(t, err)
@@ -116,16 +116,16 @@ func TestMultipleMetricPipelinesOneLock(t *testing.T) {
 	cond, err := mc.Check(ctx)
 	require.NoError(t, err)
 	expectedCond := &metav1.Condition{
-		Type:    reconciler.MetricConditionType,
-		Status:  reconciler.ConditionStatusTrue,
-		Reason:  reconciler.ReasonMetricGatewayDeploymentReady,
+		Type:    "MetricComponentsHealthy",
+		Status:  "True",
+		Reason:  "MetricGatewayDeploymentReady",
 		Message: "Metric gateway deployment is ready",
 	}
 	require.Equal(t, cond, expectedCond)
 
 }
 
-func getMetricPipeline(name string, state telemetryv1alpha1.MetricPipelineConditionType, reason string) telemetryv1alpha1.MetricPipeline {
+func makeMetricPipeline(name string, state telemetryv1alpha1.MetricPipelineConditionType, reason string) telemetryv1alpha1.MetricPipeline {
 	return telemetryv1alpha1.MetricPipeline{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
