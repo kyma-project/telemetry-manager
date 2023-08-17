@@ -37,6 +37,10 @@ func (t *traceComponentsHealthChecker) validateTracePipeline(tracePipeines []v1a
 		if len(conditions) == 0 {
 			return reconciler.ReasonTraceCollectorDeploymentNotReady
 		}
+		if conditions[len(conditions)-1].Reason == reconciler.ReasonWaitingForLock {
+			// Skip the case when user has deployed more than supported pipelines
+			continue
+		}
 		if conditions[len(conditions)-1].Reason == reconciler.ReasonReferencedSecretMissingReason {
 			return reconciler.ReasonReferencedSecretMissingReason
 		}

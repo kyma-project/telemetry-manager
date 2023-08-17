@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 )
 
-//go:generate mockery --name ComponentHealthChecker --filename conditions_prober.go
+//go:generate mockery --name ComponentHealthChecker --filename component_health_checker.go
 type ComponentHealthChecker interface {
 	Check(ctx context.Context) (*metav1.Condition, error)
 }

@@ -37,6 +37,10 @@ func (m *metricComponentsHealthChecker) validateMetricPipeline(metricPipelines [
 		if len(conditions) == 0 {
 			return reconciler.ReasonMetricGatewayDeploymentNotReady
 		}
+		if conditions[len(conditions)-1].Reason == reconciler.ReasonWaitingForLock {
+			// Skip the case when user has deployed more than supported pipelines
+			continue
+		}
 		if conditions[len(conditions)-1].Reason == reconciler.ReasonReferencedSecretMissingReason {
 			return reconciler.ReasonReferencedSecretMissingReason
 		}
