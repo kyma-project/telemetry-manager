@@ -91,8 +91,7 @@ func TestUpdateConditions_NoPipelines(t *testing.T) {
 		Metrics: &operatorv1alpha1.OTLPEndpoints{},
 	}
 	require.Equal(t, endpoints, expectedEndpoint)
-	var expectedState operatorv1alpha1.State
-	expectedState = "Ready"
+	var expectedState operatorv1alpha1.State = "Ready"
 	require.Equal(t, obj.Status.Status.State, expectedState)
 }
 
@@ -316,8 +315,7 @@ func TestUpdateConditions_TracePipelinePending(t *testing.T) {
 	err = rc.updateStatus(ctx, &obj)
 	require.NoError(t, err)
 	state := obj.Status.Status.State
-	var expectedState operatorv1alpha1.State
-	expectedState = "Warning"
+	var expectedState operatorv1alpha1.State = "Warning"
 	require.Equal(t, state, expectedState)
 
 }
@@ -368,7 +366,7 @@ func TestUpdateConditions_CheckWarningState(t *testing.T) {
 
 	mockLogCompHealthChecker.On("Check", mock.Anything).Return(getLoggingCondition(reconciler.ConditionStatusFalse, reconciler.ReasonReferencedSecretMissing), nil)
 	mockTraceCompHealthChecker.On("Check", mock.Anything).Return(getTraceCondition(reconciler.ConditionStatusFalse, reconciler.ReasonTraceCollectorDeploymentNotReady), nil)
-	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusTrue, reconciler.ReasonNoPipelineDeployed), nil)
+	mockMetricCompHealthChecker.On("Check", mock.Anything).Return(getMetricCondition(reconciler.ConditionStatusFalse, reconciler.ReasonReferencedSecretMissing), nil)
 
 	err = rc.updateStatus(ctx, &obj)
 	require.NoError(t, err)
