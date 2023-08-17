@@ -20,56 +20,27 @@ type ComponentHealthChecker interface {
 }
 
 func (r *Reconciler) updateStatus(ctx context.Context, obj *operatorv1alpha1.Telemetry) error {
-	for component, healthChecker := range r.healthCheckers {
-		// skip metric pipeline if metrics are not enabled
-		if !r.checkMetricPipelineCRExist(ctx) && component == "Metrics Components" {
-			continue
-		}
-
-		if err := r.updateConditions(ctx, component, healthChecker, obj); err != nil {
+	for _, checker := range r.healthCheckers {
+		if err := r.updateComponentCondition(ctx, checker, obj); err != nil {
 			return err
 		}
 	}
-	return r.updateEndpoints(ctx, obj)
+	return r.updateGatewayEndpoints(ctx, obj)
 }
 
-func (r *Reconciler) updateConditions(ctx context.Context, compName string, cp ComponentHealthChecker, obj *operatorv1alpha1.Telemetry) error {
-	newCondition, err := cp.Check(ctx)
+func (r *Reconciler) updateComponentCondition(ctx context.Context, checker ComponentHealthChecker, telemetry *operatorv1alpha1.Telemetry) error {
+	newCondition, err := checker.Check(ctx)
 	if err != nil {
-		return fmt.Errorf("unable to update conditions for: %v, %w", compName, err)
+		return fmt.Errorf("unable to check component: %w", err)
 	}
 
-	newCondition.ObservedGeneration = obj.GetGeneration()
-
-	meta.SetStatusCondition(&obj.Status.Conditions, *newCondition)
-	obj.Status.Status.State = r.state(obj)
-	return r.serverSideApplyStatus(ctx, obj)
+	newCondition.ObservedGeneration = telemetry.GetGeneration()
+	meta.SetStatusCondition(&telemetry.Status.Conditions, *newCondition)
+	telemetry.Status.Status.State = r.nextState(telemetry)
+	return r.serverSideApplyStatus(ctx, telemetry)
 }
 
-func (r *Reconciler) updateEndpoints(ctx context.Context, obj *operatorv1alpha1.Telemetry) error {
-	logf := log.FromContext(ctx)
-	var metricEndpoints *operatorv1alpha1.OTLPEndpoints
-	var err error
-
-	if r.checkMetricPipelineCRExist(ctx) {
-		metricEndpoints, err = r.metricEndpoints(ctx, r.config, &obj.Status.Conditions)
-		if err != nil {
-			logf.Error(err, "Unable to update metric endpoints")
-		}
-	}
-
-	traceEndpoints, err := r.traceEndpoints(ctx, r.config, &obj.Status.Conditions)
-	if err != nil {
-		logf.Error(err, "Unable to update trace endpoints")
-	}
-
-	obj.Status.GatewayEndpoints = operatorv1alpha1.GatewayEndpoints{
-		Traces:  traceEndpoints,
-		Metrics: metricEndpoints,
-	}
-	return r.serverSideApplyStatus(ctx, obj)
-}
-func (r *Reconciler) state(obj *operatorv1alpha1.Telemetry) operatorv1alpha1.State {
+func (r *Reconciler) nextState(obj *operatorv1alpha1.Telemetry) operatorv1alpha1.State {
 	conditions := obj.Status.Conditions
 	var state operatorv1alpha1.State
 	state = "Ready"
@@ -79,6 +50,31 @@ func (r *Reconciler) state(obj *operatorv1alpha1.Telemetry) operatorv1alpha1.Sta
 		}
 	}
 	return state
+}
+
+func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+	logf := log.FromContext(ctx)
+	var metricEndpoints *operatorv1alpha1.OTLPEndpoints
+	var err error
+
+	if r.config.Metrics.Enabled {
+		metricEndpoints, err = r.metricEndpoints(ctx, r.config, &telemetry.Status.Conditions)
+		if err != nil {
+			logf.Error(err, "Unable to update metric endpoints")
+		}
+	}
+
+	traceEndpoints, err := r.traceEndpoints(ctx, r.config, &telemetry.Status.Conditions)
+	if err != nil {
+		logf.Error(err, "Unable to update trace endpoints")
+	}
+
+	telemetry.Status.GatewayEndpoints = operatorv1alpha1.GatewayEndpoints{
+		Traces:  traceEndpoints,
+		Metrics: metricEndpoints,
+	}
+
+	return r.serverSideApplyStatus(ctx, telemetry)
 }
 
 func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, conditions *[]metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {

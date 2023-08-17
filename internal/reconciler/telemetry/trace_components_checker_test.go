@@ -21,7 +21,7 @@ func TestTracePipelineMissingSecret(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	tc := traceComponentsHealthChecker{client: fakeClient}
+	tc := traceComponentsChecker{client: fakeClient}
 	metricObj := getTracePipeline("foo", telemetryv1alpha1.TracePipelinePending, reconciler.ReasonReferencedSecretMissing)
 
 	err := fakeClient.Create(ctx, &metricObj)
@@ -46,7 +46,7 @@ func TestMultipleTracePipelineOnePending(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	tc := traceComponentsHealthChecker{client: fakeClient}
+	tc := traceComponentsChecker{client: fakeClient}
 	traceObj0 := getTracePipeline("foo", telemetryv1alpha1.TracePipelinePending, reconciler.ReasonMetricGatewayDeploymentNotReady)
 	traceObj1 := getTracePipeline("bar", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
 
@@ -74,7 +74,7 @@ func TestAllTracePipelinesHealthy(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	tc := traceComponentsHealthChecker{client: fakeClient}
+	tc := traceComponentsChecker{client: fakeClient}
 
 	traceObj0 := getTracePipeline("foo", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
 	traceObj1 := getTracePipeline("bar", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
@@ -102,7 +102,7 @@ func TestMultipleTracePipelinesOneLock(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	tc := traceComponentsHealthChecker{client: fakeClient}
+	tc := traceComponentsChecker{client: fakeClient}
 
 	traceObj0 := getTracePipeline("foo", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
 	traceObj1 := getTracePipeline("bar", telemetryv1alpha1.TracePipelinePending, reconciler.ReasonWaitingForLock)

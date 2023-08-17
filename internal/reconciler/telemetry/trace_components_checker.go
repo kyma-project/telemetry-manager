@@ -11,47 +11,53 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 )
 
-type traceComponentsHealthChecker struct {
+type traceComponentsChecker struct {
 	client client.Client
 }
 
-func (t *traceComponentsHealthChecker) Check(ctx context.Context) (*metav1.Condition, error) {
+func (t *traceComponentsChecker) Check(ctx context.Context) (*metav1.Condition, error) {
 	var tracePipelines v1alpha1.TracePipelineList
 	err := t.client.List(ctx, &tracePipelines)
 	if err != nil {
 		return &metav1.Condition{}, fmt.Errorf("failed to get all trace pipelines while syncing conditions: %w", err)
 	}
 	if len(tracePipelines.Items) == 0 {
-		return t.buildTelemetryConditions(reconciler.ReasonNoPipelineDeployed), nil
+		return t.createConditionFromReason(reconciler.ReasonNoPipelineDeployed), nil
 	}
 
 	// Try to get the status of the trace collector via the pipelines
-	status := t.validateTracePipeline(tracePipelines.Items)
-	return t.buildTelemetryConditions(status), nil
+	status := t.determineReason(tracePipelines.Items)
+	return t.createConditionFromReason(status), nil
 
 }
 
-func (t *traceComponentsHealthChecker) validateTracePipeline(tracePipeines []v1alpha1.TracePipeline) string {
-	for _, m := range tracePipeines {
-		conditions := m.Status.Conditions
+func (t *traceComponentsChecker) determineReason(tracePipelines []v1alpha1.TracePipeline) string {
+	if len(tracePipelines) == 0 {
+		return reconciler.ReasonNoPipelineDeployed
+	}
+
+	for _, pipeline := range tracePipelines {
+		conditions := pipeline.Status.Conditions
 		if len(conditions) == 0 {
 			return reconciler.ReasonTraceCollectorDeploymentNotReady
 		}
-		if conditions[len(conditions)-1].Reason == reconciler.ReasonWaitingForLock {
+
+		lastCondition := conditions[len(conditions)-1]
+		if lastCondition.Reason == reconciler.ReasonWaitingForLock {
 			// Skip the case when user has deployed more than supported pipelines
 			continue
 		}
-		if conditions[len(conditions)-1].Reason == reconciler.ReasonReferencedSecretMissingReason {
+		if lastCondition.Reason == reconciler.ReasonReferencedSecretMissingReason {
 			return reconciler.ReasonReferencedSecretMissingReason
 		}
-		if conditions[len(conditions)-1].Type == v1alpha1.TracePipelinePending {
+		if lastCondition.Type == v1alpha1.TracePipelinePending {
 			return reconciler.ReasonTraceCollectorDeploymentNotReady
 		}
 	}
 	return reconciler.ReasonTraceCollectorDeploymentReady
 }
 
-func (t *traceComponentsHealthChecker) buildTelemetryConditions(reason string) *metav1.Condition {
+func (t *traceComponentsChecker) createConditionFromReason(reason string) *metav1.Condition {
 	if reason == reconciler.ReasonTraceCollectorDeploymentReady || reason == reconciler.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
 			Type:    reconciler.TraceConditionType,

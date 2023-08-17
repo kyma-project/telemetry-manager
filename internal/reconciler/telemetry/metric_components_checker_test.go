@@ -21,7 +21,7 @@ func TestMetricPipelineMissingSecret(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	mc := metricComponentsHealthChecker{client: fakeClient}
+	mc := metricComponentsChecker{client: fakeClient}
 	metricObj := getMetricPipeline("foo", telemetryv1alpha1.MetricPipelinePending, reconciler.ReasonReferencedSecretMissing)
 
 	err := fakeClient.Create(ctx, &metricObj)
@@ -46,7 +46,7 @@ func TestMultipleMetricPipelineOnePending(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	mc := metricComponentsHealthChecker{client: fakeClient}
+	mc := metricComponentsChecker{client: fakeClient}
 	metricObj0 := getMetricPipeline("foo", telemetryv1alpha1.MetricPipelinePending, reconciler.ReasonMetricGatewayDeploymentNotReady)
 	metricObj1 := getMetricPipeline("bar", telemetryv1alpha1.MetricPipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
 
@@ -74,7 +74,7 @@ func TestAllMetricPipelinesHealthy(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	mc := metricComponentsHealthChecker{client: fakeClient}
+	mc := metricComponentsChecker{client: fakeClient}
 
 	metricObj0 := getMetricPipeline("foo", telemetryv1alpha1.MetricPipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
 	metricObj1 := getMetricPipeline("bar", telemetryv1alpha1.MetricPipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
@@ -103,7 +103,7 @@ func TestMultipleMetricPipelinesOneLock(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	mc := metricComponentsHealthChecker{client: fakeClient}
+	mc := metricComponentsChecker{client: fakeClient}
 
 	metricObj0 := getMetricPipeline("foo", telemetryv1alpha1.MetricPipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
 	metricObj1 := getMetricPipeline("bar", telemetryv1alpha1.MetricPipelinePending, reconciler.ReasonWaitingForLock)

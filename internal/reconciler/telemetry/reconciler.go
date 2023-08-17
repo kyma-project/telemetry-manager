@@ -59,20 +59,24 @@ type Reconciler struct {
 	// EventRecorder for creating k8s events
 	record.EventRecorder
 	config         Config
-	healthCheckers map[string]ComponentHealthChecker
+	healthCheckers []ComponentHealthChecker
 }
 
 func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, config Config) *Reconciler {
+	healthCheckers := []ComponentHealthChecker{
+		&logComponentsChecker{client: client},
+		&traceComponentsChecker{client: client},
+	}
+	if config.Metrics.Enabled {
+		healthCheckers = append(healthCheckers, &metricComponentsChecker{client: client})
+	}
+
 	return &Reconciler{
-		Client:        client,
-		Scheme:        scheme,
-		EventRecorder: eventRecorder,
-		config:        config,
-		healthCheckers: map[string]ComponentHealthChecker{
-			"Log Components":     &logComponentsHealthChecker{client: client},
-			"Trace Components":   &traceComponentsHealthChecker{client: client},
-			"Metrics Components": &metricComponentsHealthChecker{client: client},
-		},
+		Client:         client,
+		Scheme:         scheme,
+		EventRecorder:  eventRecorder,
+		config:         config,
+		healthCheckers: healthCheckers,
 	}
 }
 
@@ -80,7 +84,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	logger := log.FromContext(ctx)
 
 	objectInstance := operatorv1alpha1.Telemetry{}
-
 	if err := r.Client.Get(ctx, req.NamespacedName, &objectInstance); err != nil {
 		logger.Info(req.NamespacedName.String() + " got deleted!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)

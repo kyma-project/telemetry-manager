@@ -21,7 +21,7 @@ func TestLogPipelineMissingSecret(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	lc := logComponentsHealthChecker{client: fakeClient}
+	lc := logComponentsChecker{client: fakeClient}
 	logObj := getLogPipeline("foo", telemetryv1alpha1.LogPipelinePending, reconciler.ReasonReferencedSecretMissing)
 
 	err := fakeClient.Create(ctx, &logObj)
@@ -46,7 +46,7 @@ func TestMultipleLogPipelineOnePending(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	lc := logComponentsHealthChecker{client: fakeClient}
+	lc := logComponentsChecker{client: fakeClient}
 	logObj0 := getLogPipeline("foo", telemetryv1alpha1.LogPipelinePending, reconciler.ReasonFluentBitDSNotReady)
 	logObj1 := getLogPipeline("bar", telemetryv1alpha1.LogPipelineRunning, reconciler.ReasonFluentBitDSReady)
 
@@ -74,7 +74,7 @@ func TestAllLogPipelinesHealthy(t *testing.T) {
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	lc := logComponentsHealthChecker{client: fakeClient}
+	lc := logComponentsChecker{client: fakeClient}
 
 	logObj0 := getLogPipeline("foo", telemetryv1alpha1.LogPipelineRunning, reconciler.ReasonFluentBitDSReady)
 	logObj1 := getLogPipeline("bar", telemetryv1alpha1.LogPipelineRunning, reconciler.ReasonFluentBitDSReady)
