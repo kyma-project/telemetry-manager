@@ -5,4 +5,3 @@
 - [Metrics](04-metrics.md)
 - [Tutorials](05-tutorials.md)
 - [Resources](resources/README.md)
-- [Integrate Kyma with Dynatrace](integration/dynatrace/README.md)
