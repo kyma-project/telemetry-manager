@@ -353,7 +353,7 @@ func makeLoggingCondition(status metav1.ConditionStatus, reason string) *metav1.
 		Status:             status,
 		ObservedGeneration: 1,
 		Reason:             reason,
-		Message:            reconciler.Conditions[reason],
+		Message:            reconciler.Condition(reason),
 	}
 }
 func makeMetricCondition(status metav1.ConditionStatus, reason string) *metav1.Condition {
@@ -362,7 +362,7 @@ func makeMetricCondition(status metav1.ConditionStatus, reason string) *metav1.C
 		Status:             status,
 		ObservedGeneration: 1,
 		Reason:             reason,
-		Message:            reconciler.Conditions[reason],
+		Message:            reconciler.Condition(reason),
 	}
 }
 func makeTraceCondition(status metav1.ConditionStatus, reason string) *metav1.Condition {
@@ -371,6 +371,6 @@ func makeTraceCondition(status metav1.ConditionStatus, reason string) *metav1.Co
 		Status:             status,
 		ObservedGeneration: 1,
 		Reason:             reason,
-		Message:            reconciler.Conditions[reason],
+		Message:            reconciler.Condition(reason),
 	}
 }
