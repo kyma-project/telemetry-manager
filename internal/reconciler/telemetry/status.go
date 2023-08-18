@@ -63,13 +63,13 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 	var err error
 
 	if r.config.Metrics.Enabled {
-		metricEndpoints, err = r.metricEndpoints(ctx, r.config, &telemetry.Status.Conditions)
+		metricEndpoints, err = r.metricEndpoints(ctx, r.config, telemetry.Status.Conditions)
 		if err != nil {
 			logf.Error(err, "Unable to update metric endpoints")
 		}
 	}
 
-	traceEndpoints, err := r.traceEndpoints(ctx, r.config, &telemetry.Status.Conditions)
+	traceEndpoints, err := r.traceEndpoints(ctx, r.config, telemetry.Status.Conditions)
 	if err != nil {
 		logf.Error(err, "Unable to update trace endpoints")
 	}
@@ -82,7 +82,7 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 	return r.serverSideApplyStatus(ctx, telemetry)
 }
 
-func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, conditions *[]metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {
+func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, conditions []metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {
 	var metricPipelines v1alpha1.MetricPipelineList
 	err := r.Client.List(ctx, &metricPipelines)
 	if err != nil {
@@ -92,14 +92,14 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, conditi
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
-	if !checkComponentConditionIsHealthy(metricComponentsHealthyConditionType, conditions) {
+	if !meta.IsStatusConditionTrue(conditions, metricComponentsHealthyConditionType) {
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
 	return makeOTLPEndpoints(config.Metrics.OTLPServiceName, config.Metrics.Namespace), nil
 }
 
-func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, conditions *[]metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {
+func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, conditions []metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {
 	var tracePipelines v1alpha1.TracePipelineList
 	err := r.Client.List(ctx, &tracePipelines)
 	if err != nil {
@@ -109,7 +109,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, conditio
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
-	if !checkComponentConditionIsHealthy(traceComponentsHealthyConditionType, conditions) {
+	if !meta.IsStatusConditionTrue(conditions, traceComponentsHealthyConditionType) {
 		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
@@ -121,14 +121,4 @@ func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndp
 		HTTP: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPHTTP),
 		GRPC: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPGRPC),
 	}
-
-}
-
-func checkComponentConditionIsHealthy(condType string, conditions *[]metav1.Condition) bool {
-	for _, c := range *conditions {
-		if c.Type == condType && c.Status == metav1.ConditionTrue {
-			return true
-		}
-	}
-	return false
 }
