@@ -20,12 +20,6 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-var (
-	telemetryFluentbitName              = "telemetry-fluent-bit"
-	telemetryWebhookEndpoint            = "telemetry-operator-webhook"
-	telemetryFluentbitMetricServiceName = "telemetry-fluent-bit-metrics"
-)
-
 const configParser = `Format regex
 Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$
 Time_Key time
