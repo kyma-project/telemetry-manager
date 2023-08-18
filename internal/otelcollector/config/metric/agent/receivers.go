@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
-const scrapeInterval = 10 * time.Second
+const scrapeInterval = 30 * time.Second
 
 func makeReceiversConfig(inputs inputSources) Receivers {
 	var receiversConfig Receivers
