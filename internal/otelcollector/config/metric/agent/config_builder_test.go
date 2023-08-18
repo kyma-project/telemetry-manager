@@ -287,7 +287,7 @@ receivers:
         config:
             scrape_configs:
                 - job_name: opentelemetry-collector
-                  scrape_interval: 10s
+                  scrape_interval: 30s
                   static_configs:
                     - targets:
                         - ${MY_POD_IP}:8888
@@ -295,7 +295,7 @@ receivers:
         config:
             scrape_configs:
                 - job_name: app-pods
-                  scrape_interval: 10s
+                  scrape_interval: 30s
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_pod_node_name]
                       regex: $MY_NODE_NAME
@@ -331,7 +331,7 @@ receivers:
         config:
             scrape_configs:
                 - job_name: app-services
-                  scrape_interval: 10s
+                  scrape_interval: 30s
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_endpoint_node_name]
                       regex: $MY_NODE_NAME
@@ -370,7 +370,7 @@ receivers:
         config:
             scrape_configs:
                 - job_name: istio-proxy
-                  scrape_interval: 10s
+                  scrape_interval: 30s
                   metrics_path: /stats/prometheus
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_pod_node_name]
