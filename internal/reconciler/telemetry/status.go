@@ -9,8 +9,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -24,13 +25,38 @@ type ComponentHealthChecker interface {
 	Check(ctx context.Context) (*metav1.Condition, error)
 }
 
-func (r *Reconciler) updateStatus(ctx context.Context, obj *operatorv1alpha1.Telemetry) error {
+func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
 	for _, checker := range r.healthCheckers {
-		if err := r.updateComponentCondition(ctx, checker, obj); err != nil {
-			return err
+		if err := r.updateComponentCondition(ctx, checker, telemetry); err != nil {
+			return fmt.Errorf("failed to update component condition: %w", err)
 		}
 	}
-	return r.updateGatewayEndpoints(ctx, obj)
+
+	if err := r.updateGatewayEndpoints(ctx, telemetry); err != nil {
+		return fmt.Errorf("failed to update gateway endpoints: %w", err)
+	}
+
+	if err := r.checkTelemetryBeingDeleted(ctx, telemetry); err != nil {
+		return fmt.Errorf("failed to check if telemetry is being deleted: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) checkTelemetryBeingDeleted(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+	// check if deletionTimestamp is set, retry until it gets deleted
+	instanceIsBeingDeleted := !telemetry.GetDeletionTimestamp().IsZero()
+	if instanceIsBeingDeleted &&
+		telemetry.Status.State != operatorv1alpha1.StateDeleting {
+		if r.dependentResourcesExist(ctx) {
+			// there are some resources still in use update status and retry
+			r.updateTelemetryStatus(ctx, telemetry, telemetry.Status.WithState(operatorv1alpha1.StateError))
+		}
+		// if the status is not yet set to deleting, also update the status
+		r.updateTelemetryStatus(ctx, telemetry, telemetry.Status.WithState(operatorv1alpha1.StateDeleting))
+	}
+
+	return nil
 }
 
 func (r *Reconciler) updateComponentCondition(ctx context.Context, checker ComponentHealthChecker, telemetry *operatorv1alpha1.Telemetry) error {
@@ -83,7 +109,7 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 }
 
 func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, conditions []metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {
-	var metricPipelines v1alpha1.MetricPipelineList
+	var metricPipelines telemetryv1alpha1.MetricPipelineList
 	err := r.Client.List(ctx, &metricPipelines)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all mertic pipelines while syncing conditions: %w", err)
@@ -100,7 +126,7 @@ func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, conditi
 }
 
 func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, conditions []metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {
-	var tracePipelines v1alpha1.TracePipelineList
+	var tracePipelines telemetryv1alpha1.TracePipelineList
 	err := r.Client.List(ctx, &tracePipelines)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all trace pipelines while syncing conditions: %w", err)
@@ -121,4 +147,41 @@ func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndp
 		HTTP: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPHTTP),
 		GRPC: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPGRPC),
 	}
+}
+
+func (r *Reconciler) updateTelemetryStatus(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, new *operatorv1alpha1.TelemetryStatus) error {
+	telemetry.Status = *new
+
+	if err := r.serverSideApplyStatus(ctx, telemetry); err != nil {
+		r.Event(telemetry, "Warning", "ErrorUpdatingStatus", fmt.Sprintf("updating state to %v", string(new.State)))
+		return fmt.Errorf("error while updating status %s to: %w", new.State, err)
+	}
+
+	r.Event(telemetry, "Normal", "StatusUpdated", fmt.Sprintf("updating state to %v", string(new.State)))
+	return nil
+}
+
+func (r *Reconciler) serverSideApplyStatus(ctx context.Context, obj client.Object) error {
+	obj.SetManagedFields(nil)
+	obj.SetResourceVersion("")
+	return r.Status().Patch(ctx, obj, client.Apply,
+		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}})
+}
+
+func (r *Reconciler) dependentResourcesExist(ctx context.Context) bool {
+	return r.resourcesExist(ctx, &telemetryv1alpha1.LogParserList{}) ||
+		r.resourcesExist(ctx, &telemetryv1alpha1.LogPipelineList{}) ||
+		r.resourcesExist(ctx, &telemetryv1alpha1.MetricPipelineList{}) ||
+		r.resourcesExist(ctx, &telemetryv1alpha1.TracePipelineList{})
+}
+
+func (r *Reconciler) resourcesExist(ctx context.Context, list client.ObjectList) bool {
+	if err := r.List(ctx, list); err != nil {
+		// no kind found
+		if _, ok := err.(*meta.NoKindMatchError); ok {
+			return false
+		}
+		return true
+	}
+	return meta.LenList(list) > 0
 }

@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,10 +34,6 @@ var (
 const (
 	// StateReady signifies Module CR is Ready and has been installed successfully.
 	StateReady State = "Ready"
-
-	// StateProcessing signifies Module CR is reconciling and is in the process of installation.
-	// Processing can also signal that the Installation previously encountered an error and is now recovering.
-	StateProcessing State = "Processing"
 
 	// StateError signifies an error for Module CR. This signifies that the Installation
 	// process encountered an error.
@@ -86,27 +81,6 @@ type OTLPEndpoints struct {
 
 func (s *TelemetryStatus) WithState(state State) *TelemetryStatus {
 	s.State = state
-	return s
-}
-
-func (s *TelemetryStatus) WithInstallConditionStatus(status metav1.ConditionStatus, objGeneration int64) *TelemetryStatus {
-	if s.Conditions == nil {
-		s.Conditions = []metav1.Condition{}
-	}
-
-	condition := meta.FindStatusCondition(s.Conditions, ConditionTypeInstallation)
-
-	if condition == nil {
-		condition = &metav1.Condition{
-			Type:    ConditionTypeInstallation,
-			Reason:  ConditionReasonReady,
-			Message: "installation is ready and resources can be used",
-		}
-	}
-
-	condition.Status = status
-	condition.ObservedGeneration = objGeneration
-	meta.SetStatusCondition(&s.Conditions, *condition)
 	return s
 }
 

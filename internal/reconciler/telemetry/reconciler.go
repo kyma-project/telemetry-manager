@@ -7,8 +7,6 @@ import (
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -19,9 +17,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 const (
@@ -83,60 +81,39 @@ func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder r
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	objectInstance := operatorv1alpha1.Telemetry{}
-	if err := r.Client.Get(ctx, req.NamespacedName, &objectInstance); err != nil {
+	var telemetry operatorv1alpha1.Telemetry
+	if err := r.Client.Get(ctx, req.NamespacedName, &telemetry); err != nil {
 		logger.Info(req.NamespacedName.String() + " got deleted!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := r.updateStatus(ctx, &objectInstance); err != nil {
+	if err := r.updateStatus(ctx, &telemetry); err != nil {
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	instanceIsBeingDeleted := !objectInstance.GetDeletionTimestamp().IsZero()
-
-	// Check if deletionTimestamp is set, retry until it gets deleted
-	status := getStatusFromTelemetry(&objectInstance)
-
-	if instanceIsBeingDeleted &&
-		status.State != operatorv1alpha1.StateDeleting {
-		if r.customResourceExist(ctx) {
-			// there are some resources still in use update status and retry
-			return ctrl.Result{Requeue: true}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(operatorv1alpha1.StateError))
-		}
-		// if the status is not yet set to deleting, also update the status
-		return ctrl.Result{}, r.setStatusForObjectInstance(ctx, &objectInstance, status.WithState(operatorv1alpha1.StateDeleting))
-	}
-
 	// add finalizer if not present
-	if controllerutil.AddFinalizer(&objectInstance, finalizer) {
-		return ctrl.Result{}, r.serverSideApply(ctx, &objectInstance)
+	if telemetry.Status.State == operatorv1alpha1.StateDeleting {
+		if controllerutil.RemoveFinalizer(&telemetry, finalizer) {
+			return ctrl.Result{}, r.Client.Update(ctx, &telemetry)
+		}
+	}
+	if controllerutil.AddFinalizer(&telemetry, finalizer) {
+		return ctrl.Result{}, r.serverSideApply(ctx, &telemetry)
 	}
 
-	if err := r.reconcileWebhook(ctx, &objectInstance); err != nil {
+	if err := r.reconcileWebhook(ctx, &telemetry); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile webhook: %w", err)
-	}
-
-	switch status.State {
-	case "":
-		return ctrl.Result{}, r.HandleInitialState(ctx, &objectInstance)
-	case operatorv1alpha1.StateProcessing:
-		return ctrl.Result{Requeue: true}, r.HandleProcessingState(ctx, &objectInstance)
-	case operatorv1alpha1.StateDeleting:
-		return ctrl.Result{Requeue: true}, r.HandleDeletingState(ctx, &objectInstance)
-	case operatorv1alpha1.StateError:
-		return ctrl.Result{Requeue: true}, r.HandleErrorState(ctx, &objectInstance)
-	case operatorv1alpha1.StateReady:
-		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleReadyState(ctx, &objectInstance)
-	case operatorv1alpha1.StateWarning:
-		return ctrl.Result{RequeueAfter: requeueInterval}, r.HandleErrorState(ctx, &objectInstance)
-
 	}
 
 	return ctrl.Result{}, nil
 }
 
 func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+	err := r.deleteWebhook(ctx)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete webhook: %w", err)
+	}
+
 	if !r.config.Webhook.Enabled {
 		return nil
 	}
@@ -181,56 +158,6 @@ func (r *Reconciler) deleteWebhook(ctx context.Context) error {
 	return r.Delete(ctx, webhook)
 }
 
-// HandleReadyState checks for the consistency of reconciled resource, by verifying the underlying resources.
-func (r *Reconciler) HandleReadyState(_ context.Context, _ *operatorv1alpha1.Telemetry) error {
-	return nil
-}
-
-// HandleErrorState handles error recovery for the reconciled resource.
-func (r *Reconciler) HandleErrorState(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry) error {
-	status := getStatusFromTelemetry(objectInstance)
-
-	// set eventual state to Ready - if no errors were found
-	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(operatorv1alpha1.StateReady).
-		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
-}
-
-// HandleInitialState bootstraps state handling for the reconciled resource.
-func (r *Reconciler) HandleInitialState(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry) error {
-	status := getStatusFromTelemetry(objectInstance)
-
-	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(operatorv1alpha1.StateProcessing).
-		WithInstallConditionStatus(metav1.ConditionUnknown, objectInstance.GetGeneration()))
-}
-
-// HandleProcessingState processes the reconciled resource by processing the underlying resources.
-// Based on the processing either a success or failure state is set on the reconciled resource.
-func (r *Reconciler) HandleProcessingState(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry) error {
-	status := getStatusFromTelemetry(objectInstance)
-
-	// set eventual state to Ready - if no errors were found
-	return r.setStatusForObjectInstance(ctx, objectInstance, status.
-		WithState(operatorv1alpha1.StateReady).
-		WithInstallConditionStatus(metav1.ConditionTrue, objectInstance.GetGeneration()))
-}
-
-func (r *Reconciler) HandleDeletingState(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry) error {
-	r.Event(objectInstance, "Normal", "Deleting", "resource deleting")
-
-	err := r.deleteWebhook(ctx)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete webhook: %w", err)
-	}
-
-	// if resources are ready to be deleted, remove finalizer
-	if controllerutil.RemoveFinalizer(objectInstance, finalizer) {
-		return r.Client.Update(ctx, objectInstance)
-	}
-	return nil
-}
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
@@ -238,90 +165,8 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func getStatusFromTelemetry(objectInstance *operatorv1alpha1.Telemetry) operatorv1alpha1.TelemetryStatus {
-	return objectInstance.Status
-}
-
-func (r *Reconciler) setStatusForObjectInstance(ctx context.Context, objectInstance *operatorv1alpha1.Telemetry,
-	status *operatorv1alpha1.TelemetryStatus,
-) error {
-	objectInstance.Status = *status
-
-	if err := r.serverSideApplyStatus(ctx, objectInstance); err != nil {
-		r.Event(objectInstance, "Warning", "ErrorUpdatingStatus", fmt.Sprintf("updating state to %v", string(status.State)))
-		return fmt.Errorf("error while updating status %s to: %w", status.State, err)
-	}
-
-	r.Event(objectInstance, "Normal", "StatusUpdated", fmt.Sprintf("updating state to %v", string(status.State)))
-	return nil
-}
-
-func (r *Reconciler) serverSideApplyStatus(ctx context.Context, obj client.Object) error {
-	obj.SetManagedFields(nil)
-	obj.SetResourceVersion("")
-	return r.Status().Patch(ctx, obj, client.Apply,
-		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}})
-}
-
 func (r *Reconciler) serverSideApply(ctx context.Context, obj client.Object) error {
 	obj.SetManagedFields(nil)
 	obj.SetResourceVersion("")
 	return r.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner(fieldOwner))
-}
-
-func (r *Reconciler) customResourceExist(ctx context.Context) bool {
-	return r.checkLogParserExist(ctx) ||
-		r.checkLogPipelineExist(ctx) ||
-		r.checkMetricPipelinesExist(ctx) ||
-		r.checkTracePipelinesExist(ctx)
-}
-
-func (r *Reconciler) checkLogParserExist(ctx context.Context) bool {
-	var parserList telemetryv1alpha1.LogParserList
-	if err := r.List(ctx, &parserList); err != nil {
-		//no kind found
-		if _, ok := err.(*meta.NoKindMatchError); ok {
-			return false
-		}
-		return true
-	}
-	return len(parserList.Items) > 0
-}
-
-func (r *Reconciler) checkLogPipelineExist(ctx context.Context) bool {
-	var pipelineList telemetryv1alpha1.LogPipelineList
-	if err := r.List(ctx, &pipelineList); err != nil {
-		//no kind found
-		if _, ok := err.(*meta.NoKindMatchError); ok {
-			return false
-		}
-		return true
-	}
-	return len(pipelineList.Items) > 0
-}
-
-func (r *Reconciler) checkMetricPipelinesExist(ctx context.Context) bool {
-	var metricPipelineList telemetryv1alpha1.MetricPipelineList
-	if err := r.List(ctx, &metricPipelineList); err != nil {
-		//no kind found
-		if _, ok := err.(*meta.NoKindMatchError); ok {
-			return false
-		}
-		return true
-	}
-
-	return len(metricPipelineList.Items) > 0
-}
-
-func (r *Reconciler) checkTracePipelinesExist(ctx context.Context) bool {
-	var tracePipelineList telemetryv1alpha1.TracePipelineList
-	if err := r.List(ctx, &tracePipelineList); err != nil {
-		//no kind found
-		if _, ok := err.(*meta.NoKindMatchError); ok {
-			return false
-		}
-		return true
-	}
-
-	return len(tracePipelineList.Items) > 0
 }
