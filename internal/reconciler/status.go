@@ -16,7 +16,7 @@ const (
 	ReasonTraceGatewayDeploymentReady    = "TraceCollectorDeploymentReady"
 )
 
-var Conditions = map[string]string{
+var conditions = map[string]string{
 	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
 	ReasonReferencedSecretMissing: "One or more referenced secrets are missing",
 	ReasonWaitingForLock:          "Waiting for the lock",
@@ -30,4 +30,11 @@ var Conditions = map[string]string{
 
 	ReasonTraceGatewayDeploymentNotReady: "Trace collector is deployment not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace collector deployment is ready",
+}
+
+func Condition(reason string) string {
+	if cond, found := conditions[reason]; found {
+		return cond
+	}
+	return ""
 }

@@ -63,13 +63,13 @@ func (t *traceComponentsChecker) createConditionFromReason(reason string) *metav
 			Type:    traceComponentsHealthyConditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  reason,
-			Message: reconciler.Conditions[reason],
+			Message: reconciler.Condition(reason),
 		}
 	}
 	return &metav1.Condition{
 		Type:    traceComponentsHealthyConditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
-		Message: reconciler.Conditions[reason],
+		Message: reconciler.Condition(reason),
 	}
 }
