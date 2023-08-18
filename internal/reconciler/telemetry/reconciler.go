@@ -272,7 +272,7 @@ func (r *Reconciler) serverSideApply(ctx context.Context, obj client.Object) err
 func (r *Reconciler) customResourceExist(ctx context.Context) bool {
 	return r.checkLogParserExist(ctx) ||
 		r.checkLogPipelineExist(ctx) ||
-		r.checkMetricPipelineCRExist(ctx) ||
+		r.checkMetricPipelinesExist(ctx) ||
 		r.checkTracePipelinesExist(ctx)
 }
 
@@ -300,10 +300,17 @@ func (r *Reconciler) checkLogPipelineExist(ctx context.Context) bool {
 	return len(pipelineList.Items) > 0
 }
 
-func (r *Reconciler) checkMetricPipelineCRExist(ctx context.Context) bool {
+func (r *Reconciler) checkMetricPipelinesExist(ctx context.Context) bool {
 	var metricPipelineList telemetryv1alpha1.MetricPipelineList
-	err := r.List(ctx, &metricPipelineList)
-	return err == nil
+	if err := r.List(ctx, &metricPipelineList); err != nil {
+		//no kind found
+		if _, ok := err.(*meta.NoKindMatchError); ok {
+			return false
+		}
+		return true
+	}
+
+	return len(metricPipelineList.Items) > 0
 }
 
 func (r *Reconciler) checkTracePipelinesExist(ctx context.Context) bool {
