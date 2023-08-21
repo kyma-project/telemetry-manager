@@ -49,7 +49,7 @@ type Header struct {
 }
 
 type OtlpTLS struct {
-	// Defines whether to send requests via plaintext instead of TLS.
+	// Defines whether to send requests via plaintext instead of TLS. This option is ignored if the endpoint scheme is `http` or `https`.
 	// +kubebuilder:default:=false
 	Insecure bool `json:"insecure"`
 	// Defines whether to skip TLS certificate verification.
@@ -68,7 +68,7 @@ type OtlpOutput struct {
 	// +kubebuilder:default:=grpc
 	// +kubebuilder:validation:Enum=grpc;http
 	Protocol string `json:"protocol,omitempty"`
-	// Defines the host and port (<host>:<port>) of an OTLP endpoint. If the endpoint scheme is `https` or `http`, this setting takes precedence over the `tls.insecure` configuration setting.
+	// Defines the host and port (<host>:<port>) of an OTLP endpoint. If the endpoint scheme is `http` or `https`, this setting takes precedence over the `tls.insecure` configuration setting.
 	// +kubebuilder:validation:Required
 	Endpoint ValueType `json:"endpoint"`
 	// Defines authentication options for the OTLP output

@@ -151,7 +151,7 @@ spec:
                         type: object
                       endpoint:
                         description: Defines the host and port (<host>:<port>) of
-                          an OTLP endpoint. If the endpoint scheme is `https` or `http`,
+                          an OTLP endpoint. If the endpoint scheme is `http` or `https`,
                           this setting takes precedence over the `tls.insecure` configuration
                           setting.
                         properties:
@@ -267,7 +267,8 @@ spec:
                           insecure:
                             default: false
                             description: Defines whether to send requests via plaintext
-                              instead of TLS.
+                              instead of TLS. This option is ignored if the endpoint
+                              scheme is `http` or `https`.
                             type: boolean
                           insecureSkipVerify:
                             description: Defines whether to skip TLS certificate verification.

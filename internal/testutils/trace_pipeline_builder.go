@@ -15,10 +15,6 @@ type TracePipelineBuilder struct {
 	endpoint          string
 	basicAuthUser     string
 	basicAuthPassword string
-	insecure          bool
-	tlsCA             string
-	tlsCert           string
-	tlsKey            string
 }
 
 func NewTracePipelineBuilder() *TracePipelineBuilder {

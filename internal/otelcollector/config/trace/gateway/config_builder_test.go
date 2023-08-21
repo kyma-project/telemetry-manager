@@ -236,8 +236,6 @@ exporters:
         verbosity: basic
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
-        tls:
-            insecure: true
         sending_queue:
             enabled: true
             queue_size: 256

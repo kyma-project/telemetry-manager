@@ -65,7 +65,7 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string |  |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string |  |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string |  |
-| **output.&#x200b;otlp.&#x200b;endpoint** (required) | object | Defines the host and port (<host>:<port>) of an OTLP endpoint. If the endpoint scheme is `https` or `http`, this setting takes precedence over the `tls.insecure` configuration setting. |
+| **output.&#x200b;otlp.&#x200b;endpoint** (required) | object | Defines the host and port (<host>:<port>) of an OTLP endpoint. If the endpoint scheme is `http` or `https`, this setting takes precedence over the `tls.insecure` configuration setting. |
 | **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;value**  | string | Value that can contain references to Secret values. |
 | **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;valueFrom**  | object |  |
 | **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to a key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
@@ -96,7 +96,7 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string |  |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string |  |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string |  |
-| **output.&#x200b;otlp.&#x200b;tls.&#x200b;insecure** (required) | boolean | Defines whether to send requests via plaintext instead of TLS. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;insecure** (required) | boolean | Defines whether to send requests via plaintext instead of TLS. This option is ignored if the endpoint scheme is `http` or `https`. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;insecureSkipVerify**  | boolean | Defines whether to skip TLS certificate verification. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key**  | object | Defines the client key. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;value**  | string | Value that can contain references to Secret values. |
