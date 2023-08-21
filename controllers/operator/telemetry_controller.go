@@ -74,7 +74,7 @@ func (r *TelemetryReconciler) mapWebhook(ctx context.Context, object client.Obje
 		return requests
 	}
 
-	err := r.List(context.Background(), &telemetries)
+	err := r.List(ctx, &telemetries)
 	if err != nil {
 		ctrl.Log.Error(err, "unable to list Telemetry CRs")
 		return requests
