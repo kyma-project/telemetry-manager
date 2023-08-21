@@ -15,10 +15,17 @@ import (
 const (
 	basicAuthHeaderVariablePrefix = "BASIC_AUTH_HEADER"
 	otlpEndpointVariablePrefix    = "OTLP_ENDPOINT"
+	tlsConfigCertVariablePrefix   = "OTLP_TLS_CERT_PEM"
+	tlsConfigKeyVariablePrefix    = "OTLP_TLS_KEY_PEM"
+	tlsConfigCaVariablePrefix     = "OTLP_TLS_CA_PEM"
 )
 
 func makeHeaderEnvVarCompliant(header telemetryv1alpha1.Header, pipelineName string) string {
 	return fmt.Sprintf("HEADER_%s_%s", envvar.MakeEnvVarCompliant(pipelineName), envvar.MakeEnvVarCompliant(header.Name))
+}
+
+func makeTLSConfigEnvVarCompliant(prefix, pipelineName string) string {
+	return fmt.Sprintf("%s_%s", prefix, envvar.MakeEnvVarCompliant(pipelineName))
 }
 
 func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
@@ -51,6 +58,33 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 			return nil, err
 		}
 		secretData[key] = value
+	}
+
+	if !output.TLS.Insecure {
+		if !output.TLS.InsecureSkipVerify && output.TLS.CA.IsDefined() {
+			ca, err := resolveValue(ctx, c, output.TLS.CA)
+			if err != nil {
+				return nil, err
+			}
+			tlsConfigCaVariable := makeTLSConfigEnvVarCompliant(tlsConfigCaVariablePrefix, pipelineName)
+			secretData[tlsConfigCaVariable] = ca
+		}
+		if output.TLS.Cert.IsDefined() {
+			ca, err := resolveValue(ctx, c, output.TLS.Cert)
+			if err != nil {
+				return nil, err
+			}
+			tlsConfigCertVariable := makeTLSConfigEnvVarCompliant(tlsConfigCertVariablePrefix, pipelineName)
+			secretData[tlsConfigCertVariable] = ca
+		}
+		if output.TLS.Key.IsDefined() {
+			ca, err := resolveValue(ctx, c, output.TLS.Key)
+			if err != nil {
+				return nil, err
+			}
+			tlsConfigKeyVariable := makeTLSConfigEnvVarCompliant(tlsConfigKeyVariablePrefix, pipelineName)
+			secretData[tlsConfigKeyVariable] = ca
+		}
 	}
 
 	return secretData, nil

@@ -15,6 +15,10 @@ type TracePipelineBuilder struct {
 	endpoint          string
 	basicAuthUser     string
 	basicAuthPassword string
+	insecure          bool
+	tlsCA             string
+	tlsCert           string
+	tlsKey            string
 }
 
 func NewTracePipelineBuilder() *TracePipelineBuilder {
@@ -22,6 +26,7 @@ func NewTracePipelineBuilder() *TracePipelineBuilder {
 		name:      fmt.Sprintf("test-%d", time.Now().Nanosecond()),
 		namespace: "telemetry-system",
 		endpoint:  "https://localhost",
+		insecure:  true,
 	}
 }
 
@@ -41,7 +46,30 @@ func (b *TracePipelineBuilder) WithBasicAuth(user, password string) *TracePipeli
 	return b
 }
 
+func (b *TracePipelineBuilder) WithmTLS() *TracePipelineBuilder {
+	b.insecure = false
+	b.tlsCA = "test ca pem"
+	b.tlsCert = "test cert pem"
+	b.tlsKey = "test key pem"
+	return b
+}
+
 func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
+	tls := telemetryv1alpha1.OtlpTLS{
+		Insecure: b.insecure,
+	}
+	if !b.insecure {
+		tls.CA = telemetryv1alpha1.ValueType{
+			Value: b.tlsCA,
+		}
+		tls.Cert = telemetryv1alpha1.ValueType{
+			Value: b.tlsCert,
+		}
+		tls.Key = telemetryv1alpha1.ValueType{
+			Value: b.tlsKey,
+		}
+	}
+
 	return telemetryv1alpha1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      b.name,
@@ -63,6 +91,7 @@ func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
 							},
 						},
 					},
+					TLS: tls,
 				},
 			},
 		},

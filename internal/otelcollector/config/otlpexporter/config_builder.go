@@ -42,12 +42,13 @@ func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*config.OTLPExporter, 
 func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, envVars map[string][]byte, queueSize int) *config.OTLPExporter {
 	headers := makeHeaders(otlpOutput, pipelineName)
 	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
+	otlpEndpointValue := string(envVars[otlpEndpointVariable])
+	tlsConfig := makeTLSConfig(otlpOutput, otlpEndpointValue, pipelineName)
+
 	otlpExporterConfig := config.OTLPExporter{
 		Endpoint: fmt.Sprintf("${%s}", otlpEndpointVariable),
 		Headers:  headers,
-		TLS: config.TLS{
-			Insecure: isInsecureOutput(string(envVars[otlpEndpointVariable])),
-		},
+		TLS:      tlsConfig,
 		SendingQueue: config.SendingQueue{
 			Enabled:   true,
 			QueueSize: queueSize,
@@ -74,6 +75,30 @@ func ExporterID(output *telemetryv1alpha1.OtlpOutput, pipelineName string) strin
 	return fmt.Sprintf("%s/%s", outputType, pipelineName)
 }
 
+func makeTLSConfig(output *telemetryv1alpha1.OtlpOutput, otlpEndpointValue, pipelineName string) config.TLS {
+	var cfg config.TLS
+
+	// TODO if endpoint is secure, but insecure is set to true, then the insecure setting should be ignored.
+	// https://opentelemetry.io/docs/collector/configuration/
+	// TODO do we even need to check if the endpoint is secure?
+	if isInsecureEndpoint(otlpEndpointValue) || output.TLS.Insecure {
+		cfg.Insecure = true
+		return cfg
+	}
+	cfg.InsecureSkipVerify = output.TLS.InsecureSkipVerify
+	if !cfg.InsecureSkipVerify && output.TLS.CA.IsDefined() {
+		cfg.CAPem = fmt.Sprintf("${%s}", makeTLSConfigEnvVarCompliant(tlsConfigCaVariablePrefix, pipelineName))
+	}
+	if output.TLS.Cert.IsDefined() {
+		cfg.CertPem = fmt.Sprintf("${%s}", makeTLSConfigEnvVarCompliant(tlsConfigCertVariablePrefix, pipelineName))
+	}
+	if output.TLS.Key.IsDefined() {
+		cfg.KeyPem = fmt.Sprintf("${%s}", makeTLSConfigEnvVarCompliant(tlsConfigKeyVariablePrefix, pipelineName))
+	}
+
+	return cfg
+}
+
 func makeHeaders(output *telemetryv1alpha1.OtlpOutput, pipelineName string) map[string]string {
 	headers := make(map[string]string)
 	if output.Authentication != nil && output.Authentication.Basic.IsDefined() {
@@ -87,6 +112,6 @@ func makeHeaders(output *telemetryv1alpha1.OtlpOutput, pipelineName string) map[
 	return headers
 }
 
-func isInsecureOutput(endpoint string) bool {
+func isInsecureEndpoint(endpoint string) bool {
 	return len(strings.TrimSpace(endpoint)) > 0 && strings.HasPrefix(endpoint, "http://")
 }
