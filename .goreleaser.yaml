@@ -2,6 +2,21 @@
 changelog:
   use: github
   sort: asc
+  groups:
+    - title: Bug fixes
+      regexp: '^[(\[]?(B|b)ug'
+      order: 1
+    - title: Documentation
+      regexp: '^(.*?(D|d)ocs.*?)|(.*?(D|d)ocument.*?)$'
+      order: 2
+    - title: Test suites
+      regexp: '^((T|t)est)|(.*?[\s-_](T|t)est)'
+      order: 3
+    - title: Features
+      order: 0
+  filters:
+    exclude:
+        - '^(B|b)ump'
 release:
   extra_files:
     - glob: template.yaml
