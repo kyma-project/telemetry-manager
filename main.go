@@ -43,6 +43,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -497,6 +498,7 @@ func createLogPipelineValidator(client client.Client) *logpipelinewebhook.Valida
 		logpipelinevalidation.NewVariablesValidator(client),
 		logpipelinevalidation.NewMaxPipelinesValidator(maxLogPipelines),
 		logpipelinevalidation.NewFilesValidator(),
+		admission.NewDecoder(scheme),
 		dryrun.NewDryRunner(client, createDryRunConfig()),
 		&telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: parsePlugins(deniedOutputPlugins), DeniedFilterPlugins: parsePlugins(deniedFilterPlugins)})
 }

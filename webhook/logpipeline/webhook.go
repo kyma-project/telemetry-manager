@@ -56,6 +56,7 @@ func NewValidatingWebhookHandler(
 	variablesValidator validation.VariablesValidator,
 	maxPipelinesValidator validation.MaxPipelinesValidator,
 	fileValidator validation.FilesValidator,
+	decoder *admission.Decoder,
 	dryRunner DryRunner,
 	logPipelineValidationConfig *telemetryv1alpha1.LogPipelineValidationConfig,
 ) *ValidatingWebhookHandler {
@@ -63,6 +64,7 @@ func NewValidatingWebhookHandler(
 		Client:                      client,
 		variablesValidator:          variablesValidator,
 		maxPipelinesValidator:       maxPipelinesValidator,
+		decoder:                     decoder,
 		fileValidator:               fileValidator,
 		dryRunner:                   dryRunner,
 		logPipelineValidationConfig: logPipelineValidationConfig,
@@ -144,10 +146,5 @@ func (v *ValidatingWebhookHandler) validateLogPipeline(ctx context.Context, logP
 		return err
 	}
 
-	return nil
-}
-
-func (v *ValidatingWebhookHandler) InjectDecoder(d *admission.Decoder) error {
-	v.decoder = d
 	return nil
 }
