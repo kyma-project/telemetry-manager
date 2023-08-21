@@ -232,8 +232,7 @@ spec:
                           insecure:
                             default: false
                             description: Defines whether to send requests via plaintext
-                              instead of TLS. This setting is ignored when the OTLP
-                              endpoint specifies a valid scheme.
+                              instead of TLS.
                             type: boolean
                           insecureSkipVerify:
                             description: Defines whether to skip TLS certificate verification.
@@ -266,7 +265,6 @@ spec:
                         type: object
                     required:
                     - endpoint
-                    - tls
                     type: object
                 required:
                 - otlp

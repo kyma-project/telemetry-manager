@@ -49,7 +49,7 @@ type Header struct {
 }
 
 type OtlpTLS struct {
-	// Defines whether to send requests via plaintext instead of TLS. This setting is ignored when the OTLP endpoint specifies a valid scheme.
+	// Defines whether to send requests via plaintext instead of TLS.
 	// +kubebuilder:default:=false
 	Insecure bool `json:"insecure"`
 	// Defines whether to skip TLS certificate verification.
@@ -76,7 +76,7 @@ type OtlpOutput struct {
 	// Defines custom headers to be added to outgoing HTTP or GRPC requests.
 	Headers []Header `json:"headers,omitempty"`
 	// Defines TLS options for the OTLP output.
-	TLS OtlpTLS `json:"tls"`
+	TLS *OtlpTLS `json:"tls,omitempty"`
 }
 
 type AuthenticationOptions struct {

@@ -81,7 +81,7 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string |  |
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string |  |
 | **output.&#x200b;otlp.&#x200b;protocol**  | string | Defines the OTLP protocol (http or grpc). Default is GRPC. |
-| **output.&#x200b;otlp.&#x200b;tls** (required) | object | Defines TLS options for the OTLP output. |
+| **output.&#x200b;otlp.&#x200b;tls**  | object | Defines TLS options for the OTLP output. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca**  | object | Defines the CA certificate. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca.&#x200b;value**  | string | Value that can contain references to Secret values. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom**  | object |  |
@@ -96,7 +96,7 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string |  |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string |  |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string |  |
-| **output.&#x200b;otlp.&#x200b;tls.&#x200b;insecure** (required) | boolean | Defines whether to send requests via plaintext instead of TLS. This setting is ignored when the OTLP endpoint specifies a valid scheme. |
+| **output.&#x200b;otlp.&#x200b;tls.&#x200b;insecure** (required) | boolean | Defines whether to send requests via plaintext instead of TLS. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;insecureSkipVerify**  | boolean | Defines whether to skip TLS certificate verification. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key**  | object | Defines the client key. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;key.&#x200b;value**  | string | Value that can contain references to Secret values. |

@@ -83,7 +83,7 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
-	tls := v1alpha1.OtlpTLS{
+	tls := &v1alpha1.OtlpTLS{
 		Insecure: true,
 	}
 	output := &v1alpha1.OtlpOutput{
@@ -100,7 +100,7 @@ func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
-	tls := v1alpha1.OtlpTLS{
+	tls := &v1alpha1.OtlpTLS{
 		Insecure:           false,
 		InsecureSkipVerify: true,
 	}
@@ -120,7 +120,7 @@ func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithmTLS(t *testing.T) {
-	tls := v1alpha1.OtlpTLS{
+	tls := &v1alpha1.OtlpTLS{
 		Insecure:           false,
 		InsecureSkipVerify: false,
 		CA: v1alpha1.ValueType{
