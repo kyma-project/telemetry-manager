@@ -79,11 +79,6 @@ type OTLPEndpoints struct {
 	HTTP string `json:"http,omitempty"`
 }
 
-func (s *TelemetryStatus) WithState(state State) *TelemetryStatus {
-	s.State = state
-	return s
-}
-
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="generation",type="integer",JSONPath=".metadata.generation"

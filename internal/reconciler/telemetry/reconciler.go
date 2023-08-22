@@ -115,7 +115,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 	}
 
 	if controllerutil.ContainsFinalizer(telemetry, finalizer) {
-		if r.dependentResourcesFound(ctx) {
+		if r.dependentTelemetryCRsFound(ctx) {
 			return nil
 		}
 

@@ -36,24 +36,21 @@ func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alph
 		return fmt.Errorf("failed to update gateway endpoints: %w", err)
 	}
 
-	if err := r.checkTelemetryBeingDeleted(ctx, telemetry); err != nil {
+	if err := r.checkDependentTelemetryCRs(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to check if telemetry is being deleted: %w", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) checkTelemetryBeingDeleted(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	// check if deletionTimestamp is set, retry until it gets deleted
+func (r *Reconciler) checkDependentTelemetryCRs(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
 	instanceIsBeingDeleted := !telemetry.GetDeletionTimestamp().IsZero()
 	if instanceIsBeingDeleted &&
 		telemetry.Status.State != operatorv1alpha1.StateDeleting {
-		if r.dependentResourcesFound(ctx) {
-			// there are some resources still in use update status and retry
-			r.updateTelemetryStatus(ctx, telemetry, telemetry.Status.WithState(operatorv1alpha1.StateError))
+		if r.dependentTelemetryCRsFound(ctx) {
+			r.updateStatusState(ctx, telemetry, operatorv1alpha1.StateError)
 		}
-		// if the status is not yet set to deleting, also update the status
-		r.updateTelemetryStatus(ctx, telemetry, telemetry.Status.WithState(operatorv1alpha1.StateDeleting))
+		r.updateStatusState(ctx, telemetry, operatorv1alpha1.StateDeleting)
 	}
 
 	return nil
@@ -149,15 +146,15 @@ func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndp
 	}
 }
 
-func (r *Reconciler) updateTelemetryStatus(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, new *operatorv1alpha1.TelemetryStatus) error {
-	telemetry.Status = *new
+func (r *Reconciler) updateStatusState(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, newState operatorv1alpha1.State) error {
+	telemetry.Status.State = newState
 
 	if err := r.serverSideApplyStatus(ctx, telemetry); err != nil {
-		r.Event(telemetry, "Warning", "ErrorUpdatingStatus", fmt.Sprintf("updating state to %v", string(new.State)))
-		return fmt.Errorf("error while updating status %s to: %w", new.State, err)
+		r.Event(telemetry, "Warning", "ErrorUpdatingStatus", fmt.Sprintf("updating state to %v", string(newState)))
+		return fmt.Errorf("error while updating status %s to: %w", newState, err)
 	}
 
-	r.Event(telemetry, "Normal", "StatusUpdated", fmt.Sprintf("updating state to %v", string(new.State)))
+	r.Event(telemetry, "Normal", "StatusUpdated", fmt.Sprintf("updating state to %v", string(newState)))
 	return nil
 }
 
@@ -168,7 +165,7 @@ func (r *Reconciler) serverSideApplyStatus(ctx context.Context, obj client.Objec
 		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}})
 }
 
-func (r *Reconciler) dependentResourcesFound(ctx context.Context) bool {
+func (r *Reconciler) dependentTelemetryCRsFound(ctx context.Context) bool {
 	return r.resourcesExist(ctx, &telemetryv1alpha1.LogParserList{}) ||
 		r.resourcesExist(ctx, &telemetryv1alpha1.LogPipelineList{}) ||
 		r.resourcesExist(ctx, &telemetryv1alpha1.MetricPipelineList{}) ||
