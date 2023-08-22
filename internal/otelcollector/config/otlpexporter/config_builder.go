@@ -77,16 +77,16 @@ func ExporterID(output *telemetryv1alpha1.OtlpOutput, pipelineName string) strin
 
 func makeTLSConfig(output *telemetryv1alpha1.OtlpOutput, otlpEndpointValue, pipelineName string) config.TLS {
 	var cfg config.TLS
-	cfg.Insecure = isHTTPEndpoint(otlpEndpointValue)
+	cfg.Insecure = isInsecureOutput(otlpEndpointValue)
 
 	if output.TLS == nil {
 		return cfg
 	}
 
-	// endpoint scheme of https or http has precedence over configured insecure option
-	if !(isHTTPSEndpoint(otlpEndpointValue) || isHTTPEndpoint(otlpEndpointValue)) {
+	if !cfg.Insecure {
 		cfg.Insecure = output.TLS.Insecure
 	}
+
 	cfg.InsecureSkipVerify = output.TLS.InsecureSkipVerify
 	if output.TLS.CA.IsDefined() {
 		cfg.CAPem = fmt.Sprintf("${%s}", makeTLSVariable(tlsConfigCaVariablePrefix, pipelineName))
@@ -114,10 +114,6 @@ func makeHeaders(output *telemetryv1alpha1.OtlpOutput, pipelineName string) map[
 	return headers
 }
 
-func isHTTPEndpoint(endpoint string) bool {
+func isInsecureOutput(endpoint string) bool {
 	return len(strings.TrimSpace(endpoint)) > 0 && strings.HasPrefix(endpoint, "http://")
-}
-
-func isHTTPSEndpoint(endpoint string) bool {
-	return len(strings.TrimSpace(endpoint)) > 0 && strings.HasPrefix(endpoint, "https://")
 }
