@@ -87,9 +87,7 @@ spec:
 apiVersion: v1
 kind: Namespace
 metadata:
-  creationTimestamp: null
   name: metric-producer
-spec: {}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -106,11 +104,6 @@ spec:
       app: metric-producer
   template:
     metadata:
-      annotations:
-        prometheus.io/path: /metrics
-        prometheus.io/port: "8080"
-        prometheus.io/scrape: "true"
-      creationTimestamp: null
       labels:
         app: metric-producer
     spec:
@@ -120,13 +113,34 @@ spec:
           name: sample-metrics
           ports:
             - containerPort: 8080
-              name: http
+              name: http-metrics
               protocol: TCP
           resources:
             limits:
               memory: 100Mi
             requests:
               memory: 32Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "8080"
+    prometheus.io/scrape: "true"
+  labels:
+    app: metric-producer
+  name: metric-producer
+  namespace: metric-producer
+spec:
+  ports:
+    - name: http-metrics
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: metric-producer
+  type: ClusterIP
 ---
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline

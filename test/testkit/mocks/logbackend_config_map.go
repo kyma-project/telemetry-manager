@@ -1,5 +1,3 @@
-//go:build e2e
-
 package mocks
 
 import (
@@ -46,7 +44,7 @@ exporters:
   file:
     path: {{ FILEPATH }}
   logging:
-    loglevel: info
+    loglevel: debug
 service:
   telemetry:
     logs:
@@ -57,7 +55,8 @@ service:
         - otlp
         - fluentforward
       exporters:
-        - file`
+        - file
+        - logging`
 
 const configTemplateFluentd = `<source>
   @type http

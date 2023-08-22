@@ -1,5 +1,3 @@
-//go:build e2e
-
 package log
 
 import (
@@ -16,8 +14,13 @@ type HTTPPipeline struct {
 	name             string
 	secretKeyRef     *telemetry.SecretKeyRef
 	excludeContainer []string
+	includeContainer []string
 	keepAnnotations  bool
 	dropLabels       bool
+}
+
+func (p *HTTPPipeline) Name() string {
+	return p.name
 }
 
 func NewHTTPPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *HTTPPipeline {
@@ -31,6 +34,11 @@ func NewPipeline(name string) *Pipeline {
 	return &Pipeline{
 		name: name,
 	}
+}
+
+func (p *HTTPPipeline) WithIncludeContainer(names []string) *HTTPPipeline {
+	p.includeContainer = names
+	return p
 }
 
 func (p *HTTPPipeline) WithExcludeContainer(names []string) *HTTPPipeline {
@@ -72,6 +80,7 @@ func (p *HTTPPipeline) K8sObjectHTTP() *telemetry.LogPipeline {
 				Application: telemetry.ApplicationInput{
 					Containers: telemetry.InputContainers{
 						Exclude: p.excludeContainer,
+						Include: p.includeContainer,
 					},
 					KeepAnnotations: p.keepAnnotations,
 					DropLabels:      p.dropLabels,

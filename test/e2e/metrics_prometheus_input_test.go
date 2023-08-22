@@ -18,6 +18,7 @@ import (
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 	kitotlpmetric "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
@@ -73,39 +74,48 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			metricPipelineShouldBeRunning(pipelines.First())
 		})
 
-		It("Should verify custom metrics", func() {
-			metricTypeMap := map[mocks.MetricType]pmetric.MetricType{
-				mocks.MetricTypeCounter:   pmetric.MetricTypeSum,
-				mocks.MetricTypeGauge:     pmetric.MetricTypeGauge,
-				mocks.MetricTypeHistogram: pmetric.MetricTypeHistogram,
-				mocks.MetricTypeSummary:   pmetric.MetricTypeSummary,
-			}
+		It("Should verify custom metric scraping via annotated pods", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(urls.MockBackendExport())
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
+				// targets discovered via annotated pods must have no service label
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return metricsEqual(m, metricproducer.MetricCPUTemperature, withoutServiceLabel)
+					}),
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return metricsEqual(m, metricproducer.MetricCPUEnergyHistogram, withoutServiceLabel)
+					}),
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return metricsEqual(m, metricproducer.MetricHardwareHumidity, withoutServiceLabel)
+					}),
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return metricsEqual(m, metricproducer.MetricHardDiskErrorsTotal, withoutServiceLabel)
+					}))))
+			}, timeout, interval).Should(Succeed())
+		})
 
+		It("Should verify custom metric scraping via annotated services", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
+					// targets discovered via annotated service must have the service label
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return m.Name() == mocks.CustomMetricCPUTemperature.Name && m.Type() == metricTypeMap[mocks.CustomMetricCPUTemperature.Type]
+						return metricsEqual(m, metricproducer.MetricCPUTemperature, withServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						if m.Name() == mocks.CustomMetricHardDiskErrorsTotal.Name && m.Type() == metricTypeMap[mocks.CustomMetricHardDiskErrorsTotal.Type] && m.Sum().IsMonotonic() {
-							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricHardDiskErrorsTotal.Labels...)
-						}
-						return false
+						return metricsEqual(m, metricproducer.MetricCPUEnergyHistogram, withServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						if m.Name() == mocks.CustomMetricCPUEnergyHistogram.Name && m.Type() == metricTypeMap[mocks.CustomMetricCPUEnergyHistogram.Type] {
-							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricCPUEnergyHistogram.Labels...)
-						}
-						return false
+						return metricsEqual(m, metricproducer.MetricHardwareHumidity, withServiceLabel)
 					}),
 					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						if m.Name() == mocks.CustomMetricHardwareHumidity.Name && m.Type() == metricTypeMap[mocks.CustomMetricHardwareHumidity.Type] {
-							return kitotlpmetric.AllDataPointsHaveAttributes(m, mocks.CustomMetricHardwareHumidity.Labels...)
-						}
-						return false
+						return metricsEqual(m, metricproducer.MetricHardDiskErrorsTotal, withServiceLabel)
 					}))))
 			}, timeout, interval).Should(Succeed())
 		})
@@ -141,7 +151,7 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-web", httpWebPort)
-	mockMetricProvider := mocks.NewCustomMetricProvider(mocksNamespaceName)
+	mockMetricProducer := metricproducer.New(mocksNamespaceName)
 
 	// Default namespace objects.
 	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
@@ -153,7 +163,8 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 		mockBackendConfigMap.K8sObject(),
 		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		mockMetricProvider.K8sObject(),
+		mockMetricProducer.Pod().WithPrometheusAnnotations().K8sObject(),
+		mockMetricProducer.Service().WithPrometheusAnnotations().K8sObject(),
 		hostSecret.K8sObject(),
 		metricPipeline.K8sObject(),
 	}...)
@@ -161,4 +172,27 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 	urls.SetMockBackendExport(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort))
 
 	return objs, urls, pipelines
+}
+
+type comparisonMode int
+
+const (
+	withServiceLabel comparisonMode = iota
+	withoutServiceLabel
+)
+
+func metricsEqual(actual pmetric.Metric, expected metricproducer.Metric, comparisonMode comparisonMode) bool {
+	if actual.Name() != expected.Name || actual.Type() != expected.Type {
+		return false
+	}
+
+	switch comparisonMode {
+	case withServiceLabel:
+		return kitotlpmetric.AllDataPointsContainAttributes(actual, append(expected.Labels, "service")...)
+	case withoutServiceLabel:
+		return kitotlpmetric.AllDataPointsContainAttributes(actual, expected.Labels...) &&
+			kitotlpmetric.NoDataPointsContainAttributes(actual, "service")
+	default:
+		return false
+	}
 }

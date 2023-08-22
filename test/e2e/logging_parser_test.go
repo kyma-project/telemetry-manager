@@ -20,12 +20,6 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-var (
-	telemetryFluentbitName              = "telemetry-fluent-bit"
-	telemetryWebhookEndpoint            = "telemetry-operator-webhook"
-	telemetryFluentbitMetricServiceName = "telemetry-fluent-bit-metrics"
-)
-
 const configParser = `Format regex
 Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$
 Time_Key time
@@ -75,7 +69,9 @@ var _ = Describe("Logging", Label("logging"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogsWithAttribute("user", "foo"), ContainLogsWithAttribute("pass", "bar"))))
+					ContainLogs(WithAttributeKeyValue("user", "foo")),
+					ContainLogs(WithAttributeKeyValue("pass", "bar")),
+				)))
 			}, timeout, interval).Should(Succeed())
 		})
 	})

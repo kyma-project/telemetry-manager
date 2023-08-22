@@ -46,11 +46,11 @@ func TestReceivers(t *testing.T) {
 		require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
 		require.NotNil(t, collectorConfig.Receivers.PrometheusSelf)
 		require.Len(t, collectorConfig.Receivers.PrometheusSelf.Config.ScrapeConfigs, 1)
-		require.Len(t, collectorConfig.Receivers.PrometheusSelf.Config.ScrapeConfigs[0].ServiceDiscoveryConfigs, 1)
+		require.Len(t, collectorConfig.Receivers.PrometheusSelf.Config.ScrapeConfigs[0].StaticDiscoveryConfigs, 1)
 
 		require.NotNil(t, collectorConfig.Receivers.PrometheusAppPods)
 		require.Len(t, collectorConfig.Receivers.PrometheusAppPods.Config.ScrapeConfigs, 1)
-		require.Len(t, collectorConfig.Receivers.PrometheusAppPods.Config.ScrapeConfigs[0].ServiceDiscoveryConfigs, 1)
+		require.Len(t, collectorConfig.Receivers.PrometheusAppPods.Config.ScrapeConfigs[0].KubernetesDiscoveryConfigs, 1)
 	})
 
 	t.Run("istio input enabled", func(t *testing.T) {
@@ -63,6 +63,6 @@ func TestReceivers(t *testing.T) {
 		require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
 		require.NotNil(t, collectorConfig.Receivers.PrometheusIstio)
 		require.Len(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs, 1)
-		require.Len(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs[0].ServiceDiscoveryConfigs, 1)
+		require.Len(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs[0].KubernetesDiscoveryConfigs, 1)
 	})
 }
