@@ -1,4 +1,4 @@
-- [Home](https://kyma-project.io/#/)
+- [Home](/)
 - [Kyma Telemetry Module](README.md)
 - [Telemetry Manager](01-manager.md)
 - [Application Logs](02-logs.md)
