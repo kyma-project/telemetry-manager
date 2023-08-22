@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 //go:generate mockery --name ComponentHealthChecker --filename component_health_checker.go
@@ -92,7 +93,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operat
 	}
 
 	if cond.Status != metav1.ConditionTrue || cond.Reason != reconciler.ReasonTraceGatewayDeploymentReady {
-		return nil, nil
+		return &operatorv1alpha1.OTLPEndpoints{}, nil
 	}
 
 	return makeOTLPEndpoints(config.Traces.OTLPServiceName, config.Traces.Namespace), nil
