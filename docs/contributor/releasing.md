@@ -2,7 +2,9 @@
 
 This release process covers the steps to release new major and minor versions for the Kyma Telemetry module.
 
-1. Verify that all issues in the [Github milestone](https://github.com/kyma-project/telemetry-manager/milestones) related to the version are closed and close the milestone.
+1. Verify that all issues in the [Github milestone](https://github.com/kyma-project/telemetry-manager/milestones) related to the version are closed.
+
+1. Close the milestone.
 
 1. Create a new [Github milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
