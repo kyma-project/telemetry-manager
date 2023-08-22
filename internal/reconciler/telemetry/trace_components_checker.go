@@ -58,16 +58,17 @@ func (t *traceComponentsChecker) determineReason(tracePipelines []v1alpha1.Trace
 }
 
 func (t *traceComponentsChecker) createConditionFromReason(reason string) *metav1.Condition {
+	conditionType := "TraceComponentsHealthy"
 	if reason == reconciler.ReasonTraceGatewayDeploymentReady || reason == reconciler.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
-			Type:    traceComponentsHealthyConditionType,
+			Type:    conditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  reason,
 			Message: reconciler.Condition(reason),
 		}
 	}
 	return &metav1.Condition{
-		Type:    traceComponentsHealthyConditionType,
+		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
 		Message: reconciler.Condition(reason),

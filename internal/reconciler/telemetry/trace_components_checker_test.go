@@ -31,12 +31,11 @@ func TestTracePipelineMissingSecret(t *testing.T) {
 	require.NoError(t, err)
 	expectedCond := &metav1.Condition{
 		Type:    "TraceComponentsHealthy",
-		Status:  "True",
+		Status:  "False",
 		Reason:  reconciler.ReasonReferencedSecretMissing,
 		Message: "One or more referenced secrets are missing",
 	}
 	require.Equal(t, cond, expectedCond)
-
 }
 
 func TestMultipleTracePipelineOnePending(t *testing.T) {
@@ -59,12 +58,11 @@ func TestMultipleTracePipelineOnePending(t *testing.T) {
 	require.NoError(t, err)
 	expectedCond := &metav1.Condition{
 		Type:    "TraceComponentsHealthy",
-		Status:  "True",
+		Status:  "False",
 		Reason:  "TraceCollectorDeploymentNotReady",
 		Message: "Trace collector is deployment not ready",
 	}
 	require.Equal(t, cond, expectedCond)
-
 }
 
 func TestAllTracePipelinesHealthy(t *testing.T) {
@@ -117,11 +115,10 @@ func TestMultipleTracePipelinesOneLock(t *testing.T) {
 	expectedCond := &metav1.Condition{
 		Type:    "TraceComponentsHealthy",
 		Status:  "True",
-		Reason:  "TraceCollectorDeploymentNotReady",
+		Reason:  "TraceCollectorDeploymentReady",
 		Message: "Trace collector deployment is ready",
 	}
 	require.Equal(t, cond, expectedCond)
-
 }
 
 func makeTracePipeline(name string, state telemetryv1alpha1.TracePipelineConditionType, reason string) telemetryv1alpha1.TracePipeline {

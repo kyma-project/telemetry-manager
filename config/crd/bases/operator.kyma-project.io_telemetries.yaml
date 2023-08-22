@@ -123,13 +123,6 @@ spec:
                 description: GatewayEndpoints for trace and metric gateway
                 nullable: true
                 properties:
-                  metrics:
-                    properties:
-                      grpc:
-                        type: string
-                      http:
-                        type: string
-                    type: object
                   traces:
                     properties:
                       grpc:

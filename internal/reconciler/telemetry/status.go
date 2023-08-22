@@ -7,15 +7,10 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	logComponentsHealthyConditionType    = "LogComponentsHealthy"
-	traceComponentsHealthyConditionType  = "TraceComponentsHealthy"
-	metricComponentsHealthyConditionType = "MetricComponentsHealthy"
 )
 
 //go:generate mockery --name ComponentHealthChecker --filename component_health_checker.go
@@ -24,7 +19,7 @@ type ComponentHealthChecker interface {
 }
 
 func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	for _, checker := range r.healthCheckers {
+	for _, checker := range r.enabledHealthCheckers() {
 		if err := r.updateComponentCondition(ctx, checker, telemetry); err != nil {
 			return fmt.Errorf("failed to update component condition: %w", err)
 		}
@@ -39,6 +34,13 @@ func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alph
 	}
 
 	return nil
+}
+
+func (r *Reconciler) enabledHealthCheckers() []ComponentHealthChecker {
+	if r.config.Metrics.Enabled {
+		return []ComponentHealthChecker{r.healthCheckers.logs, r.healthCheckers.metrics, r.healthCheckers.traces}
+	}
+	return []ComponentHealthChecker{r.healthCheckers.logs, r.healthCheckers.traces}
 }
 
 func (r *Reconciler) updateComponentCondition(ctx context.Context, checker ComponentHealthChecker, telemetry *operatorv1alpha1.Telemetry) error {
@@ -68,7 +70,7 @@ func stateFromConditions(conditions []metav1.Condition) operatorv1alpha1.State {
 }
 
 func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	traceEndpoints, err := r.traceEndpoints(ctx, r.config, telemetry.Status.Conditions)
+	traceEndpoints, err := r.traceEndpoints(ctx, r.config)
 	if err != nil {
 		return fmt.Errorf("failed to get trace endpoints: %w", err)
 	}
@@ -83,18 +85,14 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 	return nil
 }
 
-func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, conditions []metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {
-	var tracePipelines telemetryv1alpha1.TracePipelineList
-	err := r.Client.List(ctx, &tracePipelines)
+func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operatorv1alpha1.OTLPEndpoints, error) {
+	cond, err := r.healthCheckers.traces.Check(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get all trace pipelines while syncing conditions: %w", err)
-	}
-	if len(tracePipelines.Items) == 0 {
-		return &operatorv1alpha1.OTLPEndpoints{}, nil
+		return nil, fmt.Errorf("failed to check trace components: %w", err)
 	}
 
-	if !meta.IsStatusConditionTrue(conditions, traceComponentsHealthyConditionType) {
-		return &operatorv1alpha1.OTLPEndpoints{}, nil
+	if cond.Status != metav1.ConditionTrue || cond.Reason != reconciler.ReasonTraceGatewayDeploymentReady {
+		return nil, nil
 	}
 
 	return makeOTLPEndpoints(config.Traces.OTLPServiceName, config.Traces.Namespace), nil

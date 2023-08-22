@@ -48,16 +48,17 @@ func (l *logComponentsChecker) determineReason(logPipelines []v1alpha1.LogPipeli
 }
 
 func (l *logComponentsChecker) createConditionFromReason(reason string) *metav1.Condition {
+	conditionType := "LogComponentsHealthy"
 	if reason == reconciler.ReasonFluentBitDSReady || reason == reconciler.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
-			Type:    logComponentsHealthyConditionType,
+			Type:    conditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  reason,
 			Message: reconciler.Condition(reason),
 		}
 	}
 	return &metav1.Condition{
-		Type:    logComponentsHealthyConditionType,
+		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
 		Message: reconciler.Condition(reason),

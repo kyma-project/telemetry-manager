@@ -45,28 +45,28 @@ type WebhookConfig struct {
 	CertConfig webhookcert.Config
 }
 
+type healthCheckers struct {
+	logs, metrics, traces ComponentHealthChecker
+}
+
 type Reconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	*rest.Config
 	config         Config
-	healthCheckers []ComponentHealthChecker
+	healthCheckers healthCheckers
 }
 
 func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config) *Reconciler {
-	healthCheckers := []ComponentHealthChecker{
-		&logComponentsChecker{client: client},
-		&traceComponentsChecker{client: client},
-	}
-	if config.Metrics.Enabled {
-		healthCheckers = append(healthCheckers, &metricComponentsChecker{client: client})
-	}
-
 	return &Reconciler{
-		Client:         client,
-		Scheme:         scheme,
-		config:         config,
-		healthCheckers: healthCheckers,
+		Client: client,
+		Scheme: scheme,
+		config: config,
+		healthCheckers: healthCheckers{
+			logs:    &logComponentsChecker{client: client},
+			traces:  &traceComponentsChecker{client: client},
+			metrics: &metricComponentsChecker{client: client},
+		},
 	}
 }
 

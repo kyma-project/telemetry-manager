@@ -53,16 +53,17 @@ func (m *metricComponentsChecker) determineReason(metricPipelines []v1alpha1.Met
 }
 
 func (m *metricComponentsChecker) createConditionFromReason(reason string) *metav1.Condition {
+	conditionType := "MetricComponentsHealthy"
 	if reason == reconciler.ReasonMetricGatewayDeploymentReady || reason == reconciler.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
-			Type:    metricComponentsHealthyConditionType,
+			Type:    conditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  reason,
 			Message: reconciler.Condition(reason),
 		}
 	}
 	return &metav1.Condition{
-		Type:    metricComponentsHealthyConditionType,
+		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
 		Message: reconciler.Condition(reason),
