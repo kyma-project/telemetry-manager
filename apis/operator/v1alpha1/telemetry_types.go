@@ -25,11 +25,6 @@ import (
 
 type State string
 
-var (
-	ConditionTypeInstallation = "Installation"
-	ConditionReasonReady      = "Ready"
-)
-
 // Valid Module CR States.
 const (
 	// StateReady signifies Module CR is Ready and has been installed successfully.

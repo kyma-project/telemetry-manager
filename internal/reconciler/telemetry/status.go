@@ -71,10 +71,10 @@ func (r *Reconciler) updateComponentCondition(ctx context.Context, checker Compo
 func (r *Reconciler) nextState(obj *operatorv1alpha1.Telemetry) operatorv1alpha1.State {
 	conditions := obj.Status.Conditions
 	var state operatorv1alpha1.State
-	state = "Ready"
+	state = operatorv1alpha1.StateReady
 	for _, c := range conditions {
 		if c.Status == metav1.ConditionFalse {
-			state = "Warning"
+			state = operatorv1alpha1.StateWarning
 		}
 	}
 	return state
