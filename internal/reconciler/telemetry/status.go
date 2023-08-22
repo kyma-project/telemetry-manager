@@ -41,28 +41,6 @@ func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alph
 	return nil
 }
 
-// checkIfDeletingWithDependentCRs transitions the state of the provided Telemetry Custom Resource based on
-// the presence of dependent CRs (LogPipeline, MetricPipeline, TracePipeline) in the cluster.
-// If the provided Telemetry CR is being deleted and no dependent Telemetry CRs are not found, the state is set to "Deleting".
-// If dependent CRs are found, the state is set to "Error" until they are removed from the cluster.
-func (r *Reconciler) checkIfDeletingWithDependentCRs(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	isBeingDeleted := !telemetry.GetDeletionTimestamp().IsZero()
-	if !isBeingDeleted {
-		return nil
-	}
-
-	if r.dependentCRsFound(ctx) {
-		telemetry.Status.State = operatorv1alpha1.StateError
-	} else {
-		telemetry.Status.State = operatorv1alpha1.StateDeleting
-	}
-
-	if err := r.Status().Update(ctx, telemetry); err != nil {
-		return fmt.Errorf("failed to update status: %w", err)
-	}
-	return nil
-}
-
 func (r *Reconciler) updateComponentCondition(ctx context.Context, checker ComponentHealthChecker, telemetry *operatorv1alpha1.Telemetry) error {
 	newCondition, err := checker.Check(ctx)
 	if err != nil {
@@ -127,6 +105,28 @@ func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndp
 		HTTP: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPHTTP),
 		GRPC: fmt.Sprintf("http://%s.%s:%d", serviceName, namespace, ports.OTLPGRPC),
 	}
+}
+
+// checkIfDeletingWithDependentCRs transitions the state of the provided Telemetry Custom Resource based on
+// the presence of dependent CRs (LogPipeline, MetricPipeline, TracePipeline) in the cluster.
+// If the provided Telemetry CR is being deleted and no dependent Telemetry CRs are not found, the state is set to "Deleting".
+// If dependent CRs are found, the state is set to "Error" until they are removed from the cluster.
+func (r *Reconciler) checkIfDeletingWithDependentCRs(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+	isBeingDeleted := !telemetry.GetDeletionTimestamp().IsZero()
+	if !isBeingDeleted {
+		return nil
+	}
+
+	if r.dependentCRsFound(ctx) {
+		telemetry.Status.State = operatorv1alpha1.StateError
+	} else {
+		telemetry.Status.State = operatorv1alpha1.StateDeleting
+	}
+
+	if err := r.Status().Update(ctx, telemetry); err != nil {
+		return fmt.Errorf("failed to update status: %w", err)
+	}
+	return nil
 }
 
 func (r *Reconciler) dependentCRsFound(ctx context.Context) bool {

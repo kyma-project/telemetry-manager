@@ -3,8 +3,6 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"time"
-
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,9 +20,7 @@ import (
 )
 
 const (
-	requeueInterval = time.Second * 10
-	finalizer       = "telemetry.kyma-project.io/finalizer"
-	fieldOwner      = "telemetry.kyma-project.io/owner"
+	finalizer = "telemetry.kyma-project.io/finalizer"
 )
 
 type Config struct {
@@ -172,10 +168,4 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	}
 
 	return nil
-}
-
-func (r *Reconciler) serverSideApply(ctx context.Context, obj client.Object) error {
-	obj.SetManagedFields(nil)
-	obj.SetResourceVersion("")
-	return r.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner(fieldOwner))
 }
