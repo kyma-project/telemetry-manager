@@ -87,18 +87,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := r.updateStatus(ctx, &telemetry); err != nil {
-		return ctrl.Result{Requeue: true}, err
+	if err := r.handleFinalizer(ctx, &telemetry); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to manage finalizer")
 	}
 
-	// add finalizer if not present
-	if telemetry.Status.State == operatorv1alpha1.StateDeleting {
-		if controllerutil.RemoveFinalizer(&telemetry, finalizer) {
-			return ctrl.Result{}, r.Client.Update(ctx, &telemetry)
-		}
-	}
-	if controllerutil.AddFinalizer(&telemetry, finalizer) {
-		return ctrl.Result{}, r.serverSideApply(ctx, &telemetry)
+	if err := r.updateStatus(ctx, &telemetry); err != nil {
+		return ctrl.Result{Requeue: true}, fmt.Errorf("failed to update status")
 	}
 
 	if err := r.reconcileWebhook(ctx, &telemetry); err != nil {
@@ -108,12 +102,48 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	err := r.deleteWebhook(ctx)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete webhook: %w", err)
+func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+	if telemetry.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !controllerutil.ContainsFinalizer(telemetry, finalizer) {
+			controllerutil.AddFinalizer(telemetry, finalizer)
+			if err := r.Update(ctx, telemetry); err != nil {
+				return fmt.Errorf("failed to update telemetry: %w", err)
+			}
+		}
+
+		return nil
 	}
 
+	if controllerutil.ContainsFinalizer(telemetry, finalizer) {
+		if r.dependentResourcesFound(ctx) {
+			return nil
+		}
+
+		err := r.deleteWebhook(ctx)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete webhook: %w", err)
+		}
+
+		controllerutil.RemoveFinalizer(telemetry, finalizer)
+		if err := r.Update(ctx, telemetry); err != nil {
+			return fmt.Errorf("failed to update telemetry: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) deleteWebhook(ctx context.Context) error {
+	webhook := &admissionv1.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: r.config.Webhook.CertConfig.WebhookName.Name,
+		},
+	}
+
+	return r.Delete(ctx, webhook)
+}
+
+func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
 	if !r.config.Webhook.Enabled {
 		return nil
 	}
@@ -146,23 +176,6 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	}
 
 	return nil
-}
-
-func (r *Reconciler) deleteWebhook(ctx context.Context) error {
-	webhook := &admissionv1.ValidatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: r.config.Webhook.CertConfig.WebhookName.Name,
-		},
-	}
-
-	return r.Delete(ctx, webhook)
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&operatorv1alpha1.Telemetry{}).
-		Complete(r)
 }
 
 func (r *Reconciler) serverSideApply(ctx context.Context, obj client.Object) error {

@@ -48,7 +48,7 @@ func (r *Reconciler) checkTelemetryBeingDeleted(ctx context.Context, telemetry *
 	instanceIsBeingDeleted := !telemetry.GetDeletionTimestamp().IsZero()
 	if instanceIsBeingDeleted &&
 		telemetry.Status.State != operatorv1alpha1.StateDeleting {
-		if r.dependentResourcesExist(ctx) {
+		if r.dependentResourcesFound(ctx) {
 			// there are some resources still in use update status and retry
 			r.updateTelemetryStatus(ctx, telemetry, telemetry.Status.WithState(operatorv1alpha1.StateError))
 		}
@@ -168,7 +168,7 @@ func (r *Reconciler) serverSideApplyStatus(ctx context.Context, obj client.Objec
 		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}})
 }
 
-func (r *Reconciler) dependentResourcesExist(ctx context.Context) bool {
+func (r *Reconciler) dependentResourcesFound(ctx context.Context) bool {
 	return r.resourcesExist(ctx, &telemetryv1alpha1.LogParserList{}) ||
 		r.resourcesExist(ctx, &telemetryv1alpha1.LogPipelineList{}) ||
 		r.resourcesExist(ctx, &telemetryv1alpha1.MetricPipelineList{}) ||

@@ -116,7 +116,9 @@ var _ = BeforeSuite(func() {
 	}
 	client := mgr.GetClient()
 
-	telemetryReconciler := telemetry.NewReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"), config)
+	telemetryReconciler := NewTelemetryReconciler(client,
+		telemetry.NewReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"), config),
+		config)
 	err = telemetryReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
