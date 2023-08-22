@@ -76,6 +76,35 @@ func ConsistOfNumberOfSpans(expectedNumber int) types.GomegaMatcher {
 	}, gomega.Equal(expectedNumber))
 }
 
+// ContainSpansWithAttributes succeeds if the filexporter output file has one or more spans with the span attributes passed into the matcher.
+func ContainSpansWithAttributes(expectedAttrs pcommon.Map) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlTraces []byte) ([]ptrace.Span, error) {
+		tds, err := unmarshalTraces(jsonlTraces)
+		if err != nil {
+			return nil, fmt.Errorf("ContainSpansWithAttributes requires a valid OTLP JSON document: %v", err)
+		}
+
+		spans := getAllSpans(tds)
+
+		var matchingSpans []ptrace.Span
+		for _, span := range spans {
+			if hasMatchingAttributes(span, expectedAttrs) {
+				matchingSpans = append(matchingSpans, span)
+			}
+		}
+		return matchingSpans, nil
+	}, gomega.Not(gomega.BeEmpty()))
+}
+
+func hasMatchingAttributes(span ptrace.Span, expectedAttrs pcommon.Map) bool {
+	for expectedKey, expectedVal := range expectedAttrs.AsRaw() {
+		if value, hasKey := span.Attributes().Get(expectedKey); !hasKey || value.AsString() != expectedVal {
+			return false
+		}
+	}
+	return true
+}
+
 func getAllSpans(tds []ptrace.Traces) []ptrace.Span {
 	var spans []ptrace.Span
 
