@@ -93,7 +93,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config) (*operat
 	}
 
 	if cond.Status != metav1.ConditionTrue || cond.Reason != reconciler.ReasonTraceGatewayDeploymentReady {
-		return &operatorv1alpha1.OTLPEndpoints{}, nil
+		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
 	return makeOTLPEndpoints(config.Traces.OTLPServiceName, config.Traces.Namespace), nil
