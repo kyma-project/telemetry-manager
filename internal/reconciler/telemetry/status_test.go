@@ -80,8 +80,7 @@ func TestUpdateConditions_NoPipelines(t *testing.T) {
 	require.Len(t, conditions, 3)
 	endpoints := obj.Status.GatewayEndpoints
 	expectedEndpoint := operatorv1alpha1.GatewayEndpoints{
-		Traces:  &operatorv1alpha1.OTLPEndpoints{},
-		Metrics: &operatorv1alpha1.OTLPEndpoints{},
+		Traces: &operatorv1alpha1.OTLPEndpoints{},
 	}
 	require.Equal(t, endpoints, expectedEndpoint)
 	var expectedState operatorv1alpha1.State = "Ready"
@@ -234,8 +233,6 @@ func TestUpdateConditions_MetricPipelineRunning(t *testing.T) {
 		}
 	}
 	endpoints := obj.Status.GatewayEndpoints
-	require.Equal(t, endpoints.Metrics.GRPC, "http://metric-otlp-svc.default:4317")
-	require.Equal(t, endpoints.Metrics.HTTP, "http://metric-otlp-svc.default:4318")
 	require.Equal(t, endpoints.Traces.GRPC, "")
 	require.Equal(t, endpoints.Traces.HTTP, "")
 }
