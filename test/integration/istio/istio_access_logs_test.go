@@ -1,6 +1,6 @@
-//go:build e2e
+//go:build istio
 
-package integration
+package istio
 
 import (
 	"net/http"
@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 )
 
-var _ = Describe("Istio access logs", Label("istio"), func() {
+var _ = Describe("Istio access logs", Label("logging"), func() {
 	Context("Istio", Ordered, func() {
 		var (
 			urls               *mocks.URLProvider
@@ -74,8 +74,9 @@ var _ = Describe("Istio access logs", Label("istio"), func() {
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {
 			Eventually(func(g Gomega) {
-				_, err := proxyClient.Get(urls.MetricPodURL())
+				resp, err := proxyClient.Get(urls.MetricPodURL())
 				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 			}, timeout, interval).Should(Succeed())
 		})
 
