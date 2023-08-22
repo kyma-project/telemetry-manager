@@ -612,7 +612,7 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eve
 		Webhook: webhookConfig,
 	}
 
-	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, config), config)
+	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config), config)
 }
 
 func createWebhookConfig() telemetry.WebhookConfig {

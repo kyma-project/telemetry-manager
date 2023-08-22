@@ -10,7 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -54,13 +53,11 @@ type Reconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	*rest.Config
-	// EventRecorder for creating k8s events
-	record.EventRecorder
 	config         Config
 	healthCheckers []ComponentHealthChecker
 }
 
-func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, config Config) *Reconciler {
+func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config) *Reconciler {
 	healthCheckers := []ComponentHealthChecker{
 		&logComponentsChecker{client: client},
 		&traceComponentsChecker{client: client},
@@ -72,7 +69,6 @@ func NewReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder r
 	return &Reconciler{
 		Client:         client,
 		Scheme:         scheme,
-		EventRecorder:  eventRecorder,
 		config:         config,
 		healthCheckers: healthCheckers,
 	}
@@ -115,7 +111,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 	}
 
 	if controllerutil.ContainsFinalizer(telemetry, finalizer) {
-		if r.dependentTelemetryCRsFound(ctx) {
+		if r.dependentCRsFound(ctx) {
 			return nil
 		}
 

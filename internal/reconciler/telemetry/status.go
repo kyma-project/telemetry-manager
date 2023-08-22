@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -36,23 +34,32 @@ func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alph
 		return fmt.Errorf("failed to update gateway endpoints: %w", err)
 	}
 
-	if err := r.checkDependentTelemetryCRs(ctx, telemetry); err != nil {
+	if err := r.checkIfDeletingWithDependentCRs(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to check if telemetry is being deleted: %w", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) checkDependentTelemetryCRs(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	instanceIsBeingDeleted := !telemetry.GetDeletionTimestamp().IsZero()
-	if instanceIsBeingDeleted &&
-		telemetry.Status.State != operatorv1alpha1.StateDeleting {
-		if r.dependentTelemetryCRsFound(ctx) {
-			r.updateStatusState(ctx, telemetry, operatorv1alpha1.StateError)
-		}
-		r.updateStatusState(ctx, telemetry, operatorv1alpha1.StateDeleting)
+// checkIfDeletingWithDependentCRs transitions the state of the provided Telemetry Custom Resource based on
+// the presence of dependent CRs (LogPipeline, MetricPipeline, TracePipeline) in the cluster.
+// If the provided Telemetry CR is being deleted and no dependent Telemetry CRs are not found, the state is set to "Deleting".
+// If dependent CRs are found, the state is set to "Error" until they are removed from the cluster.
+func (r *Reconciler) checkIfDeletingWithDependentCRs(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+	isBeingDeleted := !telemetry.GetDeletionTimestamp().IsZero()
+	if !isBeingDeleted {
+		return nil
 	}
 
+	if r.dependentCRsFound(ctx) {
+		telemetry.Status.State = operatorv1alpha1.StateError
+	} else {
+		telemetry.Status.State = operatorv1alpha1.StateDeleting
+	}
+
+	if err := r.Status().Update(ctx, telemetry); err != nil {
+		return fmt.Errorf("failed to update status: %w", err)
+	}
 	return nil
 }
 
@@ -64,14 +71,16 @@ func (r *Reconciler) updateComponentCondition(ctx context.Context, checker Compo
 
 	newCondition.ObservedGeneration = telemetry.GetGeneration()
 	meta.SetStatusCondition(&telemetry.Status.Conditions, *newCondition)
-	telemetry.Status.Status.State = r.nextState(telemetry)
-	return r.serverSideApplyStatus(ctx, telemetry)
+	telemetry.Status.Status.State = stateFromConditions(telemetry.Status.Conditions)
+
+	if err := r.Status().Update(ctx, telemetry); err != nil {
+		return fmt.Errorf("failed to update status: %w", err)
+	}
+	return nil
 }
 
-func (r *Reconciler) nextState(obj *operatorv1alpha1.Telemetry) operatorv1alpha1.State {
-	conditions := obj.Status.Conditions
-	var state operatorv1alpha1.State
-	state = operatorv1alpha1.StateReady
+func stateFromConditions(conditions []metav1.Condition) operatorv1alpha1.State {
+	state := operatorv1alpha1.StateReady
 	for _, c := range conditions {
 		if c.Status == metav1.ConditionFalse {
 			state = operatorv1alpha1.StateWarning
@@ -81,45 +90,19 @@ func (r *Reconciler) nextState(obj *operatorv1alpha1.Telemetry) operatorv1alpha1
 }
 
 func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	logf := log.FromContext(ctx)
-	var metricEndpoints *operatorv1alpha1.OTLPEndpoints
-	var err error
-
-	if r.config.Metrics.Enabled {
-		metricEndpoints, err = r.metricEndpoints(ctx, r.config, telemetry.Status.Conditions)
-		if err != nil {
-			logf.Error(err, "Unable to update metric endpoints")
-		}
-	}
-
 	traceEndpoints, err := r.traceEndpoints(ctx, r.config, telemetry.Status.Conditions)
 	if err != nil {
-		logf.Error(err, "Unable to update trace endpoints")
+		return fmt.Errorf("failed to get trace endpoints: %w", err)
 	}
 
 	telemetry.Status.GatewayEndpoints = operatorv1alpha1.GatewayEndpoints{
-		Traces:  traceEndpoints,
-		Metrics: metricEndpoints,
+		Traces: traceEndpoints,
 	}
 
-	return r.serverSideApplyStatus(ctx, telemetry)
-}
-
-func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, conditions []metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {
-	var metricPipelines telemetryv1alpha1.MetricPipelineList
-	err := r.Client.List(ctx, &metricPipelines)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get all mertic pipelines while syncing conditions: %w", err)
+	if err := r.Status().Update(ctx, telemetry); err != nil {
+		return fmt.Errorf("failed to update status: %w", err)
 	}
-	if len(metricPipelines.Items) == 0 {
-		return &operatorv1alpha1.OTLPEndpoints{}, nil
-	}
-
-	if !meta.IsStatusConditionTrue(conditions, metricComponentsHealthyConditionType) {
-		return &operatorv1alpha1.OTLPEndpoints{}, nil
-	}
-
-	return makeOTLPEndpoints(config.Metrics.OTLPServiceName, config.Metrics.Namespace), nil
+	return nil
 }
 
 func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, conditions []metav1.Condition) (*operatorv1alpha1.OTLPEndpoints, error) {
@@ -146,26 +129,7 @@ func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndp
 	}
 }
 
-func (r *Reconciler) updateStatusState(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, newState operatorv1alpha1.State) error {
-	telemetry.Status.State = newState
-
-	if err := r.serverSideApplyStatus(ctx, telemetry); err != nil {
-		r.Event(telemetry, "Warning", "ErrorUpdatingStatus", fmt.Sprintf("updating state to %v", string(newState)))
-		return fmt.Errorf("error while updating status %s to: %w", newState, err)
-	}
-
-	r.Event(telemetry, "Normal", "StatusUpdated", fmt.Sprintf("updating state to %v", string(newState)))
-	return nil
-}
-
-func (r *Reconciler) serverSideApplyStatus(ctx context.Context, obj client.Object) error {
-	obj.SetManagedFields(nil)
-	obj.SetResourceVersion("")
-	return r.Status().Patch(ctx, obj, client.Apply,
-		&client.SubResourcePatchOptions{PatchOptions: client.PatchOptions{FieldManager: fieldOwner}})
-}
-
-func (r *Reconciler) dependentTelemetryCRsFound(ctx context.Context) bool {
+func (r *Reconciler) dependentCRsFound(ctx context.Context) bool {
 	return r.resourcesExist(ctx, &telemetryv1alpha1.LogParserList{}) ||
 		r.resourcesExist(ctx, &telemetryv1alpha1.LogPipelineList{}) ||
 		r.resourcesExist(ctx, &telemetryv1alpha1.MetricPipelineList{}) ||

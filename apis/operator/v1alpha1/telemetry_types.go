@@ -65,8 +65,7 @@ type TelemetryStatus struct {
 }
 
 type GatewayEndpoints struct {
-	Traces  *OTLPEndpoints `json:"traces,omitempty"`
-	Metrics *OTLPEndpoints `json:"metrics,omitempty"`
+	Traces *OTLPEndpoints `json:"traces,omitempty"`
 }
 
 type OTLPEndpoints struct {
