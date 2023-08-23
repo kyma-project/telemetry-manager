@@ -89,13 +89,13 @@ func makeTLSConfig(output *telemetryv1alpha1.OtlpOutput, otlpEndpointValue, pipe
 
 	cfg.InsecureSkipVerify = output.TLS.InsecureSkipVerify
 	if output.TLS.CA.IsDefined() {
-		cfg.CAPem = fmt.Sprintf("${%s}", makeTLSVariable(tlsConfigCaVariablePrefix, pipelineName))
+		cfg.CAPem = fmt.Sprintf("${%s}", makeTLSCaVariable(pipelineName))
 	}
 	if output.TLS.Cert.IsDefined() {
-		cfg.CertPem = fmt.Sprintf("${%s}", makeTLSVariable(tlsConfigCertVariablePrefix, pipelineName))
+		cfg.CertPem = fmt.Sprintf("${%s}", makeTLSCertVariable(pipelineName))
 	}
 	if output.TLS.Key.IsDefined() {
-		cfg.KeyPem = fmt.Sprintf("${%s}", makeTLSVariable(tlsConfigKeyVariablePrefix, pipelineName))
+		cfg.KeyPem = fmt.Sprintf("${%s}", makeTLSKeyVariable(pipelineName))
 	}
 
 	return cfg
