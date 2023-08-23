@@ -9,6 +9,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"golang.org/x/exp/slices"
 )
 
 type metricComponentsChecker struct {
@@ -19,37 +20,40 @@ func (m *metricComponentsChecker) Check(ctx context.Context) (*metav1.Condition,
 	var metricPipelines v1alpha1.MetricPipelineList
 	err := m.client.List(ctx, &metricPipelines)
 	if err != nil {
-		return &metav1.Condition{}, fmt.Errorf("failed to get all mertic pipelines while syncing conditions: %w", err)
+		return &metav1.Condition{}, fmt.Errorf("failed to get list metric pipelines: %w", err)
 	}
 
 	reason := m.determineReason(metricPipelines.Items)
 	return m.createConditionFromReason(reason), nil
 }
 
-func (m *metricComponentsChecker) determineReason(metricPipelines []v1alpha1.MetricPipeline) string {
-	if len(metricPipelines) == 0 {
+func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPipeline) string {
+	if len(pipelines) == 0 {
 		return reconciler.ReasonNoPipelineDeployed
 	}
 
-	for _, pipeline := range metricPipelines {
-		conditions := pipeline.Status.Conditions
-		if len(conditions) == 0 {
-			return reconciler.ReasonMetricGatewayDeploymentNotReady
-		}
-
-		lastCondition := conditions[len(conditions)-1]
-		if lastCondition.Reason == reconciler.ReasonWaitingForLock {
-			// Skip the case when user has deployed more than supported pipelines
-			continue
-		}
-		if lastCondition.Reason == reconciler.ReasonReferencedSecretMissing {
-			return reconciler.ReasonReferencedSecretMissing
-		}
-		if lastCondition.Type == v1alpha1.MetricPipelinePending {
-			return reconciler.ReasonMetricGatewayDeploymentNotReady
-		}
+	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
+		return m.isPendingWithReason(p, reconciler.ReasonMetricGatewayDeploymentNotReady)
+	}); found {
+		return reconciler.ReasonMetricGatewayDeploymentNotReady
 	}
+
+	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
+		return m.isPendingWithReason(p, reconciler.ReasonReferencedSecretMissing)
+	}); found {
+		return reconciler.ReasonReferencedSecretMissing
+	}
+
 	return reconciler.ReasonMetricGatewayDeploymentReady
+}
+
+func (m *metricComponentsChecker) isPendingWithReason(p v1alpha1.MetricPipeline, reason string) bool {
+	if len(p.Status.Conditions) == 0 {
+		return false
+	}
+
+	lastCondition := p.Status.Conditions[len(p.Status.Conditions)-1]
+	return lastCondition.Type == v1alpha1.MetricPipelinePending && lastCondition.Reason == reason
 }
 
 func (m *metricComponentsChecker) createConditionFromReason(reason string) *metav1.Condition {

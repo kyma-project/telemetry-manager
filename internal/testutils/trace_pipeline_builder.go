@@ -15,6 +15,7 @@ type TracePipelineBuilder struct {
 	endpoint          string
 	basicAuthUser     string
 	basicAuthPassword string
+	status            telemetryv1alpha1.TracePipelineStatus
 }
 
 func NewTracePipelineBuilder() *TracePipelineBuilder {
@@ -38,6 +39,11 @@ func (b *TracePipelineBuilder) WithEndpoint(endpoint string) *TracePipelineBuild
 func (b *TracePipelineBuilder) WithBasicAuth(user, password string) *TracePipelineBuilder {
 	b.basicAuthUser = user
 	b.basicAuthPassword = password
+	return b
+}
+
+func (b *TracePipelineBuilder) WithStatus(status telemetryv1alpha1.TracePipelineStatus) *TracePipelineBuilder {
+	b.status = status
 	return b
 }
 
@@ -66,5 +72,6 @@ func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
 				},
 			},
 		},
+		Status: b.status,
 	}
 }
