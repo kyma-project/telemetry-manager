@@ -228,7 +228,7 @@ spec:
                                 type: object
                             type: object
                           insecure:
-                            description: Defines whether to send requests via plaintext
+                            description: Defines whether to send requests using plaintext
                               instead of TLS.
                             type: boolean
                           insecureSkipVerify:

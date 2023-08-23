@@ -49,7 +49,7 @@ type Header struct {
 }
 
 type OtlpTLS struct {
-	// Defines whether to send requests via plaintext instead of TLS.
+	// Defines whether to send requests using plaintext instead of TLS.
 	Insecure bool `json:"insecure"`
 	// Defines whether to skip TLS certificate verification.
 	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
