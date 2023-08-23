@@ -10,7 +10,7 @@ function create_module() {
 }
 
 function apply_doc_url_annotation() {
-    kubectl annotate --local=true -f template.yaml operator.kyma-project.io/doc-url=https://github.com/kyma-project/telemetry-manager/tree/${RELEASE_TAG}/docs/user -o yaml > temporary-template.yaml
+    kubectl annotate --local=true -f template.yaml operator.kyma-project.io/doc-url=https://kyma-project.io/#/telemetry-manager/user/README
     mv temporary-template.yaml template.yaml
 }
 
