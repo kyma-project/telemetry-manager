@@ -228,7 +228,6 @@ spec:
                                 type: object
                             type: object
                           insecure:
-                            default: false
                             description: Defines whether to send requests via plaintext
                               instead of TLS.
                             type: boolean

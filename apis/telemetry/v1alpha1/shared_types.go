@@ -50,7 +50,6 @@ type Header struct {
 
 type OtlpTLS struct {
 	// Defines whether to send requests via plaintext instead of TLS.
-	// +kubebuilder:default:=false
 	Insecure bool `json:"insecure"`
 	// Defines whether to skip TLS certificate verification.
 	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
