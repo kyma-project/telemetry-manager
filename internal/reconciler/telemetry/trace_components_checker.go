@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/exp/slices"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
-	"golang.org/x/exp/slices"
 )
 
 type traceComponentsChecker struct {
@@ -28,19 +28,19 @@ func (t *traceComponentsChecker) Check(ctx context.Context) (*metav1.Condition, 
 
 }
 
-func (m *traceComponentsChecker) determineReason(pipelines []v1alpha1.TracePipeline) string {
+func (t *traceComponentsChecker) determineReason(pipelines []v1alpha1.TracePipeline) string {
 	if len(pipelines) == 0 {
 		return reconciler.ReasonNoPipelineDeployed
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.TracePipeline) bool {
-		return m.isPendingWithReason(p, reconciler.ReasonTraceGatewayDeploymentNotReady)
+		return t.isPendingWithReason(p, reconciler.ReasonTraceGatewayDeploymentNotReady)
 	}); found {
 		return reconciler.ReasonTraceGatewayDeploymentNotReady
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.TracePipeline) bool {
-		return m.isPendingWithReason(p, reconciler.ReasonReferencedSecretMissing)
+		return t.isPendingWithReason(p, reconciler.ReasonReferencedSecretMissing)
 	}); found {
 		return reconciler.ReasonReferencedSecretMissing
 	}
@@ -48,7 +48,7 @@ func (m *traceComponentsChecker) determineReason(pipelines []v1alpha1.TracePipel
 	return reconciler.ReasonTraceGatewayDeploymentReady
 }
 
-func (m *traceComponentsChecker) isPendingWithReason(p v1alpha1.TracePipeline, reason string) bool {
+func (t *traceComponentsChecker) isPendingWithReason(p v1alpha1.TracePipeline, reason string) bool {
 	if len(p.Status.Conditions) == 0 {
 		return false
 	}

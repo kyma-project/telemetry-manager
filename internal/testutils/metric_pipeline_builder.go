@@ -2,12 +2,13 @@ package testutils
 
 import (
 	"fmt"
+	"math/rand"
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
-	"math/rand"
-	"time"
 )
 
 type MetricPipelineBuilder struct {

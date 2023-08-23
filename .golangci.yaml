@@ -128,6 +128,8 @@ issues:
     - linters: [ dupl ]
       path: test/testkit/matchers/(log|metric|trace)_matchers.go
     - linters: [ dupl ]
+      path: internal/reconciler/telemetry/log_components_checker.go
+    - linters: [ dupl ]
       path: internal/reconciler/telemetry/metric_components_checker.go
     - linters: [ dupl ]
       path: internal/reconciler/telemetry/trace_components_checker.go

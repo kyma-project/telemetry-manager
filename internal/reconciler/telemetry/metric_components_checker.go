@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/exp/slices"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
-	"golang.org/x/exp/slices"
 )
 
 type metricComponentsChecker struct {

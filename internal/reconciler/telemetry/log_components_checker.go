@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/exp/slices"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
-	"golang.org/x/exp/slices"
 )
 
 type logComponentsChecker struct {
@@ -27,19 +27,19 @@ func (l *logComponentsChecker) Check(ctx context.Context) (*metav1.Condition, er
 	return l.createConditionFromReason(reason), nil
 }
 
-func (m *logComponentsChecker) determineReason(pipelines []v1alpha1.LogPipeline) string {
+func (l *logComponentsChecker) determineReason(pipelines []v1alpha1.LogPipeline) string {
 	if len(pipelines) == 0 {
 		return reconciler.ReasonNoPipelineDeployed
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.LogPipeline) bool {
-		return m.isPendingWithReason(p, reconciler.ReasonFluentBitDSNotReady)
+		return l.isPendingWithReason(p, reconciler.ReasonFluentBitDSNotReady)
 	}); found {
 		return reconciler.ReasonFluentBitDSNotReady
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.LogPipeline) bool {
-		return m.isPendingWithReason(p, reconciler.ReasonReferencedSecretMissing)
+		return l.isPendingWithReason(p, reconciler.ReasonReferencedSecretMissing)
 	}); found {
 		return reconciler.ReasonReferencedSecretMissing
 	}
