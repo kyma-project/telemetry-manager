@@ -33,7 +33,7 @@ func TestLogPipelineMissingSecret(t *testing.T) {
 		Type:    "LogComponentsHealthy",
 		Status:  "False",
 		Reason:  "ReferencedSecretMissing",
-		Message: "One or more referenced secrets are missing",
+		Message: "One or more referenced Secrets are missing",
 	}
 	require.Equal(t, cond, expectedCond)
 
@@ -61,7 +61,7 @@ func TestMultipleLogPipelineOnePending(t *testing.T) {
 		Type:    "LogComponentsHealthy",
 		Status:  "False",
 		Reason:  "FluentBitDaemonSetNotReady",
-		Message: "Fluent bit Daemonset is not ready",
+		Message: "Fluent Bit DaemonSet is not ready",
 	}
 	require.Equal(t, cond, expectedCond)
 
@@ -90,7 +90,7 @@ func TestAllLogPipelinesHealthy(t *testing.T) {
 		Type:    "LogComponentsHealthy",
 		Status:  "True",
 		Reason:  "FluentBitDaemonSetReady",
-		Message: "Fluent bit Daemonset is ready",
+		Message: "Fluent Bit DaemonSet is ready",
 	}
 	require.Equal(t, cond, expectedCond)
 

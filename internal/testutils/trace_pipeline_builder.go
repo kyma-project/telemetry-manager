@@ -1,28 +1,30 @@
 package testutils
 
 import (
-	"fmt"
-	"time"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"fmt"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"math/rand"
+	"time"
 )
 
 type TracePipelineBuilder struct {
+	randSource rand.Source
+
 	name              string
-	namespace         string
 	endpoint          string
 	basicAuthUser     string
 	basicAuthPassword string
-	status            telemetryv1alpha1.TracePipelineStatus
+
+	conditions []telemetryv1alpha1.TracePipelineCondition
 }
 
 func NewTracePipelineBuilder() *TracePipelineBuilder {
 	return &TracePipelineBuilder{
-		name:      fmt.Sprintf("test-%d", time.Now().Nanosecond()),
-		namespace: "telemetry-system",
-		endpoint:  "https://localhost",
+		randSource: rand.NewSource(time.Now().UnixNano()),
+		endpoint:   "https://localhost",
 	}
 }
 
@@ -42,16 +44,34 @@ func (b *TracePipelineBuilder) WithBasicAuth(user, password string) *TracePipeli
 	return b
 }
 
-func (b *TracePipelineBuilder) WithStatus(status telemetryv1alpha1.TracePipelineStatus) *TracePipelineBuilder {
-	b.status = status
+func TracePendingCondition(reason string) telemetryv1alpha1.TracePipelineCondition {
+	return telemetryv1alpha1.TracePipelineCondition{
+		Reason: reason,
+		Type:   telemetryv1alpha1.TracePipelinePending,
+	}
+}
+
+func TraceRunningCondition() telemetryv1alpha1.TracePipelineCondition {
+	return telemetryv1alpha1.TracePipelineCondition{
+		Reason: reconciler.ReasonTraceGatewayDeploymentReady,
+		Type:   telemetryv1alpha1.TracePipelineRunning,
+	}
+}
+
+func (b *TracePipelineBuilder) WithStatusConditions(conditions ...telemetryv1alpha1.TracePipelineCondition) *TracePipelineBuilder {
+	b.conditions = conditions
 	return b
 }
 
 func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
+	name := b.name
+	if name == "" {
+		name = fmt.Sprintf("test-%d", b.randSource.Int63())
+	}
+
 	return telemetryv1alpha1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      b.name,
-			Namespace: b.namespace,
+			Name: name,
 		},
 		Spec: telemetryv1alpha1.TracePipelineSpec{
 			Output: telemetryv1alpha1.TracePipelineOutput{
@@ -72,6 +92,8 @@ func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
 				},
 			},
 		},
-		Status: b.status,
+		Status: telemetryv1alpha1.TracePipelineStatus{
+			Conditions: b.conditions,
+		},
 	}
 }

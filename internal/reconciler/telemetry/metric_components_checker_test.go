@@ -42,7 +42,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    "MetricComponentsHealthy",
 				Status:  "True",
 				Reason:  "MetricGatewayDeploymentReady",
-				Message: "Metric gateway deployment is ready",
+				Message: "Metric gateway Deployment is ready",
 			},
 		},
 		{
@@ -57,7 +57,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
 				Reason:  "ReferencedSecretMissing",
-				Message: "One or more referenced secrets are missing",
+				Message: "One or more referenced Secrets are missing",
 			},
 		},
 		{
@@ -72,7 +72,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
 				Reason:  "MetricGatewayDeploymentNotReady",
-				Message: "Metric gateway deployment is not ready",
+				Message: "Metric gateway Deployment is not ready",
 			},
 		},
 		{
@@ -87,7 +87,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    "MetricComponentsHealthy",
 				Status:  "True",
 				Reason:  "MetricGatewayDeploymentReady",
-				Message: "Metric gateway deployment is ready",
+				Message: "Metric gateway Deployment is ready",
 			},
 		},
 		{
@@ -102,7 +102,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
 				Reason:  "MetricGatewayDeploymentNotReady",
-				Message: "Metric gateway deployment is not ready",
+				Message: "Metric gateway Deployment is not ready",
 			},
 		},
 	}

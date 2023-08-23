@@ -5,9 +5,8 @@ const (
 	ReasonReferencedSecretMissing = "ReferencedSecretMissing"
 	ReasonWaitingForLock          = "WaitingForLock"
 
-	ReasonFluentBitDSNotReady          = "FluentBitDaemonSetNotReady"
-	ReasonFluentBitDSReady             = "FluentBitDaemonSetReady"
-	ReasonFluentBitPodCrashBackLooping = "FluentBitPodCrashBackLoop"
+	ReasonFluentBitDSNotReady = "FluentBitDaemonSetNotReady"
+	ReasonFluentBitDSReady    = "FluentBitDaemonSetReady"
 
 	ReasonMetricGatewayDeploymentNotReady = "MetricGatewayDeploymentNotReady"
 	ReasonMetricGatewayDeploymentReady    = "MetricGatewayDeploymentReady"
@@ -18,18 +17,17 @@ const (
 
 var conditions = map[string]string{
 	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
-	ReasonReferencedSecretMissing: "One or more referenced secrets are missing",
+	ReasonReferencedSecretMissing: "One or more referenced Secrets are missing",
 	ReasonWaitingForLock:          "Waiting for the lock",
 
-	ReasonFluentBitDSNotReady:          "Fluent bit Daemonset is not ready",
-	ReasonFluentBitDSReady:             "Fluent bit Daemonset is ready",
-	ReasonFluentBitPodCrashBackLooping: "Fluent bit pod is in crashback loop",
+	ReasonFluentBitDSNotReady: "Fluent Bit DaemonSet is not ready",
+	ReasonFluentBitDSReady:    "Fluent Bit DaemonSet is ready",
 
-	ReasonMetricGatewayDeploymentNotReady: "Metric gateway deployment is not ready",
-	ReasonMetricGatewayDeploymentReady:    "Metric gateway deployment is ready",
+	ReasonMetricGatewayDeploymentNotReady: "Metric gateway Deployment is not ready",
+	ReasonMetricGatewayDeploymentReady:    "Metric gateway Deployment is ready",
 
-	ReasonTraceGatewayDeploymentNotReady: "Trace collector is deployment not ready",
-	ReasonTraceGatewayDeploymentReady:    "Trace collector deployment is ready",
+	ReasonTraceGatewayDeploymentNotReady: "Trace collector Deployment is not ready",
+	ReasonTraceGatewayDeploymentReady:    "Trace collector Deployment is ready",
 }
 
 func Condition(reason string) string {

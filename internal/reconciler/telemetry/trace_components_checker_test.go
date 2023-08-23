@@ -12,127 +12,120 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
-func TestTracePipelineMissingSecret(t *testing.T) {
-	ctx := context.Background()
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	tc := traceComponentsChecker{client: fakeClient}
-	metricObj := makeTracePipeline("foo", telemetryv1alpha1.TracePipelinePending, reconciler.ReasonReferencedSecretMissing)
-
-	err := fakeClient.Create(ctx, &metricObj)
-	require.NoError(t, err)
-
-	cond, err := tc.Check(ctx)
-	require.NoError(t, err)
-	expectedCond := &metav1.Condition{
-		Type:    "TraceComponentsHealthy",
-		Status:  "False",
-		Reason:  reconciler.ReasonReferencedSecretMissing,
-		Message: "One or more referenced secrets are missing",
-	}
-	require.Equal(t, cond, expectedCond)
-}
-
-func TestMultipleTracePipelineOnePending(t *testing.T) {
-	ctx := context.Background()
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	tc := traceComponentsChecker{client: fakeClient}
-	traceObj0 := makeTracePipeline("foo", telemetryv1alpha1.TracePipelinePending, reconciler.ReasonMetricGatewayDeploymentNotReady)
-	traceObj1 := makeTracePipeline("bar", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
-
-	err := fakeClient.Create(ctx, &traceObj0)
-	require.NoError(t, err)
-	err = fakeClient.Create(ctx, &traceObj1)
-	require.NoError(t, err)
-
-	cond, err := tc.Check(ctx)
-	require.NoError(t, err)
-	expectedCond := &metav1.Condition{
-		Type:    "TraceComponentsHealthy",
-		Status:  "False",
-		Reason:  "TraceCollectorDeploymentNotReady",
-		Message: "Trace collector is deployment not ready",
-	}
-	require.Equal(t, cond, expectedCond)
-}
-
-func TestAllTracePipelinesHealthy(t *testing.T) {
-	ctx := context.Background()
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	tc := traceComponentsChecker{client: fakeClient}
-
-	traceObj0 := makeTracePipeline("foo", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
-	traceObj1 := makeTracePipeline("bar", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
-
-	err := fakeClient.Create(ctx, &traceObj0)
-	require.NoError(t, err)
-	err = fakeClient.Create(ctx, &traceObj1)
-	require.NoError(t, err)
-
-	cond, err := tc.Check(ctx)
-	require.NoError(t, err)
-	expectedCond := &metav1.Condition{
-		Type:    "TraceComponentsHealthy",
-		Status:  "True",
-		Reason:  "TraceCollectorDeploymentReady",
-		Message: "Trace collector deployment is ready",
-	}
-	require.Equal(t, cond, expectedCond)
-
-}
-func TestMultipleTracePipelinesOneLock(t *testing.T) {
-	ctx := context.Background()
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	tc := traceComponentsChecker{client: fakeClient}
-
-	traceObj0 := makeTracePipeline("foo", telemetryv1alpha1.TracePipelineRunning, reconciler.ReasonMetricGatewayDeploymentReady)
-	traceObj1 := makeTracePipeline("bar", telemetryv1alpha1.TracePipelinePending, reconciler.ReasonWaitingForLock)
-
-	err := fakeClient.Create(ctx, &traceObj0)
-	require.NoError(t, err)
-	err = fakeClient.Create(ctx, &traceObj1)
-	require.NoError(t, err)
-
-	cond, err := tc.Check(ctx)
-	require.NoError(t, err)
-	expectedCond := &metav1.Condition{
-		Type:    "TraceComponentsHealthy",
-		Status:  "True",
-		Reason:  "TraceCollectorDeploymentReady",
-		Message: "Trace collector deployment is ready",
-	}
-	require.Equal(t, cond, expectedCond)
-}
-
-func makeTracePipeline(name string, state telemetryv1alpha1.TracePipelineConditionType, reason string) telemetryv1alpha1.TracePipeline {
-	return telemetryv1alpha1.TracePipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Spec: telemetryv1alpha1.TracePipelineSpec{},
-		Status: telemetryv1alpha1.TracePipelineStatus{
-			Conditions: []telemetryv1alpha1.TracePipelineCondition{{
-				Type:   state,
-				Reason: reason},
+func TestTraceComponentsCheck(t *testing.T) {
+	tests := []struct {
+		name              string
+		pipelines         []telemetryv1alpha1.TracePipeline
+		expectedCondition *metav1.Condition
+	}{
+		{
+			name: "should be healthy if no pipelines deployed",
+			expectedCondition: &metav1.Condition{
+				Type:    "TraceComponentsHealthy",
+				Status:  "True",
+				Reason:  "NoPipelineDeployed",
+				Message: "No pipelines have been deployed",
 			},
 		},
+		{
+			name: "should be healthy if all pipelines running",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().WithStatusConditions(
+					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
+				testutils.NewTracePipelineBuilder().WithStatusConditions(
+					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "TraceComponentsHealthy",
+				Status:  "True",
+				Reason:  "TraceCollectorDeploymentReady",
+				Message: "Trace collector Deployment is ready",
+			},
+		},
+		{
+			name: "should fail if one pipeline refs missing secret",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().WithStatusConditions(
+					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
+				testutils.NewTracePipelineBuilder().WithStatusConditions(
+					testutils.TracePendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "TraceComponentsHealthy",
+				Status:  "False",
+				Reason:  "ReferencedSecretMissing",
+				Message: "One or more referenced Secrets are missing",
+			},
+		},
+		{
+			name: "should fail if one pipeline waiting for gateway",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().WithStatusConditions(
+					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
+				testutils.NewTracePipelineBuilder().WithStatusConditions(
+					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady)).Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "TraceComponentsHealthy",
+				Status:  "False",
+				Reason:  "TraceCollectorDeploymentNotReady",
+				Message: "Trace collector Deployment is not ready",
+			},
+		},
+		{
+			name: "should ignore pipelines waiting for lock",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().WithStatusConditions(
+					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
+				testutils.NewTracePipelineBuilder().WithStatusConditions(
+					testutils.TracePendingCondition(reconciler.ReasonWaitingForLock)).Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "TraceComponentsHealthy",
+				Status:  "True",
+				Reason:  "TraceCollectorDeploymentReady",
+				Message: "Trace collector Deployment is ready",
+			},
+		},
+		{
+			name: "should prioritize missing secret over unready gateway reason",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().WithStatusConditions(
+					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady)).Build(),
+				testutils.NewTracePipelineBuilder().WithStatusConditions(
+					testutils.TracePendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "TraceComponentsHealthy",
+				Status:  "False",
+				Reason:  "TraceCollectorDeploymentNotReady",
+				Message: "Trace collector Deployment is not ready",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			scheme := runtime.NewScheme()
+			_ = clientgoscheme.AddToScheme(scheme)
+			_ = telemetryv1alpha1.AddToScheme(scheme)
+
+			b := fake.NewClientBuilder().WithScheme(scheme)
+			for i := range test.pipelines {
+				b.WithObjects(&test.pipelines[i])
+			}
+			fakeClient := b.Build()
+
+			m := &traceComponentsChecker{
+				client: fakeClient,
+			}
+
+			condition, err := m.Check(context.Background())
+			require.NoError(t, err)
+			require.Equal(t, test.expectedCondition, condition)
+		})
 	}
 }

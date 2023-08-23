@@ -22,13 +22,13 @@ type MetricPipelineBuilder struct {
 	basicAuthPassword string
 	convertToDelta    bool
 
-	conds []telemetryv1alpha1.MetricPipelineCondition
+	conditions []telemetryv1alpha1.MetricPipelineCondition
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 	return &MetricPipelineBuilder{
-		endpoint:   "https://localhost",
 		randSource: rand.NewSource(time.Now().UnixNano()),
+		endpoint:   "https://localhost",
 	}
 }
 
@@ -82,8 +82,8 @@ func MetricRunningCondition() telemetryv1alpha1.MetricPipelineCondition {
 	}
 }
 
-func (b *MetricPipelineBuilder) WithStatusConditions(conds ...telemetryv1alpha1.MetricPipelineCondition) *MetricPipelineBuilder {
-	b.conds = conds
+func (b *MetricPipelineBuilder) WithStatusConditions(conditions ...telemetryv1alpha1.MetricPipelineCondition) *MetricPipelineBuilder {
+	b.conditions = conditions
 	return b
 }
 
@@ -130,7 +130,7 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 			},
 		},
 		Status: telemetryv1alpha1.MetricPipelineStatus{
-			Conditions: b.conds,
+			Conditions: b.conditions,
 		},
 	}
 }
