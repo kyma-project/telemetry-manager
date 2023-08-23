@@ -39,7 +39,7 @@ func (t *traceComponentsChecker) determineReason(tracePipelines []v1alpha1.Trace
 	for _, pipeline := range tracePipelines {
 		conditions := pipeline.Status.Conditions
 		if len(conditions) == 0 {
-			return reconciler.ReasonTraceGatewayDeploymentNotReady
+			continue
 		}
 
 		lastCondition := conditions[len(conditions)-1]

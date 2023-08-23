@@ -81,11 +81,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if err := r.handleFinalizer(ctx, &telemetry); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to manage finalizer")
+		return ctrl.Result{}, fmt.Errorf("failed to manage finalizer: %w", err)
 	}
 
 	if err := r.updateStatus(ctx, &telemetry); err != nil {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("failed to update status")
+		return ctrl.Result{Requeue: true}, fmt.Errorf("failed to update status: %w", err)
 	}
 
 	if err := r.reconcileWebhook(ctx, &telemetry); err != nil {
