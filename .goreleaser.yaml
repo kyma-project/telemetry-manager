@@ -4,19 +4,20 @@ changelog:
   sort: asc
   groups:
     - title: Bug fixes
-      regexp: '^[(\[]?(B|b)ug'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
       order: 1
     - title: Documentation
-      regexp: '^(.*?(D|d)ocs.*?)|(.*?(D|d)ocument.*?)$'
+      regexp: '^.*?docs(\([[:word:]]+\))??!?:.+$'
       order: 2
     - title: Test suites
-      regexp: '^((T|t)est)|(.*?[\s-_](T|t)est)'
+      regexp: '^.*?test(\([[:word:]]+\))??!?:.+$'
       order: 3
     - title: Features
       order: 0
   filters:
     exclude:
-        - '^(B|b)ump'
+        - '^.*?refactor(\([[:word:]]+\))??!?:.+$'
+        - '^.*?deps(\([[:word:]]+\))??!?:.+$'
 release:
   extra_files:
     - glob: template.yaml
