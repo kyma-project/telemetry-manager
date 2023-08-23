@@ -9,6 +9,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"golang.org/x/exp/slices"
 )
 
 type logComponentsChecker struct {
@@ -26,25 +27,33 @@ func (l *logComponentsChecker) Check(ctx context.Context) (*metav1.Condition, er
 	return l.createConditionFromReason(reason), nil
 }
 
-func (l *logComponentsChecker) determineReason(logPipelines []v1alpha1.LogPipeline) string {
-	if len(logPipelines) == 0 {
+func (m *logComponentsChecker) determineReason(pipelines []v1alpha1.LogPipeline) string {
+	if len(pipelines) == 0 {
 		return reconciler.ReasonNoPipelineDeployed
 	}
 
-	for _, pipeline := range logPipelines {
-		conditions := pipeline.Status.Conditions
-		if len(conditions) == 0 {
-			return reconciler.ReasonFluentBitDSNotReady
-		}
-		lastCondition := conditions[len(conditions)-1]
-		if lastCondition.Reason == reconciler.ReasonReferencedSecretMissing {
-			return reconciler.ReasonReferencedSecretMissing
-		}
-		if lastCondition.Type == v1alpha1.LogPipelinePending {
-			return reconciler.ReasonFluentBitDSNotReady
-		}
+	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.LogPipeline) bool {
+		return m.isPendingWithReason(p, reconciler.ReasonFluentBitDSNotReady)
+	}); found {
+		return reconciler.ReasonFluentBitDSNotReady
 	}
+
+	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.LogPipeline) bool {
+		return m.isPendingWithReason(p, reconciler.ReasonReferencedSecretMissing)
+	}); found {
+		return reconciler.ReasonReferencedSecretMissing
+	}
+
 	return reconciler.ReasonFluentBitDSReady
+}
+
+func (l *logComponentsChecker) isPendingWithReason(p v1alpha1.LogPipeline, reason string) bool {
+	if len(p.Status.Conditions) == 0 {
+		return false
+	}
+
+	lastCondition := p.Status.Conditions[len(p.Status.Conditions)-1]
+	return lastCondition.Type == v1alpha1.LogPipelinePending && lastCondition.Reason == reason
 }
 
 func (l *logComponentsChecker) createConditionFromReason(reason string) *metav1.Condition {

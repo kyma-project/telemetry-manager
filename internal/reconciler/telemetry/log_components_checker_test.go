@@ -12,103 +12,120 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
-func TestLogPipelineMissingSecret(t *testing.T) {
-	ctx := context.Background()
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	lc := logComponentsChecker{client: fakeClient}
-	logObj := makeLogPipeline("foo", telemetryv1alpha1.LogPipelinePending, reconciler.ReasonReferencedSecretMissing)
-
-	err := fakeClient.Create(ctx, &logObj)
-	require.NoError(t, err)
-
-	cond, err := lc.Check(ctx)
-	require.NoError(t, err)
-	expectedCond := &metav1.Condition{
-		Type:    "LogComponentsHealthy",
-		Status:  "False",
-		Reason:  "ReferencedSecretMissing",
-		Message: "One or more referenced Secrets are missing",
-	}
-	require.Equal(t, cond, expectedCond)
-
-}
-
-func TestMultipleLogPipelineOnePending(t *testing.T) {
-	ctx := context.Background()
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	lc := logComponentsChecker{client: fakeClient}
-	logObj0 := makeLogPipeline("foo", telemetryv1alpha1.LogPipelinePending, reconciler.ReasonFluentBitDSNotReady)
-	logObj1 := makeLogPipeline("bar", telemetryv1alpha1.LogPipelineRunning, reconciler.ReasonFluentBitDSReady)
-
-	err := fakeClient.Create(ctx, &logObj0)
-	require.NoError(t, err)
-	err = fakeClient.Create(ctx, &logObj1)
-	require.NoError(t, err)
-
-	cond, err := lc.Check(ctx)
-	require.NoError(t, err)
-	expectedCond := &metav1.Condition{
-		Type:    "LogComponentsHealthy",
-		Status:  "False",
-		Reason:  "FluentBitDaemonSetNotReady",
-		Message: "Fluent Bit DaemonSet is not ready",
-	}
-	require.Equal(t, cond, expectedCond)
-
-}
-
-func TestAllLogPipelinesHealthy(t *testing.T) {
-	ctx := context.Background()
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	lc := logComponentsChecker{client: fakeClient}
-
-	logObj0 := makeLogPipeline("foo", telemetryv1alpha1.LogPipelineRunning, reconciler.ReasonFluentBitDSReady)
-	logObj1 := makeLogPipeline("bar", telemetryv1alpha1.LogPipelineRunning, reconciler.ReasonFluentBitDSReady)
-
-	err := fakeClient.Create(ctx, &logObj0)
-	require.NoError(t, err)
-	err = fakeClient.Create(ctx, &logObj1)
-	require.NoError(t, err)
-
-	cond, err := lc.Check(ctx)
-	require.NoError(t, err)
-	expectedCond := &metav1.Condition{
-		Type:    "LogComponentsHealthy",
-		Status:  "True",
-		Reason:  "FluentBitDaemonSetReady",
-		Message: "Fluent Bit DaemonSet is ready",
-	}
-	require.Equal(t, cond, expectedCond)
-
-}
-
-func makeLogPipeline(name string, state telemetryv1alpha1.LogPipelineConditionType, reason string) telemetryv1alpha1.LogPipeline {
-	return telemetryv1alpha1.LogPipeline{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Spec: telemetryv1alpha1.LogPipelineSpec{},
-		Status: telemetryv1alpha1.LogPipelineStatus{
-			Conditions: []telemetryv1alpha1.LogPipelineCondition{{
-				Type:   state,
-				Reason: reason},
+func TestLogComponentsCheck(t *testing.T) {
+	tests := []struct {
+		name              string
+		pipelines         []telemetryv1alpha1.LogPipeline
+		expectedCondition *metav1.Condition
+	}{
+		{
+			name: "should be healthy if no pipelines deployed",
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "True",
+				Reason:  "NoPipelineDeployed",
+				Message: "No pipelines have been deployed",
 			},
-			UnsupportedMode: false,
 		},
+		{
+			name: "should be healthy if all pipelines running",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithStatusConditions(
+					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+				testutils.NewLogPipelineBuilder().WithStatusConditions(
+					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "True",
+				Reason:  "FluentBitDaemonSetReady",
+				Message: "Fluent Bit DaemonSet is ready",
+			},
+		},
+		{
+			name: "should fail if one pipeline refs missing secret",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithStatusConditions(
+					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+				testutils.NewLogPipelineBuilder().WithStatusConditions(
+					testutils.LogPendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "False",
+				Reason:  "ReferencedSecretMissing",
+				Message: "One or more referenced Secrets are missing",
+			},
+		},
+		{
+			name: "should fail if one pipeline waiting for gateway",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithStatusConditions(
+					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+				testutils.NewLogPipelineBuilder().WithStatusConditions(
+					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady)).Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "False",
+				Reason:  "FluentBitDaemonSetNotReady",
+				Message: "Fluent Bit DaemonSet is not ready",
+			},
+		},
+		{
+			name: "should ignore pipelines waiting for lock",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithStatusConditions(
+					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+				testutils.NewLogPipelineBuilder().WithStatusConditions(
+					testutils.LogPendingCondition(reconciler.ReasonWaitingForLock)).Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "True",
+				Reason:  "FluentBitDaemonSetReady",
+				Message: "Fluent Bit DaemonSet is ready",
+			},
+		},
+		{
+			name: "should prioritize missing secret over unready gateway reason",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithStatusConditions(
+					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady)).Build(),
+				testutils.NewLogPipelineBuilder().WithStatusConditions(
+					testutils.LogPendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "False",
+				Reason:  "FluentBitDaemonSetNotReady",
+				Message: "Fluent Bit DaemonSet is not ready",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			scheme := runtime.NewScheme()
+			_ = clientgoscheme.AddToScheme(scheme)
+			_ = telemetryv1alpha1.AddToScheme(scheme)
+
+			b := fake.NewClientBuilder().WithScheme(scheme)
+			for i := range test.pipelines {
+				b.WithObjects(&test.pipelines[i])
+			}
+			fakeClient := b.Build()
+
+			m := &logComponentsChecker{
+				client: fakeClient,
+			}
+
+			condition, err := m.Check(context.Background())
+			require.NoError(t, err)
+			require.Equal(t, test.expectedCondition, condition)
+		})
 	}
 }
