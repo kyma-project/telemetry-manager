@@ -40,6 +40,10 @@ func (b *Backend) HTTPBackendConfigMap(name string) *LogBackendConfigMap {
 	return NewLogBackendConfigMap(name, b.namespace, b.exportedFilePath)
 }
 
+func (b *Backend) TLSBackendConfigMap(name, certPem, keyPem, caPem string) *TLSBackendConfigMap {
+	return NewTLSBackendConfigMap(name, b.namespace, b.exportedFilePath, certPem, keyPem, caPem, b.signalType)
+}
+
 func (b *Backend) FluentDConfigMap(name string) *FluentDConfigMap {
 	return NewFluentDConfigMap(name, b.namespace)
 }
