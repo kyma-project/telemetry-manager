@@ -8,7 +8,7 @@ The diagram shows how distributed tracing helps to track the request path:
 
 ![Distributed tracing](./assets/traces-intro.drawio.svg)
 
-The goal of the Telemetry Module is to support you in collecting all relevant trace data in a Kyma cluster, enrich them and ship them to a backend for further analysis. Kyma modules like Istio or Serverless contribute traces transparently. Multiple [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/) are available.
+The goal of the Telemetry Module is to support you in collecting all relevant trace data in a Kyma cluster, enrich them and ship them to a backend for further analysis. Kyma modules like Istio or Serverless contribute traces transparently. You can choose among multiple [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/).
 ## Prerequisites
 
 For a complete recording of a distributed trace, it is [essential](https://www.w3.org/TR/trace-context/#problem-statement) that every involved component is at least propagating the trace context. In Kyma, all components involved in users' requests support the [W3C Trace Context protocol](https://www.w3.org/TR/trace-context), which is a vendor-neutral protocol gaining more and more support by all kinds of vendors and tools. The involved Kyma components are mainly Istio, Serverless, and Eventing.
