@@ -10,26 +10,27 @@ The goal of the Telemetry Module is to support you in collecting all relevant me
 
 ## Prerequisites
 
+A component from which you want to collect metrics data, needs to expose (or instrument) the metrics first. Typically, it instruments specific metrics for the used language runtime (like nodeJS) and custom metrics specific to the business logic. Also, the exposure can be in different formats, usually the pull-based prometheus format or the [push-based OTLP format](https://opentelemetry.io/docs/specs/otlp/).
 
-For a complete recording of a distributed trace, it is [essential](https://www.w3.org/TR/trace-context/#problem-statement) that every involved component is at least propagating the trace context. In Kyma, all components involved in users' requests support the [W3C Trace Context protocol](https://www.w3.org/TR/trace-context), which is a vendor-neutral protocol gaining more and more support by all kinds of vendors and tools. The involved Kyma components are mainly Istio, Serverless, and Eventing.
-
-With that, your application must also propagate the W3C Trace Context for any user-related activity. This can be achieved easily using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) available for all common programming languages. If an application follows that guidance and is part of the Istio Service Mesh, it's already outlined with dedicated span data in the trace data collected by the Kyma telemetry setup.
-
-Furthermore, an application should enrich a trace with additional span data and send these data to the cluster-central telemetry services. That can also be achieved with the help of the mentioned [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/).
+To do the instrumentation you usually leverage an SDK, namely the [prometheus-client libraries](https://prometheus.io/docs/instrumenting/clientlibs/) or the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/). Both libraries provide extensions to activate language specific auto-instrumentation like for nodeJS and an API to implement custom instrumentation.
 
 ## Architecture
 
-The Telemetry module provides an in-cluster central deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as a gateway. The gateway exposes endpoints for the OTLP protocol for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-metrics` service, where all Kyma components and users' applications should send the metrics data to.
+The Telemetry module provides an in-cluster central Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as a gateway. The gateway exposes endpoints for the [OTLP protocol](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-metrics` service, where all Kyma components and users' applications should send the metrics data to.
+
+Optional, it provides a DaemonSet of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as an agent. That agent will scrape metrics of workload in the [prometheus pull-based format](https://prometheus.io/docs/instrumenting/exposition_formats) and can provide runtime specific metrics for workload.
 
 ![Architecture](./assets/traces-arch.drawio.svg)
 
-1. An end-to-end request is triggered and populates across the distributed application. Every involved component propagates the trace context using the [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
-2. The involved components that have contributed a new span to the trace send the related span data to the trace gateway using the `telemetry-otlp-traces` service. The communication happens based on the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) protocol either using GRPC or HTTP.
-1. The trace gateway enriches the span data with relevant metadata, typical for sources running on Kubernetes, like Pod identifiers.
-1. With the `TracePipeline` resource, the trace gateway is configured with a target backend.
+1. An application exposing metrics in OTLP, pushes metrics to the central metric gateway service 
+2. An application exposing metrics in prometheus protocol, activates the agent to scrape the metrics via aan annotation based configuration
+3. The agent can be activated to scrape metrics of each istio sidecar additionally
+4. The agent convertes and pushes all scraped metric data to the gateway in OTLP
+5. The gateway enrichs all received data with typical metadata of the source by communicating with the K8S APIServer. Furthermore, it will filter data according to the pipeline configuration.
+6. With the `MetricPipeline` resource, the metric gateway is configured with a target backend.
 1. The backend can run in-cluster.
 1. The backend can also run out-cluster, if authentication has been set up.
-1. The trace data can be consumed using the backend system.
+1. The metric data can be consumed using the backend system.
 
 ### Metric Gateway
 The OTel Collector comes with a [concept](https://opentelemetry.io/docs/collector/configuration/) of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together. Kyma's TracePipeline provides a hardened setup of an OTel Collector and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
