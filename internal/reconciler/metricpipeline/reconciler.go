@@ -298,7 +298,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	if err = controllerutil.SetOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
 		return err
 	}
-	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, r.Client, serviceAccount); err != nil {
+	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create otel collector service account: %w", err)
 	}
 
