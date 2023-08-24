@@ -8,7 +8,7 @@ The diagram shows how distributed tracing helps to track the request path:
 
 ![Distributed tracing](./assets/traces-intro.drawio.svg)
 
-The goal of the Telemetry Module is to support you in collecting all relevant trace data in a Kyma cluster, enrich them and ship them to a backend for further analysis. Kyma modules like Istio or Serverless contribute traces transparently.
+The goal of the Telemetry Module is to support you in collecting all relevant trace data in a Kyma cluster, enrich them and ship them to a backend for further analysis. Kyma modules like Istio or Serverless contribute traces transparently. Multiple [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/) are available.
 ## Prerequisites
 
 For a complete recording of a distributed trace, it is [essential](https://www.w3.org/TR/trace-context/#problem-statement) that every involved component is at least propagating the trace context. In Kyma, all components involved in users' requests support the [W3C Trace Context protocol](https://www.w3.org/TR/trace-context), which is a vendor-neutral protocol gaining more and more support by all kinds of vendors and tools. The involved Kyma components are mainly Istio, Serverless, and Eventing.
@@ -59,12 +59,12 @@ In the following steps, you can see how to set up a typical TracePipeline. Learn
    apiVersion: telemetry.kyma-project.io/v1alpha1
    kind: TracePipeline
    metadata:
-     name: jaeger
+     name: backend
    spec:
      output:
        otlp:
          endpoint:
-           value: http://jaeger-collector.jaeger.svc.cluster.local:4317
+           value: https://backend.example.com:4317
    ```
 
    This configures the underlying OTel Collector with a pipeline for traces. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-traces` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, dependent on the configured protocol.
@@ -108,13 +108,13 @@ To use the HTTP protocol instead of the default GRPC, use the `protocol` attribu
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: TracePipeline
 metadata:
-  name: jaeger
+  name: backend
 spec:
   output:
     otlp:
       protocol: http
       endpoint:
-        value: http://jaeger-collector.jaeger.svc.cluster.local:4318
+        value: https://backend.example.com:4318
 ```
 
 ### Step 4: Add authentication details
@@ -262,12 +262,12 @@ Use the **valueFrom** attribute to map Secret keys as in the following examples:
   apiVersion: telemetry.kyma-project.io/v1alpha1
   kind: TracePipeline
   metadata:
-    name: jaeger
+    name: backend
   spec:
     output:
       otlp:
         endpoint:
-          value: http://jaeger-collector.jaeger.svc.cluster.local:4317
+          value: https://backend.example.com:4317
         headers:
           - name: Authorization
             valueFrom:
@@ -288,7 +288,7 @@ metadata:
   name: backend
   namespace: default
 stringData:
-  endpoint: https://myhost:4317
+  endpoint: https://backend.example.com:4317
   user: myUser
   password: XXX
   token: Bearer YYY
@@ -423,9 +423,9 @@ For up to 5 minutes, a retry for data is attempted when the destination is unava
 ### No guaranteed delivery
 The used buffers are volatile. If the OTel collector instance crashes, trace data can be lost.
 
-### Single TracePipeline support
+### Multiple TracePipeline support
 
-Only one TracePipeline resource at a time is supported at the moment.
+Up to 3 TracePipelines at a time are supported at the moment.
 
 ### System span filtering
 System-related spans reported by Istio are filtered out without the opt-out option. Here are a few examples of such spans:
