@@ -92,7 +92,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
-	return ctrl.Result{}, nil
+	// Keep requeueing until dependent resources are removed
+	requeue := telemetry.Status.State == operatorv1alpha1.StateError
+	return ctrl.Result{Requeue: requeue}, nil
 }
 
 func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
