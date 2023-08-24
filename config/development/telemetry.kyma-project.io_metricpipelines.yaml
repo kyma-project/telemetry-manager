@@ -298,8 +298,6 @@ spec:
                                     type: object
                                 type: object
                             type: object
-                        required:
-                        - insecure
                         type: object
                     required:
                     - endpoint
