@@ -1,37 +1,37 @@
 # Telemetry CR conditions
 
-This section describes the possible states of the Telemetry CR. There are conditions type `Logging`, `Metrics` and `Tracing` representing state of each of the subcomponents. The state of the telemetry CR is derived from combined state of all the subcomponents.
+This section describes the possible states of the Telemetry CR. There are conditions type `LogComponentsHealthy`, `TraceComponentsHealthy` and `MetricComponentsHealthy` representing state of each of the subcomponents. The state of the Telemetry CR is derived from combined state of all the subcomponents.
 
-## Logging Subcomponent state
+## Log Components State
 | No | Condition type | Condition status | Condition reason              | Remark                                     |
 |----|----------------|------------------|-------------------------------|--------------------------------------------|
-| 1  | Logging        | True             | ReasonNoPipelineDeployed      | No pipelines have been deployed            |
-| 1  | Logging        | True             | ReasonFluentBitDSReady        | Fluent bit Daemonset is ready              |
-| 1  | Logging        | False            | ReasonReferencedSecretMissing | One or more referenced secrets are missing |
-| 1  | Logging        | False            | ReasonFluentBitDSNotReady     | Fluent bit Daemonset is not ready          |
+| 1  | LogComponentsHealthy | True             | ReasonNoPipelineDeployed      | No pipelines have been deployed            |
+| 2  | LogComponentsHealthy | True             | ReasonFluentBitDSReady        | Fluent Bit DaemonSet is ready              |
+| 3  | LogComponentsHealthy | False            | ReasonReferencedSecretMissing | One or more referenced Secrets are missing |
+| 4  | LogComponentsHealthy | False            | ReasonFluentBitDSNotReady     | Fluent Bit DaemonSet is not ready          |
 
-## Tracing Subcomponent state
-| No | Condition type | Condition status | Condition reason                       | Remark                                     |
-|----|----------------|------------------|----------------------------------------|--------------------------------------------|
-| 1  | Tracing        | True             | ReasonNoPipelineDeployed               | No pipelines have been deployed            |
-| 1  | Tracing        | True             | ReasonTraceCollectorDeploymentReady    | Trace collector deployment is ready        |
-| 1  | Tracing        | False            | ReasonReferencedSecretMissing          | One or more referenced secrets are missing |
-| 1  | Tracing        | False            | ReasonTraceCollectorDeploymentNotReady | Trace collector is deployment not ready    |
+## Trace Components State
+| No | Condition type         | Condition status | Condition reason                       | Remark                                     |
+|----|------------------------|------------------|----------------------------------------|--------------------------------------------|
+| 1  | TraceComponentsHealthy | True             | ReasonNoPipelineDeployed               | No pipelines have been deployed            |
+| 2  | TraceComponentsHealthy | True             | ReasonTraceCollectorDeploymentReady    | Trace collector Deployment is ready        |
+| 3  | TraceComponentsHealthy | False            | ReasonReferencedSecretMissing          | One or more referenced Secrets are missing |
+| 4  | TraceComponentsHealthy | False            | ReasonTraceCollectorDeploymentNotReady | Trace collector Deployment is not ready    |
 
-## Metric Subcomponent state
+## Metric Components State
 | No | Condition type | Condition status | Condition reason                         | Remark                                     |
 |----|----------------|------------------|------------------------------------------|--------------------------------------------|
-| 1  | Metrics        | True             | ReasonNoPipelineDeployed                 | No pipelines have been deployed            |
-| 1  | Metrics        | True             | ReasonMetricGatewayDeploymentReady       | Metric gateway deployment is ready         |
-| 1  | Metrics        | False            | ReasonReferencedSecretMissing            | One or more referenced secrets are missing |
-| 1  | Metrics        | False            | ReasonMetricGatewayDeploymentNotReady    | Metric gateway deployment is not ready     |
+| 1  | MetricComponentsHealthy | True             | ReasonNoPipelineDeployed                 | No pipelines have been deployed            |
+| 2  | MetricComponentsHealthy | True             | ReasonMetricGatewayDeploymentReady       | Metric gateway Deployment is ready         |
+| 3  | MetricComponentsHealthy | False            | ReasonReferencedSecretMissing            | One or more referenced Secrets are missing |
+| 4  | MetricComponentsHealthy | False            | ReasonMetricGatewayDeploymentNotReady    | Metric gateway Deployment is not ready     |
 
 
-## Telemetry component state
-| No | CR State | Logging State | Tracing State | Metrics State | 
-|----|----------|---------------|---------------|---------------|
-| 1  | Ready    | True          | True          | True          | 
-| 1  | Warning  | False         | True          | True          |
-| 1  | Warning  | False         | False         | False         |
-| 1  | Warning  | False         | False         | True          |
-| 1  | Warning  | False         | True          | False         |
+## Telemetry CR State
+| No | Telemetry State | LogComponentsHealthy | TraceComponentsHealthy | MetricComponentsHealthy | 
+|----|-----------------|---------------|---------------|---------------|
+| 1  | Ready           | True          | True          | True          | 
+| 2  | Warning         | False         | True          | True          |
+| 3  | Warning         | False         | False         | False         |
+| 4  | Warning         | False         | False         | True          |
+| 5  | Warning         | False         | True          | False         |
