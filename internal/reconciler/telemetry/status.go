@@ -12,6 +12,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"golang.org/x/exp/slices"
 )
 
 //go:generate mockery --name ComponentHealthChecker --filename component_health_checker.go
@@ -20,6 +21,15 @@ type ComponentHealthChecker interface {
 }
 
 func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
+	if !telemetry.GetDeletionTimestamp().IsZero() {
+		if err := r.updateStateIfBeingDeleted(ctx, telemetry); err != nil {
+			return fmt.Errorf("failed to check if telemetry is being deleted: %w", err)
+		}
+
+		// Interrupt further state evaluation if Telemetry is being deleted
+		return nil
+	}
+
 	for _, checker := range r.enabledHealthCheckers() {
 		if err := r.updateComponentCondition(ctx, checker, telemetry); err != nil {
 			return fmt.Errorf("failed to update component condition: %w", err)
@@ -28,10 +38,6 @@ func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alph
 
 	if err := r.updateGatewayEndpoints(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to update gateway endpoints: %w", err)
-	}
-
-	if err := r.checkIfDeletingWithDependentCRs(ctx, telemetry); err != nil {
-		return fmt.Errorf("failed to check if telemetry is being deleted: %w", err)
 	}
 
 	return nil
@@ -52,22 +58,19 @@ func (r *Reconciler) updateComponentCondition(ctx context.Context, checker Compo
 
 	newCondition.ObservedGeneration = telemetry.GetGeneration()
 	meta.SetStatusCondition(&telemetry.Status.Conditions, *newCondition)
-	telemetry.Status.Status.State = stateFromConditions(telemetry.Status.Conditions)
+
+	if slices.ContainsFunc(telemetry.Status.Conditions, func(cond metav1.Condition) bool {
+		return cond.Status == metav1.ConditionFalse
+	}) {
+		telemetry.Status.State = operatorv1alpha1.StateWarning
+	} else {
+		telemetry.Status.State = operatorv1alpha1.StateReady
+	}
 
 	if err := r.Status().Update(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to update status: %w", err)
 	}
 	return nil
-}
-
-func stateFromConditions(conditions []metav1.Condition) operatorv1alpha1.State {
-	state := operatorv1alpha1.StateReady
-	for _, c := range conditions {
-		if c.Status == metav1.ConditionFalse {
-			state = operatorv1alpha1.StateWarning
-		}
-	}
-	return state
 }
 
 func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
@@ -106,16 +109,11 @@ func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndp
 	}
 }
 
-// checkIfDeletingWithDependentCRs transitions the state of the provided Telemetry Custom Resource based on
+// updateStateIfBeingDeleted transitions the state of the provided Telemetry Custom Resource based on
 // the presence of dependent CRs (LogPipeline, MetricPipeline, TracePipeline) in the cluster.
 // If the provided Telemetry CR is being deleted and no dependent Telemetry CRs are not found, the state is set to "Deleting".
 // If dependent CRs are found, the state is set to "Error" until they are removed from the cluster.
-func (r *Reconciler) checkIfDeletingWithDependentCRs(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	isBeingDeleted := !telemetry.GetDeletionTimestamp().IsZero()
-	if !isBeingDeleted {
-		return nil
-	}
-
+func (r *Reconciler) updateStateIfBeingDeleted(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
 	if r.dependentCRsFound(ctx) {
 		telemetry.Status.State = operatorv1alpha1.StateError
 	} else {
@@ -125,6 +123,7 @@ func (r *Reconciler) checkIfDeletingWithDependentCRs(ctx context.Context, teleme
 	if err := r.Status().Update(ctx, telemetry); err != nil {
 		return fmt.Errorf("failed to update status: %w", err)
 	}
+
 	return nil
 }
 

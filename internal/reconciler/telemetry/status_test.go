@@ -16,6 +16,8 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestUpdateStatus(t *testing.T) {
@@ -23,6 +25,7 @@ func TestUpdateStatus(t *testing.T) {
 		name                 string
 		config               *Config
 		telemetry            *operatorv1alpha1.Telemetry
+		resources            []client.Object
 		logsCheckerReturn    *metav1.Condition
 		logsCheckerError     error
 		metricsCheckerReturn *metav1.Condition
@@ -151,16 +154,43 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			expectError: true,
 		},
+		{
+			name: "deleting with no dependent resources",
+			telemetry: &operatorv1alpha1.Telemetry{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:              "default",
+					DeletionTimestamp: pointerFrom(metav1.Now()),
+				},
+			},
+			expectedState: operatorv1alpha1.StateDeleting,
+		},
+		{
+			name: "deleting with dependent resources",
+			telemetry: &operatorv1alpha1.Telemetry{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:              "default",
+					DeletionTimestamp: pointerFrom(metav1.Now()),
+				},
+			},
+			resources: []client.Object{
+				pointerFrom(testutils.NewTracePipelineBuilder().Build()),
+			},
+			expectedState: operatorv1alpha1.StateError,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
 			scheme := runtime.NewScheme()
 			_ = clientgoscheme.AddToScheme(scheme)
 			_ = telemetryv1alpha1.AddToScheme(scheme)
 			_ = operatorv1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 			require.NoError(t, fakeClient.Create(context.Background(), tt.telemetry))
+			for _, res := range tt.resources {
+				require.NoError(t, fakeClient.Create(context.Background(), res))
+			}
 
 			mockLogsChecker := &mocks.ComponentHealthChecker{}
 			mockMetricsChecker := &mocks.ComponentHealthChecker{}
@@ -182,28 +212,30 @@ func TestUpdateStatus(t *testing.T) {
 				r.config = *tt.config
 			}
 
+			// Act
 			err := r.updateStatus(context.Background(), tt.telemetry)
 
+			// Assert
 			if tt.expectError {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 			}
-
 			require.Equal(t, tt.expectedState, tt.telemetry.Status.State)
-
 			require.Len(t, tt.telemetry.Status.Conditions, len(tt.expectedConditions))
 			for i, expectedCond := range tt.expectedConditions {
 				actualCond := tt.telemetry.Status.Conditions[i]
-
 				require.Equal(t, expectedCond.Type, actualCond.Type)
 				require.Equal(t, expectedCond.Status, actualCond.Status)
 				require.Equal(t, expectedCond.Reason, actualCond.Reason)
 				require.Equal(t, expectedCond.Message, actualCond.Message)
 				require.NotZero(t, actualCond.LastTransitionTime)
 			}
-
 			require.Equal(t, tt.expectedEndpoints, tt.telemetry.Status.GatewayEndpoints)
 		})
 	}
+}
+
+func pointerFrom[T any](value T) *T {
+	return &value
 }
