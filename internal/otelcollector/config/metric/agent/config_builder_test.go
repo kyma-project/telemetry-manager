@@ -14,7 +14,7 @@ import (
 func TestMakeAgentConfig(t *testing.T) {
 	gatewayServiceName := types.NamespacedName{Name: "metrics", Namespace: "telemetry-system"}
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
-		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
+		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, false)
 
 		actualExporterConfig := collectorConfig.Exporters.OTLP
 		require.Equal(t, "metrics.telemetry-system.svc.cluster.local:4317", actualExporterConfig.Endpoint)
@@ -22,7 +22,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 	t.Run("insecure", func(t *testing.T) {
 		t.Run("otlp exporter endpoint", func(t *testing.T) {
-			collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
+			collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, false)
 
 			actualExporterConfig := collectorConfig.Exporters.OTLP
 			require.True(t, actualExporterConfig.TLS.Insecure)
@@ -30,14 +30,14 @@ func TestMakeAgentConfig(t *testing.T) {
 	})
 
 	t.Run("extensions", func(t *testing.T) {
-		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
+		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, false)
 
 		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
 		require.Contains(t, collectorConfig.Service.Extensions, "health_check")
 	})
 
 	t.Run("telemetry", func(t *testing.T) {
-		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
+		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, false)
 
 		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
 		require.Equal(t, "${MY_POD_IP}:8888", collectorConfig.Service.Telemetry.Metrics.Address)
@@ -47,7 +47,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		t.Run("no input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
-			})
+			}, false)
 
 			require.Nil(t, collectorConfig.Processors.DeleteServiceName)
 			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
@@ -59,7 +59,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		t.Run("runtime input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
-			})
+			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
@@ -75,7 +75,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		t.Run("prometheus input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
-			})
+			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
@@ -91,7 +91,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		t.Run("istio input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithIstioInputOn(true).Build(),
-			})
+			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
@@ -108,7 +108,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		t.Run("multiple input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).WithIstioInputOn(true).Build(),
-			})
+			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
@@ -136,7 +136,7 @@ func TestMakeAgentConfig(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 				testutils.NewMetricPipelineBuilder().Build(),
-			})
+			}, false)
 
 			require.Nil(t, collectorConfig.Processors.DeleteServiceName)
 			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
@@ -149,7 +149,7 @@ func TestMakeAgentConfig(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(false).Build(),
 				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
-			})
+			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
@@ -166,7 +166,7 @@ func TestMakeAgentConfig(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
 				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
-			})
+			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
@@ -183,7 +183,7 @@ func TestMakeAgentConfig(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(false).Build(),
 				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
-			})
+			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
@@ -200,7 +200,7 @@ func TestMakeAgentConfig(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
 				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
-			})
+			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.Nil(t, collectorConfig.Processors.InsertInputSourceRuntime)
@@ -217,7 +217,7 @@ func TestMakeAgentConfig(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
 				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
-			})
+			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 			require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
@@ -428,7 +428,7 @@ exporters:
 
 		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).WithIstioInputOn(true).Build(),
-		})
+		}, false)
 
 		yamlBytes, err := yaml.Marshal(collectorConfig)
 

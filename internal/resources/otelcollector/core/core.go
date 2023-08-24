@@ -63,6 +63,20 @@ func WithResources(resources corev1.ResourceRequirements) PodSpecOption {
 	}
 }
 
+func WithVolumeMount(volumeMount corev1.VolumeMount) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		for i := range pod.Containers {
+			pod.Containers[i].VolumeMounts = append(pod.Containers[i].VolumeMounts, volumeMount)
+		}
+	}
+}
+
+func WithVolume(volume corev1.Volume) PodSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.Volumes = append(pod.Volumes, volume)
+	}
+}
+
 func MakePodSpec(baseName, image string, opts ...PodSpecOption) corev1.PodSpec {
 	pod := corev1.PodSpec{
 		Containers: []corev1.Container{

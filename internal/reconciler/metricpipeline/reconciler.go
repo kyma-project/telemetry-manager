@@ -3,6 +3,9 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -265,6 +268,25 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	return pipeline.Spec.Input.Application.Runtime.Enabled || pipeline.Spec.Input.Application.Prometheus.Enabled || pipeline.Spec.Input.Application.Istio.Enabled
 }
 
+func (r *Reconciler) isIstioDeployed(ctx context.Context) bool {
+	var customResourceList v1.CustomResourceDefinitionList
+	if err := r.List(ctx, &customResourceList); err != nil {
+		//no kind found
+		if _, ok := err.(*meta.NoKindMatchError); ok {
+			return false
+		}
+		return false
+	}
+
+	for _, crd := range customResourceList.Items {
+		if strings.EqualFold(crd.Name, "peerauthentications.security.istio.io") {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	namespacedBaseName := types.NamespacedName{
 		Name:      r.config.Agent.BaseName,
@@ -276,7 +298,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	if err = controllerutil.SetOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
 		return err
 	}
-	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
+	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, r.Client, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create otel collector service account: %w", err)
 	}
 
@@ -299,7 +321,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	agentConfig := agent.MakeConfig(types.NamespacedName{
 		Namespace: r.config.Gateway.Namespace,
 		Name:      r.config.Gateway.Service.OTLPServiceName,
-	}, allPipelines)
+	}, allPipelines, r.isIstioDeployed(ctx))
 	var agentConfigYAML []byte
 	agentConfigYAML, err = yaml.Marshal(agentConfig)
 	if err != nil {

@@ -11,16 +11,18 @@ import (
 )
 
 type inputSources struct {
-	runtime    bool
-	prometheus bool
-	istio      bool
+	runtime       bool
+	prometheus    bool
+	istio         bool
+	istioDeployed bool
 }
 
-func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *Config {
+func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline, istioDeployed bool) *Config {
 	inputs := inputSources{
-		runtime:    enableRuntimeMetricScraping(pipelines),
-		prometheus: enablePrometheusMetricScraping(pipelines),
-		istio:      enableIstioMetricScraping(pipelines),
+		runtime:       enableRuntimeMetricScraping(pipelines),
+		prometheus:    enablePrometheusMetricScraping(pipelines),
+		istio:         enableIstioMetricScraping(pipelines),
+		istioDeployed: istioDeployed,
 	}
 
 	return &Config{

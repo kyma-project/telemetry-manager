@@ -59,6 +59,14 @@ func MakeDaemonSet(config Config, configHash, envVarPodIP, envVarNodeName string
 		core.WithResources(resources),
 		core.WithEnvVarFromSource(envVarPodIP, core.FieldPathPodIP),
 		core.WithEnvVarFromSource(envVarNodeName, core.FieldPathNodeName),
+		core.WithVolume(corev1.Volume{Name: "istio-certs", VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		}}),
+		core.WithVolumeMount(corev1.VolumeMount{
+			Name:      "istio-certs",
+			MountPath: "/etc/istio-output-certs",
+			ReadOnly:  true,
+		}),
 	)
 
 	return &appsv1.DaemonSet{
