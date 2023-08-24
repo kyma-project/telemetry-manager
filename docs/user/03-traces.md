@@ -6,8 +6,9 @@ Observability tools aim to show the big picture, no matter if you're monitoring 
 
 The diagram shows how distributed tracing helps to track the request path:
 
-![Distributed tracing](./assets/tracing-intro.drawio.svg)
+![Distributed tracing](./assets/traces-intro.drawio.svg)
 
+The goal of the Telemetry Module is to support you in collecting all relevant trace data in a Kyma cluster, enrich them and ship them to a backend for further analysis. Kyma modules like Istio or Serverless contribute traces transparently.
 ## Prerequisites
 
 For a complete recording of a distributed trace, it is [essential](https://www.w3.org/TR/trace-context/#problem-statement) that every involved component is at least propagating the trace context. In Kyma, all components involved in users' requests support the [W3C Trace Context protocol](https://www.w3.org/TR/trace-context), which is a vendor-neutral protocol gaining more and more support by all kinds of vendors and tools. The involved Kyma components are mainly Istio, Serverless, and Eventing.
@@ -20,7 +21,7 @@ Furthermore, an application should enrich a trace with additional span data and 
 
 The Telemetry module provides an in-cluster central deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as a gateway. The gateway exposes endpoints for the OTLP protocol for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-traces` service, where all Kyma components and users' applications should send the trace data to.
 
-![Architecture](./assets/tracing-arch.drawio.svg)
+![Architecture](./assets/traces-arch.drawio.svg)
 
 1. An end-to-end request is triggered and populates across the distributed application. Every involved component propagates the trace context using the [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
 2. The involved components that have contributed a new span to the trace send the related span data to the trace gateway using the `telemetry-otlp-traces` service. The communication happens based on the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) protocol either using GRPC or HTTP.
@@ -30,8 +31,8 @@ The Telemetry module provides an in-cluster central deployment of an [OTel Colle
 1. The backend can also run out-cluster, if authentication has been set up.
 1. The trace data can be consumed using the backend system.
 
-### OTel Collector
-The OTel Collector comes with a [concept](https://opentelemetry.io/docs/collector/configuration/) of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together. Kyma's TracePipeline provides a hardened setup of an OTel Collector and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
+### Trace Gateway
+In a Kyma cluster, the Trace Gateway is the central component to which all parties of traces can send their individual span. The gateway collects, enriches, and dispatches the data to the configured backend. The gateway is based on the Otel Collector and comes with a concept of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together (see [Otel Collector: Configuration](https://opentelemetry.io/docs/collector/configuration/)). Kyma's TracePipeline provides a hardened setup of an OTel Collector, and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
 - Supportability - all features are tested and supported
 - Migratability - smooth migration experiences when switching underlying technologies or architectures
 - Native Kubernetes support - API provided by Kyma allows for an easy integration with Secrets, for example, served by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator#readme). Telemetry Manager takes care of the full lifecycle.
@@ -42,7 +43,7 @@ The downside is that only a limited set of features is available. If you want to
 ### Telemetry Manager
 The TracePipeline resource is managed by Telemetry Manager, a typical Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) responsible for managing the custom parts of the OTel Collector configuration.
 
-![Manager resources](./assets/tracing-resources.drawio.svg)
+![Manager resources](./assets/traces-resources.drawio.svg)
 
 Telemetry Manager watches all TracePipeline resources and related Secrets. Whenever the configuration changes, it validates the configuration and generates a new configuration for OTel Collector, where a ConfigMap for the configuration is generated. Referenced Secrets are copied into one Secret that is mounted to the OTel Collector as well.
 Furthermore, the manager takes care of the full lifecycle of the OTel Collector Deployment itself. Only if there is a TracePipeline defined, the collector is deployed. At anytime, you can opt out of using the tracing feature by not specifying a TracePipeline.
@@ -122,18 +123,42 @@ To integrate with external systems, you must configure authentication details. A
 
 <div tabs>
   <details>
+    <summary>Mutual TLS</summary>
+
+  ```yaml
+  apiVersion: telemetry.kyma-project.io/v1alpha1
+  kind: TracePipeline
+  metadata:
+    name: backend
+  spec:
+    output:
+      otlp:
+        endpoint:
+          value: https://backend.example.com/otlp:4317
+        tls:
+          cert:
+            value: |
+              -----BEGIN CERTIFICATE-----
+              ...
+          key:
+            value: |
+              -----BEGIN RSA PRIVATE KEY-----
+              ...
+  ```
+  </details>
+  <details>
     <summary>Basic authentication</summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
   kind: TracePipeline
   metadata:
-    name: jaeger
+    name: backend
   spec:
     output:
       otlp:
         endpoint:
-          value: http://jaeger-collector.jaeger.svc.cluster.local:4317
+          value: https://backend.example.com/otlp:4317
         authentication:
           basic:
             user:
@@ -149,12 +174,12 @@ To integrate with external systems, you must configure authentication details. A
   apiVersion: telemetry.kyma-project.io/v1alpha1
   kind: TracePipeline
   metadata:
-    name: jaeger
+    name: backend
   spec:
     output:
       otlp:
         endpoint:
-          value: http://jaeger-collector.jaeger.svc.cluster.local:4317
+          value: https://backend.example.com/otlp:4317
         headers:
           - name: Authorization
             value: "Bearer myToken"
@@ -170,13 +195,41 @@ Use the **valueFrom** attribute to map Secret keys as in the following examples:
 
 <div tabs>
   <details>
+    <summary>Mutual TLS</summary>
+
+  ```yaml
+  apiVersion: telemetry.kyma-project.io/v1alpha1
+  kind: TracePipeline
+  metadata:
+    name: backend
+  spec:
+    output:
+      otlp:
+        endpoint:
+          value: https://backend.example.com/otlp:4317
+        tls:
+          cert:
+            valueFrom:
+              secretKeyRef:
+                  name: backend
+                  namespace: default
+                  key: cert
+          key:
+            valueFrom:
+              secretKeyRef:
+                  name: backend
+                  namespace: default
+                  key: key
+  ```
+  </details>
+  <details>
     <summary>Basic authentication</summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
   kind: TracePipeline
   metadata:
-    name: jaeger
+    name: backend
   spec:
     output:
       otlp:

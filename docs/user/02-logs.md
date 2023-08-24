@@ -14,7 +14,7 @@ Your application must log to `stdout` or `stderr`, which is the recommended way 
 
 The Telemetry module provides [Fluent Bit](https://fluentbit.io/) as a log agent. Fluent Bit collects all application logs of the cluster workload and ships them to a backend.
 
-![Architecture](./assets/logging-arch.drawio.svg)
+![Architecture](./assets/logs-arch.drawio.svg)
 
 1. Container logs are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories.
 2. Fluent Bit runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails them using a filesystem buffer for reliability.
@@ -28,7 +28,7 @@ The Telemetry module provides [Fluent Bit](https://fluentbit.io/) as a log agent
 Fluent Bit comes with a pipeline concept, which supports a flexible combination of inputs with outputs and filtering in between; for details, see [Fluent Bit: Output](https://docs.fluentbit.io/manual/concepts/data-pipeline/output).
 Kyma's Telemetry module brings a predefined setup of the Fluent Bit DaemonSet and a base configuration, which assures that the application logs of the workloads in the cluster are processed reliably and efficiently. Additionally, the telemetry module provides a Kubernetes API called `LogPipeline` to configure outputs with some filtering capabilities.
 
-![Pipeline Concept](./assets/logging-pipelines.drawio.svg)
+![Pipeline Concept](./assets/logs-pipelines.drawio.svg)
 
 1. A central `tail` input plugin reads the application logs.
 
@@ -42,7 +42,7 @@ This approach assures a reliable buffer management and isolation of pipelines, w
 
 The LogPipeline resource is managed by Telemetry Manager, a typical Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) responsible for managing the custom parts of the Fluent Bit configuration.
 
-![Manager resources](./assets/logging-resources.drawio.svg)
+![Manager resources](./assets/logs-resources.drawio.svg)
 
 Telemetry Manager watches all LogPipeline resources and related Secrets. Whenever the configuration changes, Telemetry Manager validates the configuration (with a [validating webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)) and generates a new configuration for the Fluent Bit DaemonSet, where several ConfigMaps for the different aspects of the configuration are generated. Furthermore, referenced Secrets are copied into one Secret that is also mounted to the DaemonSet.
 
@@ -324,7 +324,7 @@ spec:
 
 After a log record has been read, it is preprocessed by centrally configured plugins, like the `kubernetes` filter. Thus, when a record is ready to be processed by the sections defined in the LogPipeline definition, it has several attributes available for processing and shipment.
 
-![Flow](./assets/logging-flow.drawio.svg)
+![Flow](./assets/logs-flow.drawio.svg)
 
 Learn more about the flow of the log record through the general pipeline and the available log attributes in the following sections.
 
