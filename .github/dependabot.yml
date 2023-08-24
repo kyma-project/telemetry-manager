@@ -6,14 +6,11 @@ updates:
     schedule:
       interval: "daily"
     commit-message:
-      prefix: "deps"
-      include: "scope"
-
+      prefix: "chore(dependabot)"
 
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "daily"
     commit-message:
-      prefix: "deps"
-      include: "scope"
+      prefix: "chore(dependabot)"
