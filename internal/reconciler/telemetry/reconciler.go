@@ -109,6 +109,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 
 	if controllerutil.ContainsFinalizer(telemetry, finalizer) {
 		if r.dependentCRsFound(ctx) {
+			// Block deletion of the resource if there are still some dependent resources
 			return nil
 		}
 

@@ -26,7 +26,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alph
 			return fmt.Errorf("failed to check if telemetry is being deleted: %w", err)
 		}
 
-		// Interrupt further state evaluation if Telemetry is being deleted
+		// Interrupt further state evaluation if the resource is being deleted
 		return nil
 	}
 
