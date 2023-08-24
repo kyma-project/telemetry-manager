@@ -48,6 +48,19 @@ type Header struct {
 	ValueType `json:",inline"`
 }
 
+type OtlpTLS struct {
+	// Defines whether to send requests using plaintext instead of TLS.
+	Insecure bool `json:"insecure"`
+	// Defines whether to skip TLS certificate verification.
+	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
+	// Defines the CA certificate.
+	CA ValueType `json:"ca,omitempty"`
+	// Defines the client certificate.
+	Cert ValueType `json:"cert,omitempty"`
+	// Defines the client key.
+	Key ValueType `json:"key,omitempty"`
+}
+
 type OtlpOutput struct {
 	// Defines the OTLP protocol (http or grpc). Default is GRPC.
 	// +kubebuilder:validation:MinLength=1
@@ -61,6 +74,8 @@ type OtlpOutput struct {
 	Authentication *AuthenticationOptions `json:"authentication,omitempty"`
 	// Defines custom headers to be added to outgoing HTTP or GRPC requests.
 	Headers []Header `json:"headers,omitempty"`
+	// Defines TLS options for the OTLP output.
+	TLS *OtlpTLS `json:"tls,omitempty"`
 }
 
 type AuthenticationOptions struct {
