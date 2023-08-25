@@ -346,7 +346,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-The agent will start pulling all `istio-*` metrics from Istio sidecars.
+The agent will start pulling all [Istio metrics](https://istio.io/latest/docs/reference/config/metrics/) from Istio sidecars.
 
 ### Result
 
