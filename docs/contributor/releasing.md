@@ -43,7 +43,7 @@ This release process covers the steps to release new major and minor versions fo
 
 9. Verify the [Prow Status](https://status.build.kyma-project.io/) of the postsubmit job (`post-telemetry-manager-release-module`).
    - Once the postsubmit job succeeds, the new Github release is available under [releases](https://github.com/kyma-project/telemetry-manager/releases).
-   - If the postsubmit job failed, retrigger it by removing the tag from upstream and pushing it again:
+   - If the postsubmit job fails, retrigger it by removing the tag from upstream and pushing it again:
      ```bash
      git push --delete upstream {RELEASE_VERSION}
      git push upstream {RELEASE_VERSION}
@@ -66,11 +66,11 @@ Due to the Squash merge Github Workflow, each PR results in a single commit afte
 * **docs**. Changes regarding the documentation.
 * **test**. The test suite alternations.
 * **deps**. The changes in the external dependencies.
-* **chore**. Anything not covered by the above categories (e.g. refactoring or artefacts building alternations).
+* **chore**. Anything not covered by the above categories (e.g., refactoring or artefacts building alternations).
 
 Beware that PRs of type `chore` do not appear in the Changelog for the release. Therefore, exclude maintenance changes that are not interesting to consumers of the project by marking them with chore type:
 
-* Dotfile changes (.gitignore, .github and so forth).
+* Dotfile changes (.gitignore, .github, and so forth).
 * Changes to development-only dependencies.
 * Minor code style changes.
 * Formatting changes in documentation.
@@ -81,4 +81,4 @@ The subject must describe the change and follow the recommendations:
 
 * Describe a change using the [imperative mood](https://en.wikipedia.org/wiki/Imperative_mood).  It must start with a present-tense verb, for example (but not limited to) Add, Document, Fix, Deprecate.
 * Start with an uppercase.
-* Kyma [capitalization](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/02-style-and-terminology.md#capitalization) and [termonology](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/02-style-and-terminology.md#terminology) guides.
+* Kyma [capitalization](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/02-style-and-terminology.md#capitalization) and [terminology](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/02-style-and-terminology.md#terminology) guides.
