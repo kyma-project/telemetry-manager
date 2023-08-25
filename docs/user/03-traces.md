@@ -439,14 +439,12 @@ System-related spans reported by Istio are filtered out without the opt-out opti
 
 ## Troubleshooting
 
-- Symptom: Traces are not arriving at the destination at all.
+- Symptom: No traces are arriving at the destination.
 
-   Cause: That might be due to {add reasons}.
+   Cause: The backend is not reachable or wrong authentication credentials are used
 
    Remedy: Investigate the cause with the following steps:
    1. Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
-   1. In the monitoring dashboard for Kyma Telemetry, check if the data is exported.
-   1. Verify that you activated Istio tracing.
 
 - Symptom: Custom spans don't arrive at the destination, but Istio spans do.
 

@@ -326,6 +326,8 @@ spec:
         value: https://backend.example.com:4317
 ```
 
+The agent will configure the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) for the metric groups `pod` and `container`. With that, [system metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md) related to containers and pods will get collected.
+
 ### Step 6: Activate Istio metrics
 To enable collection of Istio metrics for your Pods, define a MetricPipeline that has the `istio` section enabled as input:
 ```yaml
@@ -343,6 +345,8 @@ spec:
       endpoint:
         value: https://backend.example.com:4317
 ```
+
+The agent will start pulling all `istio-*` metrics from Istio sidecars.
 
 ### Result
 
@@ -366,7 +370,7 @@ The metric gateway setup is based on the following assumptions:
 - The collector has no autoscaling options and has a limited resource setup of 1 CPU and 1 GiB memory.
 - Batching is enabled, and a batch will contain up to 512 metrics/batch.
 - A destination can be unavailable for up to 5 minutes without direct loss of metric data.
-- An average metric consists of 40 attributes with 64 character length.
+- An average metric consists of 7 attributes with 64 character length.
 
 This leads to the following limitations:
 ### Throughput
@@ -384,16 +388,14 @@ Up to three MetricPipeline resources at a time are supported.
 
 ## Troubleshooting
 
-- Symptom: Traces don't arrive at the destination at all.
+- Symptom: No metrics are arriving at the destination.
 
-   Cause: That might be due to {add reasons}.
+   Cause: The backend is not reachable or wrong authentication credentials are used
 
    Remedy: Investigate the cause with the following steps:
    1. Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
-   1. In the monitoring dashboard for Kyma Telemetry, check if the data is exported.
-   1. Verify that you activated Istio tracing.
 
-- Symptom: Custom spans don't arrive at the destination, but Istio spans do.
+- Symptom: Custom metrics don't arrive at the destination, but Istio metrics do.
 
    Cause: Your SDK version is incompatible with the OTel collector version.
    
