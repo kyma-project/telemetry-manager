@@ -5,6 +5,7 @@
 //     body?
 //     footer?
 
+
 module.exports = {
     rules: {
         // The scope clause must always be in lowercase.
