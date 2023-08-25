@@ -50,36 +50,40 @@ Furthermore, the manager takes care of the full lifecycle of the OTel Collector 
 
 ## Setting up a TracePipeline
 
-In the following steps, you can see how to set up a typical TracePipeline. Learn more about the available [parameters and attributes](resources/04-tracepipeline.md).
+In the following steps, you can see how to construct a typical TracePipeline. Learn more about the available [parameters and attributes](resources/04-tracepipeline.md). See how to deploy the TracePipeline in the [result section](#result).
 
-### Step 1. Create a TracePipeline with an output
-1. To ship traces to a new OTLP output, create a resource file of the kind `TracePipeline`:
+### Step 1a. Create a TracePipeline with an OTLP GRPC output
+To ship traces to a new OTLP output, create a resource of the kind `TracePipeline`:
 
-   ```yaml
-   apiVersion: telemetry.kyma-project.io/v1alpha1
-   kind: TracePipeline
-   metadata:
-     name: backend
-   spec:
-     output:
-       otlp:
-         endpoint:
-           value: https://backend.example.com:4317
-   ```
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
 
-   This configures the underlying OTel Collector with a pipeline for traces. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-traces` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, dependent on the configured protocol.
+This configures the underlying OTel Collector with a pipeline for traces. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-traces` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, dependent on the configured protocol.
 
-2. To create the instance, apply the resource file in your cluster:
-    ```bash
-    kubectl apply -f path/to/my-trace-pipeline.yaml
-    ```
+### Step 1b. Create a TracePipeline with an OTLP HTTP output
 
-3. Check that the status of the TracePipeline in your cluster is `Ready`:
-    ```bash
-    kubectl get tracepipeline
-    NAME              STATUS    AGE
-    http-backend      Ready     44s
-    ```
+To use the HTTP protocol instead of the default GRPC, use the `protocol` attribute and ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      protocol: http
+      endpoint:
+        value: https://backend.example.com:4318
+```
 
 ### Step 2. Enable Istio tracing
 
@@ -101,23 +105,7 @@ spec:
   randomSamplingPercentage: 5.00
 ```
 
-### Step 3. Switch the protocol to HTTP
-
-To use the HTTP protocol instead of the default GRPC, use the `protocol` attribute and ensure that the proper port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: TracePipeline
-metadata:
-  name: backend
-spec:
-  output:
-    otlp:
-      protocol: http
-      endpoint:
-        value: https://backend.example.com:4318
-```
-
-### Step 4: Add authentication details
+### Step 3a: Add authentication details from plain text
 
 To integrate with external systems, you must configure authentication details. At the moment, Basic Authentication and custom headers are supported.
 
@@ -187,7 +175,7 @@ To integrate with external systems, you must configure authentication details. A
   </details>
 </div>
 
-### Step 5: Add authentication details from Secrets
+### Step 3b: Add authentication details from Secrets
 
 Integrations into external systems usually require authentication details dealing with sensitive data. To handle that data properly in Secrets, TracePipeline supports the reference of Secrets.
 
@@ -294,10 +282,26 @@ stringData:
   token: Bearer YYY
 ```
 
-### Step 6: Rotate the Secret
+### Step 4: Rotate the Secret
 
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
 If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
+
+### Result
+
+To activate and verify the constructed TracePipeline, follow these steps:
+1. Place the snippet in a file named for example `tracepipeline.yaml`.
+2. To activate the instance, apply the resource file in your cluster:
+    ```bash
+    kubectl apply -f tracepipeline.yaml
+    ```
+
+3. Check that the status of the TracePipeline in your cluster is `Ready`:
+    ```bash
+    kubectl get tracepipeline
+    NAME              STATUS    AGE
+    backend           Ready     44s
+    ```
 
 ## Kyma Components with tracing capabilities
 

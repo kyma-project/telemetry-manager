@@ -18,14 +18,14 @@ For the instrumentation, you usually use an SDK, namely the [Prometheus client l
 
 In the Telemetry module, a central in-cluster Deployment of an [OTel Collector](https://opentelemetry.io/docs/collector/) acts as a gateway. The gateway exposes endpoints for the [OTLP protocol](https://opentelemetry.io/docs/specs/otlp/) for GRPC and HTTP-based communication using the dedicated `telemetry-otlp-metrics` service, to which all Kyma components and users' applications should send the metrics data.
 
-Optionally, the Telemetry module provides a DaemonSet of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as an agent. That agent scrapes metrics of workload in the [Prometheus pull-based format](https://prometheus.io/docs/instrumenting/exposition_formats) and can provide runtime specific metrics for workload.
+Optionally, the Telemetry module provides a DaemonSet of an [OTel Collector](https://opentelemetry.io/docs/collector/) acting as an agent. That agent pulls metrics of workload in the [Prometheus pull-based format](https://prometheus.io/docs/instrumenting/exposition_formats) and can provide runtime specific metrics for workload.
 
 ![Architecture](./assets/metrics-arch.drawio.svg)
 
 1. An application exposing metrics in OTLP, pushes metrics to the central metric gateway service.
 2. An application exposing metrics in Prometheus protocol, activates the agent to scrape the metrics with an annotation-based configuration.
-3. Additionally, you can activate the agent scrape metrics of each Istio sidecar.
-4. The agent converts and pushes all scraped metric data to the gateway in OTLP.
+3. Additionally, you can activate the agent to pull metrics of each Istio sidecar.
+4. The agent converts and pushes all collected metric data to the gateway in OTLP.
 5. The gateway enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
 6. The `MetricPipeline` resource specifies the target backend for the metric gateway.
 1. The backend can run within the cluster.
@@ -54,38 +54,26 @@ Furthermore, the manager takes care of the full lifecycle of the Gateway Deploym
 
 ## Setting up a MetricPipeline
 
-In the following steps, you can see how to set up a typical MetricPipeline. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
+In the following steps, you can see how to construct a typical MetricPipeline. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md). See how to deploy the MetricPipeline in the [result section](#result).
 
-### Step 1. Create a MetricPipeline with an output
-1. To ship metrics to a new OTLP output, create a resource file of the kind `MetricPipeline`:
+### Step 1a. Create a MetricPipeline with an OTLP GRPC output
+To ship metrics to a new OTLP output, create a resource of the kind `MetricPipeline`:
 
-   ```yaml
-   apiVersion: telemetry.kyma-project.io/v1alpha1
-   kind: MetricPipeline
-   metadata:
-     name: backend
-   spec:
-     output:
-       otlp:
-         endpoint:
-           value: https://backend.example.com:4317
-   ```
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
 
-   This configures the underlying OTel Collector of the gateway with a pipeline for metrics. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-metrics` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, depending on the configured protocol.
+This configures the underlying OTel Collector of the gateway with a pipeline for metrics. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-metrics` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, depending on the configured protocol.
 
-2. To create the instance, apply the resource file in your cluster:
-    ```bash
-    kubectl apply -f path/to/my-metric-pipeline.yaml
-    ```
-
-3. Check that the status of the MetricPipeline in your cluster is `Ready`:
-    ```bash
-    kubectl get metricpipeline
-    NAME              STATUS    AGE
-    http-backend      Ready     44s
-    ```
-
-### Step 2. Switch the protocol to HTTP
+### Step 1b. Create a MetricPipeline with an OTLP HTTP output
 
 To use the HTTP protocol instead of the default GRPC, use the `protocol` attribute and ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
 ```yaml
@@ -101,7 +89,7 @@ spec:
         value: https://backend.example.com:4318
 ```
 
-### Step 3: Add authentication details
+### Step 2a: Add authentication details from plain text
 
 To integrate with external systems, you must configure authentication details. At the moment, Basic Authentication and custom headers are supported.
 
@@ -172,7 +160,7 @@ See the following code examples for mTLS, basic, and token-based custom authenti
   </details>
 </div>
 
-### Step 4: Add authentication details from Secrets
+### Step 2b: Add authentication details from Secrets
 
 Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, MetricsPipeline supports the reference of Secrets.
 
@@ -279,17 +267,16 @@ stringData:
   token: Bearer YYY
 ```
 
-### Step 5: Rotate the Secret
+### Step 3: Rotate the Secret
 
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
 If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
-### Step 6: Activate Prometheus-based metrics
-
+### Step 4: Activate Prometheus-based metrics
 
 > **NOTE:** For the following approach, you must have instrumented your application using a library like the [Prometheus client library](https://prometheus.io/docs/instrumenting/clientlibs/), with a port in your workload exposed serving as a Prometheus metrics endpoint.
 
-To enable collection of Prometheus-based metrics, define a MetricPipeline that has Prometheus enabled as input:
+To enable collection of Prometheus-based metrics, define a MetricPipeline that has the `prometheus` section enabled as input:
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
@@ -321,8 +308,8 @@ prometheus.io/path: /myMetrics # optional, configure the path under which the me
 
 > **NOTE:** The agent can scrape endpoints even if the workload uses Istio and accepts only mTLS communication.
 
-### Step 7: Activate runtime metrics
-To enable collection of runtime metrics for your Pods, define a MetricPipeline with runtime enabled as input:
+### Step 5: Activate runtime metrics
+To enable collection of runtime metrics for your Pods, define a MetricPipeline that has the `runtime` section enabled as input:
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
@@ -339,8 +326,8 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-### Step 8: Activate Istio metrics
-To enable collection of Istio metrics for your Pods, define a MetricPipeline with Istio enabled as input:
+### Step 6: Activate Istio metrics
+To enable collection of Istio metrics for your Pods, define a MetricPipeline that has the `istio` section enabled as input:
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
@@ -356,6 +343,22 @@ spec:
       endpoint:
         value: https://backend.example.com:4317
 ```
+
+### Result
+
+To activate and verify the constructed MetricPipeline, follow these steps:
+1. Place the snippet in a file named for example `metricpipeline.yaml`.
+2. To activate the instance, apply the resource file in your cluster:
+    ```bash
+    kubectl apply -f metricpipeline.yaml
+    ```
+
+3. Check that the status of the MetricPipeline in your cluster is `Ready`:
+    ```bash
+    kubectl get metricpipeline
+    NAME              STATUS    AGE
+    backend           Ready     44s
+    ```
 
 ## Limitations
 
