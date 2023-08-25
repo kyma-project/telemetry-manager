@@ -1,6 +1,7 @@
 # Telemetry CR conditions
 
-This section describes the possible states of the Telemetry CR. There are conditions type `LogComponentsHealthy`, `TraceComponentsHealthy` and `MetricComponentsHealthy` representing state of each of the subcomponents. The state of the Telemetry CR is derived from combined state of all the subcomponents.
+This section describes the possible states of the Telemetry CR. 
+The state of the Telemetry CR is derived from the combined state of all the subcomponents, namely, from the condition types `LogComponentsHealthy`, `TraceComponentsHealthy` and `MetricComponentsHealthy`. 
 
 ## Log Components State
 | No | Condition type | Condition status | Condition reason              | Remark                                     |
