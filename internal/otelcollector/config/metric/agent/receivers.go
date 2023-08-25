@@ -15,8 +15,8 @@ func makeReceiversConfig(inputs inputSources) Receivers {
 
 	if inputs.prometheus {
 		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
-		receiversConfig.PrometheusAppPods = makePrometheusAppPodsConfig()
-		receiversConfig.PrometheusAppServices = makePrometheusAppServicesConfig()
+		receiversConfig.PrometheusAppPods = makePrometheusAppPodsConfig(inputs.istioDeployed)
+		receiversConfig.PrometheusAppServices = makePrometheusAppServicesConfig(inputs.istioDeployed)
 	}
 
 	if inputs.runtime {
@@ -59,7 +59,16 @@ func makePrometheusSelfConfig() *PrometheusReceiver {
 	}
 }
 
-func makePrometheusAppPodsConfig() *PrometheusReceiver {
+func makePrometheusAppPodsConfig(istioEnabled bool) *PrometheusReceiver {
+	var tlsConfig = TLSConfig{}
+	if istioEnabled {
+		tlsConfig = TLSConfig{
+			CAFile:             "/etc/istio-output-certs/root-cert.pem",
+			CertFile:           "/etc/istio-output-certs/cert-chain.pem",
+			KeyFile:            "key_file: /etc/istio-output-certs/key.pem",
+			InsecureSkipVerify: true,
+		}
+	}
 	return &PrometheusReceiver{
 		Config: PrometheusConfig{
 			ScrapeConfigs: []ScrapeConfig{
@@ -67,6 +76,7 @@ func makePrometheusAppPodsConfig() *PrometheusReceiver {
 					JobName:                    "app-pods",
 					ScrapeInterval:             scrapeInterval,
 					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
+					TLSConfig:                  tlsConfig,
 					RelabelConfigs: []RelabelConfig{
 						keepRunningOnSameNode(NodeAffiliatedPod),
 						keepAnnotated(AnnotatedPod),
@@ -83,7 +93,7 @@ func makePrometheusAppPodsConfig() *PrometheusReceiver {
 	}
 }
 
-func makePrometheusAppServicesConfig() *PrometheusReceiver {
+func makePrometheusAppServicesConfig(istioEnabled bool) *PrometheusReceiver {
 	return &PrometheusReceiver{
 		Config: PrometheusConfig{
 			ScrapeConfigs: []ScrapeConfig{
