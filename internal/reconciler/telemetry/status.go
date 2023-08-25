@@ -59,6 +59,8 @@ func (r *Reconciler) updateComponentCondition(ctx context.Context, checker Compo
 	newCondition.ObservedGeneration = telemetry.GetGeneration()
 	meta.SetStatusCondition(&telemetry.Status.Conditions, *newCondition)
 
+	// Since LogPipeline, MetricPipeline, and TracePipeline have status conditions with positive polarity,
+	// we can assume that the Telemetry Module is in the 'Ready' state if all conditions of dependent resources have the status 'True.'
 	if slices.ContainsFunc(telemetry.Status.Conditions, func(cond metav1.Condition) bool {
 		return cond.Status == metav1.ConditionFalse
 	}) {
