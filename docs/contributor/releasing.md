@@ -51,7 +51,7 @@ This release process covers the steps to release new major and minor versions fo
 
 ## Changelog
 
-Every PR's title must adhere to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification for an automatic changelog generation. It is enforced by a [Conventional Pull Request](https://github.com/marketplace/actions/conventional-pull-request) GitHub Action and a [Commitlint](https://commitlint.js.org/#/reference-rules).
+Every PR's title must adhere to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification for an automatic changelog generation. It is enforced by a [semantic-pull-request](https://github.com/marketplace/actions/semantic-pull-request) GitHub Action.
 
 ### Pull Request Title
 
@@ -80,5 +80,5 @@ Beware that PRs of type `chore` do not appear in the Changelog for the release. 
 The subject must describe the change and follow the recommendations:
 
 * Describe a change using the [imperative mood](https://en.wikipedia.org/wiki/Imperative_mood).  It must start with a present-tense verb, for example (but not limited to) Add, Document, Fix, Deprecate.
-* Start with an uppercase.
+* Start with an uppercase, and not finish with a full stop.
 * Kyma [capitalization](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/02-style-and-terminology.md#capitalization) and [terminology](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/02-style-and-terminology.md#terminology) guides.
