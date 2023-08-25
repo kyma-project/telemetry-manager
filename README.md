@@ -1,12 +1,13 @@
 # Telemetry Manager
 
 ## Status
+[![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/telemetry-manager)](https://api.reuse.software/info/github.com/kyma-project/telemetry-manager)
 
 ![GitHub tag checks state](https://img.shields.io/github/checks-status/kyma-project/telemetry-manager/main?label=telemetry-operator&link=https%3A%2F%2Fgithub.com%2Fkyma-project%2Ftelemetry-manager%2Fcommits%2Fmain)
 
 ## Overview
 
-[Telemetry Manager](./docs/user/01-manager.md) is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that fulfils the [Kyma module interface](https://github.com/kyma-project/community/tree/main/concepts/modularization). It provides APIs for a managed agent/gateway setup for log, trace, and metric ingestion and dispatching into 3rd-party backend systems, in order to reduce the pain of orchestrating such setup on your own. Read more on the [usage](./docs/user/README.md) of the module as well as general [design and strategy](https://github.com/kyma-project/community/blob/main/concepts/observability-strategy/strategy.md) behind the module.
+[Telemetry Manager](docs/user/01-manager.md) is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that fulfils the [Kyma module interface](https://github.com/kyma-project/community/tree/main/concepts/modularization). It provides APIs for a managed agent/gateway setup for log, trace, and metric ingestion and dispatching into 3rd-party backend systems, in order to reduce the pain of orchestrating such setup on your own. Read more on the [usage](docs/user/README.md) of the module as well as general [design and strategy](https://github.com/kyma-project/community/blob/main/concepts/observability-strategy/strategy.md) behind the module.
 
 ### Logs
 
@@ -26,27 +27,34 @@ The metric controller creates an [OpenTelemetry Collector](https://opentelemetry
 
 For more information, see [Dynamic Monitoring Backend Configuration](https://github.com/kyma-project/community/tree/main/concepts/observability-strategy/configurable-monitoring).
 
-## Usage
-
-See the [user documentation](./docs/user/README.md).
-
 ## Installation
 
-See the [installation instruction](./docs/contributor/installation.md).
+See the [installation instruction](docs/contributor/installation.md).
+
+## Usage
+
+See the [user documentation](docs/user/README.md).
 
 ## Development
 
 For details, see:
-- [Available commands for building/linting/installation](./docs/contributor/development.md)
-- [Testing strategy](./docs/contributor/testing.md)
-- [Troubleshooting and debugging](./docs/contributor/troubleshooting.md)
-- [Release process](./docs/contributor/releasing.md)
-- [Governance checks like linting](./docs/contributor/governance.md)
-
-## License
-
-This project is licensed under the Apache Software License, version 2.0 except as noted otherwise in the [LICENSE](./LICENSE) file.
+- [Available commands for building/linting/installation](docs/contributor/development.md)
+- [Testing strategy](docs/contributor/testing.md)
+- [Troubleshooting and debugging](docs/contributor/troubleshooting.md)
+- [Release process](docs/contributor/releasing.md)
+- [Governance checks like linting](docs/contributor/governance.md)
 
 ## Contributing
+<!--- mandatory section - do not change this! --->
 
-To contribute to this project, follow the general [Kyma project contributing](https://github.com/kyma-project/community/blob/main/docs/contributing/02-contributing.md) guidelines.
+See the [CONTRIBUTING](CONTRIBUTING.md) file.
+
+## Code of Conduct
+<!--- mandatory section - do not change this! --->
+
+See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+
+## Licensing
+<!--- mandatory section - do not change this! --->
+
+See the [LICENSE](LICENSE) file.

@@ -42,12 +42,13 @@ func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*config.OTLPExporter, 
 func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, envVars map[string][]byte, queueSize int) *config.OTLPExporter {
 	headers := makeHeaders(otlpOutput, pipelineName)
 	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
+	otlpEndpointValue := string(envVars[otlpEndpointVariable])
+	tlsConfig := makeTLSConfig(otlpOutput, otlpEndpointValue, pipelineName)
+
 	otlpExporterConfig := config.OTLPExporter{
 		Endpoint: fmt.Sprintf("${%s}", otlpEndpointVariable),
 		Headers:  headers,
-		TLS: config.TLS{
-			Insecure: isInsecureOutput(string(envVars[otlpEndpointVariable])),
-		},
+		TLS:      tlsConfig,
 		SendingQueue: config.SendingQueue{
 			Enabled:   true,
 			QueueSize: queueSize,
@@ -74,6 +75,32 @@ func ExporterID(output *telemetryv1alpha1.OtlpOutput, pipelineName string) strin
 	return fmt.Sprintf("%s/%s", outputType, pipelineName)
 }
 
+func makeTLSConfig(output *telemetryv1alpha1.OtlpOutput, otlpEndpointValue, pipelineName string) config.TLS {
+	var cfg config.TLS
+	cfg.Insecure = isInsecureOutput(otlpEndpointValue)
+
+	if output.TLS == nil {
+		return cfg
+	}
+
+	if !cfg.Insecure {
+		cfg.Insecure = output.TLS.Insecure
+	}
+
+	cfg.InsecureSkipVerify = output.TLS.InsecureSkipVerify
+	if output.TLS.CA.IsDefined() {
+		cfg.CAPem = fmt.Sprintf("${%s}", makeTLSCaVariable(pipelineName))
+	}
+	if output.TLS.Cert.IsDefined() {
+		cfg.CertPem = fmt.Sprintf("${%s}", makeTLSCertVariable(pipelineName))
+	}
+	if output.TLS.Key.IsDefined() {
+		cfg.KeyPem = fmt.Sprintf("${%s}", makeTLSKeyVariable(pipelineName))
+	}
+
+	return cfg
+}
+
 func makeHeaders(output *telemetryv1alpha1.OtlpOutput, pipelineName string) map[string]string {
 	headers := make(map[string]string)
 	if output.Authentication != nil && output.Authentication.Basic.IsDefined() {
@@ -82,7 +109,7 @@ func makeHeaders(output *telemetryv1alpha1.OtlpOutput, pipelineName string) map[
 	}
 
 	for _, header := range output.Headers {
-		headers[header.Name] = fmt.Sprintf("${%s}", makeHeaderEnvVarCompliant(header, pipelineName))
+		headers[header.Name] = fmt.Sprintf("${%s}", makeHeaderVariable(header, pipelineName))
 	}
 	return headers
 }

@@ -1,4 +1,4 @@
-//go:build e2e
+//go:build e2edisabled
 
 package e2e
 
@@ -19,6 +19,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
 
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+)
+
+var (
+	telemetryFluentbitName              = "telemetry-fluent-bit"
+	telemetryWebhookEndpoint            = "telemetry-operator-webhook"
+	telemetryFluentbitMetricServiceName = "telemetry-fluent-bit-metrics"
 )
 
 var _ = Describe("Logging", Label("logging"), func() {

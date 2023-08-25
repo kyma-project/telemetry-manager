@@ -49,7 +49,7 @@ Furthermore, the manager takes care of the full lifecycle of the OTel Collector 
 
 ## Setting up a TracePipeline
 
-In the following steps, you can see how to set up a typical TracePipeline. Learn more about the available [parameters and attributes](/docs/user/resources/04-tracepipeline.md).
+In the following steps, you can see how to set up a typical TracePipeline. Learn more about the available [parameters and attributes](resources/04-tracepipeline.md).
 
 ### Step 1. Create a TracePipeline with an output
 1. To ship traces to a new OTLP output, create a resource file of the kind `TracePipeline`:

@@ -1,10 +1,10 @@
 # Installation
 
-You can choose among several ways of installation. For more details on the available make targets and the prerequisites, see [Development](./development.md).
+You can choose among several ways of installation. For more details on the available make targets and the prerequisites, see [Development](development.md).
 
 ## Prerequisites
 
-- See prerequisites for running the make targets at the [Development section](./development.md).
+- See prerequisites for running the make targets at the [Development section](development.md).
 - You have a Kubecontext pointing to an existing Kubernetes cluster.
 
 ## Install Telemetry Manager from sources
@@ -33,7 +33,7 @@ kubectl apply -f https://github.com/kyma-project/telemetry-manager/releases/late
 
 ## Install Telemetry Manager in your cluster from latest release using the Lifecycle manager
 
-1. Ensure that you have the [Kyma CLI](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/01-install-kyma-CLI/) installed.
+1. Ensure that you have the [Kyma CLI](https://kyma-project.io/#/04-operation-guides/operations/01-install-kyma-CLI/) installed.
 
 2. Install the Lifecycle manager:
 

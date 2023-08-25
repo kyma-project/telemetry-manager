@@ -83,7 +83,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
@@ -121,7 +121,7 @@ func TestMakeAgentConfig(t *testing.T) {
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-runtime"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/istio")
@@ -191,7 +191,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
@@ -208,7 +208,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
@@ -229,7 +229,7 @@ func TestMakeAgentConfig(t *testing.T) {
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-runtime"}, collectorConfig.Service.Pipelines["metrics/runtime"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/runtime"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/prometheus")
-			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
+			require.Equal(t, []string{"prometheus/self", "prometheus/app-pods", "prometheus/app-services"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Receivers)
 			require.Equal(t, []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 		})
@@ -253,6 +253,7 @@ service:
             receivers:
                 - prometheus/self
                 - prometheus/app-pods
+                - prometheus/app-services
             processors:
                 - resource/delete-service-name
                 - resource/insert-input-source-prometheus
@@ -284,25 +285,17 @@ receivers:
             - pod
     prometheus/self:
         config:
-            global: {}
             scrape_configs:
                 - job_name: opentelemetry-collector
-                  honor_timestamps: false
-                  scrape_interval: 10s
-                  follow_redirects: true
-                  enable_http2: true
+                  scrape_interval: 30s
                   static_configs:
                     - targets:
                         - ${MY_POD_IP}:8888
     prometheus/app-pods:
         config:
-            global: {}
             scrape_configs:
                 - job_name: app-pods
-                  honor_timestamps: false
-                  scrape_interval: 10s
-                  follow_redirects: false
-                  enable_http2: false
+                  scrape_interval: 30s
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_pod_node_name]
                       regex: $MY_NODE_NAME
@@ -334,19 +327,51 @@ receivers:
                       action: drop
                   kubernetes_sd_configs:
                     - role: pod
-                      kubeconfig_file: ""
-                      follow_redirects: true
-                      enable_http2: true
+    prometheus/app-services:
+        config:
+            scrape_configs:
+                - job_name: app-services
+                  scrape_interval: 30s
+                  relabel_configs:
+                    - source_labels: [__meta_kubernetes_endpoint_node_name]
+                      regex: $MY_NODE_NAME
+                      action: keep
+                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+                      regex: "true"
+                      action: keep
+                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+                      regex: (https?)
+                      target_label: __scheme__
+                      action: replace
+                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+                      regex: (.+)
+                      target_label: __metrics_path__
+                      action: replace
+                    - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+                      regex: ([^:]+)(?::\d+)?;(\d+)
+                      target_label: __address__
+                      replacement: $$1:$$2
+                      action: replace
+                    - source_labels: [__meta_kubernetes_pod_phase]
+                      regex: Pending|Succeeded|Failed
+                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_container_init]
+                      regex: (true)
+                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_container_name]
+                      regex: (istio-proxy)
+                      action: drop
+                    - source_labels: [__meta_kubernetes_service_name]
+                      target_label: service
+                      action: replace
+                  kubernetes_sd_configs:
+                    - role: endpoints
     prometheus/istio:
         config:
-            global: {}
             scrape_configs:
                 - job_name: istio-proxy
-                  honor_timestamps: false
-                  scrape_interval: 10s
+                  scrape_interval: 30s
                   metrics_path: /stats/prometheus
-                  follow_redirects: false
-                  enable_http2: false
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_pod_node_name]
                       regex: $MY_NODE_NAME
@@ -366,9 +391,6 @@ receivers:
                       action: keep
                   kubernetes_sd_configs:
                     - role: pod
-                      kubeconfig_file: ""
-                      follow_redirects: true
-                      enable_http2: true
 processors:
     resource/delete-service-name:
         attributes:
@@ -409,6 +431,7 @@ exporters:
 		})
 
 		yamlBytes, err := yaml.Marshal(collectorConfig)
+
 		require.NoError(t, err)
 		require.Equal(t, expected, string(yamlBytes))
 	})

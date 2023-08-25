@@ -15,11 +15,10 @@ import (
 const (
 	basicAuthHeaderVariablePrefix = "BASIC_AUTH_HEADER"
 	otlpEndpointVariablePrefix    = "OTLP_ENDPOINT"
+	tlsConfigCertVariablePrefix   = "OTLP_TLS_CERT_PEM"
+	tlsConfigKeyVariablePrefix    = "OTLP_TLS_KEY_PEM"
+	tlsConfigCaVariablePrefix     = "OTLP_TLS_CA_PEM"
 )
-
-func makeHeaderEnvVarCompliant(header telemetryv1alpha1.Header, pipelineName string) string {
-	return fmt.Sprintf("HEADER_%s_%s", envvar.MakeEnvVarCompliant(pipelineName), envvar.MakeEnvVarCompliant(header.Name))
-}
 
 func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
 	secretData := make(map[string][]byte)
@@ -45,12 +44,39 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 	secretData[otlpEndpointVariable] = endpoint
 
 	for _, header := range output.Headers {
-		key := makeHeaderEnvVarCompliant(header, pipelineName)
+		key := makeHeaderVariable(header, pipelineName)
 		value, err := resolveValue(ctx, c, header.ValueType)
 		if err != nil {
 			return nil, err
 		}
 		secretData[key] = value
+	}
+
+	if output.TLS != nil {
+		if output.TLS.CA.IsDefined() {
+			ca, err := resolveValue(ctx, c, output.TLS.CA)
+			if err != nil {
+				return nil, err
+			}
+			tlsConfigCaVariable := makeTLSCaVariable(pipelineName)
+			secretData[tlsConfigCaVariable] = ca
+		}
+		if output.TLS.Cert.IsDefined() {
+			cert, err := resolveValue(ctx, c, output.TLS.Cert)
+			if err != nil {
+				return nil, err
+			}
+			tlsConfigCertVariable := makeTLSCertVariable(pipelineName)
+			secretData[tlsConfigCertVariable] = cert
+		}
+		if output.TLS.Key.IsDefined() {
+			key, err := resolveValue(ctx, c, output.TLS.Key)
+			if err != nil {
+				return nil, err
+			}
+			tlsConfigKeyVariable := makeTLSKeyVariable(pipelineName)
+			secretData[tlsConfigKeyVariable] = key
+		}
 	}
 
 	return secretData, nil
@@ -77,4 +103,20 @@ func makeOtlpEndpointVariable(pipelineName string) string {
 
 func makeBasicAuthHeaderVariable(pipelineName string) string {
 	return fmt.Sprintf("%s_%s", basicAuthHeaderVariablePrefix, envvar.MakeEnvVarCompliant(pipelineName))
+}
+
+func makeHeaderVariable(header telemetryv1alpha1.Header, pipelineName string) string {
+	return fmt.Sprintf("HEADER_%s_%s", envvar.MakeEnvVarCompliant(pipelineName), envvar.MakeEnvVarCompliant(header.Name))
+}
+
+func makeTLSCertVariable(pipelineName string) string {
+	return fmt.Sprintf("%s_%s", tlsConfigCertVariablePrefix, envvar.MakeEnvVarCompliant(pipelineName))
+}
+
+func makeTLSKeyVariable(pipelineName string) string {
+	return fmt.Sprintf("%s_%s", tlsConfigKeyVariablePrefix, envvar.MakeEnvVarCompliant(pipelineName))
+}
+
+func makeTLSCaVariable(pipelineName string) string {
+	return fmt.Sprintf("%s_%s", tlsConfigCaVariablePrefix, envvar.MakeEnvVarCompliant(pipelineName))
 }

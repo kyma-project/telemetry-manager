@@ -10,6 +10,7 @@
 **/bin
 testbin/*
 artifacts/*
+junit.xml
 
 # Test binary, build with `go test -c`
 *.test

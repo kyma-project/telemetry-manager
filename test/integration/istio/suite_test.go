@@ -1,6 +1,6 @@
-//go:build e2e
+//go:build istio
 
-package integration
+package istio
 
 import (
 	"context"
