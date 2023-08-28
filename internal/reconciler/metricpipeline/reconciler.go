@@ -7,7 +7,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -269,8 +269,9 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 }
 
 func (r *Reconciler) isIstioDeployed(ctx context.Context) bool {
-	var customResourceList v1.CustomResourceDefinitionList
-	if err := r.List(ctx, &customResourceList); err != nil {
+	var crdList apiextensionsv1.CustomResourceDefinitionList
+	if err := r.List(ctx, &crdList); err != nil {
+		logf.FromContext(ctx).Error(err, "Not able to list CRDs")
 		//no kind found
 		if _, ok := err.(*meta.NoKindMatchError); ok {
 			return false
@@ -278,7 +279,14 @@ func (r *Reconciler) isIstioDeployed(ctx context.Context) bool {
 		return false
 	}
 
-	for _, crd := range customResourceList.Items {
+	var names []string
+	for _, crd := range crdList.Items {
+		names = append(names, crd.Name)
+	}
+
+	logf.FromContext(ctx).Info("Found CRDs", "crds", names)
+
+	for _, crd := range crdList.Items {
 		if strings.EqualFold(crd.Name, "peerauthentications.security.istio.io") {
 			return true
 		}
