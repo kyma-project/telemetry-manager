@@ -111,3 +111,21 @@ func dropIstioProxyContainer() RelabelConfig {
 		Regex:        "(istio-proxy)",
 	}
 }
+
+func replaceSchemeIstioTLS() RelabelConfig {
+	return RelabelConfig{
+		SourceLabels: []string{"__meta_kubernetes_pod_label_security_istio_io_tlsMode"},
+		Action:       Replace,
+		TargetLabel:  "__scheme__",
+		Regex:        "(istio)",
+		Replacement:  "https",
+	}
+}
+
+func dropNonHttps() RelabelConfig {
+	return RelabelConfig{
+		SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scheme"},
+		Action:       Drop,
+		Regex:        "(http)",
+	}
+}
