@@ -92,16 +92,16 @@ var (
 	maxTracePipelines  int
 	maxMetricPipelines int
 
-	traceCollectorImage                string
-	traceCollectorPriorityClass        string
-	traceCollectorCPULimit             string
-	traceCollectorDynamicCPULimit      string
-	traceCollectorMemoryLimit          string
-	traceCollectorDynamicMemoryLimit   string
-	traceCollectorCPURequest           string
-	traceCollectorDynamicCPURequest    string
-	traceCollectorMemoryRequest        string
-	traceCollectorDynamicMemoryRequest string
+	traceGatewayImage                string
+	traceGatewayPriorityClass        string
+	traceGatewayCPULimit             string
+	traceGatewayDynamicCPULimit      string
+	traceGatewayMemoryLimit          string
+	traceGatewayDynamicMemoryLimit   string
+	traceGatewayCPURequest           string
+	traceGatewayDynamicCPURequest    string
+	traceGatewayMemoryRequest        string
+	traceGatewayDynamicMemoryRequest string
 
 	fluentBitMemoryBufferLimit         string
 	fluentBitFsBufferLimit             string
@@ -216,16 +216,16 @@ func main() {
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MY_POD_NAMESPACE", "default"), "Namespace of the manager")
 
-	flag.StringVar(&traceCollectorImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorCPULimit, "trace-collector-cpu-limit", "900m", "CPU limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorDynamicCPULimit, "trace-collector-dynamic-cpu-limit", "100m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceCollectorMemoryLimit, "trace-collector-memory-limit", "512Mi", "Memory limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorDynamicMemoryLimit, "trace-collector-dynamic-memory-limit", "512Mi", "Additional memory limit for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceCollectorCPURequest, "trace-collector-cpu-request", "25m", "CPU request for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorDynamicCPURequest, "trace-collector-dynamic-cpu-request", "0", "Additional CPU request for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceCollectorMemoryRequest, "trace-collector-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorDynamicMemoryRequest, "trace-collector-dynamic-memory-request", "0", "Additional memory request for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayCPULimit, "trace-collector-cpu-limit", "900m", "CPU limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicCPULimit, "trace-collector-dynamic-cpu-limit", "100m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayMemoryLimit, "trace-collector-memory-limit", "512Mi", "Memory limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicMemoryLimit, "trace-collector-dynamic-memory-limit", "512Mi", "Additional memory limit for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayCPURequest, "trace-collector-cpu-request", "25m", "CPU request for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicCPURequest, "trace-collector-dynamic-cpu-request", "0", "Additional CPU request for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayMemoryRequest, "trace-collector-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicMemoryRequest, "trace-collector-dynamic-memory-request", "0", "Additional memory request for tracing OpenTelemetry Collector per TracePipeline")
 	flag.IntVar(&maxTracePipelines, "trace-collector-pipelines", 3, "Maximum number of TracePipelines to be created. If 0, no limit is applied.")
 
 	flag.StringVar(&metricGatewayImage, "metric-gateway-image", otelImage, "Image for metrics OpenTelemetry Collector")
@@ -507,16 +507,16 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 			Namespace: telemetryNamespace,
 			BaseName:  "telemetry-trace-collector",
 			Deployment: gateway.DeploymentConfig{
-				Image:                traceCollectorImage,
-				PriorityClassName:    traceCollectorPriorityClass,
-				BaseCPULimit:         resource.MustParse(traceCollectorCPULimit),
-				DynamicCPULimit:      resource.MustParse(traceCollectorDynamicCPULimit),
-				BaseMemoryLimit:      resource.MustParse(traceCollectorMemoryLimit),
-				DynamicMemoryLimit:   resource.MustParse(traceCollectorDynamicMemoryLimit),
-				BaseCPURequest:       resource.MustParse(traceCollectorCPURequest),
-				DynamicCPURequest:    resource.MustParse(traceCollectorDynamicCPURequest),
-				BaseMemoryRequest:    resource.MustParse(traceCollectorMemoryRequest),
-				DynamicMemoryRequest: resource.MustParse(traceCollectorDynamicMemoryRequest),
+				Image:                traceGatewayImage,
+				PriorityClassName:    traceGatewayPriorityClass,
+				BaseCPULimit:         resource.MustParse(traceGatewayCPULimit),
+				DynamicCPULimit:      resource.MustParse(traceGatewayDynamicCPULimit),
+				BaseMemoryLimit:      resource.MustParse(traceGatewayMemoryLimit),
+				DynamicMemoryLimit:   resource.MustParse(traceGatewayDynamicMemoryLimit),
+				BaseCPURequest:       resource.MustParse(traceGatewayCPURequest),
+				DynamicCPURequest:    resource.MustParse(traceGatewayDynamicCPURequest),
+				BaseMemoryRequest:    resource.MustParse(traceGatewayMemoryRequest),
+				DynamicMemoryRequest: resource.MustParse(traceGatewayDynamicMemoryRequest),
 			},
 			Service: gateway.ServiceConfig{
 				OTLPServiceName: traceOTLPServiceName,

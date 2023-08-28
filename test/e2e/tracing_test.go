@@ -31,7 +31,7 @@ import (
 )
 
 var (
-	traceCollectorBaseName             = "telemetry-trace-collector"
+	traceGatewayBaseName               = "telemetry-trace-collector"
 	maxNumberOfTracePipelines          = 3
 	tracePipelineReconciliationTimeout = 10 * time.Second
 )
@@ -43,7 +43,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 			urls               *mocks.URLProvider
 			mockNs             = "trace-mocks-single-pipeline"
 			mockDeploymentName = "trace-receiver"
-			traceCollectorname = types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
+			traceGatewayName   = types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
 		)
 
 		BeforeAll(func() {
@@ -57,18 +57,18 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running trace collector deployment", Label(operationalTest), func() {
+		It("Should have a running trace gateway deployment", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, traceCollectorname)
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, traceGatewayName)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should have 2 trace collector replicas", func() {
+		It("Should have 2 trace gateway replicas", func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
-				err := k8sClient.Get(ctx, traceCollectorname, &deployment)
+				err := k8sClient.Get(ctx, traceGatewayName, &deployment)
 				g.Expect(err).NotTo(HaveOccurred())
 				return *deployment.Spec.Replicas
 			}, timeout, interval).Should(Equal(int32(2)))
@@ -83,7 +83,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should be able to get trace collector metrics endpoint", Label(operationalTest), func() {
+		It("Should be able to get trace gateway metrics endpoint", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.Metrics())
 				g.Expect(err).NotTo(HaveOccurred())
@@ -123,17 +123,17 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 
 		It("Should have a working network policy", func() {
 			var networkPolicy networkingv1.NetworkPolicy
-			key := types.NamespacedName{Name: traceCollectorBaseName + "-pprof-deny-ingress", Namespace: kymaSystemNamespaceName}
+			key := types.NamespacedName{Name: traceGatewayBaseName + "-pprof-deny-ingress", Namespace: kymaSystemNamespaceName}
 			Expect(k8sClient.Get(ctx, key, &networkPolicy)).To(Succeed())
 
 			Eventually(func(g Gomega) {
 				var podList corev1.PodList
-				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kymaSystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": traceCollectorBaseName})).To(Succeed())
+				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kymaSystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": traceGatewayBaseName})).To(Succeed())
 				g.Expect(podList.Items).NotTo(BeEmpty())
 
-				traceCollectorPodName := podList.Items[0].Name
+				traceGatewayPodName := podList.Items[0].Name
 				pprofPort := 1777
-				pprofEndpoint := proxyClient.ProxyURLForPod(kymaSystemNamespaceName, traceCollectorPodName, "debug/pprof/", pprofPort)
+				pprofEndpoint := proxyClient.ProxyURLForPod(kymaSystemNamespaceName, traceGatewayPodName, "debug/pprof/", pprofPort)
 
 				resp, err := proxyClient.Get(pprofEndpoint)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -455,7 +455,7 @@ func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 		WithPort("http-metrics", httpMetricsPort)
 	urls.SetMetrics(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", httpMetricsPort))
 
-	objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", traceCollectorBaseName)))
+	objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", traceGatewayBaseName)))
 
 	return objs, urls, pipelines
 }
