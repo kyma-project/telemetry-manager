@@ -11,8 +11,8 @@ const (
 	ReasonMetricGatewayDeploymentNotReady = "MetricGatewayDeploymentNotReady"
 	ReasonMetricGatewayDeploymentReady    = "MetricGatewayDeploymentReady"
 
-	ReasonTraceGatewayDeploymentNotReady = "TraceCollectorDeploymentNotReady"
-	ReasonTraceGatewayDeploymentReady    = "TraceCollectorDeploymentReady"
+	ReasonTraceGatewayDeploymentNotReady = "TraceGatewayDeploymentNotReady"
+	ReasonTraceGatewayDeploymentReady    = "TraceGatewayDeploymentReady"
 )
 
 var conditions = map[string]string{
@@ -26,8 +26,8 @@ var conditions = map[string]string{
 	ReasonMetricGatewayDeploymentNotReady: "Metric gateway Deployment is not ready",
 	ReasonMetricGatewayDeploymentReady:    "Metric gateway Deployment is ready",
 
-	ReasonTraceGatewayDeploymentNotReady: "Trace collector Deployment is not ready",
-	ReasonTraceGatewayDeploymentReady:    "Trace collector Deployment is ready",
+	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
+	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
 }
 
 func Condition(reason string) string {

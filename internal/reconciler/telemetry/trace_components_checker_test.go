@@ -41,8 +41,8 @@ func TestTraceComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "True",
-				Reason:  "TraceCollectorDeploymentReady",
-				Message: "Trace collector Deployment is ready",
+				Reason:  "TraceGatewayDeploymentReady",
+				Message: "Trace gateway Deployment is ready",
 			},
 		},
 		{
@@ -71,8 +71,8 @@ func TestTraceComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "False",
-				Reason:  "TraceCollectorDeploymentNotReady",
-				Message: "Trace collector Deployment is not ready",
+				Reason:  "TraceGatewayDeploymentNotReady",
+				Message: "Trace gateway Deployment is not ready",
 			},
 		},
 		{
@@ -86,8 +86,8 @@ func TestTraceComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "True",
-				Reason:  "TraceCollectorDeploymentReady",
-				Message: "Trace collector Deployment is ready",
+				Reason:  "TraceGatewayDeploymentReady",
+				Message: "Trace gateway Deployment is ready",
 			},
 		},
 		{
@@ -101,8 +101,8 @@ func TestTraceComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "False",
-				Reason:  "TraceCollectorDeploymentNotReady",
-				Message: "Trace collector Deployment is not ready",
+				Reason:  "TraceGatewayDeploymentNotReady",
+				Message: "Trace gateway Deployment is not ready",
 			},
 		},
 	}

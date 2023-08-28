@@ -18,12 +18,12 @@ The state of the log components is determined by the status condition of type `L
 
 The state of the trace components is determined by the status condition of type `TraceComponentsHealthy`:
 
-| Condition status | Condition reason                       | Message                                     |
-|------------------|----------------------------------------|--------------------------------------------|
-| True             | ReasonNoPipelineDeployed               | No pipelines have been deployed            |
-| True             | ReasonTraceCollectorDeploymentReady    | Trace collector Deployment is ready        |
-| False            | ReasonReferencedSecretMissing          | One or more referenced Secrets are missing |
-| False            | ReasonTraceCollectorDeploymentNotReady | Trace collector Deployment is not ready    |
+| Condition status | Condition reason                     | Message                                     |
+|------------------|--------------------------------------|--------------------------------------------|
+| True             | ReasonNoPipelineDeployed             | No pipelines have been deployed            |
+| True             | ReasonTraceGatewayDeploymentReady    | Trace gateway Deployment is ready        |
+| False            | ReasonReferencedSecretMissing        | One or more referenced Secrets are missing |
+| False            | ReasonTraceGatewayDeploymentNotReady | Trace gateway Deployment is not ready    |
 
 ## Metric Components State
 
