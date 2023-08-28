@@ -1,16 +1,16 @@
-//go:build e2e
+//go:build istio
 
-package e2e
+package istio
 
 import (
 	"net/http"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"go.opentelemetry.io/collector/pdata/pmetric"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
@@ -22,20 +22,18 @@ import (
 	kitotlpmetric "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
-var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
-	Context("When a metricpipeline exists", Ordered, func() {
+var _ = Describe("Metrics Prometheus input", Label("metrics"), func() {
+	Context("App with istio-sidecar", Ordered, func() {
 		var (
-			pipelines          *kyma.PipelineList
 			urls               *mocks.URLProvider
 			mockDeploymentName = "metric-agent-receiver"
 			mocksNs            = "metric-prometheus-input"
-			metricGatewayName  = types.NamespacedName{Name: metricAgentGatewayBaseName, Namespace: kymaSystemNamespaceName}
-			metricAgentName    = types.NamespacedName{Name: metricAgentBaseName, Namespace: kymaSystemNamespaceName}
+			metricGatewayName  = types.NamespacedName{Name: "telemetry-metric-gateway", Namespace: kymaSystemNamespaceName}
+			metricAgentName    = types.NamespacedName{Name: "telemetry-metric-agent", Namespace: kymaSystemNamespaceName}
 		)
 
 		BeforeAll(func() {
-			k8sObjects, urlProvider, pipelinesProvider := makeMetricsPrometheusInputTestK8sObjects(mocksNs, mockDeploymentName)
-			pipelines = pipelinesProvider
+			k8sObjects, urlProvider, _ := makeMetricsPrometheusInputTestK8sObjects(mocksNs, mockDeploymentName)
 			urls = urlProvider
 
 			DeferCleanup(func() {
@@ -68,10 +66,6 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(err).ShouldNot(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
 			}, timeout, interval).Should(Succeed())
-		})
-
-		It("Should have a running pipeline", func() {
-			metricPipelineShouldBeRunning(pipelines.First())
 		})
 
 		It("Should verify custom metric scraping via annotated pods", func() {
@@ -119,16 +113,6 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 					}))))
 			}, timeout, interval).Should(Succeed())
 		})
-
-		It("Should verify no kubelet metrics", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					Not(ContainMetricsWithNames(kubeletMetricNames...)))))
-			}, timeout, interval).Should(Succeed())
-		})
 	})
 })
 
@@ -163,8 +147,8 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 		mockBackendConfigMap.K8sObject(),
 		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		mockMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-		mockMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+		mockMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
+		mockMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
 		hostSecret.K8sObject(),
 		metricPipeline.K8sObject(),
 	}...)
