@@ -170,3 +170,14 @@ func MakeConfigMap(name types.NamespacedName, collectorConfig string) *corev1.Co
 		},
 	}
 }
+
+func MakeIstioTLSPodAnnotations() map[string]string {
+	return map[string]string{
+		"sidecar.istio.io/userVolumeMount": "'[{\"name\": \"istio-certs\", \"mountPath\": \"/etc/istio-output-certs\"}]'",
+		"proxy.istio.io/config": `
+  proxyMetadata:
+    OUTPUT_CERTS: /etc/istio-output-certs
+`,
+		"sidecar.istio.io/inject": "true",
+	}
+}

@@ -54,14 +54,7 @@ func MakeDaemonSet(config Config, configHash, envVarPodIP, envVarNodeName string
 
 	annotations := core.MakeCommonPodAnnotations(configHash)
 
-	maps.Copy(annotations, map[string]string{
-		"sidecar.istio.io/userVolumeMount": "'[{\"name\": \"istio-certs\", \"mountPath\": \"/etc/istio-output-certs\"}]'",
-		"proxy.istio.io/config": `
-  proxyMetadata:
-    OUTPUT_CERTS: /etc/istio-output-certs  
-`,
-		"sidecar.istio.io/inject": "true",
-	})
+	maps.Copy(annotations, core.MakeIstioTLSPodAnnotations())
 	resources := makeResourceRequirements(config)
 	podSpec := core.MakePodSpec(config.BaseName, config.DaemonSet.Image,
 		core.WithPriorityClass(config.DaemonSet.PriorityClassName),
