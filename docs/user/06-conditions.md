@@ -39,6 +39,9 @@ The state of the metric components is determined by the status condition of type
 
 ## Telemetry CR State
 
-The state of Telemetry CR is set to 'Ready' only if all the subcomponent conditions (LogComponentsHealthy, TraceComponentsHealthy, and MetricComponentsHealthy) have a status of 'True.' If any of these conditions are not 'True,' the overall state is set to 'Warning.'
+- 'Ready': Only if all the subcomponent conditions (LogComponentsHealthy, TraceComponentsHealthy, and MetricComponentsHealthy) have a status of 'True.' 
+- 'Warning': If any of these conditions are not 'True'.
+- 'Deleting': When a Telemetry CR is being deleted.
+- 'Error': If the deletion is blocked because some dependent resources exist.
 When a Telemetry CR is being deleted, its state is set to 'Deleting'. If the deletion is blocked due to the existence of some dependent resources, the state is changed to 'Error'.
 
