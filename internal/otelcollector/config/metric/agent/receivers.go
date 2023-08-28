@@ -84,7 +84,7 @@ func makePrometheusAppPodsConfig(istioEnabled bool) *PrometheusReceiver {
 			InsecureSkipVerify: true,
 		}
 
-		relabelConfig = append(relabelConfig, replaceSchemeIstioTLS(), dropNonHttps())
+		relabelConfig = append(relabelConfig, replaceSchemeIstioTLS(), dropNonHTTPS())
 	}
 	return &PrometheusReceiver{
 		Config: PrometheusConfig{
@@ -124,7 +124,7 @@ func makePrometheusAppServicesConfig(istioEnabled bool) *PrometheusReceiver {
 			InsecureSkipVerify: true,
 		}
 
-		relabelConfig = append(relabelConfig, replaceSchemeIstioTLS(), dropNonHttps())
+		relabelConfig = append(relabelConfig, replaceSchemeIstioTLS(), dropNonHTTPS())
 	}
 
 	return &PrometheusReceiver{

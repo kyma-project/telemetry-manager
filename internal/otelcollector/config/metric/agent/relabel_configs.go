@@ -122,7 +122,7 @@ func replaceSchemeIstioTLS() RelabelConfig {
 	}
 }
 
-func dropNonHttps() RelabelConfig {
+func dropNonHTTPS() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scheme"},
 		Action:       Drop,
