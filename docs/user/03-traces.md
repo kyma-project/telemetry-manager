@@ -441,7 +441,7 @@ System-related spans reported by Istio are filtered out without the opt-out opti
 
 - Symptom: No traces are arriving at the destination.
 
-   Cause: The backend is not reachable or wrong authentication credentials are used
+   Cause: The backend is not reachable or wrong authentication credentials are used.
 
    Remedy: Investigate the cause with the following steps:
    1. Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
