@@ -5,7 +5,7 @@ The state of the Telemetry CR is derived from the combined state of all the subc
 
 ## Log Components State
 
-The state of the log components is determined by the status condition of type `LogComponentsHealthy`
+The state of the log components is determined by the status condition of type `LogComponentsHealthy`:
 
 | Condition status | Condition reason              | Message                                    |
 |------------------|-------------------------------|--------------------------------------------|
