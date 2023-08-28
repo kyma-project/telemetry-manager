@@ -16,7 +16,7 @@ The state of the log components is determined by the status condition of type `L
 
 ## Trace Components State
 
-The state of the trace components is determined by the status condition of type `TraceComponentsHealthy`
+The state of the trace components is determined by the status condition of type `TraceComponentsHealthy`:
 
 | Condition status | Condition reason                       | Message                                     |
 |------------------|----------------------------------------|--------------------------------------------|
