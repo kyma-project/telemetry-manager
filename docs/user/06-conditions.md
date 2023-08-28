@@ -27,7 +27,7 @@ The state of the trace components is determined by the status condition of type 
 
 ## Metric Components State
 
-The state of the metric components is determined by the status condition of type `MetricComponentsHealthy`
+The state of the metric components is determined by the status condition of type `MetricComponentsHealthy`:
 
 | Condition status | Condition reason                         | Message                                     |
 |------------------|------------------------------------------|--------------------------------------------|
