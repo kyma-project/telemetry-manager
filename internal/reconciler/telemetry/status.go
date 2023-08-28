@@ -3,8 +3,8 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"slices"
 
-	"golang.org/x/exp/slices"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
