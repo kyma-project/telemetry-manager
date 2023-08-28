@@ -43,5 +43,4 @@ The state of the metric components is determined by the status condition of type
 - 'Warning': If any of these conditions are not 'True'.
 - 'Deleting': When a Telemetry CR is being deleted.
 - 'Error': If the deletion is blocked because some dependent resources exist.
-When a Telemetry CR is being deleted, its state is set to 'Deleting'. If the deletion is blocked due to the existence of some dependent resources, the state is changed to 'Error'.
 
