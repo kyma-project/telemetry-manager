@@ -1,13 +1,12 @@
 package metricproducer
 
 import (
-	"strconv"
-
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"strconv"
 )
 
 type Metric struct {
@@ -15,6 +14,13 @@ type Metric struct {
 	Name   string
 	Labels []string
 }
+
+type ScrapingScheme string
+
+const (
+	SchemeHTTP  ScrapingScheme = "http"
+	SchemeHTTPS ScrapingScheme = "https"
+)
 
 var (
 	MetricCPUTemperature = Metric{
@@ -37,17 +43,11 @@ var (
 		Labels: []string{"sensor"},
 	}
 
-	metricsPort           = 8080
-	metricsPortName       = "http-metrics"
-	metricsEndpoint       = "/metrics"
-	baseName              = "metric-producer"
-	prometheusAnnotations = map[string]string{
-		"prometheus.io/path":   metricsEndpoint,
-		"prometheus.io/port":   strconv.Itoa(metricsPort),
-		"prometheus.io/scrape": "true",
-		"prometheus.io/scheme": "http",
-	}
-	selectorLabels = map[string]string{
+	metricsPort     = 8080
+	metricsPortName = "http-metrics"
+	metricsEndpoint = "/metrics"
+	baseName        = "metric-producer"
+	selectorLabels  = map[string]string{
 		"app": "sample-metrics",
 	}
 )
@@ -91,9 +91,18 @@ func (mp *MetricProducer) Pod() *Pod {
 	}
 }
 
-func (p *Pod) WithPrometheusAnnotations() *Pod {
-	p.annotations = prometheusAnnotations
+func (p *Pod) WithPrometheusAnnotations(scheme ScrapingScheme) *Pod {
+	p.annotations = makePrometheusAnnotations(scheme)
 	return p
+}
+
+func makePrometheusAnnotations(scheme ScrapingScheme) map[string]string {
+	return map[string]string{
+		"prometheus.io/scrape": "true",
+		"prometheus.io/path":   metricsEndpoint,
+		"prometheus.io/port":   strconv.Itoa(metricsPort),
+		"prometheus.io/scheme": string(scheme),
+	}
 }
 
 func (p *Pod) K8sObject() *corev1.Pod {
@@ -136,8 +145,8 @@ func (mp *MetricProducer) Service() *Service {
 	}
 }
 
-func (s *Service) WithPrometheusAnnotations() *Service {
-	s.annotations = prometheusAnnotations
+func (s *Service) WithPrometheusAnnotations(scheme ScrapingScheme) *Service {
+	s.annotations = makePrometheusAnnotations(scheme)
 	return s
 }
 
