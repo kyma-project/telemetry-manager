@@ -55,7 +55,7 @@ type ScrapeConfig struct {
 	StaticDiscoveryConfigs     []StaticDiscoveryConfig     `yaml:"static_configs,omitempty"`
 	KubernetesDiscoveryConfigs []KubernetesDiscoveryConfig `yaml:"kubernetes_sd_configs,omitempty"`
 
-	TLSConfig TLSConfig `yaml:"tls_config,omitempty"`
+	TLSConfig *TLSConfig `yaml:"tls_config,omitempty"`
 }
 
 type TLSConfig struct {
