@@ -14,7 +14,7 @@ func TestReceivers(t *testing.T) {
 	t.Run("no input enabled", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().Build(),
-		})
+		}, false)
 
 		require.Nil(t, collectorConfig.Receivers.KubeletStats)
 		require.Nil(t, collectorConfig.Receivers.PrometheusSelf)
@@ -25,7 +25,7 @@ func TestReceivers(t *testing.T) {
 	t.Run("runtime input enabled", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
-		})
+		}, false)
 
 		require.NotNil(t, collectorConfig.Receivers.KubeletStats)
 		require.Equal(t, "serviceAccount", collectorConfig.Receivers.KubeletStats.AuthType)
@@ -40,7 +40,7 @@ func TestReceivers(t *testing.T) {
 	t.Run("prometheus input enabled", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
-		})
+		}, false)
 
 		require.Nil(t, collectorConfig.Receivers.KubeletStats)
 		require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
@@ -56,7 +56,7 @@ func TestReceivers(t *testing.T) {
 	t.Run("istio input enabled", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithIstioInputOn(true).Build(),
-		})
+		}, false)
 
 		require.Nil(t, collectorConfig.Receivers.KubeletStats)
 		require.Nil(t, collectorConfig.Receivers.PrometheusSelf)
