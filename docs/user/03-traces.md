@@ -50,7 +50,7 @@ Furthermore, the manager takes care of the full lifecycle of the OTel Collector 
 
 ## Setting up a TracePipeline
 
-In the following steps, you can see how to construct a typical TracePipeline. Learn more about the available [parameters and attributes](resources/04-tracepipeline.md). See how to deploy the TracePipeline in the [result section](#result).
+In the following steps, you can see how to construct and deploy a typical TracePipeline. Learn more about the available [parameters and attributes](resources/04-tracepipeline.md).
 
 ### Step 1a. Create a TracePipeline with an OTLP GRPC output
 To ship traces to a new OTLP output, create a resource of the kind `TracePipeline`:
@@ -287,16 +287,18 @@ stringData:
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
 If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
-### Result
+### Step 5: Deploy the Pipeline
 
-To activate and verify the constructed TracePipeline, follow these steps:
+To activate the constructed TracePipeline, follow these steps:
 1. Place the snippet in a file named for example `tracepipeline.yaml`.
-2. To activate the instance, apply the resource file in your cluster:
+2. Apply the resource file in your cluster:
     ```bash
     kubectl apply -f tracepipeline.yaml
     ```
 
-3. Check that the status of the TracePipeline in your cluster is `Ready`:
+### Result
+
+You activated a TracePipeline and traces start streaming to your backend. To verify that the pipeline is running, verify that the status of the LogPipeline in your cluster is `Ready`:
     ```bash
     kubectl get tracepipeline
     NAME              STATUS    AGE

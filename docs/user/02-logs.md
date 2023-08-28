@@ -48,7 +48,7 @@ Telemetry Manager watches all LogPipeline resources and related Secrets. Wheneve
 
 ## Setting up a LogPipeline
 
-In the following steps, you can see how to construct a typical LogPipeline. Learn more about the available [parameters and attributes](resources/02-logpipeline.md). See how to deploy the LogPipeline in the [result section](#result).
+In the following steps, you can see how to construct and deploy a typical LogPipeline. Learn more about the available [parameters and attributes](resources/02-logpipeline.md).
 
 ### Step 1: Create a LogPipeline and output
 
@@ -307,16 +307,18 @@ spec:
   ...
 ```
 
-### Result
+### Step 7: Deploy the Pipeline
 
-To activate and verify the constructed LogPipeline, follow these steps:
+To activate the constructed LogPipeline, follow these steps:
 1. Place the snippet in a file named for example `logpipeline.yaml`.
-2. To activate the instance, apply the resource file in your cluster:
+2. Apply the resource file in your cluster:
     ```bash
     kubectl apply -f logpipeline.yaml
     ```
 
-3. Check that the status of the LogPipeline in your cluster is `Ready`:
+### Result
+
+You activated a LogPipeline and logs start streaming to your backend. To verify that the pipeline is running, verify that the status of the LogPipeline in your cluster is `Ready`:
     ```bash
     kubectl get logpipeline
     NAME              STATUS    AGE

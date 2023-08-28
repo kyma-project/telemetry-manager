@@ -54,7 +54,7 @@ Furthermore, the manager takes care of the full lifecycle of the Gateway Deploym
 
 ## Setting up a MetricPipeline
 
-In the following steps, you can see how to construct a typical MetricPipeline. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md). See how to deploy the MetricPipeline in the [result section](#result).
+In the following steps, you can see how to construct and deploy a typical MetricPipeline. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
 
 ### Step 1a. Create a MetricPipeline with an OTLP GRPC output
 To ship metrics to a new OTLP output, create a resource of the kind `MetricPipeline`:
@@ -348,21 +348,22 @@ spec:
 
 The agent will start pulling all [Istio metrics](https://istio.io/latest/docs/reference/config/metrics/) from Istio sidecars.
 
-### Result
+### Step 7: Deploy the Pipeline
 
-To activate and verify the constructed MetricPipeline, follow these steps:
+To activate the constructed MetricPipeline, follow these steps:
 1. Place the snippet in a file named for example `metricpipeline.yaml`.
-2. To activate the instance, apply the resource file in your cluster:
+2. Apply the resource file in your cluster:
     ```bash
     kubectl apply -f metricpipeline.yaml
     ```
 
-3. Check that the status of the MetricPipeline in your cluster is `Ready`:
+### Result
+
+You activated a MetricPipeline and metrics start streaming to your backend. To verify that the pipeline is running, verify that the status of the LogPipeline in your cluster is `Ready`:
     ```bash
     kubectl get metricpipeline
     NAME              STATUS    AGE
     backend           Ready     44s
-    ```
 
 ## Limitations
 
