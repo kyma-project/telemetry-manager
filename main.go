@@ -38,7 +38,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -139,6 +138,11 @@ const (
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
+
+	metricGateway         = "telemetry-metric-gateway"
+	metricOTLPServiceName = "telemetry-otlp-metrics"
+
+	traceOTLPServiceName = "telemetry-otlp-traces"
 )
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
@@ -294,7 +298,6 @@ func main() {
 	}()
 
 	syncPeriod := 1 * time.Hour
-
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		SyncPeriod:              &syncPeriod,
 		Scheme:                  scheme,
@@ -347,28 +350,12 @@ func main() {
 		}
 	}
 
-	webhookConfig := telemetry.WebhookConfig{
-		Enabled: enableWebhook,
-		CertConfig: webhookcert.Config{
-			CertDir: certDir,
-			ServiceName: types.NamespacedName{
-				Name:      webhookServiceName,
-				Namespace: telemetryNamespace,
-			},
-			CASecretName: types.NamespacedName{
-				Name:      "telemetry-webhook-cert",
-				Namespace: telemetryNamespace,
-			},
-			WebhookName: types.NamespacedName{
-				Name: "validation.webhook.telemetry.kyma-project.io",
-			},
-		},
-	}
+	webhookConfig := createWebhookConfig()
 
 	if enableTelemetryManagerModule {
 		setupLog.Info("Starting with telemetry manager controller")
 
-		if err = createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), mgr.GetEventRecorderFor("telemetry-operator"), webhookConfig).SetupWithManager(mgr); err != nil {
+		if err = createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), webhookConfig).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
 			os.Exit(1)
 		}
@@ -532,7 +519,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 				DynamicMemoryRequest: resource.MustParse(traceCollectorDynamicMemoryRequest),
 			},
 			Service: gateway.ServiceConfig{
-				OTLPServiceName: "telemetry-otlp-traces",
+				OTLPServiceName: traceOTLPServiceName,
 			},
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
@@ -576,7 +563,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 				DynamicMemoryRequest: resource.MustParse(metricGatewayDynamicMemoryRequest),
 			},
 			Service: gateway.ServiceConfig{
-				OTLPServiceName: "telemetry-otlp-metrics",
+				OTLPServiceName: metricOTLPServiceName,
 			},
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
@@ -610,6 +597,39 @@ func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
 }
 
-func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
-	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, webhookConfig))
+func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
+	config := telemetry.Config{
+		Traces: telemetry.TracesConfig{
+			OTLPServiceName: traceOTLPServiceName,
+			Namespace:       telemetryNamespace,
+		},
+		Metrics: telemetry.MetricsConfig{
+			Enabled:         enableMetrics,
+			OTLPServiceName: metricOTLPServiceName,
+			Namespace:       telemetryNamespace,
+		},
+		Webhook: webhookConfig,
+	}
+
+	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config), config)
+}
+
+func createWebhookConfig() telemetry.WebhookConfig {
+	return telemetry.WebhookConfig{
+		Enabled: enableWebhook,
+		CertConfig: webhookcert.Config{
+			CertDir: certDir,
+			ServiceName: types.NamespacedName{
+				Name:      webhookServiceName,
+				Namespace: telemetryNamespace,
+			},
+			CASecretName: types.NamespacedName{
+				Name:      "telemetry-webhook-cert",
+				Namespace: telemetryNamespace,
+			},
+			WebhookName: types.NamespacedName{
+				Name: "validation.webhook.telemetry.kyma-project.io",
+			},
+		},
+	}
 }

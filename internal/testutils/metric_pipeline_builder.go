@@ -2,16 +2,19 @@ package testutils
 
 import (
 	"fmt"
+	"math/rand"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 )
 
 type MetricPipelineBuilder struct {
+	randSource rand.Source
+
 	name              string
-	namespace         string
 	endpoint          string
 	runtimeInputOn    bool
 	prometheusInputOn bool
@@ -19,13 +22,14 @@ type MetricPipelineBuilder struct {
 	basicAuthUser     string
 	basicAuthPassword string
 	convertToDelta    bool
+
+	conditions []telemetryv1alpha1.MetricPipelineCondition
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 	return &MetricPipelineBuilder{
-		name:      fmt.Sprintf("test-%d", time.Now().Nanosecond()),
-		namespace: "telemetry-system",
-		endpoint:  "https://localhost",
+		randSource: rand.NewSource(time.Now().UnixNano()),
+		endpoint:   "https://localhost",
 	}
 }
 
@@ -65,11 +69,33 @@ func (b *MetricPipelineBuilder) WithConvertToDeltaFlag(on bool) *MetricPipelineB
 	return b
 }
 
+func MetricPendingCondition(reason string) telemetryv1alpha1.MetricPipelineCondition {
+	return telemetryv1alpha1.MetricPipelineCondition{
+		Reason: reason,
+		Type:   telemetryv1alpha1.MetricPipelinePending,
+	}
+}
+
+func MetricRunningCondition() telemetryv1alpha1.MetricPipelineCondition {
+	return telemetryv1alpha1.MetricPipelineCondition{
+		Reason: reconciler.ReasonMetricGatewayDeploymentReady,
+		Type:   telemetryv1alpha1.MetricPipelineRunning,
+	}
+}
+
+func (b *MetricPipelineBuilder) WithStatusConditions(conditions ...telemetryv1alpha1.MetricPipelineCondition) *MetricPipelineBuilder {
+	b.conditions = conditions
+	return b
+}
+
 func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
+	name := b.name
+	if name == "" {
+		name = fmt.Sprintf("test-%d", b.randSource.Int63())
+	}
 	return telemetryv1alpha1.MetricPipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      b.name,
-			Namespace: b.namespace,
+			Name: name,
 		},
 		Spec: telemetryv1alpha1.MetricPipelineSpec{
 			Input: telemetryv1alpha1.MetricPipelineInput{
@@ -103,6 +129,9 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 				},
 				ConvertToDelta: b.convertToDelta,
 			},
+		},
+		Status: telemetryv1alpha1.MetricPipelineStatus{
+			Conditions: b.conditions,
 		},
 	}
 }
