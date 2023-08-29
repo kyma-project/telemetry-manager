@@ -37,7 +37,7 @@ var _ = Describe("Metrics Prometheus input", Label("metrics"), func() {
 			urls = urlProvider
 
 			DeferCleanup(func() {
-				//Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())

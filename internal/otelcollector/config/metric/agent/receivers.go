@@ -23,8 +23,8 @@ func makeReceiversConfig(inputs inputSources, isIstioActive bool) Receivers {
 
 	if inputs.prometheus {
 		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
-		receiversConfig.PrometheusAppPods = makePrometheusAppPodsConfig(isIstioActive)
-		receiversConfig.PrometheusAppServices = makePrometheusAppServicesConfig(isIstioActive)
+		receiversConfig.PrometheusAppPods = makePrometheusPodsConfig(isIstioActive)
+		receiversConfig.PrometheusAppServices = makePrometheusServicesConfig(isIstioActive)
 	}
 
 	if inputs.runtime {
@@ -67,14 +67,14 @@ func makePrometheusSelfConfig() *PrometheusReceiver {
 	}
 }
 
-func makePrometheusAppPodsConfig(isIstioActive bool) *PrometheusReceiver {
+func makePrometheusPodsConfig(isIstioActive bool) *PrometheusReceiver {
 	var config PrometheusReceiver
 
 	httpScrapeConfig := ScrapeConfig{
 		JobName:                    "app-pods",
 		ScrapeInterval:             scrapeInterval,
 		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
-		RelabelConfigs:             makePrometheusAppPodsRelabelConfigs(false),
+		RelabelConfigs:             makePrometheusPodsRelabelConfigs(false),
 	}
 	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpScrapeConfig)
 
@@ -83,7 +83,7 @@ func makePrometheusAppPodsConfig(isIstioActive bool) *PrometheusReceiver {
 			JobName:                    "app-pods-secure",
 			ScrapeInterval:             scrapeInterval,
 			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
-			RelabelConfigs:             makePrometheusAppPodsRelabelConfigs(true),
+			RelabelConfigs:             makePrometheusPodsRelabelConfigs(true),
 			TLSConfig:                  makeTLSConfig(),
 		}
 		config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpsScrapeConfig)
@@ -92,7 +92,7 @@ func makePrometheusAppPodsConfig(isIstioActive bool) *PrometheusReceiver {
 	return &config
 }
 
-func makePrometheusAppPodsRelabelConfigs(isSecure bool) []RelabelConfig {
+func makePrometheusPodsRelabelConfigs(isSecure bool) []RelabelConfig {
 	relabelConfigs := []RelabelConfig{
 		keepIfRunningOnSameNode(NodeAffiliatedPod),
 		keepIfScrapingEnabled(AnnotatedPod),
@@ -113,14 +113,14 @@ func makePrometheusAppPodsRelabelConfigs(isSecure bool) []RelabelConfig {
 		inferAddressFromAnnotation(AnnotatedPod))
 }
 
-func makePrometheusAppServicesConfig(isIstioActive bool) *PrometheusReceiver {
+func makePrometheusServicesConfig(isIstioActive bool) *PrometheusReceiver {
 	var config PrometheusReceiver
 
 	httpScrapeConfig := ScrapeConfig{
 		JobName:                    "app-services",
 		ScrapeInterval:             scrapeInterval,
 		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RoleEndpoints}},
-		RelabelConfigs:             makePrometheusAppServicesRelabelConfigs(false),
+		RelabelConfigs:             makePrometheusServicesRelabelConfigs(false),
 	}
 	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpScrapeConfig)
 
@@ -129,7 +129,7 @@ func makePrometheusAppServicesConfig(isIstioActive bool) *PrometheusReceiver {
 			JobName:                    "app-services-secure",
 			ScrapeInterval:             scrapeInterval,
 			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RoleEndpoints}},
-			RelabelConfigs:             makePrometheusAppServicesRelabelConfigs(true),
+			RelabelConfigs:             makePrometheusServicesRelabelConfigs(true),
 			TLSConfig:                  makeTLSConfig(),
 		}
 		config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpsScrapeConfig)
@@ -138,7 +138,7 @@ func makePrometheusAppServicesConfig(isIstioActive bool) *PrometheusReceiver {
 	return &config
 }
 
-func makePrometheusAppServicesRelabelConfigs(isSecure bool) []RelabelConfig {
+func makePrometheusServicesRelabelConfigs(isSecure bool) []RelabelConfig {
 	relabelConfigs := []RelabelConfig{
 		keepIfRunningOnSameNode(NodeAffiliatedEndpoint),
 		keepIfScrapingEnabled(AnnotatedService),
