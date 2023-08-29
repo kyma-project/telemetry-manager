@@ -3,7 +3,7 @@ package backend
 import (
 	"path/filepath"
 
-	fluentD "github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/fluentd"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/fluentd"
 )
 
 type Backend struct {
@@ -30,8 +30,8 @@ func (b *Backend) ConfigMap(name string) *ConfigMap {
 	return NewConfigMap(name, b.namespace, b.exportedFilePath, b.signalType)
 }
 
-func (b *Backend) FluentDConfigMap(name string) *fluentD.ConfigMap {
-	return fluentD.NewConfigMap(name, b.namespace)
+func (b *Backend) FluentdConfigMap(name string) *fluentd.ConfigMap {
+	return fluentd.NewConfigMap(name, b.namespace)
 }
 
 func (b *Backend) Deployment(configMapName string) *Deployment {

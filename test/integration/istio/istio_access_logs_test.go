@@ -14,7 +14,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -26,7 +27,7 @@ import (
 var _ = Describe("Istio access logs", Label("logging"), func() {
 	Context("Istio", Ordered, func() {
 		var (
-			urls               *mocks.URLProvider
+			urls               *urlprovider.URLProvider
 			mockNs             = "istio-access-logs-mocks"
 			mockDeploymentName = "istio-access-logs-backend"
 			sampleAppNs        = "sample"
@@ -92,10 +93,10 @@ var _ = Describe("Istio access logs", Label("logging"), func() {
 	})
 })
 
-func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) ([]client.Object, *mocks.URLProvider, string) {
+func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) ([]client.Object, *urlprovider.URLProvider, string) {
 	var (
 		objs []client.Object
-		urls = mocks.NewURLProvider()
+		urls = urlprovider.New()
 
 		grpcOTLPPort = 4317
 		httpOTLPPort = 4318
@@ -110,12 +111,12 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 	objs = append(objs, appNamespace.K8sObject())
 
 	//// Mocks namespace objects.
-	mockHTTPBackend := mocks.NewHTTPBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)
+	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)
 
-	mockBackendConfigMap := mockHTTPBackend.HTTPBackendConfigMap("log-receiver-config")
-	mockFluentDConfigMap := mockHTTPBackend.FluentDConfigMap("log-receiver-config-fluentd")
-	mockBackendDeployment := mockHTTPBackend.HTTPDeployment(mockBackendConfigMap.Name(), mockFluentDConfigMap.FluentDName())
-	mockBackendExternalService := mockHTTPBackend.ExternalService().
+	mockBackendConfigMap := mockBackend.ConfigMap("log-receiver-config")
+	mockFluentdConfigMap := mockBackend.FluentdConfigMap("log-receiver-config-fluentd")
+	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name()).WithFluentdConfigName(mockFluentdConfigMap.Name())
+	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-otlp", httpOTLPPort).
 		WithPort("http-web", httpWebPort).
@@ -130,8 +131,8 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
-		mockFluentDConfigMap.K8sObjectFluentDConfig(),
-		mockBackendDeployment.K8sObjectHTTP(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
+		mockFluentdConfigMap.K8sObject(),
+		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		sampleApp.Pod().K8sObject(),
 		hostSecret.K8sObject(),
