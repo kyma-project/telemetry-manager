@@ -108,12 +108,18 @@ func (p *Pod) K8sObject() *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  "sample-metrics",
-					Image: "ghcr.io/skhalash/examples/monitoring-custom-metrics:3d41736",
+					Image: "ckleineweber076/monitoring-custom-metrics:otlp-tracing",
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          metricsPortName,
 							ContainerPort: int32(metricsPort),
 							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+							Value: "http://telemetry-otlp-traces.kyma-system:4318/v1/traces",
 						},
 					},
 					Resources: corev1.ResourceRequirements{
