@@ -71,7 +71,6 @@ service:
       level: "info"
   pipelines:
     {{ SIGNAL_TYPE }}:
-    logs:
       receivers:
         - otlp
         - fluentforward
