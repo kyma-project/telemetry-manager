@@ -68,79 +68,104 @@ func makePrometheusSelfConfig() *PrometheusReceiver {
 }
 
 func makePrometheusAppPodsConfig(isIstioActive bool) *PrometheusReceiver {
-	scrapeConfig := ScrapeConfig{
+	var config PrometheusReceiver
+
+	httpScrapeConfig := ScrapeConfig{
 		JobName:                    "app-pods",
 		ScrapeInterval:             scrapeInterval,
 		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
-		RelabelConfigs: []RelabelConfig{
-			keepRunningOnSameNode(NodeAffiliatedPod),
-			keepAnnotated(AnnotatedPod),
-			replaceScheme(AnnotatedPod),
-			replaceMetricPath(AnnotatedPod),
-			replaceAddress(AnnotatedPod),
-			dropNonRunningPods(),
-			dropInitContainers(),
-			dropIstioProxyContainer(),
-		},
+		RelabelConfigs:             makePrometheusAppPodsRelabelConfigs(false),
 	}
+	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpScrapeConfig)
 
 	if isIstioActive {
-		scrapeConfig.TLSConfig = &TLSConfig{
-			CAFile:             istioCAFile,
-			CertFile:           istioCertFile,
-			KeyFile:            istioKeyFile,
-			InsecureSkipVerify: true,
+		httpsScrapeConfig := ScrapeConfig{
+			JobName:                    "app-pods-secure",
+			ScrapeInterval:             scrapeInterval,
+			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
+			RelabelConfigs:             makePrometheusAppPodsRelabelConfigs(true),
+			TLSConfig:                  makeTLSConfig(),
 		}
-
-		scrapeConfig.RelabelConfigs = append(scrapeConfig.RelabelConfigs,
-			replaceSchemeIfSidecarFound(),
-			dropNonHTTPS(),
-		)
+		config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpsScrapeConfig)
 	}
 
-	return &PrometheusReceiver{
-		Config: PrometheusConfig{
-			ScrapeConfigs: []ScrapeConfig{scrapeConfig},
-		},
+	return &config
+}
+
+func makePrometheusAppPodsRelabelConfigs(isSecure bool) []RelabelConfig {
+	relabelConfigs := []RelabelConfig{
+		keepRunningOnSameNode(NodeAffiliatedPod),
+		keepAnnotated(AnnotatedPod),
+		dropNonRunningPods(),
+		dropInitContainers(),
+		dropIstioProxyContainer(),
 	}
+
+	if isSecure {
+		relabelConfigs = append(relabelConfigs, dropHTTP())
+	} else {
+		relabelConfigs = append(relabelConfigs, dropHTTPS(), replaceSchemeIfSidecarFound())
+	}
+
+	return append(relabelConfigs,
+		replaceScheme(AnnotatedPod),
+		replaceMetricPath(AnnotatedPod),
+		replaceAddress(AnnotatedPod))
 }
 
 func makePrometheusAppServicesConfig(isIstioActive bool) *PrometheusReceiver {
-	scrapeConfig := ScrapeConfig{
+	var config PrometheusReceiver
+
+	httpScrapeConfig := ScrapeConfig{
 		JobName:                    "app-services",
 		ScrapeInterval:             scrapeInterval,
 		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RoleEndpoints}},
-		RelabelConfigs: []RelabelConfig{
-			keepRunningOnSameNode(NodeAffiliatedEndpoint),
-			keepAnnotated(AnnotatedService),
-			replaceScheme(AnnotatedService),
-			replaceMetricPath(AnnotatedService),
-			replaceAddress(AnnotatedService),
-			dropNonRunningPods(),
-			dropInitContainers(),
-			dropIstioProxyContainer(),
-			replaceService(),
-		},
+		RelabelConfigs:             makePrometheusAppServicesRelabelConfigs(false),
 	}
+	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpScrapeConfig)
 
 	if isIstioActive {
-		scrapeConfig.TLSConfig = &TLSConfig{
-			CAFile:             istioCAFile,
-			CertFile:           istioCertFile,
-			KeyFile:            istioKeyFile,
-			InsecureSkipVerify: true,
+		httpsScrapeConfig := ScrapeConfig{
+			JobName:                    "app-services-secure",
+			ScrapeInterval:             scrapeInterval,
+			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RoleEndpoints}},
+			RelabelConfigs:             makePrometheusAppServicesRelabelConfigs(true),
+			TLSConfig:                  makeTLSConfig(),
 		}
-
-		scrapeConfig.RelabelConfigs = append(scrapeConfig.RelabelConfigs,
-			replaceSchemeIfSidecarFound(),
-			dropNonHTTPS(),
-		)
+		config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpsScrapeConfig)
 	}
 
-	return &PrometheusReceiver{
-		Config: PrometheusConfig{
-			ScrapeConfigs: []ScrapeConfig{scrapeConfig},
-		},
+	return &config
+}
+
+func makePrometheusAppServicesRelabelConfigs(isSecure bool) []RelabelConfig {
+	relabelConfigs := []RelabelConfig{
+		keepRunningOnSameNode(NodeAffiliatedEndpoint),
+		keepAnnotated(AnnotatedService),
+		dropNonRunningPods(),
+		dropInitContainers(),
+		dropIstioProxyContainer(),
+	}
+
+	if isSecure {
+		relabelConfigs = append(relabelConfigs, dropHTTP())
+	} else {
+		relabelConfigs = append(relabelConfigs, dropHTTPS(), replaceSchemeIfSidecarFound())
+	}
+
+	return append(relabelConfigs,
+		replaceScheme(AnnotatedService),
+		replaceMetricPath(AnnotatedService),
+		replaceAddress(AnnotatedService),
+		replaceService())
+}
+
+func makeTLSConfig() *TLSConfig {
+	return &TLSConfig{
+		CAFile:             istioCAFile,
+		CertFile:           istioCertFile,
+		KeyFile:            istioKeyFile,
+		InsecureSkipVerify: true,
 	}
 }
 

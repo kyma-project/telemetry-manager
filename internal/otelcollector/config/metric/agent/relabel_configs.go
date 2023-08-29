@@ -122,10 +122,18 @@ func replaceSchemeIfSidecarFound() RelabelConfig {
 	}
 }
 
-func dropNonHTTPS() RelabelConfig {
+func dropHTTP() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scheme"},
 		Action:       Drop,
 		Regex:        "(http)",
+	}
+}
+
+func dropHTTPS() RelabelConfig {
+	return RelabelConfig{
+		SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scheme"},
+		Action:       Drop,
+		Regex:        "(https)",
 	}
 }
