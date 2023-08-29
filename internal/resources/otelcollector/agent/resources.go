@@ -112,8 +112,8 @@ func makeResourceRequirements(config Config) corev1.ResourceRequirements {
 func makeIstioTLSPodAnnotations(istioCertPath string) map[string]string {
 	return map[string]string{
 		"proxy.istio.io/config": fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
-    proxyMetadata:
-      OUTPUT_CERTS: %s
+proxyMetadata:
+  OUTPUT_CERTS: %s
 `, istioCertPath),
 		"sidecar.istio.io/userVolumeMount":                 fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
 		"traffic.sidecar.istio.io/includeInboundPorts":     "",
