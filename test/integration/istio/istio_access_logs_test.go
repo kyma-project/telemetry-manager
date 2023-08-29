@@ -111,7 +111,7 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 	objs = append(objs, appNamespace.K8sObject())
 
 	//// Mocks namespace objects.
-	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)
+	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename, backend.SignalTypeLogs)
 
 	mockBackendConfigMap := mockBackend.ConfigMap("log-receiver-config")
 	mockFluentdConfigMap := mockBackend.FluentdConfigMap("log-receiver-config-fluentd")
@@ -132,13 +132,13 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
 		mockFluentdConfigMap.K8sObject(),
-		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
-		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
+		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
+		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		sampleApp.Pod().K8sObject(),
 		hostSecret.K8sObject(),
 		istioAccessLogsPipeline.K8sObject(),
 	}...)
-	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockHTTPBackend.Name(), telemetryDataFilename, httpWebPort), 0)
+	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
 	urls.SetMetricPodURL(proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
 	return objs, urls, istioAccessLogsPipeline.Name()
 }
