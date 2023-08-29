@@ -7,27 +7,13 @@ import (
 )
 
 type Pipeline struct {
-	name string
-}
-
-type HTTPPipeline struct {
 	name             string
 	secretKeyRef     *telemetry.SecretKeyRef
 	excludeContainer []string
 	includeContainer []string
 	keepAnnotations  bool
 	dropLabels       bool
-}
-
-func (p *HTTPPipeline) Name() string {
-	return p.name
-}
-
-func NewHTTPPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *HTTPPipeline {
-	return &HTTPPipeline{
-		name:         name,
-		secretKeyRef: secretKeyRef,
-	}
+	output           telemetry.Output
 }
 
 func NewPipeline(name string) *Pipeline {
@@ -36,40 +22,64 @@ func NewPipeline(name string) *Pipeline {
 	}
 }
 
-func (p *HTTPPipeline) WithIncludeContainer(names []string) *HTTPPipeline {
+func (p *Pipeline) Name() string {
+	return p.name
+}
+
+func (p *Pipeline) WithSecretKeyRef(secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
+	p.secretKeyRef = secretKeyRef
+	return p
+}
+
+func (p *Pipeline) WithIncludeContainer(names []string) *Pipeline {
 	p.includeContainer = names
 	return p
 }
 
-func (p *HTTPPipeline) WithExcludeContainer(names []string) *HTTPPipeline {
+func (p *Pipeline) WithExcludeContainer(names []string) *Pipeline {
 	p.excludeContainer = names
 	return p
 }
 
-func (p *HTTPPipeline) KeepAnnotations(enable bool) *HTTPPipeline {
+func (p *Pipeline) KeepAnnotations(enable bool) *Pipeline {
 	p.keepAnnotations = enable
 	return p
 }
 
-func (p *HTTPPipeline) DropLabels(enable bool) *HTTPPipeline {
+func (p *Pipeline) DropLabels(enable bool) *Pipeline {
 	p.dropLabels = enable
 	return p
 }
 
-func (p *Pipeline) K8sObject() *telemetry.LogPipeline {
-	return &telemetry.LogPipeline{
-		ObjectMeta: k8smeta.ObjectMeta{
-			Name: p.name,
-		},
-		Spec: telemetry.LogPipelineSpec{
-			Output: telemetry.Output{
-				Custom: "Name               stdout",
+func (p *Pipeline) WithStdout() *Pipeline {
+	p.output = telemetry.Output{
+		Custom: "Name               stdout",
+	}
+	return p
+}
+
+func (p *Pipeline) WithHTTPOutput() *Pipeline {
+	p.output = telemetry.Output{
+		HTTP: &telemetry.HTTPOutput{
+			Dedot: true,
+			Host: telemetry.ValueType{
+				ValueFrom: &telemetry.ValueFromSource{
+					SecretKeyRef: p.secretKeyRef,
+				},
+			},
+			Port:   "9880",
+			URI:    "/",
+			Format: "json",
+			TLSConfig: telemetry.TLSConfig{
+				Disabled:                  true,
+				SkipCertificateValidation: true,
 			},
 		},
 	}
+	return p
 }
 
-func (p *HTTPPipeline) K8sObjectHTTP() *telemetry.LogPipeline {
+func (p *Pipeline) K8sObject() *telemetry.LogPipeline {
 
 	return &telemetry.LogPipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
@@ -86,23 +96,7 @@ func (p *HTTPPipeline) K8sObjectHTTP() *telemetry.LogPipeline {
 					DropLabels:      p.dropLabels,
 				},
 			},
-			Output: telemetry.Output{
-				HTTP: &telemetry.HTTPOutput{
-					Dedot: true,
-					Host: telemetry.ValueType{
-						ValueFrom: &telemetry.ValueFromSource{
-							SecretKeyRef: p.secretKeyRef,
-						},
-					},
-					Port:   "9880",
-					URI:    "/",
-					Format: "json",
-					TLSConfig: telemetry.TLSConfig{
-						Disabled:                  true,
-						SkipCertificateValidation: true,
-					},
-				},
-			},
+			Output: p.output,
 		},
 	}
 }

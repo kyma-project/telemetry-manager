@@ -87,7 +87,7 @@ func makeLogsDeliveryTestK8sObjects(namespace string, mockDeploymentName string)
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	logHTTPPipeline := kitlog.NewHTTPPipeline("pipeline-mock-http", hostSecret.SecretKeyRef("log-host"))
+	logHTTPPipeline := kitlog.NewPipeline("pipeline-mock-http").WithSecretKeyRef(hostSecret.SecretKeyRef("log-host")).WithHTTPOutput()
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
@@ -95,7 +95,7 @@ func makeLogsDeliveryTestK8sObjects(namespace string, mockDeploymentName string)
 		mockBackendDeployment.K8sObjectHTTP(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		hostSecret.K8sObject(),
-		logHTTPPipeline.K8sObjectHTTP(),
+		logHTTPPipeline.K8sObject(),
 		mockLogSpammer.K8sObject(kitk8s.WithLabel("app", "logging-test")),
 	}...)
 

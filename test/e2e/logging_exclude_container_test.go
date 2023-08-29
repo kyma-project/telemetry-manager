@@ -107,7 +107,7 @@ func makeLogsTestExcludeContainerK8sObjects(namespace string, mockDeploymentName
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	logHTTPPipeline := kitlog.NewHTTPPipeline("pipeline-exclude-container", hostSecret.SecretKeyRef("log-host"))
+	logHTTPPipeline := kitlog.NewPipeline("pipeline-exclude-container").WithSecretKeyRef(hostSecret.SecretKeyRef("log-host")).WithHTTPOutput()
 	logHTTPPipeline.WithExcludeContainer([]string{"log-spammer"})
 
 	objs = append(objs, []client.Object{
@@ -116,7 +116,7 @@ func makeLogsTestExcludeContainerK8sObjects(namespace string, mockDeploymentName
 		mockBackendDeployment.K8sObjectHTTP(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		hostSecret.K8sObject(),
-		logHTTPPipeline.K8sObjectHTTP(),
+		logHTTPPipeline.K8sObject(),
 		mockLogSpammer.K8sObject(kitk8s.WithLabel("app", "logging-test")),
 	}...)
 

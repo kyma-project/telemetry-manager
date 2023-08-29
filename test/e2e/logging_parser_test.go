@@ -105,7 +105,7 @@ func makeLogsRegExTestK8sObjects(namespace string, mockDeploymentName string) ([
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	logHTTPPipeline := kitlog.NewHTTPPipeline("pipeline-regex-parser", hostSecret.SecretKeyRef("log-host"))
+	logHTTPPipeline := kitlog.NewPipeline("pipeline-regex-parser").WithSecretKeyRef(hostSecret.SecretKeyRef("log-host")).WithHTTPOutput()
 	logRegExParser := kitlog.NewParser("my-regex-parser", configParser)
 
 	mockLogSpammer.WithParser("my-regex-parser")
@@ -115,7 +115,7 @@ func makeLogsRegExTestK8sObjects(namespace string, mockDeploymentName string) ([
 		mockBackendDeployment.K8sObjectHTTP(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		hostSecret.K8sObject(),
-		logHTTPPipeline.K8sObjectHTTP(),
+		logHTTPPipeline.K8sObject(),
 		mockLogSpammer.K8sObject(kitk8s.WithLabel("app", "regex-parser-testing-service")),
 		logRegExParser.K8sObject(),
 	}...)

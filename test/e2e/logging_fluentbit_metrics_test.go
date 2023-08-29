@@ -109,7 +109,7 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) []clien
 		WithPort("http-web", httpWebPort)
 
 	// Default namespace objects.
-	logPipeline := kitlog.NewPipeline("pipeline-mock-backend")
+	logPipeline := kitlog.NewPipeline("pipeline-mock-backend").WithStdout()
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),

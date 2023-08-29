@@ -99,7 +99,7 @@ func makeLogsAnnotationTestK8sObjects(namespace string, mockDeploymentName strin
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	logHTTPPipeline := kitlog.NewHTTPPipeline("pipeline-annotation-test", hostSecret.SecretKeyRef("log-host"))
+	logHTTPPipeline := kitlog.NewPipeline("pipeline-annotation-test").WithSecretKeyRef(hostSecret.SecretKeyRef("log-host")).WithHTTPOutput()
 	logHTTPPipeline.KeepAnnotations(true)
 	logHTTPPipeline.DropLabels(true)
 
@@ -109,7 +109,7 @@ func makeLogsAnnotationTestK8sObjects(namespace string, mockDeploymentName strin
 		mockBackendDeployment.K8sObjectHTTP(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		hostSecret.K8sObject(),
-		logHTTPPipeline.K8sObjectHTTP(),
+		logHTTPPipeline.K8sObject(),
 		mockLogSpammer.K8sObject(kitk8s.WithLabel("app", "logging-annotation-test")),
 	}...)
 
