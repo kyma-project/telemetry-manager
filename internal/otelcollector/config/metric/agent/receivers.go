@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
@@ -9,9 +10,13 @@ import (
 )
 
 const scrapeInterval = 30 * time.Second
-const istioCAFile = "/etc/istio-output-certs/root-cert.pem"
-const istioCertFile = "/etc/istio-output-certs/cert-chain.pem"
-const istioKeyFile = "/etc/istio-output-certs/key.pem"
+const IstioCertPath = "/etc/istio-output-certs"
+
+var (
+	istioCAFile   = filepath.Join(IstioCertPath, "root-cert.pem")
+	istioCertFile = filepath.Join(IstioCertPath, "cert-chain.pem")
+	istioKeyFile  = filepath.Join(IstioCertPath, "key.pem")
+)
 
 func makeReceiversConfig(inputs inputSources, istioDeployed bool) Receivers {
 	var receiversConfig Receivers
@@ -87,7 +92,10 @@ func makePrometheusAppPodsConfig(istioDeployed bool) *PrometheusReceiver {
 			InsecureSkipVerify: true,
 		}
 
-		scrapeConfig.RelabelConfigs = append(scrapeConfig.RelabelConfigs, replaceSchemeIstioTLS(), dropNonHTTPS())
+		scrapeConfig.RelabelConfigs = append(scrapeConfig.RelabelConfigs,
+			replaceSchemeIfSidecarFound(),
+			dropNonHTTPS(),
+		)
 	}
 
 	return &PrometheusReceiver{
@@ -123,7 +131,10 @@ func makePrometheusAppServicesConfig(istioDeployed bool) *PrometheusReceiver {
 			InsecureSkipVerify: true,
 		}
 
-		scrapeConfig.RelabelConfigs = append(scrapeConfig.RelabelConfigs, replaceSchemeIstioTLS(), dropNonHTTPS())
+		scrapeConfig.RelabelConfigs = append(scrapeConfig.RelabelConfigs,
+			replaceSchemeIfSidecarFound(),
+			dropNonHTTPS(),
+		)
 	}
 
 	return &PrometheusReceiver{

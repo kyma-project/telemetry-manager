@@ -112,7 +112,7 @@ func dropIstioProxyContainer() RelabelConfig {
 	}
 }
 
-func replaceSchemeIstioTLS() RelabelConfig {
+func replaceSchemeIfSidecarFound() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_label_security_istio_io_tlsMode"},
 		Action:       Replace,

@@ -2,6 +2,7 @@ package metricproducer
 
 import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"golang.org/x/exp/maps"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,6 +72,7 @@ func (mp *MetricProducer) MetricsPort() int {
 
 type Pod struct {
 	namespace   string
+	labels      map[string]string
 	annotations map[string]string
 }
 
@@ -87,8 +89,15 @@ func New(namespace string) *MetricProducer {
 
 func (mp *MetricProducer) Pod() *Pod {
 	return &Pod{
-		namespace: mp.namespace,
+		namespace:   mp.namespace,
+		labels:      make(map[string]string),
+		annotations: make(map[string]string),
 	}
+}
+
+func (p *Pod) WithSidecarInjection() *Pod {
+	p.labels["sidecar.istio.io/inject"] = "true"
+	return p
 }
 
 func (p *Pod) WithPrometheusAnnotations(scheme ScrapingScheme) *Pod {
@@ -106,11 +115,14 @@ func makePrometheusAnnotations(scheme ScrapingScheme) map[string]string {
 }
 
 func (p *Pod) K8sObject() *corev1.Pod {
+	labels := p.labels
+	maps.Copy(labels, selectorLabels)
+
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        baseName,
 			Namespace:   p.namespace,
-			Labels:      selectorLabels,
+			Labels:      labels,
 			Annotations: p.annotations,
 		},
 		Spec: corev1.PodSpec{
