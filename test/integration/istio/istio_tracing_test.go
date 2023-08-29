@@ -144,7 +144,7 @@ func makeIstioTracingK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) 
 	objs = append(objs, appNamespace.K8sObject())
 
 	// Mocks namespace objects.
-	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
+	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/traces/"+telemetryDataFilename, backend.SignalTypeTraces)
 	mockBackendConfigMap := mockBackend.ConfigMap("trace-receiver-config")
 	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().
