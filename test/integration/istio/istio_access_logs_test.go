@@ -123,7 +123,7 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	istioAccessLogsPipeline := kitlog.NewHTTPPipeline("pipeline-istio-access-logs", hostSecret.SecretKeyRef("log-host")).WithIncludeContainer([]string{"istio-proxy"})
+	istioAccessLogsPipeline := kitlog.NewPipeline("pipeline-istio-access-logs").WithSecretKeyRef(hostSecret.SecretKeyRef("log-host")).WithIncludeContainer([]string{"istio-proxy"})
 
 	// Abusing metrics provider for istio access logs
 	sampleApp := metricproducer.New(sampleAppNs)
@@ -135,7 +135,7 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		sampleApp.Pod().K8sObject(),
 		hostSecret.K8sObject(),
-		istioAccessLogsPipeline.K8sObjectHTTP(),
+		istioAccessLogsPipeline.K8sObject(),
 	}...)
 	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockHTTPBackend.Name(), telemetryDataFilename, httpWebPort), 0)
 	urls.SetMetricPodURL(proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
