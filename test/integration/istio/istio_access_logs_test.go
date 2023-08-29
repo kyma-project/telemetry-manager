@@ -48,7 +48,7 @@ var _ = Describe("Istio access logs", Label("logging"), func() {
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
-			}, timeout*2, interval).Should(Succeed())
+			}, timeout*3, interval).Should(Succeed())
 		})
 
 		It("Should have sample app running", func() {

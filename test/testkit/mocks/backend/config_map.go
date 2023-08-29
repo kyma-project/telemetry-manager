@@ -1,4 +1,4 @@
-package mocks
+package backend
 
 import (
 	"strings"
@@ -12,17 +12,18 @@ type SignalType string
 const (
 	SignalTypeTraces  = "traces"
 	SignalTypeMetrics = "metrics"
+	SignalTypeLogs    = "logs"
 )
 
-type BackendConfigMap struct {
+type ConfigMap struct {
 	name             string
 	namespace        string
 	exportedFilePath string
 	signalType       SignalType
 }
 
-func NewBackendConfigMap(name, namespace, path string, signalType SignalType) *BackendConfigMap {
-	return &BackendConfigMap{
+func NewConfigMap(name, namespace, path string, signalType SignalType) *ConfigMap {
+	return &ConfigMap{
 		name:             name,
 		namespace:        namespace,
 		exportedFilePath: path,
@@ -30,7 +31,7 @@ func NewBackendConfigMap(name, namespace, path string, signalType SignalType) *B
 	}
 }
 
-const configTemplate = `receivers:
+const metricsAndTracesConfigTemplate = `receivers:
   otlp:
     protocols:
       grpc: {}
@@ -52,11 +53,43 @@ service:
         - file
         - logging`
 
-func (cm *BackendConfigMap) Name() string {
+const LogConfigTemplate = `receivers:
+  fluentforward:
+    endpoint: 0.0.0.0:8006
+  otlp:
+    protocols:
+      grpc: {}
+      http: {}
+exporters:
+  file:
+    path: {{ FILEPATH }}
+  logging:
+    loglevel: debug
+service:
+  telemetry:
+    logs:
+      level: "info"
+  pipelines:
+    {{ SIGNAL_TYPE }}:
+    logs:
+      receivers:
+        - otlp
+        - fluentforward
+      exporters:
+        - file
+        - logging`
+
+func (cm *ConfigMap) Name() string {
 	return cm.name
 }
 
-func (cm *BackendConfigMap) K8sObject() *corev1.ConfigMap {
+func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
+	var configTemplate string
+	if cm.signalType == SignalTypeLogs {
+		configTemplate = LogConfigTemplate
+	} else {
+		configTemplate = metricsAndTracesConfigTemplate
+	}
 	config := strings.Replace(configTemplate, "{{ FILEPATH }}", cm.exportedFilePath, 1)
 	config = strings.Replace(config, "{{ SIGNAL_TYPE }}", string(cm.signalType), 1)
 

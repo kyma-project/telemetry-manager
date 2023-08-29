@@ -16,7 +16,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
@@ -98,12 +98,12 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) []clien
 	objs = append(objs, mocksNamespace.K8sObject())
 
 	//// Mocks namespace objects.
-	mockHTTPBackend := mocks.NewHTTPBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)
+	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename, backend.SignalTypeLogs)
 
-	mockBackendConfigMap := mockHTTPBackend.HTTPBackendConfigMap("log-receiver-config")
-	mockFluentDConfigMap := mockHTTPBackend.FluentDConfigMap("log-receiver-config-fluentd")
-	mockBackendDeployment := mockHTTPBackend.HTTPDeployment(mockBackendConfigMap.Name(), mockFluentDConfigMap.FluentDName())
-	mockBackendExternalService := mockHTTPBackend.ExternalService().
+	mockBackendConfigMap := mockBackend.ConfigMap("log-receiver-config")
+	mockFluentDConfigMap := mockBackend.FluentDConfigMap("log-receiver-config-fluentd")
+	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name()).WithFluentdConfigName(mockFluentDConfigMap.Name())
+	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-otlp", httpOTLPPort).
 		WithPort("http-web", httpWebPort)
@@ -113,9 +113,9 @@ func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) []clien
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
-		mockFluentDConfigMap.K8sObjectFluentDConfig(),
-		mockBackendDeployment.K8sObjectHTTP(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
-		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
+		mockFluentDConfigMap.K8sObject(),
+		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
+		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		logPipeline.K8sObject(),
 	}...)
 

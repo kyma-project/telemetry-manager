@@ -1,4 +1,4 @@
-package mocks
+package logproducer
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
@@ -10,31 +10,31 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
-type LogSpammer struct {
+type LogProducer struct {
 	name      string
 	namespace string
 	parser    string
 }
 
-func NewLogSpammer(name, namespace string) *LogSpammer {
-	return &LogSpammer{
-		name:      name + "-spammer",
+func New(namespace string) *LogProducer {
+	return &LogProducer{
+		name:      "log-producer",
 		namespace: namespace,
 	}
 }
 
-func (ls *LogSpammer) WithParser(parser string) *LogSpammer {
-	ls.parser = parser
-	return ls
+func (lp *LogProducer) WithParser(parser string) *LogProducer {
+	lp.parser = parser
+	return lp
 }
 
-func (ls *LogSpammer) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Deployment {
+func (lp *LogProducer) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Deployment {
 	labels := k8s.ProcessLabelOptions(labelOpts...)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ls.name,
-			Namespace: ls.namespace,
+			Name:      lp.name,
+			Namespace: lp.namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -44,12 +44,12 @@ func (ls *LogSpammer) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Deployment
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,
 					Annotations: map[string]string{
-						"fluentbit.io/parser": ls.parser,
+						"fluentbit.io/parser": lp.parser,
 					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						{Name: "log-spammer", Image: "alpine:3.17.2", Command: []string{"/bin/sh", "-c", `while true
+						{Name: lp.name, Image: "alpine:3.17.2", Command: []string{"/bin/sh", "-c", `while true
 do
 	echo "foo bar"
 	sleep 10
