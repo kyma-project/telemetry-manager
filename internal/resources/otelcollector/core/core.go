@@ -151,8 +151,7 @@ func MakePodSpec(baseName, image string, opts ...PodSpecOption) corev1.PodSpec {
 
 func MakeCommonPodAnnotations(configHash string) map[string]string {
 	annotations := map[string]string{
-		"checksum/config":         configHash,
-		"sidecar.istio.io/inject": "false",
+		"checksum/config": configHash,
 	}
 
 	return annotations
