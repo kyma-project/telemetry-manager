@@ -268,7 +268,7 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	return pipeline.Spec.Input.Application.Runtime.Enabled || pipeline.Spec.Input.Application.Prometheus.Enabled || pipeline.Spec.Input.Application.Istio.Enabled
 }
 
-func (r *Reconciler) isIstioDeployed(ctx context.Context) bool {
+func (r *Reconciler) isIstioActive(ctx context.Context) bool {
 	var crdList apiextensionsv1.CustomResourceDefinitionList
 	if err := r.List(ctx, &crdList); err != nil {
 		logf.FromContext(ctx).Error(err, "Not able to list CRDs")
@@ -329,7 +329,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	agentConfig := agent.MakeConfig(types.NamespacedName{
 		Namespace: r.config.Gateway.Namespace,
 		Name:      r.config.Gateway.Service.OTLPServiceName,
-	}, allPipelines, r.isIstioDeployed(ctx))
+	}, allPipelines, r.isIstioActive(ctx))
 	var agentConfigYAML []byte
 	agentConfigYAML, err = yaml.Marshal(agentConfig)
 	if err != nil {

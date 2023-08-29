@@ -18,13 +18,13 @@ var (
 	istioKeyFile  = filepath.Join(IstioCertPath, "key.pem")
 )
 
-func makeReceiversConfig(inputs inputSources, istioDeployed bool) Receivers {
+func makeReceiversConfig(inputs inputSources, isIstioActive bool) Receivers {
 	var receiversConfig Receivers
 
 	if inputs.prometheus {
 		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
-		receiversConfig.PrometheusAppPods = makePrometheusAppPodsConfig(istioDeployed)
-		receiversConfig.PrometheusAppServices = makePrometheusAppServicesConfig(istioDeployed)
+		receiversConfig.PrometheusAppPods = makePrometheusAppPodsConfig(isIstioActive)
+		receiversConfig.PrometheusAppServices = makePrometheusAppServicesConfig(isIstioActive)
 	}
 
 	if inputs.runtime {
@@ -67,7 +67,7 @@ func makePrometheusSelfConfig() *PrometheusReceiver {
 	}
 }
 
-func makePrometheusAppPodsConfig(istioDeployed bool) *PrometheusReceiver {
+func makePrometheusAppPodsConfig(isIstioActive bool) *PrometheusReceiver {
 	scrapeConfig := ScrapeConfig{
 		JobName:                    "app-pods",
 		ScrapeInterval:             scrapeInterval,
@@ -84,7 +84,7 @@ func makePrometheusAppPodsConfig(istioDeployed bool) *PrometheusReceiver {
 		},
 	}
 
-	if istioDeployed {
+	if isIstioActive {
 		scrapeConfig.TLSConfig = &TLSConfig{
 			CAFile:             istioCAFile,
 			CertFile:           istioCertFile,
@@ -105,7 +105,7 @@ func makePrometheusAppPodsConfig(istioDeployed bool) *PrometheusReceiver {
 	}
 }
 
-func makePrometheusAppServicesConfig(istioDeployed bool) *PrometheusReceiver {
+func makePrometheusAppServicesConfig(isIstioActive bool) *PrometheusReceiver {
 	scrapeConfig := ScrapeConfig{
 		JobName:                    "app-services",
 		ScrapeInterval:             scrapeInterval,
@@ -123,7 +123,7 @@ func makePrometheusAppServicesConfig(istioDeployed bool) *PrometheusReceiver {
 		},
 	}
 
-	if istioDeployed {
+	if isIstioActive {
 		scrapeConfig.TLSConfig = &TLSConfig{
 			CAFile:             istioCAFile,
 			CertFile:           istioCertFile,
