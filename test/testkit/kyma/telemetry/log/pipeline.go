@@ -56,7 +56,7 @@ func (p *Pipeline) DropLabels(enable bool) *Pipeline {
 
 func (p *Pipeline) WithStdout() *Pipeline {
 	p.output = telemetry.Output{
-		Custom: "Name               stdout",
+		Custom: "Name stdout",
 	}
 	return p
 }
@@ -84,10 +84,10 @@ func (p *Pipeline) WithHTTPOutput() *Pipeline {
 
 func (p *Pipeline) WithCustomOutput(host string) *Pipeline {
 	const customOutputTemplate = `
-name               http
-port               9880
-host               {{ HOST }}
-format             json`
+	name   http
+	port   9880
+	host   {{ HOST }}
+	format json`
 	customOutput := strings.Replace(customOutputTemplate, "{{ HOST }}", host, 1)
 	p.output = telemetry.Output{
 		Custom: customOutput,
