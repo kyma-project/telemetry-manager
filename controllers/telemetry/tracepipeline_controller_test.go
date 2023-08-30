@@ -156,7 +156,7 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 			if err := validateTracingEnvironment(otelCollectorDeployment); err != nil {
 				return err
 			}
-			return validatePodAnnotations(otelCollectorDeployment)
+			return validatePodMetadata(otelCollectorDeployment)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
