@@ -1,18 +1,17 @@
 package agent
 
 import (
-	"fmt"
-
-	. "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
-
-	"golang.org/x/exp/maps"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"fmt"
+	"golang.org/x/exp/maps"
+
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 )
 
 const istioCertVolumeName = "istio-certs"
@@ -55,22 +54,22 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 }
 
 func MakeDaemonSet(config Config, configHash, envVarPodIP, envVarNodeName, istioCertPath string) *appsv1.DaemonSet {
-	labels := MakeDefaultLabels(config.BaseName)
+	labels := core.MakeDefaultLabels(config.BaseName)
 	labels["sidecar.istio.io/inject"] = "true"
 
-	annotations := MakeCommonPodAnnotations(configHash)
+	annotations := core.MakeCommonPodAnnotations(configHash)
 	maps.Copy(annotations, makeIstioTLSPodAnnotations(istioCertPath))
 
 	resources := makeResourceRequirements(config)
-	podSpec := MakePodSpec(config.BaseName, config.DaemonSet.Image,
-		WithPriorityClass(config.DaemonSet.PriorityClassName),
-		WithResources(resources),
-		WithEnvVarFromSource(envVarPodIP, FieldPathPodIP),
-		WithEnvVarFromSource(envVarNodeName, FieldPathNodeName),
-		WithVolume(corev1.Volume{Name: istioCertVolumeName, VolumeSource: corev1.VolumeSource{
+	podSpec := core.MakePodSpec(config.BaseName, config.DaemonSet.Image,
+		core.WithPriorityClass(config.DaemonSet.PriorityClassName),
+		core.WithResources(resources),
+		core.WithEnvVarFromSource(envVarPodIP, core.FieldPathPodIP),
+		core.WithEnvVarFromSource(envVarNodeName, core.FieldPathNodeName),
+		core.WithVolume(corev1.Volume{Name: istioCertVolumeName, VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		}}),
-		WithVolumeMount(corev1.VolumeMount{
+		core.WithVolumeMount(corev1.VolumeMount{
 			Name:      istioCertVolumeName,
 			MountPath: istioCertPath,
 			ReadOnly:  true,
