@@ -1,10 +1,10 @@
 package metricproducer
 
 import (
+	"maps"
 	"strconv"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	"golang.org/x/exp/maps"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
