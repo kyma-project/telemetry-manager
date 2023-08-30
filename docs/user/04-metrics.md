@@ -306,7 +306,7 @@ prometheus.io/port: "1234"     # optional, configure the port under which the me
 prometheus.io/path: /myMetrics # optional, configure the path under which the metrics are exposed
 ```
 
-> **NOTE:** The agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts only mTLS communication. However, there's a constraint: scraping through HTTPS is exclusively viable Istio configures the workload using 'STRICT' mTLS mode. If this condition isn't met, scraping via HTTP is the alternative option, achievable by applying the prometheus.io/scheme=http annotation.
+> **NOTE:** The agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts only mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
 
 ### Step 5: Activate runtime metrics
 To enable collection of runtime metrics for your Pods, define a MetricPipeline that has the `runtime` section enabled as input:
