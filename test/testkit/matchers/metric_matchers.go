@@ -32,6 +32,7 @@ type MetricPredicate = func(pmetric.Metric) bool
 func ContainMetricsThatSatisfy(predicate MetricPredicate) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonlMetrics []byte) ([]pmetric.Metric, error) {
 		mds, err := extractMetrics(jsonlMetrics)
+
 		if err != nil {
 			return nil, fmt.Errorf("ContainMetricsThatSatisfy requires a valid OTLP JSON document: %v", err)
 		}
@@ -91,6 +92,31 @@ func ConsistOfMetricsWithResourceAttributes(expectedAttributeNames ...string) ty
 
 		return attributeNames, nil
 	}, gomega.HaveEach(gomega.ConsistOf(expectedAttributeNames)))
+}
+
+func ConsistOfMetricsWithResourceAttributeValue(expectedAttrKey string, expectedAttrValue string) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlMetrics []byte) ([]string, error) {
+		mds, err := extractMetrics(jsonlMetrics)
+		if err != nil {
+			return nil, fmt.Errorf("ConsistOfMetricsWithResourceAttributeValue requires a valid OTLP JSON document: %v", err)
+		}
+
+		var attrValues []string
+		for _, md := range mds {
+			for i := 0; i < md.ResourceMetrics().Len(); i++ {
+				resourceMetrics := md.ResourceMetrics().At(i)
+				attributes := resourceMetrics.Resource().Attributes()
+
+				value, found := attributes.Get(expectedAttrKey)
+				if !found {
+					continue
+				}
+				attrValues = append(attrValues, value.AsString())
+			}
+		}
+
+		return attrValues, nil
+	}, gomega.ContainElements(expectedAttrValue))
 }
 
 func extractMetrics(fileBytes []byte) ([]pmetric.Metrics, error) {

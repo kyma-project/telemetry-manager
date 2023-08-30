@@ -278,6 +278,69 @@ var _ = Describe("ConsistOfMetricsWithResourceAttributes", Label("metrics"), fun
 	})
 })
 
+var _ = Describe("ConsistOfMetricsWithResourceAttributeValue", Label("metrics"), func() {
+	Context("with nil input", func() {
+		It("should error", func() {
+			success, err := ConsistOfMetricsWithResourceAttributeValue("k8s.cluster.name", "not-match").Match(nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with input of invalid type", func() {
+		It("should error", func() {
+			success, _ := ConsistOfMetricsWithResourceAttributeValue("k8s.cluster.name", "not-match").Match(struct{}{})
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should error", func() {
+			success, err := ConsistOfMetricsWithResourceAttributeValue("k8s.cluster.name", "not-match").Match([]byte{})
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with no attribute matching the expecting attributes", func() {
+		It("should fail", func() {
+			md := pmetric.NewMetrics()
+			rm := md.ResourceMetrics().AppendEmpty()
+			attrs := rm.Resource().Attributes()
+			attrs.PutStr("k8s.cluster.name", "cluster-01")
+			attrs.PutStr("k8s.deployment.name", "nginx")
+			metrics := rm.ScopeMetrics().AppendEmpty().Metrics()
+			kitmetrics.NewGauge().CopyTo(metrics.AppendEmpty())
+			kitmetrics.NewCumulativeSum().CopyTo(metrics.AppendEmpty())
+
+			Expect(mustMarshalMetrics(md)).ShouldNot(ConsistOfMetricsWithResourceAttributeValue("k8s.container.name", "not-match"))
+		})
+	})
+
+	Context("with some attribute matching the expecting attributes", func() {
+		It("should fail", func() {
+			md := pmetric.NewMetrics()
+			rm := md.ResourceMetrics().AppendEmpty()
+			attrs := rm.Resource().Attributes()
+			attrs.PutStr("k8s.cluster.name", "cluster-01")
+			attrs.PutStr("k8s.deployment.name", "nginx")
+			metrics := rm.ScopeMetrics().AppendEmpty().Metrics()
+			kitmetrics.NewGauge().CopyTo(metrics.AppendEmpty())
+			kitmetrics.NewCumulativeSum().CopyTo(metrics.AppendEmpty())
+
+			Expect(mustMarshalMetrics(md)).Should(ConsistOfMetricsWithResourceAttributeValue("k8s.deployment.name", "nginx"))
+		})
+	})
+
+	Context("with invalid input", func() {
+		It("should error", func() {
+			success, err := ConsistOfMetricsWithResourceAttributeValue("k8s.cluster.name", "not-match").Match([]byte{1, 2, 3})
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+})
+
 var _ = Describe("ContainMetricsWithNames", Label("metrics"), func() {
 	Context("with nil input", func() {
 		It("should error", func() {

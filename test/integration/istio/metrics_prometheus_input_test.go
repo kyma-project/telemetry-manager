@@ -113,6 +113,39 @@ var _ = Describe("Metrics Prometheus input", Label("metrics"), func() {
 					}))))
 			}, timeout, interval).Should(Succeed())
 		})
+
+		It("Should verify custom metric scraping via annotated pods over http", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(urls.MockBackendExport())
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					ConsistOfMetricsWithResourceAttributeValue("k8s.pod.name", "metric-producer-http"),
+				)))
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should verify custom metric scraping via annotated services over http", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(urls.MockBackendExport())
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return metricsEqualWithAttributeValue(m, metricproducer.MetricCPUTemperature, "service", "metric-producer-http")
+					}),
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return metricsEqualWithAttributeValue(m, metricproducer.MetricCPUEnergyHistogram, "service", "metric-producer-http")
+					}),
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return metricsEqualWithAttributeValue(m, metricproducer.MetricHardwareHumidity, "service", "metric-producer-http")
+					}),
+					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+						return metricsEqualWithAttributeValue(m, metricproducer.MetricHardDiskErrorsTotal, "service", "metric-producer-http")
+					}),
+				)))
+			}, timeout, interval).Should(Succeed())
+		})
 	})
 })
 
@@ -135,7 +168,8 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-web", httpWebPort)
-	mockMetricProducer := metricproducer.New(mocksNamespaceName)
+	mockMetricProducer := metricproducer.New(mocksNamespaceName, "metric-producer")
+	mockMetricProducerHTTP := metricproducer.New(mocksNamespaceName, "metric-producer-http")
 
 	// Default namespace objects.
 	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
@@ -149,6 +183,8 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		mockMetricProducer.Pod().WithSidecarInjection().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
 		mockMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
+		mockMetricProducerHTTP.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+		mockMetricProducerHTTP.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 		hostSecret.K8sObject(),
 		metricPipeline.K8sObject(),
 	}...)
@@ -179,4 +215,12 @@ func metricsEqual(actual pmetric.Metric, expected metricproducer.Metric, compari
 	default:
 		return false
 	}
+}
+
+func metricsEqualWithAttributeValue(actual pmetric.Metric, expected metricproducer.Metric, attrKey string, attrValue string) bool {
+	if actual.Name() != expected.Name || actual.Type() != expected.Type {
+		return false
+	}
+
+	return kitotlpmetric.AllDataPointsContainAttributeWithValue(actual, attrKey, attrValue)
 }

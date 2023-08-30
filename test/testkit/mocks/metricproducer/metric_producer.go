@@ -47,7 +47,6 @@ var (
 	metricsPort     = 8080
 	metricsPortName = "http-metrics"
 	metricsEndpoint = "/metrics"
-	baseName        = "metric-producer"
 	selectorLabels  = map[string]string{
 		"app": "sample-metrics",
 	}
@@ -55,11 +54,12 @@ var (
 
 // MetricProducer represents a workload that exposes dummy metrics in the Prometheus exposition format
 type MetricProducer struct {
+	name      string
 	namespace string
 }
 
 func (mp *MetricProducer) Name() string {
-	return baseName
+	return mp.name
 }
 
 func (mp *MetricProducer) MetricsEndpoint() string {
@@ -71,24 +71,28 @@ func (mp *MetricProducer) MetricsPort() int {
 }
 
 type Pod struct {
+	name        string
 	namespace   string
 	labels      map[string]string
 	annotations map[string]string
 }
 
 type Service struct {
+	name        string
 	namespace   string
 	annotations map[string]string
 }
 
-func New(namespace string) *MetricProducer {
+func New(namespace string, name string) *MetricProducer {
 	return &MetricProducer{
+		name:      name,
 		namespace: namespace,
 	}
 }
 
 func (mp *MetricProducer) Pod() *Pod {
 	return &Pod{
+		name:        mp.name,
 		namespace:   mp.namespace,
 		labels:      make(map[string]string),
 		annotations: make(map[string]string),
@@ -120,7 +124,7 @@ func (p *Pod) K8sObject() *corev1.Pod {
 
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        baseName,
+			Name:        p.name,
 			Namespace:   p.namespace,
 			Labels:      labels,
 			Annotations: p.annotations,
@@ -153,6 +157,7 @@ func (p *Pod) K8sObject() *corev1.Pod {
 
 func (mp *MetricProducer) Service() *Service {
 	return &Service{
+		name:      mp.name,
 		namespace: mp.namespace,
 	}
 }
@@ -165,7 +170,7 @@ func (s *Service) WithPrometheusAnnotations(scheme ScrapingScheme) *Service {
 func (s *Service) K8sObject() *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        baseName,
+			Name:        s.name,
 			Namespace:   s.namespace,
 			Annotations: s.annotations,
 			Labels:      selectorLabels,
