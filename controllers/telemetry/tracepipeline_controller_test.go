@@ -221,7 +221,7 @@ var _ = Describe("Deploying a TracePipeline", Ordered, func() {
 		}, timeout, interval).Should(Succeed())
 	})
 
-	It("updates Trace Collector Secret when referenced secret changes", func() {
+	It("Should update trace gateway secret when referenced secret changes", func() {
 		Eventually(func() error {
 			newData := map[string][]byte{
 				"user":     []byte("new-secret-username"),
@@ -295,6 +295,7 @@ func TestTracePipeline_MapSecret(t *testing.T) {
 	}
 
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.summary, func(t *testing.T) {
 			tracePipeline := &telemetryv1alpha1.TracePipeline{
 				ObjectMeta: metav1.ObjectMeta{

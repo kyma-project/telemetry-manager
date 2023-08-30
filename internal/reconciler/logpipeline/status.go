@@ -10,13 +10,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
-)
-
-const (
-	reasonFluentBitDSNotReady     = "FluentBitDaemonSetNotReady"
-	reasonFluentBitDSReady        = "FluentBitDaemonSetReady"
-	reasonReferencedSecretMissing = "ReferencedSecretMissing"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
@@ -65,7 +60,7 @@ func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName st
 	log := logf.FromContext(ctx)
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, &pipeline)
 	if referencesNonExistentSecret {
-		pending := telemetryv1alpha1.NewLogPipelineCondition(reasonReferencedSecretMissing, telemetryv1alpha1.LogPipelinePending)
+		pending := telemetryv1alpha1.NewLogPipelineCondition(reconciler.ReasonReferencedSecretMissing, telemetryv1alpha1.LogPipelinePending)
 
 		if pipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning) {
 			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))
@@ -85,11 +80,11 @@ func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName st
 			return nil
 		}
 
-		running := telemetryv1alpha1.NewLogPipelineCondition(reasonFluentBitDSReady, telemetryv1alpha1.LogPipelineRunning)
+		running := telemetryv1alpha1.NewLogPipelineCondition(reconciler.ReasonFluentBitDSReady, telemetryv1alpha1.LogPipelineRunning)
 		return setCondition(ctx, r.Client, &pipeline, running)
 	}
 
-	pending := telemetryv1alpha1.NewLogPipelineCondition(reasonFluentBitDSNotReady, telemetryv1alpha1.LogPipelinePending)
+	pending := telemetryv1alpha1.NewLogPipelineCondition(reconciler.ReasonFluentBitDSNotReady, telemetryv1alpha1.LogPipelinePending)
 
 	if pipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning) {
 		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))

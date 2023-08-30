@@ -51,6 +51,10 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **conditions.&#x200b;reason** (required) | string | reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty. |
 | **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt) |
-| **state** (required) | string | State signifies current state of Module CR. Value can be one of ("Ready", "Processing", "Error", "Deleting"). |
+| **endpoints**  | object | GatewayEndpoints for trace and metric gateway |
+| **endpoints.&#x200b;traces**  | object |  |
+| **endpoints.&#x200b;traces.&#x200b;grpc**  | string |  |
+| **endpoints.&#x200b;traces.&#x200b;http**  | string |  |
+| **state** (required) | string | State signifies current state of Module CR. Value can be one of ("Ready", "Processing", "Error", "Deleting", "Warning"). |
 
 <!-- TABLE-END -->

@@ -41,7 +41,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -94,16 +93,16 @@ var (
 	maxTracePipelines  int
 	maxMetricPipelines int
 
-	traceCollectorImage                string
-	traceCollectorPriorityClass        string
-	traceCollectorCPULimit             string
-	traceCollectorDynamicCPULimit      string
-	traceCollectorMemoryLimit          string
-	traceCollectorDynamicMemoryLimit   string
-	traceCollectorCPURequest           string
-	traceCollectorDynamicCPURequest    string
-	traceCollectorMemoryRequest        string
-	traceCollectorDynamicMemoryRequest string
+	traceGatewayImage                string
+	traceGatewayPriorityClass        string
+	traceGatewayCPULimit             string
+	traceGatewayDynamicCPULimit      string
+	traceGatewayMemoryLimit          string
+	traceGatewayDynamicMemoryLimit   string
+	traceGatewayCPURequest           string
+	traceGatewayDynamicCPURequest    string
+	traceGatewayMemoryRequest        string
+	traceGatewayDynamicMemoryRequest string
 
 	fluentBitMemoryBufferLimit         string
 	fluentBitFsBufferLimit             string
@@ -136,10 +135,15 @@ const (
 	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.83.0-da21e9f9"
 	overridesConfigMapName = "telemetry-override-config"
 	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.8-da21e9f9"
-	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20230503-c10c571f"
+	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20230824-2d68935f"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
+
+	metricGateway         = "telemetry-metric-gateway"
+	metricOTLPServiceName = "telemetry-otlp-metrics"
+
+	traceOTLPServiceName = "telemetry-otlp-traces"
 )
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
@@ -216,16 +220,16 @@ func main() {
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MY_POD_NAMESPACE", "default"), "Namespace of the manager")
 
-	flag.StringVar(&traceCollectorImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorCPULimit, "trace-collector-cpu-limit", "900m", "CPU limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorDynamicCPULimit, "trace-collector-dynamic-cpu-limit", "100m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceCollectorMemoryLimit, "trace-collector-memory-limit", "512Mi", "Memory limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorDynamicMemoryLimit, "trace-collector-dynamic-memory-limit", "512Mi", "Additional memory limit for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceCollectorCPURequest, "trace-collector-cpu-request", "25m", "CPU request for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorDynamicCPURequest, "trace-collector-dynamic-cpu-request", "0", "Additional CPU request for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceCollectorMemoryRequest, "trace-collector-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceCollectorDynamicMemoryRequest, "trace-collector-dynamic-memory-request", "0", "Additional memory request for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayCPULimit, "trace-collector-cpu-limit", "900m", "CPU limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicCPULimit, "trace-collector-dynamic-cpu-limit", "100m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayMemoryLimit, "trace-collector-memory-limit", "512Mi", "Memory limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicMemoryLimit, "trace-collector-dynamic-memory-limit", "512Mi", "Additional memory limit for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayCPURequest, "trace-collector-cpu-request", "25m", "CPU request for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicCPURequest, "trace-collector-dynamic-cpu-request", "0", "Additional CPU request for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayMemoryRequest, "trace-collector-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicMemoryRequest, "trace-collector-dynamic-memory-request", "0", "Additional memory request for tracing OpenTelemetry Collector per TracePipeline")
 	flag.IntVar(&maxTracePipelines, "trace-collector-pipelines", 3, "Maximum number of TracePipelines to be created. If 0, no limit is applied.")
 
 	flag.StringVar(&metricGatewayImage, "metric-gateway-image", otelImage, "Image for metrics OpenTelemetry Collector")
@@ -298,7 +302,6 @@ func main() {
 	}()
 
 	syncPeriod := 1 * time.Hour
-
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		SyncPeriod:              &syncPeriod,
 		Scheme:                  scheme,
@@ -351,28 +354,12 @@ func main() {
 		}
 	}
 
-	webhookConfig := telemetry.WebhookConfig{
-		Enabled: enableWebhook,
-		CertConfig: webhookcert.Config{
-			CertDir: certDir,
-			ServiceName: types.NamespacedName{
-				Name:      webhookServiceName,
-				Namespace: telemetryNamespace,
-			},
-			CASecretName: types.NamespacedName{
-				Name:      "telemetry-webhook-cert",
-				Namespace: telemetryNamespace,
-			},
-			WebhookName: types.NamespacedName{
-				Name: "validation.webhook.telemetry.kyma-project.io",
-			},
-		},
-	}
+	webhookConfig := createWebhookConfig()
 
 	if enableTelemetryManagerModule {
 		setupLog.Info("Starting with telemetry manager controller")
 
-		if err = createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), mgr.GetEventRecorderFor("telemetry-operator"), webhookConfig).SetupWithManager(mgr); err != nil {
+		if err = createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), webhookConfig).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
 			os.Exit(1)
 		}
@@ -524,19 +511,19 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 			Namespace: telemetryNamespace,
 			BaseName:  "telemetry-trace-collector",
 			Deployment: gateway.DeploymentConfig{
-				Image:                traceCollectorImage,
-				PriorityClassName:    traceCollectorPriorityClass,
-				BaseCPULimit:         resource.MustParse(traceCollectorCPULimit),
-				DynamicCPULimit:      resource.MustParse(traceCollectorDynamicCPULimit),
-				BaseMemoryLimit:      resource.MustParse(traceCollectorMemoryLimit),
-				DynamicMemoryLimit:   resource.MustParse(traceCollectorDynamicMemoryLimit),
-				BaseCPURequest:       resource.MustParse(traceCollectorCPURequest),
-				DynamicCPURequest:    resource.MustParse(traceCollectorDynamicCPURequest),
-				BaseMemoryRequest:    resource.MustParse(traceCollectorMemoryRequest),
-				DynamicMemoryRequest: resource.MustParse(traceCollectorDynamicMemoryRequest),
+				Image:                traceGatewayImage,
+				PriorityClassName:    traceGatewayPriorityClass,
+				BaseCPULimit:         resource.MustParse(traceGatewayCPULimit),
+				DynamicCPULimit:      resource.MustParse(traceGatewayDynamicCPULimit),
+				BaseMemoryLimit:      resource.MustParse(traceGatewayMemoryLimit),
+				DynamicMemoryLimit:   resource.MustParse(traceGatewayDynamicMemoryLimit),
+				BaseCPURequest:       resource.MustParse(traceGatewayCPURequest),
+				DynamicCPURequest:    resource.MustParse(traceGatewayDynamicCPURequest),
+				BaseMemoryRequest:    resource.MustParse(traceGatewayMemoryRequest),
+				DynamicMemoryRequest: resource.MustParse(traceGatewayDynamicMemoryRequest),
 			},
 			Service: gateway.ServiceConfig{
-				OTLPServiceName: "telemetry-otlp-traces",
+				OTLPServiceName: traceOTLPServiceName,
 			},
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
@@ -580,7 +567,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 				DynamicMemoryRequest: resource.MustParse(metricGatewayDynamicMemoryRequest),
 			},
 			Service: gateway.ServiceConfig{
-				OTLPServiceName: "telemetry-otlp-metrics",
+				OTLPServiceName: metricOTLPServiceName,
 			},
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
@@ -614,6 +601,39 @@ func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
 }
 
-func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
-	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, eventRecorder, webhookConfig))
+func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
+	config := telemetry.Config{
+		Traces: telemetry.TracesConfig{
+			OTLPServiceName: traceOTLPServiceName,
+			Namespace:       telemetryNamespace,
+		},
+		Metrics: telemetry.MetricsConfig{
+			Enabled:         enableMetrics,
+			OTLPServiceName: metricOTLPServiceName,
+			Namespace:       telemetryNamespace,
+		},
+		Webhook: webhookConfig,
+	}
+
+	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config), config)
+}
+
+func createWebhookConfig() telemetry.WebhookConfig {
+	return telemetry.WebhookConfig{
+		Enabled: enableWebhook,
+		CertConfig: webhookcert.Config{
+			CertDir: certDir,
+			ServiceName: types.NamespacedName{
+				Name:      webhookServiceName,
+				Namespace: telemetryNamespace,
+			},
+			CASecretName: types.NamespacedName{
+				Name:      "telemetry-webhook-cert",
+				Namespace: telemetryNamespace,
+			},
+			WebhookName: types.NamespacedName{
+				Name: "validation.webhook.telemetry.kyma-project.io",
+			},
+		},
+	}
 }

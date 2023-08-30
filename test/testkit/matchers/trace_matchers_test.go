@@ -294,6 +294,69 @@ var _ = Describe("ConsistOfNumberOfSpans", Label("tracing"), func() {
 	})
 })
 
+var _ = Describe("ContainSpansWithAttributes", Label("tracing"), func() {
+	expectedAttrs := pcommon.NewMap()
+	expectedAttrs.PutStr("component", "proxy")
+
+	Context("with nil input", func() {
+		It("should match false", func() {
+			success, err := ContainSpansWithAttributes(expectedAttrs).Match(nil)
+			Expect(err).Should(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with empty input", func() {
+		It("should match false", func() {
+			success, err := ContainSpansWithAttributes(expectedAttrs).Match([]byte{})
+			Expect(err).ShouldNot(HaveOccurred())
+			Expect(success).Should(BeFalse())
+		})
+	})
+
+	Context("with no spans having the attributes", func() {
+		It("should fail", func() {
+			td := ptrace.NewTraces()
+			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
+			spans.AppendEmpty().Attributes().PutStr("http.url", "foo")
+			spans.AppendEmpty().Attributes().PutStr("http.url", "bar")
+			spans.AppendEmpty().Attributes().PutStr("http.url", "baz")
+
+			expectedAttrs := pcommon.NewMap()
+			expectedAttrs.PutStr("http.method", "GET")
+			Expect(mustMarshalTraces(td)).ShouldNot(ContainSpansWithAttributes(expectedAttrs))
+		})
+	})
+
+	Context("with one span having the attribute", func() {
+		It("should succeed", func() {
+			td := ptrace.NewTraces()
+			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
+			spans.AppendEmpty().Attributes().PutStr("http.url", "foo")
+			spans.AppendEmpty().Attributes().PutStr("http.url", "bar")
+			spans.AppendEmpty().Attributes().PutStr("http.method", "GET")
+
+			expectedAttrs := pcommon.NewMap()
+			expectedAttrs.PutStr("http.method", "GET")
+			Expect(mustMarshalTraces(td)).Should(ContainSpansWithAttributes(expectedAttrs))
+		})
+	})
+
+	Context("with one span having multiple attributes", func() {
+		It("should succeed", func() {
+			td := ptrace.NewTraces()
+			spans := td.ResourceSpans().AppendEmpty().ScopeSpans().AppendEmpty().Spans()
+			spans.AppendEmpty().Attributes().PutStr("http.method", "GET")
+			spans.At(0).Attributes().PutStr("http.url", "foo")
+
+			expectedAttrs := pcommon.NewMap()
+			expectedAttrs.PutStr("http.method", "GET")
+			Expect(mustMarshalTraces(td)).Should(ContainSpansWithAttributes(expectedAttrs))
+		})
+	})
+
+})
+
 func mustMarshalTraces(td ptrace.Traces) []byte {
 	var marshaler ptrace.JSONMarshaler
 	bytes, err := marshaler.MarshalTraces(td)

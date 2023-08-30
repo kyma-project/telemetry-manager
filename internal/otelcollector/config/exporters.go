@@ -9,7 +9,11 @@ type OTLPExporter struct {
 }
 
 type TLS struct {
-	Insecure bool `yaml:"insecure"`
+	Insecure           bool   `yaml:"insecure"`
+	InsecureSkipVerify bool   `yaml:"insecure_skip_verify,omitempty"`
+	CertPem            string `yaml:"cert_pem,omitempty"`
+	KeyPem             string `yaml:"key_pem,omitempty"`
+	CAPem              string `yaml:"ca_pem,omitempty"`
 }
 
 type SendingQueue struct {

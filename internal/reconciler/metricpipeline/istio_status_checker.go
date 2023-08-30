@@ -2,9 +2,9 @@ package metricpipeline
 
 import (
 	"context"
+	"slices"
 	"strings"
 
-	"golang.org/x/exp/slices"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"

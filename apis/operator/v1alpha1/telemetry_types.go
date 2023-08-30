@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,19 +25,10 @@ import (
 
 type State string
 
-var (
-	ConditionTypeInstallation = "Installation"
-	ConditionReasonReady      = "Ready"
-)
-
 // Valid Module CR States.
 const (
 	// StateReady signifies Module CR is Ready and has been installed successfully.
 	StateReady State = "Ready"
-
-	// StateProcessing signifies Module CR is reconciling and is in the process of installation.
-	// Processing can also signal that the Installation previously encountered an error and is now recovering.
-	StateProcessing State = "Processing"
 
 	// StateError signifies an error for Module CR. This signifies that the Installation
 	// process encountered an error.
@@ -48,6 +38,10 @@ const (
 	// StateDeleting signifies Module CR is being deleted. This is the state that is used
 	// when a deletionTimestamp was detected and Finalizers are picked up.
 	StateDeleting State = "Deleting"
+
+	// StateWarning signifies specified resource has been deployed, but cannot be used due to misconfiguration,
+	// usually it means that user interaction is required.
+	StateWarning State = "Warning"
 )
 
 // TelemetrySpec defines the desired state of Telemetry
@@ -64,33 +58,19 @@ type TelemetryStatus struct {
 	// If all Conditions are met, State is expected to be in StateReady.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
+	// GatewayEndpoints for trace and metric gateway
+	// +nullable
+	GatewayEndpoints GatewayEndpoints `json:"endpoints,omitempty"`
 	// add other fields to status subresource here
 }
 
-func (s *TelemetryStatus) WithState(state State) *TelemetryStatus {
-	s.State = state
-	return s
+type GatewayEndpoints struct {
+	Traces *OTLPEndpoints `json:"traces,omitempty"`
 }
 
-func (s *TelemetryStatus) WithInstallConditionStatus(status metav1.ConditionStatus, objGeneration int64) *TelemetryStatus {
-	if s.Conditions == nil {
-		s.Conditions = make([]metav1.Condition, 0, 1)
-	}
-
-	condition := meta.FindStatusCondition(s.Conditions, ConditionTypeInstallation)
-
-	if condition == nil {
-		condition = &metav1.Condition{
-			Type:    ConditionTypeInstallation,
-			Reason:  ConditionReasonReady,
-			Message: "installation is ready and resources can be used",
-		}
-	}
-
-	condition.Status = status
-	condition.ObservedGeneration = objGeneration
-	meta.SetStatusCondition(&s.Conditions, *condition)
-	return s
+type OTLPEndpoints struct {
+	GRPC string `json:"grpc,omitempty"`
+	HTTP string `json:"http,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -126,8 +106,8 @@ func init() {
 // Status defines the observed state of Module CR.
 type Status struct {
 	// State signifies current state of Module CR.
-	// Value can be one of ("Ready", "Processing", "Error", "Deleting").
+	// Value can be one of ("Ready", "Processing", "Error", "Deleting", "Warning").
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=Processing;Deleting;Ready;Error
+	// +kubebuilder:validation:Enum=Processing;Deleting;Ready;Error;Warning
 	State State `json:"state"`
 }

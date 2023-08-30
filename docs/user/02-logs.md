@@ -14,7 +14,7 @@ Your application must log to `stdout` or `stderr`, which is the recommended way 
 
 The Telemetry module provides [Fluent Bit](https://fluentbit.io/) as a log agent. Fluent Bit collects all application logs of the cluster workload and ships them to a backend.
 
-![Architecture](./assets/logging-arch.drawio.svg)
+![Architecture](./assets/logs-arch.drawio.svg)
 
 1. Container logs are stored by the Kubernetes container runtime under the `var/log` directory and its subdirectories.
 2. Fluent Bit runs as a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) (one instance per Node), detects any new log files in the folder, and tails them using a filesystem buffer for reliability.
@@ -28,7 +28,7 @@ The Telemetry module provides [Fluent Bit](https://fluentbit.io/) as a log agent
 Fluent Bit comes with a pipeline concept, which supports a flexible combination of inputs with outputs and filtering in between; for details, see [Fluent Bit: Output](https://docs.fluentbit.io/manual/concepts/data-pipeline/output).
 Kyma's Telemetry module brings a predefined setup of the Fluent Bit DaemonSet and a base configuration, which assures that the application logs of the workloads in the cluster are processed reliably and efficiently. Additionally, the telemetry module provides a Kubernetes API called `LogPipeline` to configure outputs with some filtering capabilities.
 
-![Pipeline Concept](./assets/logging-pipelines.drawio.svg)
+![Pipeline Concept](./assets/logs-pipelines.drawio.svg)
 
 1. A central `tail` input plugin reads the application logs.
 
@@ -42,70 +42,58 @@ This approach assures a reliable buffer management and isolation of pipelines, w
 
 The LogPipeline resource is managed by Telemetry Manager, a typical Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) responsible for managing the custom parts of the Fluent Bit configuration.
 
-![Manager resources](./assets/logging-resources.drawio.svg)
+![Manager resources](./assets/logs-resources.drawio.svg)
 
 Telemetry Manager watches all LogPipeline resources and related Secrets. Whenever the configuration changes, Telemetry Manager validates the configuration (with a [validating webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)) and generates a new configuration for the Fluent Bit DaemonSet, where several ConfigMaps for the different aspects of the configuration are generated. Furthermore, referenced Secrets are copied into one Secret that is also mounted to the DaemonSet.
 
 ## Setting up a LogPipeline
 
-In the following steps, you can see how to set up a typical LogPipeline. For an overview of all available attributes, see the [reference document](resources/02-logpipeline.md).
+In the following steps, you can see how to construct and deploy a typical LogPipeline. Learn more about the available [parameters and attributes](resources/02-logpipeline.md).
 
 ### Step 1: Create a LogPipeline and output
 
-1. To ship application logs to a new output, create a resource file of the kind `LogPipeline`: 
-    ```yaml
-    kind: LogPipeline
-      apiVersion: telemetry.kyma-project.io/v1alpha1
-      metadata:
-        name: http-backend
-    spec:
-      output:
-        http:
-          dedot: false
-          port: "80"
-          uri: "/"
-          host:
-            value: https://myhost/logs
-          user:
-            value: "user"
-          password:
-            value: "not-required"
-    ```
-    An output is a data destination configured by a [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) of the relevant type. The LogPipeline supports the following output types:
+To ship application logs to a new output, create a resource of the kind `LogPipeline`: 
+```yaml
+kind: LogPipeline
+  apiVersion: telemetry.kyma-project.io/v1alpha1
+  metadata:
+    name: http-backend
+spec:
+  output:
+    http:
+      dedot: false
+      port: "80"
+      uri: "/"
+      host:
+        value: https://myhost/logs
+      user:
+        value: "user"
+      password:
+        value: "not-required"
+```
+An output is a data destination configured by a [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) of the relevant type. The LogPipeline supports the following output types:
 
-    - **http**, which sends the data to the specified HTTP destination. The output is designed to integrate with a [Fluentd HTTP Input](https://docs.fluentd.org/input/http), which opens up a huge ecosystem of integration possibilities.
-    - **grafana-loki**, which sends the data to the Kyma-internal Loki instance.
-      >**NOTE:** This output is considered legacy and is only provided for backward compatibility with the [deprecated](https://github.com/kyma-project/kyma/releases/tag/2.9.0) in-cluster Loki instance. It might not be compatible with the latest Loki versions. For integration with a custom Loki installation, use the `custom` output with the name `loki` instead. See also [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).
-    - **custom**, which supports the configuration of any destination in the Fluent Bit configuration syntax. 
-      >**CAUTION:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
+- **http**, which sends the data to the specified HTTP destination. The output is designed to integrate with a [Fluentd HTTP Input](https://docs.fluentd.org/input/http), which opens up a huge ecosystem of integration possibilities.
+- **grafana-loki**, which sends the data to the Kyma-internal Loki instance.
+  >**NOTE:** This output is considered legacy and is only provided for backward compatibility with the [deprecated](https://github.com/kyma-project/kyma/releases/tag/2.9.0) in-cluster Loki instance. It might not be compatible with the latest Loki versions. For integration with a custom Loki installation, use the `custom` output with the name `loki` instead. See also [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).
+- **custom**, which supports the configuration of any destination in the Fluent Bit configuration syntax. 
+  >**CAUTION:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
-      See the following example of the `custom` output:
-      ```yaml
-      spec:
-        output:
-          custom: |
-            Name               http
-            Host               https://myhost/logs
-            Http_User          user
-            Http_Passwd        not-required
-            Format             json
-            Port               80
-            Uri                /
-            Tls                on
-            tls.verify         on
-      ```
-
-2. To create the instance, apply the resource file in your cluster:
-    ```bash
-    kubectl apply -f path/to/my-log-pipeline.yaml
-    ```
-
-3. Check that the status of the LogPipeline in your cluster is `Ready`:
-    ```bash
-    kubectl get logpipeline
-    NAME              STATUS    AGE
-    http-backend      Ready     44s
-    ```
+  See the following example of the `custom` output:
+  ```yaml
+  spec:
+    output:
+      custom: |
+        Name               http
+        Host               https://myhost/logs
+        Http_User          user
+        Http_Passwd        not-required
+        Format             json
+        Port               80
+        Uri                /
+        Tls                on
+        tls.verify         on
+  ```
 
 ### Step 2: Create an input
 
@@ -144,7 +132,6 @@ spec:
         exclude:
         - fluent-bit
 ```
-
 
 ### Step 3: Add filters
 
@@ -320,11 +307,29 @@ spec:
   ...
 ```
 
+### Step 7: Deploy the Pipeline
+
+To activate the constructed LogPipeline, follow these steps:
+1. Place the snippet in a file named for example `logpipeline.yaml`.
+2. Apply the resource file in your cluster:
+    ```bash
+    kubectl apply -f logpipeline.yaml
+    ```
+
+### Result
+
+You activated a LogPipeline and logs start streaming to your backend. To verify that the pipeline is running, verify that the status of the LogPipeline in your cluster is `Ready`:
+    ```bash
+    kubectl get logpipeline
+    NAME              STATUS    AGE
+    backend           Ready     44s
+    ```
+
 ## Log record processing
 
 After a log record has been read, it is preprocessed by centrally configured plugins, like the `kubernetes` filter. Thus, when a record is ready to be processed by the sections defined in the LogPipeline definition, it has several attributes available for processing and shipment.
 
-![Flow](./assets/logging-flow.drawio.svg)
+![Flow](./assets/logs-flow.drawio.svg)
 
 Learn more about the flow of the log record through the general pipeline and the available log attributes in the following sections.
 

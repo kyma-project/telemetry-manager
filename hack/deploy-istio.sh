@@ -11,6 +11,10 @@ spec:
   accessLogging:
     - providers:
         - name: stdout-json
+  tracing:
+    - providers:
+        - name: "kyma-traces"
+      randomSamplingPercentage: 100.00
 EOF
 }
 
