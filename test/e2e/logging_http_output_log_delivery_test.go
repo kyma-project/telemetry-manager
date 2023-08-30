@@ -27,11 +27,11 @@ var _ = Describe("Logging", Label("logging"), func() {
 		var (
 			urls               *urlprovider.URLProvider
 			mockDeploymentName = "log-receiver"
-			namespace          = "HTTP-output-log-delivery"
+			mockNs             = "log-http-output"
 		)
 
 		BeforeAll(func() {
-			k8sObjects, logsURLProvider := makeHTTPOutputLogTestK8sObjects(namespace, mockDeploymentName)
+			k8sObjects, logsURLProvider := makeHTTPOutputLogTestK8sObjects(mockNs, mockDeploymentName)
 			urls = logsURLProvider
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -41,7 +41,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 
 		It("Should have a log backend running", Label("operational"), func() {
 			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockDeploymentName, Namespace: namespace}
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
