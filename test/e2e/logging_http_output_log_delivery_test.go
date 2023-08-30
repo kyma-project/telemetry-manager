@@ -27,7 +27,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 		var (
 			urls               *urlprovider.URLProvider
 			mockDeploymentName = "log-receiver"
-			namespace          = "http-output-log-delivery"
+			namespace          = "test"
 		)
 
 		BeforeAll(func() {
