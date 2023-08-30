@@ -102,9 +102,9 @@ func makePrometheusPodsRelabelConfigs(isSecure bool) []RelabelConfig {
 	}
 
 	if isSecure {
-		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTP())
+		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTP(), inferSchemeFromIstioInjectedLabel())
 	} else {
-		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTPS(), inferSchemeFromIstioInjectedLabel())
+		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTPS())
 	}
 
 	return append(relabelConfigs,
@@ -148,9 +148,9 @@ func makePrometheusServicesRelabelConfigs(isSecure bool) []RelabelConfig {
 	}
 
 	if isSecure {
-		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTP())
+		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTP(), inferSchemeFromIstioInjectedLabel())
 	} else {
-		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTPS(), inferSchemeFromIstioInjectedLabel())
+		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTPS())
 	}
 
 	return append(relabelConfigs,

@@ -3,12 +3,8 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -45,17 +41,19 @@ type DeploymentProber interface {
 
 type Reconciler struct {
 	client.Client
-	config           Config
-	prober           DeploymentProber
-	overridesHandler overrides.GlobalConfigHandler
+	config             Config
+	prober             DeploymentProber
+	overridesHandler   overrides.GlobalConfigHandler
+	istioStatusChecker istioStatusChecker
 }
 
 func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
 	return &Reconciler{
-		Client:           client,
-		config:           config,
-		prober:           prober,
-		overridesHandler: overridesHandler,
+		Client:             client,
+		config:             config,
+		prober:             prober,
+		overridesHandler:   overridesHandler,
+		istioStatusChecker: istioStatusChecker{client: client},
 	}
 }
 
@@ -268,33 +266,6 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	return pipeline.Spec.Input.Application.Runtime.Enabled || pipeline.Spec.Input.Application.Prometheus.Enabled || pipeline.Spec.Input.Application.Istio.Enabled
 }
 
-func (r *Reconciler) isIstioActive(ctx context.Context) bool {
-	var crdList apiextensionsv1.CustomResourceDefinitionList
-	if err := r.List(ctx, &crdList); err != nil {
-		logf.FromContext(ctx).Error(err, "Not able to list CRDs")
-		//no kind found
-		if _, ok := err.(*meta.NoKindMatchError); ok {
-			return false
-		}
-		return false
-	}
-
-	var names []string
-	for _, crd := range crdList.Items {
-		names = append(names, crd.Name)
-	}
-
-	logf.FromContext(ctx).Info("Found CRDs", "crds", names)
-
-	for _, crd := range crdList.Items {
-		if strings.EqualFold(crd.Name, "peerauthentications.security.istio.io") {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	namespacedBaseName := types.NamespacedName{
 		Name:      r.config.Agent.BaseName,
@@ -326,10 +297,11 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
+	isIstioActive := r.istioStatusChecker.isIstioActive(ctx)
 	agentConfig := agent.MakeConfig(types.NamespacedName{
 		Namespace: r.config.Gateway.Namespace,
 		Name:      r.config.Gateway.Service.OTLPServiceName,
-	}, allPipelines, r.isIstioActive(ctx))
+	}, allPipelines, isIstioActive)
 	var agentConfigYAML []byte
 	agentConfigYAML, err = yaml.Marshal(agentConfig)
 	if err != nil {

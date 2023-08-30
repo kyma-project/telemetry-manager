@@ -52,6 +52,14 @@ func keepIfContainerWithEnvoyPort() RelabelConfig {
 	}
 }
 
+// inferSchemeFromIstioInjectedLabel configures the default scraping scheme to HTTPS
+// based on the presence of the security.istio.io/tlsMode label in a Pod. This label
+// is automatically added by Istio's MutatingWebhook when a sidecar is injected.
+//
+// When a sidecar is detected (i.e., the label is present), this function sets the scraping scheme to HTTPS.
+//
+// Note: The HTTPS scheme can be manually overridden by setting the "prometheus.io/scheme"
+// annotation on the Pod or the Service.
 func inferSchemeFromIstioInjectedLabel() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_label_security_istio_io_tlsMode"},
