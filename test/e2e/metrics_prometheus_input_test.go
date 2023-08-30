@@ -151,7 +151,7 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-web", httpWebPort)
-	mockMetricProducer := metricproducer.New(mocksNamespaceName)
+	mockMetricProducer := metricproducer.New(mocksNamespaceName, "metric-producer")
 
 	// Default namespace objects.
 	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
