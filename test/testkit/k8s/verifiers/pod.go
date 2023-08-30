@@ -22,3 +22,19 @@ func IsPodReady(ctx context.Context, k8sClient client.Client, listOptions client
 	}
 	return true, nil
 }
+
+func HasContainer(ctx context.Context, k8sClient client.Client, listOptions client.ListOptions, containerName string) (bool, error) {
+	var pods corev1.PodList
+	err := k8sClient.List(ctx, &pods, &listOptions)
+	if err != nil {
+		return false, err
+	}
+	for _, pod := range pods.Items {
+		for _, container := range pod.Spec.Containers {
+			if container.Name == containerName {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}

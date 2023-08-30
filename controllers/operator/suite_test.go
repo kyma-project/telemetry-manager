@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -72,6 +73,8 @@ var _ = BeforeSuite(func() {
 
 	err = operatorv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
+	err = telemetryv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
 
@@ -100,8 +103,22 @@ var _ = BeforeSuite(func() {
 	webhookConfig := telemetry.WebhookConfig{
 		Enabled: false,
 	}
+	config := telemetry.Config{
+		Traces: telemetry.TracesConfig{
+			OTLPServiceName: "traceFoo",
+			Namespace:       "kyma-system",
+		},
+		Metrics: telemetry.MetricsConfig{
+			OTLPServiceName: "metricFoo",
+			Namespace:       "kyma-system",
+		},
+		Webhook: webhookConfig,
+	}
 	client := mgr.GetClient()
-	telemetryReconciler := telemetry.NewReconciler(client, mgr.GetScheme(), mgr.GetEventRecorderFor("dummy"), webhookConfig)
+
+	telemetryReconciler := NewTelemetryReconciler(client,
+		telemetry.NewReconciler(client, mgr.GetScheme(), config),
+		config)
 	err = telemetryReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
