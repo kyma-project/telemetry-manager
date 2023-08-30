@@ -1,6 +1,8 @@
 package log
 
 import (
+	"strings"
+
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -75,6 +77,19 @@ func (p *Pipeline) WithHTTPOutput() *Pipeline {
 				SkipCertificateValidation: true,
 			},
 		},
+	}
+	return p
+}
+
+func (p *Pipeline) WithCustomOutput(host string) *Pipeline {
+	const customOutputTemplate = `
+name               http
+port               9880
+host               {{ HOST }}
+format             json`
+	customOutput := strings.Replace(customOutputTemplate, "{{ HOST }}", host, 1)
+	p.output = telemetry.Output{
+		Custom: customOutput,
 	}
 	return p
 }
