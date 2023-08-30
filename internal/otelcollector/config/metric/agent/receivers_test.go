@@ -38,19 +38,62 @@ func TestReceivers(t *testing.T) {
 	})
 
 	t.Run("prometheus input enabled", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
-		}, false)
+		tests := []struct {
+			name                      string
+			istioActive               bool
+			expectedPodScrapeJobs     []string
+			expectedServiceScrapeJobs []string
+		}{
+			{
+				name: "istio not active",
+				expectedPodScrapeJobs: []string{
+					"app-pods",
+				},
+				expectedServiceScrapeJobs: []string{
+					"app-services",
+				},
+			},
+			{
+				name:        "istio active",
+				istioActive: true,
+				expectedPodScrapeJobs: []string{
+					"app-pods",
+					"app-pods-secure",
+				},
+				expectedServiceScrapeJobs: []string{
+					"app-services",
+					"app-services-secure",
+				},
+			},
+		}
 
-		require.Nil(t, collectorConfig.Receivers.KubeletStats)
-		require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
-		require.NotNil(t, collectorConfig.Receivers.PrometheusSelf)
-		require.Len(t, collectorConfig.Receivers.PrometheusSelf.Config.ScrapeConfigs, 1)
-		require.Len(t, collectorConfig.Receivers.PrometheusSelf.Config.ScrapeConfigs[0].StaticDiscoveryConfigs, 1)
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+					testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
+				}, tt.istioActive)
 
-		require.NotNil(t, collectorConfig.Receivers.PrometheusAppPods)
-		require.Len(t, collectorConfig.Receivers.PrometheusAppPods.Config.ScrapeConfigs, 1)
-		require.Len(t, collectorConfig.Receivers.PrometheusAppPods.Config.ScrapeConfigs[0].KubernetesDiscoveryConfigs, 1)
+				receivers := collectorConfig.Receivers
+
+				require.Nil(t, receivers.KubeletStats)
+				require.Nil(t, receivers.PrometheusIstio)
+				require.NotNil(t, receivers.PrometheusSelf)
+				require.Len(t, receivers.PrometheusSelf.Config.ScrapeConfigs, 1)
+				require.Len(t, receivers.PrometheusSelf.Config.ScrapeConfigs[0].StaticDiscoveryConfigs, 1)
+
+				require.NotNil(t, receivers.PrometheusAppPods)
+				require.Len(t, receivers.PrometheusAppPods.Config.ScrapeConfigs, len(tt.expectedPodScrapeJobs))
+				for i := range receivers.PrometheusAppPods.Config.ScrapeConfigs {
+					require.Equal(t, tt.expectedPodScrapeJobs[i], receivers.PrometheusAppPods.Config.ScrapeConfigs[i].JobName)
+				}
+
+				require.NotNil(t, receivers.PrometheusAppServices)
+				require.Len(t, receivers.PrometheusAppServices.Config.ScrapeConfigs, len(tt.expectedServiceScrapeJobs))
+				for i := range receivers.PrometheusAppServices.Config.ScrapeConfigs {
+					require.Equal(t, tt.expectedServiceScrapeJobs[i], receivers.PrometheusAppServices.Config.ScrapeConfigs[i].JobName)
+				}
+			})
+		}
 	})
 
 	t.Run("istio input enabled", func(t *testing.T) {
