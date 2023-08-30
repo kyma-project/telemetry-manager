@@ -16,6 +16,7 @@ type Pipeline struct {
 	keepAnnotations  bool
 	dropLabels       bool
 	output           telemetry.Output
+	filters          []telemetry.Filter
 }
 
 func NewPipeline(name string) *Pipeline {
@@ -94,6 +95,13 @@ format             json`
 	return p
 }
 
+func (p *Pipeline) WithFilter(filter string) *Pipeline {
+	p.filters = append(p.filters, telemetry.Filter{
+		Custom: filter,
+	})
+	return p
+}
+
 func (p *Pipeline) K8sObject() *telemetry.LogPipeline {
 
 	return &telemetry.LogPipeline{
@@ -111,7 +119,8 @@ func (p *Pipeline) K8sObject() *telemetry.LogPipeline {
 					DropLabels:      p.dropLabels,
 				},
 			},
-			Output: p.output,
+			Output:  p.output,
+			Filters: p.filters,
 		},
 	}
 }
