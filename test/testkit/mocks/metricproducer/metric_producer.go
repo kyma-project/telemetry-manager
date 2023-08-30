@@ -1,13 +1,14 @@
 package metricproducer
 
 import (
+	"strconv"
+
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"golang.org/x/exp/maps"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"strconv"
 )
 
 type Metric struct {
