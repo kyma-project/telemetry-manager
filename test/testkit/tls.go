@@ -8,53 +8,104 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
+	"net"
 	"time"
 )
 
-func GenerateTLSCerts() (string, string, string, error) {
-	// trace-tls-receiver.trace-mocks-tls-pipeline.svc.cluster.local
-	now := time.Now()
-	template := &x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			CommonName: "kyma.telemetry.com",
-		},
-		NotBefore:             now,
-		NotAfter:              now.AddDate(0, 0, 1), // Valid for one day
+type TLSCerts struct {
+	CaCertPem     bytes.Buffer
+	ServerCertPem bytes.Buffer
+	ServerKeyPem  bytes.Buffer
+	ClientCertPem bytes.Buffer
+	ClientKeyPem  bytes.Buffer
+}
+
+// helper function to create a cert template with a serial number and other required fields
+func certTemplate(serialNumber int64) *x509.Certificate {
+	return &x509.Certificate{
+		SerialNumber:          big.NewInt(serialNumber),
+		Subject:               pkix.Name{Organization: []string{"Kyma E2E Test"}},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(time.Hour),
 		BasicConstraintsValid: true,
-		IsCA:                  true,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		KeyUsage: x509.KeyUsageKeyEncipherment |
-			x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 	}
+}
 
-	certPrivKey, err := rsa.GenerateKey(rand.Reader, 2048)
+func GenerateTLSCerts(serverDNSName string) (TLSCerts, error) {
+	var certs TLSCerts
+
+	// CA Certificate
+	caPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return "", "", "", err
+		return certs, err
 	}
 
-	certBytes, err := x509.CreateCertificate(rand.Reader, template, template, certPrivKey.Public(), certPrivKey)
+	caTemplate := certTemplate(1)
+	caTemplate.IsCA = true
+	caTemplate.KeyUsage = x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature
+	caTemplate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
+	caTemplate.IPAddresses = []net.IP{net.ParseIP("127.0.0.1")}
+
+	caCertBytes, err := x509.CreateCertificate(rand.Reader, caTemplate, caTemplate, caPrivateKey.Public(), caPrivateKey)
 	if err != nil {
-		return "", "", "", err
+		return certs, err
 	}
 
-	certPEM := new(bytes.Buffer)
-	err = pem.Encode(certPEM, &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: certBytes,
-	})
+	err = pem.Encode(&certs.CaCertPem, &pem.Block{Type: "CERTIFICATE", Bytes: caCertBytes})
 	if err != nil {
-		return "", "", "", err
+		return certs, err
 	}
 
-	certPrivKeyPEM := new(bytes.Buffer)
-	err = pem.Encode(certPrivKeyPEM, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
-	})
+	// Server Certificate (signed by CA certificate)
+	serverPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return "", "", "", err
+		return certs, err
 	}
 
-	return certPEM.String(), certPrivKeyPEM.String(), "", nil
+	err = pem.Encode(&certs.ServerKeyPem, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(serverPrivateKey)})
+	if err != nil {
+		return certs, err
+	}
+
+	serverTemplate := certTemplate(2)
+	serverTemplate.KeyUsage = x509.KeyUsageDigitalSignature
+	serverTemplate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
+	serverTemplate.DNSNames = []string{serverDNSName}
+
+	serverBytes, err := x509.CreateCertificate(rand.Reader, serverTemplate, caTemplate, serverPrivateKey.Public(), caPrivateKey)
+	if err != nil {
+		return certs, err
+	}
+
+	err = pem.Encode(&certs.ServerCertPem, &pem.Block{Type: "CERTIFICATE", Bytes: serverBytes})
+	if err != nil {
+		return certs, err
+	}
+
+	// Client Certificate (signed by CA certificate)
+	clientPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return certs, err
+	}
+
+	err = pem.Encode(&certs.ClientKeyPem, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(clientPrivateKey)})
+	if err != nil {
+		return certs, err
+	}
+
+	clientTemplate := certTemplate(3)
+	serverTemplate.KeyUsage = x509.KeyUsageDigitalSignature
+	serverTemplate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
+
+	clientCertBytes, err := x509.CreateCertificate(rand.Reader, clientTemplate, caTemplate, clientPrivateKey.Public(), caPrivateKey)
+	if err != nil {
+		return certs, err
+	}
+
+	err = pem.Encode(&certs.ClientCertPem, &pem.Block{Type: "CERTIFICATE", Bytes: clientCertBytes})
+	if err != nil {
+		return certs, err
+	}
+
+	return certs, nil
 }

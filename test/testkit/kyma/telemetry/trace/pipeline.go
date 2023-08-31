@@ -28,18 +28,18 @@ func NewPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
 	}
 }
 
-func (p *Pipeline) WithTLS(certPem, keyPem, caPem string) *Pipeline {
+func (p *Pipeline) WithTLS(caCertPem, clientCertPem, clientKeyPem string) *Pipeline {
 	p.tls = &telemetry.OtlpTLS{
 		Insecure:           false,
 		InsecureSkipVerify: false,
 		CA: telemetry.ValueType{
-			Value: caPem,
+			Value: caCertPem,
 		},
 		Cert: telemetry.ValueType{
-			Value: certPem,
+			Value: clientCertPem,
 		},
 		Key: telemetry.ValueType{
-			Value: keyPem,
+			Value: clientKeyPem,
 		},
 	}
 	return p

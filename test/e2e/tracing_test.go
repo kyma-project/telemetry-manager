@@ -62,11 +62,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		})
 
 		It("Should have a running trace gateway deployment", Label(operationalTest), func() {
-			Eventually(func(g Gomega) {
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, traceGatewayName)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout, interval).Should(Succeed())
+			deploymentShouldBeReady(traceGatewayBaseName, kymaSystemNamespaceName)
 		})
 
 		It("Should have 2 trace gateway replicas", func() {
@@ -97,7 +93,6 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		It("Should verify end-to-end trace delivery", Label(operationalTest), func() {
 			traceID, spanIDs, attrs := makeAndSendTraces(urls.OTLPPush())
 			tracesShouldBeDelivered(urls.MockBackendExport(), traceID, spanIDs, attrs)
-
 		})
 
 		It("Should have a working network policy", func() {
@@ -332,20 +327,21 @@ func makeTracingTestK8sObjects(namespace string, withTLS bool, mockDeploymentNam
 	objs = append(objs, mocksNamespace.K8sObject())
 
 	for i, mockDeploymentName := range mockDeploymentNames {
-		var certPem string
-		var keyPem string
-		var caPem string
+		var certs testkit.TLSCerts
 
 		//// Mocks namespace objects.
 		mockBackend := mocks.NewBackend(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
 		var mockBackendDeployment *mocks.BackendDeployment
+
 		if withTLS {
 			var err error
-			certPem, keyPem, caPem, err = testkit.GenerateTLSCerts()
+			backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", mockDeploymentName, mocksNamespace.Name())
+			certs, err = testkit.GenerateTLSCerts(backendDNSName)
 			if err != nil {
 				log.Println(fmt.Sprintf("could not create TLS certs: %v", err))
 			}
-			mockBackendConfigMap := mockBackend.TLSBackendConfigMap(suffixize("trace-receiver-config", i), certPem, keyPem, caPem)
+			mockBackendConfigMap := mockBackend.TLSBackendConfigMap(suffixize("trace-receiver-config", i),
+				certs.ServerCertPem.String(), certs.ServerKeyPem.String(), certs.CaCertPem.String())
 			mockBackendDeployment = mockBackend.Deployment(mockBackendConfigMap.Name())
 			objs = append(objs, mockBackendConfigMap.K8sObject())
 		} else {
@@ -364,7 +360,7 @@ func makeTracingTestK8sObjects(namespace string, withTLS bool, mockDeploymentNam
 		hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("trace-host", otlpEndpointURL)).Persistent(isOperational())
 		tracePipeline := kittrace.NewPipeline(fmt.Sprintf("%s-%s", mockDeploymentName, "pipeline"), hostSecret.SecretKeyRef("trace-host")).Persistent(isOperational())
 		if withTLS {
-			tracePipeline = tracePipeline.WithTLS(certPem, keyPem, caPem)
+			tracePipeline = tracePipeline.WithTLS(certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String())
 		}
 		pipelines.Append(tracePipeline.Name())
 
@@ -422,7 +418,7 @@ func tracePipelineShouldStayPending(pipelineName string) {
 func tracePipelineShouldBeDeployed(pipelineName string) {
 	Eventually(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
-		key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
+		key := types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
 		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
@@ -433,7 +429,7 @@ func tracePipelineShouldBeDeployed(pipelineName string) {
 func tracePipelineShouldNotBeDeployed(pipelineName string) {
 	Consistently(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
-		key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
+		key := types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
 		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
