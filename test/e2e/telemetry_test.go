@@ -181,8 +181,8 @@ func testWebhookReconciliation() {
 		Expect(k8sClient.Delete(ctx, &validatingWebhookConfiguration)).Should(Succeed())
 	})
 
-	var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
 	Eventually(func(g Gomega) {
+		var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
 		g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 		g.Expect(validatingWebhookConfiguration.UID).ShouldNot(Equal(oldUID))
 	}, timeout, interval).Should(Succeed())
