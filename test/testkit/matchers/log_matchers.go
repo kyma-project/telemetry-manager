@@ -106,15 +106,31 @@ func WithAttributeKeys(expectedKeys ...string) LogFilter {
 	}
 }
 
-func WithKubernetesLabels() LogFilter {
+func WithKubernetesLabels(keysAndValues ...string) LogFilter {
 	return func(lr plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 		if !hasKubernetesAttrs {
 			return false
 		}
+		labels, hasLabels := kubernetesAttrs.Get("labels")
+		lenKV := len(keysAndValues)
+		if lenKV == 0 {
+			return hasLabels
+		}
 
-		_, hasLabels := kubernetesAttrs.Get("labels")
-		return hasLabels
+		if lenKV%2 != 0 {
+			panic(fmt.Sprintf("no value matching a key: %s", keysAndValues[lenKV-1]))
+		}
+
+		labelsMap := labels.Map()
+		for i := 0; i < lenKV; i += 2 {
+			k, v := keysAndValues[i], keysAndValues[i+1]
+			value, exists := labelsMap.Get(k)
+			if !exists && value.AsString() != v {
+				return false
+			}
+		}
+		return true
 	}
 }
 
