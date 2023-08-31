@@ -3,7 +3,10 @@
 package istio
 
 import (
+	"fmt"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/curljob"
 	"net/http"
+	"strings"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -100,15 +103,6 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 		})
 
 		It("Should have istio-proxy traces in the backend", func() {
-			By("Sending http requests", func() {
-				for i := 0; i < 100; i++ {
-					Eventually(func(g Gomega) {
-						resp, err := proxyClient.Get(urls.MetricPodURL())
-						g.Expect(err).NotTo(HaveOccurred())
-						g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-					}, timeout, interval).Should(Succeed())
-				}
-			})
 
 			// Identify istio-proxy traces by component=proxy attribute
 			attrs := pcommon.NewMap()
@@ -162,15 +156,20 @@ func makeIstioTracingK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) 
 	urls.SetMetrics(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", httpMetricsPort))
 
 	// Abusing metrics provider for istio traces
-	sampleApp := metricproducer.New(sampleAppNs)
+	sampleApp := metricproducer.New(sampleAppNs, "sample-producer")
+	sampleCurl := curljob.New("sample-curl", sampleAppNs)
+
+	sampleCurl.SetURL(fmt.Sprintf("http://%s.%s:%d/%s", sampleApp.Name(), sampleAppNs, sampleApp.MetricsPort(), strings.TrimLeft(sampleApp.MetricsEndpoint(), "/")))
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
 		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		sampleApp.Pod().K8sObject(),
+		sampleApp.Service().K8sObject(),
 		hostSecret.K8sObject(),
 		istioTracePipeline.K8sObject(),
+		sampleCurl.K8sObject(),
 		traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")),
 	}...)
 	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)

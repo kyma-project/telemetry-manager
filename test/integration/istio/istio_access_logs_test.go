@@ -3,7 +3,10 @@
 package istio
 
 import (
+	"fmt"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/curljob"
 	"net/http"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -72,14 +75,6 @@ var _ = Describe("Istio access logs", Label("logging"), func() {
 			}, timeout, interval).Should(BeTrue())
 		})
 
-		It("Should invoke the metrics endpoint to generate access logs", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MetricPodURL())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-			}, timeout, interval).Should(Succeed())
-		})
-
 		It("Should verify istio logs are present", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
@@ -127,6 +122,9 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 
 	// Abusing metrics provider for istio access logs
 	sampleApp := metricproducer.New(sampleAppNs, "metric-producer")
+	sampleCurl := curljob.New("sample-curl", sampleAppNs)
+
+	sampleCurl.SetURL(fmt.Sprintf("http://%s.%s:%d/%s", sampleApp.Name(), sampleAppNs, sampleApp.MetricsPort(), strings.TrimLeft(sampleApp.MetricsEndpoint(), "/")))
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
@@ -135,6 +133,8 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
 		sampleApp.Pod().K8sObject(),
 		hostSecret.K8sObject(),
+		sampleCurl.K8sObject(),
+		sampleApp.Service().K8sObject(),
 		istioAccessLogsPipeline.K8sObjectHTTP(),
 	}...)
 	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockHTTPBackend.Name(), telemetryDataFilename, httpWebPort), 0)
