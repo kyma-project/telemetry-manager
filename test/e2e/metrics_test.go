@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -29,9 +28,8 @@ import (
 )
 
 var (
-	metricGatewayBaseName               = "telemetry-metric-gateway"
-	maxNumberOfMetricPipelines          = 3
-	metricPipelineReconciliationTimeout = 10 * time.Second
+	metricGatewayBaseName      = "telemetry-metric-gateway"
+	maxNumberOfMetricPipelines = 3
 )
 
 var _ = Describe("Metrics", Label("metrics"), func() {
@@ -222,7 +220,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 				var deployment appsv1.Deployment
 				key := types.NamespacedName{Name: "telemetry-metric-gateway", Namespace: "kyma-system"}
 				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
-			}, metricPipelineReconciliationTimeout, interval).ShouldNot(Succeed())
+			}, reconciliationTimeout, interval).ShouldNot(Succeed())
 		})
 
 		It("Should have running metricpipeline", func() {
@@ -441,7 +439,7 @@ func metricPipelineShouldStayPending(pipelineName string) {
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)).To(BeFalse())
-	}, metricPipelineReconciliationTimeout, interval).Should(Succeed())
+	}, reconciliationTimeout, interval).Should(Succeed())
 }
 
 func addCumulativeToDeltaConversion(metricPipeline telemetryv1alpha1.MetricPipeline) {
@@ -467,7 +465,7 @@ func metricPipelineShouldNotBeDeployed(pipelineName string) {
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return !strings.Contains(configString, pipelineAlias)
-	}, metricPipelineReconciliationTimeout, interval).Should(BeTrue())
+	}, reconciliationTimeout, interval).Should(BeTrue())
 }
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.

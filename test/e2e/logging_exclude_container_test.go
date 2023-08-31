@@ -4,7 +4,6 @@ package e2e
 
 import (
 	"net/http"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -73,7 +72,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					Not(ContainLogs(WithContainer("log-spammer"))))))
-			}, 20*time.Second, interval).Should(Succeed())
+			}, telemetryDeliveryTimeout, interval).Should(Succeed())
 		})
 
 	})
