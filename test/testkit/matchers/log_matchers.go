@@ -2,12 +2,12 @@ package matchers
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
+	"maps"
+	"strings"
 )
 
 // ConsistOfNumberOfLogs succeeds if the filexporter output file has the expected number of logs.
@@ -106,15 +106,31 @@ func WithAttributeKeys(expectedKeys ...string) LogFilter {
 	}
 }
 
-func WithKubernetesLabels() LogFilter {
+func WithKubernetesLabels(expectedLabels ...map[string]string) LogFilter {
 	return func(lr plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 		if !hasKubernetesAttrs {
 			return false
 		}
+		labels, hasLabels := kubernetesAttrs.Get("labels")
+		if len(expectedLabels) == 0 {
+			return hasLabels
+		}
+		labelsMap := labels.Map()
 
-		_, hasLabels := kubernetesAttrs.Get("labels")
-		return hasLabels
+		for _, l := range expectedLabels {
+			for k, v := range l {
+				value, exists := labelsMap.Get(maps.Equal())
+				if !exists {
+					return false
+				}
+				if value.AsString() != v {
+					return false
+				}
+				return true
+			}
+		}
+		return false
 	}
 }
 
