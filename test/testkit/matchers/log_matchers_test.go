@@ -225,23 +225,28 @@ var _ = Describe("WithAttributeKeys", func() {
 })
 
 var _ = Describe("WithKubernetesLabels", func() {
-	It("should succeed if the log record has kubernetes label attributes", func() {
+	It("should succeed if the log record has the expected kubernetes label attributes", func() {
 		ld := plog.NewLogs()
 		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 		k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
-		k8sAttrs.PutEmptyMap("labels").PutStr("env", "prod")
+		k8sAttrs.PutEmptyMap("labels")
+		labels, _ := k8sAttrs.Get("labels")
+		labelsMap := labels.Map()
+		labelsMap.PutStr("app", "test-app")
+		labelsMap.PutStr("env", "test-env")
 
-		logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
-
-		Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithKubernetesLabels()))
+		Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithKubernetesLabels(map[string]string{
+			"app": "test-app",
+			"env": "test-env",
+		})))
 	})
 
-	It("should fail if the log record does not have kubernetes label attributes", func() {
+	It("should fail if the log record does not have  the expected kubernetes label attributes", func() {
 		ld := plog.NewLogs()
 		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 		logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 
-		Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithKubernetesLabels()))
+		Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithKubernetesLabels(map[string]string{"env": "prod"})))
 	})
 })
 
@@ -251,8 +256,6 @@ var _ = Describe("WithKubernetesAnnotations", func() {
 		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 		k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 		k8sAttrs.PutEmptyMap("annotations").PutStr("prometheus.io/scrape", "true")
-
-		logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 
 		Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithKubernetesAnnotations()))
 	})

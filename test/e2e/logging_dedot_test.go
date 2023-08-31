@@ -1,3 +1,5 @@
+//go:build e2e
+
 package e2e
 
 import (
@@ -17,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 )
 
-var _ = Describe("Logging", Label("logging1"), func() {
+var _ = Describe("Logging", Label("logging"), func() {
 	Context("dedot labels", Ordered, func() {
 		var (
 			urls               *urlprovider.URLProvider
@@ -56,7 +58,9 @@ var _ = Describe("Logging", Label("logging1"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogs(WithKubernetesLabels("dedot_label", "logging-dedot-value"))),
+					ContainLogs(WithKubernetesLabels(map[string]string{
+						"dedot_label": "logging-dedot-value",
+					}))),
 				))
 			}, timeout, interval).Should(Succeed())
 		})

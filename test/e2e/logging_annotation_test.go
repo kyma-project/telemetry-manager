@@ -66,7 +66,9 @@ var _ = Describe("Logging", Label("logging"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainLogs(WithKubernetesAnnotations()),
-					Not(ContainLogs(WithKubernetesLabels())),
+					Not(ContainLogs(WithKubernetesLabels(map[string]string{
+						"app": "logging-annotation-test",
+					}))),
 				)))
 			}, telemetryDeliveryTimeout, interval).Should(Succeed())
 		})

@@ -106,27 +106,26 @@ func WithAttributeKeys(expectedKeys ...string) LogFilter {
 	}
 }
 
-func WithKubernetesLabels(keysAndValues ...string) LogFilter {
+// checks if all the labels in the expectedLabels map exist in the log record
+func WithKubernetesLabels(expectedLabels map[string]string) LogFilter {
 	return func(lr plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 		if !hasKubernetesAttrs {
 			return false
 		}
-		labels, hasLabels := kubernetesAttrs.Get("labels")
-		lenKV := len(keysAndValues)
-		if lenKV == 0 {
-			return hasLabels
-		}
 
-		if lenKV%2 != 0 {
-			panic(fmt.Sprintf("no value matching a key: %s", keysAndValues[lenKV-1]))
+		labels, hasLabels := kubernetesAttrs.Get("labels")
+		if !hasLabels {
+			return len(expectedLabels) == 0
 		}
 
 		labelsMap := labels.Map()
-		for i := 0; i < lenKV; i += 2 {
-			k, v := keysAndValues[i], keysAndValues[i+1]
-			value, exists := labelsMap.Get(k)
-			if !exists && value.AsString() != v {
+		for expectedKey, expectedValue := range expectedLabels {
+			value, exists := labelsMap.Get(expectedKey)
+			if !exists {
+				return false
+			}
+			if value.AsString() != expectedValue {
 				return false
 			}
 		}
