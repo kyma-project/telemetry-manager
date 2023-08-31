@@ -14,7 +14,7 @@ import (
 
 var _ = Describe("Logging", Label("logging"), func() {
 
-	Context("Validating webhook", Ordered, func() {
+	Context("When a validating webhook exists", Ordered, func() {
 
 		BeforeAll(func() {
 			Eventually(func(g Gomega) {
@@ -24,12 +24,12 @@ var _ = Describe("Logging", Label("logging"), func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should reject LogPipeline with unknown custom filter", func() {
+		It("Should reject a logpipeline with unknown custom filter", func() {
 			logPipeline := kitlog.NewPipeline("unknown-custom-filter-pipeline").WithStdout().WithFilter("Name unknown")
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipeline.K8sObject())).ShouldNot(Succeed())
 		})
 
-		It("Should reject LogPipeline with denied custom filter", func() {
+		It("Should reject a logpipeline with denied custom filter", func() {
 			logPipeline := kitlog.NewPipeline("denied-custom-filter-pipeline").WithStdout().WithFilter("Name kubernetes")
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipeline.K8sObject())).ShouldNot(Succeed())
 		})
