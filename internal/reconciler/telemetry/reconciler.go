@@ -144,7 +144,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 		return nil
 	}
 
-	if !telemetry.DeletionTimestamp.IsZero() {
+	if !telemetry.DeletionTimestamp.IsZero() && !r.dependentCRsFound(ctx) {
 		return nil
 	}
 
