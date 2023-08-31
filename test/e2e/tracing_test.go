@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -34,9 +33,8 @@ import (
 )
 
 var (
-	traceGatewayBaseName               = "telemetry-trace-collector"
-	maxNumberOfTracePipelines          = 3
-	tracePipelineReconciliationTimeout = 10 * time.Second
+	traceGatewayBaseName      = "telemetry-trace-collector"
+	maxNumberOfTracePipelines = 3
 )
 
 var _ = Describe("Tracing", Label("tracing"), func() {
@@ -137,7 +135,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 				var deployment appsv1.Deployment
 				key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
 				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
-			}, tracePipelineReconciliationTimeout, interval).ShouldNot(Succeed())
+			}, reconciliationTimeout, interval).ShouldNot(Succeed())
 		})
 
 		It("Should have running tracepipeline", func() {
@@ -310,6 +308,46 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 	})
 })
 
+func tracePipelineShouldBeRunning(pipelineName string) {
+	Eventually(func(g Gomega) bool {
+		var pipeline telemetryv1alpha1.TracePipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		return pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning)
+	}, timeout, interval).Should(BeTrue())
+}
+
+func tracePipelineShouldStayPending(pipelineName string) {
+	Consistently(func(g Gomega) {
+		var pipeline telemetryv1alpha1.TracePipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning)).To(BeFalse())
+	}, reconciliationTimeout, interval).Should(Succeed())
+}
+
+func tracePipelineShouldBeDeployed(pipelineName string) {
+	Eventually(func(g Gomega) bool {
+		var collectorConfig corev1.ConfigMap
+		key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
+		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
+		configString := collectorConfig.Data["relay.conf"]
+		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
+		return strings.Contains(configString, pipelineAlias)
+	}, timeout, interval).Should(BeTrue())
+}
+
+func tracePipelineShouldNotBeDeployed(pipelineName string) {
+	Consistently(func(g Gomega) bool {
+		var collectorConfig corev1.ConfigMap
+		key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
+		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
+		configString := collectorConfig.Data["relay.conf"]
+		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
+		return !strings.Contains(configString, pipelineAlias)
+	}, reconciliationTimeout, interval).Should(BeTrue())
+}
+
 // makeTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
 func makeTracingTestK8sObjects(namespace string, withTLS bool, mockDeploymentNames ...string) ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
 	var (
@@ -395,46 +433,6 @@ func makeBrokenTracePipeline(name string) ([]client.Object, string) {
 		hostSecret.K8sObject(),
 		tracePipeline.K8sObject(),
 	}, tracePipeline.Name()
-}
-
-func tracePipelineShouldBeRunning(pipelineName string) {
-	Eventually(func(g Gomega) bool {
-		var pipeline telemetryv1alpha1.TracePipeline
-		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		return pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning)
-	}, timeout, interval).Should(BeTrue())
-}
-
-func tracePipelineShouldStayPending(pipelineName string) {
-	Consistently(func(g Gomega) {
-		var pipeline telemetryv1alpha1.TracePipeline
-		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning)).To(BeFalse())
-	}, tracePipelineReconciliationTimeout, interval).Should(Succeed())
-}
-
-func tracePipelineShouldBeDeployed(pipelineName string) {
-	Eventually(func(g Gomega) bool {
-		var collectorConfig corev1.ConfigMap
-		key := types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
-		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
-		configString := collectorConfig.Data["relay.conf"]
-		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
-		return strings.Contains(configString, pipelineAlias)
-	}, timeout, interval).Should(BeTrue())
-}
-
-func tracePipelineShouldNotBeDeployed(pipelineName string) {
-	Consistently(func(g Gomega) bool {
-		var collectorConfig corev1.ConfigMap
-		key := types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
-		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
-		configString := collectorConfig.Data["relay.conf"]
-		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
-		return !strings.Contains(configString, pipelineAlias)
-	}, tracePipelineReconciliationTimeout, interval).Should(BeTrue())
 }
 
 func deploymentShouldBeReady(name, namespace string) {

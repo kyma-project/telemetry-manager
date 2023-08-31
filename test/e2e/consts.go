@@ -7,8 +7,10 @@ import (
 )
 
 const (
-	timeout  = time.Second * 60
-	interval = time.Millisecond * 250
+	timeout                  = time.Second * 60
+	reconciliationTimeout    = time.Second * 10
+	telemetryDeliveryTimeout = time.Second * 20
+	interval                 = time.Millisecond * 250
 
 	// The filename for the OpenTelemetry collector's file exporter.
 	telemetryDataFilename = "otlp-data.jsonl"
