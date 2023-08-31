@@ -16,9 +16,9 @@ type LogProducer struct {
 	parser    string
 }
 
-func New(namespace string) *LogProducer {
+func New(name, namespace string) *LogProducer {
 	return &LogProducer{
-		name:      "log-producer",
+		name:      name,
 		namespace: namespace,
 	}
 }

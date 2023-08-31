@@ -21,17 +21,25 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
+type OutputType string
+
+const (
+	OutputTypeHTTP   = "http"
+	OutputTypeCustom = "custom"
+)
+
 var _ = Describe("Logging", Label("logging"), func() {
 
-	Context("Log delivery to HTTP output", Ordered, func() {
+	Context("When a logpipeline with HTTP output exists", Ordered, func() {
 		var (
 			urls               *urlprovider.URLProvider
 			mockDeploymentName = "log-receiver"
 			mockNs             = "log-http-output"
+			logProducerPodName = "log-producer-http-output"
 		)
 
 		BeforeAll(func() {
-			k8sObjects, logsURLProvider := makeHTTPOutputLogTestK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects, logsURLProvider := makeLogDeliveryTestK8sObjects(mockNs, mockDeploymentName, logProducerPodName, OutputTypeHTTP)
 			urls = logsURLProvider
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -40,28 +48,61 @@ var _ = Describe("Logging", Label("logging"), func() {
 		})
 
 		It("Should have a log backend running", Label("operational"), func() {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout*2, interval).Should(Succeed())
+			logBackendShouldBeRunning(mockDeploymentName, mockNs)
 		})
 
-		It("Should verify end-to-end log delivery", Label("operational"), func() {
+		It("Should verify end-to-end log delivery with http ", Label("operational"), func() {
+			logsShouldBeDelivered(logProducerPodName, urls)
+		})
+	})
 
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogs(Any()))))
-			}, timeout, interval).Should(Succeed())
+	Context("When a logpipeline with custom output exists", Ordered, func() {
+		var (
+			urls               *urlprovider.URLProvider
+			mockDeploymentName = "log-receiver"
+			mockNs             = "log-custom-output"
+			logProducerPodName = "log-producer-custom-output"
+		)
+
+		BeforeAll(func() {
+			k8sObjects, logsURLProvider := makeLogDeliveryTestK8sObjects(mockNs, mockDeploymentName, logProducerPodName, OutputTypeCustom)
+			urls = logsURLProvider
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			})
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have a log backend running", func() {
+			logBackendShouldBeRunning(mockDeploymentName, mockNs)
+		})
+
+		It("Should verify end-to-end log delivery with custom output", func() {
+			logsShouldBeDelivered(logProducerPodName, urls)
 		})
 	})
 })
 
-func makeHTTPOutputLogTestK8sObjects(namespace string, mockDeploymentName string) ([]client.Object, *urlprovider.URLProvider) {
+func logBackendShouldBeRunning(mockDeploymentName, mockNs string) {
+	Eventually(func(g Gomega) {
+		key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
+		ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(ready).To(BeTrue())
+	}, timeout*2, interval).Should(Succeed())
+}
+
+func logsShouldBeDelivered(logProducerPodName string, urls *urlprovider.URLProvider) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(urls.MockBackendExport())
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+			ContainLogs(WithPod(logProducerPodName)))))
+	}, timeout, interval).Should(Succeed())
+}
+
+func makeLogDeliveryTestK8sObjects(namespace string, mockDeploymentName string, logProducerPodName string, outputType OutputType) ([]client.Object, *urlprovider.URLProvider) {
 	var (
 		objs []client.Object
 		urls = urlprovider.New()
@@ -84,12 +125,17 @@ func makeHTTPOutputLogTestK8sObjects(namespace string, mockDeploymentName string
 		WithPort("http-otlp", httpOTLPPort).
 		WithPort("http-web", httpWebPort).
 		WithPort("http-log", httpLogPort)
-	mockLogProducer := logproducer.New(mocksNamespace.Name())
+	mockLogProducer := logproducer.New(logProducerPodName, mocksNamespace.Name())
 
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	logPipeline := kitlog.NewPipeline("http-output-pipeline").WithSecretKeyRef(hostSecret.SecretKeyRef("log-host")).WithHTTPOutput()
+	var logPipeline *kitlog.Pipeline
+	if outputType == OutputTypeHTTP {
+		logPipeline = kitlog.NewPipeline("http-output-pipeline").WithSecretKeyRef(hostSecret.SecretKeyRef("log-host")).WithHTTPOutput()
+	} else {
+		logPipeline = kitlog.NewPipeline("custom-output-pipeline").WithCustomOutput(logEndpointURL)
+	}
 
 	objs = append(objs, []client.Object{
 		mocksNamespace.K8sObject(),

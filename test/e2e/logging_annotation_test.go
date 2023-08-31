@@ -97,7 +97,7 @@ func makeLogsAnnotationTestK8sObjects(namespace string, mockDeploymentName strin
 		WithPort("http-otlp", httpOTLPPort).
 		WithPort("http-web", httpWebPort).
 		WithPort("http-log", httpLogPort)
-	mockLogProducer := logproducer.New(mocksNamespace.Name())
+	mockLogProducer := logproducer.New("log-producer", mocksNamespace.Name())
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))

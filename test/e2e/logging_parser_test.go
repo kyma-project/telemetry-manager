@@ -30,7 +30,7 @@ Types user:string pass:string`
 
 var _ = Describe("Logging", Label("logging"), func() {
 
-	Context("LogParser", Ordered, func() {
+	Context("When a LogParser exists", Ordered, func() {
 		var (
 			urls               *urlprovider.URLProvider
 			mockNs             = "log-parser-mocks"
@@ -103,7 +103,7 @@ func makeLogsRegExTestK8sObjects(namespace string, mockDeploymentName string) ([
 		WithPort("http-otlp", httpOTLPPort).
 		WithPort("http-web", httpWebPort).
 		WithPort("http-log", httpLogPort)
-	mockLogProducer := logproducer.New(mocksNamespace.Name())
+	mockLogProducer := logproducer.New("log-producer", mocksNamespace.Name())
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
