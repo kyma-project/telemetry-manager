@@ -68,7 +68,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 					ContainLogs(WithKubernetesLabels()),
 					Not(ContainLogs(WithKubernetesAnnotations())),
 				)))
-			}, timeout, interval).Should(Succeed())
+			}, telemetryDeliveryTimeout, interval).Should(Succeed())
 		})
 
 	})
