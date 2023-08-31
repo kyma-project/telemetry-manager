@@ -35,7 +35,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 			urls               *urlprovider.URLProvider
 			mockDeploymentName = "log-receiver"
 			mockNs             = "log-http-output"
-			logProducerPodName = "log-producer-http-output"
+			logProducerPodName = "log-producer-http"
 		)
 
 		BeforeAll(func() {
@@ -61,7 +61,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 			urls               *urlprovider.URLProvider
 			mockDeploymentName = "log-receiver"
 			mockNs             = "log-custom-output"
-			logProducerPodName = "log-producer-custom-output"
+			logProducerPodName = "log-producer-custom"
 		)
 
 		BeforeAll(func() {
