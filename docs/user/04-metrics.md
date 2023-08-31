@@ -297,7 +297,7 @@ spec:
 The agent is configured with a generic scrape configuration, which uses annotations to specify the endpoints to scrape in the cluster. 
 You only need to have the annotations in place for metrics ingestion to start automatically.
 
-Put the following annotations either to a service that resolves your metrics port, or directly to the Pod:
+Put the following annotations either to a Service that resolves your metrics port, or directly to the Pod:
 
 ```yaml
 prometheus.io/scrape: "true"   # mandatory to enable automatic scraping
@@ -306,7 +306,7 @@ prometheus.io/port: "1234"     # optional, configure the port under which the me
 prometheus.io/path: /myMetrics # optional, configure the path under which the metrics are exposed
 ```
 
-> **NOTE:** The agent can scrape endpoints even if the workload uses Istio and accepts only mTLS communication.
+> **NOTE:** The agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts only mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
 
 ### Step 5: Activate runtime metrics
 To enable collection of runtime metrics for your Pods, define a MetricPipeline that has the `runtime` section enabled as input:
@@ -374,6 +374,7 @@ The metric gateway setup is based on the following assumptions:
 - An average metric consists of 7 attributes with 64 character length.
 
 This leads to the following limitations:
+
 ### Throughput
 The maximum throughput is 4200 metric/sec ~= 15.000.000 metrics/hour. If more data must be ingested, it can be refused.
 
@@ -384,7 +385,6 @@ For up to 5 minutes, a retry for data is attempted when the destination is unava
 The used buffers are volatile. If the gateway or agent instances crash, metric data can be lost.
 
 ### Multiple MetricPipeline support
-
 Up to three MetricPipeline resources at a time are supported.
 
 ## Troubleshooting

@@ -76,7 +76,10 @@ func MakeSecret(config Config, secretData map[string][]byte) *corev1.Secret {
 
 func MakeDeployment(config Config, configHash string, pipelineCount int, envVarPodIP, envVarNodeName string) *appsv1.Deployment {
 	labels := core.MakeDefaultLabels(config.BaseName)
+	labels["sidecar.istio.io/inject"] = "false"
+
 	annotations := core.MakeCommonPodAnnotations(configHash)
+
 	resources := makeResourceRequirements(config, pipelineCount)
 	affinity := makePodAffinity(labels)
 	podSpec := core.MakePodSpec(config.BaseName, config.Deployment.Image,

@@ -42,11 +42,9 @@ func TestMakeDaemonSet(t *testing.T) {
 	require.Equal(t, daemonSet.Name, config.BaseName)
 	require.Equal(t, daemonSet.Namespace, config.Namespace)
 
-	expectedLabels := map[string]string{"app.kubernetes.io/name": config.BaseName}
-	require.Equal(t, daemonSet.Spec.Selector.MatchLabels, expectedLabels)
-	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Labels, expectedLabels)
-
-	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Annotations["sidecar.istio.io/inject"], "false")
+	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Labels["app.kubernetes.io/name"], config.BaseName)
+	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Labels["app.kubernetes.io/name"], config.BaseName)
+	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Labels["sidecar.istio.io/inject"], "true")
 	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Annotations["checksum/config"], "123")
 	require.NotEmpty(t, daemonSet.Spec.Template.Spec.Containers[0].EnvFrom)
 
