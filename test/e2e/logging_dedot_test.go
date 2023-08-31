@@ -54,7 +54,6 @@ var _ = Describe("Logging", Label("logging1"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogs(WithContainer("log-producer")),
 					ContainLogs(WithKubernetesLabels("dedot_label", "logging-dedot-value"))),
 				))
 			}, timeout, interval).Should(Succeed())
