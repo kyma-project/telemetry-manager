@@ -35,7 +35,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 			urls               *urlprovider.URLProvider
 			mockDeploymentName = "log-receiver"
 			mockNs             = "log-http-output"
-			logProducerPodName = "log-producer-http"
+			logProducerPodName = "log-producer-http-output" //#nosec G101 -- This is a false positive
 		)
 
 		BeforeAll(func() {
@@ -61,7 +61,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 			urls               *urlprovider.URLProvider
 			mockDeploymentName = "log-receiver"
 			mockNs             = "log-custom-output"
-			logProducerPodName = "log-producer-custom"
+			logProducerPodName = "log-producer-custom-output" //#nosec G101 -- This is a false positive
 		)
 
 		BeforeAll(func() {
@@ -96,6 +96,7 @@ func logsShouldBeDelivered(logProducerPodName string, urls *urlprovider.URLProvi
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(urls.MockBackendExport())
 		g.Expect(err).NotTo(HaveOccurred())
+		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 			ContainLogs(WithPod(logProducerPodName)))))
