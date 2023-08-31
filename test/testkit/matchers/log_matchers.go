@@ -6,7 +6,6 @@ import (
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
-	"maps"
 	"strings"
 )
 
@@ -106,31 +105,31 @@ func WithAttributeKeys(expectedKeys ...string) LogFilter {
 	}
 }
 
-func WithKubernetesLabels(expectedLabels ...map[string]string) LogFilter {
+func WithKubernetesLabels(keysAndValues ...string) LogFilter {
 	return func(lr plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 		if !hasKubernetesAttrs {
 			return false
 		}
 		labels, hasLabels := kubernetesAttrs.Get("labels")
-		if len(expectedLabels) == 0 {
+		lenKV := len(keysAndValues)
+		if lenKV == 0 {
 			return hasLabels
 		}
-		labelsMap := labels.Map()
 
-		for _, l := range expectedLabels {
-			for k, v := range l {
-				value, exists := labelsMap.Get(maps.Equal())
-				if !exists {
-					return false
-				}
-				if value.AsString() != v {
-					return false
-				}
-				return true
+		if lenKV%2 != 0 {
+			panic(fmt.Sprintf("no value matching a key: %s", keysAndValues[lenKV-1]))
+		}
+
+		labelsMap := labels.Map()
+		for i := 0; i < lenKV; i += 2 {
+			k, v := keysAndValues[i], keysAndValues[i+1]
+			value, exists := labelsMap.Get(k)
+			if !exists && value.AsString() != v {
+				return false
 			}
 		}
-		return false
+		return true
 	}
 }
 

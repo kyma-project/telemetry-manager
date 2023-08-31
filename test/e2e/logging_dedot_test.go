@@ -49,15 +49,13 @@ var _ = Describe("Logging", Label("logging1"), func() {
 		})
 		// label foo.bar: value should be represented as foo_bar:value
 		It("Should dedot the labels", func() {
-			//expectedLabels, err := json.Marshal(map[string]string{"dedot_label": "logging-dedot-value"})
-			//Expect(err).NotTo(HaveOccurred())
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainLogs(WithContainer("log-producer")),
-					ContainLogs(WithKubernetesLabels(map[string]string{"dedot_label": "logging-dedot-value"}))),
+					ContainLogs(WithKubernetesLabels("dedot_label", "logging-dedot-value"))),
 				))
 			}, timeout, interval).Should(Succeed())
 		})
