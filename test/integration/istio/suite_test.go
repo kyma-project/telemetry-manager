@@ -49,7 +49,7 @@ var (
 
 func TestE2e(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "E2e Suite")
+	RunSpecs(t, "Istio Integration Suite")
 }
 
 var _ = BeforeSuite(func() {

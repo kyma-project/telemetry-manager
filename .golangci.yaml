@@ -127,6 +127,9 @@ issues:
       path: internal/reconciler/tracepipeline/reconciler_test.go
     - linters: [ dupl ]
       path: test/testkit/matchers/(log|metric|trace)_matchers.go
+      # Unify components checkers after getting rid of custom conditions in favor of metav1.Conditions
+    - linters: [ dupl ]
+      path: internal/reconciler/telemetry/(log|metric|trace)_components_checker.go
     - linters: [ dupl ]
       path: main.go
     - linters: [ errcheck ]

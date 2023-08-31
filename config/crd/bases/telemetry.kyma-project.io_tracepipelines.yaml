@@ -182,7 +182,9 @@ spec:
                         description: Defines TLS options for the OTLP output.
                         properties:
                           ca:
-                            description: Defines the CA certificate.
+                            description: Defines an optional CA certificate for server
+                              certificate verification when using TLS. The certificate
+                              needs to be provided in PEM format.
                             properties:
                               value:
                                 description: Value that can contain references to
@@ -205,7 +207,9 @@ spec:
                                 type: object
                             type: object
                           cert:
-                            description: Defines the client certificate.
+                            description: Defines a client certificate to use when
+                              using TLS. The certificate needs to be provided in PEM
+                              format.
                             properties:
                               value:
                                 description: Value that can contain references to
@@ -232,10 +236,12 @@ spec:
                               instead of TLS.
                             type: boolean
                           insecureSkipVerify:
-                            description: Defines whether to skip TLS certificate verification.
+                            description: Defines whether to skip server certificate
+                              verification when using TLS.
                             type: boolean
                           key:
-                            description: Defines the client key.
+                            description: Defines the client key to use when using
+                              TLS. The key needs to be provided in PEM format.
                             properties:
                               value:
                                 description: Value that can contain references to
@@ -257,8 +263,6 @@ spec:
                                     type: object
                                 type: object
                             type: object
-                        required:
-                        - insecure
                         type: object
                     required:
                     - endpoint

@@ -50,14 +50,14 @@ type Header struct {
 
 type OtlpTLS struct {
 	// Defines whether to send requests using plaintext instead of TLS.
-	Insecure bool `json:"insecure"`
-	// Defines whether to skip TLS certificate verification.
+	Insecure bool `json:"insecure,omitempty"`
+	// Defines whether to skip server certificate verification when using TLS.
 	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
-	// Defines the CA certificate.
+	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate needs to be provided in PEM format.
 	CA ValueType `json:"ca,omitempty"`
-	// Defines the client certificate.
+	// Defines a client certificate to use when using TLS. The certificate needs to be provided in PEM format.
 	Cert ValueType `json:"cert,omitempty"`
-	// Defines the client key.
+	// Defines the client key to use when using TLS. The key needs to be provided in PEM format.
 	Key ValueType `json:"key,omitempty"`
 }
 
