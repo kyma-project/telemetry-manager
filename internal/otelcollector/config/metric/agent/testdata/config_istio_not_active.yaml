@@ -74,7 +74,7 @@ receivers:
                     - source_labels: [__meta_kubernetes_pod_container_name]
                       regex: (istio-proxy)
                       action: drop
-                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
                       regex: (https)
                       action: drop
                     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
