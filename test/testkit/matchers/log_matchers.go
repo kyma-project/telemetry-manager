@@ -2,11 +2,12 @@ package matchers
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
-	"strings"
 )
 
 // ConsistOfNumberOfLogs succeeds if the filexporter output file has the expected number of logs.
