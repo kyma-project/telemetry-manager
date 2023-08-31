@@ -299,14 +299,14 @@ You only need to have the annotations in place for metrics ingestion to start au
 
 Put the following annotations either to a Service that resolves your metrics port, or directly to the Pod:
 
-```yaml
-prometheus.io/scrape: "true"   # mandatory to enable automatic scraping
-prometheus.io/scheme: https    # optional, default is "http" if no Istio sidecar is used. When using a sidecar (Pod has label `security.istio.io/tlsMode=istio`), the default is "https". Use "https" to scrape workloads using Istio client certificates.
-prometheus.io/port: "1234"     # optional, configure the port under which the metrics are exposed
-prometheus.io/path: /myMetrics # optional, configure the path under which the metrics are exposed
-```
+| Annotation Key         | Example Values    | Default Value | Description                                                                                                                                                                                                                                                                                                                                 |
+|------------------------|-------------------|--------------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `prometheus.io/scrape` | `true`, `false` | None (mandatory) | Controls whether Prometheus will automatically scrape metrics from this target.                                                                                                                                                                                                                                                             |
+| `prometheus.io/port`   | `8080`, `9100` | None (mandatory) | Specifies the port where the metrics are exposed.                                                                                                                                                                                                                                                                                           |
+| `prometheus.io/path`   | `/metrics`, `/custom_metrics` | `/metrics` | Defines the HTTP path where Prometheus can find metrics data.                                                                                                                                                                                                                                                                               |
+| `prometheus.io/scheme` | `http`, `https` | If Istio is active, `https` is supported; otherwise, only `http` is available. The default scheme is `http` unless an Istio sidecar is present, denoted by the label `security.istio.io/tlsMode=istio`, in which case `https` becomes the default. | Determines the protocol used for scraping metrics — either HTTPS with mTLS or plain HTTP. |
 
-> **NOTE:** The agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts only mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
+> **NOTE:** The agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
 
 ### Step 5: Activate runtime metrics
 To enable collection of runtime metrics for your Pods, define a MetricPipeline that has the `runtime` section enabled as input:
@@ -404,3 +404,14 @@ Up to three MetricPipeline resources at a time are supported.
    1. Check which SDK version you are using for instrumentation. 
    1. Investigate whether it is compatible with the OTel collector version.
    1. If required, upgrade to a supported SDK version.
+
+- Symptom: Custom metrics don't arrive at the destination and the Otel collector produces log entries "Failed to scrpae Prometheus endpoint":
+```
+2023-08-29T09:53:07.123Z	warn	internal/transaction.go:111	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
+```
+
+  Cause: The workload is not configured using 'STRICT' mTLS mode.
+
+  Remedy:
+1. Configure the workload using 'STRICT' mTLS mode (e.g. by applying a corresponding PeerAuthentication).
+1. If it's not possible, set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
