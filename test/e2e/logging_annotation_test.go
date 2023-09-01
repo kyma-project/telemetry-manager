@@ -65,7 +65,9 @@ var _ = Describe("Logging", Label("logging"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogs(WithKubernetesAnnotations()),
+					ContainLogs(WithKubernetesAnnotations(map[string]string{
+						"release": "v1.0.0",
+					})),
 					Not(ContainLogs(WithKubernetesLabels(map[string]string{
 						"app": "logging-annotation-test",
 					}))),
@@ -99,7 +101,10 @@ func makeLogsAnnotationTestK8sObjects(namespace string, mockDeploymentName strin
 		WithPort("http-otlp", httpOTLPPort).
 		WithPort("http-web", httpWebPort).
 		WithPort("http-log", httpLogPort)
-	mockLogProducer := logproducer.New("log-producer", mocksNamespace.Name())
+	mockLogProducer := logproducer.New("log-producer", mocksNamespace.Name()).
+		WithAnnotations(map[string]string{
+			"release": "v1.0.0",
+		})
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))

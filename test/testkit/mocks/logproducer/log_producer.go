@@ -11,9 +11,9 @@ import (
 )
 
 type LogProducer struct {
-	name      string
-	namespace string
-	parser    string
+	name        string
+	namespace   string
+	annotations map[string]string
 }
 
 func New(name, namespace string) *LogProducer {
@@ -23,9 +23,10 @@ func New(name, namespace string) *LogProducer {
 	}
 }
 
-func (lp *LogProducer) WithParser(parser string) *LogProducer {
-	lp.parser = parser
+func (lp *LogProducer) WithAnnotations(annotations map[string]string) *LogProducer {
+	lp.annotations = annotations
 	return lp
+
 }
 
 func (lp *LogProducer) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Deployment {
@@ -42,10 +43,8 @@ func (lp *LogProducer) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Deploymen
 			Selector: &metav1.LabelSelector{MatchLabels: labels},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
-					Annotations: map[string]string{
-						"fluentbit.io/parser": lp.parser,
-					},
+					Labels:      labels,
+					Annotations: lp.annotations,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{

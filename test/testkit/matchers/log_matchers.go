@@ -133,15 +133,30 @@ func WithKubernetesLabels(expectedLabels map[string]string) LogFilter {
 	}
 }
 
-func WithKubernetesAnnotations() LogFilter {
+// checks if all the annotations in the expectedAnnotations map exist in the log record
+func WithKubernetesAnnotations(expectedAnnotations map[string]string) LogFilter {
 	return func(lr plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 		if !hasKubernetesAttrs {
 			return false
 		}
 
-		_, hasAnnotations := kubernetesAttrs.Get("annotations")
-		return hasAnnotations
+		annotations, hasAnnotations := kubernetesAttrs.Get("annotations")
+		if !hasAnnotations {
+			return len(expectedAnnotations) == 0
+		}
+
+		annotationsMap := annotations.Map()
+		for expectedKey, expectedValue := range expectedAnnotations {
+			value, exists := annotationsMap.Get(expectedKey)
+			if !exists {
+				return false
+			}
+			if value.AsString() != expectedValue {
+				return false
+			}
+		}
+		return true
 	}
 }
 

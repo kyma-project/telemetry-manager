@@ -110,7 +110,9 @@ func makeLogsRegExTestK8sObjects(namespace string, mockDeploymentName string) ([
 	logHTTPPipeline := kitlog.NewPipeline("pipeline-regex-parser").WithSecretKeyRef(hostSecret.SecretKeyRef("log-host")).WithHTTPOutput()
 	logRegExParser := kitlog.NewParser("my-regex-parser", configParser)
 
-	mockLogProducer.WithParser("my-regex-parser")
+	mockLogProducer.WithAnnotations(map[string]string{
+		"fluentbit.io/parser": "my-regex-parser",
+	})
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
 		mockFluentdConfigMap.K8sObject(),

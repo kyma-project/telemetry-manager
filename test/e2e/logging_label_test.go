@@ -66,9 +66,11 @@ var _ = Describe("Logging", Label("logging"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainLogs(WithKubernetesLabels(map[string]string{
-						"app": "logging-annotation-test",
+						"app": "logging-label-test",
 					})),
-					Not(ContainLogs(WithKubernetesAnnotations())),
+					Not(ContainLogs(WithKubernetesAnnotations(map[string]string{
+						"release": "v1.0.0",
+					}))),
 				)))
 			}, telemetryDeliveryTimeout, interval).Should(Succeed())
 		})
@@ -100,7 +102,10 @@ func makeLogsLabelTestK8sObjects(namespace string, mockDeploymentName string) ([
 		WithPort("http-otlp", httpOTLPPort).
 		WithPort("http-web", httpWebPort).
 		WithPort("http-log", httpLogPort)
-	mockLogProducer := logproducer.New("log-producer", mocksNamespace.Name())
+	mockLogProducer := logproducer.New("log-producer", mocksNamespace.Name()).
+		WithAnnotations(map[string]string{
+			"release": "v1.0.0",
+		})
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
@@ -115,7 +120,7 @@ func makeLogsLabelTestK8sObjects(namespace string, mockDeploymentName string) ([
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		hostSecret.K8sObject(),
 		logPipeline.K8sObject(),
-		mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-annotation-test")),
+		mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-label-test")),
 	}...)
 
 	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
