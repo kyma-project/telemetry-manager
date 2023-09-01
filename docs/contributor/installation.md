@@ -33,7 +33,7 @@ kubectl apply -f https://github.com/kyma-project/telemetry-manager/releases/late
 
 ## Install Telemetry Manager in your cluster from latest release using the Lifecycle manager
 
-1. Ensure that you have the [Kyma CLI](https://kyma-project.io/#/04-operation-guides/operations/01-install-kyma-CLI/) installed.
+1. Ensure that you have the [Kyma CLI](https://kyma-project.io/#/04-operation-guides/operations/01-install-kyma-CLI) installed.
 
 2. Install the Lifecycle manager:
 
