@@ -199,7 +199,7 @@ type LogPipelineCondition struct {
 type LogPipelineStatus struct {
 	// An array of conditions describing the status of the pipeline.
 	Conditions []LogPipelineCondition `json:"conditions,omitempty"`
-	// Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://kyma-project.io/docs/kyma/latest/01-overview/telemetry/telemetry-02-logs/#unsupported-mode).
+	// Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
 	UnsupportedMode bool `json:"unsupportedMode,omitempty"`
 }
 
