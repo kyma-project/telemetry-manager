@@ -225,7 +225,7 @@ var _ = Describe("WithAttributeKeys", func() {
 })
 
 var _ = Describe("WithKubernetesLabels", func() {
-	It("should succeed if the log record has the expected kubernetes label attributes", func() {
+	It("should succeed if the log record has the expected labels inside the kubernetes label attribute", func() {
 		ld := plog.NewLogs()
 		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 		k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
@@ -235,23 +235,19 @@ var _ = Describe("WithKubernetesLabels", func() {
 		labelsMap.PutStr("app", "test-app")
 		labelsMap.PutStr("env", "test-env")
 
-		Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithKubernetesLabels(map[string]string{
-			"app": "test-app",
-			"env": "test-env",
-		})))
+		Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithKubernetesLabels("app", "test-app", "env", "test-env")))
 	})
-
-	It("should fail if the log record does not have  the expected kubernetes label attributes", func() {
+	It("should fail if the log record does not have the kubernetes label attribute", func() {
 		ld := plog.NewLogs()
 		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 		logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 
-		Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithKubernetesLabels(map[string]string{"env": "prod"})))
+		Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithKubernetesLabels()))
 	})
 })
 
 var _ = Describe("WithKubernetesAnnotations", func() {
-	It("should succeed if the log record has the expected kubernetes annotation attributes", func() {
+	It("should succeed if the log record has the expected annotations inside the kubernetes annotation attribute", func() {
 		ld := plog.NewLogs()
 		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 		k8sAttrs := logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
@@ -261,18 +257,15 @@ var _ = Describe("WithKubernetesAnnotations", func() {
 		annotationsMap.PutStr("prometheus.io/scrape", "true")
 		annotationsMap.PutStr("release", "v1.0.0")
 
-		Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithKubernetesAnnotations(map[string]string{
-			"prometheus.io/scrape": "true",
-			"release":              "v1.0.0",
-		})))
+		Expect(mustMarshalLogs(ld)).Should(ContainLogs(WithKubernetesAnnotations("prometheus.io/scrape", "true", "release", "v1.0.0")))
 	})
 
-	It("should fail if the log record does not have the expected kubernetes annotation attributes", func() {
+	It("should fail if the log record does not have the kubernetes annotation attribute", func() {
 		ld := plog.NewLogs()
 		logs := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty().LogRecords()
 		logs.AppendEmpty().Attributes().PutEmptyMap("kubernetes")
 
-		Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithKubernetesAnnotations(map[string]string{"prometheus.io/scrape": "true"})))
+		Expect(mustMarshalLogs(ld)).ShouldNot(ContainLogs(WithKubernetesAnnotations()))
 	})
 })
 

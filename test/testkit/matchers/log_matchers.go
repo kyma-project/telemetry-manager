@@ -106,21 +106,26 @@ func WithAttributeKeys(expectedKeys ...string) LogFilter {
 	}
 }
 
-// checks if all the labels in the expectedLabels map exist in the log record
-func WithKubernetesLabels(expectedLabels map[string]string) LogFilter {
+// WithKubernetesLabels checks if all the labels represented in {keysAndValues} exist in the log record {lr}
+// if no {keysAndValues} are passed, then it just checks if the "labels" attribute exists in the log record {lr}
+func WithKubernetesLabels(keysAndValues ...string) LogFilter {
 	return func(lr plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 		if !hasKubernetesAttrs {
 			return false
 		}
-
 		labels, hasLabels := kubernetesAttrs.Get("labels")
-		if !hasLabels {
-			return len(expectedLabels) == 0
+		lenKV := len(keysAndValues)
+		if lenKV == 0 {
+			return hasLabels
+		}
+		if lenKV%2 != 0 {
+			panic(fmt.Sprintf("no value matching a key: %s", keysAndValues[lenKV-1]))
 		}
 
 		labelsMap := labels.Map()
-		for expectedKey, expectedValue := range expectedLabels {
+		for i := 0; i < lenKV; i += 2 {
+			expectedKey, expectedValue := keysAndValues[i], keysAndValues[i+1]
 			value, exists := labelsMap.Get(expectedKey)
 			if !exists {
 				return false
@@ -133,8 +138,9 @@ func WithKubernetesLabels(expectedLabels map[string]string) LogFilter {
 	}
 }
 
-// checks if all the annotations in the expectedAnnotations map exist in the log record
-func WithKubernetesAnnotations(expectedAnnotations map[string]string) LogFilter {
+// WithKubernetesAnnotations checks if all the annotations represented in {keysAndValues} exist in the log record {lr}
+// if no {keysAndValues} are passed, then it just checks if the "annotations" attribute exists in the log record {lr}
+func WithKubernetesAnnotations(keysAndValues ...string) LogFilter {
 	return func(lr plog.LogRecord) bool {
 		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 		if !hasKubernetesAttrs {
@@ -142,12 +148,17 @@ func WithKubernetesAnnotations(expectedAnnotations map[string]string) LogFilter 
 		}
 
 		annotations, hasAnnotations := kubernetesAttrs.Get("annotations")
-		if !hasAnnotations {
-			return len(expectedAnnotations) == 0
+		lenKV := len(keysAndValues)
+		if lenKV == 0 {
+			return hasAnnotations
+		}
+		if lenKV%2 != 0 {
+			panic(fmt.Sprintf("no value matching a key: %s", keysAndValues[lenKV-1]))
 		}
 
 		annotationsMap := annotations.Map()
-		for expectedKey, expectedValue := range expectedAnnotations {
+		for i := 0; i < lenKV; i += 2 {
+			expectedKey, expectedValue := keysAndValues[i], keysAndValues[i+1]
 			value, exists := annotationsMap.Get(expectedKey)
 			if !exists {
 				return false
