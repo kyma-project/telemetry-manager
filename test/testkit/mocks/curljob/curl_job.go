@@ -8,6 +8,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	curlImage = "europe-docker.pkg.dev/kyma-project/prod/external/curlimages/curl:7.78.0"
+)
+
 var (
 	selectorLabels = map[string]string{
 		"app": "sample-curl-job",
@@ -50,7 +54,7 @@ func (c *CurlJob) K8sObject() *v1.Job {
 					Containers: []corev1.Container{
 						{
 							Name:    "curl",
-							Image:   "radial/busyboxplus:curl",
+							Image:   curlImage,
 							Command: []string{"bin/sh"},
 							Args:    []string{"-c", fmt.Sprintf("for run in $(seq 1 %d); do curl %s; done \n curl -fsI -X POST http://localhost:15020/quitquitquit", c.repeat, c.url)},
 						},
