@@ -8,7 +8,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
-	"net"
 	"time"
 )
 
@@ -44,7 +43,6 @@ func GenerateTLSCerts(serverDNSName string) (TLSCerts, error) {
 	caTemplate.IsCA = true
 	caTemplate.KeyUsage = x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature
 	caTemplate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
-	caTemplate.IPAddresses = []net.IP{net.ParseIP("127.0.0.1")}
 
 	caCertBytes, err := x509.CreateCertificate(rand.Reader, caTemplate, caTemplate, caPrivateKey.Public(), caPrivateKey)
 	if err != nil {
