@@ -110,17 +110,21 @@ func WithAttributeKeys(expectedKeys ...string) LogFilter {
 // if no {keysAndValues} are passed, then it just checks if the "labels" attribute exists in the log record {lr}
 func WithKubernetesLabels(keysAndValues ...string) LogFilter {
 	return func(lr plog.LogRecord) bool {
+		lenKV := len(keysAndValues)
+		if lenKV%2 != 0 {
+			panic(fmt.Sprintf("no value matching a key: %s", keysAndValues[lenKV-1]))
+		}
+
 		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 		if !hasKubernetesAttrs {
 			return false
 		}
 		labels, hasLabels := kubernetesAttrs.Get("labels")
-		lenKV := len(keysAndValues)
-		if lenKV == 0 {
-			return hasLabels
+		if !hasLabels {
+			return false
 		}
-		if lenKV%2 != 0 {
-			panic(fmt.Sprintf("no value matching a key: %s", keysAndValues[lenKV-1]))
+		if lenKV == 0 {
+			return true
 		}
 
 		labelsMap := labels.Map()
@@ -142,18 +146,21 @@ func WithKubernetesLabels(keysAndValues ...string) LogFilter {
 // if no {keysAndValues} are passed, then it just checks if the "annotations" attribute exists in the log record {lr}
 func WithKubernetesAnnotations(keysAndValues ...string) LogFilter {
 	return func(lr plog.LogRecord) bool {
+		lenKV := len(keysAndValues)
+		if lenKV%2 != 0 {
+			panic(fmt.Sprintf("no value matching a key: %s", keysAndValues[lenKV-1]))
+		}
+
 		kubernetesAttrs, hasKubernetesAttrs := getKubernetesAttributes(lr)
 		if !hasKubernetesAttrs {
 			return false
 		}
-
 		annotations, hasAnnotations := kubernetesAttrs.Get("annotations")
-		lenKV := len(keysAndValues)
-		if lenKV == 0 {
-			return hasAnnotations
+		if !hasAnnotations {
+			return false
 		}
-		if lenKV%2 != 0 {
-			panic(fmt.Sprintf("no value matching a key: %s", keysAndValues[lenKV-1]))
+		if lenKV == 0 {
+			return true
 		}
 
 		annotationsMap := annotations.Map()
