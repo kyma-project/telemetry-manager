@@ -275,7 +275,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		var (
 			pipelines          *kyma.PipelineList
 			urls               *mocks.URLProvider
-			mockNs             = "trace-mocks-tls-pipeline"
+			mockNs             = "trace-mocks-tls-pipeline" //nolint:gosec // no hardcoded credentials leaked
 			mockDeploymentName = "trace-tls-receiver"
 		)
 
@@ -469,10 +469,9 @@ func sendTraces(ctx context.Context, traces ptrace.Traces, otlpPushURL string) e
 	return sender.Export(ctx, traces)
 }
 
-func tracesShouldBeDelivered(proxyUrl string, traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attrs pcommon.Map) {
+func tracesShouldBeDelivered(proxyURL string, traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attrs pcommon.Map) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(proxyUrl)
-		defer resp.Body.Close()
+		resp, err := proxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -480,5 +479,7 @@ func tracesShouldBeDelivered(proxyUrl string, traceID pcommon.TraceID, spanIDs [
 			ConsistOfSpansWithIDs(spanIDs...),
 			ConsistOfSpansWithTraceID(traceID),
 			ConsistOfSpansWithAttributes(attrs))))
+		err = resp.Body.Close()
+		g.Expect(err).NotTo(HaveOccurred())
 	}, timeout, interval).Should(Succeed())
 }

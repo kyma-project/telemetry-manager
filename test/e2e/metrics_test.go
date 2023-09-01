@@ -548,15 +548,16 @@ func sendSumMetrics(ctx context.Context, metrics pmetric.Metrics, otlpPushURL st
 	return sender.ExportSumMetrics(ctx, metrics)
 }
 
-func metricsShouldBeDelivered(proxyUrl string, metrics []pmetric.Metric) {
+func metricsShouldBeDelivered(proxyURL string, metrics []pmetric.Metric) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(proxyUrl)
-		defer resp.Body.Close()
+		resp, err := proxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 			ConsistOfNumberOfMetrics(len(metrics)),
 			ContainMetrics(metrics...))))
+		err = resp.Body.Close()
+		g.Expect(err).NotTo(HaveOccurred())
 	}, timeout, interval).Should(Succeed())
 }
 
