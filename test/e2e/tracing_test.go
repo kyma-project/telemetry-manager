@@ -5,7 +5,6 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -44,7 +43,6 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 			urls               *mocks.URLProvider
 			mockNs             = "trace-mocks-single-pipeline"
 			mockDeploymentName = "trace-receiver"
-			traceGatewayName   = types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
 		)
 
 		BeforeAll(func() {
@@ -66,7 +64,8 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		It("Should have 2 trace gateway replicas", func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
-				err := k8sClient.Get(ctx, traceGatewayName, &deployment)
+				key := types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
+				err := k8sClient.Get(ctx, key, &deployment)
 				g.Expect(err).NotTo(HaveOccurred())
 				return *deployment.Spec.Replicas
 			}, timeout, interval).Should(Equal(int32(2)))
@@ -133,7 +132,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		It("Should not have trace-collector deployment", func() {
 			Consistently(func(g Gomega) {
 				var deployment appsv1.Deployment
-				key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
+				key := types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
 				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
 			}, reconciliationTimeout, interval).ShouldNot(Succeed())
 		})
@@ -329,7 +328,7 @@ func tracePipelineShouldStayPending(pipelineName string) {
 func tracePipelineShouldBeDeployed(pipelineName string) {
 	Eventually(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
-		key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
+		key := types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
 		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
@@ -340,7 +339,7 @@ func tracePipelineShouldBeDeployed(pipelineName string) {
 func tracePipelineShouldNotBeDeployed(pipelineName string) {
 	Consistently(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
-		key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
+		key := types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
 		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
@@ -375,9 +374,8 @@ func makeTracingTestK8sObjects(namespace string, withTLS bool, mockDeploymentNam
 			var err error
 			backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", mockDeploymentName, mocksNamespace.Name())
 			certs, err = testkit.GenerateTLSCerts(backendDNSName)
-			if err != nil {
-				log.Println(fmt.Sprintf("could not create TLS certs: %v", err))
-			}
+			Expect(err).NotTo(HaveOccurred())
+
 			mockBackendConfigMap := mockBackend.TLSBackendConfigMap(suffixize("trace-receiver-config", i),
 				certs.ServerCertPem.String(), certs.ServerKeyPem.String(), certs.CaCertPem.String())
 			mockBackendDeployment = mockBackend.Deployment(mockBackendConfigMap.Name())
@@ -444,7 +442,7 @@ func deploymentShouldBeReady(name, namespace string) {
 	}, timeout, interval).Should(Succeed())
 }
 
-func makeAndSendTraces(otlpPushUrl string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map) {
+func makeAndSendTraces(otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map) {
 	traceID := kittraces.NewTraceID()
 	var spanIDs []pcommon.SpanID
 	for i := 0; i < 100; i++ {
@@ -457,7 +455,7 @@ func makeAndSendTraces(otlpPushUrl string) (pcommon.TraceID, []pcommon.SpanID, p
 	attrs.PutStr("attrC", "vanilla")
 	traces := kittraces.MakeTraces(traceID, spanIDs, attrs)
 
-	Expect(sendTraces(context.Background(), traces, otlpPushUrl)).To(Succeed())
+	Expect(sendTraces(context.Background(), traces, otlpPushURL)).To(Succeed())
 
 	return traceID, spanIDs, attrs
 }
@@ -474,6 +472,7 @@ func sendTraces(ctx context.Context, traces ptrace.Traces, otlpPushURL string) e
 func tracesShouldBeDelivered(proxyUrl string, traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attrs pcommon.Map) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(proxyUrl)
+		defer resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
