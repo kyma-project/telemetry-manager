@@ -8,6 +8,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var (
+	selectorLabels = map[string]string{
+		"app": "sample-curl-job",
+	}
+)
+
 type CurlJob struct {
 	name      string
 	namespace string
@@ -24,11 +30,13 @@ func New(name string, namespace string) *CurlJob {
 func (c *CurlJob) SetURL(url string) {
 	c.url = url
 }
+
 func (c *CurlJob) K8sObject() *v1.Job {
 	return &v1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      c.name,
 			Namespace: c.namespace,
+			Labels:    selectorLabels,
 		},
 		Spec: v1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -39,7 +47,7 @@ func (c *CurlJob) K8sObject() *v1.Job {
 							Name:    "curl",
 							Image:   "radial/busyboxplus:curl",
 							Command: []string{"bin/sh"},
-							Args:    []string{"-c", fmt.Sprintf("for run in $(seq 1 1000); do curl %s; done", c.url)},
+							Args:    []string{"-c", fmt.Sprintf("for run in $(seq 1 100); do curl %s; done \n curl -fsI -X POST http://localhost:15020/quitquitquit", c.url)},
 						},
 					},
 				},

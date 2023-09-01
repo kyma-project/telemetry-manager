@@ -92,6 +92,19 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 			}, timeout, interval).Should(BeTrue())
 		})
 
+		It("Should have a curl job completed", func() {
+			Eventually(func(g Gomega) {
+				listOptions := client.ListOptions{
+					LabelSelector: labels.SelectorFromSet(map[string]string{"app": "sample-curl-job"}),
+					Namespace:     sampleAppNs,
+				}
+
+				completed, err := verifiers.IsJobCompleted(ctx, k8sClient, listOptions)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(completed).To(BeTrue())
+			}, timeout*2, interval).Should(Succeed())
+		})
+
 		It("Trace collector should answer requests", func() {
 			By("Calling metrics service", func() {
 				Eventually(func(g Gomega) {
