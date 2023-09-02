@@ -19,7 +19,6 @@ type Pipeline struct {
 	secretKeyRef *telemetry.SecretKeyRef
 	persistent   bool
 	id           string
-	tls          *telemetry.OtlpTLS
 }
 
 func NewPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
@@ -58,7 +57,6 @@ func (p *Pipeline) K8sObject(opts ...PipelineOption) *telemetry.TracePipeline {
 							SecretKeyRef: p.secretKeyRef,
 						},
 					},
-					TLS: p.tls,
 				},
 			},
 		},
