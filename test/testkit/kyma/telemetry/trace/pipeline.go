@@ -12,6 +12,8 @@ import (
 
 const version = "1.0.0"
 
+type PipelineOption = func(pipeline telemetry.TracePipeline)
+
 type Pipeline struct {
 	name         string
 	secretKeyRef *telemetry.SecretKeyRef
@@ -28,23 +30,6 @@ func NewPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
 	}
 }
 
-func (p *Pipeline) WithTLS(caCertPem, clientCertPem, clientKeyPem string) *Pipeline {
-	p.tls = &telemetry.OtlpTLS{
-		Insecure:           false,
-		InsecureSkipVerify: false,
-		CA: telemetry.ValueType{
-			Value: caCertPem,
-		},
-		Cert: telemetry.ValueType{
-			Value: clientCertPem,
-		},
-		Key: telemetry.ValueType{
-			Value: clientKeyPem,
-		},
-	}
-	return p
-}
-
 func (p *Pipeline) Name() string {
 	if p.persistent {
 		return p.name
@@ -53,14 +38,14 @@ func (p *Pipeline) Name() string {
 	return fmt.Sprintf("%s-%s", p.name, p.id)
 }
 
-func (p *Pipeline) K8sObject() *telemetry.TracePipeline {
+func (p *Pipeline) K8sObject(opts ...PipelineOption) *telemetry.TracePipeline {
 	var labels k8s.Labels
 	if p.persistent {
 		labels = k8s.PersistentLabel
 	}
 	labels.Version(version)
 
-	return &telemetry.TracePipeline{
+	pipeline := telemetry.TracePipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
 			Name:   p.Name(),
 			Labels: labels,
@@ -78,6 +63,12 @@ func (p *Pipeline) K8sObject() *telemetry.TracePipeline {
 			},
 		},
 	}
+
+	for _, opt := range opts {
+		opt(pipeline)
+	}
+
+	return &pipeline
 }
 
 func (p *Pipeline) Persistent(persistent bool) *Pipeline {

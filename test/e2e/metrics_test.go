@@ -42,8 +42,10 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		)
 
 		BeforeAll(func() {
-			withTLS := false
-			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(mockNs, withTLS, []string{mockDeploymentName})
+			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(
+				mocks.WithMockNamespace(mockNs),
+				mocks.WithMockDeploymentNames(mockDeploymentName),
+			)
 			pipelines = pipelinesProvider
 			urls = urlProvider
 
@@ -119,8 +121,11 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		)
 
 		BeforeAll(func() {
-			withTLS := false
-			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(mockNs, withTLS, []string{mockDeploymentName}, addCumulativeToDeltaConversion)
+			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(
+				mocks.WithMockNamespace(mockNs),
+				mocks.WithMockDeploymentNames(mockDeploymentName),
+				mocks.WithMetricPipelineOption(getCumulativeToDeltaConversionMetricPipelineFunc()),
+			)
 			pipelines = pipelinesProvider
 			urls = urlProvider
 
@@ -247,8 +252,10 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		)
 
 		BeforeAll(func() {
-			withTLS := false
-			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(mockNs, withTLS, []string{mockDeploymentName})
+			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(
+				mocks.WithMockNamespace(mockNs),
+				mocks.WithMockDeploymentNames(mockDeploymentName),
+			)
 			pipelines = pipelinesProvider
 			urls = urlProvider
 			brokenPipelineObjs, brokenName := makeBrokenMetricPipeline("pipeline-1")
@@ -290,8 +297,10 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		)
 
 		BeforeAll(func() {
-			withTLS := false
-			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(mockNs, withTLS, []string{primaryMockDeploymentName, auxiliaryMockDeploymentName})
+			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(
+				mocks.WithMockNamespace(mockNs),
+				mocks.WithMockDeploymentNames(primaryMockDeploymentName, auxiliaryMockDeploymentName),
+			)
 			pipelines = pipelinesProvider
 			urls = urlProvider
 
@@ -332,8 +341,10 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		)
 
 		BeforeAll(func() {
-			withTLS := true
-			k8sObjects, metricsURLProvider, pipelinesProvider := makeMetricsTestK8sObjects(mockNs, withTLS, []string{mockDeploymentName})
+			k8sObjects, metricsURLProvider, pipelinesProvider := makeMetricsTestK8sObjects(
+				mocks.WithMockNamespace(mockNs),
+				mocks.WithMockDeploymentNames(mockDeploymentName),
+			)
 			pipelines = pipelinesProvider
 			urls = metricsURLProvider
 
@@ -376,28 +387,6 @@ func metricPipelineShouldStayPending(pipelineName string) {
 	}, reconciliationTimeout, interval).Should(Succeed())
 }
 
-func addCumulativeToDeltaConversion(metricPipeline telemetryv1alpha1.MetricPipeline) {
-	metricPipeline.Spec.Output.ConvertToDelta = true
-}
-
-func addTLSConfigFunc(caCertPem, clientCertPem, clientKeyPem string) kitmetric.PipelineOption {
-	return func(metricPipeline telemetryv1alpha1.MetricPipeline) {
-		metricPipeline.Spec.Output.Otlp.TLS = &telemetryv1alpha1.OtlpTLS{
-			Insecure:           false,
-			InsecureSkipVerify: false,
-			CA: telemetryv1alpha1.ValueType{
-				Value: caCertPem,
-			},
-			Cert: telemetryv1alpha1.ValueType{
-				Value: clientCertPem,
-			},
-			Key: telemetryv1alpha1.ValueType{
-				Value: clientKeyPem,
-			},
-		}
-	}
-}
-
 func metricPipelineShouldBeDeployed(pipelineName string) {
 	Eventually(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
@@ -421,7 +410,7 @@ func metricPipelineShouldNotBeDeployed(pipelineName string) {
 }
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeMetricsTestK8sObjects(namespace string, withTLS bool, mockDeploymentNames []string, metricPipelineOptions ...kitmetric.PipelineOption) ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
+func makeMetricsTestK8sObjects(setters ...mocks.BackendOptionSetter) ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
 	var (
 		objs      []client.Object
 		pipelines = kyma.NewPipelineList()
@@ -433,28 +422,35 @@ func makeMetricsTestK8sObjects(namespace string, withTLS bool, mockDeploymentNam
 		httpWebPort     = 80
 	)
 
-	mocksNamespace := kitk8s.NewNamespace(namespace)
+	options := &mocks.BackendOptions{}
+	for _, setter := range setters {
+		setter(options)
+	}
+
+	mocksNamespace := kitk8s.NewNamespace(options.Namespace)
 	objs = append(objs, mocksNamespace.K8sObject())
 
-	for i, mockDeploymentName := range mockDeploymentNames {
+	for i, mockDeploymentName := range options.MockDeploymentNames {
 		var certs testkit.TLSCerts
 
 		// Mocks namespace objects.
 		mockBackend := mocks.NewBackend(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
 		var mockBackendDeployment *mocks.BackendDeployment
 
-		if withTLS {
+		if options.WithTLS {
 			var err error
 			backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", mockDeploymentName, mocksNamespace.Name())
 			certs, err = testkit.GenerateTLSCerts(backendDNSName)
 			Expect(err).NotTo(HaveOccurred())
+
 			mockBackendConfigMap := mockBackend.TLSBackendConfigMap(suffixize("metric-receiver-config", i),
 				certs.ServerCertPem.String(), certs.ServerKeyPem.String(), certs.CaCertPem.String())
 			mockBackendDeployment = mockBackend.Deployment(mockBackendConfigMap.Name())
 			objs = append(objs, mockBackendConfigMap.K8sObject())
 
-			metricPipelineOptions = append(metricPipelineOptions, addTLSConfigFunc(certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()))
-
+			options.MetricPipelineOptions = append(options.MetricPipelineOptions, getTLSConfigToMetricPipelineFunc(
+				certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()),
+			)
 		} else {
 			mockBackendConfigMap := mockBackend.ConfigMap(suffixize("metric-receiver-config", i))
 			mockBackendDeployment = mockBackend.Deployment(mockBackendConfigMap.Name())
@@ -476,7 +472,7 @@ func makeMetricsTestK8sObjects(namespace string, withTLS bool, mockDeploymentNam
 			mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 			mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 			hostSecret.K8sObject(),
-			metricPipeline.K8sObject(metricPipelineOptions...),
+			metricPipeline.K8sObject(options.MetricPipelineOptions...),
 		}...)
 
 		urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), i)
@@ -503,6 +499,30 @@ func makeBrokenMetricPipeline(name string) ([]client.Object, string) {
 		hostSecret.K8sObject(),
 		metricPipeline.K8sObject(),
 	}, metricPipeline.Name()
+}
+
+func getCumulativeToDeltaConversionMetricPipelineFunc() kitmetric.PipelineOption {
+	return func(metricPipeline telemetryv1alpha1.MetricPipeline) {
+		metricPipeline.Spec.Output.ConvertToDelta = true
+	}
+}
+
+func getTLSConfigToMetricPipelineFunc(caCertPem, clientCertPem, clientKeyPem string) kitmetric.PipelineOption {
+	return func(metricPipeline telemetryv1alpha1.MetricPipeline) {
+		metricPipeline.Spec.Output.Otlp.TLS = &telemetryv1alpha1.OtlpTLS{
+			Insecure:           false,
+			InsecureSkipVerify: false,
+			CA: telemetryv1alpha1.ValueType{
+				Value: caCertPem,
+			},
+			Cert: telemetryv1alpha1.ValueType{
+				Value: clientCertPem,
+			},
+			Key: telemetryv1alpha1.ValueType{
+				Value: clientKeyPem,
+			},
+		}
+	}
 }
 
 func makeAndSendGaugeMetrics(otlpPushURL string) []pmetric.Metric {
