@@ -403,7 +403,7 @@ func makeTracingTestK8sObjects(setters ...mocks.BackendOptionSetter) ([]client.O
 			mockBackendDeployment = mockBackend.Deployment(mockBackendConfigMap.Name())
 			objs = append(objs, mockBackendConfigMap.K8sObject())
 
-			options.TracePipelineOptions = append(options.TracePipelineOptions, getTLSConfigToTracePipelineFunc(
+			options.TracePipelineOptions = append(options.TracePipelineOptions, getTLSConfigTracePipelineOption(
 				certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()),
 			)
 
@@ -457,7 +457,7 @@ func makeBrokenTracePipeline(name string) ([]client.Object, string) {
 	}, tracePipeline.Name()
 }
 
-func getTLSConfigToTracePipelineFunc(caCertPem, clientCertPem, clientKeyPem string) kittrace.PipelineOption {
+func getTLSConfigTracePipelineOption(caCertPem, clientCertPem, clientKeyPem string) kittrace.PipelineOption {
 	return func(tracePipeline telemetryv1alpha1.TracePipeline) {
 		tracePipeline.Spec.Output.Otlp.TLS = &telemetryv1alpha1.OtlpTLS{
 			Insecure:           false,

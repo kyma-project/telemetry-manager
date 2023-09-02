@@ -124,7 +124,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(
 				mocks.WithMockNamespace(mockNs),
 				mocks.WithMockDeploymentNames(mockDeploymentName),
-				mocks.WithMetricPipelineOption(getCumulativeToDeltaConversionMetricPipelineFunc()),
+				mocks.WithMetricPipelineOption(getCumulativeToDeltaConversionMetricPipelineOption()),
 			)
 			pipelines = pipelinesProvider
 			urls = urlProvider
@@ -279,6 +279,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 
 		})
 		It("Should have a metrics backend running", func() {
+			deploymentShouldBeReady(mockDeploymentName, mockNs)
 		})
 
 		It("Should verify end-to-end metric delivery", func() {
@@ -343,6 +344,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		BeforeAll(func() {
 			k8sObjects, metricsURLProvider, pipelinesProvider := makeMetricsTestK8sObjects(
 				mocks.WithMockNamespace(mockNs),
+				mocks.WithTLS(true),
 				mocks.WithMockDeploymentNames(mockDeploymentName),
 			)
 			pipelines = pipelinesProvider
@@ -448,7 +450,7 @@ func makeMetricsTestK8sObjects(setters ...mocks.BackendOptionSetter) ([]client.O
 			mockBackendDeployment = mockBackend.Deployment(mockBackendConfigMap.Name())
 			objs = append(objs, mockBackendConfigMap.K8sObject())
 
-			options.MetricPipelineOptions = append(options.MetricPipelineOptions, getTLSConfigToMetricPipelineFunc(
+			options.MetricPipelineOptions = append(options.MetricPipelineOptions, getTLSConfigMetricPipelineOption(
 				certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()),
 			)
 		} else {
@@ -501,13 +503,13 @@ func makeBrokenMetricPipeline(name string) ([]client.Object, string) {
 	}, metricPipeline.Name()
 }
 
-func getCumulativeToDeltaConversionMetricPipelineFunc() kitmetric.PipelineOption {
+func getCumulativeToDeltaConversionMetricPipelineOption() kitmetric.PipelineOption {
 	return func(metricPipeline telemetryv1alpha1.MetricPipeline) {
 		metricPipeline.Spec.Output.ConvertToDelta = true
 	}
 }
 
-func getTLSConfigToMetricPipelineFunc(caCertPem, clientCertPem, clientKeyPem string) kitmetric.PipelineOption {
+func getTLSConfigMetricPipelineOption(caCertPem, clientCertPem, clientKeyPem string) kitmetric.PipelineOption {
 	return func(metricPipeline telemetryv1alpha1.MetricPipeline) {
 		metricPipeline.Spec.Output.Otlp.TLS = &telemetryv1alpha1.OtlpTLS{
 			Insecure:           false,
