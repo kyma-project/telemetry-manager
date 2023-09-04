@@ -221,7 +221,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 		}, timeout, interval).Should(Succeed())
 	})
 
-	It("updates Metric Collector Secret when referenced secret changes", func() {
+	It("Should update metric gateway secret when referenced secret changes", func() {
 		Eventually(func() error {
 			newData := map[string][]byte{
 				"user":     []byte("new-secret-username"),

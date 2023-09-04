@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	gatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 )
@@ -53,7 +54,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonMetricGatewayDeploymentNotReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonMetricGatewayDeploymentNotReady)
 	})
 
 	t.Run("should add running condition if metric gateway deployment is ready", func(t *testing.T) {
@@ -86,7 +87,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelineRunning)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonMetricGatewayDeploymentReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonMetricGatewayDeploymentReady)
 	})
 
 	t.Run("should reset conditions and add pending condition if metric gateway deployment becomes not ready again", func(t *testing.T) {
@@ -103,8 +104,8 @@ func TestUpdateStatus(t *testing.T) {
 				}},
 			Status: telemetryv1alpha1.MetricPipelineStatus{
 				Conditions: []telemetryv1alpha1.MetricPipelineCondition{
-					{Reason: reasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
-					{Reason: reasonMetricGatewayDeploymentReady, Type: telemetryv1alpha1.MetricPipelineRunning},
+					{Reason: reconciler.ReasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
+					{Reason: reconciler.ReasonMetricGatewayDeploymentReady, Type: telemetryv1alpha1.MetricPipelineRunning},
 				},
 			},
 		}
@@ -125,7 +126,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonMetricGatewayDeploymentNotReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonMetricGatewayDeploymentNotReady)
 	})
 
 	t.Run("should reset conditions and add pending condition if some referenced secret does not exist anymore", func(t *testing.T) {
@@ -150,8 +151,8 @@ func TestUpdateStatus(t *testing.T) {
 				}},
 			Status: telemetryv1alpha1.MetricPipelineStatus{
 				Conditions: []telemetryv1alpha1.MetricPipelineCondition{
-					{Reason: reasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
-					{Reason: reasonMetricGatewayDeploymentReady, Type: telemetryv1alpha1.MetricPipelineRunning},
+					{Reason: reconciler.ReasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
+					{Reason: reconciler.ReasonMetricGatewayDeploymentReady, Type: telemetryv1alpha1.MetricPipelineRunning},
 				},
 			},
 		}
@@ -173,7 +174,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonReferencedSecretMissingReason)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonReferencedSecretMissing)
 	})
 
 	t.Run("should add running condition if referenced secret exists and metric gateway deployment is ready", func(t *testing.T) {
@@ -223,7 +224,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelineRunning)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonMetricGatewayDeploymentReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonMetricGatewayDeploymentReady)
 	})
 
 	t.Run("should add pending condition if waiting for lock", func(t *testing.T) {
@@ -256,7 +257,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonWaitingForLock)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonWaitingForLock)
 	})
 
 	t.Run("should add pending condition if acquired lock but metric gateway is not ready", func(t *testing.T) {
@@ -291,6 +292,6 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reasonMetricGatewayDeploymentNotReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonMetricGatewayDeploymentNotReady)
 	})
 }

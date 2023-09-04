@@ -787,7 +787,7 @@ data:
         ]
       },
       "timezone": "",
-      "title": "Kyma / Telemetry / Trace Collector",
+      "title": "Kyma / Telemetry / Trace Gateway",
       "uid": "Dzc-UHcVz",
       "version": 6
     }

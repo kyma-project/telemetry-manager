@@ -119,14 +119,27 @@ spec:
                   - type
                   type: object
                 type: array
+              endpoints:
+                description: GatewayEndpoints for trace and metric gateway
+                nullable: true
+                properties:
+                  traces:
+                    properties:
+                      grpc:
+                        type: string
+                      http:
+                        type: string
+                    type: object
+                type: object
               state:
                 description: State signifies current state of Module CR. Value can
-                  be one of ("Ready", "Processing", "Error", "Deleting").
+                  be one of ("Ready", "Processing", "Error", "Deleting", "Warning").
                 enum:
                 - Processing
                 - Deleting
                 - Ready
                 - Error
+                - Warning
                 type: string
             required:
             - state

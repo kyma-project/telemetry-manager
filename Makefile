@@ -106,12 +106,6 @@ test-matchers: ginkgo
 provision-test-env:
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
 
-.PHONY: e2e-test
-e2e-test: ginkgo k3d  | test-matchers provision-test-env ## Provision k3d cluster and run end-to-end tests.
-	$(GINKGO) run --tags e2e -v --junit-report=junit.xml ./test/e2e
-	mkdir -p ${ARTIFACTS}
-	mv junit.xml ${ARTIFACTS}
-
 .PHONY: e2e-test-logging
 e2e-test-logging: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
@@ -236,7 +230,7 @@ undeploy-dev: ## Undeploy resources based on the development variant from the K8
 
 .PHONY: release
 release: kyma kustomize ## Create module with its image pushed to prod registry and create a github release entry
-	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} IMG=${IMG} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} RELEASE_TAG=${RELEASE_TAG} ./hack/release.sh
+	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} IMG=${IMG} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/release.sh
 
 ##@ Build Dependencies
 
