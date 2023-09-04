@@ -413,5 +413,5 @@ Up to three MetricPipeline resources at a time are supported.
   Cause: The workload is not configured using 'STRICT' mTLS mode.
 
   Remedy:
-1. Configure the workload using 'STRICT' mTLS mode (e.g. by applying a corresponding PeerAuthentication).
+1. Configure the workload using 'STRICT' mTLS mode (for example, by applying a corresponding PeerAuthentication).
 1. If it's not possible, set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
