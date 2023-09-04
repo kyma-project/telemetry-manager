@@ -17,43 +17,45 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	kitotlpmetric "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
 var _ = Describe("Istio metrics", Label("metrics"), func() {
 	const (
-		mocksNs            = "metric-prometheus-input"
-		mockDeploymentName = "metric-agent-receiver"
+		mockNs                           = "metric-prometheus-input"
+		mockBackendName                  = "metric-agent-receiver"
+		httpsAnnotatedMetricProducerName = "metric-producer-https"
+		httpAnnotatedMetricProducerName  = "metric-producer-http"
 	)
 	var (
-		urls              *mocks.URLProvider
+		urls              = urlprovider.New()
 		metricGatewayName = types.NamespacedName{Name: "telemetry-metric-gateway", Namespace: kymaSystemNamespaceName}
 		metricAgentName   = types.NamespacedName{Name: "telemetry-metric-agent", Namespace: kymaSystemNamespaceName}
 	)
 
-	makeResources := func() ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
+	makeResources := func() ([]client.Object, *urlprovider.URLProvider) {
 		var (
 			objs         []client.Object
 			pipelines    = kyma.NewPipelineList()
-			urls         = mocks.NewURLProvider()
 			grpcOTLPPort = 4317
 			httpWebPort  = 80
 		)
 
-		objs = append(objs, kitk8s.NewNamespace(mocksNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		// Mocks namespace objects.
-		mockBackend := mocks.NewBackend(mockDeploymentName, mocksNs, "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
+		mockBackend := backend.New(mockBackendName, mockNs, "/metrics/"+telemetryDataFilename, backend.SignalTypeMetrics)
 		mockBackendConfigMap := mockBackend.ConfigMap("metric-receiver-config")
 		mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 		mockBackendExternalService := mockBackend.ExternalService().
 			WithPort("grpc-otlp", grpcOTLPPort).
 			WithPort("http-web", httpWebPort)
 
-		mpWithHTTPSAnnotation := metricproducer.New(mocksNs, "metric-producer")
-		mpWithHTTPAnnotation := metricproducer.New(mocksNs, "metric-producer-http")
+		httpsAnnotatedMetricProducer := metricproducer.New(mockNs, httpsAnnotatedMetricProducerName)
+		httpAnnotatedMetricProducer := metricproducer.New(mockNs, httpAnnotatedMetricProducerName)
 
 		// Default namespace objects.
 		otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
@@ -65,22 +67,22 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 			mockBackendConfigMap.K8sObject(),
 			mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 			mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-			mpWithHTTPSAnnotation.Pod().WithSidecarInjection().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
-			mpWithHTTPSAnnotation.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
-			mpWithHTTPAnnotation.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-			mpWithHTTPAnnotation.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+			httpsAnnotatedMetricProducer.Pod().WithSidecarInjection().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
+			httpsAnnotatedMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
+			httpAnnotatedMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+			httpAnnotatedMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 			hostSecret.K8sObject(),
 			metricPipeline.K8sObject(),
 		}...)
 
-		urls.SetMockBackendExport(proxyClient.ProxyURLForService(mocksNs, mockBackend.Name(), telemetryDataFilename, httpWebPort))
+		urls.SetMockBackendExport(proxyClient.ProxyURLForService(mockNs, mockBackend.Name(), telemetryDataFilename, httpWebPort))
 
-		return objs, urls, pipelines
+		return objs, urls
 	}
 
 	Context("App with istio-sidecar", Ordered, func() {
 		BeforeAll(func() {
-			k8sObjects, urlProvider, _ := makeResources()
+			k8sObjects, urlProvider := makeResources()
 			urls = urlProvider
 
 			DeferCleanup(func() {
@@ -100,7 +102,7 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 
 		It("Should have a metrics backend running", func() {
 			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mocksNs}
+				key := types.NamespacedName{Name: mockBackendName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
