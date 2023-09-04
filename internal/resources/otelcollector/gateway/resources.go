@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"maps"
 	"strconv"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
-	"maps"
 )
 
 type Config struct {
