@@ -23,12 +23,12 @@ data:
       kind: Telemetry
       group: operator.kyma-project.io
       version: v1alpha1
-    name: Telemetry Module
-    category: Observability
+    name: Telemetry
+    category: Kyma
     urlPath: telemetries
     scope: namespace
     description: >-
-      {{[Telemetry](https://github.com/kyma-project/telemetry-manager/blob/main/config/crd/bases/operator.kyma-project.io_telemetries.yaml)}}
+      {{[Telemetry](https://kyma-project.io/#/telemetry-manager/user/resources/01-telemetry)}}
       is a detailed description of the kind of data and the format used to define a
       Telemetry module instance.
     features:

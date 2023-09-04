@@ -4,10 +4,11 @@ package istio
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/curljob"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/curljob"
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -18,7 +19,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -30,7 +32,7 @@ import (
 var _ = Describe("Istio access logs", Label("logging"), func() {
 	Context("Istio", Ordered, func() {
 		var (
-			urls               *mocks.URLProvider
+			urls               *urlprovider.URLProvider
 			mockNs             = "istio-access-logs-mocks"
 			mockDeploymentName = "istio-access-logs-backend"
 			sampleAppNs        = "sample"
@@ -109,10 +111,10 @@ var _ = Describe("Istio access logs", Label("logging"), func() {
 	})
 })
 
-func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName string) ([]client.Object, *mocks.URLProvider, string) {
+func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName string) ([]client.Object, *urlprovider.URLProvider, string) {
 	var (
 		objs []client.Object
-		urls = mocks.NewURLProvider()
+		urls = urlprovider.New()
 
 		grpcOTLPPort = 4317
 		httpOTLPPort = 4318
@@ -124,12 +126,12 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName string) ([]client.
 	objs = append(objs, mocksNamespace.K8sObject())
 
 	//// Mocks namespace objects.
-	mockHTTPBackend := mocks.NewHTTPBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)
+	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename, backend.SignalTypeLogs)
 
-	mockBackendConfigMap := mockHTTPBackend.HTTPBackendConfigMap("log-receiver-config")
-	mockFluentDConfigMap := mockHTTPBackend.FluentDConfigMap("log-receiver-config-fluentd")
-	mockBackendDeployment := mockHTTPBackend.HTTPDeployment(mockBackendConfigMap.Name(), mockFluentDConfigMap.FluentDName())
-	mockBackendExternalService := mockHTTPBackend.ExternalService().
+	mockBackendConfigMap := mockBackend.ConfigMap("log-receiver-config")
+	mockFluentdConfigMap := mockBackend.FluentdConfigMap("log-receiver-config-fluentd")
+	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name()).WithFluentdConfigName(mockFluentdConfigMap.Name())
+	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-otlp", httpOTLPPort).
 		WithPort("http-web", httpWebPort).
@@ -137,19 +139,17 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName string) ([]client.
 
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	istioAccessLogsPipeline := kitlog.NewHTTPPipeline("pipeline-istio-access-logs", hostSecret.SecretKeyRef("log-host")).WithIncludeContainer([]string{"istio-proxy"})
+	istioAccessLogsPipeline := kitlog.NewPipeline("pipeline-istio-access-logs").WithSecretKeyRef(hostSecret.SecretKeyRef("log-host")).WithIncludeContainer([]string{"istio-proxy"}).WithHTTPOutput()
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
-		mockFluentDConfigMap.K8sObjectFluentDConfig(),
-		mockBackendDeployment.K8sObjectHTTP(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
-		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
-
+		mockFluentdConfigMap.K8sObject(),
+		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
+		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		hostSecret.K8sObject(),
-
-		istioAccessLogsPipeline.K8sObjectHTTP(),
+		istioAccessLogsPipeline.K8sObject(),
 	}...)
-	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockHTTPBackend.Name(), telemetryDataFilename, httpWebPort), 0)
+	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
 	return objs, urls, istioAccessLogsPipeline.Name()
 }
 

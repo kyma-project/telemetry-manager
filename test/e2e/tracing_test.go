@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -23,7 +22,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -31,16 +31,15 @@ import (
 )
 
 var (
-	traceGatewayBaseName               = "telemetry-trace-collector"
-	maxNumberOfTracePipelines          = 3
-	tracePipelineReconciliationTimeout = 10 * time.Second
+	traceGatewayBaseName      = "telemetry-trace-collector"
+	maxNumberOfTracePipelines = 3
 )
 
 var _ = Describe("Tracing", Label("tracing"), func() {
 	Context("When a tracepipeline exists", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
-			urls               *mocks.URLProvider
+			urls               *urlprovider.URLProvider
 			mockNs             = "trace-mocks-single-pipeline"
 			mockDeploymentName = "trace-receiver"
 			traceGatewayName   = types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
@@ -163,7 +162,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 				var deployment appsv1.Deployment
 				key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
 				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
-			}, tracePipelineReconciliationTimeout, interval).ShouldNot(Succeed())
+			}, reconciliationTimeout, interval).ShouldNot(Succeed())
 		})
 
 		It("Should have running tracepipeline", func() {
@@ -232,7 +231,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		var (
 			brokenPipelineName string
 			pipelines          *kyma.PipelineList
-			urls               *mocks.URLProvider
+			urls               *urlprovider.URLProvider
 			mockNs             = "trace-mocks-broken-pipeline"
 			mockDeploymentName = "trace-receiver"
 		)
@@ -296,7 +295,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 	Context("When multiple tracepipelines exist", Ordered, func() {
 		var (
 			pipelines                   *kyma.PipelineList
-			urls                        *mocks.URLProvider
+			urls                        *urlprovider.URLProvider
 			mockNs                      = "trace-mocks-multi-pipeline"
 			primaryMockDeploymentName   = "trace-receiver"
 			auxiliaryMockDeploymentName = "trace-receiver-1"
@@ -379,7 +378,7 @@ func tracePipelineShouldStayPending(pipelineName string) {
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning)).To(BeFalse())
-	}, tracePipelineReconciliationTimeout, interval).Should(Succeed())
+	}, reconciliationTimeout, interval).Should(Succeed())
 }
 
 func tracePipelineShouldBeDeployed(pipelineName string) {
@@ -401,15 +400,15 @@ func tracePipelineShouldNotBeDeployed(pipelineName string) {
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return !strings.Contains(configString, pipelineAlias)
-	}, tracePipelineReconciliationTimeout, interval).Should(BeTrue())
+	}, reconciliationTimeout, interval).Should(BeTrue())
 }
 
 // makeTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
+func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
 	var (
 		objs      []client.Object
 		pipelines = kyma.NewPipelineList()
-		urls      = mocks.NewURLProvider()
+		urls      = urlprovider.New()
 
 		grpcOTLPPort    = 4317
 		httpMetricsPort = 8888
@@ -422,7 +421,7 @@ func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 
 	for i, mockDeploymentName := range mockDeploymentNames {
 		//// Mocks namespace objects.
-		mockBackend := mocks.NewBackend(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
+		mockBackend := backend.New(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/traces/"+telemetryDataFilename, backend.SignalTypeTraces)
 		mockBackendConfigMap := mockBackend.ConfigMap(suffixize("trace-receiver-config", i))
 		mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 		mockBackendExternalService := mockBackend.ExternalService().

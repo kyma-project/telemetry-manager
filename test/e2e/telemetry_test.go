@@ -73,19 +73,7 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 		})
 
 		It("Should reconcile ValidatingWebhookConfiguration", func() {
-			var oldUID types.UID
-			By("Deleting ValidatingWebhookConfiguration", func() {
-				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
-				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
-				oldUID = validatingWebhookConfiguration.UID
-				Expect(k8sClient.Delete(ctx, &validatingWebhookConfiguration)).Should(Succeed())
-			})
-
-			var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
-			Eventually(func(g Gomega) {
-				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
-				g.Expect(validatingWebhookConfiguration.UID).ShouldNot(Equal(oldUID))
-			}, timeout, interval).Should(Succeed())
+			testWebhookReconciliation()
 		})
 
 		It("Should reconcile CA bundle secret", func() {
@@ -155,6 +143,10 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 			}, timeout, interval).Should(Succeed())
 		})
 
+		It("Should reconcile ValidatingWebhookConfiguration if LogPipeline exists", func() {
+			testWebhookReconciliation()
+		})
+
 		It("Should delete Telemetry", func() {
 			By("Deleting Telemetry and other resources", func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sLogPipelineObject...)).Should(Succeed())
@@ -180,8 +172,24 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 	})
 })
 
+func testWebhookReconciliation() {
+	var oldUID types.UID
+	By("Deleting ValidatingWebhookConfiguration", func() {
+		var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
+		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+		oldUID = validatingWebhookConfiguration.UID
+		Expect(k8sClient.Delete(ctx, &validatingWebhookConfiguration)).Should(Succeed())
+	})
+
+	Eventually(func(g Gomega) {
+		var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
+		g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+		g.Expect(validatingWebhookConfiguration.UID).ShouldNot(Equal(oldUID))
+	}, timeout, interval).Should(Succeed())
+}
+
 func makeTestPipelineK8sObjects() []client.Object {
-	logPipeline := kitlog.NewPipeline(telemetryTestK8SObjectName)
+	logPipeline := kitlog.NewPipeline(telemetryTestK8SObjectName).WithStdout()
 	return []client.Object{
 		logPipeline.K8sObject(),
 	}
