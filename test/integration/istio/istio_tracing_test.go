@@ -172,6 +172,7 @@ func makeIstioTracingK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) 
 	sampleApp := metricproducer.New(sampleAppNs, "sample-producer")
 	sampleCurl := curljob.New("sample-curl", sampleAppNs)
 
+	sampleCurl.SetRepeat(100)
 	sampleCurl.SetURL(fmt.Sprintf("http://%s.%s:%d/%s", sampleApp.Name(), sampleAppNs, sampleApp.MetricsPort(), strings.TrimLeft(sampleApp.MetricsEndpoint(), "/")))
 
 	objs = append(objs, []client.Object{
