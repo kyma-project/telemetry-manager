@@ -301,7 +301,7 @@ Put the following annotations either to a Service that resolves your metrics por
 
 | Annotation Key         | Example Values    | Default Value | Description                                                                                                                                                                                                                                                                                                                                 |
 |------------------------|-------------------|--------------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `prometheus.io/scrape` | `true`, `false` | None (mandatory) | Controls whether Prometheus will automatically scrape metrics from this target.                                                                                                                                                                                                                                                             |
+| `prometheus.io/scrape` (mandatory) | `true`, `false` | None | Controls whether Prometheus will automatically scrape metrics from this target.                                                                                                                                                                                                                                                             |
 | `prometheus.io/port`   | `8080`, `9100` | None (mandatory) | Specifies the port where the metrics are exposed.                                                                                                                                                                                                                                                                                           |
 | `prometheus.io/path`   | `/metrics`, `/custom_metrics` | `/metrics` | Defines the HTTP path where Prometheus can find metrics data.                                                                                                                                                                                                                                                                               |
 | `prometheus.io/scheme` | `http`, `https` | If Istio is active, `https` is supported; otherwise, only `http` is available. The default scheme is `http` unless an Istio sidecar is present, denoted by the label `security.istio.io/tlsMode=istio`, in which case `https` becomes the default. | Determines the protocol used for scraping metrics — either HTTPS with mTLS or plain HTTP. |
@@ -405,7 +405,7 @@ Up to three MetricPipeline resources at a time are supported.
    1. Investigate whether it is compatible with the OTel collector version.
    1. If required, upgrade to a supported SDK version.
 
-- Symptom: Custom metrics don't arrive at the destination and the Otel collector produces log entries "Failed to scrpae Prometheus endpoint":
+- Symptom: Custom metrics don't arrive at the destination and the OTel Collector produces log entries "Failed to scrape Prometheus endpoint":
 ```
 2023-08-29T09:53:07.123Z	warn	internal/transaction.go:111	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
 ```
@@ -413,5 +413,5 @@ Up to three MetricPipeline resources at a time are supported.
   Cause: The workload is not configured using 'STRICT' mTLS mode.
 
   Remedy:
-1. Configure the workload using 'STRICT' mTLS mode (e.g. by applying a corresponding PeerAuthentication).
+1. Configure the workload using 'STRICT' mTLS mode (for example, by applying a corresponding PeerAuthentication).
 1. If it's not possible, set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
