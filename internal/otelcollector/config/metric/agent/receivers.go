@@ -75,7 +75,7 @@ func makePrometheusConfigForServices(isIstioActive bool) *PrometheusReceiver {
 	return makePrometheusConfig(isIstioActive, "app-services", RoleEndpoints, makePrometheusServicesRelabelConfigs)
 }
 
-func makePrometheusConfig(isIstioActive bool, jobNamePrefix string, role Role, relabelConfigFn func(bool) []RelabelConfig) *PrometheusReceiver {
+func makePrometheusConfig(isIstioActive bool, jobNamePrefix string, role Role, relabelConfigFn func(keepSecure bool) []RelabelConfig) *PrometheusReceiver {
 	var config PrometheusReceiver
 
 	baseScrapeConfig := ScrapeConfig{
@@ -99,44 +99,46 @@ func makePrometheusConfig(isIstioActive bool, jobNamePrefix string, role Role, r
 	return &config
 }
 
-func makePrometheusPodsRelabelConfigs(isSecure bool) []RelabelConfig {
+func makePrometheusPodsRelabelConfigs(keepSecure bool) []RelabelConfig {
 	relabelConfigs := []RelabelConfig{
 		keepIfRunningOnSameNode(NodeAffiliatedPod),
 		keepIfScrapingEnabled(AnnotatedPod),
 		dropIfPodNotRunning(),
 		dropIfInitContainer(),
 		dropIfIstioProxy(),
+		inferSchemeFromIstioInjectedLabel(),
+		inferSchemeFromAnnotation(AnnotatedPod),
 	}
 
-	if isSecure {
-		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTP(AnnotatedPod), inferSchemeFromIstioInjectedLabel())
+	if keepSecure {
+		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTP(AnnotatedPod))
 	} else {
 		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTPS(AnnotatedPod))
 	}
 
 	return append(relabelConfigs,
-		inferSchemeFromAnnotation(AnnotatedPod),
 		inferMetricsPathFromAnnotation(AnnotatedPod),
 		inferAddressFromAnnotation(AnnotatedPod))
 }
 
-func makePrometheusServicesRelabelConfigs(isSecure bool) []RelabelConfig {
+func makePrometheusServicesRelabelConfigs(keepSecure bool) []RelabelConfig {
 	relabelConfigs := []RelabelConfig{
 		keepIfRunningOnSameNode(NodeAffiliatedEndpoint),
 		keepIfScrapingEnabled(AnnotatedService),
 		dropIfPodNotRunning(),
 		dropIfInitContainer(),
 		dropIfIstioProxy(),
+		inferSchemeFromIstioInjectedLabel(),
+		inferSchemeFromAnnotation(AnnotatedService),
 	}
 
-	if isSecure {
-		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTP(AnnotatedService), inferSchemeFromIstioInjectedLabel())
+	if keepSecure {
+		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTP(AnnotatedService))
 	} else {
 		relabelConfigs = append(relabelConfigs, dropIfSchemeAnnotationHTTPS(AnnotatedService))
 	}
 
 	return append(relabelConfigs,
-		inferSchemeFromAnnotation(AnnotatedService),
 		inferMetricsPathFromAnnotation(AnnotatedService),
 		inferAddressFromAnnotation(AnnotatedService),
 		inferServiceFromMetaLabel())

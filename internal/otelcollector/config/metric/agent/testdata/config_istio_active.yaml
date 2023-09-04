@@ -74,13 +74,18 @@ receivers:
                     - source_labels: [__meta_kubernetes_pod_container_name]
                       regex: (istio-proxy)
                       action: drop
-                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
-                      regex: (https)
-                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
+                      regex: (istio)
+                      target_label: __scheme__
+                      replacement: https
+                      action: replace
                     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
                       regex: (https?)
                       target_label: __scheme__
                       action: replace
+                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+                      regex: (https)
+                      action: drop
                     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
                       regex: (.+)
                       target_label: __metrics_path__
@@ -110,9 +115,6 @@ receivers:
                     - source_labels: [__meta_kubernetes_pod_container_name]
                       regex: (istio-proxy)
                       action: drop
-                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
-                      regex: (http)
-                      action: drop
                     - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
                       regex: (istio)
                       target_label: __scheme__
@@ -122,6 +124,9 @@ receivers:
                       regex: (https?)
                       target_label: __scheme__
                       action: replace
+                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+                      regex: (http)
+                      action: drop
                     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
                       regex: (.+)
                       target_label: __metrics_path__
@@ -159,13 +164,18 @@ receivers:
                     - source_labels: [__meta_kubernetes_pod_container_name]
                       regex: (istio-proxy)
                       action: drop
-                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
-                      regex: (https)
-                      action: drop
+                    - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
+                      regex: (istio)
+                      target_label: __scheme__
+                      replacement: https
+                      action: replace
                     - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
                       regex: (https?)
                       target_label: __scheme__
                       action: replace
+                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+                      regex: (https)
+                      action: drop
                     - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
                       regex: (.+)
                       target_label: __metrics_path__
@@ -198,9 +208,6 @@ receivers:
                     - source_labels: [__meta_kubernetes_pod_container_name]
                       regex: (istio-proxy)
                       action: drop
-                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
-                      regex: (http)
-                      action: drop
                     - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
                       regex: (istio)
                       target_label: __scheme__
@@ -210,6 +217,9 @@ receivers:
                       regex: (https?)
                       target_label: __scheme__
                       action: replace
+                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+                      regex: (http)
+                      action: drop
                     - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
                       regex: (.+)
                       target_label: __metrics_path__
