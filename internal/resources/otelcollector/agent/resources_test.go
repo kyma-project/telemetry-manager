@@ -42,10 +42,11 @@ func TestMakeDaemonSet(t *testing.T) {
 	require.Equal(t, daemonSet.Name, config.BaseName)
 	require.Equal(t, daemonSet.Namespace, config.Namespace)
 
-	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Labels["app.kubernetes.io/name"], config.BaseName)
-	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Labels["app.kubernetes.io/name"], config.BaseName)
-	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Labels["sidecar.istio.io/inject"], "true")
-	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Annotations["checksum/config"], "123")
+	require.Equal(t, config.BaseName, daemonSet.Spec.Template.ObjectMeta.Labels["app.kubernetes.io/name"])
+	require.Equal(t, "true", daemonSet.Spec.Template.ObjectMeta.Labels["sidecar.istio.io/inject"])
+	require.Len(t, daemonSet.Spec.Selector.MatchLabels, 1)
+	require.Equal(t, config.BaseName, daemonSet.Spec.Selector.MatchLabels["app.kubernetes.io/name"])
+	require.Equal(t, "123", daemonSet.Spec.Template.ObjectMeta.Annotations["checksum/config"])
 	require.NotEmpty(t, daemonSet.Spec.Template.Spec.Containers[0].EnvFrom)
 
 	require.NotNil(t, daemonSet.Spec.Template.Spec.Containers[0].LivenessProbe, "liveness probe must be defined")

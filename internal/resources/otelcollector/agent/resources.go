@@ -54,8 +54,9 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 }
 
 func MakeDaemonSet(config Config, configHash, envVarPodIP, envVarNodeName, istioCertPath string) *appsv1.DaemonSet {
-	labels := core.MakeDefaultLabels(config.BaseName)
-	labels["sidecar.istio.io/inject"] = "true"
+	selectorLabels := core.MakeDefaultLabels(config.BaseName)
+	podLabels := maps.Clone(selectorLabels)
+	podLabels["sidecar.istio.io/inject"] = "true"
 
 	annotations := core.MakeCommonPodAnnotations(configHash)
 	maps.Copy(annotations, makeIstioTLSPodAnnotations(istioCertPath))
@@ -80,15 +81,14 @@ func MakeDaemonSet(config Config, configHash, envVarPodIP, envVarNodeName, istio
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.BaseName,
 			Namespace: config.Namespace,
-			Labels:    labels,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: selectorLabels,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels,
+					Labels:      podLabels,
 					Annotations: annotations,
 				},
 				Spec: podSpec,
