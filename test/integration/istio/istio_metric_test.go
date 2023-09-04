@@ -22,22 +22,69 @@ import (
 	kitotlpmetric "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
-var _ = Describe("Metrics Prometheus input", Label("metrics"), func() {
-	Context("App with istio-sidecar", Ordered, func() {
+var _ = Describe("Istio metrics", Label("metrics"), func() {
+	const (
+		mocksNs            = "metric-prometheus-input"
+		mockDeploymentName = "metric-agent-receiver"
+	)
+	var (
+		urls              *mocks.URLProvider
+		metricGatewayName = types.NamespacedName{Name: "telemetry-metric-gateway", Namespace: kymaSystemNamespaceName}
+		metricAgentName   = types.NamespacedName{Name: "telemetry-metric-agent", Namespace: kymaSystemNamespaceName}
+	)
+
+	makeResources := func() ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
 		var (
-			urls               *mocks.URLProvider
-			mockDeploymentName = "metric-agent-receiver"
-			mocksNs            = "metric-prometheus-input"
-			metricGatewayName  = types.NamespacedName{Name: "telemetry-metric-gateway", Namespace: kymaSystemNamespaceName}
-			metricAgentName    = types.NamespacedName{Name: "telemetry-metric-agent", Namespace: kymaSystemNamespaceName}
+			objs         []client.Object
+			pipelines    = kyma.NewPipelineList()
+			urls         = mocks.NewURLProvider()
+			grpcOTLPPort = 4317
+			httpWebPort  = 80
 		)
 
+		objs = append(objs, kitk8s.NewNamespace(mocksNs).K8sObject())
+
+		// Mocks namespace objects.
+		mockBackend := mocks.NewBackend(mockDeploymentName, mocksNs, "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
+		mockBackendConfigMap := mockBackend.ConfigMap("metric-receiver-config")
+		mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
+		mockBackendExternalService := mockBackend.ExternalService().
+			WithPort("grpc-otlp", grpcOTLPPort).
+			WithPort("http-web", httpWebPort)
+
+		mpWithHTTPSAnnotation := metricproducer.New(mocksNs, "metric-producer")
+		mpWithHTTPAnnotation := metricproducer.New(mocksNs, "metric-producer-http")
+
+		// Default namespace objects.
+		otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
+		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
+		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", hostSecret.SecretKeyRef("metric-host")).PrometheusInput(true)
+		pipelines.Append(metricPipeline.Name())
+
+		objs = append(objs, []client.Object{
+			mockBackendConfigMap.K8sObject(),
+			mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
+			mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
+			mpWithHTTPSAnnotation.Pod().WithSidecarInjection().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
+			mpWithHTTPSAnnotation.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
+			mpWithHTTPAnnotation.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+			mpWithHTTPAnnotation.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+			hostSecret.K8sObject(),
+			metricPipeline.K8sObject(),
+		}...)
+
+		urls.SetMockBackendExport(proxyClient.ProxyURLForService(mocksNs, mockBackend.Name(), telemetryDataFilename, httpWebPort))
+
+		return objs, urls, pipelines
+	}
+
+	Context("App with istio-sidecar", Ordered, func() {
 		BeforeAll(func() {
-			k8sObjects, urlProvider, _ := makeMetricsPrometheusInputTestK8sObjects(mocksNs, mockDeploymentName)
+			k8sObjects, urlProvider, _ := makeResources()
 			urls = urlProvider
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				//Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -68,131 +115,93 @@ var _ = Describe("Metrics Prometheus input", Label("metrics"), func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should verify custom metric scraping via annotated pods", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
-				// targets discovered via annotated pods must have no service label
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricCPUTemperature, withoutServiceLabel)
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricCPUEnergyHistogram, withoutServiceLabel)
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricHardwareHumidity, withoutServiceLabel)
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricHardDiskErrorsTotal, withoutServiceLabel)
-					}))))
-			}, timeout, interval).Should(Succeed())
+		// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
+		// targets discovered via annotated pods must have no service label
+		Context("Annotated pods", func() {
+			It("Should scrape if prometheus.io/scheme=https", func() {
+				Eventually(func(g Gomega) {
+					resp, err := proxyClient.Get(urls.MockBackendExport())
+					g.Expect(err).NotTo(HaveOccurred())
+					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+					g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+						ConsistOfMetricsWithResourceAttributeValue("k8s.pod.name", "metric-producer-https"),
+						ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+							return metricsEqual(m, metricproducer.MetricCPUTemperature, withoutServiceLabel)
+						}),
+						ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+							return metricsEqual(m, metricproducer.MetricCPUEnergyHistogram, withoutServiceLabel)
+						}),
+						ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+							return metricsEqual(m, metricproducer.MetricHardwareHumidity, withoutServiceLabel)
+						}),
+						ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+							return metricsEqual(m, metricproducer.MetricHardDiskErrorsTotal, withoutServiceLabel)
+						}))))
+				}, timeout, telemetryDeliveryInterval).Should(Succeed())
+			})
+
+			It("Should scrape if prometheus.io/scheme=http", func() {
+				Eventually(func(g Gomega) {
+					resp, err := proxyClient.Get(urls.MockBackendExport())
+					g.Expect(err).NotTo(HaveOccurred())
+					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+					g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+						ConsistOfMetricsWithResourceAttributeValue("k8s.pod.name", "metric-producer-http"),
+					)))
+				}, timeout, telemetryDeliveryInterval).Should(Succeed())
+			})
 		})
 
-		It("Should verify custom metric scraping via annotated services", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
-					// targets discovered via annotated service must have the service label
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricCPUTemperature, withServiceLabel)
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricCPUEnergyHistogram, withServiceLabel)
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricHardwareHumidity, withServiceLabel)
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricHardDiskErrorsTotal, withServiceLabel)
-					}))))
-			}, timeout, interval).Should(Succeed())
-		})
+		// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
+		// targets discovered via annotated service must have the service label
+		Context("Annotated services", func() {
+			It("Should scrape if prometheus.io/scheme=https", func() {
+				Eventually(func(g Gomega) {
+					resp, err := proxyClient.Get(urls.MockBackendExport())
+					g.Expect(err).NotTo(HaveOccurred())
+					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+					g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+						ConsistOfMetricsWithResourceAttributeValue("k8s.pod.name", "metric-producer-https"),
+						ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+							return metricsEqualWithAttributeValue(m, metricproducer.MetricCPUTemperature, "service", "metric-producer-https")
+						}),
+						ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+							return metricsEqualWithAttributeValue(m, metricproducer.MetricCPUEnergyHistogram, "service", "metric-producer-https")
+						}),
+						ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+							return metricsEqualWithAttributeValue(m, metricproducer.MetricHardwareHumidity, "service", "metric-producer-https")
+						}),
+						ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+							return metricsEqualWithAttributeValue(m, metricproducer.MetricHardDiskErrorsTotal, "service", "metric-producer-https")
+						}),
+					)))
+				}, timeout, telemetryDeliveryInterval).Should(Succeed())
+			})
 
-		It("Should verify custom metric scraping via annotated pods over http", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ConsistOfMetricsWithResourceAttributeValue("k8s.pod.name", "metric-producer-http"),
-				)))
-			}, timeout, interval).Should(Succeed())
-		})
-
-		It("Should verify custom metric scraping via annotated services over http", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqualWithAttributeValue(m, metricproducer.MetricCPUTemperature, "service", "metric-producer-http")
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqualWithAttributeValue(m, metricproducer.MetricCPUEnergyHistogram, "service", "metric-producer-http")
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqualWithAttributeValue(m, metricproducer.MetricHardwareHumidity, "service", "metric-producer-http")
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqualWithAttributeValue(m, metricproducer.MetricHardDiskErrorsTotal, "service", "metric-producer-http")
-					}),
-				)))
-			}, timeout, interval).Should(Succeed())
+			It("Should scrape if prometheus.io/scheme=http", func() {
+				Eventually(func(g Gomega) {
+					resp, err := proxyClient.Get(urls.MockBackendExport())
+					g.Expect(err).NotTo(HaveOccurred())
+					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+					g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+						ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+							return metricsEqualWithAttributeValue(m, metricproducer.MetricCPUTemperature, "service", "metric-producer-http")
+						}),
+						ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+							return metricsEqualWithAttributeValue(m, metricproducer.MetricCPUEnergyHistogram, "service", "metric-producer-http")
+						}),
+						ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+							return metricsEqualWithAttributeValue(m, metricproducer.MetricHardwareHumidity, "service", "metric-producer-http")
+						}),
+						ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+							return metricsEqualWithAttributeValue(m, metricproducer.MetricHardDiskErrorsTotal, "service", "metric-producer-http")
+						}),
+					)))
+				}, timeout, telemetryDeliveryInterval).Should(Succeed())
+			})
 		})
 	})
 })
-
-func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDeploymentName string) ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
-	var (
-		objs         []client.Object
-		pipelines    = kyma.NewPipelineList()
-		urls         = mocks.NewURLProvider()
-		grpcOTLPPort = 4317
-		httpWebPort  = 80
-	)
-
-	mocksNamespace := kitk8s.NewNamespace(mocksNamespaceName)
-	objs = append(objs, kitk8s.NewNamespace(mocksNamespaceName).K8sObject())
-
-	// Mocks namespace objects.
-	mockBackend := mocks.NewBackend(mockDeploymentName, mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
-	mockBackendConfigMap := mockBackend.ConfigMap("metric-receiver-config")
-	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
-	mockBackendExternalService := mockBackend.ExternalService().
-		WithPort("grpc-otlp", grpcOTLPPort).
-		WithPort("http-web", httpWebPort)
-	mockMetricProducer := metricproducer.New(mocksNamespaceName, "metric-producer")
-	mockMetricProducerHTTP := metricproducer.New(mocksNamespaceName, "metric-producer-http")
-
-	// Default namespace objects.
-	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
-	hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
-	metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", hostSecret.SecretKeyRef("metric-host")).PrometheusInput(true)
-	pipelines.Append(metricPipeline.Name())
-
-	objs = append(objs, []client.Object{
-		mockBackendConfigMap.K8sObject(),
-		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		mockMetricProducer.Pod().WithSidecarInjection().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
-		mockMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
-		mockMetricProducerHTTP.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-		mockMetricProducerHTTP.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-		hostSecret.K8sObject(),
-		metricPipeline.K8sObject(),
-	}...)
-
-	urls.SetMockBackendExport(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort))
-
-	return objs, urls, pipelines
-}
 
 type comparisonMode int
 

@@ -104,7 +104,7 @@ var _ = Describe("Istio access logs", Label("logging"), func() {
 
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainLogs(WithAttributeKeys(istio.AccessLogAttributeKeys...)))))
-			}, timeout, 10*time.Second).Should(Succeed())
+			}, timeout, telemetryDeliveryInterval).Should(Succeed())
 		})
 	})
 })

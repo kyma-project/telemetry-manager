@@ -166,7 +166,7 @@ e2e-coverage: ginkgo
 integration-test-istio: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run integration tests with istio.
 	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
-	$(GINKGO) run --tags istio -v --flake-attempts=5 --junit-report=junit.xml ./test/integration/istio
+	$(GINKGO) run --tags istio -v --junit-report=junit.xml ./test/integration/istio
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 

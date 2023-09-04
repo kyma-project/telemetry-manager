@@ -127,7 +127,7 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainSpansWithAttributes(attrs))))
-			}, timeout, interval).Should(Succeed())
+			}, timeout, telemetryDeliveryInterval).Should(Succeed())
 		})
 	})
 })
