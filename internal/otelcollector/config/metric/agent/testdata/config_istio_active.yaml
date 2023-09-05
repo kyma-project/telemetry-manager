@@ -83,7 +83,7 @@ receivers:
                       regex: (https?)
                       target_label: __scheme__
                       action: replace
-                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+                    - source_labels: [__scheme__]
                       regex: (https)
                       action: drop
                     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
@@ -124,7 +124,7 @@ receivers:
                       regex: (https?)
                       target_label: __scheme__
                       action: replace
-                    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+                    - source_labels: [__scheme__]
                       regex: (http)
                       action: drop
                     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
@@ -173,7 +173,7 @@ receivers:
                       regex: (https?)
                       target_label: __scheme__
                       action: replace
-                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+                    - source_labels: [__scheme__]
                       regex: (https)
                       action: drop
                     - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
@@ -217,7 +217,7 @@ receivers:
                       regex: (https?)
                       target_label: __scheme__
                       action: replace
-                    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+                    - source_labels: [__scheme__]
                       regex: (http)
                       action: drop
                     - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]

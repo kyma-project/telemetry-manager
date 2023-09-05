@@ -132,7 +132,7 @@ func dropIfIstioProxy() RelabelConfig {
 
 func dropIfSchemeAnnotationHTTP(annotated AnnotatedResource) RelabelConfig {
 	return RelabelConfig{
-		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_scheme", annotated)},
+		SourceLabels: []string{"__scheme__"},
 		Action:       Drop,
 		Regex:        "(http)",
 	}
@@ -140,7 +140,7 @@ func dropIfSchemeAnnotationHTTP(annotated AnnotatedResource) RelabelConfig {
 
 func dropIfSchemeAnnotationHTTPS(annotated AnnotatedResource) RelabelConfig {
 	return RelabelConfig{
-		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_scheme", annotated)},
+		SourceLabels: []string{"__scheme__"},
 		Action:       Drop,
 		Regex:        "(https)",
 	}
