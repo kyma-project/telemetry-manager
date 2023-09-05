@@ -15,7 +15,7 @@ function create_module() {
     export IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/telemetry-manager
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
     ${KUSTOMIZE} build config/default > manifests.yaml
-    ${KYMA} alpha create module --module-config-file=module_config.yaml --registry ${MODULE_REGISTRY} --insecure --ci
+    ${KYMA} alpha create module --module-config-file=module_config.yaml --registry ${MODULE_REGISTRY} --insecure --ci -v
 }
 
 function apply_local_template_label() {
