@@ -2,7 +2,6 @@
 
 > **NOTE:** The feature is not available yet. To understand the current progress, watch this [epic](https://github.com/kyma-project/kyma/issues/13079).
 
-
 Observability is all about exposing the internals of the components belonging to an distributed application and making that data analysable at a central place.
 While application logs and traces are usually providing request-oriented data, metrics are aggregated statistics exposed by a component to reflect the internal state. Typical statistics like the amount of processed requests, or the amount of registered users, can be very useful to introspect the current state and also the health of a component. Also, you can define proactive and reactive alerts if metrics are about to reach thresholds, or if they already passed thresholds.
 
@@ -33,7 +32,9 @@ Optionally, the Telemetry module provides a DaemonSet of an [OTel Collector](htt
 1. The metric data is consumed using the backend system.
 
 ### Metric Gateway
+
 In a Kyma cluster, the metric gateway is the central component to which all components can send their individual metrics. The gateway collects, enriches, and dispatches the data to the configured backend. The gateway is based on the [OTel Collector](https://opentelemetry.io/docs/collector/) and comes with a concept of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together (see [Configuration](https://opentelemetry.io/docs/collector/configuration/). Kyma's MetricPipeline provides a hardened setup of an OTel Collector and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
+
 - Supportability - all features are tested and supported
 - Migratability - smooth migration experiences when switching underlying technologies or architectures
 - Native Kubernetes support - API provided by Kyma supports an easy integration with Secrets, for example, served by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator#readme). Telemetry Manager takes care of the full lifecycle.
@@ -42,6 +43,7 @@ In a Kyma cluster, the metric gateway is the central component to which all comp
 The downside is that only a limited set of features is available. If you want to avoid this downside, bring your own collector setup. The current feature set focuses on providing the full configurability of backends integrated by OTLP.
 
 ### Metric Agent
+
 If a MetricPipeline configures a feature in the `input.application` section, an additional DaemonSet is deployed acting as an agent. The agent is also based on an [OTel Collector](https://opentelemetry.io/docs/collector/) and encompasses the collection and conversion of Prometheus-based metrics. Hereby, the workload puts an `prometheus.io/scrape` annotation on the specification of the Pod or service, and the agent collects it. The agent pushes all data in OTLP to the central gateway.
 
 ### Telemetry Manager
@@ -56,38 +58,47 @@ Furthermore, the manager takes care of the full lifecycle of the Gateway Deploym
 
 In the following steps, you can see how to construct and deploy a typical MetricPipeline. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
 
-### Step 1a. Create a MetricPipeline with an OTLP GRPC output
-To ship metrics to a new OTLP output, create a resource of the kind `MetricPipeline`:
+### Step 1. Create a MetricPipeline with an OTLP output
 
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
-```
+To ship metrics to a new OTLP output, create a resource of the kind `MetricPipeline`. Default protocol is GRPC, but you can choose HTTP instead.
 
-This configures the underlying OTel Collector of the gateway with a pipeline for metrics. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-metrics` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, depending on the configured protocol.
+This configures the underlying OTel Collector of the gateway with a pipeline for metrics. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-metrics` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, depending on the configured protocol. Ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
 
-### Step 1b. Create a MetricPipeline with an OTLP HTTP output
+<div tabs>
+  <details>
+    <summary>GRPC</summary>
+    For GRPC, use:
 
-To use the HTTP protocol instead of the default GRPC, use the `protocol` attribute and ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
-  output:
-    otlp:
-      protocol: http
-      endpoint:
-        value: https://backend.example.com:4318
-```
+      ```yaml
+      apiVersion: telemetry.kyma-project.io/v1alpha1
+      kind: MetricPipeline
+      metadata:
+        name: backend
+      spec:
+        output:
+          otlp:
+            endpoint:
+              value: https://backend.example.com:4317
+      ```
+  </details>
+  <details>
+    <summary>HTTP</summary>
+    To use the HTTP protocol, use the `protocol` attribute:
+  
+    ```yaml
+    apiVersion: telemetry.kyma-project.io/v1alpha1
+    kind: MetricPipeline
+    metadata:
+      name: backend
+    spec:
+      output:
+        otlp:
+          protocol: http
+          endpoint:
+            value: https://backend.example.com:4318
+    ```
+  </details>
+</div>
 
 ### Step 2a: Add authentication details from plain text
 
@@ -277,6 +288,7 @@ If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/S
 > **NOTE:** For the following approach, you must have instrumented your application using a library like the [Prometheus client library](https://prometheus.io/docs/instrumenting/clientlibs/), with a port in your workload exposed serving as a Prometheus metrics endpoint.
 
 To enable collection of Prometheus-based metrics, define a MetricPipeline that has the `prometheus` section enabled as input:
+
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
@@ -293,7 +305,6 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-
 The agent is configured with a generic scrape configuration, which uses annotations to specify the endpoints to scrape in the cluster. 
 You only need to have the annotations in place for metrics ingestion to start automatically.
 
@@ -309,7 +320,9 @@ Put the following annotations either to a Service that resolves your metrics por
 > **NOTE:** The agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
 
 ### Step 5: Activate runtime metrics
+
 To enable collection of runtime metrics for your Pods, define a MetricPipeline that has the `runtime` section enabled as input:
+
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
@@ -329,7 +342,9 @@ spec:
 The agent will configure the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) for the metric groups `pod` and `container`. With that, [system metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md) related to containers and pods will get collected.
 
 ### Step 6: Activate Istio metrics
+
 To enable collection of Istio metrics for your Pods, define a MetricPipeline that has the `istio` section enabled as input:
+
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
@@ -351,8 +366,10 @@ The agent will start pulling all [Istio metrics](https://istio.io/latest/docs/re
 ### Step 7: Deploy the Pipeline
 
 To activate the constructed MetricPipeline, follow these steps:
+
 1. Place the snippet in a file named for example `metricpipeline.yaml`.
 2. Apply the resource file in your cluster:
+
     ```bash
     kubectl apply -f metricpipeline.yaml
     ```
@@ -368,6 +385,7 @@ You activated a MetricPipeline and metrics start streaming to your backend. To v
 ## Limitations
 
 The metric gateway setup is based on the following assumptions:
+
 - The collector has no autoscaling options and has a limited resource setup of 1 CPU and 1 GiB memory.
 - Batching is enabled, and a batch will contain up to 512 metrics/batch.
 - A destination can be unavailable for up to 5 minutes without direct loss of metric data.
@@ -376,50 +394,64 @@ The metric gateway setup is based on the following assumptions:
 This leads to the following limitations:
 
 ### Throughput
+
 The maximum throughput is 4200 metric/sec ~= 15.000.000 metrics/hour. If more data must be ingested, it can be refused.
 
 ### Unavailability of output
+
 For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 
 ### No guaranteed delivery
+
 The used buffers are volatile. If the gateway or agent instances crash, metric data can be lost.
 
 ### Multiple MetricPipeline support
+
 Up to three MetricPipeline resources at a time are supported.
 
 ## Troubleshooting
 
-- Symptom: No metrics are arriving at the destination.
+### No metrics arrive at the destination
 
-   Cause: The backend is not reachable or wrong authentication credentials are used
+Symptom: No metrics arrive at the destination.
 
-   Remedy: Investigate the cause with the following steps:
-   1. Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
+Cause: The backend is not reachable or wrong authentication credentials are used.
 
-- Symptom: Custom metrics don't arrive at the destination, but Istio metrics do.
+Remedy:
 
-   Cause: Your SDK version is incompatible with the OTel collector version.
-   
-   Remedy:
-   1. Check which SDK version you are using for instrumentation. 
-   1. Investigate whether it is compatible with the OTel collector version.
-   1. If required, upgrade to a supported SDK version.
+1. To check the `telemetry-trace-collector` Pods for error logs, call `kubectl logs -n kyma-system {POD_NAME}`.
+2. Fix the errors.
 
-- Symptom: Custom metrics don't arrive at the destination and the OTel Collector produces log entries "Failed to scrape Prometheus endpoint":
-  ```
-  2023-08-29T09:53:07.123Z	warn	internal/transaction.go:111	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
-  ```
+### Only Istio metrics arrive at the destination
 
-  Cause: The workload is not configured using 'STRICT' mTLS mode.
+Symptom: Custom metrics don't arrive at the destination, but Istio metrics do.
 
-  Remedy:
-  <div tabs>
-    <details>
-      <summary>Strict mTLS</summary>
-      Configure the workload using 'STRICT' mTLS mode (for example, by applying a corresponding PeerAuthentication).
-    </details>
-    <details>
-      <summary>Scheme annotation</summary>
-      Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
-    </details>
-  </div>
+Cause: Your SDK version is incompatible with the OTel collector version.
+
+Remedy:
+
+1. Check which SDK version you are using for instrumentation.
+2. Investigate whether it is compatible with the OTel collector version.
+3. If required, upgrade to a supported SDK version.
+
+### Log entry: Failed to scrape Prometheus endpoint
+
+Symptom: Custom metrics don't arrive at the destination and the OTel Collector produces log entries "Failed to scrape Prometheus endpoint":
+
+```bash
+2023-08-29T09:53:07.123Z	warn	internal/transaction.go:111	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
+```
+
+Cause: The workload is not configured to use 'STRICT' mTLS mode.
+
+Remedy: You can either set up 'STRICT' mTLS mode or HTTP scraping:
+<div tabs>
+  <details>
+    <summary>Strict mTLS</summary>
+    Configure the workload using 'STRICT' mTLS mode (for example, by applying a corresponding PeerAuthentication).
+  </details>
+  <details>
+    <summary>Scheme annotation</summary>
+    Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
+  </details>
+</div>
