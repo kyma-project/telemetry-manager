@@ -1,7 +1,6 @@
 package metricproducer
 
 import (
-	"maps"
 	"strconv"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -16,13 +15,6 @@ type Metric struct {
 	Name   string
 	Labels []string
 }
-
-type ScrapingScheme string
-
-const (
-	SchemeHTTP  ScrapingScheme = "http"
-	SchemeHTTPS ScrapingScheme = "https"
-)
 
 var (
 	MetricCPUTemperature = Metric{
@@ -45,22 +37,28 @@ var (
 		Labels: []string{"sensor"},
 	}
 
-	metricsPort     = 8080
-	metricsPortName = "http-metrics"
-	metricsEndpoint = "/metrics"
-	selectorLabels  = map[string]string{
+	metricsPort           = 8080
+	metricsPortName       = "http-metrics"
+	metricsEndpoint       = "/metrics"
+	baseName              = "metric-producer"
+	prometheusAnnotations = map[string]string{
+		"prometheus.io/path":   metricsEndpoint,
+		"prometheus.io/port":   strconv.Itoa(metricsPort),
+		"prometheus.io/scrape": "true",
+		"prometheus.io/scheme": "http",
+	}
+	selectorLabels = map[string]string{
 		"app": "sample-metrics",
 	}
 )
 
 // MetricProducer represents a workload that exposes dummy metrics in the Prometheus exposition format
 type MetricProducer struct {
-	name      string
 	namespace string
 }
 
 func (mp *MetricProducer) Name() string {
-	return mp.name
+	return baseName
 }
 
 func (mp *MetricProducer) MetricsEndpoint() string {
@@ -72,62 +70,38 @@ func (mp *MetricProducer) MetricsPort() int {
 }
 
 type Pod struct {
-	name        string
 	namespace   string
-	labels      map[string]string
 	annotations map[string]string
 }
 
 type Service struct {
-	name        string
 	namespace   string
 	annotations map[string]string
 }
 
-func New(namespace string, name string) *MetricProducer {
+func New(namespace string) *MetricProducer {
 	return &MetricProducer{
-		name:      name,
 		namespace: namespace,
 	}
 }
 
 func (mp *MetricProducer) Pod() *Pod {
 	return &Pod{
-		name:        mp.name,
-		namespace:   mp.namespace,
-		labels:      make(map[string]string),
-		annotations: make(map[string]string),
+		namespace: mp.namespace,
 	}
 }
 
-func (p *Pod) WithSidecarInjection() *Pod {
-	p.labels["sidecar.istio.io/inject"] = "true"
+func (p *Pod) WithPrometheusAnnotations() *Pod {
+	p.annotations = prometheusAnnotations
 	return p
-}
-
-func (p *Pod) WithPrometheusAnnotations(scheme ScrapingScheme) *Pod {
-	p.annotations = makePrometheusAnnotations(scheme)
-	return p
-}
-
-func makePrometheusAnnotations(scheme ScrapingScheme) map[string]string {
-	return map[string]string{
-		"prometheus.io/scrape": "true",
-		"prometheus.io/path":   metricsEndpoint,
-		"prometheus.io/port":   strconv.Itoa(metricsPort),
-		"prometheus.io/scheme": string(scheme),
-	}
 }
 
 func (p *Pod) K8sObject() *corev1.Pod {
-	labels := p.labels
-	maps.Copy(labels, selectorLabels)
-
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        p.name,
+			Name:        baseName,
 			Namespace:   p.namespace,
-			Labels:      labels,
+			Labels:      selectorLabels,
 			Annotations: p.annotations,
 		},
 		Spec: corev1.PodSpec{
@@ -158,20 +132,19 @@ func (p *Pod) K8sObject() *corev1.Pod {
 
 func (mp *MetricProducer) Service() *Service {
 	return &Service{
-		name:      mp.name,
 		namespace: mp.namespace,
 	}
 }
 
-func (s *Service) WithPrometheusAnnotations(scheme ScrapingScheme) *Service {
-	s.annotations = makePrometheusAnnotations(scheme)
+func (s *Service) WithPrometheusAnnotations() *Service {
+	s.annotations = prometheusAnnotations
 	return s
 }
 
 func (s *Service) K8sObject() *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        s.name,
+			Name:        baseName,
 			Namespace:   s.namespace,
 			Annotations: s.annotations,
 			Labels:      selectorLabels,

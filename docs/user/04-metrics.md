@@ -299,12 +299,12 @@ You only need to have the annotations in place for metrics ingestion to start au
 
 Put the following annotations either to a Service that resolves your metrics port, or directly to the Pod:
 
-| Annotation Key         | Example Values    | Default Value | Description                                                                                                                                                                                                                                                                                                                                 |
-|------------------------|-------------------|--------------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Annotation Key                     | Example Values    | Default Value | Description                                                                                                                                                                                                                                                                                                                                 |
+|------------------------------------|-------------------|-------------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `prometheus.io/scrape` (mandatory) | `true`, `false` | None | Controls whether Prometheus will automatically scrape metrics from this target.                                                                                                                                                                                                                                                             |
-| `prometheus.io/port`   | `8080`, `9100` | None (mandatory) | Specifies the port where the metrics are exposed.                                                                                                                                                                                                                                                                                           |
-| `prometheus.io/path`   | `/metrics`, `/custom_metrics` | `/metrics` | Defines the HTTP path where Prometheus can find metrics data.                                                                                                                                                                                                                                                                               |
-| `prometheus.io/scheme` | `http`, `https` | If Istio is active, `https` is supported; otherwise, only `http` is available. The default scheme is `http` unless an Istio sidecar is present, denoted by the label `security.istio.io/tlsMode=istio`, in which case `https` becomes the default. | Determines the protocol used for scraping metrics — either HTTPS with mTLS or plain HTTP. |
+| `prometheus.io/port` (mandatory)   | `8080`, `9100` | None | Specifies the port where the metrics are exposed.                                                                                                                                                                                                                                                                                           |
+| `prometheus.io/path`               | `/metrics`, `/custom_metrics` | `/metrics` | Defines the HTTP path where Prometheus can find metrics data.                                                                                                                                                                                                                                                                               |
+| `prometheus.io/scheme`             | `http`, `https` | If Istio is active, `https` is supported; otherwise, only `http` is available. The default scheme is `http` unless an Istio sidecar is present, denoted by the label `security.istio.io/tlsMode=istio`, in which case `https` becomes the default. | Determines the protocol used for scraping metrics — either HTTPS with mTLS or plain HTTP. |
 
 > **NOTE:** The agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
 
@@ -413,5 +413,13 @@ Up to three MetricPipeline resources at a time are supported.
   Cause: The workload is not configured using 'STRICT' mTLS mode.
 
   Remedy:
-1. Configure the workload using 'STRICT' mTLS mode (for example, by applying a corresponding PeerAuthentication).
-1. If it's not possible, set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
+<div tabs>
+  <details>
+    <summary>Strict mTLS</summary>
+Configure the workload using 'STRICT' mTLS mode (for example, by applying a corresponding PeerAuthentication).
+  </details>
+    <details>
+    <summary>Scheme annotation</summary>
+Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
+  </details>
+</div>
