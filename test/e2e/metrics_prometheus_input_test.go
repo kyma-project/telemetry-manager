@@ -164,8 +164,8 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 		mockBackendConfigMap.K8sObject(),
 		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		mockMetricProducer.Pod().WithPrometheusAnnotations().K8sObject(),
-		mockMetricProducer.Service().WithPrometheusAnnotations().K8sObject(),
+		mockMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+		mockMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 		hostSecret.K8sObject(),
 		metricPipeline.K8sObject(),
 	}...)
