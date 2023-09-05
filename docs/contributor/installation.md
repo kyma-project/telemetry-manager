@@ -28,7 +28,7 @@ make deploy-dev
 
 ```
 kubectl create ns kyma-system
-kubectl apply -f https://github.com/kyma-project/telemetry-manager/releases/latest/download/rendered.yaml
+kubectl apply -f https://github.com/kyma-project/telemetry-manager/releases/latest/download/manifests.yaml
 ```
 
 ## Install Telemetry Manager in your cluster from latest release using the Lifecycle manager

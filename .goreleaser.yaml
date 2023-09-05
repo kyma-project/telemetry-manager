@@ -24,7 +24,7 @@ changelog:
 release:
   extra_files:
     - glob: template.yaml
-    - glob: ./manifests/telemetry/rendered.yaml
+    - glob: manifests.yaml
 builds:
   -
     skip: true

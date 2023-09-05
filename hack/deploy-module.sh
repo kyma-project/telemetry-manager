@@ -6,16 +6,16 @@ readonly REGISTRY_PORT="${REGISTRY_PORT:-5001}"
 readonly MODULE_REGISTRY="${MODULE_REGISTRY:-localhost:${REGISTRY_PORT}}"
 
 function build_and_push_manager_image() {
-    export IMG=localhost:${REGISTRY_PORT}/${MODULE_NAME}-manager
+    export IMG=localhost:${REGISTRY_PORT}/telemetry-manager
     make docker-build
     make docker-push
 }
 
 function create_module() {
-    export IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/${MODULE_NAME}-manager
+    export IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/telemetry-manager
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
-    # create module command uses Kustomization files defined in "config/default"
-    ${KYMA} alpha create module --name kyma-project.io/module/${MODULE_NAME} --version ${MODULE_VERSION} --channel ${MODULE_CHANNEL} --default-cr ${MODULE_CR_PATH} --registry ${MODULE_REGISTRY} --insecure --ci --kubebuilder-project
+    ${KUSTOMIZE} build config/default > manifests.yaml
+    ${KYMA} alpha create module --module-config-file=module_config.yaml --registry ${MODULE_REGISTRY} --insecure --ci
 }
 
 function apply_local_template_label() {
@@ -78,7 +78,7 @@ function main() {
     kubectl apply -f template.yaml
 
     # Enable the module
-    ${KYMA} alpha enable module ${MODULE_NAME} --channel ${MODULE_CHANNEL}
+    ${KYMA} alpha enable module telemetry --channel fast
 
     # Wait for Telemetry CR to be in Ready state
     verify_telemetry_status
