@@ -30,7 +30,7 @@ var _ = Describe("Istio access logs", Label("logging"), func() {
 			urls               *urlprovider.URLProvider
 			mockNs             = "istio-access-logs-mocks"
 			mockDeploymentName = "istio-access-logs-backend"
-			sampleAppNs        = "sample"
+			sampleAppNs        = "istio-permissive-mtls"
 			logPipelineName    string
 		)
 		BeforeAll(func() {
@@ -107,9 +107,6 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 	mocksNamespace := kitk8s.NewNamespace(mockNs)
 	objs = append(objs, mocksNamespace.K8sObject())
 
-	appNamespace := kitk8s.NewNamespace(sampleAppNs, kitk8s.WithIstioInjection())
-	objs = append(objs, appNamespace.K8sObject())
-
 	//// Mocks namespace objects.
 	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename, backend.SignalTypeLogs)
 
@@ -127,7 +124,7 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 	istioAccessLogsPipeline := kitlog.NewPipeline("pipeline-istio-access-logs").WithSecretKeyRef(hostSecret.SecretKeyRef("log-host")).WithIncludeContainer([]string{"istio-proxy"}).WithHTTPOutput()
 
 	// Abusing metrics provider for istio access logs
-	sampleApp := metricproducer.New(sampleAppNs)
+	sampleApp := metricproducer.New(sampleAppNs, metricproducer.WithName("access-log-emitter"))
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),

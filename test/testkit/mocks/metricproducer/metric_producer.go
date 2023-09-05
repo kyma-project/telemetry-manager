@@ -112,13 +112,8 @@ func (mp *MetricProducer) Pod() *Pod {
 	}
 }
 
-func (p *Pod) WithSidecarInjection() *Pod {
-	p.labels["sidecar.istio.io/inject"] = "true"
-	return p
-}
-
 func (p *Pod) WithPrometheusAnnotations(scheme ScrapingScheme) *Pod {
-	p.annotations = makePrometheusAnnotations(scheme)
+	maps.Copy(p.annotations, makePrometheusAnnotations(scheme))
 	return p
 }
 
