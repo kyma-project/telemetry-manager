@@ -406,7 +406,7 @@ Up to three MetricPipeline resources at a time are supported.
    1. If required, upgrade to a supported SDK version.
 
 - Symptom: Custom metrics don't arrive at the destination and the OTel Collector produces log entries "Failed to scrape Prometheus endpoint":
-2023-08-29T09:53:07.123Z	warn	internal/transaction.go:111	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
+  2023-08-29T09:53:07.123Z	warn	internal/transaction.go:111	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
 
   Cause: The workload is not configured using 'STRICT' mTLS mode.
 
