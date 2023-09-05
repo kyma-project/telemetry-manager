@@ -192,22 +192,6 @@ func AllDataPointsContainAttributes(m pmetric.Metric, expectedAttrKeys ...string
 	return true
 }
 
-func AllDataPointsContainAttributeWithValue(m pmetric.Metric, expectedAttrKey string, expectedAttrValue string) bool {
-	attrsPerDataPoint := getAttributesPerDataPoint(m)
-	for _, attrs := range attrsPerDataPoint {
-		if !containsAttributeValue(attrs, expectedAttrKey, expectedAttrValue) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func containsAttributeValue(m pcommon.Map, attrKey string, attrValue string) bool {
-	value, found := m.Get(attrKey)
-	return found && attrValue == value.AsString()
-}
-
 func NoDataPointsContainAttributes(m pmetric.Metric, expectedAttrKeys ...string) bool {
 	attrsPerDataPoint := getAttributesPerDataPoint(m)
 	for _, attrs := range attrsPerDataPoint {
