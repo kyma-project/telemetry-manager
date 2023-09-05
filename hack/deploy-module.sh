@@ -15,6 +15,11 @@ function create_module() {
     export IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/telemetry-manager
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
     ls -la
+    echo "git remote -v"
+    git remote -v
+    echo "git remote add"
+    git remote add origin https://github.com/kyma-project/telemetry-manager
+    echo "git remote -v"
     git remote -v
     ${KUSTOMIZE} build config/default > manifests.yaml
     ${KYMA} alpha create module --module-config-file=module_config.yaml --registry ${MODULE_REGISTRY} --insecure --ci -v
