@@ -10,6 +10,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const (
+	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/examples/monitoring-custom-metrics:v20230905-b823fd14"
+)
+
 type Metric struct {
 	Type   pmetric.MetricType
 	Name   string
@@ -108,7 +112,7 @@ func (p *Pod) K8sObject() *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  "sample-metrics",
-					Image: "ckleineweber076/monitoring-custom-metrics:otlp-tracing",
+					Image: metricProducerImage,
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          metricsPortName,
