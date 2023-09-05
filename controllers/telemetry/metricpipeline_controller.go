@@ -94,6 +94,7 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&source.Kind{Type: &apiextensionsv1.CustomResourceDefinition{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapCRDChanges),
+			builder.WithPredicates(setup.CreateOrDelete()),
 		).Complete(r)
 }
 
