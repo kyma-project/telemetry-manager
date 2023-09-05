@@ -1,6 +1,9 @@
 package agent
 
 import (
+	"fmt"
+	"maps"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -10,6 +13,8 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 )
+
+const istioCertVolumeName = "istio-certs"
 
 type Config struct {
 	BaseName  string
@@ -48,10 +53,13 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func MakeDaemonSet(config Config, configHash, envVarPodIP, envVarNodeName string) *appsv1.DaemonSet {
-	labels := core.MakeDefaultLabels(config.BaseName)
+func MakeDaemonSet(config Config, configHash, envVarPodIP, envVarNodeName, istioCertPath string) *appsv1.DaemonSet {
+	selectorLabels := core.MakeDefaultLabels(config.BaseName)
+	podLabels := maps.Clone(selectorLabels)
+	podLabels["sidecar.istio.io/inject"] = "true"
 
 	annotations := core.MakeCommonPodAnnotations(configHash)
+	maps.Copy(annotations, makeIstioTLSPodAnnotations(istioCertPath))
 
 	resources := makeResourceRequirements(config)
 	podSpec := core.MakePodSpec(config.BaseName, config.DaemonSet.Image,
@@ -59,21 +67,28 @@ func MakeDaemonSet(config Config, configHash, envVarPodIP, envVarNodeName string
 		core.WithResources(resources),
 		core.WithEnvVarFromSource(envVarPodIP, core.FieldPathPodIP),
 		core.WithEnvVarFromSource(envVarNodeName, core.FieldPathNodeName),
+		core.WithVolume(corev1.Volume{Name: istioCertVolumeName, VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		}}),
+		core.WithVolumeMount(corev1.VolumeMount{
+			Name:      istioCertVolumeName,
+			MountPath: istioCertPath,
+			ReadOnly:  true,
+		}),
 	)
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.BaseName,
 			Namespace: config.Namespace,
-			Labels:    labels,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: selectorLabels,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels,
+					Labels:      podLabels,
 					Annotations: annotations,
 				},
 				Spec: podSpec,
@@ -92,5 +107,17 @@ func makeResourceRequirements(config Config) corev1.ResourceRequirements {
 			corev1.ResourceCPU:    config.DaemonSet.CPURequest,
 			corev1.ResourceMemory: config.DaemonSet.MemoryRequest,
 		},
+	}
+}
+
+func makeIstioTLSPodAnnotations(istioCertPath string) map[string]string {
+	return map[string]string{
+		"proxy.istio.io/config": fmt.Sprintf(`# configure an env variable OUTPUT_CERTS to write certificates to the given folder
+proxyMetadata:
+  OUTPUT_CERTS: %s
+`, istioCertPath),
+		"sidecar.istio.io/userVolumeMount":                 fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
+		"traffic.sidecar.istio.io/includeInboundPorts":     "",
+		"traffic.sidecar.istio.io/includeOutboundIPRanges": "",
 	}
 }

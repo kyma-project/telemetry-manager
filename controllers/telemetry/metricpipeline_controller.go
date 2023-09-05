@@ -23,6 +23,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -89,6 +90,11 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&source.Kind{Type: &corev1.Secret{}},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
+		).
+		Watches(
+			&source.Kind{Type: &apiextensionsv1.CustomResourceDefinition{}},
+			handler.EnqueueRequestsFromMapFunc(r.mapCRDChanges),
+			builder.WithPredicates(setup.CreateOrDelete()),
 		).Complete(r)
 }
 
@@ -113,6 +119,31 @@ func (r *MetricPipelineReconciler) mapSecret(object client.Object) []reconcile.R
 			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 			ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
 		}
+	}
+	return requests
+}
+
+func (r *MetricPipelineReconciler) mapCRDChanges(object client.Object) []reconcile.Request {
+	var pipelines telemetryv1alpha1.MetricPipelineList
+	var requests []reconcile.Request
+	err := r.List(context.Background(), &pipelines)
+	if err != nil {
+		ctrl.Log.Error(err, "CRD UpdateEvent: fetching MetricPipelineList failed!", err.Error())
+		return requests
+	}
+
+	crd, ok := object.(*apiextensionsv1.CustomResourceDefinition)
+	if !ok {
+		ctrl.Log.V(1).Error(errIncorrectCRDObject, "CRD object of incompatible type")
+		return requests
+	}
+	ctrl.Log.V(1).Info(fmt.Sprintf("CRD UpdateEvent: handling Secret: %s", crd.Name))
+	for i := range pipelines.Items {
+		var pipeline = pipelines.Items[i]
+
+		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		ctrl.Log.V(1).Info(fmt.Sprintf("CRD UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
+
 	}
 	return requests
 }

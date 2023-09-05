@@ -42,17 +42,19 @@ type DeploymentProber interface {
 
 type Reconciler struct {
 	client.Client
-	config           Config
-	prober           DeploymentProber
-	overridesHandler overrides.GlobalConfigHandler
+	config             Config
+	prober             DeploymentProber
+	overridesHandler   overrides.GlobalConfigHandler
+	istioStatusChecker istioStatusChecker
 }
 
 func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
 	return &Reconciler{
-		Client:           client,
-		config:           config,
-		prober:           prober,
-		overridesHandler: overridesHandler,
+		Client:             client,
+		config:             config,
+		prober:             prober,
+		overridesHandler:   overridesHandler,
+		istioStatusChecker: istioStatusChecker{client: client},
 	}
 }
 
@@ -296,10 +298,11 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
+	isIstioActive := r.istioStatusChecker.isIstioActive(ctx)
 	agentConfig := agent.MakeConfig(types.NamespacedName{
 		Namespace: r.config.Gateway.Namespace,
 		Name:      r.config.Gateway.Service.OTLPServiceName,
-	}, allPipelines)
+	}, allPipelines, isIstioActive)
 	var agentConfigYAML []byte
 	agentConfigYAML, err = yaml.Marshal(agentConfig)
 	if err != nil {
@@ -315,7 +318,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	}
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
-	daemonSet := otelagentresources.MakeDaemonSet(r.config.Agent, configHash, config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName)
+	daemonSet := otelagentresources.MakeDaemonSet(r.config.Agent, configHash, config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName, agent.IstioCertPath)
 	if err = controllerutil.SetOwnerReference(pipeline, daemonSet, r.Scheme()); err != nil {
 		return err
 	}

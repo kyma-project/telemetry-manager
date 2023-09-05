@@ -16,7 +16,7 @@ type inputSources struct {
 	istio      bool
 }
 
-func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline) *Config {
+func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline, isIstioActive bool) *Config {
 	inputs := inputSources{
 		runtime:    enableRuntimeMetricScraping(pipelines),
 		prometheus: enablePrometheusMetricScraping(pipelines),
@@ -28,7 +28,7 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.Me
 			Extensions: makeExtensionsConfig(),
 			Service:    makeServiceConfig(inputs),
 		},
-		Receivers:  makeReceiversConfig(inputs),
+		Receivers:  makeReceiversConfig(inputs, isIstioActive),
 		Processors: makeProcessorsConfig(inputs),
 		Exporters:  makeExportersConfig(gatewayServiceName),
 	}
