@@ -130,7 +130,7 @@ func dropIfIstioProxy() RelabelConfig {
 	}
 }
 
-func dropIfSchemeAnnotationHTTP() RelabelConfig {
+func dropIfSchemeHTTP() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__scheme__"},
 		Action:       Drop,
@@ -138,7 +138,7 @@ func dropIfSchemeAnnotationHTTP() RelabelConfig {
 	}
 }
 
-func dropIfSchemeAnnotationHTTPS() RelabelConfig {
+func dropIfSchemeHTTPS() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__scheme__"},
 		Action:       Drop,
