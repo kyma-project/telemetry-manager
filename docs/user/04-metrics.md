@@ -58,7 +58,7 @@ Furthermore, the manager takes care of the full lifecycle of the Gateway Deploym
 
 In the following steps, you can see how to construct and deploy a typical MetricPipeline. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
 
-### Step 1. Create a MetricPipeline with an OTLP output
+### Step 1. Create a MetricPipeline
 
 To ship metrics to a new OTLP output, create a resource of the kind `MetricPipeline`. Default protocol is GRPC, but you can choose HTTP instead.
 
@@ -317,7 +317,7 @@ Put the following annotations either to a Service that resolves your metrics por
 | `prometheus.io/path`               | `/metrics`, `/custom_metrics` | `/metrics` | Defines the HTTP path where Prometheus can find metrics data.                                                                                                                                                                                                                                                                               |
 | `prometheus.io/scheme`             | `http`, `https` | If Istio is active, `https` is supported; otherwise, only `http` is available. The default scheme is `http` unless an Istio sidecar is present, denoted by the label `security.istio.io/tlsMode=istio`, in which case `https` becomes the default. | Determines the protocol used for scraping metrics — either HTTPS with mTLS or plain HTTP. |
 
-> **NOTE:** The agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
+> **NOTE:** The agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation. For related troubleshooting, see [Log entry: Failed to scrape Prometheus endpoint](#log-entry-failed-to-scrape-prometheus-endpoint).
 
 ### Step 5: Activate runtime metrics
 
@@ -442,7 +442,7 @@ Symptom: Custom metrics don't arrive at the destination and the OTel Collector p
 2023-08-29T09:53:07.123Z	warn	internal/transaction.go:111	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
 ```
 
-Cause: The workload is not configured to use 'STRICT' mTLS mode.
+Cause: The workload is not configured to use 'STRICT' mTLS mode. For details, see [Activate Prometheus-based metrics](#step-4-activate-prometheus-based-metrics).
 
 Remedy: You can either set up 'STRICT' mTLS mode or HTTP scraping:
 <div tabs>
@@ -451,7 +451,7 @@ Remedy: You can either set up 'STRICT' mTLS mode or HTTP scraping:
     Configure the workload using 'STRICT' mTLS mode (for example, by applying a corresponding PeerAuthentication).
   </details>
   <details>
-    <summary>Scheme annotation</summary>
+    <summary>HTTP scraping</summary>
     Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
   </details>
 </div>
