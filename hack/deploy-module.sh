@@ -15,6 +15,7 @@ function create_module() {
     export IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/telemetry-manager
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
     ls -la
+    git remote -v
     ${KUSTOMIZE} build config/default > manifests.yaml
     ${KYMA} alpha create module --module-config-file=module_config.yaml --registry ${MODULE_REGISTRY} --insecure --ci -v
 }
@@ -60,7 +61,9 @@ function main() {
     
     # Build and push manager image to a local k3d registry
     build_and_push_manager_image
-    
+
+    build_kyma_cli
+
     # Create the module and push its image to a local k3d registry
     create_module
 
