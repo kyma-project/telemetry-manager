@@ -93,7 +93,7 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		).
 		Watches(
 			&source.Kind{Type: &apiextensionsv1.CustomResourceDefinition{}},
-			handler.EnqueueRequestsFromMapFunc(r.mapCRDChanges),
+			handler.EnqueueRequestsFromMapFunc(r.mapCRD),
 		).Complete(r)
 }
 
@@ -122,7 +122,7 @@ func (r *MetricPipelineReconciler) mapSecret(object client.Object) []reconcile.R
 	return requests
 }
 
-func (r *MetricPipelineReconciler) mapCRDChanges(object client.Object) []reconcile.Request {
+func (r *MetricPipelineReconciler) mapCRD(object client.Object) []reconcile.Request {
 	var pipelines telemetryv1alpha1.MetricPipelineList
 	var requests []reconcile.Request
 	err := r.List(context.Background(), &pipelines)
