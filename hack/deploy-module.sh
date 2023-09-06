@@ -14,14 +14,14 @@ function build_and_push_manager_image() {
 function create_module() {
     export IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/telemetry-manager
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
-    ${KUSTOMIZE} build config/default > manifests.yaml
+    ${KUSTOMIZE} build config/default > telemetry-manager.yaml
     git remote add origin https://github.com/kyma-project/telemetry-manager
-    ${KYMA} alpha create module --module-config-file=module_config.yaml --registry ${MODULE_REGISTRY} --insecure --ci
+    ${KYMA} alpha create module --module-config-file=module_config.yaml --registry ${MODULE_REGISTRY} --insecure -o moduletemplate.yaml --ci
 }
 
 function apply_local_template_label() {
-    kubectl label --local=true -f template.yaml operator.kyma-project.io/use-local-template=true -o yaml > temporary-template.yaml
-    mv temporary-template.yaml template.yaml
+    kubectl label --local=true -f moduletemplate.yaml operator.kyma-project.io/use-local-template=true -o yaml > temporary-template.yaml
+    mv temporary-template.yaml moduletemplate.yaml
 }
 
 function verify_telemetry_status() {
@@ -64,10 +64,10 @@ function main() {
     # Create the module and push its image to a local k3d registry
     create_module
 
-    # Modify template.yaml with the URL needed for lifecycle manager to access the module image from inside the k3d cluster
+    # Modify moduletemplate.yaml with the URL needed for lifecycle manager to access the module image from inside the k3d cluster
     sed -e "s/${REGISTRY_PORT}/5000/" \
 		-e "s/localhost/k3d-${REGISTRY_NAME}.localhost/" \
-        -i "" template.yaml
+        -i "" moduletemplate.yaml
 	
     # Apply label needed by the lifecycle manager for local module deployment
     apply_local_template_label
@@ -76,7 +76,7 @@ function main() {
     ${KYMA} alpha deploy --ci
 
     # Deploy the ModuleTemplate in the cluster
-    kubectl apply -f template.yaml
+    kubectl apply -f moduletemplate.yaml
 
     # Enable the module
     ${KYMA} alpha enable module telemetry --channel fast

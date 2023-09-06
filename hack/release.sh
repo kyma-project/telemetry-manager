@@ -5,13 +5,14 @@ readonly GCP_ACCESS_TOKEN=$(gcloud auth application-default print-access-token)
 
 function create_module() {
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
-    ${KUSTOMIZE} build config/default > manifests.yaml
+    ${KUSTOMIZE} build config/default > telemetry-manager.yaml
     git remote add origin https://github.com/kyma-project/telemetry-manager
-    ${KYMA} alpha create module --module-config-file=module_config.yaml --registry ${MODULE_REGISTRY} -c oauth2accesstoken:${GCP_ACCESS_TOKEN} --ci
+    ${KYMA} alpha create module --module-config-file=module_config.yaml --registry ${MODULE_REGISTRY} -c oauth2accesstoken:${GCP_ACCESS_TOKEN} -o moduletemplate.yaml --ci
 }
 
 function create_github_release() {
-    git remote add origin git@github.com:kyma-project/telemetry-manager.git
+    # rename the file for Telemetry default CR to have a better naming as a release artefact
+    cp ./config/samples/operator_v1alpha1_telemetry.yaml telemetry-default-cr.yaml
     git reset --hard
     curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash
 }
