@@ -100,7 +100,7 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 			})
 		})
 
-		It("Should have istio-proxy traces in the backend", func() {
+		It("Should have istio-proxy spans in the backend", func() {
 			By("Sending http requests", func() {
 				for i := 0; i < 100; i++ {
 					Eventually(func(g Gomega) {
@@ -112,15 +112,29 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 			})
 
 			// Identify istio-proxy traces by component=proxy attribute
-			attrs := pcommon.NewMap()
-			attrs.PutStr("component", "proxy")
+			proxyAttrs := pcommon.NewMap()
+			proxyAttrs.PutStr("component", "proxy")
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainSpansWithAttributes(attrs))))
+					ContainSpansWithAttributes(proxyAttrs))))
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should have custom spans in the backend", func() {
+			// Identify sample app by serviceName attribute
+			customResourceAttr := pcommon.NewMap()
+			customResourceAttr.PutStr("service.name", "monitoring-custom-metrics")
+
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(urls.MockBackendExport())
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					ContainSpansWithResourceAttributes(customResourceAttr))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})

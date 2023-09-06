@@ -88,7 +88,7 @@ func ContainSpansWithAttributes(expectedAttrs pcommon.Map) types.GomegaMatcher {
 
 		var matchingSpans []ptrace.Span
 		for _, span := range spans {
-			if hasMatchingAttributes(span, expectedAttrs) {
+			if hasMatchingAttributes(span.Attributes(), expectedAttrs) {
 				matchingSpans = append(matchingSpans, span)
 			}
 		}
@@ -96,13 +96,46 @@ func ContainSpansWithAttributes(expectedAttrs pcommon.Map) types.GomegaMatcher {
 	}, gomega.Not(gomega.BeEmpty()))
 }
 
-func hasMatchingAttributes(span ptrace.Span, expectedAttrs pcommon.Map) bool {
+func ContainSpansWithResourceAttributes(expectedAttrs pcommon.Map) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlTraces []byte) ([]ptrace.Span, error) {
+		tds, err := unmarshalTraces(jsonlTraces)
+		if err != nil {
+			return nil, fmt.Errorf("ContainSpansWithResourceAttributes requires a valid OTLP JSON document: %v", err)
+		}
+
+		matchingSpans := getSpansWithResourceAttributes(tds, expectedAttrs)
+		return matchingSpans, nil
+	}, gomega.Not(gomega.BeEmpty()))
+}
+
+func hasMatchingAttributes(actualAttrs pcommon.Map, expectedAttrs pcommon.Map) bool {
 	for expectedKey, expectedVal := range expectedAttrs.AsRaw() {
-		if value, hasKey := span.Attributes().Get(expectedKey); !hasKey || value.AsString() != expectedVal {
+		if value, hasKey := actualAttrs.Get(expectedKey); !hasKey || value.AsString() != expectedVal {
 			return false
 		}
 	}
 	return true
+}
+
+func getSpansWithResourceAttributes(tds []ptrace.Traces, expectedAttrs pcommon.Map) []ptrace.Span {
+	var spans []ptrace.Span
+
+	for _, td := range tds {
+		for i := 0; i < td.ResourceSpans().Len(); i++ {
+			resourceSpans := td.ResourceSpans().At(i)
+			if !hasMatchingAttributes(resourceSpans.Resource().Attributes(), expectedAttrs) {
+				continue
+			}
+			for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
+				scopeSpans := resourceSpans.ScopeSpans().At(j)
+				for k := 0; k < scopeSpans.Spans().Len(); k++ {
+					spans = append(spans, scopeSpans.Spans().At(k))
+				}
+			}
+		}
+	}
+
+	return spans
 }
 
 func getAllSpans(tds []ptrace.Traces) []ptrace.Span {
