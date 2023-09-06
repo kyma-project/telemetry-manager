@@ -6,6 +6,7 @@ readonly GCP_ACCESS_TOKEN=$(gcloud auth application-default print-access-token)
 function create_module() {
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
     ${KUSTOMIZE} build config/default > manifests.yaml
+    git remote add origin https://github.com/kyma-project/telemetry-manager
     ${KYMA} alpha create module --module-config-file=module_config.yaml --registry ${MODULE_REGISTRY} -c oauth2accesstoken:${GCP_ACCESS_TOKEN} --ci
 }
 
