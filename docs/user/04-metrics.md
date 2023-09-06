@@ -60,9 +60,9 @@ In the following steps, you can see how to construct and deploy a typical Metric
 
 ### Step 1. Create a MetricPipeline
 
-To ship metrics to a new OTLP output, create a resource of the kind `MetricPipeline`. Default protocol is GRPC, but you can choose HTTP instead.
+To ship metrics to a new OTLP output, create a resource of the kind `MetricPipeline`. The default protocol is GRPC, but you can choose HTTP instead.
 
-This configures the underlying OTel Collector of the gateway with a pipeline for metrics. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-metrics` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, depending on the configured protocol. Ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
+This configures the underlying OTel Collector of the gateway with a pipeline for metrics. The receiver of the pipeline is of the OTLP type and is accessible using the `telemetry-otlp-metrics` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, depending on the configured protocol. Ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
 
 <div tabs>
   <details>
@@ -83,7 +83,7 @@ This configures the underlying OTel Collector of the gateway with a pipeline for
   </details>
   <details>
     <summary>HTTP</summary>
-    To use the HTTP protocol, use the `protocol` attribute:
+    To use the HTTP protocol, use the <code>protocol</code> attribute:
   
     ```yaml
     apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -339,7 +339,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-The agent will configure the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) for the metric groups `pod` and `container`. With that, [system metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md) related to containers and pods will get collected.
+The agent configures the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) for the metric groups `pod` and `container`. With that, [system metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md) related to containers and pods get collected.
 
 ### Step 6: Activate Istio metrics
 
@@ -387,7 +387,7 @@ You activated a MetricPipeline and metrics start streaming to your backend. To v
 The metric gateway setup is based on the following assumptions:
 
 - The collector has no autoscaling options and has a limited resource setup of 1 CPU and 1 GiB memory.
-- Batching is enabled, and a batch will contain up to 512 metrics/batch.
+- Batching is enabled, and a batch contains up to 512 metrics/batch.
 - A destination can be unavailable for up to 5 minutes without direct loss of metric data.
 - An average metric consists of 7 attributes with 64 character length.
 
@@ -452,6 +452,6 @@ Remedy: You can either set up 'STRICT' mTLS mode or HTTP scraping:
   </details>
   <details>
     <summary>HTTP scraping</summary>
-    Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
+    Set up scraping through HTTP by applying the <code>prometheus.io/scheme=http</code> annotation.
   </details>
 </div>
