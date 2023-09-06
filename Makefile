@@ -7,7 +7,7 @@ MODULE_NAME ?= telemetry
 MODULE_CR_PATH ?= ./config/samples/operator_v1alpha1_telemetry.yaml
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.26.1
-ISTIO_VERSION ?= 0.2.1
+ISTIO_VERSION ?= 1.0.0
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
 # Operating system type
