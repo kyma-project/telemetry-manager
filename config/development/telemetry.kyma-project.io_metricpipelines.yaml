@@ -105,8 +105,8 @@ spec:
                                     description: The value as a reference to a resource.
                                     properties:
                                       secretKeyRef:
-                                        description: Refers to a value located in
-                                          a Secret by a key. You must provide `name`
+                                        description: Refers to the value of a specific
+                                          key in a Secret. You must provide `name`
                                           and `namespace` of the Secret, as well as
                                           the name of the `key`.
                                         properties:
@@ -120,7 +120,7 @@ spec:
                                               the referenced value
                                             type: string
                                           namespace:
-                                            description: The name of the namespace
+                                            description: The name of the Namespace
                                               containing the Secret with the referenced
                                               value.
                                             type: string
@@ -138,8 +138,8 @@ spec:
                                     description: The value as a reference to a resource.
                                     properties:
                                       secretKeyRef:
-                                        description: Refers to a value located in
-                                          a Secret by a key. You must provide `name`
+                                        description: Refers to the value of a specific
+                                          key in a Secret. You must provide `name`
                                           and `namespace` of the Secret, as well as
                                           the name of the `key`.
                                         properties:
@@ -153,7 +153,7 @@ spec:
                                               the referenced value
                                             type: string
                                           namespace:
-                                            description: The name of the namespace
+                                            description: The name of the Namespace
                                               containing the Secret with the referenced
                                               value.
                                             type: string
@@ -176,8 +176,8 @@ spec:
                             description: The value as a reference to a resource.
                             properties:
                               secretKeyRef:
-                                description: Refers to a value located in a Secret
-                                  by a key. You must provide `name` and `namespace`
+                                description: Refers to the value of a specific key
+                                  in a Secret. You must provide `name` and `namespace`
                                   of the Secret, as well as the name of the `key`.
                                 properties:
                                   key:
@@ -189,7 +189,7 @@ spec:
                                       the referenced value
                                     type: string
                                   namespace:
-                                    description: The name of the namespace containing
+                                    description: The name of the Namespace containing
                                       the Secret with the referenced value.
                                     type: string
                                 type: object
@@ -210,8 +210,8 @@ spec:
                               description: The value as a reference to a resource.
                               properties:
                                 secretKeyRef:
-                                  description: Refers to a value located in a Secret
-                                    by a key. You must provide `name` and `namespace`
+                                  description: Refers to the value of a specific key
+                                    in a Secret. You must provide `name` and `namespace`
                                     of the Secret, as well as the name of the `key`.
                                   properties:
                                     key:
@@ -223,7 +223,7 @@ spec:
                                         the referenced value
                                       type: string
                                     namespace:
-                                      description: The name of the namespace containing
+                                      description: The name of the Namespace containing
                                         the Secret with the referenced value.
                                       type: string
                                   type: object
@@ -256,9 +256,10 @@ spec:
                                 description: The value as a reference to a resource.
                                 properties:
                                   secretKeyRef:
-                                    description: Refers to a value located in a Secret
-                                      by a key. You must provide `name` and `namespace`
-                                      of the Secret, as well as the name of the `key`.
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
                                     properties:
                                       key:
                                         description: The name of the attribute of
@@ -269,7 +270,7 @@ spec:
                                           the referenced value
                                         type: string
                                       namespace:
-                                        description: The name of the namespace containing
+                                        description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
                                     type: object
@@ -287,9 +288,10 @@ spec:
                                 description: The value as a reference to a resource.
                                 properties:
                                   secretKeyRef:
-                                    description: Refers to a value located in a Secret
-                                      by a key. You must provide `name` and `namespace`
-                                      of the Secret, as well as the name of the `key`.
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
                                     properties:
                                       key:
                                         description: The name of the attribute of
@@ -300,7 +302,7 @@ spec:
                                           the referenced value
                                         type: string
                                       namespace:
-                                        description: The name of the namespace containing
+                                        description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
                                     type: object
@@ -325,9 +327,10 @@ spec:
                                 description: The value as a reference to a resource.
                                 properties:
                                   secretKeyRef:
-                                    description: Refers to a value located in a Secret
-                                      by a key. You must provide `name` and `namespace`
-                                      of the Secret, as well as the name of the `key`.
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
                                     properties:
                                       key:
                                         description: The name of the attribute of
@@ -338,7 +341,7 @@ spec:
                                           the referenced value
                                         type: string
                                       namespace:
-                                        description: The name of the namespace containing
+                                        description: The name of the Namespace containing
                                           the Secret with the referenced value.
                                         type: string
                                     type: object

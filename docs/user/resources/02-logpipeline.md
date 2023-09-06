@@ -96,10 +96,10 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **output.&#x200b;grafana-loki.&#x200b;url**  | object | Grafana Loki URL. |
 | **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;value**  | string | The value as plain text. |
 | **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;valueFrom**  | object | The value as a reference to a resource. |
-| **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to a value located in a Secret by a key. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
 | **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string | The name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string | The name of the Secret containing the referenced value |
-| **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the namespace containing the Secret with the referenced value. |
+| **output.&#x200b;grafana-loki.&#x200b;url.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
 | **output.&#x200b;http**  | object | Configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin. |
 | **output.&#x200b;http.&#x200b;compress**  | string | Defines the compression algorithm to use. |
 | **output.&#x200b;http.&#x200b;dedot**  | boolean | Enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_). Default is `false`. |
@@ -107,17 +107,17 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **output.&#x200b;http.&#x200b;host**  | object | Defines the host of the HTTP receiver. |
 | **output.&#x200b;http.&#x200b;host.&#x200b;value**  | string | The value as plain text. |
 | **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom**  | object | The value as a reference to a resource. |
-| **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to a value located in a Secret by a key. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
 | **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string | The name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string | The name of the Secret containing the referenced value |
-| **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the namespace containing the Secret with the referenced value. |
+| **output.&#x200b;http.&#x200b;host.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
 | **output.&#x200b;http.&#x200b;password**  | object | Defines the basic auth password. |
 | **output.&#x200b;http.&#x200b;password.&#x200b;value**  | string | The value as plain text. |
 | **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom**  | object | The value as a reference to a resource. |
-| **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to a value located in a Secret by a key. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
 | **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string | The name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string | The name of the Secret containing the referenced value |
-| **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the namespace containing the Secret with the referenced value. |
+| **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
 | **output.&#x200b;http.&#x200b;port**  | string | Defines the port of the HTTP receiver. Default is 443. |
 | **output.&#x200b;http.&#x200b;tls**  | object | Configures TLS for the HTTP target server. |
 | **output.&#x200b;http.&#x200b;tls.&#x200b;disabled**  | boolean | Indicates if TLS is disabled or enabled. Default is `false`. |
@@ -126,17 +126,17 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **output.&#x200b;http.&#x200b;user**  | object | Defines the basic auth user. |
 | **output.&#x200b;http.&#x200b;user.&#x200b;value**  | string | The value as plain text. |
 | **output.&#x200b;http.&#x200b;user.&#x200b;valueFrom**  | object | The value as a reference to a resource. |
-| **output.&#x200b;http.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to a value located in a Secret by a key. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;http.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
 | **output.&#x200b;http.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string | The name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;http.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string | The name of the Secret containing the referenced value |
-| **output.&#x200b;http.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the namespace containing the Secret with the referenced value. |
+| **output.&#x200b;http.&#x200b;user.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
 | **variables**  | \[\]object | A list of mappings from Kubernetes Secret keys to environment variables. Mapped keys are mounted as environment variables, so that they are available as [Variables](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/variables) in the sections. |
 | **variables.&#x200b;name**  | string | Name of the variable to map. |
 | **variables.&#x200b;valueFrom**  | object |  |
-| **variables.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to a value located in a Secret by a key. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **variables.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
 | **variables.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string | The name of the attribute of the Secret holding the referenced value. |
 | **variables.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string | The name of the Secret containing the referenced value |
-| **variables.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the namespace containing the Secret with the referenced value. |
+| **variables.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
 
 **Status:**
 

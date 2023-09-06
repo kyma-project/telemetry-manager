@@ -20,7 +20,7 @@ func (v *ValueType) IsDefined() bool {
 }
 
 type ValueFromSource struct {
-	// Refers to a value located in a Secret by a key. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
+	// Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`.
 	SecretKeyRef *SecretKeyRef `json:"secretKeyRef,omitempty"`
 }
 
@@ -31,7 +31,7 @@ func (v *ValueFromSource) IsSecretKeyRef() bool {
 type SecretKeyRef struct {
 	// The name of the Secret containing the referenced value
 	Name string `json:"name,omitempty"`
-	// The name of the namespace containing the Secret with the referenced value.
+	// The name of the Namespace containing the Secret with the referenced value.
 	Namespace string `json:"namespace,omitempty"`
 	// The name of the attribute of the Secret holding the referenced value.
 	Key string `json:"key,omitempty"`
