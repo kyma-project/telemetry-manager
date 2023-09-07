@@ -69,23 +69,23 @@ This configures the underlying OTel Collector of the gateway with a pipeline for
     <summary>GRPC</summary>
     For GRPC, use:
 
-      ```yaml
-      apiVersion: telemetry.kyma-project.io/v1alpha1
-      kind: MetricPipeline
-      metadata:
-        name: backend
-      spec:
-        output:
-          otlp:
-            endpoint:
-              value: https://backend.example.com:4317
-      ```
+  ```yaml
+    apiVersion: telemetry.kyma-project.io/v1alpha1
+    kind: MetricPipeline
+    metadata:
+      name: backend
+    spec:
+      output:
+        otlp:
+          endpoint:
+            value: https://backend.example.com:4317
+  ```
   </details>
   <details>
     <summary>HTTP</summary>
     To use the HTTP protocol, use the <code>protocol</code> attribute:
   
-    ```yaml
+  ```yaml
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: MetricPipeline
     metadata:
@@ -96,7 +96,7 @@ This configures the underlying OTel Collector of the gateway with a pipeline for
           protocol: http
           endpoint:
             value: https://backend.example.com:4318
-    ```
+  ```
   </details>
 </div>
 
