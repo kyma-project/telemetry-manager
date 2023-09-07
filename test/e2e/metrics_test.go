@@ -447,7 +447,7 @@ func makeMetricsTestK8sObjects(setters ...backend.OptionSetter) ([]client.Object
 		}
 
 		// Mocks namespace objects.
-		mockBackend := backend.New(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, backend.SignalTypeMetrics, options.WithTLS, certs)
+		mockBackend := backend.NewWithTLS(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, backend.SignalTypeMetrics, options.WithTLS, certs)
 		mockBackendConfigMap := mockBackend.ConfigMap(suffixize("metric-receiver-config", i))
 		mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 		mockBackendExternalService := mockBackend.ExternalService().

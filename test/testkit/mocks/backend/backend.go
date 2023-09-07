@@ -16,7 +16,18 @@ type Backend struct {
 	certs            testkit.TLSCerts
 }
 
-func New(name, namespace, exportedFilePath string, signalType SignalType, withTLS bool, certs testkit.TLSCerts) *Backend {
+func New(name, namespace, exportedFilePath string, signalType SignalType) *Backend {
+	return &Backend{
+		name:             name,
+		namespace:        namespace,
+		exportedFilePath: exportedFilePath,
+		signalType:       signalType,
+		withTLS:          false,
+		certs:            testkit.TLSCerts{},
+	}
+}
+
+func NewWithTLS(name, namespace, exportedFilePath string, signalType SignalType, withTLS bool, certs testkit.TLSCerts) *Backend {
 	return &Backend{
 		name:             name,
 		namespace:        namespace,

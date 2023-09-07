@@ -368,7 +368,6 @@ func tracePipelineShouldNotBeDeployed(pipelineName string) {
 
 // makeTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
 func makeTracingTestK8sObjects(setters ...backend.OptionSetter) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
-
 	var (
 		objs      []client.Object
 		pipelines = kyma.NewPipelineList()
@@ -401,7 +400,7 @@ func makeTracingTestK8sObjects(setters ...backend.OptionSetter) ([]client.Object
 			)
 		}
 
-		mockBackend := backend.New(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, backend.SignalTypeTraces, options.WithTLS, certs)
+		mockBackend := backend.NewWithTLS(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, backend.SignalTypeTraces, options.WithTLS, certs)
 		mockBackendConfigMap := mockBackend.ConfigMap(suffixize("trace-receiver-config", i))
 		mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 		mockBackendExternalService := mockBackend.ExternalService().
