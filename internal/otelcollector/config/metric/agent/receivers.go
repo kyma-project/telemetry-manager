@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
@@ -9,14 +10,21 @@ import (
 )
 
 const scrapeInterval = 30 * time.Second
+const IstioCertPath = "/etc/istio-output-certs"
 
-func makeReceiversConfig(inputs inputSources) Receivers {
+var (
+	istioCAFile   = filepath.Join(IstioCertPath, "root-cert.pem")
+	istioCertFile = filepath.Join(IstioCertPath, "cert-chain.pem")
+	istioKeyFile  = filepath.Join(IstioCertPath, "key.pem")
+)
+
+func makeReceiversConfig(inputs inputSources, isIstioActive bool) Receivers {
 	var receiversConfig Receivers
 
 	if inputs.prometheus {
 		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
-		receiversConfig.PrometheusAppPods = makePrometheusAppPodsConfig()
-		receiversConfig.PrometheusAppServices = makePrometheusAppServicesConfig()
+		receiversConfig.PrometheusAppPods = makePrometheusConfigForPods(isIstioActive)
+		receiversConfig.PrometheusAppServices = makePrometheusConfigForServices(isIstioActive)
 	}
 
 	if inputs.runtime {
@@ -59,52 +67,89 @@ func makePrometheusSelfConfig() *PrometheusReceiver {
 	}
 }
 
-func makePrometheusAppPodsConfig() *PrometheusReceiver {
-	return &PrometheusReceiver{
-		Config: PrometheusConfig{
-			ScrapeConfigs: []ScrapeConfig{
-				{
-					JobName:                    "app-pods",
-					ScrapeInterval:             scrapeInterval,
-					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
-					RelabelConfigs: []RelabelConfig{
-						keepRunningOnSameNode(NodeAffiliatedPod),
-						keepAnnotated(AnnotatedPod),
-						replaceScheme(AnnotatedPod),
-						replaceMetricPath(AnnotatedPod),
-						replaceAddress(AnnotatedPod),
-						dropNonRunningPods(),
-						dropInitContainers(),
-						dropIstioProxyContainer(),
-					},
-				},
-			},
-		},
-	}
+func makePrometheusConfigForPods(isIstioActive bool) *PrometheusReceiver {
+	return makePrometheusConfig(isIstioActive, "app-pods", RolePod, makePrometheusPodsRelabelConfigs)
 }
 
-func makePrometheusAppServicesConfig() *PrometheusReceiver {
-	return &PrometheusReceiver{
-		Config: PrometheusConfig{
-			ScrapeConfigs: []ScrapeConfig{
-				{
-					JobName:                    "app-services",
-					ScrapeInterval:             scrapeInterval,
-					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RoleEndpoints}},
-					RelabelConfigs: []RelabelConfig{
-						keepRunningOnSameNode(NodeAffiliatedEndpoint),
-						keepAnnotated(AnnotatedService),
-						replaceScheme(AnnotatedService),
-						replaceMetricPath(AnnotatedService),
-						replaceAddress(AnnotatedService),
-						dropNonRunningPods(),
-						dropInitContainers(),
-						dropIstioProxyContainer(),
-						replaceService(),
-					},
-				},
-			},
-		},
+func makePrometheusConfigForServices(isIstioActive bool) *PrometheusReceiver {
+	return makePrometheusConfig(isIstioActive, "app-services", RoleEndpoints, makePrometheusServicesRelabelConfigs)
+}
+
+func makePrometheusConfig(isIstioActive bool, jobNamePrefix string, role Role, relabelConfigFn func(keepSecure bool) []RelabelConfig) *PrometheusReceiver {
+	var config PrometheusReceiver
+
+	baseScrapeConfig := ScrapeConfig{
+		ScrapeInterval:             scrapeInterval,
+		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: role}},
+	}
+
+	httpScrapeConfig := baseScrapeConfig
+	httpScrapeConfig.JobName = jobNamePrefix
+	httpScrapeConfig.RelabelConfigs = relabelConfigFn(false)
+	config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpScrapeConfig)
+
+	if isIstioActive {
+		httpsScrapeConfig := baseScrapeConfig
+		httpsScrapeConfig.JobName = jobNamePrefix + "-secure"
+		httpsScrapeConfig.RelabelConfigs = relabelConfigFn(true)
+		httpsScrapeConfig.TLSConfig = makeTLSConfig()
+		config.Config.ScrapeConfigs = append(config.Config.ScrapeConfigs, httpsScrapeConfig)
+	}
+
+	return &config
+}
+
+func makePrometheusPodsRelabelConfigs(keepSecure bool) []RelabelConfig {
+	relabelConfigs := []RelabelConfig{
+		keepIfRunningOnSameNode(NodeAffiliatedPod),
+		keepIfScrapingEnabled(AnnotatedPod),
+		dropIfPodNotRunning(),
+		dropIfInitContainer(),
+		dropIfIstioProxy(),
+		inferSchemeFromIstioInjectedLabel(),
+		inferSchemeFromAnnotation(AnnotatedPod),
+	}
+
+	if keepSecure {
+		relabelConfigs = append(relabelConfigs, dropIfSchemeHTTP())
+	} else {
+		relabelConfigs = append(relabelConfigs, dropIfSchemeHTTPS())
+	}
+
+	return append(relabelConfigs,
+		inferMetricsPathFromAnnotation(AnnotatedPod),
+		inferAddressFromAnnotation(AnnotatedPod))
+}
+
+func makePrometheusServicesRelabelConfigs(keepSecure bool) []RelabelConfig {
+	relabelConfigs := []RelabelConfig{
+		keepIfRunningOnSameNode(NodeAffiliatedEndpoint),
+		keepIfScrapingEnabled(AnnotatedService),
+		dropIfPodNotRunning(),
+		dropIfInitContainer(),
+		dropIfIstioProxy(),
+		inferSchemeFromIstioInjectedLabel(),
+		inferSchemeFromAnnotation(AnnotatedService),
+	}
+
+	if keepSecure {
+		relabelConfigs = append(relabelConfigs, dropIfSchemeHTTP())
+	} else {
+		relabelConfigs = append(relabelConfigs, dropIfSchemeHTTPS())
+	}
+
+	return append(relabelConfigs,
+		inferMetricsPathFromAnnotation(AnnotatedService),
+		inferAddressFromAnnotation(AnnotatedService),
+		inferServiceFromMetaLabel())
+}
+
+func makeTLSConfig() *TLSConfig {
+	return &TLSConfig{
+		CAFile:             istioCAFile,
+		CertFile:           istioCertFile,
+		KeyFile:            istioKeyFile,
+		InsecureSkipVerify: true,
 	}
 }
 
@@ -118,10 +163,10 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 					ScrapeInterval:             scrapeInterval,
 					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
 					RelabelConfigs: []RelabelConfig{
-						keepRunningOnSameNode(NodeAffiliatedPod),
-						keepIstioProxyContainer(),
-						keepContainerWithEnvoyPort(),
-						dropNonRunningPods(),
+						keepIfRunningOnSameNode(NodeAffiliatedPod),
+						keepIfIstioProxy(),
+						keepIfContainerWithEnvoyPort(),
+						dropIfPodNotRunning(),
 					},
 					MetricRelabelConfigs: []RelabelConfig{
 						{

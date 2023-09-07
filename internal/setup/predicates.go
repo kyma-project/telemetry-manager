@@ -31,3 +31,12 @@ func CreateOrUpdateOrDelete() predicate.Predicate {
 		GenericFunc: func(e event.GenericEvent) bool { return false },
 	}
 }
+
+func CreateOrDelete() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc:  func(e event.CreateEvent) bool { return true },
+		DeleteFunc:  func(e event.DeleteEvent) bool { return true },
+		UpdateFunc:  func(e event.UpdateEvent) bool { return false },
+		GenericFunc: func(e event.GenericEvent) bool { return false },
+	}
+}

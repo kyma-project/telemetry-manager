@@ -54,6 +54,15 @@ type ScrapeConfig struct {
 
 	StaticDiscoveryConfigs     []StaticDiscoveryConfig     `yaml:"static_configs,omitempty"`
 	KubernetesDiscoveryConfigs []KubernetesDiscoveryConfig `yaml:"kubernetes_sd_configs,omitempty"`
+
+	TLSConfig *TLSConfig `yaml:"tls_config,omitempty"`
+}
+
+type TLSConfig struct {
+	CAFile             string `yaml:"ca_file,omitempty"`
+	CertFile           string `yaml:"cert_file,omitempty"`
+	KeyFile            string `yaml:"key_file,omitempty"`
+	InsecureSkipVerify bool   `yaml:"insecure_skip_verify"`
 }
 
 type StaticDiscoveryConfig struct {

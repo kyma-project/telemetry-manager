@@ -1,7 +1,7 @@
 # Image URL to use all building/pushing image targets
-IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20230821-3b55ba99
+IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20230901-8f845e47
 # Values required for creating telemetry module
-MODULE_VERSION ?= 0.9.0
+MODULE_VERSION ?= 0.10.0
 MODULE_CHANNEL ?= fast
 MODULE_NAME ?= telemetry
 MODULE_CR_PATH ?= ./config/samples/operator_v1alpha1_telemetry.yaml
@@ -108,6 +108,7 @@ provision-test-env:
 
 .PHONY: e2e-test
 e2e-test: ginkgo k3d  | test-matchers provision-test-env ## Provision k3d cluster and run end-to-end tests.
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 	$(GINKGO) run --tags e2e -v --junit-report=junit.xml ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}

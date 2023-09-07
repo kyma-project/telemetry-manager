@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"maps"
 	"strconv"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -75,10 +76,14 @@ func MakeSecret(config Config, secretData map[string][]byte) *corev1.Secret {
 }
 
 func MakeDeployment(config Config, configHash string, pipelineCount int, envVarPodIP, envVarNodeName string) *appsv1.Deployment {
-	labels := core.MakeDefaultLabels(config.BaseName)
+	selectorLabels := core.MakeDefaultLabels(config.BaseName)
+	podLabels := maps.Clone(selectorLabels)
+	podLabels["sidecar.istio.io/inject"] = "false"
+
 	annotations := core.MakeCommonPodAnnotations(configHash)
+
 	resources := makeResourceRequirements(config, pipelineCount)
-	affinity := makePodAffinity(labels)
+	affinity := makePodAffinity(selectorLabels)
 	podSpec := core.MakePodSpec(config.BaseName, config.Deployment.Image,
 		core.WithPriorityClass(config.Deployment.PriorityClassName),
 		core.WithResources(resources),
@@ -91,16 +96,15 @@ func MakeDeployment(config Config, configHash string, pipelineCount int, envVarP
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.BaseName,
 			Namespace: config.Namespace,
-			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: pointer.Int32(2),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: selectorLabels,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels,
+					Labels:      podLabels,
 					Annotations: annotations,
 				},
 				Spec: podSpec,

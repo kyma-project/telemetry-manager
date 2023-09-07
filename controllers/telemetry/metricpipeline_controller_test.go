@@ -157,7 +157,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			if err := validateMetricsEnvironment(otelCollectorDeployment); err != nil {
 				return err
 			}
-			return validatePodAnnotations(otelCollectorDeployment)
+			return validatePodMetadata(otelCollectorDeployment)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {

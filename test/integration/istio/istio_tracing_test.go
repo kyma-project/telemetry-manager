@@ -10,8 +10,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
 	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -30,7 +31,7 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 			traceCollectorBaseName = "telemetry-trace-collector"
 		)
 		var (
-			urls               *mocks.URLProvider
+			urls               *urlprovider.URLProvider
 			tracePipelineName  string
 			traceCollectorname = types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
 		)
@@ -99,7 +100,7 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 			})
 		})
 
-		It("Should have istio-proxy traces in the backend", func() {
+		It("Should have istio-proxy spans in the backend", func() {
 			By("Sending http requests", func() {
 				for i := 0; i < 100; i++ {
 					Eventually(func(g Gomega) {
@@ -111,24 +112,38 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 			})
 
 			// Identify istio-proxy traces by component=proxy attribute
-			attrs := pcommon.NewMap()
-			attrs.PutStr("component", "proxy")
+			proxyAttrs := pcommon.NewMap()
+			proxyAttrs.PutStr("component", "proxy")
 
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainSpansWithAttributes(attrs))))
+					ContainSpansWithAttributes(proxyAttrs))))
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("Should have custom spans in the backend", func() {
+			// Identify sample app by serviceName attribute
+			customResourceAttr := pcommon.NewMap()
+			customResourceAttr.PutStr("service.name", "monitoring-custom-metrics")
+
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(urls.MockBackendExport())
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+					ContainSpansWithResourceAttributes(customResourceAttr))))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
 })
 
-func makeIstioTracingK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) ([]client.Object, *mocks.URLProvider, string) {
+func makeIstioTracingK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) ([]client.Object, *urlprovider.URLProvider, string) {
 	var (
 		objs []client.Object
-		urls = mocks.NewURLProvider()
+		urls = urlprovider.New()
 
 		grpcOTLPPort    = 4317
 		httpOTLPPort    = 4318
@@ -143,7 +158,7 @@ func makeIstioTracingK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) 
 	objs = append(objs, appNamespace.K8sObject())
 
 	// Mocks namespace objects.
-	mockBackend := mocks.NewBackend(mockDeploymentName, mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
+	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/traces/"+telemetryDataFilename, backend.SignalTypeTraces)
 	mockBackendConfigMap := mockBackend.ConfigMap("trace-receiver-config")
 	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().

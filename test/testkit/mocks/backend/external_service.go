@@ -1,4 +1,4 @@
-package mocks
+package backend
 
 import (
 	"fmt"
@@ -11,35 +11,35 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
-type ExternalBackendService struct {
+type ExternalService struct {
 	testkit.PortRegistry
 
 	name      string
 	namespace string
 }
 
-func NewExternalBackendService(name, namespace string) *ExternalBackendService {
-	return &ExternalBackendService{
+func NewExternalService(name, namespace string) *ExternalService {
+	return &ExternalService{
 		name:         name,
 		namespace:    namespace,
 		PortRegistry: testkit.NewPortRegistry(),
 	}
 }
 
-func (s *ExternalBackendService) OTLPEndpointURL(port int) string {
+func (s *ExternalService) OTLPEndpointURL(port int) string {
 	return fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", s.name, s.namespace, port)
 }
 
-func (s *ExternalBackendService) Host() string {
+func (s *ExternalService) Host() string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", s.name, s.namespace)
 }
 
-func (s *ExternalBackendService) WithPort(name string, port int) *ExternalBackendService {
+func (s *ExternalService) WithPort(name string, port int) *ExternalService {
 	s.PortRegistry.AddPort(name, port)
 	return s
 }
 
-func (s *ExternalBackendService) K8sObject(labelOpts ...testkit.OptFunc) *corev1.Service {
+func (s *ExternalService) K8sObject(labelOpts ...testkit.OptFunc) *corev1.Service {
 	labels := k8s.ProcessLabelOptions(labelOpts...)
 
 	ports := make([]corev1.ServicePort, 0)

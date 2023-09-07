@@ -15,7 +15,9 @@ import (
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
@@ -28,9 +30,9 @@ Types user:string pass:string`
 
 var _ = Describe("Logging", Label("logging"), func() {
 
-	Context("LogParser", Ordered, func() {
+	Context("When a LogParser exists", Ordered, func() {
 		var (
-			urls               *mocks.URLProvider
+			urls               *urlprovider.URLProvider
 			mockNs             = "log-parser-mocks"
 			mockDeploymentName = "log-receiver-parser"
 		)
@@ -53,9 +55,9 @@ var _ = Describe("Logging", Label("logging"), func() {
 			}, timeout*2, interval).Should(Succeed())
 		})
 
-		It("Should have a log spammer running", func() {
+		It("Should have a log producer running", func() {
 			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockDeploymentName + "-spammer", Namespace: mockNs}
+				key := types.NamespacedName{Name: "log-producer", Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
@@ -77,10 +79,10 @@ var _ = Describe("Logging", Label("logging"), func() {
 	})
 })
 
-func makeLogsRegExTestK8sObjects(namespace string, mockDeploymentName string) ([]client.Object, *mocks.URLProvider) {
+func makeLogsRegExTestK8sObjects(namespace string, mockDeploymentName string) ([]client.Object, *urlprovider.URLProvider) {
 	var (
 		objs []client.Object
-		urls = mocks.NewURLProvider()
+		urls = urlprovider.New()
 
 		grpcOTLPPort = 4317
 		httpOTLPPort = 4318
@@ -91,36 +93,38 @@ func makeLogsRegExTestK8sObjects(namespace string, mockDeploymentName string) ([
 	objs = append(objs, mocksNamespace.K8sObject())
 
 	//// Mocks namespace objects.
-	mockHTTPBackend := mocks.NewHTTPBackend(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename)
+	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename, backend.SignalTypeLogs)
 
-	mockBackendConfigMap := mockHTTPBackend.HTTPBackendConfigMap("log-receiver-config")
-	mockFluentDConfigMap := mockHTTPBackend.FluentDConfigMap("log-receiver-config-fluentd")
-	mockBackendDeployment := mockHTTPBackend.HTTPDeployment(mockBackendConfigMap.Name(), mockFluentDConfigMap.FluentDName())
-	mockBackendExternalService := mockHTTPBackend.ExternalService().
+	mockBackendConfigMap := mockBackend.ConfigMap("log-receiver-config")
+	mockFluentdConfigMap := mockBackend.FluentdConfigMap("log-receiver-config-fluentd")
+	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name()).WithFluentdConfigName(mockFluentdConfigMap.Name())
+	mockBackendExternalService := mockBackend.ExternalService().
 		WithPort("grpc-otlp", grpcOTLPPort).
 		WithPort("http-otlp", httpOTLPPort).
 		WithPort("http-web", httpWebPort).
 		WithPort("http-log", httpLogPort)
-	mockLogSpammer := mockHTTPBackend.LogSpammer()
+	mockLogProducer := logproducer.New("log-producer", mocksNamespace.Name())
 	// Default namespace objects.
 	logEndpointURL := mockBackendExternalService.Host()
 	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	logHTTPPipeline := kitlog.NewHTTPPipeline("pipeline-regex-parser", hostSecret.SecretKeyRef("log-host"))
+	logHTTPPipeline := kitlog.NewPipeline("pipeline-regex-parser").WithSecretKeyRef(hostSecret.SecretKeyRef("log-host")).WithHTTPOutput()
 	logRegExParser := kitlog.NewParser("my-regex-parser", configParser)
 
-	mockLogSpammer.WithParser("my-regex-parser")
+	mockLogProducer.WithAnnotations(map[string]string{
+		"fluentbit.io/parser": "my-regex-parser",
+	})
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),
-		mockFluentDConfigMap.K8sObjectFluentDConfig(),
-		mockBackendDeployment.K8sObjectHTTP(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
-		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockHTTPBackend.Name())),
+		mockFluentdConfigMap.K8sObject(),
+		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
+		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 		hostSecret.K8sObject(),
-		logHTTPPipeline.K8sObjectHTTP(),
-		mockLogSpammer.K8sObject(kitk8s.WithLabel("app", "regex-parser-testing-service")),
+		logHTTPPipeline.K8sObject(),
+		mockLogProducer.K8sObject(kitk8s.WithLabel("app", "regex-parser-testing-service")),
 		logRegExParser.K8sObject(),
 	}...)
 
-	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockHTTPBackend.Name(), telemetryDataFilename, httpWebPort), 0)
+	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
 
 	return objs, urls
 }

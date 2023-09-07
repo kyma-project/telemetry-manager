@@ -27,7 +27,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
 )
 
@@ -40,15 +41,15 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 	Context("When a tracepipeline exists", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
-			urls               *mocks.URLProvider
+			urls               *urlprovider.URLProvider
 			mockNs             = "trace-mocks-single-pipeline"
 			mockDeploymentName = "trace-receiver"
 		)
 
 		BeforeAll(func() {
 			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
-				mocks.WithMockNamespace(mockNs),
-				mocks.WithMockDeploymentNames(mockDeploymentName),
+				backend.WithMockNamespace(mockNs),
+				backend.WithMockDeploymentNames(mockDeploymentName),
 			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
@@ -205,15 +206,15 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		var (
 			brokenPipelineName string
 			pipelines          *kyma.PipelineList
-			urls               *mocks.URLProvider
+			urls               *urlprovider.URLProvider
 			mockNs             = "trace-mocks-broken-pipeline"
 			mockDeploymentName = "trace-receiver"
 		)
 
 		BeforeAll(func() {
 			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
-				mocks.WithMockNamespace(mockNs),
-				mocks.WithMockDeploymentNames(mockDeploymentName),
+				backend.WithMockNamespace(mockNs),
+				backend.WithMockDeploymentNames(mockDeploymentName),
 			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
@@ -246,15 +247,15 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 	Context("When multiple tracepipelines exist", Ordered, func() {
 		var (
 			pipelines                   *kyma.PipelineList
-			urls                        *mocks.URLProvider
+			urls                        *urlprovider.URLProvider
 			mockNs                      = "trace-mocks-multi-pipeline"
 			primaryMockDeploymentName   = "trace-receiver"
 			auxiliaryMockDeploymentName = "trace-receiver-1"
 		)
 		BeforeAll(func() {
 			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
-				mocks.WithMockNamespace(mockNs),
-				mocks.WithMockDeploymentNames(primaryMockDeploymentName, auxiliaryMockDeploymentName),
+				backend.WithMockNamespace(mockNs),
+				backend.WithMockDeploymentNames(primaryMockDeploymentName, auxiliaryMockDeploymentName),
 			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
@@ -280,16 +281,16 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 	Context("When a tracepipeline with TLS activated exists", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
-			urls               *mocks.URLProvider
+			urls               *urlprovider.URLProvider
 			mockNs             = "trace-mocks-tls-pipeline" //nolint:gosec // no hardcoded credentials leaked
 			mockDeploymentName = "trace-tls-receiver"
 		)
 
 		BeforeAll(func() {
 			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
-				mocks.WithMockNamespace(mockNs),
-				mocks.WithTLS(true),
-				mocks.WithMockDeploymentNames(mockDeploymentName),
+				backend.WithMockNamespace(mockNs),
+				backend.WithTLS(true),
+				backend.WithMockDeploymentNames(mockDeploymentName),
 			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
@@ -366,11 +367,12 @@ func tracePipelineShouldNotBeDeployed(pipelineName string) {
 }
 
 // makeTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeTracingTestK8sObjects(setters ...mocks.BackendOptionSetter) ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
+func makeTracingTestK8sObjects(setters ...backend.OptionSetter) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
+
 	var (
 		objs      []client.Object
 		pipelines = kyma.NewPipelineList()
-		urls      = mocks.NewURLProvider()
+		urls      = urlprovider.New()
 
 		grpcOTLPPort    = 4317
 		httpMetricsPort = 8888
@@ -378,7 +380,7 @@ func makeTracingTestK8sObjects(setters ...mocks.BackendOptionSetter) ([]client.O
 		httpWebPort     = 80
 	)
 
-	options := &mocks.BackendOptions{}
+	var options *backend.Options
 	for _, setter := range setters {
 		setter(options)
 	}
@@ -388,31 +390,20 @@ func makeTracingTestK8sObjects(setters ...mocks.BackendOptionSetter) ([]client.O
 
 	for i, mockDeploymentName := range options.MockDeploymentNames {
 		var certs testkit.TLSCerts
-		//// Mocks namespace objects.
-		mockBackend := mocks.NewBackend(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
-		var mockBackendDeployment *mocks.BackendDeployment
-
 		if options.WithTLS {
 			var err error
 			backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", mockDeploymentName, mocksNamespace.Name())
 			certs, err = testkit.GenerateTLSCerts(backendDNSName)
 			Expect(err).NotTo(HaveOccurred())
 
-			mockBackendConfigMap := mockBackend.TLSBackendConfigMap(suffixize("trace-receiver-config", i),
-				certs.ServerCertPem.String(), certs.ServerKeyPem.String(), certs.CaCertPem.String())
-			mockBackendDeployment = mockBackend.Deployment(mockBackendConfigMap.Name())
-			objs = append(objs, mockBackendConfigMap.K8sObject())
-
 			options.TracePipelineOptions = append(options.TracePipelineOptions, getTLSConfigTracePipelineOption(
 				certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()),
 			)
-
-		} else {
-			mockBackendConfigMap := mockBackend.ConfigMap(suffixize("trace-receiver-config", i))
-			mockBackendDeployment = mockBackend.Deployment(mockBackendConfigMap.Name())
-			objs = append(objs, mockBackendConfigMap.K8sObject())
 		}
 
+		mockBackend := backend.New(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, backend.SignalTypeTraces, options.WithTLS, certs)
+		mockBackendConfigMap := mockBackend.ConfigMap(suffixize("trace-receiver-config", i))
+		mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 		mockBackendExternalService := mockBackend.ExternalService().
 			WithPort("grpc-otlp", grpcOTLPPort).
 			WithPort("http-otlp", httpOTLPPort).
@@ -425,6 +416,7 @@ func makeTracingTestK8sObjects(setters ...mocks.BackendOptionSetter) ([]client.O
 		pipelines.Append(tracePipeline.Name())
 
 		objs = append(objs, []client.Object{
+			mockBackendConfigMap.K8sObject(),
 			mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 			mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 			hostSecret.K8sObject(),

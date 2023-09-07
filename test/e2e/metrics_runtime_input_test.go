@@ -15,7 +15,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 )
 
 var (
@@ -30,7 +31,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 	Context("When a metricpipeline exists", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
-			urls               *mocks.URLProvider
+			urls               *urlprovider.URLProvider
 			mockDeploymentName = "metric-agent-receiver"
 			mocksNs            = "metric-runtime-input-mocks"
 			metricGatewayName  = types.NamespacedName{Name: metricAgentGatewayBaseName, Namespace: kymaSystemNamespaceName}
@@ -100,11 +101,11 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 	})
 })
 
-func makeMetricsRuntmeInputTestK8sObjects(mocksNamespaceName string, mockDeploymentName string) ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
+func makeMetricsRuntmeInputTestK8sObjects(mocksNamespaceName string, mockDeploymentName string) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
 	var (
 		objs         []client.Object
 		pipelines    = kyma.NewPipelineList()
-		urls         = mocks.NewURLProvider()
+		urls         = urlprovider.New()
 		grpcOTLPPort = 4317
 		httpWebPort  = 80
 	)
@@ -113,7 +114,7 @@ func makeMetricsRuntmeInputTestK8sObjects(mocksNamespaceName string, mockDeploym
 	objs = append(objs, kitk8s.NewNamespace(mocksNamespaceName).K8sObject())
 
 	// Mocks namespace objects.
-	mockBackend := mocks.NewBackend(mockDeploymentName, mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
+	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, backend.SignalTypeMetrics)
 	mockBackendConfigMap := mockBackend.ConfigMap("metric-receiver-config")
 	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().

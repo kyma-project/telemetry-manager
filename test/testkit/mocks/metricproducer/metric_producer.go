@@ -10,6 +10,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const (
+	metricProducerImage = "europe-docker.pkg.dev/kyma-project/prod/examples/monitoring-custom-metrics:v20230905-b823fd14"
+)
+
 type Metric struct {
 	Type   pmetric.MetricType
 	Name   string
@@ -108,12 +112,18 @@ func (p *Pod) K8sObject() *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  "sample-metrics",
-					Image: "ghcr.io/skhalash/examples/monitoring-custom-metrics:3d41736",
+					Image: metricProducerImage,
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          metricsPortName,
 							ContainerPort: int32(metricsPort),
 							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+							Value: "http://telemetry-otlp-traces.kyma-system:4318/v1/traces",
 						},
 					},
 					Resources: corev1.ResourceRequirements{

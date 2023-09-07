@@ -10,8 +10,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func validatePodAnnotations(deployment appsv1.Deployment) error {
-	if value, found := deployment.Spec.Template.ObjectMeta.Annotations["sidecar.istio.io/inject"]; !found || value != "false" {
+func validatePodMetadata(deployment appsv1.Deployment) error {
+	if value, found := deployment.Spec.Template.ObjectMeta.Labels["sidecar.istio.io/inject"]; !found || value != "false" {
 		return fmt.Errorf("istio sidecar injection for otel collector not disabled")
 	}
 
