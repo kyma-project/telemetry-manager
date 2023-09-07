@@ -379,7 +379,7 @@ func makeTracingTestK8sObjects(setters ...backend.OptionSetter) ([]client.Object
 		httpWebPort     = 80
 	)
 
-	var options *backend.Options
+	options := &backend.Options{}
 	for _, setter := range setters {
 		setter(options)
 	}
