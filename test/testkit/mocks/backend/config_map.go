@@ -116,7 +116,7 @@ func (cm *ConfigMap) Name() string {
 
 func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	var configTemplate string
-	var data map[string]string
+	data := make(map[string]string)
 
 	if cm.signalType == SignalTypeLogs {
 		configTemplate = LogConfigTemplate
