@@ -12,6 +12,8 @@ import (
 
 const version = "1.0.0"
 
+type PipelineOption = func(pipeline telemetry.TracePipeline)
+
 type Pipeline struct {
 	name         string
 	secretKeyRef *telemetry.SecretKeyRef
@@ -35,14 +37,14 @@ func (p *Pipeline) Name() string {
 	return fmt.Sprintf("%s-%s", p.name, p.id)
 }
 
-func (p *Pipeline) K8sObject() *telemetry.TracePipeline {
+func (p *Pipeline) K8sObject(opts ...PipelineOption) *telemetry.TracePipeline {
 	var labels k8s.Labels
 	if p.persistent {
 		labels = k8s.PersistentLabel
 	}
 	labels.Version(version)
 
-	return &telemetry.TracePipeline{
+	pipeline := telemetry.TracePipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
 			Name:   p.Name(),
 			Labels: labels,
@@ -59,6 +61,12 @@ func (p *Pipeline) K8sObject() *telemetry.TracePipeline {
 			},
 		},
 	}
+
+	for _, opt := range opts {
+		opt(pipeline)
+	}
+
+	return &pipeline
 }
 
 func (p *Pipeline) Persistent(persistent bool) *Pipeline {
