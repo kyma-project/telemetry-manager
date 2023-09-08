@@ -9,14 +9,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit"
 )
 
-type SignalType string
-
-const (
-	SignalTypeTraces  = "traces"
-	SignalTypeMetrics = "metrics"
-	SignalTypeLogs    = "logs"
-)
-
 type ConfigMap struct {
 	name             string
 	namespace        string

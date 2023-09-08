@@ -32,7 +32,9 @@ var _ = Describe("Logging", Label("logging"), func() {
 		)
 
 		BeforeAll(func() {
-			k8sObjects, logsURLProvider := makeLogsAnnotationTestK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects, logsURLProvider := makeLogsAnnotationTestK8sObjects(mockNs,
+				backend.NewOptions(mockDeploymentName),
+			)
 			urls = logsURLProvider
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -61,7 +63,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 		It("Should collect only annotations and drop label", func() {
 			Consistently(func(g Gomega) {
 				time.Sleep(20 * time.Second)
-				resp, err := proxyClient.Get(urls.MockBackendExport())
+				resp, err := proxyClient.Get(urls.MockBackendExport(mockDeploymentName))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -73,52 +75,32 @@ var _ = Describe("Logging", Label("logging"), func() {
 	})
 })
 
-func makeLogsAnnotationTestK8sObjects(namespace string, mockDeploymentName string) ([]client.Object, *urlprovider.URLProvider) {
+func makeLogsAnnotationTestK8sObjects(namespace string, options *backend.Options) ([]client.Object, *urlprovider.URLProvider) {
 	var (
 		objs []client.Object
 		urls = urlprovider.New()
-
-		grpcOTLPPort = 4317
-		httpOTLPPort = 4318
-		httpWebPort  = 80
-		httpLogPort  = 9880
 	)
 	mocksNamespace := kitk8s.NewNamespace(namespace)
 	objs = append(objs, mocksNamespace.K8sObject())
 
-	//// Mocks namespace objects.
-	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename, backend.SignalTypeLogs)
-
-	mockBackendConfigMap := mockBackend.ConfigMap("log-receiver-config")
-	mockFluentdConfigMap := mockBackend.FluentdConfigMap("log-receiver-config-fluentd")
-	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name()).WithFluentdConfigName(mockFluentdConfigMap.Name())
-	mockBackendExternalService := mockBackend.ExternalService().
-		WithPort("grpc-otlp", grpcOTLPPort).
-		WithPort("http-otlp", httpOTLPPort).
-		WithPort("http-web", httpWebPort).
-		WithPort("http-log", httpLogPort)
+	// Mock namespace objects.
+	mockBackend := backend.New(mocksNamespace.Name(), options)
 	mockLogProducer := logproducer.New("log-producer", mocksNamespace.Name()).
 		WithAnnotations(map[string]string{
 			"release": "v1.0.0",
 		})
 	// Default namespace objects.
-	logEndpointURL := mockBackendExternalService.Host()
-	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
-	logPipeline := kitlog.NewPipeline("pipeline-annotation-test").WithSecretKeyRef(hostSecret.SecretKeyRef("log-host")).WithHTTPOutput()
+	logPipeline := kitlog.NewPipeline("pipeline-annotation-test").WithSecretKeyRef(mockBackend.GetHostSecretRefKey()).WithHTTPOutput()
 	logPipeline.KeepAnnotations(true)
 	logPipeline.DropLabels(true)
 
-	objs = append(objs, []client.Object{
-		mockBackendConfigMap.K8sObject(),
-		mockFluentdConfigMap.K8sObject(),
-		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		hostSecret.K8sObject(),
-		logPipeline.K8sObject(),
-		mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-annotation-test")),
-	}...)
+	objs = append(objs, mockBackend.K8sObjects()...)
+	objs = append(objs, logPipeline.K8sObject())
+	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-annotation-test")))
 
-	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
+	urls.SetMockBackendExport(options.Name, proxyClient.ProxyURLForService(
+		namespace, options.Name, backend.TelemetryDataFilename, backend.HTTPWebPort),
+	)
 
 	return objs, urls
 }

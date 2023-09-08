@@ -124,7 +124,7 @@ func makeLogsRegExTestK8sObjects(namespace string, mockDeploymentName string) ([
 		logRegExParser.K8sObject(),
 	}...)
 
-	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
+	urls.SetMockBackendExport(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
 
 	return objs, urls
 }

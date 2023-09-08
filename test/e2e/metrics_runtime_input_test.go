@@ -122,7 +122,7 @@ func makeMetricsRuntmeInputTestK8sObjects(mocksNamespaceName string, mockDeploym
 		WithPort("http-web", httpWebPort)
 
 	// Default namespace objects.
-	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
+	otlpEndpointURL := mockBackendExternalService.OTLPGrpcEndpointURL(grpcOTLPPort)
 	hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
 	metricPipeline := kitmetric.NewPipeline("pipeline-with-runtime-input-enabled", hostSecret.SecretKeyRef("metric-host")).RuntimeInput(true)
 	pipelines.Append(metricPipeline.Name())

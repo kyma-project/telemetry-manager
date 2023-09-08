@@ -5,6 +5,11 @@ package istio
 import (
 	"net/http"
 
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
@@ -13,10 +18,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
-	"go.opentelemetry.io/collector/pdata/pcommon"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -166,7 +167,7 @@ func makeIstioTracingK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) 
 		WithPort("http-otlp", httpOTLPPort).
 		WithPort("http-web", httpWebPort)
 
-	traceEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
+	traceEndpointURL := mockBackendExternalService.OTLPGrpcEndpointURL(grpcOTLPPort)
 	hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("trace-host", traceEndpointURL))
 	istioTracePipeline := kittrace.NewPipeline("pipeline-istio-traces", hostSecret.SecretKeyRef("trace-host"))
 
@@ -188,7 +189,7 @@ func makeIstioTracingK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) 
 		istioTracePipeline.K8sObject(),
 		traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")),
 	}...)
-	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
+	urls.SetMockBackendExport(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
 	urls.SetMetricPodURL(proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
 	return objs, urls, istioTracePipeline.Name()
 }

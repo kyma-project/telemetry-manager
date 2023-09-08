@@ -149,7 +149,7 @@ func makeLogDeliveryTestK8sObjects(namespace string, mockDeploymentName string, 
 		mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")),
 	}...)
 
-	urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
+	urls.SetMockBackendExport(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
 
 	return objs, urls
 }

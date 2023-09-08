@@ -155,7 +155,7 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 	mockMetricProducer := metricproducer.New(mocksNamespaceName)
 
 	// Default namespace objects.
-	otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
+	otlpEndpointURL := mockBackendExternalService.OTLPGrpcEndpointURL(grpcOTLPPort)
 	hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
 	metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", hostSecret.SecretKeyRef("metric-host")).PrometheusInput(true)
 	pipelines.Append(metricPipeline.Name())

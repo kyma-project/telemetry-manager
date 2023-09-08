@@ -19,6 +19,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -106,8 +107,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 				g.Expect(podList.Items).NotTo(BeEmpty())
 
 				traceGatewayPodName := podList.Items[0].Name
-				pprofPort := 1777
-				pprofEndpoint := proxyClient.ProxyURLForPod(kymaSystemNamespaceName, traceGatewayPodName, "debug/pprof/", pprofPort)
+				pprofEndpoint := proxyClient.ProxyURLForPod(kymaSystemNamespaceName, traceGatewayPodName, "debug/pprof/", ports.Pprof)
 
 				resp, err := proxyClient.Get(pprofEndpoint)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -400,7 +400,7 @@ func makeTracingTestK8sObjects(setters ...backend.OptionSetter) ([]client.Object
 			)
 		}
 
-		mockBackend := backend.NewWithTLS(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, backend.SignalTypeTraces, options.WithTLS, certs)
+		mockBackend := backend.NewWithTLS(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/traces/"+telemetryDataFilename, backend.SignalTypeTraces, options.WithTLS, certs)
 		mockBackendConfigMap := mockBackend.ConfigMap(suffixize("trace-receiver-config", i))
 		mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 		mockBackendExternalService := mockBackend.ExternalService().
@@ -409,7 +409,7 @@ func makeTracingTestK8sObjects(setters ...backend.OptionSetter) ([]client.Object
 			WithPort("http-web", httpWebPort)
 
 		// Default namespace objects.
-		otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
+		otlpEndpointURL := mockBackendExternalService.OTLPGrpcEndpointURL(grpcOTLPPort)
 		hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("trace-host", otlpEndpointURL)).Persistent(isOperational())
 		tracePipeline := kittrace.NewPipeline(fmt.Sprintf("%s-%s", mockDeploymentName, "pipeline"), hostSecret.SecretKeyRef("trace-host")).Persistent(isOperational())
 		pipelines.Append(tracePipeline.Name())
@@ -422,7 +422,7 @@ func makeTracingTestK8sObjects(setters ...backend.OptionSetter) ([]client.Object
 			tracePipeline.K8sObject(options.TracePipelineOptions...),
 		}...)
 
-		urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), i)
+		urls.SetMockBackendExport(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), i)
 	}
 
 	urls.SetOTLPPush(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", httpOTLPPort))
