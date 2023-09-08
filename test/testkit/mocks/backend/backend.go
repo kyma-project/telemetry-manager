@@ -3,6 +3,7 @@ package backend
 import (
 	"path/filepath"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/fluentd"
 )
 
@@ -11,6 +12,8 @@ type Backend struct {
 	namespace        string
 	exportedFilePath string
 	signalType       SignalType
+	withTLS          bool
+	certs            testkit.TLSCerts
 }
 
 func New(name, namespace, exportedFilePath string, signalType SignalType) *Backend {
@@ -19,6 +22,19 @@ func New(name, namespace, exportedFilePath string, signalType SignalType) *Backe
 		namespace:        namespace,
 		exportedFilePath: exportedFilePath,
 		signalType:       signalType,
+		withTLS:          false,
+		certs:            testkit.TLSCerts{},
+	}
+}
+
+func NewWithTLS(name, namespace, exportedFilePath string, signalType SignalType, withTLS bool, certs testkit.TLSCerts) *Backend {
+	return &Backend{
+		name:             name,
+		namespace:        namespace,
+		exportedFilePath: exportedFilePath,
+		signalType:       signalType,
+		withTLS:          withTLS,
+		certs:            certs,
 	}
 }
 
@@ -27,7 +43,7 @@ func (b *Backend) Name() string {
 }
 
 func (b *Backend) ConfigMap(name string) *ConfigMap {
-	return NewConfigMap(name, b.namespace, b.exportedFilePath, b.signalType)
+	return NewConfigMap(name, b.namespace, b.exportedFilePath, b.signalType, b.withTLS, b.certs)
 }
 
 func (b *Backend) FluentdConfigMap(name string) *fluentd.ConfigMap {

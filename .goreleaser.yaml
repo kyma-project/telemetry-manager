@@ -23,8 +23,9 @@ changelog:
         - '^(B|b)ump'
 release:
   extra_files:
-    - glob: template.yaml
-    - glob: ./manifests/telemetry/rendered.yaml
+    - glob: moduletemplate.yaml
+    - glob: telemetry-manager.yaml
+    - glob: telemetry-default-cr.yaml
 builds:
   -
     skip: true

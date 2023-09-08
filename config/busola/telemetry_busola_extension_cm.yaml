@@ -12,12 +12,38 @@ data:
       - name: State
         source: status.state
         widget: Badge
+
     body:
-      - source: spec
-        widget: CodeViewer
-        language: "'plaintext'"
+      - name: Status
+        widget: Panel
+        children:
+        - source: status.endpoints.traces.grpc
+          name: OTLP GRPC Trace Endpoint
+        - source: status.endpoints.traces.http
+          name: OTLP HTTP Trace Endpoint
+      - source: status.conditions
+        widget: Table
+        name: Reconciliation Conditions
+        children:
+          - source: type
+            name: Type
+          - source: status
+            name: Status
+            widget: Badge
+            highlights:
+              positive:
+                - 'True'
+              negative:
+                - 'False'
+          - source: reason
+            name: Reason
+          - source: message
+            name: Message
+          - source: '$readableTimestamp(lastTransitionTime)'
+            name: Last transition
+            sort: true
   form: |
-    []
+    [ ]
   general: |
     resource:
       kind: Telemetry
@@ -28,12 +54,11 @@ data:
     urlPath: telemetries
     scope: namespace
     description: >-
-      {{[Telemetry](https://kyma-project.io/#/telemetry-manager/user/resources/01-telemetry)}}
-      is a detailed description of the kind of data and the format used to define a
-      Telemetry module instance.
+      The {{[Telemetry](https://kyma-project.io/#/telemetry-manager/user/resources/01-telemetry)}} resource configures the telemetry module.
     features:
       actions:
         disableCreate: true
+        disableDelete: true
   list: |
     - name: State
       source: status.state

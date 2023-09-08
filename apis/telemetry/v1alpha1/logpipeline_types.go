@@ -185,11 +185,11 @@ const (
 	LogPipelineRunning LogPipelineConditionType = "Running"
 )
 
-// LogPipelineCondition contains details for the current condition of this LogPipeline
+// LogPipelineCondition contains details for the current condition of this LogPipeline.
 type LogPipelineCondition struct {
 	// An array of conditions describing the status of the pipeline.
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
-	//  An array of conditions describing the status of the pipeline.
+	// Reason of last transition.
 	Reason string `json:"reason,omitempty"`
 	// The possible transition types are:<br>- `Running`: The instance is ready and usable.<br>- `Pending`: The pipeline is being activated.
 	Type LogPipelineConditionType `json:"type,omitempty"`
