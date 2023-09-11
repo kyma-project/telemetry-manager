@@ -92,8 +92,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
-	// Keep requeueing until dependent resources are removed
-	requeue := telemetry.Status.State == operatorv1alpha1.StateError
+	// Keep requeuing as long as the Telemetry CR is in a "Warning" state
+	requeue := telemetry.Status.State == operatorv1alpha1.StateWarning
 	return ctrl.Result{Requeue: requeue}, nil
 }
 

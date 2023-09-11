@@ -16,20 +16,24 @@ type metricComponentsChecker struct {
 	client client.Client
 }
 
-func (m *metricComponentsChecker) Check(ctx context.Context) (*metav1.Condition, error) {
+func (m *metricComponentsChecker) Check(ctx context.Context, isTelemetryDeletionInitiated bool) (*metav1.Condition, error) {
 	var metricPipelines v1alpha1.MetricPipelineList
 	err := m.client.List(ctx, &metricPipelines)
 	if err != nil {
 		return &metav1.Condition{}, fmt.Errorf("failed to get list metric pipelines: %w", err)
 	}
 
-	reason := m.determineReason(metricPipelines.Items)
+	reason := m.determineReason(metricPipelines.Items, isTelemetryDeletionInitiated)
 	return m.createConditionFromReason(reason), nil
 }
 
-func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPipeline) string {
+func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPipeline, isTelemetryDeletionInitiated bool) string {
 	if len(pipelines) == 0 {
 		return reconciler.ReasonNoPipelineDeployed
+	}
+
+	if isTelemetryDeletionInitiated {
+		return reconciler.ReasonMetricComponentsDeletionBlocked
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
