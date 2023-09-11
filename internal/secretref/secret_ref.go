@@ -52,15 +52,13 @@ func GetValue(ctx context.Context, client client.Reader, ref telemetryv1alpha1.S
 }
 
 func checkIfSecretHasKey(ctx context.Context, client client.Reader, ref telemetryv1alpha1.SecretKeyRef) bool {
-	log := logf.FromContext(ctx)
-
 	var secret corev1.Secret
 	if err := client.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, &secret); err != nil {
-		log.V(1).Info(fmt.Sprintf("Unable to get secret '%s' from namespace '%s'", ref.Name, ref.Namespace))
+		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to get secret '%s' from namespace '%s'", ref.Name, ref.Namespace))
 		return false
 	}
 	if _, ok := secret.Data[ref.Key]; !ok {
-		log.V(1).Info(fmt.Sprintf("Unable to find key '%s' in secret '%s'", ref.Key, ref.Name))
+		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to find key '%s' in secret '%s'", ref.Key, ref.Name))
 		return false
 	}
 
