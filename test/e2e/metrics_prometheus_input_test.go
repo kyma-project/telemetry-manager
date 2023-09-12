@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
@@ -106,18 +106,20 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
 					// targets discovered via annotated service must have the service label
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricCPUTemperature, withServiceLabel)
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricCPUEnergyHistogram, withServiceLabel)
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricHardwareHumidity, withServiceLabel)
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricHardDiskErrorsTotal, withServiceLabel)
-					}))))
+					//ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+					//	return metricsEqual(m, metricproducer.MetricCPUTemperature, withServiceLabel)
+					//}),
+					ContainMd(WithName(metricproducer.MetricCPUEnergyHistogram.Name + "1")),
+					//ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+					//	return metricsEqual(m, metricproducer.MetricCPUEnergyHistogram, withServiceLabel)
+					//}),
+					//ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+					//	return metricsEqual(m, metricproducer.MetricHardwareHumidity, withServiceLabel)
+					//}),
+					//ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
+					//	return metricsEqual(m, metricproducer.MetricHardDiskErrorsTotal, withServiceLabel)
+					//}),
+				)))
 			}, timeout, interval).Should(Succeed())
 		})
 

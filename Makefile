@@ -1,13 +1,9 @@
 # Image URL to use all building/pushing image targets
-IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20230901-8f845e47
-# Values required for creating telemetry module
-MODULE_VERSION ?= 0.10.0
-MODULE_CHANNEL ?= fast
-MODULE_NAME ?= telemetry
-MODULE_CR_PATH ?= ./config/samples/operator_v1alpha1_telemetry.yaml
+IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20230911-69866791
+MODULE_CONFIG_PATH ?= module_config.yaml
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.26.1
-ISTIO_VERSION ?= 0.2.1
+ENVTEST_K8S_VERSION = 1.27.1
+ISTIO_VERSION ?= 1.0.0
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
 # Operating system type
@@ -154,7 +150,7 @@ upgrade-test: ginkgo k3d ## Provision k3d cluster and run upgrade tests.
 
 .PHONY: e2e-deploy-module
 e2e-deploy-module: kyma kustomize ## Provision a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
-	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/deploy-module.sh
+	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} MODULE_CONFIG_PATH=${MODULE_CONFIG_PATH} ./hack/deploy-module.sh
 
 .PHONY:
 e2e-coverage: ginkgo
@@ -237,7 +233,7 @@ undeploy-dev: ## Undeploy resources based on the development variant from the K8
 
 .PHONY: release
 release: kyma kustomize ## Create module with its image pushed to prod registry and create a github release entry
-	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} IMG=${IMG} MODULE_NAME=${MODULE_NAME} MODULE_VERSION=${MODULE_VERSION} MODULE_CHANNEL=${MODULE_CHANNEL} MODULE_CR_PATH=${MODULE_CR_PATH} ./hack/release.sh
+	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} IMG=${IMG} MODULE_CONFIG_PATH=${MODULE_CONFIG_PATH} ./hack/release.sh
 
 ##@ Build Dependencies
 

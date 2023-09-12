@@ -1,4 +1,4 @@
-package matchers
+package metric
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
@@ -105,7 +106,7 @@ func extractMetrics(fileBytes []byte) ([]pmetric.Metrics, error) {
 }
 
 func unmarshalMetrics(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
-	return unmarshalSignals[pmetric.Metrics](jsonlMetrics, func(buf []byte) (pmetric.Metrics, error) {
+	return matchers.UnmarshalSignals[pmetric.Metrics](jsonlMetrics, func(buf []byte) (pmetric.Metrics, error) {
 		var unmarshaler pmetric.JSONUnmarshaler
 		return unmarshaler.UnmarshalMetrics(buf)
 	})

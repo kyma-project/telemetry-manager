@@ -1,4 +1,4 @@
-package matchers
+package metric
 
 import (
 	"go.opentelemetry.io/collector/pdata/pmetric"

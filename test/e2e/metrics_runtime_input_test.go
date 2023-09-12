@@ -14,9 +14,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 )
 
 var (

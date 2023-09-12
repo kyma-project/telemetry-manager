@@ -182,7 +182,7 @@ func makeUnique(slice []string) []string {
 }
 
 func AllDataPointsContainAttributes(m pmetric.Metric, expectedAttrKeys ...string) bool {
-	attrsPerDataPoint := getAttributesPerDataPoint(m)
+	attrsPerDataPoint := GetAttributesPerDataPoint(m)
 	for _, attrs := range attrsPerDataPoint {
 		if !containsAllAttributes(attrs, expectedAttrKeys...) {
 			return false
@@ -193,7 +193,7 @@ func AllDataPointsContainAttributes(m pmetric.Metric, expectedAttrKeys ...string
 }
 
 func NoDataPointsContainAttributes(m pmetric.Metric, expectedAttrKeys ...string) bool {
-	attrsPerDataPoint := getAttributesPerDataPoint(m)
+	attrsPerDataPoint := GetAttributesPerDataPoint(m)
 	for _, attrs := range attrsPerDataPoint {
 		if !containsNoneOfAttributes(attrs, expectedAttrKeys...) {
 			return false
@@ -203,7 +203,7 @@ func NoDataPointsContainAttributes(m pmetric.Metric, expectedAttrKeys ...string)
 	return true
 }
 
-func getAttributesPerDataPoint(m pmetric.Metric) []pcommon.Map {
+func GetAttributesPerDataPoint(m pmetric.Metric) []pcommon.Map {
 	var attrsPerDataPoint []pcommon.Map
 
 	switch m.Type() {

@@ -45,6 +45,13 @@ var (
 		Labels: []string{"sensor"},
 	}
 
+	AllMetricNames = []string{
+		MetricCPUTemperature.Name,
+		MetricHardDiskErrorsTotal.Name,
+		MetricCPUEnergyHistogram.Name,
+		MetricHardwareHumidity.Name,
+	}
+
 	metricsPort     = 8080
 	metricsPortName = "http-metrics"
 	metricsEndpoint = "/metrics"
@@ -114,6 +121,11 @@ func (mp *MetricProducer) Pod() *Pod {
 
 func (p *Pod) WithPrometheusAnnotations(scheme ScrapingScheme) *Pod {
 	maps.Copy(p.annotations, makePrometheusAnnotations(scheme))
+	return p
+}
+
+func (p *Pod) WithSidecarInjection() *Pod {
+	p.labels["sidecar.istio.io/inject"] = "true"
 	return p
 }
 

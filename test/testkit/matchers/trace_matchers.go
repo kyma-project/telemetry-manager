@@ -124,7 +124,7 @@ func getAllSpans(tds []ptrace.Traces) []ptrace.Span {
 }
 
 func unmarshalTraces(jsonlTraces []byte) ([]ptrace.Traces, error) {
-	return unmarshalSignals[ptrace.Traces](jsonlTraces, func(buf []byte) (ptrace.Traces, error) {
+	return UnmarshalSignals[ptrace.Traces](jsonlTraces, func(buf []byte) (ptrace.Traces, error) {
 		var unmarshaler ptrace.JSONUnmarshaler
 		return unmarshaler.UnmarshalTraces(buf)
 	})
