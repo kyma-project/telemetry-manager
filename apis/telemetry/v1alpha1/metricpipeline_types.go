@@ -105,7 +105,7 @@ type MetricPipelineOutput struct {
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.
 type MetricPipelineStatus struct {
-	// Defines the trail of MetricPipeline conditions.
+	// An array of conditions describing the status of the pipeline.
 	Conditions []MetricPipelineCondition `json:"conditions,omitempty"`
 }
 
@@ -117,11 +117,14 @@ const (
 	MetricPipelineRunning MetricPipelineConditionType = "Running"
 )
 
-// Contains details for the current condition of this MetricPipeline.
+// MetricPipelineCondition contains details for the current condition of this LogPipeline.
 type MetricPipelineCondition struct {
-	LastTransitionTime metav1.Time                 `json:"lastTransitionTime,omitempty"`
-	Reason             string                      `json:"reason,omitempty"`
-	Type               MetricPipelineConditionType `json:"type,omitempty"`
+	// Point in time the condition transitioned into a different state.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	// Reason of last transition.
+	Reason string `json:"reason,omitempty"`
+	// The possible transition types are:<br>- `Running`: The instance is ready and usable.<br>- `Pending`: The pipeline is being activated.
+	Type MetricPipelineConditionType `json:"type,omitempty"`
 }
 
 func NewMetricPipelineCondition(reason string, condType MetricPipelineConditionType) *MetricPipelineCondition {

@@ -70,9 +70,7 @@ func NewReconciler(client client.Client, config Config, prober DeploymentProber,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := logf.FromContext(ctx)
-
-	log.V(1).Info("Reconciliation triggered")
+	logf.FromContext(ctx).V(1).Info("Reconciliation triggered")
 
 	overrideConfig, err := r.overridesHandler.UpdateOverrideConfig(ctx, r.config.OverridesConfigMapName)
 	if err != nil {
@@ -83,7 +81,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 	if overrideConfig.Tracing.Paused {
-		log.V(1).Info("Skipping reconciliation of tracepipeline as reconciliation is paused")
+		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
 		return ctrl.Result{}, nil
 	}
 
@@ -127,7 +125,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
 	}
 	if len(deployablePipelines) == 0 {
-		return fmt.Errorf("no trace pipeline ready for deployment")
+		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: no trace pipeline ready for deployment")
+		return nil
 	}
 
 	if err = r.reconcileTraceGateway(ctx, pipeline, deployablePipelines); err != nil {
