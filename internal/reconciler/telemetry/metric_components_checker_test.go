@@ -17,12 +17,14 @@ import (
 
 func TestMetricComponentsCheck(t *testing.T) {
 	tests := []struct {
-		name              string
-		pipelines         []telemetryv1alpha1.MetricPipeline
-		expectedCondition *metav1.Condition
+		name                         string
+		pipelines                    []telemetryv1alpha1.MetricPipeline
+		isTelemetryDeletionInitiated bool
+		expectedCondition            *metav1.Condition
 	}{
 		{
-			name: "should be healthy if no pipelines deployed",
+			name:                         "should be healthy if no pipelines deployed",
+			isTelemetryDeletionInitiated: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "True",
@@ -38,6 +40,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonMetricGatewayDeploymentNotReady), testutils.MetricRunningCondition()).Build(),
 			},
+			isTelemetryDeletionInitiated: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "True",
@@ -46,13 +49,14 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should fail if one pipeline refs missing secret",
+			name: "should not be healthy if one pipeline refs missing secret",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonMetricGatewayDeploymentNotReady), testutils.MetricRunningCondition()).Build(),
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
 			},
+			isTelemetryDeletionInitiated: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
@@ -61,13 +65,14 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should fail if one pipeline waiting for gateway",
+			name: "should not be healthy if one pipeline waiting for gateway",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonMetricGatewayDeploymentNotReady), testutils.MetricRunningCondition()).Build(),
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonMetricGatewayDeploymentNotReady)).Build(),
 			},
+			isTelemetryDeletionInitiated: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
@@ -83,6 +88,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonWaitingForLock)).Build(),
 			},
+			isTelemetryDeletionInitiated: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "True",
@@ -91,18 +97,33 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should prioritize missing secret over unready gateway reason",
+			name: "should prioritize unready gateway reason over missing secret",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonMetricGatewayDeploymentNotReady)).Build(),
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
 			},
+			isTelemetryDeletionInitiated: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
 				Reason:  "MetricGatewayDeploymentNotReady",
 				Message: "Metric gateway Deployment is not ready",
+			},
+		},
+		{
+			name: "should block deletion if there are existing pipelines",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithStatusConditions(
+					testutils.MetricPendingCondition(reconciler.ReasonMetricGatewayDeploymentNotReady), testutils.MetricRunningCondition()).Build(),
+			},
+			isTelemetryDeletionInitiated: true,
+			expectedCondition: &metav1.Condition{
+				Type:    "MetricComponentsHealthy",
+				Status:  "False",
+				Reason:  "MetricComponentsDeletionBlocked",
+				Message: "One or more MetricPipelines still exist",
 			},
 		},
 	}
@@ -123,7 +144,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				client: fakeClient,
 			}
 
-			condition, err := m.Check(context.Background())
+			condition, err := m.Check(context.Background(), test.isTelemetryDeletionInitiated)
 			require.NoError(t, err)
 			require.Equal(t, test.expectedCondition, condition)
 		})
