@@ -120,39 +120,15 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		// targets discovered via annotated pods must have no service label
 		Context("Annotated pods", func() {
 			It("Should scrape if prometheus.io/scheme=https", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(urls.MockBackendExport())
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-					g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
-						WithMetrics(ContainElement(WithName(BeElementOf(metricproducer.AllMetricNames)))),
-						WithResourceAttrs(ContainElement(HaveKeyWithValue("k8s.pod.name", httpAnnotatedMetricProducerName))),
-					))))
-				}, timeout, telemetryDeliveryInterval).Should(Succeed())
+				podScrapedMetricsShouldBeDelivered(urls, httpsAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme=http", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(urls.MockBackendExport())
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-					g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
-						WithMetrics(ContainElement(WithName(BeElementOf(metricproducer.AllMetricNames)))),
-						WithResourceAttrs(ContainElement(HaveKeyWithValue("k8s.pod.name", httpAnnotatedMetricProducerName))),
-					))))
-				}, timeout, telemetryDeliveryInterval).Should(Succeed())
+				podScrapedMetricsShouldBeDelivered(urls, httpAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme unset", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(urls.MockBackendExport())
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-					g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
-						WithMetrics(ContainElement(WithName(BeElementOf(metricproducer.AllMetricNames)))),
-						WithResourceAttrs(ContainElement(HaveKeyWithValue("k8s.pod.name", unannotatedMetricProducerName))),
-					))))
-				}, timeout, telemetryDeliveryInterval).Should(Succeed())
+				podScrapedMetricsShouldBeDelivered(urls, unannotatedMetricProducerName)
 			})
 		})
 
@@ -160,43 +136,41 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		// targets discovered via annotated service must have the service label
 		Context("Annotated services", func() {
 			It("Should scrape if prometheus.io/scheme=https", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(urls.MockBackendExport())
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-					g.Expect(resp).To(HaveHTTPBody(ContainMd(
-						WithMetrics(ContainElement(SatisfyAll(
-							WithDataPointAttrs(ContainElement(HaveKeyWithValue("service", httpsAnnotatedMetricProducerName))),
-							WithName(BeElementOf(metricproducer.AllMetricNames)),
-						))))))
-				}, timeout, telemetryDeliveryInterval).Should(Succeed())
+				serviceScrapedMetricsShouldBeDelivered(urls, httpsAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme=http", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(urls.MockBackendExport())
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-					g.Expect(resp).To(HaveHTTPBody(ContainMd(
-						WithMetrics(ContainElement(SatisfyAll(
-							WithDataPointAttrs(ContainElement(HaveKeyWithValue("service", httpAnnotatedMetricProducerName))),
-							WithName(BeElementOf(metricproducer.AllMetricNames)),
-						))))))
-				}, timeout, telemetryDeliveryInterval).Should(Succeed())
+				serviceScrapedMetricsShouldBeDelivered(urls, httpAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme unset", func() {
-				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(urls.MockBackendExport())
-					g.Expect(err).NotTo(HaveOccurred())
-					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-					g.Expect(resp).To(HaveHTTPBody(ContainMd(
-						WithMetrics(ContainElement(SatisfyAll(
-							WithDataPointAttrs(ContainElement(HaveKeyWithValue("service", unannotatedMetricProducerName))),
-							WithName(BeElementOf(metricproducer.AllMetricNames)),
-						))))))
-				}, timeout, telemetryDeliveryInterval).Should(Succeed())
+				serviceScrapedMetricsShouldBeDelivered(urls, unannotatedMetricProducerName)
 			})
 		})
 	})
 })
+
+func podScrapedMetricsShouldBeDelivered(urls *urlprovider.URLProvider, podName string) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(urls.MockBackendExport())
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
+			WithMetrics(ContainElement(WithName(BeElementOf(metricproducer.AllMetricNames)))),
+			WithResourceAttrs(ContainElement(HaveKeyWithValue("k8s.pod.name", podName))),
+		))))
+	}, timeout, telemetryDeliveryInterval).Should(Succeed())
+}
+
+func serviceScrapedMetricsShouldBeDelivered(urls *urlprovider.URLProvider, serviceName string) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(urls.MockBackendExport())
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(ContainMd(
+			WithMetrics(ContainElement(SatisfyAll(
+				WithDataPointAttrs(ContainElement(HaveKeyWithValue("service", serviceName))),
+				WithName(BeElementOf(metricproducer.AllMetricNames)),
+			))))))
+	}, timeout, telemetryDeliveryInterval).Should(Succeed())
+}
