@@ -3,8 +3,10 @@
 package e2e
 
 import (
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -129,6 +131,10 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 			}, timeout, interval).Should(Succeed())
 		})
 
+		It("Should reconcile ValidatingWebhookConfiguration if LogPipeline exists", func() {
+			testWebhookReconciliation()
+		})
+
 		It("Should not delete Telemetry when LogPipeline exists", func() {
 			By("Deleting telemetry", func() {
 				Expect(kitk8s.ForceDeleteObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
@@ -137,18 +143,29 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 			Eventually(func(g Gomega) {
 				var telemetry v1alpha1.Telemetry
 				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
-				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateWarning))
 				g.Expect(telemetry.Finalizers).Should(HaveLen(1))
 				g.Expect(telemetry.Finalizers[0]).Should(Equal("telemetry.kyma-project.io/finalizer"))
+				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateWarning))
+				expectedConditions := []metav1.Condition{
+					{Type: "LogComponentsHealthy", Status: metav1.ConditionFalse, Reason: reconciler.ReasonLogComponentsDeletionBlocked, Message: reconciler.Condition(reconciler.ReasonLogComponentsDeletionBlocked)},
+					{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.Condition(reconciler.ReasonNoPipelineDeployed)},
+					{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.Condition(reconciler.ReasonNoPipelineDeployed)},
+				}
+				g.Expect(len(telemetry.Status.Conditions)).Should(Equal(len(expectedConditions)))
+				for i, expectedCond := range expectedConditions {
+					actualCond := telemetry.Status.Conditions[i]
+					g.Expect(expectedCond.Type).Should(Equal(actualCond.Type))
+					g.Expect(expectedCond.Status).Should(Equal(actualCond.Status))
+					g.Expect(expectedCond.Reason).Should(Equal(actualCond.Reason))
+					g.Expect(expectedCond.Message).Should(Equal(actualCond.Message))
+					g.Expect(actualCond.LastTransitionTime).NotTo(BeZero())
+				}
+
 			}, timeout, interval).Should(Succeed())
 		})
 
-		It("Should reconcile ValidatingWebhookConfiguration if LogPipeline exists", func() {
-			testWebhookReconciliation()
-		})
-
 		It("Should delete Telemetry", func() {
-			By("Deleting Telemetry and other resources", func() {
+			By("Deleting the orphaned LogPipeline", func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sLogPipelineObject...)).Should(Succeed())
 			})
 
