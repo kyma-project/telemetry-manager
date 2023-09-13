@@ -25,8 +25,9 @@ import (
 var _ = Describe("Istio tracing", Label("tracing"), func() {
 	Context("App with istio-sidecar", Ordered, func() {
 		const (
-			mockNs                 = "istio-tracing-mock"
-			mockDeploymentName     = "istio-tracing-backend"
+			mockNs             = "istio-tracing-mock"
+			mockDeploymentName = "istio-tracing-backend"
+			//creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
 			sampleAppNs            = "istio-permissive-mtls"
 			traceCollectorBaseName = "telemetry-trace-collector"
 		)

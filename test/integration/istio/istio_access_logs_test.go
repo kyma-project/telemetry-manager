@@ -30,8 +30,9 @@ var _ = Describe("Istio access logs", Label("logging"), func() {
 			urls               *urlprovider.URLProvider
 			mockNs             = "istio-access-logs-mocks"
 			mockDeploymentName = "istio-access-logs-backend"
-			sampleAppNs        = "istio-permissive-mtls"
-			logPipelineName    string
+			//creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
+			sampleAppNs     = "istio-permissive-mtls"
+			logPipelineName string
 		)
 		BeforeAll(func() {
 			k8sObjects, urlProvider, logPipeline := makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs)
