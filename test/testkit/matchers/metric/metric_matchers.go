@@ -1,97 +1,73 @@
 package metric
 
 import (
-	"fmt"
-
-	"github.com/onsi/gomega"
-	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
+	"fmt"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
+	"github.com/onsi/gomega"
+	"github.com/onsi/gomega/types"
 )
 
-// ContainMetrics succeeds if the filexporter output file contains the metrics passed into the matcher. The ordering of the elements does not matter.
-func ContainMetrics(expectedMetrics ...pmetric.Metric) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlMetrics []byte) ([]pmetric.Metric, error) {
+func ContainMd(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
 		mds, err := extractMetrics(jsonlMetrics)
 		if err != nil {
-			return nil, fmt.Errorf("ContainMetrics requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("ContainMd requires a valid OTLP JSON document: %v", err)
 		}
 
-		var metrics []pmetric.Metric
-		for _, md := range mds {
-			metrics = append(metrics, kitmetrics.AllMetrics(md)...)
-		}
-		return metrics, nil
-	}, gomega.ContainElements(expectedMetrics))
+		return mds, nil
+	}, gomega.ContainElements(matcher))
 }
 
-type MetricPredicate = func(pmetric.Metric) bool
-
-// ContainMetricsThatSatisfy succeeds if the filexporter output file contains metrics that satisfy the predicate passed into the matcher. The ordering of the elements does not matter.
-func ContainMetricsThatSatisfy(predicate MetricPredicate) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlMetrics []byte) ([]pmetric.Metric, error) {
+func ConsistOfMds(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
 		mds, err := extractMetrics(jsonlMetrics)
 		if err != nil {
-			return nil, fmt.Errorf("ContainMetricsThatSatisfy requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("ConsistOfMds requires a valid OTLP JSON document: %v", err)
 		}
 
-		var metrics []pmetric.Metric
-		for _, md := range mds {
-			metrics = append(metrics, kitmetrics.AllMetrics(md)...)
-		}
-		return metrics, nil
-	}, gomega.ContainElements(gomega.Satisfy(predicate)))
+		return mds, nil
+	}, gomega.ConsistOf(matcher))
 }
 
-// ConsistOfNumberOfMetrics succeeds if the filexporter output file has the expected number of metrics.
-func ConsistOfNumberOfMetrics(expectedMetricCount int) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlMetrics []byte) (int, error) {
-		mds, err := extractMetrics(jsonlMetrics)
-		if err != nil {
-			return 0, fmt.Errorf("ConsistOfNumberOfMetrics requires a valid OTLP JSON document: %v", err)
-		}
-		metricCount := 0
-		for _, md := range mds {
-			metricCount += len(kitmetrics.AllMetrics(md))
-		}
-
-		return metricCount, nil
-	}, gomega.Equal(expectedMetricCount))
+func WithMetrics(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(md pmetric.Metrics) ([]pmetric.Metric, error) {
+		return kitmetrics.AllMetrics(md), nil
+	}, matcher)
 }
 
-// ContainMetricsWithNames succeeds if the filexporter output file contains metrics with names passed into the matcher. The ordering of the elements does not matter.
-func ContainMetricsWithNames(expectedMetricNames ...string) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlMetrics []byte) ([]string, error) {
-		mds, err := extractMetrics(jsonlMetrics)
-		if err != nil {
-			return nil, fmt.Errorf("ContainMetricsWithNames requires a valid OTLP JSON document: %v", err)
+func WithResourceAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(md pmetric.Metrics) ([]map[string]any, error) {
+		var rawAttrs []map[string]any
+		for i := 0; i < md.ResourceMetrics().Len(); i++ {
+			rawAttrs = append(rawAttrs, md.ResourceMetrics().At(i).Resource().Attributes().AsRaw())
 		}
-
-		var metricNames []string
-		for _, md := range mds {
-			metricNames = append(metricNames, kitmetrics.AllMetricNames(md)...)
-		}
-
-		return metricNames, nil
-	}, gomega.ContainElements(expectedMetricNames))
+		return rawAttrs, nil
+	}, matcher)
 }
 
-func ConsistOfMetricsWithResourceAttributes(expectedAttributeNames ...string) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlMetrics []byte) ([][]string, error) {
-		mds, err := extractMetrics(jsonlMetrics)
-		if err != nil {
-			return nil, fmt.Errorf("ConsistOfMetricsWithResourceAttributes requires a valid OTLP JSON document: %v", err)
-		}
+func WithName(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(m pmetric.Metric) (string, error) {
+		return m.Name(), nil
+	}, matcher)
+}
 
-		var attributeNames [][]string
-		for _, md := range mds {
-			attributeNames = append(attributeNames, kitmetrics.AllResourceAttributeNames(md))
-		}
+func WithType(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(m pmetric.Metric) (pmetric.MetricType, error) {
+		return m.Type(), nil
+	}, matcher)
+}
 
-		return attributeNames, nil
-	}, gomega.HaveEach(gomega.ConsistOf(expectedAttributeNames)))
+func WithDataPointAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(m pmetric.Metric) ([]map[string]any, error) {
+		var rawAttrs []map[string]any
+		for _, attrs := range kitmetrics.GetAttributesPerDataPoint(m) {
+			rawAttrs = append(rawAttrs, attrs.AsRaw())
+		}
+		return rawAttrs, nil
+	}, matcher)
 }
 
 func extractMetrics(fileBytes []byte) ([]pmetric.Metrics, error) {

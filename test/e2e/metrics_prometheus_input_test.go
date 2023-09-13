@@ -10,8 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"go.opentelemetry.io/collector/pdata/pmetric"
-
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -20,7 +18,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
-	kitotlpmetric "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
 var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
@@ -83,18 +80,24 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
 				// targets discovered via annotated pods must have no service label
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricCPUTemperature, withoutServiceLabel)
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricCPUEnergyHistogram, withoutServiceLabel)
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricHardwareHumidity, withoutServiceLabel)
-					}),
-					ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-						return metricsEqual(m, metricproducer.MetricHardDiskErrorsTotal, withoutServiceLabel)
-					}))))
+					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+						WithName(Equal(metricproducer.MetricCPUTemperature.Name)),
+						WithType(Equal(metricproducer.MetricCPUTemperature.Type)),
+					)))),
+					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+						WithName(Equal(metricproducer.MetricCPUEnergyHistogram.Name)),
+						WithType(Equal(metricproducer.MetricCPUEnergyHistogram.Type)),
+					)))),
+					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+						WithName(Equal(metricproducer.MetricHardwareHumidity.Name)),
+						WithType(Equal(metricproducer.MetricHardwareHumidity.Type)),
+					)))),
+					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+						WithName(Equal(metricproducer.MetricHardDiskErrorsTotal.Name)),
+						WithType(Equal(metricproducer.MetricHardDiskErrorsTotal.Type)),
+					)))),
+				),
+				))
 			}, timeout, interval).Should(Succeed())
 		})
 
@@ -104,22 +107,28 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
-					// targets discovered via annotated service must have the service label
-					//ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-					//	return metricsEqual(m, metricproducer.MetricCPUTemperature, withServiceLabel)
-					//}),
-					ContainMd(WithName(metricproducer.MetricCPUEnergyHistogram.Name + "1")),
-					//ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-					//	return metricsEqual(m, metricproducer.MetricCPUEnergyHistogram, withServiceLabel)
-					//}),
-					//ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-					//	return metricsEqual(m, metricproducer.MetricHardwareHumidity, withServiceLabel)
-					//}),
-					//ContainMetricsThatSatisfy(func(m pmetric.Metric) bool {
-					//	return metricsEqual(m, metricproducer.MetricHardDiskErrorsTotal, withServiceLabel)
-					//}),
-				)))
+					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+						WithName(Equal(metricproducer.MetricCPUTemperature.Name)),
+						WithType(Equal(metricproducer.MetricCPUTemperature.Type)),
+						WithDataPointAttrs(ContainElement(HaveKey("service"))),
+					)))),
+					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+						WithName(Equal(metricproducer.MetricCPUEnergyHistogram.Name)),
+						WithType(Equal(metricproducer.MetricCPUEnergyHistogram.Type)),
+						WithDataPointAttrs(ContainElement(HaveKey("service"))),
+					)))),
+					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+						WithName(Equal(metricproducer.MetricHardwareHumidity.Name)),
+						WithType(Equal(metricproducer.MetricHardwareHumidity.Type)),
+						WithDataPointAttrs(ContainElement(HaveKey("service"))),
+					)))),
+					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+						WithName(Equal(metricproducer.MetricHardDiskErrorsTotal.Name)),
+						WithType(Equal(metricproducer.MetricHardDiskErrorsTotal.Type)),
+						WithDataPointAttrs(ContainElement(HaveKey("service"))),
+					)))),
+				),
+				))
 			}, timeout, interval).Should(Succeed())
 		})
 
@@ -128,8 +137,9 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					Not(ContainMetricsWithNames(kubeletMetricNames...)))))
+				g.Expect(resp).To(HaveHTTPBody(
+					Not(ContainMd(WithMetrics(ContainElement(WithName(BeElementOf(kubeletMetricNames)))))),
+				))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
@@ -175,27 +185,4 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 	urls.SetMockBackendExport(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort))
 
 	return objs, urls, pipelines
-}
-
-type comparisonMode int
-
-const (
-	withServiceLabel comparisonMode = iota
-	withoutServiceLabel
-)
-
-func metricsEqual(actual pmetric.Metric, expected metricproducer.Metric, comparisonMode comparisonMode) bool {
-	if actual.Name() != expected.Name || actual.Type() != expected.Type {
-		return false
-	}
-
-	switch comparisonMode {
-	case withServiceLabel:
-		return kitotlpmetric.AllDataPointsContainAttributes(actual, append(expected.Labels, "service")...)
-	case withoutServiceLabel:
-		return kitotlpmetric.AllDataPointsContainAttributes(actual, expected.Labels...) &&
-			kitotlpmetric.NoDataPointsContainAttributes(actual, "service")
-	default:
-		return false
-	}
 }
