@@ -3,7 +3,6 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -14,6 +13,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
