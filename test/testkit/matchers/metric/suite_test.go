@@ -3,12 +3,11 @@ package metric
 import (
 	"testing"
 
-	"github.com/onsi/gomega"
-
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 func TestMetricMatchers(t *testing.T) {
-	gomega.RegisterFailHandler(Fail)
+	RegisterFailHandler(Fail)
 	RunSpecs(t, "Metric Matcher Suite")
 }
