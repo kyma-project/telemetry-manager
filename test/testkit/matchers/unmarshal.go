@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-func unmarshalSignals[T plog.Logs | pmetric.Metrics | ptrace.Traces](jsonlSignals []byte, unmarshal func(buf []byte) (T, error)) ([]T, error) {
+func UnmarshalSignals[T plog.Logs | pmetric.Metrics | ptrace.Traces](jsonlSignals []byte, unmarshal func(buf []byte) (T, error)) ([]T, error) {
 	var allSignals []T
 
 	// User bufio.Reader instead of bufio.Scanner to handle very long lines gracefully
