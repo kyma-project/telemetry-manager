@@ -137,7 +137,7 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 			Eventually(func(g Gomega) {
 				var telemetry v1alpha1.Telemetry
 				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
-				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateError))
+				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateWarning))
 				g.Expect(telemetry.Finalizers).Should(HaveLen(1))
 				g.Expect(telemetry.Finalizers[0]).Should(Equal("telemetry.kyma-project.io/finalizer"))
 			}, timeout, interval).Should(Succeed())
