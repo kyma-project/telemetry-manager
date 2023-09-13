@@ -7,8 +7,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
 var _ = Describe("WithMds", func() {
