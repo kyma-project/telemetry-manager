@@ -80,22 +80,22 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
 				// targets discovered via annotated pods must have no service label
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+					ContainMd(ContainMetric(SatisfyAll(
 						WithName(Equal(metricproducer.MetricCPUTemperature.Name)),
 						WithType(Equal(metricproducer.MetricCPUTemperature.Type)),
-					)))),
-					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+					))),
+					ContainMd(ContainMetric(SatisfyAll(
 						WithName(Equal(metricproducer.MetricCPUEnergyHistogram.Name)),
 						WithType(Equal(metricproducer.MetricCPUEnergyHistogram.Type)),
-					)))),
-					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+					))),
+					ContainMd(ContainMetric(SatisfyAll(
 						WithName(Equal(metricproducer.MetricHardwareHumidity.Name)),
 						WithType(Equal(metricproducer.MetricHardwareHumidity.Type)),
-					)))),
-					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+					))),
+					ContainMd(ContainMetric(SatisfyAll(
 						WithName(Equal(metricproducer.MetricHardDiskErrorsTotal.Name)),
 						WithType(Equal(metricproducer.MetricHardDiskErrorsTotal.Type)),
-					)))),
+					))),
 				),
 				))
 			}, timeout, interval).Should(Succeed())
@@ -107,26 +107,26 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+					ContainMd(ContainMetric(SatisfyAll(
 						WithName(Equal(metricproducer.MetricCPUTemperature.Name)),
 						WithType(Equal(metricproducer.MetricCPUTemperature.Type)),
-						WithDataPointAttrs(ContainElement(HaveKey("service"))),
-					)))),
-					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+						ContainDataPointAttrs(HaveKey("service")),
+					))),
+					ContainMd(ContainMetric(SatisfyAll(
 						WithName(Equal(metricproducer.MetricCPUEnergyHistogram.Name)),
 						WithType(Equal(metricproducer.MetricCPUEnergyHistogram.Type)),
-						WithDataPointAttrs(ContainElement(HaveKey("service"))),
-					)))),
-					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+						ContainDataPointAttrs(HaveKey("service")),
+					))),
+					ContainMd(ContainMetric(SatisfyAll(
 						WithName(Equal(metricproducer.MetricHardwareHumidity.Name)),
 						WithType(Equal(metricproducer.MetricHardwareHumidity.Type)),
-						WithDataPointAttrs(ContainElement(HaveKey("service"))),
-					)))),
-					ContainMd(WithMetrics(ContainElement(SatisfyAll(
+						ContainDataPointAttrs(HaveKey("service")),
+					))),
+					ContainMd(ContainMetric(SatisfyAll(
 						WithName(Equal(metricproducer.MetricHardDiskErrorsTotal.Name)),
 						WithType(Equal(metricproducer.MetricHardDiskErrorsTotal.Type)),
-						WithDataPointAttrs(ContainElement(HaveKey("service"))),
-					)))),
+						ContainDataPointAttrs(HaveKey("service")),
+					))),
 				),
 				))
 			}, timeout, interval).Should(Succeed())
@@ -138,7 +138,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainMd(WithMetrics(ContainElement(WithName(BeElementOf(kubeletMetricNames)))))),
+					Not(ContainMd(ContainMetric(WithName(BeElementOf(kubeletMetricNames))))),
 				))
 			}, timeout, interval).Should(Succeed())
 		})

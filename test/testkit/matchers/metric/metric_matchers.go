@@ -8,32 +8,36 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-func ContainMd(matcher types.GomegaMatcher) types.GomegaMatcher {
+func WithMds(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
 		mds, err := extractMetrics(jsonlMetrics)
 		if err != nil {
-			return nil, fmt.Errorf("ContainMd requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("WithMds requires a valid OTLP JSON document: %v", err)
 		}
 
 		return mds, nil
-	}, gomega.ContainElements(matcher))
+	}, matcher)
 }
 
-func ConsistOfMds(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
-		mds, err := extractMetrics(jsonlMetrics)
-		if err != nil {
-			return nil, fmt.Errorf("ConsistOfMds requires a valid OTLP JSON document: %v", err)
-		}
+// ContainMd is an alias for WithMds(gomega.ContainElement()).
+func ContainMd(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return WithMds(gomega.ContainElement(matcher))
+}
 
-		return mds, nil
-	}, gomega.ConsistOf(matcher))
+// ConsistOfMds is an alias for WithMds(gomega.ConsistOf()).
+func ConsistOfMds(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return WithMds(gomega.ConsistOf(matcher))
 }
 
 func WithMetrics(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(md pmetric.Metrics) ([]pmetric.Metric, error) {
 		return getMetrics(md), nil
 	}, matcher)
+}
+
+// ContainMetric is an alias for WithMetrics(gomega.ContainElement()).
+func ContainMetric(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return WithMetrics(gomega.ContainElement(matcher))
 }
 
 func WithResourceAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
@@ -44,6 +48,11 @@ func WithResourceAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
 		}
 		return rawAttrs, nil
 	}, matcher)
+}
+
+// ContainResourceAttrs is an alias for WithResourceAttrs(gomega.ContainElement()).
+func ContainResourceAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return WithResourceAttrs(gomega.ContainElement(matcher))
 }
 
 func WithName(matcher types.GomegaMatcher) types.GomegaMatcher {
@@ -66,4 +75,9 @@ func WithDataPointAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
 		}
 		return rawAttrs, nil
 	}, matcher)
+}
+
+// ContainDataPointAttrs is an alias for WithDataPointAttrs(gomega.ContainElement()).
+func ContainDataPointAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return WithDataPointAttrs(gomega.ContainElement(matcher))
 }

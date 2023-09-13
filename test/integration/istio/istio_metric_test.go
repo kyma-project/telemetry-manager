@@ -156,8 +156,8 @@ func podScrapedMetricsShouldBeDelivered(urls *urlprovider.URLProvider, podName s
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
-			WithMetrics(ContainElement(WithName(BeElementOf(metricproducer.AllMetricNames)))),
-			WithResourceAttrs(ContainElement(HaveKeyWithValue("k8s.pod.name", podName))),
+			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", podName)),
+			ContainMetric(WithName(BeElementOf(metricproducer.AllMetricNames))),
 		))))
 	}, timeout, telemetryDeliveryInterval).Should(Succeed())
 }
@@ -168,9 +168,9 @@ func serviceScrapedMetricsShouldBeDelivered(urls *urlprovider.URLProvider, servi
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(ContainMd(
-			WithMetrics(ContainElement(SatisfyAll(
-				WithDataPointAttrs(ContainElement(HaveKeyWithValue("service", serviceName))),
+			ContainMetric(SatisfyAll(
 				WithName(BeElementOf(metricproducer.AllMetricNames)),
-			))))))
+				ContainDataPointAttrs(HaveKeyWithValue("service", serviceName)),
+			)))))
 	}, timeout, telemetryDeliveryInterval).Should(Succeed())
 }
