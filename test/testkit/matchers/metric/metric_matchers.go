@@ -5,9 +5,9 @@ import (
 
 	"fmt"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 )
 
 func ContainMd(matcher types.GomegaMatcher) types.GomegaMatcher {
@@ -34,8 +34,24 @@ func ConsistOfMds(matcher types.GomegaMatcher) types.GomegaMatcher {
 
 func WithMetrics(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(md pmetric.Metrics) ([]pmetric.Metric, error) {
-		return kitmetrics.AllMetrics(md), nil
+		return flatten(md), nil
 	}, matcher)
+}
+
+func flatten(md pmetric.Metrics) []pmetric.Metric {
+	var metrics []pmetric.Metric
+
+	for i := 0; i < md.ResourceMetrics().Len(); i++ {
+		resourceMetrics := md.ResourceMetrics().At(i)
+		for j := 0; j < resourceMetrics.ScopeMetrics().Len(); j++ {
+			scopeMetrics := resourceMetrics.ScopeMetrics().At(j)
+			for k := 0; k < scopeMetrics.Metrics().Len(); k++ {
+				metrics = append(metrics, scopeMetrics.Metrics().At(k))
+			}
+		}
+	}
+
+	return metrics
 }
 
 func WithResourceAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
@@ -63,11 +79,36 @@ func WithType(matcher types.GomegaMatcher) types.GomegaMatcher {
 func WithDataPointAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(m pmetric.Metric) ([]map[string]any, error) {
 		var rawAttrs []map[string]any
-		for _, attrs := range kitmetrics.GetAttributesPerDataPoint(m) {
+		for _, attrs := range getAttributesPerDataPoint(m) {
 			rawAttrs = append(rawAttrs, attrs.AsRaw())
 		}
 		return rawAttrs, nil
 	}, matcher)
+}
+
+func getAttributesPerDataPoint(m pmetric.Metric) []pcommon.Map {
+	var attrsPerDataPoint []pcommon.Map
+
+	switch m.Type() {
+	case pmetric.MetricTypeSum:
+		for i := 0; i < m.Sum().DataPoints().Len(); i++ {
+			attrsPerDataPoint = append(attrsPerDataPoint, m.Sum().DataPoints().At(i).Attributes())
+		}
+	case pmetric.MetricTypeGauge:
+		for i := 0; i < m.Gauge().DataPoints().Len(); i++ {
+			attrsPerDataPoint = append(attrsPerDataPoint, m.Gauge().DataPoints().At(i).Attributes())
+		}
+	case pmetric.MetricTypeHistogram:
+		for i := 0; i < m.Histogram().DataPoints().Len(); i++ {
+			attrsPerDataPoint = append(attrsPerDataPoint, m.Histogram().DataPoints().At(i).Attributes())
+		}
+	case pmetric.MetricTypeSummary:
+		for i := 0; i < m.Summary().DataPoints().Len(); i++ {
+			attrsPerDataPoint = append(attrsPerDataPoint, m.Summary().DataPoints().At(i).Attributes())
+		}
+	}
+
+	return attrsPerDataPoint
 }
 
 func extractMetrics(fileBytes []byte) ([]pmetric.Metrics, error) {
@@ -93,7 +134,7 @@ func unmarshalMetrics(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
 // and the pmetric package (https://github.com/open-telemetry/opentelemetry-collector/blob/main/pdata/pmetric/aggregation_temporality.go)
 func applyTemporalityWorkaround(mds []pmetric.Metrics) {
 	for _, md := range mds {
-		for _, metric := range kitmetrics.AllMetrics(md) {
+		for _, metric := range flatten(md) {
 			if metric.Type() != pmetric.MetricTypeSum {
 				continue
 			}
