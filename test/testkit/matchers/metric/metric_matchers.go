@@ -1,13 +1,14 @@
 package metric
 
 import (
-	"go.opentelemetry.io/collector/pdata/pmetric"
-
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
 func ContainMd(matcher types.GomegaMatcher) types.GomegaMatcher {
