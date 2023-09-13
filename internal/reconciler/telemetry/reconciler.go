@@ -3,6 +3,7 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -13,7 +14,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
@@ -72,11 +72,9 @@ func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config) 
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-
 	var telemetry operatorv1alpha1.Telemetry
 	if err := r.Client.Get(ctx, req.NamespacedName, &telemetry); err != nil {
-		logger.Info(req.NamespacedName.String() + " got deleted!")
+		log.FromContext(ctx).Info(req.NamespacedName.String() + " got deleted!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -112,6 +110,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 	if controllerutil.ContainsFinalizer(telemetry, finalizer) {
 		if r.dependentCRsFound(ctx) {
 			// Block deletion of the resource if there are still some dependent resources
+			log.FromContext(ctx).Info("Telemetry CR deletion is blocked because one or more dependent CRs (LogPipeline, LogParser, MetricPipeline, TracePipeline) still exist")
 			return nil
 		}
 
