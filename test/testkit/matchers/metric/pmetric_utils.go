@@ -1,9 +1,10 @@
 package metric
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
 func extractMetrics(fileBytes []byte) ([]pmetric.Metrics, error) {
