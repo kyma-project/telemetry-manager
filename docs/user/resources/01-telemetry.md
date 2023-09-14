@@ -78,6 +78,6 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **endpoints.&#x200b;traces**  | object |  |
 | **endpoints.&#x200b;traces.&#x200b;grpc**  | string |  |
 | **endpoints.&#x200b;traces.&#x200b;http**  | string |  |
-| **state** (required) | string | State signifies current state of Module CR. Value can be one of ("Ready", "Processing", "Error", "Deleting", "Warning"). |
+| **state** (required) | string | State signifies current state of Module CR. Value can be one of ("Ready", "Deleting", "Warning"). |
 
 <!-- TABLE-END -->
