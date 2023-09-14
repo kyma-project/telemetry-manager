@@ -29,12 +29,14 @@ func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alph
 		}
 	}
 
-	if err := r.updateOverallStatus(ctx, telemetry, telemetryInDeletion); err != nil {
-		return fmt.Errorf("failed to update Telemetry status: %w", err)
-	}
+	r.updateOverallState(ctx, telemetry, telemetryInDeletion)
 
 	if err := r.updateGatewayEndpoints(ctx, telemetry, telemetryInDeletion); err != nil {
 		return fmt.Errorf("failed to update gateway endpoints: %w", err)
+	}
+
+	if err := r.Status().Update(ctx, telemetry); err != nil {
+		return fmt.Errorf("failed to update status: %w", err)
 	}
 
 	return nil
@@ -59,7 +61,7 @@ func (r *Reconciler) updateComponentCondition(ctx context.Context, checker Compo
 	return nil
 }
 
-func (r *Reconciler) updateOverallStatus(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, telemetryInDeletion bool) error {
+func (r *Reconciler) updateOverallState(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, telemetryInDeletion bool) {
 	if telemetryInDeletion {
 		// If the provided Telemetry CR is being deleted and dependent Telemetry CRs (LogPipeline, LogParser, MetricPipeline, TracePipeline) are found, the state is set to "Warning" until they are removed from the cluster.
 		// If dependent CRs are not found, the state is set to "Deleting"
@@ -68,22 +70,18 @@ func (r *Reconciler) updateOverallStatus(ctx context.Context, telemetry *operato
 		} else {
 			telemetry.Status.State = operatorv1alpha1.StateDeleting
 		}
-	} else {
-		// Since LogPipeline, MetricPipeline, and TracePipeline have status conditions with positive polarity,
-		// we can assume that the Telemetry Module is in the 'Ready' state if all conditions of dependent resources have the status 'True.'
-		if slices.ContainsFunc(telemetry.Status.Conditions, func(cond metav1.Condition) bool {
-			return cond.Status == metav1.ConditionFalse
-		}) {
-			telemetry.Status.State = operatorv1alpha1.StateWarning
-		} else {
-			telemetry.Status.State = operatorv1alpha1.StateReady
-		}
+		return
 	}
 
-	if err := r.Status().Update(ctx, telemetry); err != nil {
-		return fmt.Errorf("failed to update status: %w", err)
+	// Since LogPipeline, MetricPipeline, and TracePipeline have status conditions with positive polarity,
+	// we can assume that the Telemetry Module is in the 'Ready' state if all conditions of dependent resources have the status 'True.'
+	if slices.ContainsFunc(telemetry.Status.Conditions, func(cond metav1.Condition) bool {
+		return cond.Status == metav1.ConditionFalse
+	}) {
+		telemetry.Status.State = operatorv1alpha1.StateWarning
+	} else {
+		telemetry.Status.State = operatorv1alpha1.StateReady
 	}
-	return nil
 }
 
 func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, telemetryInDeletion bool) error {
@@ -96,9 +94,6 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 		Traces: traceEndpoints,
 	}
 
-	if err := r.Status().Update(ctx, telemetry); err != nil {
-		return fmt.Errorf("failed to update status: %w", err)
-	}
 	return nil
 }
 
