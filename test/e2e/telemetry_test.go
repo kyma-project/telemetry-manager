@@ -151,7 +151,7 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 					{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.Condition(reconciler.ReasonNoPipelineDeployed)},
 					{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.Condition(reconciler.ReasonNoPipelineDeployed)},
 				}
-				g.Expect(len(telemetry.Status.Conditions)).Should(Equal(len(expectedConditions)))
+				g.Expect(telemetry.Status.Conditions).Should(HaveLen(len(expectedConditions)))
 				for i, expectedCond := range expectedConditions {
 					actualCond := telemetry.Status.Conditions[i]
 					g.Expect(expectedCond.Type).Should(Equal(actualCond.Type))
