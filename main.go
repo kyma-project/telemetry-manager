@@ -140,7 +140,6 @@ const (
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
 
-	metricGateway         = "telemetry-metric-gateway"
 	metricOTLPServiceName = "telemetry-otlp-metrics"
 
 	traceOTLPServiceName = "telemetry-otlp-traces"
