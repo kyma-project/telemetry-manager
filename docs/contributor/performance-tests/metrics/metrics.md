@@ -5,10 +5,19 @@ The aim of this exercise is to harden the metric agent such that it can satisfy 
 ## Setup
 
 For the test environment following things were considered:
-- Provisioned a GCP cluster with kubernetes
+- Provisioned a GCP cluster with kubernetes (n2-standard-16)
 - Deploy Telemetry operator using `make deploy-dev`
 - Deploy prometheus for visualizing the metrics
 - Istio deployment is needed due to Prometheus
+
+Install monitoring and istio
+```unix
+kyma deploy -s main --component istio --component monitoring
+```
+
+alternatively istio CRDS can be installed from [here](https://github.com/istio/api/blob/master/kubernetes/customresourcedefinitions.gen.yaml) and only monitoring stack can be installed
+
+
 - [Avalanche prometheus metric load generator](https://blog.freshtracks.io/load-testing-prometheus-metric-ingestion-5b878711711c)
 
 Config map of the metrics agent
@@ -271,16 +280,21 @@ We identified following test cases:
 5. Test with huge metric payload where we don't scale gradually more like a spike
 
 ### Multiple pods all running on a single node and export metrics
+Setup:
 
-Avalanche load generator configured to generate `500 distinct metrics` and `20 metric series` for each pod, each metric data point has 10 labels. To simulate smooth ramp-up and avoid huge data flood from beginning, 
-Avalanche load generator started with 5 instances and instance count increased with 5 instances every minute until reach the peak.
+Avalanche load generator configuration per pod:
+- Metric count: 500
+- Metric series: 20
+- Number of labels: 10
 
-This test executed on a single node installation to determine limits of a single metric agent, after Avalanche load generator reach `30` instances metric agent hits the limits and stay stable with this setup, any load above this setup memory limiter will refuse incoming traffic.
+To simulate a smooth ramp-up and avoid huge data flood at the beginning, load generator was started with 5 instances, instance count was increased at 5 instances every minute until peak was reached.
 
-The graph below shows amount of average metric points processed by the `prometheus metric receiver` per second, agent reach in average `14K metric points/sec`
+This test was executed on a single node installation to determine the limits of a single metric agent, after the load generator reaches `30` instances, metric agent hits the limits and stays stable with this setup. Any load above this setup will cause memory limiter to refuse incoming traffic.
+
+The graph below shows the average metric points processed by the `prometheus metric receiver` per second, agent reaches an average of `14K metric points/sec`
 ![Peak accepted metric points](./assets/overall-peak-metric-point.jpg)
 
-Following graph shows amount of refused metric points from the configured `memory_limiter`, traffic above 14K metric points/sec results metric refuse by the `memory_limiter`. 
+Following graph shows the refused metric points from the configured `memory_limiter`, with traffic above 14K metric points/sec results in  metrics being refused by the `memory_limiter`. 
 ![Peak refused metric points](./assets/overall-peak-metric-point-refused.jpg)
 
 Following graph shows memory utilization of metric agent during test phase.
@@ -293,22 +307,29 @@ Following graph shows CPU utilization of metric agent during test phase.
 
 ### Workload generating huge amount of metrics
 
-This scenario will test a single endpoint with huge amount of data, Avalanche load generator deployed with a single pod instance and configured with 1000 distinct metrics and 20 metric series for each metric with 10 labels.
-Metric count increased in 1000 steps to find out limit of metric agent.
+This scenario tests a single metric endpoint with huge amount of data, Avalanche load generator deployed with a single pod instance and configured with 1000 distinct metrics and 20 metric series for each metric with 10 labels.
+
+Setup:
+
+Avalanche load generator configuration:
+- Metric Count: 1000
+- Metric Series: 20
+- Number of label: 10
+
+Metric count was increased in 1000 steps to find the limit of the metric agent.
 
 Following graph shows max stable load from single target with huge amount of metric data.
 ![Peak accepted metric points](./assets/single-target-peak-metric-point.jpg)
 
-Metric agent reach max `7K metric points/sec` from a single metric target, with 6000 metrics with 20 metric series.
-With this test scenario measured raw metric payload size was `~51MB`
+Metric agent reached max `7K metric points/sec` from a single metric target, with 6000 metrics with 20 metric series. In this test scenario the 
+ measured raw metric payload size was `~51MB`
 
-Here we tested a second configuration to determine impact of different metric series on metric agent, for the test metric series increased from `20` to `30` , distinct metric amount started from `1000` and increased in `1000` steps to until reach limit of metric agent.
-Metric agent reach a peak of `~7K metric points/sec` (yellow line from graph above) with `4000` distinct metric.
-With this setup measured raw metric payload size was `~31MB`
+Another test was performed to determine the impact of different metric series on metric agent. For this the test metric series were increased from `20` to `30`, distinct metric count started from `1000` and increased in `1000` steps until the limit of metric agent was reached.
+Metric agent reached a peak of `~7K metric points/sec` (yellow line from graph above) with `4000` distinct metric. In this setup the measured raw metric payload size was `~31MB`
 
-In both configuration metric agent reach a peak of `~7K metric points/sec` independent size of raw metric data, raw metric payload size has no impact on metric agent performance.
+In both the configurations metric agent reached a peak of `~7K metric points/sec` independent size of raw metric data, thus raw metric payload size has no impact on metric agent performance.
 
-In both configuration Avalanche load generator generate `120K metric points/scrape` 
+In both configurations Avalanche load generator generated `120K metric points/scrape` 
 
 > **NOTE:** Avalanche load generator resources have to be changed for this scenario, for this test CPU settings changed to 400m and Memory to 1Gi 
 ### Have multiple workloads across different nodes
