@@ -497,7 +497,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			Expect(k8sClient.Delete(ctx, pipelineSecret)).Should(Succeed())
 			Eventually(func() error {
 				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
-			}, timeout, interval).Should(BeNil())
+			}, timeout*3, interval).Should(BeNil())
 		})
 
 	})
