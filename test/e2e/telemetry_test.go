@@ -147,9 +147,9 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 				g.Expect(telemetry.Finalizers[0]).Should(Equal("telemetry.kyma-project.io/finalizer"))
 				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateWarning))
 				expectedConditions := []metav1.Condition{
-					{Type: "LogComponentsHealthy", Status: metav1.ConditionFalse, Reason: reconciler.ReasonLogResourceBlocksDeletion, Message: reconciler.Condition(reconciler.ReasonLogResourceBlocksDeletion)},
-					{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.Condition(reconciler.ReasonNoPipelineDeployed)},
-					{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.Condition(reconciler.ReasonNoPipelineDeployed)},
+					{Type: "LogComponentsHealthy", Status: metav1.ConditionFalse, Reason: reconciler.ReasonLogResourceBlocksDeletion, Message: reconciler.ConditionMessage(reconciler.ReasonLogResourceBlocksDeletion)},
+					{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.ConditionMessage(reconciler.ReasonNoPipelineDeployed)},
+					{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.ConditionMessage(reconciler.ReasonNoPipelineDeployed)},
 				}
 				g.Expect(telemetry.Status.Conditions).Should(HaveLen(len(expectedConditions)))
 				for i, expectedCond := range expectedConditions {

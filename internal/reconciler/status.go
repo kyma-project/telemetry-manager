@@ -18,7 +18,7 @@ const (
 	ReasonTraceResourceBlocksDeletion    = "TraceResourceBlocksDeletion"
 )
 
-var conditions = map[string]string{
+var conditionsMessage = map[string]string{
 	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
 	ReasonReferencedSecretMissing: "One or more referenced Secrets are missing",
 	ReasonWaitingForLock:          "Waiting for the lock",
@@ -36,9 +36,9 @@ var conditions = map[string]string{
 	ReasonTraceResourceBlocksDeletion:    "One or more TracePipelines still exist",
 }
 
-func Condition(reason string) string {
-	if cond, found := conditions[reason]; found {
-		return cond
+func ConditionMessage(reason string) string {
+	if condMessage, found := conditionsMessage[reason]; found {
+		return condMessage
 	}
 	return ""
 }

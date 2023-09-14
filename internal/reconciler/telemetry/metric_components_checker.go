@@ -67,13 +67,13 @@ func (m *metricComponentsChecker) createConditionFromReason(reason string) *meta
 			Type:    conditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  reason,
-			Message: reconciler.Condition(reason),
+			Message: reconciler.ConditionMessage(reason),
 		}
 	}
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
-		Message: reconciler.Condition(reason),
+		Message: reconciler.ConditionMessage(reason),
 	}
 }

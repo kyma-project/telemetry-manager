@@ -73,13 +73,13 @@ func (l *logComponentsChecker) createConditionFromReason(reason string) *metav1.
 			Type:    conditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  reason,
-			Message: reconciler.Condition(reason),
+			Message: reconciler.ConditionMessage(reason),
 		}
 	}
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
-		Message: reconciler.Condition(reason),
+		Message: reconciler.ConditionMessage(reason),
 	}
 }
