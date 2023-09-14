@@ -7,38 +7,38 @@ The state of the Telemetry CR is derived from the combined state of all the subc
 
 The state of the log components is determined by the status condition of type `LogComponentsHealthy`:
 
-| Condition status | Condition reason                | Message                                         |
-|------------------|---------------------------------|-------------------------------------------------|
-| True             | ReasonNoPipelineDeployed        | No pipelines have been deployed                 |
-| True             | ReasonFluentBitDSReady          | Fluent Bit DaemonSet is ready                   |
-| False            | ReasonReferencedSecretMissing   | One or more referenced Secrets are missing      |
-| False            | ReasonFluentBitDSNotReady       | Fluent Bit DaemonSet is not ready               |
-| False            | ReasonLogResourceBlocksDeletion | One or more LogPipelines/LogParsers still exist |
+| Condition status | Condition reason           | Message                                         |
+|------------------|----------------------------|-------------------------------------------------|
+| True             | NoPipelineDeployed         | No pipelines have been deployed                 |
+| True             | FluentBitDaemonSetReady    | Fluent Bit DaemonSet is ready                   |
+| False            | ReferencedSecretMissing    | One or more referenced Secrets are missing      |
+| False            | FluentBitDaemonSetNotReady | Fluent Bit DaemonSet is not ready               |
+| False            | LogResourceBlocksDeletion  | One or more LogPipelines/LogParsers still exist |
 
 
 ## Trace Components State
 
 The state of the trace components is determined by the status condition of type `TraceComponentsHealthy`:
 
-| Condition status | Condition reason                     | Message                                    |
-|------------------|--------------------------------------|--------------------------------------------|
-| True             | ReasonNoPipelineDeployed             | No pipelines have been deployed            |
-| True             | ReasonTraceGatewayDeploymentReady    | Trace gateway Deployment is ready          |
-| False            | ReasonReferencedSecretMissing        | One or more referenced Secrets are missing |
-| False            | ReasonTraceGatewayDeploymentNotReady | Trace gateway Deployment is not ready      |
-| False            | ReasonTraceResourceBlocksDeletion    | One or more TracePipelines still exist     |
+| Condition status | Condition reason               | Message                                    |
+|------------------|--------------------------------|--------------------------------------------|
+| True             | NoPipelineDeployed             | No pipelines have been deployed            |
+| True             | TraceGatewayDeploymentReady    | Trace gateway Deployment is ready          |
+| False            | ReferencedSecretMissing        | One or more referenced Secrets are missing |
+| False            | TraceGatewayDeploymentNotReady | Trace gateway Deployment is not ready      |
+| False            | TraceResourceBlocksDeletion    | One or more TracePipelines still exist     |
 
 ## Metric Components State
 
 The state of the metric components is determined by the status condition of type `MetricComponentsHealthy`:
 
-| Condition status | Condition reason                        | Message                                     |
-|------------------|-----------------------------------------|--------------------------------------------|
-| True             | ReasonNoPipelineDeployed                | No pipelines have been deployed            |
-| True             | ReasonMetricGatewayDeploymentReady      | Metric gateway Deployment is ready         |
-| False            | ReasonReferencedSecretMissing           | One or more referenced Secrets are missing |
-| False            | ReasonMetricGatewayDeploymentNotReady   | Metric gateway Deployment is not ready     |
-| False            | ReasonMetricResourceBlocksDeletion      | One or more MetricPipelines still exist     |
+| Condition status | Condition reason                | Message                                    |
+|------------------|---------------------------------|--------------------------------------------|
+| True             | NoPipelineDeployed              | No pipelines have been deployed            |
+| True             | MetricGatewayDeploymentReady    | Metric gateway Deployment is ready         |
+| False            | ReferencedSecretMissing         | One or more referenced Secrets are missing |
+| False            | MetricGatewayDeploymentNotReady | Metric gateway Deployment is not ready     |
+| False            | MetricResourceBlocksDeletion    | One or more MetricPipelines still exist    |
 
 
 ## Telemetry CR State
