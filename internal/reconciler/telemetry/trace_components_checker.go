@@ -34,7 +34,7 @@ func (t *traceComponentsChecker) determineReason(pipelines []v1alpha1.TracePipel
 	}
 
 	if telemetryInDeletion {
-		return reconciler.ReasonTraceComponentsDeletionBlocked
+		return reconciler.ReasonTraceResourceBlocksDeletion
 	}
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.TracePipeline) bool {
 		return t.isPendingWithReason(p, reconciler.ReasonTraceGatewayDeploymentNotReady)

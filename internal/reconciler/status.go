@@ -5,17 +5,17 @@ const (
 	ReasonReferencedSecretMissing = "ReferencedSecretMissing"
 	ReasonWaitingForLock          = "WaitingForLock"
 
-	ReasonFluentBitDSNotReady          = "FluentBitDaemonSetNotReady"
-	ReasonFluentBitDSReady             = "FluentBitDaemonSetReady"
-	ReasonLogComponentsDeletionBlocked = "LogComponentsDeletionBlocked"
+	ReasonFluentBitDSNotReady       = "FluentBitDaemonSetNotReady"
+	ReasonFluentBitDSReady          = "FluentBitDaemonSetReady"
+	ReasonLogResourceBlocksDeletion = "LogResourceBlocksDeletion"
 
 	ReasonMetricGatewayDeploymentNotReady = "MetricGatewayDeploymentNotReady"
 	ReasonMetricGatewayDeploymentReady    = "MetricGatewayDeploymentReady"
-	ReasonMetricComponentsDeletionBlocked = "MetricComponentsDeletionBlocked"
+	ReasonMetricResourceBlocksDeletion    = "MetricResourceBlocksDeletion"
 
 	ReasonTraceGatewayDeploymentNotReady = "TraceGatewayDeploymentNotReady"
 	ReasonTraceGatewayDeploymentReady    = "TraceGatewayDeploymentReady"
-	ReasonTraceComponentsDeletionBlocked = "TraceComponentsDeletionBlocked"
+	ReasonTraceResourceBlocksDeletion    = "TraceResourceBlocksDeletion"
 )
 
 var conditions = map[string]string{
@@ -23,17 +23,17 @@ var conditions = map[string]string{
 	ReasonReferencedSecretMissing: "One or more referenced Secrets are missing",
 	ReasonWaitingForLock:          "Waiting for the lock",
 
-	ReasonFluentBitDSNotReady:          "Fluent Bit DaemonSet is not ready",
-	ReasonFluentBitDSReady:             "Fluent Bit DaemonSet is ready",
-	ReasonLogComponentsDeletionBlocked: "One or more LogPipelines/LogParsers still exist",
+	ReasonFluentBitDSNotReady:       "Fluent Bit DaemonSet is not ready",
+	ReasonFluentBitDSReady:          "Fluent Bit DaemonSet is ready",
+	ReasonLogResourceBlocksDeletion: "One or more LogPipelines/LogParsers still exist",
 
 	ReasonMetricGatewayDeploymentNotReady: "Metric gateway Deployment is not ready",
 	ReasonMetricGatewayDeploymentReady:    "Metric gateway Deployment is ready",
-	ReasonMetricComponentsDeletionBlocked: "One or more MetricPipelines still exist",
+	ReasonMetricResourceBlocksDeletion:    "One or more MetricPipelines still exist",
 
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
-	ReasonTraceComponentsDeletionBlocked: "One or more TracePipelines still exist",
+	ReasonTraceResourceBlocksDeletion:    "One or more TracePipelines still exist",
 }
 
 func Condition(reason string) string {

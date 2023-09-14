@@ -33,7 +33,7 @@ func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPip
 	}
 
 	if telemetryInDeletion {
-		return reconciler.ReasonMetricComponentsDeletionBlocked
+		return reconciler.ReasonMetricResourceBlocksDeletion
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {

@@ -122,7 +122,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "False",
-				Reason:  "TraceComponentsDeletionBlocked",
+				Reason:  "TraceResourceBlocksDeletion",
 				Message: "One or more TracePipelines still exist",
 			},
 		},

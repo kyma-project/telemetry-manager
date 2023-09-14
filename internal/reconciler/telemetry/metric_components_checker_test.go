@@ -122,7 +122,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
-				Reason:  "MetricComponentsDeletionBlocked",
+				Reason:  "MetricResourceBlocksDeletion",
 				Message: "One or more MetricPipelines still exist",
 			},
 		},

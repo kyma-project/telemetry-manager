@@ -122,7 +122,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
-				Reason:  "LogComponentsDeletionBlocked",
+				Reason:  "LogResourceBlocksDeletion",
 				Message: "One or more LogPipelines/LogParsers still exist",
 			},
 		},

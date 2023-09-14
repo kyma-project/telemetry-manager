@@ -39,7 +39,7 @@ func (l *logComponentsChecker) determineReason(pipelines []v1alpha1.LogPipeline,
 	}
 
 	if telemetryInDeletion && (len(pipelines) != 0 || len(parsers) != 0) {
-		return reconciler.ReasonLogComponentsDeletionBlocked
+		return reconciler.ReasonLogResourceBlocksDeletion
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.LogPipeline) bool {

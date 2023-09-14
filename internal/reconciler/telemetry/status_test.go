@@ -194,7 +194,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonFluentBitDSReady},
 			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonMetricGatewayDeploymentReady},
-			tracesCheckerReturn:  &metav1.Condition{Type: "TraceComponentsHealthy", Status: metav1.ConditionFalse, Reason: reconciler.ReasonTraceComponentsDeletionBlocked},
+			tracesCheckerReturn:  &metav1.Condition{Type: "TraceComponentsHealthy", Status: metav1.ConditionFalse, Reason: reconciler.ReasonTraceResourceBlocksDeletion},
 			resources: []client.Object{
 				pointerFrom(testutils.NewTracePipelineBuilder().Build()),
 			},
@@ -202,7 +202,7 @@ func TestUpdateStatus(t *testing.T) {
 			expectedConditions: []metav1.Condition{
 				{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonFluentBitDSReady},
 				{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonMetricGatewayDeploymentReady},
-				{Type: "TraceComponentsHealthy", Status: metav1.ConditionFalse, Reason: reconciler.ReasonTraceComponentsDeletionBlocked},
+				{Type: "TraceComponentsHealthy", Status: metav1.ConditionFalse, Reason: reconciler.ReasonTraceResourceBlocksDeletion},
 			},
 		},
 	}
