@@ -83,7 +83,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if err := r.updateStatus(ctx, &telemetry); err != nil {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("failed to update status: %w", err)
+		return ctrl.Result{}, fmt.Errorf("failed to update status: %w", err)
 	}
 
 	if err := r.reconcileWebhook(ctx, &telemetry); err != nil {
