@@ -16,7 +16,7 @@ type logComponentsChecker struct {
 	client client.Client
 }
 
-func (l *logComponentsChecker) Check(ctx context.Context, isTelemetryDeletionInitiated bool) (*metav1.Condition, error) {
+func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
 	var logPipelines v1alpha1.LogPipelineList
 	err := l.client.List(ctx, &logPipelines)
 	if err != nil {
@@ -29,16 +29,16 @@ func (l *logComponentsChecker) Check(ctx context.Context, isTelemetryDeletionIni
 		return &metav1.Condition{}, fmt.Errorf("failed to list log parsers: %w", err)
 	}
 
-	reason := l.determineReason(logPipelines.Items, logParsers.Items, isTelemetryDeletionInitiated)
+	reason := l.determineReason(logPipelines.Items, logParsers.Items, telemetryInDeletion)
 	return l.createConditionFromReason(reason), nil
 }
 
-func (l *logComponentsChecker) determineReason(pipelines []v1alpha1.LogPipeline, parsers []v1alpha1.LogParser, isTelemetryDeletionInitiated bool) string {
+func (l *logComponentsChecker) determineReason(pipelines []v1alpha1.LogPipeline, parsers []v1alpha1.LogParser, telemetryInDeletion bool) string {
 	if len(pipelines) == 0 {
 		return reconciler.ReasonNoPipelineDeployed
 	}
 
-	if isTelemetryDeletionInitiated && (len(pipelines) != 0 || len(parsers) != 0) {
+	if telemetryInDeletion && (len(pipelines) != 0 || len(parsers) != 0) {
 		return reconciler.ReasonLogComponentsDeletionBlocked
 	}
 

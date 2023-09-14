@@ -16,24 +16,24 @@ type traceComponentsChecker struct {
 	client client.Client
 }
 
-func (t *traceComponentsChecker) Check(ctx context.Context, isTelemetryDeletionInitiated bool) (*metav1.Condition, error) {
+func (t *traceComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
 	var tracePipelines v1alpha1.TracePipelineList
 	err := t.client.List(ctx, &tracePipelines)
 	if err != nil {
 		return &metav1.Condition{}, fmt.Errorf("failed to get all trace pipelines while syncing conditions: %w", err)
 	}
 
-	status := t.determineReason(tracePipelines.Items, isTelemetryDeletionInitiated)
+	status := t.determineReason(tracePipelines.Items, telemetryInDeletion)
 	return t.createConditionFromReason(status), nil
 
 }
 
-func (t *traceComponentsChecker) determineReason(pipelines []v1alpha1.TracePipeline, isTelemetryDeletionInitiated bool) string {
+func (t *traceComponentsChecker) determineReason(pipelines []v1alpha1.TracePipeline, telemetryInDeletion bool) string {
 	if len(pipelines) == 0 {
 		return reconciler.ReasonNoPipelineDeployed
 	}
 
-	if isTelemetryDeletionInitiated {
+	if telemetryInDeletion {
 		return reconciler.ReasonTraceComponentsDeletionBlocked
 	}
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.TracePipeline) bool {

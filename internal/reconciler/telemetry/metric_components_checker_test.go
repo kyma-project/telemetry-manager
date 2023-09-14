@@ -17,14 +17,14 @@ import (
 
 func TestMetricComponentsCheck(t *testing.T) {
 	tests := []struct {
-		name                         string
-		pipelines                    []telemetryv1alpha1.MetricPipeline
-		isTelemetryDeletionInitiated bool
-		expectedCondition            *metav1.Condition
+		name                string
+		pipelines           []telemetryv1alpha1.MetricPipeline
+		telemetryInDeletion bool
+		expectedCondition   *metav1.Condition
 	}{
 		{
-			name:                         "should be healthy if no pipelines deployed",
-			isTelemetryDeletionInitiated: false,
+			name:                "should be healthy if no pipelines deployed",
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "True",
@@ -40,7 +40,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonMetricGatewayDeploymentNotReady), testutils.MetricRunningCondition()).Build(),
 			},
-			isTelemetryDeletionInitiated: false,
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "True",
@@ -56,7 +56,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
 			},
-			isTelemetryDeletionInitiated: false,
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
@@ -72,7 +72,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonMetricGatewayDeploymentNotReady)).Build(),
 			},
-			isTelemetryDeletionInitiated: false,
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
@@ -88,7 +88,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonWaitingForLock)).Build(),
 			},
-			isTelemetryDeletionInitiated: false,
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "True",
@@ -104,7 +104,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
 			},
-			isTelemetryDeletionInitiated: false,
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
@@ -118,7 +118,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().WithStatusConditions(
 					testutils.MetricPendingCondition(reconciler.ReasonMetricGatewayDeploymentNotReady), testutils.MetricRunningCondition()).Build(),
 			},
-			isTelemetryDeletionInitiated: true,
+			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
@@ -144,7 +144,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				client: fakeClient,
 			}
 
-			condition, err := m.Check(context.Background(), test.isTelemetryDeletionInitiated)
+			condition, err := m.Check(context.Background(), test.telemetryInDeletion)
 			require.NoError(t, err)
 			require.Equal(t, test.expectedCondition, condition)
 		})

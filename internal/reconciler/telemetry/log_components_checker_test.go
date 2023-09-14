@@ -17,14 +17,14 @@ import (
 
 func TestLogComponentsCheck(t *testing.T) {
 	tests := []struct {
-		name                         string
-		pipelines                    []telemetryv1alpha1.LogPipeline
-		isTelemetryDeletionInitiated bool
-		expectedCondition            *metav1.Condition
+		name                string
+		pipelines           []telemetryv1alpha1.LogPipeline
+		telemetryInDeletion bool
+		expectedCondition   *metav1.Condition
 	}{
 		{
-			name:                         "should be healthy if no pipelines deployed",
-			isTelemetryDeletionInitiated: false,
+			name:                "should be healthy if no pipelines deployed",
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "True",
@@ -40,7 +40,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
 					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
 			},
-			isTelemetryDeletionInitiated: false,
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "True",
@@ -56,7 +56,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
 					testutils.LogPendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
 			},
-			isTelemetryDeletionInitiated: false,
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
@@ -72,7 +72,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
 					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady)).Build(),
 			},
-			isTelemetryDeletionInitiated: false,
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
@@ -88,7 +88,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
 					testutils.LogPendingCondition(reconciler.ReasonWaitingForLock)).Build(),
 			},
-			isTelemetryDeletionInitiated: false,
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "True",
@@ -104,7 +104,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
 					testutils.LogPendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
 			},
-			isTelemetryDeletionInitiated: false,
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
@@ -118,7 +118,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
 					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
 			},
-			isTelemetryDeletionInitiated: true,
+			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
@@ -144,7 +144,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				client: fakeClient,
 			}
 
-			condition, err := m.Check(context.Background(), test.isTelemetryDeletionInitiated)
+			condition, err := m.Check(context.Background(), test.telemetryInDeletion)
 			require.NoError(t, err)
 			require.Equal(t, test.expectedCondition, condition)
 		})

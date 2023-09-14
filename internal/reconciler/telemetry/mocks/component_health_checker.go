@@ -15,17 +15,17 @@ type ComponentHealthChecker struct {
 	mock.Mock
 }
 
-// Check provides a mock function with given fields: ctx, isTelemetryDeletionInitiated
-func (_m *ComponentHealthChecker) Check(ctx context.Context, isTelemetryDeletionInitiated bool) (*v1.Condition, error) {
-	ret := _m.Called(ctx, isTelemetryDeletionInitiated)
+// Check provides a mock function with given fields: ctx, telemetryInDeletion
+func (_m *ComponentHealthChecker) Check(ctx context.Context, telemetryInDeletion bool) (*v1.Condition, error) {
+	ret := _m.Called(ctx, telemetryInDeletion)
 
 	var r0 *v1.Condition
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, bool) (*v1.Condition, error)); ok {
-		return rf(ctx, isTelemetryDeletionInitiated)
+		return rf(ctx, telemetryInDeletion)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, bool) *v1.Condition); ok {
-		r0 = rf(ctx, isTelemetryDeletionInitiated)
+		r0 = rf(ctx, telemetryInDeletion)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*v1.Condition)
@@ -33,7 +33,7 @@ func (_m *ComponentHealthChecker) Check(ctx context.Context, isTelemetryDeletion
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, bool) error); ok {
-		r1 = rf(ctx, isTelemetryDeletionInitiated)
+		r1 = rf(ctx, telemetryInDeletion)
 	} else {
 		r1 = ret.Error(1)
 	}

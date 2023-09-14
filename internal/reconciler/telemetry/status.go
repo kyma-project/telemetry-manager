@@ -17,23 +17,23 @@ import (
 
 //go:generate mockery --name ComponentHealthChecker --filename component_health_checker.go
 type ComponentHealthChecker interface {
-	Check(ctx context.Context, isTelemetryDeletionInitiated bool) (*metav1.Condition, error)
+	Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error)
 }
 
 func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {
-	isTelemetryDeletionInitiated := !telemetry.GetDeletionTimestamp().IsZero()
+	telemetryInDeletion := !telemetry.GetDeletionTimestamp().IsZero()
 
 	for _, checker := range r.enabledHealthCheckers() {
-		if err := r.updateComponentCondition(ctx, checker, telemetry, isTelemetryDeletionInitiated); err != nil {
+		if err := r.updateComponentCondition(ctx, checker, telemetry, telemetryInDeletion); err != nil {
 			return fmt.Errorf("failed to update component condition: %w", err)
 		}
 	}
 
-	if err := r.updateOverallStatus(ctx, telemetry, isTelemetryDeletionInitiated); err != nil {
+	if err := r.updateOverallStatus(ctx, telemetry, telemetryInDeletion); err != nil {
 		return fmt.Errorf("failed to update Telemetry status: %w", err)
 	}
 
-	if err := r.updateGatewayEndpoints(ctx, telemetry, isTelemetryDeletionInitiated); err != nil {
+	if err := r.updateGatewayEndpoints(ctx, telemetry, telemetryInDeletion); err != nil {
 		return fmt.Errorf("failed to update gateway endpoints: %w", err)
 	}
 
@@ -47,8 +47,8 @@ func (r *Reconciler) enabledHealthCheckers() []ComponentHealthChecker {
 	return []ComponentHealthChecker{r.healthCheckers.logs, r.healthCheckers.traces}
 }
 
-func (r *Reconciler) updateComponentCondition(ctx context.Context, checker ComponentHealthChecker, telemetry *operatorv1alpha1.Telemetry, isTelemetryDeletionInitiated bool) error {
-	newCondition, err := checker.Check(ctx, isTelemetryDeletionInitiated)
+func (r *Reconciler) updateComponentCondition(ctx context.Context, checker ComponentHealthChecker, telemetry *operatorv1alpha1.Telemetry, telemetryInDeletion bool) error {
+	newCondition, err := checker.Check(ctx, telemetryInDeletion)
 	if err != nil {
 		return fmt.Errorf("unable to check component: %w", err)
 	}
@@ -59,8 +59,8 @@ func (r *Reconciler) updateComponentCondition(ctx context.Context, checker Compo
 	return nil
 }
 
-func (r *Reconciler) updateOverallStatus(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, isTelemetryDeletionInitiated bool) error {
-	if isTelemetryDeletionInitiated {
+func (r *Reconciler) updateOverallStatus(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, telemetryInDeletion bool) error {
+	if telemetryInDeletion {
 		// If the provided Telemetry CR is being deleted and dependent Telemetry CRs (LogPipeline, LogParser, MetricPipeline, TracePipeline) are found, the state is set to "Warning" until they are removed from the cluster.
 		// If dependent CRs are not found, the state is set to "Deleting"
 		if r.dependentCRsFound(ctx) {
@@ -86,8 +86,8 @@ func (r *Reconciler) updateOverallStatus(ctx context.Context, telemetry *operato
 	return nil
 }
 
-func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, isTelemetryDeletionInitiated bool) error {
-	traceEndpoints, err := r.traceEndpoints(ctx, r.config, isTelemetryDeletionInitiated)
+func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *operatorv1alpha1.Telemetry, telemetryInDeletion bool) error {
+	traceEndpoints, err := r.traceEndpoints(ctx, r.config, telemetryInDeletion)
 	if err != nil {
 		return fmt.Errorf("failed to get trace endpoints: %w", err)
 	}
@@ -102,8 +102,8 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 	return nil
 }
 
-func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, isTelemetryDeletionInitiated bool) (*operatorv1alpha1.OTLPEndpoints, error) {
-	cond, err := r.healthCheckers.traces.Check(ctx, isTelemetryDeletionInitiated)
+func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, telemetryInDeletion bool) (*operatorv1alpha1.OTLPEndpoints, error) {
+	cond, err := r.healthCheckers.traces.Check(ctx, telemetryInDeletion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check trace components: %w", err)
 	}
