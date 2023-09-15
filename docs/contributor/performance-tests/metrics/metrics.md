@@ -262,10 +262,6 @@ spec:
   type: ClusterIP
 ```
 
-### Install test setup
-
-.....
-
 ## Testcases
 
 ### Assumptions
@@ -277,7 +273,7 @@ We identified following test cases:
 2. Workload generating huge amount of metrics (To understand how scraping works when the workload exposes several MB of metrics)
 3. Have multiple workloads across different nodes (To understand prometheus SDS behaviour with multiple services)
 4. Verify sample limit test
-5. Multiple pods and services scraped from multiple receivers8
+5. Multiple pods and services scraped from multiple receivers
 
 ### Multiple pods all running on a single node and export metrics
 Setup:
@@ -338,7 +334,7 @@ Setup:
 
 Gardener GCP cluster:
 - Cluster with 15 Nodes
-- Machine types n2-standrt-16 (16 CPU, 64Gi memory)
+- Machine types n2-standard-16 (16 CPU, 64Gi memory)
 Gardener support max 100 pods per node
 
 Avalanche load generator configuration:
@@ -372,6 +368,84 @@ Following graph show Kubernetes API server metrics
 Test reach max pod count `1430` on cluster, all metrics are successfully received and exported to the metric gateway, no critical memory, cpu or network utilization observed.
 
 Kubernetes API request duration reach for `GET` operations at peak `~750ms` and for `LIST` operations `~900ms`.
+
+### Multiple pods and services scraped from multiple receivers
+
+Setup:
+
+Avalanche load generator configuration:
+- Metric Count: 500
+- Metric Series: 20
+- Number of label: 10
+
+Metric agent:
+
+Metric agent pipeline configuration `metrics/prometheus` configured with an additional receiver `prometheus/app-services` as below.
+```yaml
+```yaml
+apiVersion: v1
+data:
+  relay.conf: |
+    extensions:
+        health_check:
+            endpoint: ${MY_POD_IP}:13133
+    service:
+        pipelines:
+            metrics/prometheus:
+                receivers:
+                    - prometheus/app-pods
+                    - prometheus/app-services
+                processors:
+                    - memory_limiter
+                    - resource/delete-service-name
+                    - resource/insert-input-source-prometheus
+                    - batch
+                exporters:
+                    - otlp
+```
+Following service created for Avalanche load generator to enable metric scrape from second receiver `prometheus/app-services`
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/port: "8080"
+    prometheus.io/scrape: "true"
+  labels:
+    app: avalanche-metric-load-generator
+  name: avalanche-metric-load-generator
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: avalanche-metric-load-generator
+  sessionAffinity: None
+  type: ClusterIP
+```
+
+Purpose of this test is to determine scrape behavior of metric agent and especially memory impact with multiple receiver under high load.
+
+Test metric generator started with 10 instances and metrics are scraped by the `prometheus/app-pods` receiver and `prometheus/app-services` receiver in same time independently.
+Metric generator instances increased with `2` instance every minute to simulate a ramp-up of load.
+
+With 14 instances metric agent reach the stable peak of `280K` metric samples per scrape loop in total which is the similar to single receiver performance.
+Additional load on top of this setup causes incoming metric refuse by the `memory_limiter` processor.
+
+Following graph show accepted metrics during test by the both receivers
+![Metric agent accepted metrics](./assets/agent-multi-receiver-accepted.jpg)
+
+Following graph show refused metrics during test from processor
+![Metric agent accepted metrics](./assets/agent-multi-receiver-refused.jpg)
+
+CPU utilization of metric agent
+![Metric agent accepted metrics](./assets/agent-multi-receiver-cpu.jpg)
+
+Memory utilization of metric agent
+![Metric agent accepted metrics](./assets/agent-multi-receiver-memory.jpg)
 
 ### Scrape sample limit test
 
@@ -410,8 +484,6 @@ Metric agent configuration and generated metric for this test would cause the sc
 2023-09-14T09:53:45.643Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685216843, "target_labels": "{__name__=\"up\", instance=\"100.64.13.134:8080\", job=\"app-pods\"}"}
 2023-09-14T09:53:56.041Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685230337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
 ```
-
-
 ## Summary
 
 
