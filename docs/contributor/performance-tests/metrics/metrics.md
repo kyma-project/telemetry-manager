@@ -276,8 +276,8 @@ We identified following test cases:
 1. Multiple pods all running on a single node and export metrics (to find how many workloads supported)
 2. Workload generating huge amount of metrics (To understand how scraping works when the workload exposes several MB of metrics)
 3. Have multiple workloads across different nodes (To understand prometheus SDS behaviour with multiple services)
-4. Verify istio metrics
-5. Test with huge metric payload where we don't scale gradually more like a spike
+4. Verify sample limit test
+5. Multiple pods and services scraped from multiple receivers8
 
 ### Multiple pods all running on a single node and export metrics
 Setup:
@@ -334,7 +334,83 @@ In both configurations Avalanche load generator generated `120K metric points/sc
 > **NOTE:** Avalanche load generator resources have to be changed for this scenario, for this test CPU settings changed to 400m and Memory to 1Gi 
 ### Have multiple workloads across different nodes
 
--
+Setup:
+
+Gardener GCP cluster:
+- Cluster with 15 Nodes
+- Machine types n2-standrt-16 (16 CPU, 64Gi memory)
+Gardener support max 100 pods per node
+
+Avalanche load generator configuration:
+- Metric Count: 100
+- Metric Series: 20
+- Number of label: 10
+
+Prometheus:
+- Instance memory increased to the 7Gi
+
+To simulate a smooth ramp-up and avoid huge data flood at the beginning, load generator started with `100` instances, instance counts was increased every by `100` instances every 5 minutes until max pod count of cluster reached.
+
+Following graph show metric agent received metrics 
+![Metric agent accepted metrics](./assets/max-pod-agent-accepted-metrics.jpg)
+
+Following graph show metric gateway received metrics
+![Metric gateway accepted metrics](./assets/max-pod-gateway-accepted-metrics.jpg)
+
+Following graph show metric gateway exported metrics
+![Metric gateway exported metrics](./assets/max-pod-gateway-sent-metrics.jpg)
+
+Following graph show metric agent CPU utilization
+![Metric agent exported metrics](./assets/max-pod-agent-cpu.jpg)
+
+Following graph show metric agent memory utilization
+![Metric agent exported metrics](./assets/max-pod-agent-memory.jpg)
+
+Following graph show Kubernetes API server metrics
+![Metric agent exported metrics](./assets/max-pod-k8s-api.jpg)
+
+Test reach max pod count `1430` on cluster, all metrics are successfully received and exported to the metric gateway, no critical memory, cpu or network utilization observed.
+
+Kubernetes API request duration reach for `GET` operations at peak `~750ms` and for `LIST` operations `~900ms`.
+
+### Scrape sample limit test
+
+Setup:
+
+Avalanche load generator configuration:
+- Metric Count: 100
+- Metric Series: 20
+- Number of label: 10
+
+- This configuration generate `2000` metric points per scrape.
+
+Metric agent scrape job configuration `prometheus/app-pods` and `prometheus/app-service` configured with parameter `sample_limit: 1000` to limit time series for each scrape loop to max `1000` time series.
+
+```yaml
+        prometheus/app-pods:
+            config:
+                scrape_configs:
+                    - job_name: app-pods
+                      sample_limit: 1000
+                      scrape_interval: 30s
+                      relabel_configs:
+                        - source_labels: [__meta_kubernetes_pod_node_name]
+                          regex: $MY_NODE_NAME
+                          action: keep
+```
+
+Metric agent configuration and generated metric for this test would cause the scrape of the target to fail if there were more than 1000 time series returned, with `up` being set to `0` as if the target was down.
+
+```shell
+2023-09-14T09:52:26.223Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685140337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
+2023-09-14T09:52:45.755Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685156843, "target_labels": "{__name__=\"up\", instance=\"100.64.13.134:8080\", job=\"app-pods\"}"}
+2023-09-14T09:52:56.344Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685170337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
+2023-09-14T09:53:12.202Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685186843, "target_labels": "{__name__=\"up\", instance=\"100.64.13.134:8080\", job=\"app-pods\"}"}
+2023-09-14T09:53:24.989Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685200337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
+2023-09-14T09:53:45.643Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685216843, "target_labels": "{__name__=\"up\", instance=\"100.64.13.134:8080\", job=\"app-pods\"}"}
+2023-09-14T09:53:56.041Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685230337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
+```
+
 
 ## Summary
 
