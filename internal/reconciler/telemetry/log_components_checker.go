@@ -34,12 +34,12 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 }
 
 func (l *logComponentsChecker) determineReason(pipelines []v1alpha1.LogPipeline, parsers []v1alpha1.LogParser, telemetryInDeletion bool) string {
-	if len(pipelines) == 0 {
-		return reconciler.ReasonNoPipelineDeployed
-	}
-
 	if telemetryInDeletion && (len(pipelines) != 0 || len(parsers) != 0) {
 		return reconciler.ReasonLogResourceBlocksDeletion
+	}
+
+	if len(pipelines) == 0 {
+		return reconciler.ReasonNoPipelineDeployed
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.LogPipeline) bool {
