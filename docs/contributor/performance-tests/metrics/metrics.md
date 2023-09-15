@@ -484,7 +484,27 @@ Metric agent configuration and generated metric for this test would cause the sc
 2023-09-14T09:53:45.643Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685216843, "target_labels": "{__name__=\"up\", instance=\"100.64.13.134:8080\", job=\"app-pods\"}"}
 2023-09-14T09:53:56.041Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685230337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
 ```
+
 ## Summary
+
+Overall test result following findings
+
+Setup and parameters
+- Used metric size was `20` metric data points with `10` labels per each distinct metric
+- `1Gi` memory and `1` CPU
+- `memory_limiter` configured for `85%` memory limit, `10%` spike limit with `0.5` second check interval which result (85 -10) `75%` hard limit equivalent to `750Mi` memory.
+- Batch processor configured to create batches with `1024` metrics, default batch size `8192` was exceeded grpc client default payload limit `4MB`
+- Metric gateway configured with a log exporter to avoid possible outages by the gateway back pressure (default 2 gateway instances are available) 
+
+
+Findings:
+- Test results a single agent instance with single receiver max `~120K` metric data point for single scrape loop
+- Single agent instance with single receiver reach `~280K` metric points per scrape and stay stable, anything above result metric data refused by the `memory_limiter` processor.
+- Multi node test with single receiver reach on 15 Nodes cluster `1430` pods (this was the max pod count can be deployed on this cluster), agent was able to scrape in total `~2.800K` metrics data per scrape loop and was pushed successfully to the agent without any data dropping by agent side.
+  - No Memory issues identified and no additional memory impact found
+  - K8s Api server request duration reach for `GET` operations to the `~700ms` and for `LIST` operations `~900ms`, there was only one short peak of `21s` detected for `GET` operation
+- `sample_limit` configuration tested for multiple receivers, it's work but there are no metrics identified to see limit violations when occurs, only logs are present in this case
+- Multi receiver test reach same stable limit of `~280K` metrics per scrape in total but anything over this limit can cause OOM, OOM observed only when test execution with high load run over 2 hours. Here we need further investigation and analysis to improve memory setting to get more resilience. 
 
 
 
