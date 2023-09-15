@@ -6,6 +6,7 @@ import (
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -16,6 +17,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"slices"
 )
 
 var (
@@ -146,15 +148,25 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 				g.Expect(telemetry.Finalizers).Should(HaveLen(1))
 				g.Expect(telemetry.Finalizers[0]).Should(Equal("telemetry.kyma-project.io/finalizer"))
 				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateWarning))
-				expectedConditions := []metav1.Condition{
-					{Type: "LogComponentsHealthy", Status: metav1.ConditionFalse, Reason: reconciler.ReasonLogResourceBlocksDeletion, Message: reconciler.ConditionMessage(reconciler.ReasonLogResourceBlocksDeletion)},
-					{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.ConditionMessage(reconciler.ReasonNoPipelineDeployed)},
-					{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.ConditionMessage(reconciler.ReasonNoPipelineDeployed)},
+				crdList := &metav1.PartialObjectMetadataList{}
+				crdList.SetGroupVersionKind(schema.GroupVersionKind{
+					Group:   "apiextensions.k8s.io",
+					Kind:    "CustomResourceDefinition",
+					Version: "v1",
+				})
+				g.Expect(k8sClient.List(ctx, crdList)).Should(Succeed())
+				isMetricsEnabled := slices.ContainsFunc(crdList.Items, func(crd metav1.PartialObjectMetadata) bool {
+					return crd.GetName() == "metricpipelines.telemetry.kyma-project.io"
+				})
+				expectedConditions := map[string]metav1.Condition{
+					"LogComponentsHealthy":    {Status: metav1.ConditionFalse, Reason: reconciler.ReasonLogResourceBlocksDeletion, Message: reconciler.ConditionMessage(reconciler.ReasonLogResourceBlocksDeletion)},
+					"MetricComponentsHealthy": {Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.ConditionMessage(reconciler.ReasonNoPipelineDeployed)},
+					"TraceComponentsHealthy":  {Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.ConditionMessage(reconciler.ReasonNoPipelineDeployed)},
 				}
-				g.Expect(telemetry.Status.Conditions).Should(HaveLen(len(expectedConditions)))
-				for i, expectedCond := range expectedConditions {
-					actualCond := telemetry.Status.Conditions[i]
-					g.Expect(expectedCond.Type).Should(Equal(actualCond.Type))
+				expectedConditionsLength := expectedConditionsLength(isMetricsEnabled)
+				g.Expect(telemetry.Status.Conditions).Should(HaveLen(expectedConditionsLength))
+				for _, actualCond := range telemetry.Status.Conditions {
+					expectedCond := expectedConditions[actualCond.Type]
 					g.Expect(expectedCond.Status).Should(Equal(actualCond.Status))
 					g.Expect(expectedCond.Reason).Should(Equal(actualCond.Reason))
 					g.Expect(expectedCond.Message).Should(Equal(actualCond.Message))
@@ -210,4 +222,13 @@ func makeTestPipelineK8sObjects() []client.Object {
 	return []client.Object{
 		logPipeline.K8sObject(),
 	}
+}
+
+func expectedConditionsLength(isMetricsEnabled bool) int {
+	// If metrics is enabled, Telemetry Status conditions will have the following 3 Types: "LogComponentsHealthy", "MetricComponentsHealthy" and "TraceComponentsHealthy"
+	// Otherwise, it will only have 2 Types: "LogComponentsHealthy" and "TraceComponentsHealthy"
+	if isMetricsEnabled {
+		return 3
+	}
+	return 2
 }
