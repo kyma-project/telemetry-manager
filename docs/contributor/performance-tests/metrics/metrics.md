@@ -504,7 +504,7 @@ Findings:
   - No Memory issues identified and no additional memory impact found
   - K8s Api server request duration reach for `GET` operations to the `~700ms` and for `LIST` operations `~900ms`, there was only one short peak of `21s` detected for `GET` operation
 - `sample_limit` configuration tested for multiple receivers, it's work but there are no metrics identified to see limit violations when occurs, only logs are present in this case
-- Multi receiver test reach same stable limit of `~280K` metrics per scrape in total but anything over this limit can cause OOM, OOM observed only when test execution with high load run over 2 hours. Here we need further investigation and analysis to improve memory setting to get more resilience. 
+- Multi receiver test reach same stable limit of `~280K` metrics per scrape in total but anything over this limit can cause OOM, OOM observed only when test execution with high load run over 2 hours. Further investigation and analysis required here to improve memory setting to get more resilience. 
 
 
 
