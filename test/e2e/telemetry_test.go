@@ -149,16 +149,8 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 				g.Expect(telemetry.Finalizers).Should(HaveLen(1))
 				g.Expect(telemetry.Finalizers[0]).Should(Equal("telemetry.kyma-project.io/finalizer"))
 				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateWarning))
-				crdList := &metav1.PartialObjectMetadataList{}
-				crdList.SetGroupVersionKind(schema.GroupVersionKind{
-					Group:   "apiextensions.k8s.io",
-					Kind:    "CustomResourceDefinition",
-					Version: "v1",
-				})
-				g.Expect(k8sClient.List(ctx, crdList)).Should(Succeed())
-				isMetricsEnabled := slices.ContainsFunc(crdList.Items, func(crd metav1.PartialObjectMetadata) bool {
-					return crd.GetName() == "metricpipelines.telemetry.kyma-project.io"
-				})
+				isMetricsEnabled, err := isMetricsEnabled()
+				g.Expect(err).ShouldNot(HaveOccurred())
 				expectedConditions := map[string]metav1.Condition{
 					"LogComponentsHealthy":    {Status: metav1.ConditionFalse, Reason: reconciler.ReasonLogResourceBlocksDeletion, Message: reconciler.ConditionMessage(reconciler.ReasonLogResourceBlocksDeletion)},
 					"MetricComponentsHealthy": {Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.ConditionMessage(reconciler.ReasonNoPipelineDeployed)},
@@ -223,6 +215,22 @@ func makeTestPipelineK8sObjects() []client.Object {
 	return []client.Object{
 		logPipeline.K8sObject(),
 	}
+}
+
+func isMetricsEnabled() (bool, error) {
+	crdList := &metav1.PartialObjectMetadataList{}
+	crdList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apiextensions.k8s.io",
+		Kind:    "CustomResourceDefinition",
+		Version: "v1",
+	})
+	if err := k8sClient.List(ctx, crdList); err != nil {
+		return false, err
+	}
+	isMetricsEnabled := slices.ContainsFunc(crdList.Items, func(crd metav1.PartialObjectMetadata) bool {
+		return crd.GetName() == "metricpipelines.telemetry.kyma-project.io"
+	})
+	return isMetricsEnabled, nil
 }
 
 func expectedConditionsLength(isMetricsEnabled bool) int {
