@@ -19,6 +19,7 @@ func TestLogComponentsCheck(t *testing.T) {
 	tests := []struct {
 		name                string
 		pipelines           []telemetryv1alpha1.LogPipeline
+		parsers             []telemetryv1alpha1.LogParser
 		telemetryInDeletion bool
 		expectedCondition   *metav1.Condition
 	}{
@@ -126,6 +127,19 @@ func TestLogComponentsCheck(t *testing.T) {
 				Message: "One or more LogPipelines/LogParsers still exist",
 			},
 		},
+		{
+			name: "should block deletion if there are existing parsers",
+			parsers: []telemetryv1alpha1.LogParser{
+				testutils.NewLogParsersBuilder().Build(),
+			},
+			telemetryInDeletion: true,
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "False",
+				Reason:  "LogResourceBlocksDeletion",
+				Message: "One or more LogPipelines/LogParsers still exist",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -137,6 +151,9 @@ func TestLogComponentsCheck(t *testing.T) {
 			b := fake.NewClientBuilder().WithScheme(scheme)
 			for i := range test.pipelines {
 				b.WithObjects(&test.pipelines[i])
+			}
+			for i := range test.parsers {
+				b.WithObjects(&test.parsers[i])
 			}
 			fakeClient := b.Build()
 
