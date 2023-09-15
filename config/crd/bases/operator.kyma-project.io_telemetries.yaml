@@ -132,8 +132,8 @@ spec:
                     type: object
                 type: object
               state:
-                description: State signifies current state of Module CR. Value can
-                  be one of ("Ready", "Deleting", "Warning").
+                description: 'State signifies current state of Module CR. Value can
+                  be one of these three: "Ready", "Deleting", or "Warning".'
                 enum:
                 - Deleting
                 - Ready

@@ -98,7 +98,7 @@ func init() {
 // Status defines the observed state of Module CR.
 type Status struct {
 	// State signifies current state of Module CR.
-	// Value can be one of ("Ready", "Deleting", "Warning").
+	// Value can be one of these three: "Ready", "Deleting", or "Warning".
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=Deleting;Ready;Warning
 	State State `json:"state"`
