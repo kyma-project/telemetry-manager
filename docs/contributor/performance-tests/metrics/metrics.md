@@ -382,7 +382,6 @@ Metric agent:
 
 Metric agent pipeline configuration `metrics/prometheus` configured with an additional receiver `prometheus/app-services` as below.
 ```yaml
-```yaml
 apiVersion: v1
 data:
   relay.conf: |
@@ -498,7 +497,7 @@ Setup and parameters
 
 
 Findings:
-- Test results a single agent instance with single receiver max `~120K` metric data point for single scrape loop
+- Test results with a single agent instance with single receiver max `~120K` metric data point for single scrape loop
 - Single agent instance with single receiver reach `~280K` metric points per scrape and stay stable, anything above result metric data refused by the `memory_limiter` processor.
 - Multi node test with single receiver reach on 15 Nodes cluster `1430` pods (this was the max pod count can be deployed on this cluster), agent was able to scrape in total `~2.800K` metrics data per scrape loop and was pushed successfully to the agent without any data dropping by agent side.
   - No Memory issues identified and no additional memory impact found
