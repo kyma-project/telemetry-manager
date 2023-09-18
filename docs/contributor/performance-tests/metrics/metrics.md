@@ -499,7 +499,7 @@ Findings:
 - Single agent instance with single receiver reached `~280K` metric points per scrape (`~14K metric point/sec`) and stay stable, anything above result metric data refused by the `memory_limiter` processor.
 - Multi node test with single receiver performed on 15 Nodes cluster `1430` pods (this was the max pod count can be deployed on this cluster), agent was able to scrape in total `~2.800K` metrics data per scrape loop and was pushed successfully to the agent without any data dropping by agent side.
   - No Memory issues identified and no additional memory impact found
-  - K8s Api server request duration reach for `GET` operations to the `~700ms` and for `LIST` operations `~900ms`, there was only one short peak of `21s` detected for `GET` operation
+  - K8s Api server request duration reach for `GET` operations to the `~750ms` and for `LIST` operations `~900ms`, there was only one short peak of `21s` detected for `GET` operation
 - `sample_limit` configuration tested for multiple receivers, it's work but there are no metrics identified to see limit violations when occurs, only logs are present in this case
 - Multi receiver test reach same stable limit of `~280K` metrics per scrape in total but anything over this limit can cause OOM, OOM observed only when test execution with high load run over 2 hours. Further investigation and analysis required here to improve memory setting to get more resilience. 
 
