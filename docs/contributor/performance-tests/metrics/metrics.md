@@ -495,7 +495,7 @@ Setup and parameters
 
 
 Findings:
-- Test results with a single agent instance with single receiver max `~120K` metric data point for single scrape loop
+- Test results with a single agent instance and single receiver configuration, a single target scrape reach max `~120K` metric data point.
 - Single agent instance with single receiver reached `~280K` metric points per scrape (`~14K metric point/sec`) and stay stable, anything above result metric data refused by the `memory_limiter` processor.
 - Multi node test with single receiver performed on 15 Nodes cluster `1430` pods (this was the max pod count can be deployed on this cluster), agent was able to scrape in total `~2.800K` metrics data per scrape loop and was pushed successfully to the agent without any data dropping by agent side.
   - No Memory issues identified and no additional memory impact found
@@ -504,5 +504,187 @@ Findings:
 - Multi receiver test reach same stable limit of `~280K` metrics per scrape in total but anything over this limit can cause OOM, OOM observed only when test execution with high load run over 2 hours. Further investigation and analysis required here to improve memory setting to get more resilience. 
 
 
+## Conclusion
+
+To achieve a stable and resilient metric agent setup following configuration parameters added or adjusted.
+
+To avoid metric agent to overrun with huge amount of data floods from single scrape target and run in OOM, configuration parameter `sample_limit: 50000` added each prometheus receiver scrape configuration.
+The metric agent can handle higher values but analyzing current kyma production deployments shown values around `50000` in average.
+
+For more memory resilience, the processor `memory_limiter` configured with a hard limit of `75%`, hard and soft memory limit check intervals configured to `0.5 second` to allow processor react faster when limits are exceed.
+
+Batch processor configured with a batch size `1024` to avoid hit grpc client payload size limit during metric are exported to the gateway instances.
+Default batch size of `8192` was over the default grpc client payload limit of `4MByte`.
+
+Following ConfigMap contains all configuration adjustment for metric agent as well as prometheus receiver configuration changes, this configuration should be used as reference to implements telemetry manager changes.
+
+```yaml
+apiVersion: v1
+data:
+  relay.conf: |
+    extensions:
+        health_check:
+            endpoint: ${MY_POD_IP}:13133
+    service:
+        pipelines:
+            metrics/prometheus:
+                receivers:
+                    - prometheus/app-pods
+                    - prometheus/app-services
+                processors:
+                    - memory_limiter
+                    - resource/delete-service-name
+                    - resource/insert-input-source-prometheus
+                    - batch
+                exporters:
+                    - otlp
+        telemetry:
+            metrics:
+                address: ${MY_POD_IP}:8888
+            logs:
+                level: info
+        extensions:
+            - health_check
+    receivers:
+        prometheus/app-pods:
+            config:
+                scrape_configs:
+                    - job_name: app-pods
+                      sample_limit: 50000
+                      scrape_interval: 30s
+                      relabel_configs:
+                        - source_labels: [__meta_kubernetes_pod_node_name]
+                          regex: $MY_NODE_NAME
+                          action: keep
+                        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+                          regex: "true"
+                          action: keep
+                        - source_labels: [__meta_kubernetes_pod_phase]
+                          regex: Pending|Succeeded|Failed
+                          action: drop
+                        - source_labels: [__meta_kubernetes_pod_container_init]
+                          regex: (true)
+                          action: drop
+                        - source_labels: [__meta_kubernetes_pod_container_name]
+                          regex: (istio-proxy)
+                          action: drop
+                        - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
+                          regex: (istio)
+                          target_label: __scheme__
+                          replacement: https
+                          action: replace
+                        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+                          regex: (https?)
+                          target_label: __scheme__
+                          action: replace
+                        - source_labels: [__scheme__]
+                          regex: (https)
+                          action: drop
+                        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+                          regex: (.+)
+                          target_label: __metrics_path__
+                          action: replace
+                        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+                          regex: ([^:]+)(?::\d+)?;(\d+)
+                          target_label: __address__
+                          replacement: $$1:$$2
+                          action: replace
+                      kubernetes_sd_configs:
+                        - role: pod
+        prometheus/app-services:
+            config:
+                scrape_configs:
+                    - job_name: app-services
+                      sample_limit: 50000
+                      scrape_interval: 30s
+                      relabel_configs:
+                        - source_labels: [__meta_kubernetes_endpoint_node_name]
+                          regex: $MY_NODE_NAME
+                          action: keep
+                        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+                          regex: "true"
+                          action: keep
+                        - source_labels: [__meta_kubernetes_pod_phase]
+                          regex: Pending|Succeeded|Failed
+                          action: drop
+                        - source_labels: [__meta_kubernetes_pod_container_init]
+                          regex: (true)
+                          action: drop
+                        - source_labels: [__meta_kubernetes_pod_container_name]
+                          regex: (istio-proxy)
+                          action: drop
+                        - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
+                          regex: (istio)
+                          target_label: __scheme__
+                          replacement: https
+                          action: replace
+                        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+                          regex: (https?)
+                          target_label: __scheme__
+                          action: replace
+                        - source_labels: [__scheme__]
+                          regex: (https)
+                          action: drop
+                        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+                          regex: (.+)
+                          target_label: __metrics_path__
+                          action: replace
+                        - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+                          regex: ([^:]+)(?::\d+)?;(\d+)
+                          target_label: __address__
+                          replacement: $$1:$$2
+                          action: replace
+                        - source_labels: [__meta_kubernetes_service_name]
+                          target_label: service
+                          action: replace
+                      kubernetes_sd_configs:
+                        - role: endpoints
+    processors:
+        batch:
+            send_batch_size: 1024
+            timeout: 10s
+            send_batch_max_size: 1024
+        memory_limiter:
+            check_interval: 0.5s
+            limit_percentage: 85
+            spike_limit_percentage: 10
+        resource/delete-service-name:
+            attributes:
+                - action: delete
+                  key: service.name
+        resource/insert-input-source-runtime:
+            attributes:
+                - action: insert
+                  key: kyma.source
+                  value: runtime
+        resource/insert-input-source-prometheus:
+            attributes:
+                - action: insert
+                  key: kyma.source
+                  value: prometheus
+    exporters:
+        otlp:
+            endpoint: telemetry-otlp-metrics.kyma-system.svc.cluster.local:4317
+            tls:
+                insecure: true
+            sending_queue:
+                enabled: true
+                queue_size: 512
+            retry_on_failure:
+                enabled: true
+                initial_interval: 5s
+                max_interval: 30s
+                max_elapsed_time: 300s
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: telemetry-metric-agent
+  name: telemetry-metric-agent
+  namespace: kyma-system
+  ownerReferences:
+  - apiVersion: telemetry.kyma-project.io/v1alpha1
+    kind: MetricPipeline
+    name: metricpipeline-sample
+```
 
 
