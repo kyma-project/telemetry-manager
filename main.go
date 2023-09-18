@@ -41,6 +41,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -300,16 +301,18 @@ func main() {
 
 	syncPeriod := 1 * time.Hour
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		SyncPeriod:              &syncPeriod,
 		Scheme:                  scheme,
-		MetricsBindAddress:      ":8080",
-		Port:                    9443,
+		Metrics:                 metricsserver.Options{BindAddress: ":8080"},
 		HealthProbeBindAddress:  ":8081",
 		LeaderElection:          true,
 		LeaderElectionNamespace: telemetryNamespace,
 		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
-		CertDir:                 certDir,
+		WebhookServer: k8sWebhook.NewServer(k8sWebhook.Options{
+			Port:    9443,
+			CertDir: certDir,
+		}),
 		Cache: cache.Options{
+			SyncPeriod: &syncPeriod,
 			ByObject: map[client.Object]cache.ByObject{
 				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
 				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
