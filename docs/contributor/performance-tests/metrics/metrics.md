@@ -285,7 +285,7 @@ Avalanche load generator configuration per pod:
 
 To simulate a smooth ramp-up and avoid huge data flood at the beginning, load generator was started with 5 instances, instance count was increased at 5 instances every minute until peak was reached.
 
-This test was executed on a single node installation to determine the limits of a single metric agent, after the load generator reached `30` instances, metric agent hits the limits and stays stable with this setup. Any load above this setup would cause memory limiter to refuse incoming traffic.
+This test was executed on a single node installation to determine the limits of a single metric agent, after the load generator reached `28` instances, metric agent hits the limits and stays stable with this setup. Any load above this setup would cause memory limiter to refuse incoming traffic.
 
 The graph below shows the average metric points processed by the `prometheus metric receiver` per second, agent reaches an average of `14K metric points/sec`
 ![Peak accepted metric points](./assets/overall-peak-metric-point.jpg)
@@ -496,7 +496,7 @@ Setup and parameters
 
 Findings:
 - Test results with a single agent instance with single receiver max `~120K` metric data point for single scrape loop
-- Single agent instance with single receiver reached `~280K` metric points per scrape and stay stable, anything above result metric data refused by the `memory_limiter` processor.
+- Single agent instance with single receiver reached `~280K` metric points per scrape (`~14K metric point/sec`) and stay stable, anything above result metric data refused by the `memory_limiter` processor.
 - Multi node test with single receiver performed on 15 Nodes cluster `1430` pods (this was the max pod count can be deployed on this cluster), agent was able to scrape in total `~2.800K` metrics data per scrape loop and was pushed successfully to the agent without any data dropping by agent side.
   - No Memory issues identified and no additional memory impact found
   - K8s Api server request duration reach for `GET` operations to the `~700ms` and for `LIST` operations `~900ms`, there was only one short peak of `21s` detected for `GET` operation
