@@ -5,7 +5,7 @@ The aim of this exercise is to harden the metric agent such that it can satisfy 
 ## Setup
 
 For the test environment following things were considered:
-- Provisioned a GCP cluster with kubernetes (n2-standard-16)
+- Provision a GCP cluster with Kubernetes (n2-standard-16)
 - Deploy Telemetry operator using `make deploy-dev`
 - Deploy Prometheus to visualize the metrics
 - Istio deployment is needed due to Prometheus
