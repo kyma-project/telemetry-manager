@@ -516,7 +516,7 @@ For more memory resilience, the processor `memory_limiter` configured with a har
 Batch processor configured with a batch size `1024` to avoid hit grpc client payload size limit during metric are exported to the gateway instances.
 Default batch size of `8192` was over the default grpc client payload limit of `4MByte`.
 
-Following ConfigMap contains all configuration adjustment for metric agent as well as prometheus receiver configuration changes, this configuration should be used as reference to implements telemetry manager changes.
+The following ConfigMap contains all configuration adjustments for the metric agent, as well as the Prometheus receiver configuration changes. This configuration should be used as reference to implement Telemetry manager changes.
 
 ```yaml
 apiVersion: v1
