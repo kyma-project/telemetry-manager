@@ -514,7 +514,7 @@ The metric agent can handle higher values but analyzing current kyma production 
 For more memory resilience, the processor `memory_limiter` configured with a hard limit of `75%`, hard and soft memory limit check intervals configured to `0.5 second` to allow processor react faster when limits are exceed.
 
 Batch processor configured with a batch size `1024` to avoid hit grpc client payload size limit during metric are exported to the gateway instances.
-Default batch size of `8192` was over the default grpc client payload limit of `4MByte`.
+Default batch size of `8192` was over the default gRPC client payload limit of `4MByte`.
 
 The following ConfigMap contains all configuration adjustments for the metric agent, as well as the Prometheus receiver configuration changes. This configuration should be used as reference to implement Telemetry manager changes.
 
