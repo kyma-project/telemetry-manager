@@ -7,7 +7,7 @@ The aim of this exercise is to harden the metric agent such that it can satisfy 
 For the test environment following things were considered:
 - Provisioned a GCP cluster with kubernetes (n2-standard-16)
 - Deploy Telemetry operator using `make deploy-dev`
-- Deploy prometheus for visualizing the metrics
+- Deploy Prometheus to visualize the metrics
 - Istio deployment is needed due to Prometheus
 - - Machine types n2-standard-16 (16 CPU, 64Gi memory), Gardener supports max 100 pods per node
 
