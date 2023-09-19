@@ -1,6 +1,6 @@
 # Hardened Metric Agent setup
 
-The aim of this exercise is to harden the metric agent such that it can satisfy the metric load of most of the use cases.
+The aim of this exercise is to harden the metric agent so that it can satisfy the metric load of most of the use cases.
 
 ## Setup
 
