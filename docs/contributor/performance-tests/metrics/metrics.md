@@ -509,7 +509,7 @@ Findings:
 To achieve a stable and resilient metric agent setup following configuration parameters added or adjusted.
 
 To avoid metric agent to overrun with huge amount of data floods from single scrape target and run in OOM, configuration parameter `sample_limit: 50000` added each prometheus receiver scrape configuration.
-The metric agent can handle higher values but analyzing current kyma production deployments shown values around `50000` in average.
+The metric agent can handle higher values, but analyzing current Kyma production deployments shows values around `50000` in average.
 
 For more memory resilience, the processor `memory_limiter` was configured with a hard limit of `75%`,  and hard and soft memory limit check intervals were configured to `0.5 second` to allow the processor to react faster when limits are exceed.
 
