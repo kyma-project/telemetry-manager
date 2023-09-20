@@ -297,7 +297,7 @@ The following graph shows memory utilization of metric agent during test phase.
 ![Peak memory utilization of metric agent](./assets/overall-peak-memory.jpg)
 
 
-Following graph shows CPU utilization of metric agent during test phase.
+The following graph shows CPU utilization of metric agent during test phase.
 ![Peak CPU utilization of metric agent](./assets/overall-peak-cpu.jpg)
 
 
