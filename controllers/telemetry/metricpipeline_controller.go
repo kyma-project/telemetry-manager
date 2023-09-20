@@ -90,7 +90,7 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *MetricPipelineReconciler) mapSecret(ctx context.Context, object client.Object) []reconcile.Request {
 	var pipelines telemetryv1alpha1.MetricPipelineList
 	var requests []reconcile.Request
-	err := r.List(context.Background(), &pipelines)
+	err := r.List(ctx, &pipelines)
 	if err != nil {
 		ctrl.Log.Error(err, "Secret UpdateEvent: fetching MetricPipelineList failed!", err.Error())
 		return requests
@@ -115,7 +115,7 @@ func (r *MetricPipelineReconciler) mapSecret(ctx context.Context, object client.
 func (r *MetricPipelineReconciler) mapCRDChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	var pipelines telemetryv1alpha1.MetricPipelineList
 	var requests []reconcile.Request
-	err := r.List(context.Background(), &pipelines)
+	err := r.List(ctx, &pipelines)
 	if err != nil {
 		ctrl.Log.Error(err, "CRD UpdateEvent: fetching MetricPipelineList failed!", err.Error())
 		return requests

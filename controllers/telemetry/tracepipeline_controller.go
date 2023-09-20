@@ -83,7 +83,7 @@ func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *TracePipelineReconciler) mapSecret(ctx context.Context, object client.Object) []reconcile.Request {
 	var pipelines telemetryv1alpha1.TracePipelineList
 	var requests []reconcile.Request
-	err := r.List(context.Background(), &pipelines)
+	err := r.List(ctx, &pipelines)
 	if err != nil {
 		ctrl.Log.Error(err, "Secret UpdateEvent: fetching TracePipelineList failed!", err.Error())
 		return requests
