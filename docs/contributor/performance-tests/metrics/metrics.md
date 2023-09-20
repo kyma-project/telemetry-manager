@@ -301,7 +301,7 @@ Following graph shows CPU utilization of metric agent during test phase.
 ![Peak CPU utilization of metric agent](./assets/overall-peak-cpu.jpg)
 
 
-### Workload generating huge amount of metrics
+### One workload generating huge amount of metrics
 
 This scenario tests a single metric endpoint with huge amount of data, Avalanche load generator deployed with a single pod instance and configured with 1000 distinct metrics and 20 metric series for each metric with 10 labels.
 
