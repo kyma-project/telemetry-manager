@@ -8,7 +8,7 @@ For the test environment following things were considered:
 - Provision a GCP cluster with Kubernetes (n2-standard-16)
 - Deploy Telemetry operator using `make deploy-dev`
 - Deploy Prometheus to visualize the metrics
-- Istio deployment is needed due to Prometheus
+- Deploy Istio deployment (needed for Prometheus)
 - Machine types n2-standard-16 (16 CPU, 64Gi memory), Gardener supports max 100 pods per node
 
 Install monitoring and istio
