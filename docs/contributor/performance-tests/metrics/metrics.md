@@ -327,7 +327,7 @@ In both the configurations metric agent reached a peak of `~7K metric points/sec
 In both configurations Avalanche load generator generated `120K metric points/scrape` 
 
 > **NOTE:** Avalanche load generator resources have to be changed for this scenario, for this test CPU settings changed to 400m and Memory to 1Gi 
-### Have multiple workloads across different nodes
+### Multiple workloads across different Nodes
 
 Setup:
 
