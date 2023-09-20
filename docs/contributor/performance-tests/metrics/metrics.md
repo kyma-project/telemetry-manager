@@ -9,7 +9,7 @@ For the test environment following things were considered:
 - Deploy Telemetry operator using `make deploy-dev`
 - Deploy Prometheus to visualize the metrics
 - Istio deployment is needed due to Prometheus
-- - Machine types n2-standard-16 (16 CPU, 64Gi memory), Gardener supports max 100 pods per node
+- Machine types n2-standard-16 (16 CPU, 64Gi memory), Gardener supports max 100 pods per node
 
 Install monitoring and istio
 ```unix
