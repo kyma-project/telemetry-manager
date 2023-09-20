@@ -285,7 +285,7 @@ Avalanche load generator configuration per Pod:
 
 To simulate a smooth ramp-up and avoid huge data flood at the beginning, the load generator was started with 5 instances. The instance count was increased at 5 instances every minute until peak load was reached.
 
-This test was executed on a single node installation to determine the limits of a single metric agent, after the load generator reached `28` instances, metric agent hits the limits and stays stable with this setup. Any load above this setup would cause memory limiter to refuse incoming traffic.
+To determine the limits of a single metric agent, this test was executed on a single Node installation. After the load generator reached 28 instances, metric agent hits the limits and stays stable with this setup. Any load above this setup would cause memory limiter to refuse incoming traffic.
 
 The graph below shows the average metric points processed by the `prometheus metric receiver` per second, agent reaches an average of `14K metric points/sec`
 ![Peak accepted metric points](./assets/overall-peak-metric-point.jpg)
@@ -303,7 +303,7 @@ The following graph shows CPU utilization of metric agent during test phase.
 
 ### One workload generating huge amount of metrics
 
-This scenario tests a single metric endpoint with huge amount of data, Avalanche load generator deployed with a single pod instance and configured with 1000 distinct metrics and 20 metric series for each metric with 10 labels.
+This scenario tests a single metric endpoint with huge amount of data. The Avalanche load generator is deployed with a single Pod instance and configured with 1000 distinct metrics and 20 metric series for each metric with 10 labels.
 
 Setup:
 Avalanche load generator configuration:
@@ -313,27 +313,26 @@ Avalanche load generator configuration:
 
 Metric count was increased in 1000 steps to find the limit of the metric agent.
 
-Following graph shows max stable load from single target with huge amount of metric data.
+The following graph shows the highest stable load from a single target with a huge amount of metric data.
 ![Peak accepted metric points](./assets/single-target-peak-metric-point.jpg)
 
-Metric agent reached max `7K metric points/sec` from a single metric target, with 6000 and 20 metric series. In this test scenario the 
- measured raw metric payload size was `~51MB`
+Metric agent reached max `7K metric points/sec` from a single metric target, with 6000 and 20 metric series. In this test scenario, the measured raw metric payload size was `~51MB`.
 
-Another test was performed to determine the impact of different metric series on metric agent. For this the test metric series were increased from `20` to `30`, distinct metric count started from `1000` and increased in `1000` steps until the limit of metric agent was reached.
-Metric agent reached a peak of `~7K metric points/sec` (yellow line from graph above) with `4000` distinct metric. In this setup the measured raw metric payload size was `~31MB`
+To determine the impact of different metric series on metric agent, another test was performed: For this the test, the metric series were increased from `20` to `30`, distinct metric count started from `1000` and increased in `1000` steps until the limit of metric agent was reached.
+Metric agent reached a peak of `~7K metric points/sec` (yellow line from the previous graph) with `4000` distinct metric. In this setup, the measured raw metric payload size was `~31MB`.
 
-In both the configurations metric agent reached a peak of `~7K metric points/sec` independent size of raw metric data, thus raw metric payload size has no impact on metric agent performance.
+In both configurations, the metric agent reached a peak of `~7K metric points/sec` independent size of raw metric data. Thus, the raw metric payload size has no impact on metric agent performance.
 
-In both configurations Avalanche load generator generated `120K metric points/scrape` 
+In both configurations, the Avalanche load generator generated `120K metric points/scrape` .
 
-> **NOTE:** Avalanche load generator resources have to be changed for this scenario, for this test CPU settings changed to 400m and Memory to 1Gi 
+> **NOTE:** Avalanche load generator resources must be changed for this scenario. For this test, CPU settings were changed to 400m and Memory to 1Gi. 
 ### Multiple workloads across different Nodes
 
 Setup:
 
 Gardener GCP cluster:
 - Cluster with 15 Nodes
-- Machine types n2-standard-16 (16 CPU, 64Gi memory), Gardener supports max 100 pods per node
+- Machine types n2-standard-16 (16 CPU, 64Gi memory), Gardener supports max 100 Pods per Node
 
 Avalanche load generator configuration:
 - Metric Count: 100
@@ -341,11 +340,11 @@ Avalanche load generator configuration:
 - Number of label: 10
 
 Prometheus:
-- Instance memory increased to the 7Gi
+- Instance memory increased to 7Gi
 
-To simulate a smooth ramp-up and avoid huge data flood at the beginning, load generator started with `100` instances, instance counts was increased every by `100` instances every 5 minutes until max pod count of cluster reached.
+To simulate a smooth ramp-up and avoid huge data flood at the beginning, load generator started with `100` instances. Instance count was increased every by `100` instances every 5 minutes until the max Pod count of cluster was reached.
 
-Following graph show metric agent received metrics 
+The following graph shows metric agent received metrics:
 ![Metric agent accepted metrics](./assets/max-pod-agent-accepted-metrics.jpg)
 
 Following graph show metric gateway received metrics
@@ -354,18 +353,18 @@ Following graph show metric gateway received metrics
 Following graph show metric gateway exported metrics
 ![Metric gateway exported metrics](./assets/max-pod-gateway-sent-metrics.jpg)
 
-Following graph show metric agent CPU utilization
+The following graph shows the metric agent CPU utilization:
 ![Metric agent exported metrics](./assets/max-pod-agent-cpu.jpg)
 
-Following graph show metric agent memory utilization
+The following graph shows the metric agent memory utilization:
 ![Metric agent exported metrics](./assets/max-pod-agent-memory.jpg)
 
-Following graph show Kubernetes API server metrics
+The following graph shows the Kubernetes API server metrics:
 ![Metric agent exported metrics](./assets/max-pod-k8s-api.jpg)
 
-Test reached max pod count `1430` on cluster, all metrics are successfully received and exported to the metric gateway, no critical memory, cpu or network utilization observed.
+The test reached a max Pod count `1430` on the cluster. All metrics were successfully received and exported to the metric gateway; no critical memory, cpu or network utilization was observed.
 
-Kubernetes API request duration reach for `GET` operations at peak `~750ms` and for `LIST` operations `~900ms`.
+The Kubernetes API request duration reach for `GET` operations at peak was `~750ms`, and for `LIST` operations `~900ms`.
 
 ### Scrape multiple Pods and services from multiple receivers
 
@@ -378,7 +377,7 @@ Avalanche load generator configuration:
 
 Metric agent:
 
-Metric agent pipeline configuration `metrics/prometheus` configured with an additional receiver `prometheus/app-services` as below.
+The metric agent pipeline `metrics/prometheus` has been configured with an additional receiver `prometheus/app-services`; see the following configuration:
 ```yaml
 apiVersion: v1
 data:
@@ -400,7 +399,7 @@ data:
                 exporters:
                     - otlp
 ```
-Following service created for Avalanche load generator to enable metric scrape from second receiver `prometheus/app-services`
+To enable metric scraping from the second receiver `prometheus/app-services`, the following service was created for the Avalanche load generator:
 ```yaml
 apiVersion: v1
 kind: Service
@@ -424,31 +423,31 @@ spec:
   type: ClusterIP
 ```
 
-Purpose of this test was to determine scrape behavior of metric agent and especially memory impact with multiple receiver under high load.
+The purpose of this test was to determine the scraping behavior of the metric agent, and especially the memory impact with multiple receivers under high load.
 
-Test metric generator started with 10 instances and metrics are scraped by the `prometheus/app-pods` receiver and `prometheus/app-services` receiver in same time independently.
+The test metric generator started with 10 instances. Metrics are scraped by the `prometheus/app-pods` receiver and `prometheus/app-services` receiver at the same time independently.
 Metric generator instances were increased with `2` instance every minute to simulate a ramp-up of load.
 
 With 14 instances, metric agent reached the stable peak of `280K` metric samples per scrape loop in total, which is  similar to the single receiver performance.
 Additional load on top of this setup caused refusal of incoming metrics by the `memory_limiter` processor.
 
-Following graph shows accepted metrics during test by the both receivers
+The following graph shows the metrics that were accepted during the test by both receivers:
 ![Metric agent accepted metrics](./assets/agent-multi-receiver-accepted.jpg)
 
-Following graph shows refused metrics during test from processor
+The following graph shows the refused metrics during test from the processor:
 ![Metric agent accepted metrics](./assets/agent-multi-receiver-refused.jpg)
 
-CPU utilization of the metric agent
+The following graph shows the CPU utilization of the metric agent:
 ![Metric agent accepted metrics](./assets/agent-multi-receiver-cpu.jpg)
 
-Memory utilization of the metric agent
+The following graph shows the memory utilization of the metric agent:
 ![Metric agent accepted metrics](./assets/agent-multi-receiver-memory.jpg)
 
 ### Scrape sample limit test
 
 Setup:
 
-Avalanche load generator configuration to generate `2000` metric points per scrape :
+Avalanche load generator was configured to generate `2000` metric points per scrape:
 - Metric Count: 100
 - Metric Series: 20
 - Number of label: 10
@@ -470,7 +469,8 @@ Metric agent scrape job configuration:
                           action: keep
 ```
 
-With the above `scrap_limit`, if the target exposes more than 1000 metrics then the target wont be scraped. One would see following log messages with `up` being set to `0` as if the target is unhealthy. Example message ` "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"`
+With this limit, if the target exposes more than 1000 metrics, the target won't be scraped. Instead, log messages show `up` being set to `0` as if the target is unhealthy. 
+Example message ` "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"`:
 
 ```shell
 2023-09-14T09:52:26.223Z	warn	internal/transaction.go:123	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1694685140337, "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"}
@@ -484,31 +484,31 @@ With the above `scrap_limit`, if the target exposes more than 1000 metrics then 
 
 ## Summary
 
-Overall test result following findings
+The test resulted in the following findings:
 
-Setup and parameters
+### Setup and parameters
 - Used metric size was `20` metric data points with `10` labels per each distinct metric
 - `1Gi` memory and `1` CPU
-- `memory_limiter` configured for `85%` memory limit, `10%` spike limit with `0.5` second check interval which result (85 -10) `75%` hard limit equivalent to `750Mi` memory.
-- Batch processor configured to create batches with `1024` metrics, default batch size `8192` was exceeded grpc client default payload limit `4MB`
+- `memory_limiter` configured for `85%` memory limit, `10%` spike limit with `0.5` second check interval which results in (85 -10) `75%` hard limit equivalent to `750Mi` memory.
+- Batch processor configured to create batches with `1024` metrics, default batch size `8192` was exceeded by the gRPC client default payload limit `4MB`.
 - Metric gateway configured with a log exporter to avoid possible outages by the gateway back pressure (default 2 gateway instances are available) 
 
 
-Findings:
-- Test results with a single agent instance and single receiver configuration, a single target scrape reach max `~120K` metric data point.
-- Single agent instance with single receiver reached `~280K` metric points per scrape (`~14K metric point/sec`) and stay stable, anything above result metric data refused by the `memory_limiter` processor.
-- Multi node test with single receiver performed on 15 Nodes cluster `1430` pods (this was the max pod count can be deployed on this cluster), agent was able to scrape in total `~2.800K` metrics data per scrape loop and was pushed successfully to the agent without any data dropping by agent side.
-  - No Memory issues identified and no additional memory impact found
-  - K8s Api server request duration reach for `GET` operations to the `~750ms` and for `LIST` operations `~900ms`, there was only one short peak of `21s` detected for `GET` operation
+### Findings
+- Test results with a single agent instance and single receiver configuration: A single target scrape reached max `~120K` metric data point.
+- Single agent instance with single receiver reached `~280K` metric points per scrape (`~14K metric point/sec`) and stayed stable. For anything above, the `memory_limiter` processor refuses the metric data.
+- Multi-Node test with single receiver performed on 15 Nodes cluster `1430` Pods (this was the max Pod count can be deployed on this cluster): Agent was able to scrape in total `~2.800K` metrics data per scrape loop, and data was pushed successfully to the agent without any data dropping by agent side.
+  - No memory issues identified and no additional memory impact found.
+  - Kubernetes API server request duration for `GET` operations reached `~750ms` and for `LIST` operations `~900ms`. There was only one short peak of `21s` detected for the `GET` operation.
 - `sample_limit` configuration tested for multiple receivers, it's work but there are no metrics identified to see limit violations when occurs, only logs are present in this case
-- Multi receiver test reach same stable limit of `~280K` metrics per scrape in total but anything over this limit can cause OOM, OOM observed only when test execution with high load run over 2 hours. Further investigation and analysis required here to improve memory setting to get more resilience. 
+- Multi-receiver test reached same stable limit of `~280K` metrics per scrape in total, but anything over this limit can cause OOM. OOM was observed only when test execution with high load runs over 2 hours. Further investigation and analysis are required here to improve memory setting to get more resilience. 
 
 
 ## Conclusion
 
-To achieve a stable and resilient metric agent setup following configuration parameters added or adjusted.
+To achieve a stable and resilient metric agent setup, the following configuration parameters must be added or adjusted.
 
-To avoid metric agent to overrun with huge amount of data floods from single scrape target and run in OOM, configuration parameter `sample_limit: 50000` added each prometheus receiver scrape configuration.
+To avoid metric agent to overrun with a huge amount of data floods from single scrape target and run in OOM, configuration parameter `sample_limit: 50000` were added to each Prometheus receiver scrape configuration.
 The metric agent can handle higher values, but analyzing current Kyma production deployments shows values around `50000` in average.
 
 For more memory resilience, the processor `memory_limiter` was configured with a hard limit of `75%`,  and hard and soft memory limit check intervals were configured to `0.5 second` to allow the processor to react faster when limits are exceed.
