@@ -273,7 +273,7 @@ We identified the following test cases:
 2. To understand how scraping works when the workload exposes several MB of metrics: [One workload generating huge amount of metrics](#one-workload-generating-huge-amount-of-metrics).
 3. To understand prometheus SDS behaviour with multiple services: Multiple workloads across different Nodes](#multiple-workloads-across-different-nodes).
 4. Verify sample limit test
-5. Multiple pods and services scraped from multiple receivers
+5. [Scrape multiple Pods and services from multiple receivers](#scrape-multiple-pods-and-services-from-multiple-receivers).
 
 ### Multiple pods all running on a single node and export metrics
 Setup:
