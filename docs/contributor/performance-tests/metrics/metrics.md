@@ -268,7 +268,7 @@ spec:
 
 We tweak metrics and series value with 10 labels in each metric data point. The test is executed for 1 hour to have a stabilized output. Additionally, the load is scaled slowly to prevent spikes which might cause OOMs of metric agent.
 
-We identified following test cases:
+We identified the following test cases:
 1. Multiple pods all running on a single node and export metrics (to find how many workloads supported)
 2. Workload generating huge amount of metrics (To understand how scraping works when the workload exposes several MB of metrics)
 3. Have multiple workloads across different nodes (To understand prometheus SDS behaviour with multiple services)
