@@ -283,7 +283,7 @@ Avalanche load generator configuration per Pod:
 - Metric series: 20
 - Number of labels: 10
 
-To simulate a smooth ramp-up and avoid huge data flood at the beginning, load generator was started with 5 instances, instance count was increased at 5 instances every minute until peak was reached.
+To simulate a smooth ramp-up and avoid huge data flood at the beginning, the load generator was started with 5 instances. The instance count was increased at 5 instances every minute until peak load was reached.
 
 This test was executed on a single node installation to determine the limits of a single metric agent, after the load generator reached `28` instances, metric agent hits the limits and stays stable with this setup. Any load above this setup would cause memory limiter to refuse incoming traffic.
 
