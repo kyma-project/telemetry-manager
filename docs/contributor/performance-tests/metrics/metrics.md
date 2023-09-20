@@ -367,7 +367,7 @@ Test reached max pod count `1430` on cluster, all metrics are successfully recei
 
 Kubernetes API request duration reach for `GET` operations at peak `~750ms` and for `LIST` operations `~900ms`.
 
-### Multiple pods and services scraped from multiple receivers
+### Scrape multiple Pods and services from multiple receivers
 
 Setup:
 
