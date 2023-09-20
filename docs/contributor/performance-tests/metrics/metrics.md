@@ -278,7 +278,7 @@ We identified the following test cases:
 ### Multiple Pods, all running on a single node, export metrics
 Setup:
 
-Avalanche load generator configuration per pod:
+Avalanche load generator configuration per Pod:
 - Metric count: 500
 - Metric series: 20
 - Number of labels: 10
