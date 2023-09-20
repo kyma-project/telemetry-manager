@@ -275,7 +275,7 @@ We identified the following test cases:
 4. [Scrape sample limit test](#scrape-sample-limit-test).
 5. [Scrape multiple Pods and services from multiple receivers](#scrape-multiple-pods-and-services-from-multiple-receivers).
 
-### Multiple pods all running on a single node and export metrics
+### Multiple Pods, all running on a single node, export metrics
 Setup:
 
 Avalanche load generator configuration per pod:
