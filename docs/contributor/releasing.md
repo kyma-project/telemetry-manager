@@ -14,9 +14,10 @@ This release process covers the steps to release new major and minor versions fo
    Create a PR to `telemetry-manager/main` with the following changes:
    - `Makefile`:
       - Ensure the `IMG` variable reflects the latest `telemetry-manager` version.
-      - Update the `MODULE_VERSION` variable to the value of the new module version.
    - `config/manager/kustomization.yaml`:
       - Ensure the `newTag` field for the `telemetry-manager` image reflects the latest version.
+   - `module_config.yaml`:
+       - Update the `version` field to the value of the new module version.
    - `sec-scanners-config.yaml`:
       - Ensure that all images listed in the `protecode` field have the same versions as those used in the `main.go` file.
 

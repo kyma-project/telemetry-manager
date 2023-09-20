@@ -48,64 +48,52 @@ Telemetry Manager watches all LogPipeline resources and related Secrets. Wheneve
 
 ## Setting up a LogPipeline
 
-In the following steps, you can see how to set up a typical LogPipeline. For an overview of all available attributes, see the [reference document](resources/02-logpipeline.md).
+In the following steps, you can see how to construct and deploy a typical LogPipeline. Learn more about the available [parameters and attributes](resources/02-logpipeline.md).
 
 ### Step 1: Create a LogPipeline and output
 
-1. To ship application logs to a new output, create a resource file of the kind `LogPipeline`: 
-    ```yaml
-    kind: LogPipeline
-      apiVersion: telemetry.kyma-project.io/v1alpha1
-      metadata:
-        name: http-backend
-    spec:
-      output:
-        http:
-          dedot: false
-          port: "80"
-          uri: "/"
-          host:
-            value: https://myhost/logs
-          user:
-            value: "user"
-          password:
-            value: "not-required"
-    ```
-    An output is a data destination configured by a [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) of the relevant type. The LogPipeline supports the following output types:
+To ship application logs to a new output, create a resource of the kind `LogPipeline`: 
+```yaml
+kind: LogPipeline
+  apiVersion: telemetry.kyma-project.io/v1alpha1
+  metadata:
+    name: http-backend
+spec:
+  output:
+    http:
+      dedot: false
+      port: "80"
+      uri: "/"
+      host:
+        value: https://myhost/logs
+      user:
+        value: "user"
+      password:
+        value: "not-required"
+```
+An output is a data destination configured by a [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) of the relevant type. The LogPipeline supports the following output types:
 
-    - **http**, which sends the data to the specified HTTP destination. The output is designed to integrate with a [Fluentd HTTP Input](https://docs.fluentd.org/input/http), which opens up a huge ecosystem of integration possibilities.
-    - **grafana-loki**, which sends the data to the Kyma-internal Loki instance.
-      >**NOTE:** This output is considered legacy and is only provided for backward compatibility with the [deprecated](https://github.com/kyma-project/kyma/releases/tag/2.9.0) in-cluster Loki instance. It might not be compatible with the latest Loki versions. For integration with a custom Loki installation, use the `custom` output with the name `loki` instead. See also [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).
-    - **custom**, which supports the configuration of any destination in the Fluent Bit configuration syntax. 
-      >**CAUTION:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
+- **http**, which sends the data to the specified HTTP destination. The output is designed to integrate with a [Fluentd HTTP Input](https://docs.fluentd.org/input/http), which opens up a huge ecosystem of integration possibilities.
+- **grafana-loki**, which sends the data to the Kyma-internal Loki instance.
+  >**NOTE:** This output is considered legacy and is only provided for backward compatibility with the [deprecated](https://github.com/kyma-project/kyma/releases/tag/2.9.0) in-cluster Loki instance. It might not be compatible with the latest Loki versions. For integration with a custom Loki installation, use the `custom` output with the name `loki` instead. See also [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).
+- **custom**, which supports the configuration of any destination in the Fluent Bit configuration syntax. 
+  >**CAUTION:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
-      See the following example of the `custom` output:
-      ```yaml
-      spec:
-        output:
-          custom: |
-            Name               http
-            Host               https://myhost/logs
-            Http_User          user
-            Http_Passwd        not-required
-            Format             json
-            Port               80
-            Uri                /
-            Tls                on
-            tls.verify         on
-      ```
-
-2. To create the instance, apply the resource file in your cluster:
-    ```bash
-    kubectl apply -f path/to/my-log-pipeline.yaml
-    ```
-
-3. Check that the status of the LogPipeline in your cluster is `Ready`:
-    ```bash
-    kubectl get logpipeline
-    NAME              STATUS    AGE
-    http-backend      Ready     44s
-    ```
+  See the following example of the `custom` output:
+  ```yaml
+  spec:
+    output:
+      custom: |
+        Name               http
+        Host               https://myhost/logs
+        Http_User          user
+        Http_Passwd        not-required
+        Format             json
+        Port               80
+        Uri                /
+        Tls                on
+        tls.verify         on
+  ```
 
 ### Step 2: Create an input
 
@@ -144,7 +132,6 @@ spec:
         exclude:
         - fluent-bit
 ```
-
 
 ### Step 3: Add filters
 
@@ -319,6 +306,24 @@ metadata:
 spec:
   ...
 ```
+
+### Step 7: Deploy the Pipeline
+
+To activate the constructed LogPipeline, follow these steps:
+1. Place the snippet in a file named for example `logpipeline.yaml`.
+2. Apply the resource file in your cluster:
+    ```bash
+    kubectl apply -f logpipeline.yaml
+    ```
+
+### Result
+
+You activated a LogPipeline and logs start streaming to your backend. To verify that the pipeline is running, verify that the status of the LogPipeline in your cluster is `Ready`:
+    ```bash
+    kubectl get logpipeline
+    NAME              STATUS    AGE
+    backend           Ready     44s
+    ```
 
 ## Log record processing
 

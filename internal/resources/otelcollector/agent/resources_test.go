@@ -36,18 +36,17 @@ func TestMakeClusterRole(t *testing.T) {
 }
 
 func TestMakeDaemonSet(t *testing.T) {
-	daemonSet := MakeDaemonSet(config, "123", "MY_POD_IP", "MY_NODE_NAME")
+	daemonSet := MakeDaemonSet(config, "123", "MY_POD_IP", "MY_NODE_NAME", "/etc/istio/certs")
 
 	require.NotNil(t, daemonSet)
 	require.Equal(t, daemonSet.Name, config.BaseName)
 	require.Equal(t, daemonSet.Namespace, config.Namespace)
 
-	expectedLabels := map[string]string{"app.kubernetes.io/name": config.BaseName}
-	require.Equal(t, daemonSet.Spec.Selector.MatchLabels, expectedLabels)
-	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Labels, expectedLabels)
-
-	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Annotations["sidecar.istio.io/inject"], "false")
-	require.Equal(t, daemonSet.Spec.Template.ObjectMeta.Annotations["checksum/config"], "123")
+	require.Equal(t, config.BaseName, daemonSet.Spec.Template.ObjectMeta.Labels["app.kubernetes.io/name"])
+	require.Equal(t, "true", daemonSet.Spec.Template.ObjectMeta.Labels["sidecar.istio.io/inject"])
+	require.Len(t, daemonSet.Spec.Selector.MatchLabels, 1)
+	require.Equal(t, config.BaseName, daemonSet.Spec.Selector.MatchLabels["app.kubernetes.io/name"])
+	require.Equal(t, "123", daemonSet.Spec.Template.ObjectMeta.Annotations["checksum/config"])
 	require.NotEmpty(t, daemonSet.Spec.Template.Spec.Containers[0].EnvFrom)
 
 	require.NotNil(t, daemonSet.Spec.Template.Spec.Containers[0].LivenessProbe, "liveness probe must be defined")

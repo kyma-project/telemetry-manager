@@ -8,7 +8,7 @@ The diagram shows how distributed tracing helps to track the request path:
 
 ![Distributed tracing](./assets/traces-intro.drawio.svg)
 
-The goal of the Telemetry Module is to support you in collecting all relevant trace data in a Kyma cluster, enrich them and ship them to a backend for further analysis. Kyma modules like Istio or Serverless contribute traces transparently.
+The goal of the Telemetry Module is to support you in collecting all relevant trace data in a Kyma cluster, enrich them and ship them to a backend for further analysis. Kyma modules like Istio or Serverless contribute traces transparently. You can choose among multiple [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/).
 ## Prerequisites
 
 For a complete recording of a distributed trace, it is [essential](https://www.w3.org/TR/trace-context/#problem-statement) that every involved component is at least propagating the trace context. In Kyma, all components involved in users' requests support the [W3C Trace Context protocol](https://www.w3.org/TR/trace-context), which is a vendor-neutral protocol gaining more and more support by all kinds of vendors and tools. The involved Kyma components are mainly Istio, Serverless, and Eventing.
@@ -50,36 +50,40 @@ Furthermore, the manager takes care of the full lifecycle of the OTel Collector 
 
 ## Setting up a TracePipeline
 
-In the following steps, you can see how to set up a typical TracePipeline. Learn more about the available [parameters and attributes](resources/04-tracepipeline.md).
+In the following steps, you can see how to construct and deploy a typical TracePipeline. Learn more about the available [parameters and attributes](resources/04-tracepipeline.md).
 
-### Step 1. Create a TracePipeline with an output
-1. To ship traces to a new OTLP output, create a resource file of the kind `TracePipeline`:
+### Step 1a. Create a TracePipeline with an OTLP GRPC output
+To ship traces to a new OTLP output, create a resource of the kind `TracePipeline`:
 
-   ```yaml
-   apiVersion: telemetry.kyma-project.io/v1alpha1
-   kind: TracePipeline
-   metadata:
-     name: jaeger
-   spec:
-     output:
-       otlp:
-         endpoint:
-           value: http://jaeger-collector.jaeger.svc.cluster.local:4317
-   ```
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
 
-   This configures the underlying OTel Collector with a pipeline for traces. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-traces` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, dependent on the configured protocol.
+This configures the underlying OTel Collector with a pipeline for traces. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-traces` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, dependent on the configured protocol.
 
-2. To create the instance, apply the resource file in your cluster:
-    ```bash
-    kubectl apply -f path/to/my-trace-pipeline.yaml
-    ```
+### Step 1b. Create a TracePipeline with an OTLP HTTP output
 
-3. Check that the status of the TracePipeline in your cluster is `Ready`:
-    ```bash
-    kubectl get tracepipeline
-    NAME              STATUS    AGE
-    http-backend      Ready     44s
-    ```
+To use the HTTP protocol instead of the default GRPC, use the `protocol` attribute and ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      protocol: http
+      endpoint:
+        value: https://backend.example.com:4318
+```
 
 ### Step 2. Enable Istio tracing
 
@@ -101,23 +105,7 @@ spec:
   randomSamplingPercentage: 5.00
 ```
 
-### Step 3. Switch the protocol to HTTP
-
-To use the HTTP protocol instead of the default GRPC, use the `protocol` attribute and ensure that the proper port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: TracePipeline
-metadata:
-  name: jaeger
-spec:
-  output:
-    otlp:
-      protocol: http
-      endpoint:
-        value: http://jaeger-collector.jaeger.svc.cluster.local:4318
-```
-
-### Step 4: Add authentication details
+### Step 3a: Add authentication details from plain text
 
 To integrate with external systems, you must configure authentication details. At the moment, Basic Authentication and custom headers are supported.
 
@@ -187,7 +175,7 @@ To integrate with external systems, you must configure authentication details. A
   </details>
 </div>
 
-### Step 5: Add authentication details from Secrets
+### Step 3b: Add authentication details from Secrets
 
 Integrations into external systems usually require authentication details dealing with sensitive data. To handle that data properly in Secrets, TracePipeline supports the reference of Secrets.
 
@@ -262,12 +250,12 @@ Use the **valueFrom** attribute to map Secret keys as in the following examples:
   apiVersion: telemetry.kyma-project.io/v1alpha1
   kind: TracePipeline
   metadata:
-    name: jaeger
+    name: backend
   spec:
     output:
       otlp:
         endpoint:
-          value: http://jaeger-collector.jaeger.svc.cluster.local:4317
+          value: https://backend.example.com:4317
         headers:
           - name: Authorization
             valueFrom:
@@ -288,16 +276,34 @@ metadata:
   name: backend
   namespace: default
 stringData:
-  endpoint: https://myhost:4317
+  endpoint: https://backend.example.com:4317
   user: myUser
   password: XXX
   token: Bearer YYY
 ```
 
-### Step 6: Rotate the Secret
+### Step 4: Rotate the Secret
 
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
 If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
+
+### Step 5: Deploy the Pipeline
+
+To activate the constructed TracePipeline, follow these steps:
+1. Place the snippet in a file named for example `tracepipeline.yaml`.
+2. Apply the resource file in your cluster:
+    ```bash
+    kubectl apply -f tracepipeline.yaml
+    ```
+
+### Result
+
+You activated a TracePipeline and traces start streaming to your backend. To verify that the pipeline is running, verify that the status of the LogPipeline in your cluster is `Ready`:
+    ```bash
+    kubectl get tracepipeline
+    NAME              STATUS    AGE
+    backend           Ready     44s
+    ```
 
 ## Kyma Components with tracing capabilities
 
@@ -423,9 +429,9 @@ For up to 5 minutes, a retry for data is attempted when the destination is unava
 ### No guaranteed delivery
 The used buffers are volatile. If the OTel collector instance crashes, trace data can be lost.
 
-### Single TracePipeline support
+### Multiple TracePipeline support
 
-Only one TracePipeline resource at a time is supported at the moment.
+Up to 3 TracePipelines at a time are supported at the moment.
 
 ### System span filtering
 System-related spans reported by Istio are filtered out without the opt-out option. Here are a few examples of such spans:
@@ -435,14 +441,12 @@ System-related spans reported by Istio are filtered out without the opt-out opti
 
 ## Troubleshooting
 
-- Symptom: Traces are not arriving at the destination at all.
+- Symptom: No traces are arriving at the destination.
 
-   Cause: That might be due to {add reasons}.
+   Cause: The backend is not reachable or wrong authentication credentials are used.
 
    Remedy: Investigate the cause with the following steps:
    1. Check the `telemetry-trace-collector` Pods for error logs by calling `kubectl logs -n kyma-system {POD_NAME}`.
-   1. In the monitoring dashboard for Kyma Telemetry, check if the data is exported.
-   1. Verify that you activated Istio tracing.
 
 - Symptom: Custom spans don't arrive at the destination, but Istio spans do.
 

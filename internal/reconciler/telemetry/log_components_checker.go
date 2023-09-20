@@ -3,8 +3,8 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"slices"
 
-	"golang.org/x/exp/slices"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -16,18 +16,28 @@ type logComponentsChecker struct {
 	client client.Client
 }
 
-func (l *logComponentsChecker) Check(ctx context.Context) (*metav1.Condition, error) {
+func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
 	var logPipelines v1alpha1.LogPipelineList
 	err := l.client.List(ctx, &logPipelines)
 	if err != nil {
 		return &metav1.Condition{}, fmt.Errorf("failed to list log pipelines: %w", err)
 	}
 
-	reason := l.determineReason(logPipelines.Items)
+	var logParsers v1alpha1.LogParserList
+	err = l.client.List(ctx, &logParsers)
+	if err != nil {
+		return &metav1.Condition{}, fmt.Errorf("failed to list log parsers: %w", err)
+	}
+
+	reason := l.determineReason(logPipelines.Items, logParsers.Items, telemetryInDeletion)
 	return l.createConditionFromReason(reason), nil
 }
 
-func (l *logComponentsChecker) determineReason(pipelines []v1alpha1.LogPipeline) string {
+func (l *logComponentsChecker) determineReason(pipelines []v1alpha1.LogPipeline, parsers []v1alpha1.LogParser, telemetryInDeletion bool) string {
+	if telemetryInDeletion && (len(pipelines) != 0 || len(parsers) != 0) {
+		return reconciler.ReasonLogResourceBlocksDeletion
+	}
+
 	if len(pipelines) == 0 {
 		return reconciler.ReasonNoPipelineDeployed
 	}
@@ -63,13 +73,13 @@ func (l *logComponentsChecker) createConditionFromReason(reason string) *metav1.
 			Type:    conditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  reason,
-			Message: reconciler.Condition(reason),
+			Message: reconciler.ConditionMessage(reason),
 		}
 	}
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
-		Message: reconciler.Condition(reason),
+		Message: reconciler.ConditionMessage(reason),
 	}
 }

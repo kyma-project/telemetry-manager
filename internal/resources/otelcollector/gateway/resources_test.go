@@ -76,12 +76,11 @@ func TestMakeDeployment(t *testing.T) {
 	require.Equal(t, deployment.Namespace, config.Namespace)
 	require.Equal(t, *deployment.Spec.Replicas, int32(2))
 
-	expectedLabels := map[string]string{"app.kubernetes.io/name": config.BaseName}
-	require.Equal(t, deployment.Spec.Selector.MatchLabels, expectedLabels)
-	require.Equal(t, deployment.Spec.Template.ObjectMeta.Labels, expectedLabels)
-
-	require.Equal(t, deployment.Spec.Template.ObjectMeta.Annotations["sidecar.istio.io/inject"], "false")
-	require.Equal(t, deployment.Spec.Template.ObjectMeta.Annotations["checksum/config"], "123")
+	require.Equal(t, config.BaseName, deployment.Spec.Template.ObjectMeta.Labels["app.kubernetes.io/name"])
+	require.Equal(t, "false", deployment.Spec.Template.ObjectMeta.Labels["sidecar.istio.io/inject"])
+	require.Len(t, deployment.Spec.Selector.MatchLabels, 1)
+	require.Equal(t, config.BaseName, deployment.Spec.Selector.MatchLabels["app.kubernetes.io/name"])
+	require.Equal(t, "123", deployment.Spec.Template.ObjectMeta.Annotations["checksum/config"])
 	require.NotEmpty(t, deployment.Spec.Template.Spec.Containers[0].EnvFrom)
 
 	resources := deployment.Spec.Template.Spec.Containers[0].Resources

@@ -14,7 +14,7 @@ func TestProcessors(t *testing.T) {
 	t.Run("delete service name", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).Build(),
-		})
+		}, false)
 
 		require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 		require.Len(t, collectorConfig.Processors.DeleteServiceName.Attributes, 1)
@@ -25,7 +25,7 @@ func TestProcessors(t *testing.T) {
 	t.Run("insert input source runtime", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).Build(),
-		})
+		}, false)
 
 		require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
 		require.Len(t, collectorConfig.Processors.DeleteServiceName.Attributes, 1)
@@ -36,7 +36,7 @@ func TestProcessors(t *testing.T) {
 	t.Run("insert input source runtime", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).Build(),
-		})
+		}, false)
 
 		require.NotNil(t, collectorConfig.Processors.InsertInputSourceRuntime)
 		require.Len(t, collectorConfig.Processors.InsertInputSourceRuntime.Attributes, 1)
@@ -48,7 +48,7 @@ func TestProcessors(t *testing.T) {
 	t.Run("insert input source prometheus", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).Build(),
-		})
+		}, false)
 
 		require.NotNil(t, collectorConfig.Processors.InsertInputSourcePrometheus)
 		require.Len(t, collectorConfig.Processors.InsertInputSourcePrometheus.Attributes, 1)
@@ -60,7 +60,7 @@ func TestProcessors(t *testing.T) {
 	t.Run("insert input source istio", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithIstioInputOn(true).Build(),
-		})
+		}, false)
 
 		require.NotNil(t, collectorConfig.Processors.InsertInputSourceIstio)
 		require.Len(t, collectorConfig.Processors.InsertInputSourceIstio.Attributes, 1)

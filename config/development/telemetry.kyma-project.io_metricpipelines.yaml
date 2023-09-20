@@ -99,22 +99,30 @@ spec:
                                   Secret reference.
                                 properties:
                                   value:
-                                    description: Value that can contain references
-                                      to Secret values.
+                                    description: The value as plain text.
                                     type: string
                                   valueFrom:
+                                    description: The value as a reference to a resource.
                                     properties:
                                       secretKeyRef:
-                                        description: Refers to a key in a Secret.
-                                          You must provide `name` and `namespace`
-                                          of the Secret, as well as the name of the
-                                          `key`.
+                                        description: Refers to the value of a specific
+                                          key in a Secret. You must provide `name`
+                                          and `namespace` of the Secret, as well as
+                                          the name of the `key`.
                                         properties:
                                           key:
+                                            description: The name of the attribute
+                                              of the Secret holding the referenced
+                                              value.
                                             type: string
                                           name:
+                                            description: The name of the Secret containing
+                                              the referenced value
                                             type: string
                                           namespace:
+                                            description: The name of the Namespace
+                                              containing the Secret with the referenced
+                                              value.
                                             type: string
                                         type: object
                                     type: object
@@ -124,22 +132,30 @@ spec:
                                   Secret reference.
                                 properties:
                                   value:
-                                    description: Value that can contain references
-                                      to Secret values.
+                                    description: The value as plain text.
                                     type: string
                                   valueFrom:
+                                    description: The value as a reference to a resource.
                                     properties:
                                       secretKeyRef:
-                                        description: Refers to a key in a Secret.
-                                          You must provide `name` and `namespace`
-                                          of the Secret, as well as the name of the
-                                          `key`.
+                                        description: Refers to the value of a specific
+                                          key in a Secret. You must provide `name`
+                                          and `namespace` of the Secret, as well as
+                                          the name of the `key`.
                                         properties:
                                           key:
+                                            description: The name of the attribute
+                                              of the Secret holding the referenced
+                                              value.
                                             type: string
                                           name:
+                                            description: The name of the Secret containing
+                                              the referenced value
                                             type: string
                                           namespace:
+                                            description: The name of the Namespace
+                                              containing the Secret with the referenced
+                                              value.
                                             type: string
                                         type: object
                                     type: object
@@ -154,21 +170,27 @@ spec:
                           an OTLP endpoint.
                         properties:
                           value:
-                            description: Value that can contain references to Secret
-                              values.
+                            description: The value as plain text.
                             type: string
                           valueFrom:
+                            description: The value as a reference to a resource.
                             properties:
                               secretKeyRef:
-                                description: Refers to a key in a Secret. You must
-                                  provide `name` and `namespace` of the Secret, as
-                                  well as the name of the `key`.
+                                description: Refers to the value of a specific key
+                                  in a Secret. You must provide `name` and `namespace`
+                                  of the Secret, as well as the name of the `key`.
                                 properties:
                                   key:
+                                    description: The name of the attribute of the
+                                      Secret holding the referenced value.
                                     type: string
                                   name:
+                                    description: The name of the Secret containing
+                                      the referenced value
                                     type: string
                                   namespace:
+                                    description: The name of the Namespace containing
+                                      the Secret with the referenced value.
                                     type: string
                                 type: object
                             type: object
@@ -182,21 +204,27 @@ spec:
                               description: Defines the header name.
                               type: string
                             value:
-                              description: Value that can contain references to Secret
-                                values.
+                              description: The value as plain text.
                               type: string
                             valueFrom:
+                              description: The value as a reference to a resource.
                               properties:
                                 secretKeyRef:
-                                  description: Refers to a key in a Secret. You must
-                                    provide `name` and `namespace` of the Secret,
-                                    as well as the name of the `key`.
+                                  description: Refers to the value of a specific key
+                                    in a Secret. You must provide `name` and `namespace`
+                                    of the Secret, as well as the name of the `key`.
                                   properties:
                                     key:
+                                      description: The name of the attribute of the
+                                        Secret holding the referenced value.
                                       type: string
                                     name:
+                                      description: The name of the Secret containing
+                                        the referenced value
                                       type: string
                                     namespace:
+                                      description: The name of the Namespace containing
+                                        the Secret with the referenced value.
                                       type: string
                                   type: object
                               type: object
@@ -222,21 +250,28 @@ spec:
                               needs to be provided in PEM format.
                             properties:
                               value:
-                                description: Value that can contain references to
-                                  Secret values.
+                                description: The value as plain text.
                                 type: string
                               valueFrom:
+                                description: The value as a reference to a resource.
                                 properties:
                                   secretKeyRef:
-                                    description: Refers to a key in a Secret. You
-                                      must provide `name` and `namespace` of the Secret,
-                                      as well as the name of the `key`.
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
                                     properties:
                                       key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
                                         type: string
                                       name:
+                                        description: The name of the Secret containing
+                                          the referenced value
                                         type: string
                                       namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
                                         type: string
                                     type: object
                                 type: object
@@ -247,21 +282,28 @@ spec:
                               format.
                             properties:
                               value:
-                                description: Value that can contain references to
-                                  Secret values.
+                                description: The value as plain text.
                                 type: string
                               valueFrom:
+                                description: The value as a reference to a resource.
                                 properties:
                                   secretKeyRef:
-                                    description: Refers to a key in a Secret. You
-                                      must provide `name` and `namespace` of the Secret,
-                                      as well as the name of the `key`.
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
                                     properties:
                                       key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
                                         type: string
                                       name:
+                                        description: The name of the Secret containing
+                                          the referenced value
                                         type: string
                                       namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
                                         type: string
                                     type: object
                                 type: object
@@ -279,21 +321,28 @@ spec:
                               TLS. The key needs to be provided in PEM format.
                             properties:
                               value:
-                                description: Value that can contain references to
-                                  Secret values.
+                                description: The value as plain text.
                                 type: string
                               valueFrom:
+                                description: The value as a reference to a resource.
                                 properties:
                                   secretKeyRef:
-                                    description: Refers to a key in a Secret. You
-                                      must provide `name` and `namespace` of the Secret,
-                                      as well as the name of the `key`.
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
                                     properties:
                                       key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
                                         type: string
                                       name:
+                                        description: The name of the Secret containing
+                                          the referenced value
                                         type: string
                                       namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
                                         type: string
                                     type: object
                                 type: object
@@ -310,17 +359,23 @@ spec:
             description: Represents the current information/status of MetricPipeline.
             properties:
               conditions:
-                description: Defines the trail of MetricPipeline conditions.
+                description: An array of conditions describing the status of the pipeline.
                 items:
-                  description: Contains details for the current condition of this
-                    MetricPipeline.
+                  description: MetricPipelineCondition contains details for the current
+                    condition of this LogPipeline.
                   properties:
                     lastTransitionTime:
+                      description: Point in time the condition transitioned into a
+                        different state.
                       format: date-time
                       type: string
                     reason:
+                      description: Reason of last transition.
                       type: string
                     type:
+                      description: 'The possible transition types are:<br>- `Running`:
+                        The instance is ready and usable.<br>- `Pending`: The pipeline
+                        is being activated.'
                       type: string
                   type: object
                 type: array

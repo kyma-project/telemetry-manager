@@ -42,24 +42,24 @@ type DeploymentProber interface {
 
 type Reconciler struct {
 	client.Client
-	config           Config
-	prober           DeploymentProber
-	overridesHandler overrides.GlobalConfigHandler
+	config             Config
+	prober             DeploymentProber
+	overridesHandler   overrides.GlobalConfigHandler
+	istioStatusChecker istioStatusChecker
 }
 
 func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
 	return &Reconciler{
-		Client:           client,
-		config:           config,
-		prober:           prober,
-		overridesHandler: overridesHandler,
+		Client:             client,
+		config:             config,
+		prober:             prober,
+		overridesHandler:   overridesHandler,
+		istioStatusChecker: istioStatusChecker{client: client},
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := logf.FromContext(ctx)
-
-	log.V(1).Info("Reconciliation triggered")
+	logf.FromContext(ctx).V(1).Info("Reconciliation triggered")
 
 	overrideConfig, err := r.overridesHandler.UpdateOverrideConfig(ctx, r.config.OverridesConfigMapName)
 	if err != nil {
@@ -70,7 +70,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 	if overrideConfig.Metrics.Paused {
-		log.V(1).Info("Skipping reconciliation of metricpipeline as reconciliation is paused")
+		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
 		return ctrl.Result{}, nil
 	}
 
@@ -114,7 +114,8 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
 	if len(deployablePipelines) == 0 {
-		return fmt.Errorf("no metric pipeline ready for deployment")
+		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: no metric pipeline ready for deployment")
+		return nil
 	}
 
 	if err = r.reconcileMetricGateway(ctx, pipeline, deployablePipelines); err != nil {
@@ -296,10 +297,11 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
+	isIstioActive := r.istioStatusChecker.isIstioActive(ctx)
 	agentConfig := agent.MakeConfig(types.NamespacedName{
 		Namespace: r.config.Gateway.Namespace,
 		Name:      r.config.Gateway.Service.OTLPServiceName,
-	}, allPipelines)
+	}, allPipelines, isIstioActive)
 	var agentConfigYAML []byte
 	agentConfigYAML, err = yaml.Marshal(agentConfig)
 	if err != nil {
@@ -315,7 +317,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	}
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
-	daemonSet := otelagentresources.MakeDaemonSet(r.config.Agent, configHash, config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName)
+	daemonSet := otelagentresources.MakeDaemonSet(r.config.Agent, configHash, config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName, agent.IstioCertPath)
 	if err = controllerutil.SetOwnerReference(pipeline, daemonSet, r.Scheme()); err != nil {
 		return err
 	}

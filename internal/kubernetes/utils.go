@@ -148,7 +148,7 @@ func CreateOrUpdateDeployment(ctx context.Context, c client.Client, desired *app
 	}
 
 	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
-	mergeKubectlAnnotations(&desired.Spec.Template.ObjectMeta, existing.Spec.Template.ObjectMeta)
+	mergePodAnnotations(&desired.Spec.Template.ObjectMeta, existing.Spec.Template.ObjectMeta)
 	return c.Update(ctx, desired)
 }
 
@@ -164,8 +164,7 @@ func CreateOrUpdateDaemonSet(ctx context.Context, c client.Client, desired *apps
 	}
 
 	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
-	mergeKubectlAnnotations(&desired.Spec.Template.ObjectMeta, existing.Spec.Template.ObjectMeta)
-	mergeChecksumAnnotations(&desired.Spec.Template.ObjectMeta, existing.Spec.Template.ObjectMeta)
+	mergePodAnnotations(&desired.Spec.Template.ObjectMeta, existing.Spec.Template.ObjectMeta)
 	return c.Update(ctx, desired)
 }
 
@@ -241,12 +240,10 @@ func mergeMaps(new map[string]string, old map[string]string) map[string]string {
 	return mergeMapsByPrefix(new, old, "")
 }
 
-func mergeKubectlAnnotations(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
+func mergePodAnnotations(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
 	new.SetAnnotations(mergeMapsByPrefix(new.Annotations, old.Annotations, "kubectl.kubernetes.io/"))
-}
-
-func mergeChecksumAnnotations(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
 	new.SetAnnotations(mergeMapsByPrefix(new.Annotations, old.Annotations, "checksum/"))
+	new.SetAnnotations(mergeMapsByPrefix(new.Annotations, old.Annotations, "istio-operator.kyma-project.io/restartedAt"))
 }
 
 func mergeMapsByPrefix(newMap map[string]string, oldMap map[string]string, prefix string) map[string]string {

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -17,37 +16,41 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var (
-	traceGatewayBaseName               = "telemetry-trace-collector"
-	maxNumberOfTracePipelines          = 3
-	tracePipelineReconciliationTimeout = 10 * time.Second
+	traceGatewayBaseName      = "telemetry-trace-collector"
+	maxNumberOfTracePipelines = 3
 )
 
 var _ = Describe("Tracing", Label("tracing"), func() {
 	Context("When a tracepipeline exists", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
-			urls               *mocks.URLProvider
+			urls               *urlprovider.URLProvider
 			mockNs             = "trace-mocks-single-pipeline"
 			mockDeploymentName = "trace-receiver"
-			traceGatewayName   = types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
 		)
 
 		BeforeAll(func() {
-			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
+				backend.WithMockNamespace(mockNs),
+				backend.WithMockDeploymentNames(mockDeploymentName),
+			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
 
@@ -58,29 +61,21 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		})
 
 		It("Should have a running trace gateway deployment", Label(operationalTest), func() {
-			Eventually(func(g Gomega) {
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, traceGatewayName)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout, interval).Should(Succeed())
+			deploymentShouldBeReady(traceGatewayBaseName, kymaSystemNamespaceName)
 		})
 
 		It("Should have 2 trace gateway replicas", func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
-				err := k8sClient.Get(ctx, traceGatewayName, &deployment)
+				key := types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
+				err := k8sClient.Get(ctx, key, &deployment)
 				g.Expect(err).NotTo(HaveOccurred())
 				return *deployment.Spec.Replicas
 			}, timeout, interval).Should(Equal(int32(2)))
 		})
 
 		It("Should have a trace backend running", Label(operationalTest), func() {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout, interval).Should(Succeed())
+			deploymentShouldBeReady(mockDeploymentName, mockNs)
 		})
 
 		It("Should be able to get trace gateway metrics endpoint", Label(operationalTest), func() {
@@ -96,29 +91,8 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		})
 
 		It("Should verify end-to-end trace delivery", Label(operationalTest), func() {
-			traceID := kittraces.NewTraceID()
-			var spanIDs []pcommon.SpanID
-			for i := 0; i < 100; i++ {
-				spanIDs = append(spanIDs, kittraces.NewSpanID())
-			}
-			attrs := pcommon.NewMap()
-			attrs.PutStr("attrA", "chocolate")
-			attrs.PutStr("attrB", "raspberry")
-			attrs.PutStr("attrC", "vanilla")
-
-			traces := kittraces.MakeTraces(traceID, spanIDs, attrs)
-
-			Expect(sendTraces(context.Background(), traces, urls.OTLPPush())).To(Succeed())
-
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ConsistOfSpansWithIDs(spanIDs...),
-					ConsistOfSpansWithTraceID(traceID),
-					ConsistOfSpansWithAttributes(attrs))))
-			}, timeout, interval).Should(Succeed())
+			traceID, spanIDs, attrs := makeAndSendTraces(urls.OTLPPush())
+			tracesShouldBeDelivered(urls.MockBackendExport(), traceID, spanIDs, attrs)
 		})
 
 		It("Should have a working network policy", func() {
@@ -161,9 +135,9 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		It("Should not have trace-collector deployment", func() {
 			Consistently(func(g Gomega) {
 				var deployment appsv1.Deployment
-				key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
+				key := types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
 				g.Expect(k8sClient.Get(ctx, key, &deployment)).To(Succeed())
-			}, tracePipelineReconciliationTimeout, interval).ShouldNot(Succeed())
+			}, reconciliationTimeout, interval).ShouldNot(Succeed())
 		})
 
 		It("Should have running tracepipeline", func() {
@@ -232,13 +206,16 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		var (
 			brokenPipelineName string
 			pipelines          *kyma.PipelineList
-			urls               *mocks.URLProvider
+			urls               *urlprovider.URLProvider
 			mockNs             = "trace-mocks-broken-pipeline"
 			mockDeploymentName = "trace-receiver"
 		)
 
 		BeforeAll(func() {
-			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
+				backend.WithMockNamespace(mockNs),
+				backend.WithMockDeploymentNames(mockDeploymentName),
+			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
 			brokenPipelineObjs, brokenName := makeBrokenTracePipeline("pipeline-1")
@@ -258,52 +235,63 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		})
 
 		It("Should have a trace backend running", func() {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout, interval).Should(Succeed())
+			deploymentShouldBeReady(mockDeploymentName, mockNs)
 		})
 
 		It("Should verify end-to-end trace delivery for the remaining pipeline", func() {
-			traceID := kittraces.NewTraceID()
-			var spanIDs []pcommon.SpanID
-			for i := 0; i < 100; i++ {
-				spanIDs = append(spanIDs, kittraces.NewSpanID())
-			}
-			attrs := pcommon.NewMap()
-			attrs.PutStr("attrA", "chocolate")
-			attrs.PutStr("attrB", "raspberry")
-			attrs.PutStr("attrC", "vanilla")
-
-			traces := kittraces.MakeTraces(traceID, spanIDs, attrs)
-
-			Expect(sendTraces(ctx, traces, urls.OTLPPush())).To(Succeed())
-
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ConsistOfSpansWithIDs(spanIDs...),
-					ConsistOfSpansWithTraceID(traceID),
-					ConsistOfSpansWithAttributes(attrs))))
-			}, timeout, interval).Should(Succeed())
+			traceID, spanIDs, attrs := makeAndSendTraces(urls.OTLPPush())
+			tracesShouldBeDelivered(urls.MockBackendExport(), traceID, spanIDs, attrs)
 		})
 	})
 
 	Context("When multiple tracepipelines exist", Ordered, func() {
 		var (
 			pipelines                   *kyma.PipelineList
-			urls                        *mocks.URLProvider
+			urls                        *urlprovider.URLProvider
 			mockNs                      = "trace-mocks-multi-pipeline"
 			primaryMockDeploymentName   = "trace-receiver"
 			auxiliaryMockDeploymentName = "trace-receiver-1"
 		)
+		BeforeAll(func() {
+			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
+				backend.WithMockNamespace(mockNs),
+				backend.WithMockDeploymentNames(primaryMockDeploymentName, auxiliaryMockDeploymentName),
+			)
+			pipelines = pipelinesProvider
+			urls = tracesURLProvider
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			})
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+		It("Should have running pipelines", func() {
+			tracePipelineShouldBeRunning(pipelines.First())
+			tracePipelineShouldBeRunning(pipelines.Second())
+		})
+		It("Should have a trace backend running", func() {
+			deploymentShouldBeReady(primaryMockDeploymentName, mockNs)
+		})
+		It("Should verify end-to-end trace delivery", func() {
+			traceID, spanIDs, attrs := makeAndSendTraces(urls.OTLPPush())
+			tracesShouldBeDelivered(urls.MockBackendExport(), traceID, spanIDs, attrs)
+			tracesShouldBeDelivered(urls.MockBackendExportAt(1), traceID, spanIDs, attrs)
+		})
+	})
+
+	Context("When a tracepipeline with TLS activated exists", Ordered, func() {
+		var (
+			pipelines          *kyma.PipelineList
+			urls               *urlprovider.URLProvider
+			mockNs             = "trace-mocks-tls-pipeline" //nolint:gosec // no hardcoded credentials leaked
+			mockDeploymentName = "trace-tls-receiver"
+		)
 
 		BeforeAll(func() {
-			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(mockNs, primaryMockDeploymentName, auxiliaryMockDeploymentName)
+			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
+				backend.WithMockNamespace(mockNs),
+				backend.WithTLS(true),
+				backend.WithMockDeploymentNames(mockDeploymentName),
+			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
 
@@ -315,54 +303,28 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 
 		It("Should have running pipelines", func() {
 			tracePipelineShouldBeRunning(pipelines.First())
-			tracePipelineShouldBeRunning(pipelines.Second())
 		})
 
 		It("Should have a trace backend running", func() {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: primaryMockDeploymentName, Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout, interval).Should(Succeed())
+			deploymentShouldBeReady(mockDeploymentName, mockNs)
 		})
 
 		It("Should verify end-to-end trace delivery", func() {
-			traceID := kittraces.NewTraceID()
-			var spanIDs []pcommon.SpanID
-			for i := 0; i < 100; i++ {
-				spanIDs = append(spanIDs, kittraces.NewSpanID())
-			}
-
-			attrs := pcommon.NewMap()
-			traces := kittraces.MakeTraces(traceID, spanIDs, attrs)
-
-			Expect(sendTraces(context.Background(), traces, urls.OTLPPush())).To(Succeed())
-
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ConsistOfNumberOfSpans(len(spanIDs)),
-					ConsistOfSpansWithIDs(spanIDs...),
-					ConsistOfSpansWithTraceID(traceID),
-					ConsistOfSpansWithAttributes(attrs))))
-			}, timeout, interval).Should(Succeed())
-
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExportAt(1))
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ConsistOfNumberOfSpans(len(spanIDs)),
-					ConsistOfSpansWithIDs(spanIDs...),
-					ConsistOfSpansWithTraceID(traceID),
-					ConsistOfSpansWithAttributes(attrs))))
-			}, timeout, interval).Should(Succeed())
+			traceID, spanIDs, attrs := makeAndSendTraces(urls.OTLPPush())
+			tracesShouldBeDelivered(urls.MockBackendExport(), traceID, spanIDs, attrs)
 		})
+
 	})
 })
+
+func deploymentShouldBeReady(name, namespace string) {
+	Eventually(func(g Gomega) {
+		key := types.NamespacedName{Name: name, Namespace: namespace}
+		ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(ready).To(BeTrue())
+	}, timeout, interval).Should(Succeed())
+}
 
 func tracePipelineShouldBeRunning(pipelineName string) {
 	Eventually(func(g Gomega) bool {
@@ -379,13 +341,13 @@ func tracePipelineShouldStayPending(pipelineName string) {
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning)).To(BeFalse())
-	}, tracePipelineReconciliationTimeout, interval).Should(Succeed())
+	}, reconciliationTimeout, interval).Should(Succeed())
 }
 
 func tracePipelineShouldBeDeployed(pipelineName string) {
 	Eventually(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
-		key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
+		key := types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
 		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
@@ -396,20 +358,20 @@ func tracePipelineShouldBeDeployed(pipelineName string) {
 func tracePipelineShouldNotBeDeployed(pipelineName string) {
 	Consistently(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
-		key := types.NamespacedName{Name: "telemetry-trace-collector", Namespace: "kyma-system"}
+		key := types.NamespacedName{Name: traceGatewayBaseName, Namespace: kymaSystemNamespaceName}
 		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return !strings.Contains(configString, pipelineAlias)
-	}, tracePipelineReconciliationTimeout, interval).Should(BeTrue())
+	}, reconciliationTimeout, interval).Should(BeTrue())
 }
 
 // makeTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
+func makeTracingTestK8sObjects(setters ...backend.OptionSetter) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
 	var (
 		objs      []client.Object
 		pipelines = kyma.NewPipelineList()
-		urls      = mocks.NewURLProvider()
+		urls      = urlprovider.New()
 
 		grpcOTLPPort    = 4317
 		httpMetricsPort = 8888
@@ -417,12 +379,28 @@ func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 		httpWebPort     = 80
 	)
 
-	mocksNamespace := kitk8s.NewNamespace(namespace)
+	options := &backend.Options{}
+	for _, setter := range setters {
+		setter(options)
+	}
+
+	mocksNamespace := kitk8s.NewNamespace(options.Namespace)
 	objs = append(objs, mocksNamespace.K8sObject())
 
-	for i, mockDeploymentName := range mockDeploymentNames {
-		//// Mocks namespace objects.
-		mockBackend := mocks.NewBackend(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/traces/"+telemetryDataFilename, mocks.SignalTypeTraces)
+	for i, mockDeploymentName := range options.MockDeploymentNames {
+		var certs testkit.TLSCerts
+		if options.WithTLS {
+			var err error
+			backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", mockDeploymentName, mocksNamespace.Name())
+			certs, err = testkit.GenerateTLSCerts(backendDNSName)
+			Expect(err).NotTo(HaveOccurred())
+
+			options.TracePipelineOptions = append(options.TracePipelineOptions, getTLSConfigTracePipelineOption(
+				certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()),
+			)
+		}
+
+		mockBackend := backend.NewWithTLS(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, backend.SignalTypeTraces, options.WithTLS, certs)
 		mockBackendConfigMap := mockBackend.ConfigMap(suffixize("trace-receiver-config", i))
 		mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 		mockBackendExternalService := mockBackend.ExternalService().
@@ -441,7 +419,7 @@ func makeTracingTestK8sObjects(namespace string, mockDeploymentNames ...string) 
 			mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 			mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 			hostSecret.K8sObject(),
-			tracePipeline.K8sObject(),
+			tracePipeline.K8sObject(options.TracePipelineOptions...),
 		}...)
 
 		urls.SetMockBackendExportAt(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), i)
@@ -470,6 +448,42 @@ func makeBrokenTracePipeline(name string) ([]client.Object, string) {
 	}, tracePipeline.Name()
 }
 
+func getTLSConfigTracePipelineOption(caCertPem, clientCertPem, clientKeyPem string) kittrace.PipelineOption {
+	return func(tracePipeline telemetryv1alpha1.TracePipeline) {
+		tracePipeline.Spec.Output.Otlp.TLS = &telemetryv1alpha1.OtlpTLS{
+			Insecure:           false,
+			InsecureSkipVerify: false,
+			CA: telemetryv1alpha1.ValueType{
+				Value: caCertPem,
+			},
+			Cert: telemetryv1alpha1.ValueType{
+				Value: clientCertPem,
+			},
+			Key: telemetryv1alpha1.ValueType{
+				Value: clientKeyPem,
+			},
+		}
+	}
+}
+
+func makeAndSendTraces(otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map) {
+	traceID := kittraces.NewTraceID()
+	var spanIDs []pcommon.SpanID
+	for i := 0; i < 100; i++ {
+		spanIDs = append(spanIDs, kittraces.NewSpanID())
+	}
+
+	attrs := pcommon.NewMap()
+	attrs.PutStr("attrA", "chocolate")
+	attrs.PutStr("attrB", "raspberry")
+	attrs.PutStr("attrC", "vanilla")
+	traces := kittraces.MakeTraces(traceID, spanIDs, attrs)
+
+	Expect(sendTraces(context.Background(), traces, otlpPushURL)).To(Succeed())
+
+	return traceID, spanIDs, attrs
+}
+
 func sendTraces(ctx context.Context, traces ptrace.Traces, otlpPushURL string) error {
 	sender, err := kittraces.NewHTTPSender(ctx, otlpPushURL, proxyClient)
 	if err != nil {
@@ -477,4 +491,19 @@ func sendTraces(ctx context.Context, traces ptrace.Traces, otlpPushURL string) e
 	}
 
 	return sender.Export(ctx, traces)
+}
+
+func tracesShouldBeDelivered(proxyURL string, traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attrs pcommon.Map) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(proxyURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+			ConsistOfNumberOfSpans(len(spanIDs)),
+			ConsistOfSpansWithIDs(spanIDs...),
+			ConsistOfSpansWithTraceID(traceID),
+			ConsistOfSpansWithAttributes(attrs))))
+		err = resp.Body.Close()
+		g.Expect(err).NotTo(HaveOccurred())
+	}, timeout, interval).Should(Succeed())
 }

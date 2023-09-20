@@ -3,12 +3,17 @@
 package e2e
 
 import (
+	"slices"
+
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 
@@ -73,19 +78,7 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 		})
 
 		It("Should reconcile ValidatingWebhookConfiguration", func() {
-			var oldUID types.UID
-			By("Deleting ValidatingWebhookConfiguration", func() {
-				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
-				Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
-				oldUID = validatingWebhookConfiguration.UID
-				Expect(k8sClient.Delete(ctx, &validatingWebhookConfiguration)).Should(Succeed())
-			})
-
-			var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
-			Eventually(func(g Gomega) {
-				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
-				g.Expect(validatingWebhookConfiguration.UID).ShouldNot(Equal(oldUID))
-			}, timeout, interval).Should(Succeed())
+			testWebhookReconciliation()
 		})
 
 		It("Should reconcile CA bundle secret", func() {
@@ -141,6 +134,10 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 			}, timeout, interval).Should(Succeed())
 		})
 
+		It("Should reconcile ValidatingWebhookConfiguration if LogPipeline exists", func() {
+			testWebhookReconciliation()
+		})
+
 		It("Should not delete Telemetry when LogPipeline exists", func() {
 			By("Deleting telemetry", func() {
 				Expect(kitk8s.ForceDeleteObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
@@ -149,14 +146,31 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 			Eventually(func(g Gomega) {
 				var telemetry v1alpha1.Telemetry
 				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
-				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateError))
 				g.Expect(telemetry.Finalizers).Should(HaveLen(1))
 				g.Expect(telemetry.Finalizers[0]).Should(Equal("telemetry.kyma-project.io/finalizer"))
+				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateWarning))
+				isMetricsEnabled, err := isMetricsEnabled()
+				g.Expect(err).ShouldNot(HaveOccurred())
+				expectedConditions := map[string]metav1.Condition{
+					"LogComponentsHealthy":    {Status: metav1.ConditionFalse, Reason: reconciler.ReasonLogResourceBlocksDeletion, Message: reconciler.ConditionMessage(reconciler.ReasonLogResourceBlocksDeletion)},
+					"MetricComponentsHealthy": {Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.ConditionMessage(reconciler.ReasonNoPipelineDeployed)},
+					"TraceComponentsHealthy":  {Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.ConditionMessage(reconciler.ReasonNoPipelineDeployed)},
+				}
+				expectedConditionsLength := expectedConditionsLength(isMetricsEnabled)
+				g.Expect(telemetry.Status.Conditions).Should(HaveLen(expectedConditionsLength))
+				for _, actualCond := range telemetry.Status.Conditions {
+					expectedCond := expectedConditions[actualCond.Type]
+					g.Expect(expectedCond.Status).Should(Equal(actualCond.Status))
+					g.Expect(expectedCond.Reason).Should(Equal(actualCond.Reason))
+					g.Expect(expectedCond.Message).Should(Equal(actualCond.Message))
+					g.Expect(actualCond.LastTransitionTime).NotTo(BeZero())
+				}
+
 			}, timeout, interval).Should(Succeed())
 		})
 
 		It("Should delete Telemetry", func() {
-			By("Deleting Telemetry and other resources", func() {
+			By("Deleting the orphaned LogPipeline", func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sLogPipelineObject...)).Should(Succeed())
 			})
 
@@ -180,9 +194,50 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 	})
 })
 
+func testWebhookReconciliation() {
+	var oldUID types.UID
+	By("Deleting ValidatingWebhookConfiguration", func() {
+		var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
+		Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+		oldUID = validatingWebhookConfiguration.UID
+		Expect(k8sClient.Delete(ctx, &validatingWebhookConfiguration)).Should(Succeed())
+	})
+
+	Eventually(func(g Gomega) {
+		var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
+		g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
+		g.Expect(validatingWebhookConfiguration.UID).ShouldNot(Equal(oldUID))
+	}, timeout, interval).Should(Succeed())
+}
+
 func makeTestPipelineK8sObjects() []client.Object {
-	logPipeline := kitlog.NewPipeline(telemetryTestK8SObjectName)
+	logPipeline := kitlog.NewPipeline(telemetryTestK8SObjectName).WithStdout()
 	return []client.Object{
 		logPipeline.K8sObject(),
 	}
+}
+
+func isMetricsEnabled() (bool, error) {
+	crdList := &metav1.PartialObjectMetadataList{}
+	crdList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apiextensions.k8s.io",
+		Kind:    "CustomResourceDefinition",
+		Version: "v1",
+	})
+	if err := k8sClient.List(ctx, crdList); err != nil {
+		return false, err
+	}
+	isMetricsEnabled := slices.ContainsFunc(crdList.Items, func(crd metav1.PartialObjectMetadata) bool {
+		return crd.GetName() == "metricpipelines.telemetry.kyma-project.io"
+	})
+	return isMetricsEnabled, nil
+}
+
+func expectedConditionsLength(isMetricsEnabled bool) int {
+	// If metrics is enabled, Telemetry Status conditions will have the following 3 Types: "LogComponentsHealthy", "MetricComponentsHealthy" and "TraceComponentsHealthy"
+	// Otherwise, it will only have 2 Types: "LogComponentsHealthy" and "TraceComponentsHealthy"
+	if isMetricsEnabled {
+		return 3
+	}
+	return 2
 }

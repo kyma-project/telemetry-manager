@@ -3,8 +3,8 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"slices"
 
-	"golang.org/x/exp/slices"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -16,23 +16,26 @@ type traceComponentsChecker struct {
 	client client.Client
 }
 
-func (t *traceComponentsChecker) Check(ctx context.Context) (*metav1.Condition, error) {
+func (t *traceComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
 	var tracePipelines v1alpha1.TracePipelineList
 	err := t.client.List(ctx, &tracePipelines)
 	if err != nil {
 		return &metav1.Condition{}, fmt.Errorf("failed to get all trace pipelines while syncing conditions: %w", err)
 	}
 
-	status := t.determineReason(tracePipelines.Items)
+	status := t.determineReason(tracePipelines.Items, telemetryInDeletion)
 	return t.createConditionFromReason(status), nil
 
 }
 
-func (t *traceComponentsChecker) determineReason(pipelines []v1alpha1.TracePipeline) string {
+func (t *traceComponentsChecker) determineReason(pipelines []v1alpha1.TracePipeline, telemetryInDeletion bool) string {
 	if len(pipelines) == 0 {
 		return reconciler.ReasonNoPipelineDeployed
 	}
 
+	if telemetryInDeletion {
+		return reconciler.ReasonTraceResourceBlocksDeletion
+	}
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.TracePipeline) bool {
 		return t.isPendingWithReason(p, reconciler.ReasonTraceGatewayDeploymentNotReady)
 	}); found {
@@ -64,13 +67,13 @@ func (t *traceComponentsChecker) createConditionFromReason(reason string) *metav
 			Type:    conditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  reason,
-			Message: reconciler.Condition(reason),
+			Message: reconciler.ConditionMessage(reason),
 		}
 	}
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
-		Message: reconciler.Condition(reason),
+		Message: reconciler.ConditionMessage(reason),
 	}
 }

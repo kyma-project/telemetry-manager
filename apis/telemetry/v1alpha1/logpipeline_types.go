@@ -185,11 +185,11 @@ const (
 	LogPipelineRunning LogPipelineConditionType = "Running"
 )
 
-// LogPipelineCondition contains details for the current condition of this LogPipeline
+// LogPipelineCondition contains details for the current condition of this LogPipeline.
 type LogPipelineCondition struct {
 	// An array of conditions describing the status of the pipeline.
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
-	//  An array of conditions describing the status of the pipeline.
+	// Reason of last transition.
 	Reason string `json:"reason,omitempty"`
 	// The possible transition types are:<br>- `Running`: The instance is ready and usable.<br>- `Pending`: The pipeline is being activated.
 	Type LogPipelineConditionType `json:"type,omitempty"`
@@ -199,7 +199,7 @@ type LogPipelineCondition struct {
 type LogPipelineStatus struct {
 	// An array of conditions describing the status of the pipeline.
 	Conditions []LogPipelineCondition `json:"conditions,omitempty"`
-	// Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://kyma-project.io/docs/kyma/latest/01-overview/telemetry/telemetry-02-logs/#unsupported-mode).
+	// Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
 	UnsupportedMode bool `json:"unsupportedMode,omitempty"`
 }
 

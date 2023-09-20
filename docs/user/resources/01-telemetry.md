@@ -17,14 +17,37 @@ metadata:
   name: default
   namespace: kyma-system
 Status:
-  Conditions:
-    Last Transition Time:  2023-05-23T14:57:11Z
-    Message:               installation is ready and resources can be used
-    Observed Generation:   2
-    Reason:                Ready
-    Status:                True
-    Type:                  Installation
-  State:                   Ready
+  state: Ready
+  endpoints:
+    traces:
+      grpc: http://telemetry-otlp-traces.kyma-system:4317
+      http: http://telemetry-otlp-traces.kyma-system:4318
+  conditions:
+  - lastTransitionTime: "2023-09-01T15:11:09Z"
+    message: installation is ready and resources can be used
+    observedGeneration: 2
+    reason: Ready
+    status: "True"
+    type: Installation
+  - lastTransitionTime: "2023-09-01T15:28:28Z"
+    message: Fluent Bit DaemonSet is ready
+    observedGeneration: 2
+    reason: FluentBitDaemonSetReady
+    status: "True"
+    type: LogComponentsHealthy
+  - lastTransitionTime: "2023-09-01T15:46:59Z"
+    message: Metric gateway Deployment is ready
+    observedGeneration: 2
+    reason: MetricGatewayDeploymentReady
+    status: "True"
+    type: MetricComponentsHealthy
+  - lastTransitionTime: "2023-09-01T15:35:38Z"
+    message: Trace gateway Deployment is ready
+    observedGeneration: 2
+    reason: TraceGatewayDeploymentReady
+    status: "True"
+    type: TraceComponentsHealthy
+
 ```
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
@@ -55,6 +78,6 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **endpoints.&#x200b;traces**  | object |  |
 | **endpoints.&#x200b;traces.&#x200b;grpc**  | string |  |
 | **endpoints.&#x200b;traces.&#x200b;http**  | string |  |
-| **state** (required) | string | State signifies current state of Module CR. Value can be one of ("Ready", "Processing", "Error", "Deleting", "Warning"). |
+| **state** (required) | string | State signifies current state of Module CR. Value can be one of these three: "Ready", "Deleting", or "Warning". |
 
 <!-- TABLE-END -->

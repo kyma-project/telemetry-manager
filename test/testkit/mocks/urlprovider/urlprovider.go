@@ -1,4 +1,4 @@
-package mocks
+package urlprovider
 
 type URLProvider struct {
 	metrics   string
@@ -7,7 +7,7 @@ type URLProvider struct {
 	metricPod string
 }
 
-func NewURLProvider() *URLProvider {
+func New() *URLProvider {
 	return &URLProvider{
 		pipelines: map[int]map[string]string{},
 	}

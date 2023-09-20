@@ -157,7 +157,7 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			if err := validateMetricsEnvironment(otelCollectorDeployment); err != nil {
 				return err
 			}
-			return validatePodAnnotations(otelCollectorDeployment)
+			return validatePodMetadata(otelCollectorDeployment)
 		}, timeout, interval).Should(BeNil())
 
 		Eventually(func() error {
@@ -295,6 +295,7 @@ func TestMetricPipeline_MapSecret(t *testing.T) {
 	}
 
 	for _, tc := range tests {
+		tc := tc
 		t.Run(tc.summary, func(t *testing.T) {
 			tracePipeline := &telemetryv1alpha1.TracePipeline{
 				ObjectMeta: metav1.ObjectMeta{

@@ -14,15 +14,16 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 )
 
 var (
 	metricAgentGatewayBaseName = "telemetry-metric-gateway"
 	metricAgentBaseName        = "telemetry-metric-agent"
 
-	kubeletMetricAttributes = []string{"k8s.cluster.name", "k8s.container.name", "k8s.daemonset.name", "k8s.deployment.name", "k8s.namespace.name", "k8s.node.name", "k8s.pod.name", "k8s.pod.uid", "kyma.source"}
+	kubeletMetricAttributes = []string{"k8s.cluster.name", "k8s.container.name", "k8s.namespace.name", "k8s.node.name", "k8s.pod.name", "k8s.pod.uid"}
 	kubeletMetricNames      = []string{"container.cpu.time", "container.cpu.utilization", "container.filesystem.available", "container.filesystem.capacity", "container.filesystem.usage", "container.memory.available", "container.memory.major_page_faults", "container.memory.page_faults", "container.memory.rss", "container.memory.usage", "container.memory.working_set", "k8s.pod.cpu.time", "k8s.pod.cpu.utilization", "k8s.pod.filesystem.available", "k8s.pod.filesystem.capacity", "k8s.pod.filesystem.usage", "k8s.pod.memory.available", "k8s.pod.memory.major_page_faults", "k8s.pod.memory.page_faults", "k8s.pod.memory.rss", "k8s.pod.memory.usage", "k8s.pod.memory.working_set", "k8s.pod.network.errors", "k8s.pod.network.io"}
 )
 
@@ -30,7 +31,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 	Context("When a metricpipeline exists", Ordered, func() {
 		var (
 			pipelines          *kyma.PipelineList
-			urls               *mocks.URLProvider
+			urls               *urlprovider.URLProvider
 			mockDeploymentName = "metric-agent-receiver"
 			mocksNs            = "metric-runtime-input-mocks"
 			metricGatewayName  = types.NamespacedName{Name: metricAgentGatewayBaseName, Namespace: kymaSystemNamespaceName}
@@ -38,7 +39,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 		)
 
 		BeforeAll(func() {
-			k8sObjects, urlProvider, pipelinesProvider := makeMetricsRuntmeInputTestK8sObjects(mocksNs, mockDeploymentName)
+			k8sObjects, urlProvider, pipelinesProvider := makeMetricsRuntimeInputTestK8sObjects(mocksNs, mockDeploymentName)
 			pipelines = pipelinesProvider
 			urls = urlProvider
 
@@ -83,8 +84,9 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainMetricsWithNames(kubeletMetricNames...))))
+				g.Expect(resp).To(HaveHTTPBody(
+					ContainMd(ContainMetric(WithName(BeElementOf(kubeletMetricNames)))),
+				))
 			}, timeout, interval).Should(Succeed())
 		})
 
@@ -93,18 +95,19 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 				resp, err := proxyClient.Get(urls.MockBackendExport())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ConsistOfMetricsWithResourceAttributes(kubeletMetricAttributes...))))
+				g.Expect(resp).To(HaveHTTPBody(
+					ConsistOfMds(ContainResourceAttrs(HaveKey(BeElementOf(kubeletMetricAttributes)))),
+				))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
 })
 
-func makeMetricsRuntmeInputTestK8sObjects(mocksNamespaceName string, mockDeploymentName string) ([]client.Object, *mocks.URLProvider, *kyma.PipelineList) {
+func makeMetricsRuntimeInputTestK8sObjects(mocksNamespaceName string, mockDeploymentName string) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
 	var (
 		objs         []client.Object
 		pipelines    = kyma.NewPipelineList()
-		urls         = mocks.NewURLProvider()
+		urls         = urlprovider.New()
 		grpcOTLPPort = 4317
 		httpWebPort  = 80
 	)
@@ -113,7 +116,7 @@ func makeMetricsRuntmeInputTestK8sObjects(mocksNamespaceName string, mockDeploym
 	objs = append(objs, kitk8s.NewNamespace(mocksNamespaceName).K8sObject())
 
 	// Mocks namespace objects.
-	mockBackend := mocks.NewBackend(mockDeploymentName, mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, mocks.SignalTypeMetrics)
+	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/metrics/"+telemetryDataFilename, backend.SignalTypeMetrics)
 	mockBackendConfigMap := mockBackend.ConfigMap("metric-receiver-config")
 	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
 	mockBackendExternalService := mockBackend.ExternalService().

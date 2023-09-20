@@ -76,6 +76,68 @@ func ConsistOfNumberOfSpans(expectedNumber int) types.GomegaMatcher {
 	}, gomega.Equal(expectedNumber))
 }
 
+// ContainSpansWithAttributes succeeds if the filexporter output file has one or more spans with the span attributes passed into the matcher.
+func ContainSpansWithAttributes(expectedAttrs pcommon.Map) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlTraces []byte) ([]ptrace.Span, error) {
+		tds, err := unmarshalTraces(jsonlTraces)
+		if err != nil {
+			return nil, fmt.Errorf("ContainSpansWithAttributes requires a valid OTLP JSON document: %v", err)
+		}
+
+		spans := getAllSpans(tds)
+
+		var matchingSpans []ptrace.Span
+		for _, span := range spans {
+			if hasMatchingAttributes(span.Attributes(), expectedAttrs) {
+				matchingSpans = append(matchingSpans, span)
+			}
+		}
+		return matchingSpans, nil
+	}, gomega.Not(gomega.BeEmpty()))
+}
+
+func ContainSpansWithResourceAttributes(expectedAttrs pcommon.Map) types.GomegaMatcher {
+	return gomega.WithTransform(func(jsonlTraces []byte) ([]ptrace.Span, error) {
+		tds, err := unmarshalTraces(jsonlTraces)
+		if err != nil {
+			return nil, fmt.Errorf("ContainSpansWithResourceAttributes requires a valid OTLP JSON document: %v", err)
+		}
+
+		matchingSpans := getSpansWithResourceAttributes(tds, expectedAttrs)
+		return matchingSpans, nil
+	}, gomega.Not(gomega.BeEmpty()))
+}
+
+func hasMatchingAttributes(actualAttrs pcommon.Map, expectedAttrs pcommon.Map) bool {
+	for expectedKey, expectedVal := range expectedAttrs.AsRaw() {
+		if value, hasKey := actualAttrs.Get(expectedKey); !hasKey || value.AsString() != expectedVal {
+			return false
+		}
+	}
+	return true
+}
+
+func getSpansWithResourceAttributes(tds []ptrace.Traces, expectedAttrs pcommon.Map) []ptrace.Span {
+	var spans []ptrace.Span
+
+	for _, td := range tds {
+		for i := 0; i < td.ResourceSpans().Len(); i++ {
+			resourceSpans := td.ResourceSpans().At(i)
+			if !hasMatchingAttributes(resourceSpans.Resource().Attributes(), expectedAttrs) {
+				continue
+			}
+			for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
+				scopeSpans := resourceSpans.ScopeSpans().At(j)
+				for k := 0; k < scopeSpans.Spans().Len(); k++ {
+					spans = append(spans, scopeSpans.Spans().At(k))
+				}
+			}
+		}
+	}
+
+	return spans
+}
+
 func getAllSpans(tds []ptrace.Traces) []ptrace.Span {
 	var spans []ptrace.Span
 
@@ -95,7 +157,7 @@ func getAllSpans(tds []ptrace.Traces) []ptrace.Span {
 }
 
 func unmarshalTraces(jsonlTraces []byte) ([]ptrace.Traces, error) {
-	return unmarshalSignals[ptrace.Traces](jsonlTraces, func(buf []byte) (ptrace.Traces, error) {
+	return UnmarshalSignals[ptrace.Traces](jsonlTraces, func(buf []byte) (ptrace.Traces, error) {
 		var unmarshaler ptrace.JSONUnmarshaler
 		return unmarshaler.UnmarshalTraces(buf)
 	})

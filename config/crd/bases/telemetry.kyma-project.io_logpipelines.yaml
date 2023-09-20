@@ -157,21 +157,27 @@ spec:
                         description: Grafana Loki URL.
                         properties:
                           value:
-                            description: Value that can contain references to Secret
-                              values.
+                            description: The value as plain text.
                             type: string
                           valueFrom:
+                            description: The value as a reference to a resource.
                             properties:
                               secretKeyRef:
-                                description: Refers to a key in a Secret. You must
-                                  provide `name` and `namespace` of the Secret, as
-                                  well as the name of the `key`.
+                                description: Refers to the value of a specific key
+                                  in a Secret. You must provide `name` and `namespace`
+                                  of the Secret, as well as the name of the `key`.
                                 properties:
                                   key:
+                                    description: The name of the attribute of the
+                                      Secret holding the referenced value.
                                     type: string
                                   name:
+                                    description: The name of the Secret containing
+                                      the referenced value
                                     type: string
                                   namespace:
+                                    description: The name of the Namespace containing
+                                      the Secret with the referenced value.
                                     type: string
                                 type: object
                             type: object
@@ -197,21 +203,27 @@ spec:
                         description: Defines the host of the HTTP receiver.
                         properties:
                           value:
-                            description: Value that can contain references to Secret
-                              values.
+                            description: The value as plain text.
                             type: string
                           valueFrom:
+                            description: The value as a reference to a resource.
                             properties:
                               secretKeyRef:
-                                description: Refers to a key in a Secret. You must
-                                  provide `name` and `namespace` of the Secret, as
-                                  well as the name of the `key`.
+                                description: Refers to the value of a specific key
+                                  in a Secret. You must provide `name` and `namespace`
+                                  of the Secret, as well as the name of the `key`.
                                 properties:
                                   key:
+                                    description: The name of the attribute of the
+                                      Secret holding the referenced value.
                                     type: string
                                   name:
+                                    description: The name of the Secret containing
+                                      the referenced value
                                     type: string
                                   namespace:
+                                    description: The name of the Namespace containing
+                                      the Secret with the referenced value.
                                     type: string
                                 type: object
                             type: object
@@ -220,21 +232,27 @@ spec:
                         description: Defines the basic auth password.
                         properties:
                           value:
-                            description: Value that can contain references to Secret
-                              values.
+                            description: The value as plain text.
                             type: string
                           valueFrom:
+                            description: The value as a reference to a resource.
                             properties:
                               secretKeyRef:
-                                description: Refers to a key in a Secret. You must
-                                  provide `name` and `namespace` of the Secret, as
-                                  well as the name of the `key`.
+                                description: Refers to the value of a specific key
+                                  in a Secret. You must provide `name` and `namespace`
+                                  of the Secret, as well as the name of the `key`.
                                 properties:
                                   key:
+                                    description: The name of the attribute of the
+                                      Secret holding the referenced value.
                                     type: string
                                   name:
+                                    description: The name of the Secret containing
+                                      the referenced value
                                     type: string
                                   namespace:
+                                    description: The name of the Namespace containing
+                                      the Secret with the referenced value.
                                     type: string
                                 type: object
                             type: object
@@ -263,21 +281,27 @@ spec:
                         description: Defines the basic auth user.
                         properties:
                           value:
-                            description: Value that can contain references to Secret
-                              values.
+                            description: The value as plain text.
                             type: string
                           valueFrom:
+                            description: The value as a reference to a resource.
                             properties:
                               secretKeyRef:
-                                description: Refers to a key in a Secret. You must
-                                  provide `name` and `namespace` of the Secret, as
-                                  well as the name of the `key`.
+                                description: Refers to the value of a specific key
+                                  in a Secret. You must provide `name` and `namespace`
+                                  of the Secret, as well as the name of the `key`.
                                 properties:
                                   key:
+                                    description: The name of the attribute of the
+                                      Secret holding the referenced value.
                                     type: string
                                   name:
+                                    description: The name of the Secret containing
+                                      the referenced value
                                     type: string
                                   namespace:
+                                    description: The name of the Namespace containing
+                                      the Secret with the referenced value.
                                     type: string
                                 type: object
                             type: object
@@ -299,15 +323,21 @@ spec:
                     valueFrom:
                       properties:
                         secretKeyRef:
-                          description: Refers to a key in a Secret. You must provide
-                            `name` and `namespace` of the Secret, as well as the name
-                            of the `key`.
+                          description: Refers to the value of a specific key in a
+                            Secret. You must provide `name` and `namespace` of the
+                            Secret, as well as the name of the `key`.
                           properties:
                             key:
+                              description: The name of the attribute of the Secret
+                                holding the referenced value.
                               type: string
                             name:
+                              description: The name of the Secret containing the referenced
+                                value
                               type: string
                             namespace:
+                              description: The name of the Namespace containing the
+                                Secret with the referenced value.
                               type: string
                           type: object
                       type: object
@@ -321,7 +351,7 @@ spec:
                 description: An array of conditions describing the status of the pipeline.
                 items:
                   description: LogPipelineCondition contains details for the current
-                    condition of this LogPipeline
+                    condition of this LogPipeline.
                   properties:
                     lastTransitionTime:
                       description: An array of conditions describing the status of
@@ -329,8 +359,7 @@ spec:
                       format: date-time
                       type: string
                     reason:
-                      description: An array of conditions describing the status of
-                        the pipeline.
+                      description: Reason of last transition.
                       type: string
                     type:
                       description: 'The possible transition types are:<br>- `Running`:
@@ -341,7 +370,7 @@ spec:
                 type: array
               unsupportedMode:
                 description: Is active when the LogPipeline uses a `custom` output
-                  or filter; see [unsupported mode](https://kyma-project.io/docs/kyma/latest/01-overview/telemetry/telemetry-02-logs/#unsupported-mode).
+                  or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
                 type: boolean
             type: object
         type: object
