@@ -293,7 +293,7 @@ The graph below shows the average metric points processed by the `prometheus met
 Following graph shows the refused metric points from the configured `memory_limiter`, with traffic above 14K metric points/sec results in  metrics being refused by the `memory_limiter`. 
 ![Peak refused metric points](./assets/overall-peak-metric-point-refused.jpg)
 
-Following graph shows memory utilization of metric agent during test phase.
+The following graph shows memory utilization of metric agent during test phase.
 ![Peak memory utilization of metric agent](./assets/overall-peak-memory.jpg)
 
 
