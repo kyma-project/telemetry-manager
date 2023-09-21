@@ -47,6 +47,7 @@ type PrometheusConfig struct {
 
 type ScrapeConfig struct {
 	JobName              string          `yaml:"job_name"`
+	SampleLimit          int             `yaml:"sample_limit,omitempty"`
 	ScrapeInterval       time.Duration   `yaml:"scrape_interval,omitempty"`
 	MetricsPath          string          `yaml:"metrics_path,omitempty"`
 	RelabelConfigs       []RelabelConfig `yaml:"relabel_configs,omitempty"`
@@ -99,6 +100,8 @@ const (
 )
 
 type Processors struct {
+	config.BaseProcessors `yaml:",inline"`
+
 	DeleteServiceName           *config.ResourceProcessor `yaml:"resource/delete-service-name,omitempty"`
 	InsertInputSourceRuntime    *config.ResourceProcessor `yaml:"resource/insert-input-source-runtime,omitempty"`
 	InsertInputSourcePrometheus *config.ResourceProcessor `yaml:"resource/insert-input-source-prometheus,omitempty"`

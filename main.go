@@ -545,7 +545,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 				Image:             metricGatewayImage,
 				PriorityClassName: metricGatewayPriorityClass,
 				CPULimit:          resource.MustParse("1"),
-				MemoryLimit:       resource.MustParse("1Gi"),
+				MemoryLimit:       resource.MustParse("1200Mi"),
 				CPURequest:        resource.MustParse("15m"),
 				MemoryRequest:     resource.MustParse("50Mi"),
 			},

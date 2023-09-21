@@ -6,7 +6,12 @@ import (
 )
 
 func makeProcessorsConfig(inputs inputSources) Processors {
-	var processorsConfig Processors
+	processorsConfig := Processors{
+		BaseProcessors: config.BaseProcessors{
+			Batch:         makeBatchProcessorConfig(),
+			MemoryLimiter: makeMemoryLimiterConfig(),
+		},
+	}
 
 	if inputs.runtime || inputs.prometheus || inputs.istio {
 		processorsConfig.DeleteServiceName = makeDeleteServiceNameConfig()
@@ -25,6 +30,22 @@ func makeProcessorsConfig(inputs inputSources) Processors {
 	}
 
 	return processorsConfig
+}
+
+func makeBatchProcessorConfig() *config.BatchProcessor {
+	return &config.BatchProcessor{
+		SendBatchSize:    1024,
+		Timeout:          "10s",
+		SendBatchMaxSize: 1024,
+	}
+}
+
+func makeMemoryLimiterConfig() *config.MemoryLimiter {
+	return &config.MemoryLimiter{
+		CheckInterval:        "0.1s",
+		LimitPercentage:      80,
+		SpikeLimitPercentage: 15,
+	}
 }
 
 func makeDeleteServiceNameConfig() *config.ResourceProcessor {
