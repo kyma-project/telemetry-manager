@@ -122,7 +122,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "False",
-				Reason:  "TraceResourceBlocksDeletion",
+				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (bar,foo)",
 			},
 		},

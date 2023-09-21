@@ -10,6 +10,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/extslices"
 	"strings"
 )
 
@@ -37,7 +38,7 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 
 func (l *logComponentsChecker) determineReason(pipelines []v1alpha1.LogPipeline, parsers []v1alpha1.LogParser, telemetryInDeletion bool) string {
 	if telemetryInDeletion && (len(pipelines) != 0 || len(parsers) != 0) {
-		return conditions.ReasonLogResourceBlocksDeletion
+		return conditions.ReasonResourceBlocksDeletion
 	}
 
 	if len(pipelines) == 0 {
@@ -69,7 +70,7 @@ func (l *logComponentsChecker) isPendingWithReason(p v1alpha1.LogPipeline, reaso
 }
 
 func (l *logComponentsChecker) createMessageForReason(pipelines []v1alpha1.LogPipeline, parsers []v1alpha1.LogParser, reason string) string {
-	if reason != conditions.ReasonLogResourceBlocksDeletion {
+	if reason != conditions.ReasonResourceBlocksDeletion {
 		return conditions.CommonMessageFor(reason)
 	}
 

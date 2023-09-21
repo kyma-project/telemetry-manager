@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"strings"
+	"github.com/kyma-project/telemetry-manager/internal/extslices"
 )
 
 type metricComponentsChecker struct {
@@ -35,7 +36,7 @@ func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPip
 	}
 
 	if telemetryInDeletion {
-		return conditions.ReasonMetricResourceBlocksDeletion
+		return conditions.ReasonResourceBlocksDeletion
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
@@ -63,7 +64,7 @@ func (m *metricComponentsChecker) isPendingWithReason(p v1alpha1.MetricPipeline,
 }
 
 func (m *metricComponentsChecker) createMessageForReason(pipelines []v1alpha1.MetricPipeline, reason string) string {
-	if reason != conditions.ReasonMetricResourceBlocksDeletion {
+	if reason != conditions.ReasonResourceBlocksDeletion {
 		return conditions.CommonMessageFor(reason)
 	}
 

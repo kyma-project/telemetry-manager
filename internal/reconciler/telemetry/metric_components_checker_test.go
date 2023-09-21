@@ -122,7 +122,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
-				Reason:  "MetricResourceBlocksDeletion",
+				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (bar,foo)",
 			},
 		},

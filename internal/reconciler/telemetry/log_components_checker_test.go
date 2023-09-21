@@ -123,7 +123,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
-				Reason:  "LogResourceBlocksDeletion",
+				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines: (bar,foo)",
 			},
 		},
@@ -137,7 +137,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
-				Reason:  "LogResourceBlocksDeletion",
+				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogParsers: (bar,foo)",
 			},
 		},
@@ -154,7 +154,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
-				Reason:  "LogResourceBlocksDeletion",
+				Reason:  "ResourceBlocksDeletion",
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines: (baz,foo), LogParsers: (bar)",
 			},
 		},
