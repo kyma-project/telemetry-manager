@@ -13,10 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -152,9 +152,9 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 				isMetricsEnabled, err := isMetricsEnabled()
 				g.Expect(err).ShouldNot(HaveOccurred())
 				expectedConditions := map[string]metav1.Condition{
-					"LogComponentsHealthy":    {Status: metav1.ConditionFalse, Reason: conditions.ReasonLogResourceBlocksDeletion, Message: conditions.CommonMessageFor(conditions.ReasonLogResourceBlocksDeletion)},
-					"MetricComponentsHealthy": {Status: metav1.ConditionTrue, Reason: conditions.ReasonNoPipelineDeployed, Message: conditions.CommonMessageFor(conditions.ReasonNoPipelineDeployed)},
-					"TraceComponentsHealthy":  {Status: metav1.ConditionTrue, Reason: conditions.ReasonNoPipelineDeployed, Message: conditions.CommonMessageFor(conditions.ReasonNoPipelineDeployed)},
+					"LogComponentsHealthy":    {Status: metav1.ConditionFalse, Reason: conditions.ReasonResourceBlocksDeletion, Message: ""},
+					"MetricComponentsHealthy": {Status: metav1.ConditionTrue, Reason: conditions.ReasonNoPipelineDeployed, Message: ""},
+					"TraceComponentsHealthy":  {Status: metav1.ConditionTrue, Reason: conditions.ReasonNoPipelineDeployed, Message: ""},
 				}
 				expectedConditionsLength := expectedConditionsLength(isMetricsEnabled)
 				g.Expect(telemetry.Status.Conditions).Should(HaveLen(expectedConditionsLength))
