@@ -116,28 +116,46 @@ func TestLogComponentsCheck(t *testing.T) {
 		{
 			name: "should block deletion if there are existing pipelines",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+				testutils.NewLogPipelineBuilder().WithName("foo").Build(),
+				testutils.NewLogPipelineBuilder().WithName("bar").Build(),
 			},
 			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
 				Reason:  "LogResourceBlocksDeletion",
-				Message: "One or more LogPipelines/LogParsers still exist",
+				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines: (bar,foo)",
 			},
 		},
 		{
 			name: "should block deletion if there are existing parsers",
 			parsers: []telemetryv1alpha1.LogParser{
-				testutils.NewLogParsersBuilder().Build(),
+				testutils.NewLogParsersBuilder().WithName("foo").Build(),
+				testutils.NewLogParsersBuilder().WithName("bar").Build(),
 			},
 			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
 				Reason:  "LogResourceBlocksDeletion",
-				Message: "One or more LogPipelines/LogParsers still exist",
+				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogParsers: (bar,foo)",
+			},
+		},
+		{
+			name: "should block deletion if there are existing pipelines and parsers",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithName("foo").Build(),
+				testutils.NewLogPipelineBuilder().WithName("baz").Build(),
+			},
+			parsers: []telemetryv1alpha1.LogParser{
+				testutils.NewLogParsersBuilder().WithName("bar").Build(),
+			},
+			telemetryInDeletion: true,
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "False",
+				Reason:  "LogResourceBlocksDeletion",
+				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines: (baz,foo), LogParsers: (bar)",
 			},
 		},
 	}

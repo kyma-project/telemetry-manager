@@ -115,15 +115,15 @@ func TestMetricComponentsCheck(t *testing.T) {
 		{
 			name: "should block deletion if there are existing pipelines",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithStatusConditions(
-					testutils.MetricPendingCondition(conditions.ReasonMetricGatewayDeploymentNotReady), testutils.MetricRunningCondition()).Build(),
+				testutils.NewMetricPipelineBuilder().WithName("foo").Build(),
+				testutils.NewMetricPipelineBuilder().WithName("bar").Build(),
 			},
 			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
 				Reason:  "MetricResourceBlocksDeletion",
-				Message: "One or more MetricPipelines still exist",
+				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (bar,foo)",
 			},
 		},
 	}

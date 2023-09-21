@@ -115,15 +115,15 @@ func TestTraceComponentsCheck(t *testing.T) {
 		{
 			name: "should block deletion if there are existing pipelines",
 			pipelines: []telemetryv1alpha1.TracePipeline{
-				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
+				testutils.NewTracePipelineBuilder().WithName("foo").Build(),
+				testutils.NewTracePipelineBuilder().WithName("bar").Build(),
 			},
 			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "False",
 				Reason:  "TraceResourceBlocksDeletion",
-				Message: "One or more TracePipelines still exist",
+				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (bar,foo)",
 			},
 		},
 	}

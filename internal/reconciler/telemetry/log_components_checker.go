@@ -10,6 +10,8 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/slicesext"
+	"strings"
 )
 
 type logComponentsChecker struct {
@@ -30,7 +32,8 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 	}
 
 	reason := l.determineReason(logPipelines.Items, logParsers.Items, telemetryInDeletion)
-	return l.createConditionFromReason(reason), nil
+	message := l.createMessageForReason(logPipelines.Items, logParsers.Items, reason)
+	return l.createConditionFromReason(reason, message), nil
 }
 
 func (l *logComponentsChecker) determineReason(pipelines []v1alpha1.LogPipeline, parsers []v1alpha1.LogParser, telemetryInDeletion bool) string {
@@ -66,20 +69,46 @@ func (l *logComponentsChecker) isPendingWithReason(p v1alpha1.LogPipeline, reaso
 	return lastCondition.Type == v1alpha1.LogPipelinePending && lastCondition.Reason == reason
 }
 
-func (l *logComponentsChecker) createConditionFromReason(reason string) *metav1.Condition {
+func (l *logComponentsChecker) createMessageForReason(pipelines []v1alpha1.LogPipeline, parsers []v1alpha1.LogParser, reason string) string {
+	if reason != conditions.ReasonLogResourceBlocksDeletion {
+		return conditions.CommonMessageFor(reason)
+	}
+
+	separator := ","
+	var affectedResources []string
+	if len(pipelines) > 0 {
+		pipelineNames := slicesext.TransformFunc(pipelines, func(p v1alpha1.LogPipeline) string {
+			return p.Name
+		})
+		slices.Sort(pipelineNames)
+		affectedResources = append(affectedResources, fmt.Sprintf("LogPipelines: (%s)", strings.Join(pipelineNames, separator)))
+	}
+	if len(parsers) > 0 {
+		parserNames := slicesext.TransformFunc(parsers, func(p v1alpha1.LogParser) string {
+			return p.Name
+		})
+		slices.Sort(parserNames)
+		affectedResources = append(affectedResources, fmt.Sprintf("LogParsers: (%s)", strings.Join(parserNames, separator)))
+	}
+
+	return fmt.Sprintf("The deletion of the module is blocked. To unblock the deletion, delete the following resources: %s",
+		strings.Join(affectedResources, ", "))
+}
+
+func (l *logComponentsChecker) createConditionFromReason(reason, message string) *metav1.Condition {
 	conditionType := "LogComponentsHealthy"
 	if reason == conditions.ReasonFluentBitDSReady || reason == conditions.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
 			Type:    conditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  reason,
-			Message: conditions.CommonMessageFor(reason),
+			Message: message,
 		}
 	}
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
-		Message: conditions.CommonMessageFor(reason),
+		Message: message,
 	}
 }

@@ -10,6 +10,8 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/slicesext"
+	"strings"
 )
 
 type traceComponentsChecker struct {
@@ -23,8 +25,9 @@ func (t *traceComponentsChecker) Check(ctx context.Context, telemetryInDeletion 
 		return &metav1.Condition{}, fmt.Errorf("failed to get all trace pipelines while syncing conditions: %w", err)
 	}
 
-	status := t.determineReason(tracePipelines.Items, telemetryInDeletion)
-	return t.createConditionFromReason(status), nil
+	reason := t.determineReason(tracePipelines.Items, telemetryInDeletion)
+	message := t.createMessageForReason(tracePipelines.Items, reason)
+	return t.createConditionFromReason(reason, message), nil
 
 }
 
@@ -60,20 +63,35 @@ func (t *traceComponentsChecker) isPendingWithReason(p v1alpha1.TracePipeline, r
 	return lastCondition.Type == v1alpha1.TracePipelinePending && lastCondition.Reason == reason
 }
 
-func (t *traceComponentsChecker) createConditionFromReason(reason string) *metav1.Condition {
+func (t *traceComponentsChecker) createMessageForReason(pipelines []v1alpha1.TracePipeline, reason string) string {
+	if reason != conditions.ReasonTraceResourceBlocksDeletion {
+		return conditions.CommonMessageFor(reason)
+
+	}
+
+	pipelineNames := slicesext.TransformFunc(pipelines, func(p v1alpha1.TracePipeline) string {
+		return p.Name
+	})
+	slices.Sort(pipelineNames)
+	separator := ","
+	return fmt.Sprintf("The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (%s)",
+		strings.Join(pipelineNames, separator))
+}
+
+func (t *traceComponentsChecker) createConditionFromReason(reason, message string) *metav1.Condition {
 	conditionType := "TraceComponentsHealthy"
 	if reason == conditions.ReasonTraceGatewayDeploymentReady || reason == conditions.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
 			Type:    conditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  reason,
-			Message: conditions.CommonMessageFor(reason),
+			Message: message,
 		}
 	}
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
-		Message: conditions.CommonMessageFor(reason),
+		Message: message,
 	}
 }
