@@ -1,4 +1,4 @@
-package slicesext
+package extslices
 
 import (
 	"strconv"

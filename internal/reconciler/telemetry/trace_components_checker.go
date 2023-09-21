@@ -10,7 +10,6 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/slicesext"
 	"strings"
 )
 
@@ -69,7 +68,7 @@ func (t *traceComponentsChecker) createMessageForReason(pipelines []v1alpha1.Tra
 
 	}
 
-	pipelineNames := slicesext.TransformFunc(pipelines, func(p v1alpha1.TracePipeline) string {
+	pipelineNames := extslices.TransformFunc(pipelines, func(p v1alpha1.TracePipeline) string {
 		return p.Name
 	})
 	slices.Sort(pipelineNames)

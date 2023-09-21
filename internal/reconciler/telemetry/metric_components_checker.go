@@ -10,7 +10,6 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/slicesext"
 	"strings"
 )
 
@@ -68,7 +67,7 @@ func (m *metricComponentsChecker) createMessageForReason(pipelines []v1alpha1.Me
 		return conditions.CommonMessageFor(reason)
 	}
 
-	pipelineNames := slicesext.TransformFunc(pipelines, func(p v1alpha1.MetricPipeline) string {
+	pipelineNames := extslices.TransformFunc(pipelines, func(p v1alpha1.MetricPipeline) string {
 		return p.Name
 	})
 	slices.Sort(pipelineNames)
