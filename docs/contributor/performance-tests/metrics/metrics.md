@@ -598,10 +598,10 @@ The test resulted in the following findings:
 
 ### Setup and parameters
 - Used metric size was 20 metric data points with 10 labels per each distinct metric
-- 1Gi memory and 1 CPU
-- memory_limiter configured for 85% memory limit, 10% spike limit with 0.5 second check interval which results in (85 -10) 75% hard limit equivalent to 750Mi memory.
+- 1200Mi memory and 1 CPU
+- memory_limiter configured for 80% memory limit, 15% spike limit with 0.5 second check interval which results in (80 -15) 75% hard limit equivalent to 780Mi memory.
 - Batch processor configured to create batches with 1024 metrics, default batch size 8192 was exceeded by the gRPC client default payload limit 4MB.
-- Metric gateway configured with a log exporter to avoid possible outages by the gateway back pressure (default 2 gateway instances are available) 
+- Metric gateway configured with a broken exporter to simulate backpressure from metric gateway to metric agent
 
 
 ### Findings
@@ -611,8 +611,8 @@ The test resulted in the following findings:
   - No memory issues identified and no additional memory impact found.
   - Kubernetes API server request duration for `GET` operations reached ~750ms and for `LIST` operations ~900ms. There was only one short peak of 21s detected for the `GET` operation.
 - `sample_limit` configuration tested for multiple receivers. Configured limitation works but there are no metrics identified to see limit violations when they occur, only logs are present in this case.
-- Multi-receiver test reached same stable limit of ~280K metrics per scrape in total, but anything over this limit can cause OOM. OOM was observed only when test execution with high load runs over 2 hours. Further investigation and analysis are required here to improve memory setting to get more resilience. 
-
+- Multi-receiver test reached same stable limit of ~280K metrics per scrape in total, to test OOM resilience of setup, 45% more load added on peak stable load. Metric agent stay stable over 12 hour running test, no OOM observed, load over ~280K refused successfully.
+- In all test cases backpressure from broken metric gateway handled by the metric agent successfully, no serious impact on metric agent observed, metric agent exporter successfully queued metric data and drop after unsuccessfully retry. 
 
 ## Conclusion
 
@@ -625,6 +625,14 @@ For more memory resilience, the processor memory_limiter was configured with a h
 
 Batch processor was configured with a batch size of 1024 to avoid hitting the gRPC client payload size limit while metrics are exported to the gateway instances.
 Default batch size of 8192 was over the default gRPC client payload limit of 4MByte.
+
+By the multi-receiver test some OOM observed, after further analysis result following finding:
+1. Under high load, memory limiter trigger GC to free memory and go back for normal operation
+2. Between GC and memory limiter cycle approximately 200MByte on top of allocated memory occupied
+3. Frequent GC result fragmented memory because go GC has no compaction (only Mark and Sweep)
+4. In certain cases memory get heavily fragmented, despite there are in total enough memory but non-of free memory blocks are big enough for in coming data
+
+To solve problem described above, metric agent memory limit increased from 1Gi to 1200Mi, memory_limiter check intervals decreased from 0.5 second to 0.1 second. The test repeated with new configuration and 45% more load over 12 hours, no OOM issues occurred.
 
 The following ConfigMap contains all configuration adjustments for the metric agent, as well as the Prometheus receiver configuration changes. This configuration should be used as reference to implement Telemetry manager changes.
 
@@ -755,9 +763,9 @@ data:
             timeout: 10s
             send_batch_max_size: 1024
         memory_limiter:
-            check_interval: 0.5s
-            limit_percentage: 85
-            spike_limit_percentage: 10
+            check_interval: 0.1s
+            limit_percentage: 80
+            spike_limit_percentage: 15
         resource/delete-service-name:
             attributes:
                 - action: delete
