@@ -628,7 +628,7 @@ Default batch size of 8192 was over the default gRPC client payload limit of 4MB
 
 By the multi-receiver test some OOM observed, after further analysis result following finding:
 1. Under high load, memory limiter trigger GC to free memory and go back for normal operation
-2. Between GC and memory limiter cycle approximately 200MByte on top of allocated memory occupied
+2. Between GC and memory limiter cycles approximately 200MByte on top of live memory occupied
 3. Frequent GC result fragmented memory because go GC has no compaction (only Mark and Sweep)
 4. In certain cases memory get heavily fragmented, despite there are in total enough memory but non-of free memory blocks are big enough for in coming data
 
