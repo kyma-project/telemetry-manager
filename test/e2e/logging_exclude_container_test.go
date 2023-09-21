@@ -26,7 +26,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 			urls               *urlprovider.URLProvider
 			mockNs             = "log-exclude-cntnr-mocks"
 			mockDeploymentName = "log-receiver-exclude-container"
-			logProducerName    = "log-producer"
+			logProducerName    = "log-producer-exclude-container"
 		)
 
 		BeforeAll(func() {
@@ -39,7 +39,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 		})
 
 		It("Should have a log backend running", func() {
-			logBackendShouldBeRunning(mockDeploymentName, mockNs)
+			deploymentShouldBeReady(mockDeploymentName, mockNs)
 		})
 
 		It("Should have a log producer running", func() {
@@ -81,7 +81,7 @@ func makeLogsTestExcludeContainerK8sObjects(namespace string, mockDeploymentName
 	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeLogs).Build()
 	mockLogProducer := logproducer.New(logProducerName, mocksNamespace.Name())
 	objs = append(objs, mockBackend.K8sObjects()...)
-	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
+	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-exclude-container")))
 	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
 		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
 	)
