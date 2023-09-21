@@ -140,7 +140,7 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 	objs = append(objs, kitk8s.NewNamespace(mocksNamespaceName).K8sObject())
 
 	// Mocks namespace objects.
-	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), backend.SignalTypeMetrics).Build()
+	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeMetrics).Build()
 	mockMetricProducer := metricproducer.New(mocksNamespaceName)
 	objs = append(objs, mockBackend.K8sObjects()...)
 	objs = append(objs, []client.Object{
