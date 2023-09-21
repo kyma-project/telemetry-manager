@@ -74,10 +74,55 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **conditions.&#x200b;reason** (required) | string | reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty. |
 | **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt) |
-| **endpoints**  | object | GatewayEndpoints for trace and metric gateway |
-| **endpoints.&#x200b;traces**  | object |  |
-| **endpoints.&#x200b;traces.&#x200b;grpc**  | string |  |
-| **endpoints.&#x200b;traces.&#x200b;http**  | string |  |
+| **endpoints**  | object | endpoints for trace and metric gateway. |
+| **endpoints.&#x200b;traces**  | object | traces contains the endpoints for trace gateway supporting OTLP. |
+| **endpoints.&#x200b;traces.&#x200b;grpc**  | string | GRPC endpoint for OTLP. |
+| **endpoints.&#x200b;traces.&#x200b;http**  | string | HTTP endpoint for OTLP. |
 | **state** (required) | string | State signifies current state of Module CR. Value can be one of these three: "Ready", "Deleting", or "Warning". |
 
 <!-- TABLE-END -->
+
+The `state` attribute of the Telemetry CR is derived from the combined state of all the subcomponents, namely, from the condition types `LogComponentsHealthy`, `TraceComponentsHealthy` and `MetricComponentsHealthy`. 
+
+### Log Components State
+
+The state of the log components is determined by the status condition of type `LogComponentsHealthy`:
+
+| Condition status | Condition reason           | Message                                         |
+|------------------|----------------------------|-------------------------------------------------|
+| True             | NoPipelineDeployed         | No pipelines have been deployed                 |
+| True             | FluentBitDaemonSetReady    | Fluent Bit DaemonSet is ready                   |
+| False            | ReferencedSecretMissing    | One or more referenced Secrets are missing      |
+| False            | FluentBitDaemonSetNotReady | Fluent Bit DaemonSet is not ready               |
+| False            | LogResourceBlocksDeletion  | One or more LogPipelines/LogParsers still exist |
+
+### Trace Components State
+
+The state of the trace components is determined by the status condition of type `TraceComponentsHealthy`:
+
+| Condition status | Condition reason               | Message                                    |
+|------------------|--------------------------------|--------------------------------------------|
+| True             | NoPipelineDeployed             | No pipelines have been deployed            |
+| True             | TraceGatewayDeploymentReady    | Trace gateway Deployment is ready          |
+| False            | ReferencedSecretMissing        | One or more referenced Secrets are missing |
+| False            | TraceGatewayDeploymentNotReady | Trace gateway Deployment is not ready      |
+| False            | TraceResourceBlocksDeletion    | One or more TracePipelines still exist     |
+
+### Metric Components State
+
+The state of the metric components is determined by the status condition of type `MetricComponentsHealthy`:
+
+| Condition status | Condition reason                | Message                                    |
+|------------------|---------------------------------|--------------------------------------------|
+| True             | NoPipelineDeployed              | No pipelines have been deployed            |
+| True             | MetricGatewayDeploymentReady    | Metric gateway Deployment is ready         |
+| False            | ReferencedSecretMissing         | One or more referenced Secrets are missing |
+| False            | MetricGatewayDeploymentNotReady | Metric gateway Deployment is not ready     |
+| False            | MetricResourceBlocksDeletion    | One or more MetricPipelines still exist    |
+
+
+### Telemetry CR State
+
+- 'Ready': Only if all the subcomponent conditions (LogComponentsHealthy, TraceComponentsHealthy, and MetricComponentsHealthy) have a status of 'True.' 
+- 'Warning': If any of these conditions are not 'True'.
+- 'Deleting': When a Telemetry CR is being deleted.

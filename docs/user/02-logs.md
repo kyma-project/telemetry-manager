@@ -430,6 +430,19 @@ The record **after** applying the JSON parser:
 
 As per the LogPipeline definition, a dedicated [rewrite_tag](https://docs.fluentbit.io/manual/pipeline/filters/rewrite-tag) filter is introduced. The filter brings a dedicated filesystem buffer for the outputs defined in the related pipeline, and with that, ensures a shipment of the logs isolated from outputs of other pipelines. As a consequence, each pipeline runs on its own [tag](https://docs.fluentbit.io/manual/concepts/key-concepts#tag).
 
+## Operations
+
+A LogPipeline will result in a DaemonSet running one FluentBit instance per Node in your cluster. That instances will collect and ship application logs to the configured backend. The module will assure that the FluentBit instances are operational at any time and running healthy. It will try to deliver the log data to the backend using typical patterns like buffering and retries (see the Limitations section). However, there are scenarios where the instances will drop logs as the backend is either not reachable for some duration or cannot handle the log load and is causing backpressure.
+
+To avoid and detect these situations, you should monitor the instances by collecting relevant metrics. For that, two Services `telemetry-fluent-bit-metrics` and `telemetry-fluent-bit-exporter-metrics` are located in the `kyma-system` namespace being annotated with `prometheus.io` annotations so that a discovery of the metrics is possible.
+
+The relevant metrics are:
+| Name | Threshold | Description |
+|---|---|---|
+| telemetry_fsbuffer_usage_bytes | (bytes/1000000000) * 100 > 90 | The metric indicates the current size of the persistent log buffer in bytes running on each instance. If the size reaches 1GB, logs will start getting dropped at that instance. At 90% buffer size an alert should get raised. |
+| fluentbit_output_dropped_records_total| total[5m] > 0 | The metric indicates that the instance is actively dropping logs. That typically happens when a log message got rejected with a un-retryable status code like a 400. Any occurence of such drop should be alerted. |
+
+
 ## Limitations
 
 Currently, there are the following limitations for LogPipelines that are served by Fluent Bit:
