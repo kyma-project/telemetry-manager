@@ -7,7 +7,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/test/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/fluentd"
 )
 
@@ -23,9 +26,19 @@ const (
 	SignalTypeLogs    = "logs"
 )
 
+type Setter func(*Backend)
+
 type Backend struct {
 	name       string
+	namespace  string
 	signalType SignalType
+
+	PersistentHostSecret bool
+	WithTLS              bool
+	TLSCerts             testkit.TLSCerts
+
+	TracePipelineOptions  []kittrace.PipelineOption
+	MetricPipelineOptions []kitmetric.PipelineOption
 
 	ConfigMap        *ConfigMap
 	FluentDConfigMap *fluentd.ConfigMap
@@ -34,17 +47,43 @@ type Backend struct {
 	HostSecret       *kitk8s.Secret
 }
 
-func New(namespace string, o *Options) *Backend {
-	b := &Backend{
-		name:       o.Name,
-		signalType: o.SignalType,
+func New(namespace, name string, signalType SignalType, setters ...Setter) *Backend {
+	backend := &Backend{
+		namespace:  namespace,
+		name:       name,
+		signalType: signalType,
 	}
 
-	exportedFilePath := fmt.Sprintf("/%s/%s", string(o.SignalType), TelemetryDataFilename)
+	for _, setter := range setters {
+		setter(backend)
+	}
 
-	b.ConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), namespace, exportedFilePath, b.signalType, o.WithTLS, o.TLSCerts)
-	b.Deployment = NewDeployment(b.name, namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.signalType)
-	b.ExternalService = NewExternalService(b.name, namespace, b.signalType)
+	return backend
+}
+
+func WithTLS() Setter {
+	return func(b *Backend) {
+		b.WithTLS = true
+	}
+}
+
+func WithMetricPipelineOption(option kitmetric.PipelineOption) Setter {
+	return func(b *Backend) {
+		b.MetricPipelineOptions = append(b.MetricPipelineOptions, option)
+	}
+}
+
+func (b *Backend) Build() *Backend {
+	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), TelemetryDataFilename)
+
+	b.ConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.WithTLS, b.TLSCerts)
+	b.Deployment = NewDeployment(b.name, b.namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.signalType)
+	if b.signalType == SignalTypeLogs {
+		b.FluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace)
+		b.Deployment.WithFluentdConfigName(b.FluentDConfigMap.Name())
+	}
+
+	b.ExternalService = NewExternalService(b.name, b.namespace, b.signalType)
 
 	var endpoint string
 	if b.signalType == SignalTypeLogs {
@@ -53,11 +92,7 @@ func New(namespace string, o *Options) *Backend {
 		endpoint = b.ExternalService.OTLPGrpcEndpointURL()
 	}
 	b.HostSecret = kitk8s.NewOpaqueSecret(fmt.Sprintf("%s-receiver-hostname", b.name), defaultNamespaceName,
-		kitk8s.WithStringData("host", endpoint)).Persistent(o.WithPersistentHostSecret)
-
-	if b.signalType == SignalTypeLogs {
-		b.FluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), namespace)
-	}
+		kitk8s.WithStringData("host", endpoint)).Persistent(b.PersistentHostSecret)
 
 	return b
 }
@@ -72,11 +107,11 @@ func (b *Backend) GetHostSecretRefKey() *telemetryv1alpha1.SecretKeyRef {
 
 func (b *Backend) K8sObjects() []client.Object {
 	var objects []client.Object
-	objects = append(objects, b.ConfigMap.K8sObject())
 	if b.signalType == SignalTypeLogs {
 		objects = append(objects, b.FluentDConfigMap.K8sObject())
 	}
 
+	objects = append(objects, b.ConfigMap.K8sObject())
 	objects = append(objects, b.Deployment.K8sObject(kitk8s.WithLabel("app", b.Name())))
 	objects = append(objects, b.ExternalService.K8sObject(kitk8s.WithLabel("app", b.Name())))
 	objects = append(objects, b.HostSecret.K8sObject())

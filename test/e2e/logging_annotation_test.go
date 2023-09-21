@@ -8,7 +8,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -16,8 +15,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
-
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
 
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
@@ -29,12 +26,11 @@ var _ = Describe("Logging", Label("logging"), func() {
 			urls               *urlprovider.URLProvider
 			mockNs             = "log-keep-anno-mocks"
 			mockDeploymentName = "log-receiver-annotation"
+			logProducerName    = "log-producer"
 		)
 
 		BeforeAll(func() {
-			k8sObjects, logsURLProvider := makeLogsAnnotationTestK8sObjects(mockNs,
-				backend.NewOptions(mockDeploymentName),
-			)
+			k8sObjects, logsURLProvider := makeLogsAnnotationTestK8sObjects(mockNs, mockDeploymentName, logProducerName)
 			urls = logsURLProvider
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -43,21 +39,11 @@ var _ = Describe("Logging", Label("logging"), func() {
 		})
 
 		It("Should have a log backend running", func() {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout*2, interval).Should(Succeed())
+			logBackendShouldBeRunning(mockDeploymentName, mockNs)
 		})
 
 		It("Should have a log producer running", func() {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: "log-producer", Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout*2, interval).Should(Succeed())
+			logBackendShouldBeRunning(logProducerName, mockNs)
 		})
 
 		It("Should collect only annotations and drop label", func() {
@@ -75,7 +61,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 	})
 })
 
-func makeLogsAnnotationTestK8sObjects(namespace string, options *backend.Options) ([]client.Object, *urlprovider.URLProvider) {
+func makeLogsAnnotationTestK8sObjects(namespace, mockDeploymentName, logProducerName string) ([]client.Object, *urlprovider.URLProvider) {
 	var (
 		objs []client.Object
 		urls = urlprovider.New()
@@ -84,22 +70,20 @@ func makeLogsAnnotationTestK8sObjects(namespace string, options *backend.Options
 	objs = append(objs, mocksNamespace.K8sObject())
 
 	// Mock namespace objects.
-	mockBackend := backend.New(mocksNamespace.Name(), options)
-	mockLogProducer := logproducer.New("log-producer", mocksNamespace.Name()).
-		WithAnnotations(map[string]string{
-			"release": "v1.0.0",
-		})
+	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeLogs).Build()
+	mockLogProducer := logproducer.New(logProducerName, mocksNamespace.Name()).
+		WithAnnotations(map[string]string{"release": "v1.0.0"})
+	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-annotation-test")))
+	objs = append(objs, mockBackend.K8sObjects()...)
+
 	// Default namespace objects.
 	logPipeline := kitlog.NewPipeline("pipeline-annotation-test").WithSecretKeyRef(mockBackend.GetHostSecretRefKey()).WithHTTPOutput()
 	logPipeline.KeepAnnotations(true)
 	logPipeline.DropLabels(true)
-
-	objs = append(objs, mockBackend.K8sObjects()...)
 	objs = append(objs, logPipeline.K8sObject())
-	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-annotation-test")))
 
-	urls.SetMockBackendExport(options.Name, proxyClient.ProxyURLForService(
-		namespace, options.Name, backend.TelemetryDataFilename, backend.HTTPWebPort),
+	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
+		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
 	)
 
 	return objs, urls

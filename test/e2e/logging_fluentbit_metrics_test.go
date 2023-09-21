@@ -28,7 +28,6 @@ var (
 )
 
 var _ = Describe("Logging", Label("logging"), func() {
-
 	Context("When a logpipeline exists", Ordered, func() {
 		var (
 			mockNs             = "log-pipeline-mocks"
@@ -89,35 +88,17 @@ var _ = Describe("Logging", Label("logging"), func() {
 func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) []client.Object {
 	var (
 		objs []client.Object
-
-		grpcOTLPPort = 4317
-		httpOTLPPort = 4318
-		httpWebPort  = 80
 	)
 	mocksNamespace := kitk8s.NewNamespace(namespace)
 	objs = append(objs, mocksNamespace.K8sObject())
 
 	//// Mocks namespace objects.
-	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename, backend.SignalTypeLogs)
-
-	mockBackendConfigMap := mockBackend.ConfigMap("log-receiver-config")
-	mockFluentdConfigMap := mockBackend.FluentdConfigMap("log-receiver-config-fluentd")
-	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name()).WithFluentdConfigName(mockFluentdConfigMap.Name())
-	mockBackendExternalService := mockBackend.ExternalService().
-		WithPort("grpc-otlp", grpcOTLPPort).
-		WithPort("http-otlp", httpOTLPPort).
-		WithPort("http-web", httpWebPort)
+	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeLogs).Build()
+	objs = append(objs, mockBackend.K8sObjects()...)
 
 	// Default namespace objects.
 	logPipeline := kitlog.NewPipeline("pipeline-mock-backend").WithStdout()
-
-	objs = append(objs, []client.Object{
-		mockBackendConfigMap.K8sObject(),
-		mockFluentdConfigMap.K8sObject(),
-		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		logPipeline.K8sObject(),
-	}...)
+	objs = append(objs, logPipeline.K8sObject())
 
 	return objs
 }

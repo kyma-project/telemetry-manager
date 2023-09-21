@@ -49,8 +49,8 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 
 		BeforeAll(func() {
 			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
-				backend.WithMockNamespace(mockNs),
-				backend.WithMockDeploymentNames(mockDeploymentName),
+				mockNs,
+				backend.New(mockNs, mockDeploymentName, backend.SignalTypeTraces),
 			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
@@ -93,7 +93,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 
 		It("Should verify end-to-end trace delivery", Label(operationalTest), func() {
 			traceID, spanIDs, attrs := makeAndSendTraces(urls.OTLPPush())
-			tracesShouldBeDelivered(urls.MockBackendExport(), traceID, spanIDs, attrs)
+			tracesShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), traceID, spanIDs, attrs)
 		})
 
 		It("Should have a working network policy", func() {
@@ -213,8 +213,8 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 
 		BeforeAll(func() {
 			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
-				backend.WithMockNamespace(mockNs),
-				backend.WithMockDeploymentNames(mockDeploymentName),
+				mockNs,
+				backend.New(mockNs, mockDeploymentName, backend.SignalTypeTraces),
 			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
@@ -240,7 +240,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 
 		It("Should verify end-to-end trace delivery for the remaining pipeline", func() {
 			traceID, spanIDs, attrs := makeAndSendTraces(urls.OTLPPush())
-			tracesShouldBeDelivered(urls.MockBackendExport(), traceID, spanIDs, attrs)
+			tracesShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), traceID, spanIDs, attrs)
 		})
 	})
 
@@ -254,8 +254,9 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		)
 		BeforeAll(func() {
 			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
-				backend.WithMockNamespace(mockNs),
-				backend.WithMockDeploymentNames(primaryMockDeploymentName, auxiliaryMockDeploymentName),
+				mockNs,
+				backend.New(mockNs, primaryMockDeploymentName, backend.SignalTypeTraces),
+				backend.New(mockNs, auxiliaryMockDeploymentName, backend.SignalTypeTraces),
 			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
@@ -273,8 +274,8 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		})
 		It("Should verify end-to-end trace delivery", func() {
 			traceID, spanIDs, attrs := makeAndSendTraces(urls.OTLPPush())
-			tracesShouldBeDelivered(urls.MockBackendExport(), traceID, spanIDs, attrs)
-			tracesShouldBeDelivered(urls.MockBackendExportAt(1), traceID, spanIDs, attrs)
+			tracesShouldBeDelivered(urls.MockBackendExport(primaryMockDeploymentName), traceID, spanIDs, attrs)
+			tracesShouldBeDelivered(urls.MockBackendExport(auxiliaryMockDeploymentName), traceID, spanIDs, attrs)
 		})
 	})
 
@@ -288,9 +289,8 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 
 		BeforeAll(func() {
 			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
-				backend.WithMockNamespace(mockNs),
-				backend.WithTLS(true),
-				backend.WithMockDeploymentNames(mockDeploymentName),
+				mockNs,
+				backend.New(mockNs, mockDeploymentName, backend.SignalTypeTraces, backend.WithTLS()),
 			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
@@ -311,7 +311,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 
 		It("Should verify end-to-end trace delivery", func() {
 			traceID, spanIDs, attrs := makeAndSendTraces(urls.OTLPPush())
-			tracesShouldBeDelivered(urls.MockBackendExport(), traceID, spanIDs, attrs)
+			tracesShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), traceID, spanIDs, attrs)
 		})
 
 	})
@@ -321,6 +321,15 @@ func deploymentShouldBeReady(name, namespace string) {
 	Eventually(func(g Gomega) {
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 		ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(ready).To(BeTrue())
+	}, timeout, interval).Should(Succeed())
+}
+
+func daemonsetShouldBeReady(name, namespace string) {
+	Eventually(func(g Gomega) {
+		key := types.NamespacedName{Name: name, Namespace: namespace}
+		ready, err := verifiers.IsDaemonSetReady(ctx, k8sClient, key)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrue())
 	}, timeout, interval).Should(Succeed())
@@ -367,71 +376,49 @@ func tracePipelineShouldNotBeDeployed(pipelineName string) {
 }
 
 // makeTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeTracingTestK8sObjects(setters ...backend.OptionSetter) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
+func makeTracingTestK8sObjects(namespace string, backends ...*backend.Backend) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
 	var (
 		objs      []client.Object
 		pipelines = kyma.NewPipelineList()
 		urls      = urlprovider.New()
-
-		grpcOTLPPort    = 4317
-		httpMetricsPort = 8888
-		httpOTLPPort    = 4318
-		httpWebPort     = 80
 	)
 
-	options := &backend.Options{}
-	for _, setter := range setters {
-		setter(options)
-	}
-
-	mocksNamespace := kitk8s.NewNamespace(options.Namespace)
+	mocksNamespace := kitk8s.NewNamespace(namespace)
 	objs = append(objs, mocksNamespace.K8sObject())
 
-	for i, mockDeploymentName := range options.MockDeploymentNames {
-		var certs testkit.TLSCerts
-		if options.WithTLS {
-			var err error
-			backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", mockDeploymentName, mocksNamespace.Name())
-			certs, err = testkit.GenerateTLSCerts(backendDNSName)
+	for _, mockBackend := range backends {
+		// Mocks namespace objects.
+		mockBackend.PersistentHostSecret = isOperational()
+		if mockBackend.WithTLS {
+			backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", mockBackend.Name(), mocksNamespace.Name())
+			certs, err := testkit.GenerateTLSCerts(backendDNSName)
 			Expect(err).NotTo(HaveOccurred())
-
-			options.TracePipelineOptions = append(options.TracePipelineOptions, getTLSConfigTracePipelineOption(
+			mockBackend.TLSCerts = certs
+			mockBackend.TracePipelineOptions = append(mockBackend.TracePipelineOptions, getTLSConfigTracePipelineOption(
 				certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()),
 			)
 		}
-
-		mockBackend := backend.NewWithTLS(suffixize(mockDeploymentName, i), mocksNamespace.Name(), "/traces/"+telemetryDataFilename, backend.SignalTypeTraces, options.WithTLS, certs)
-		mockBackendConfigMap := mockBackend.ConfigMap(suffixize("trace-receiver-config", i))
-		mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
-		mockBackendExternalService := mockBackend.ExternalService().
-			WithPort("grpc-otlp", grpcOTLPPort).
-			WithPort("http-otlp", httpOTLPPort).
-			WithPort("http-web", httpWebPort)
+		mockBackend = mockBackend.Build()
 
 		// Default namespace objects.
-		otlpEndpointURL := mockBackendExternalService.OTLPGrpcEndpointURL(grpcOTLPPort)
-		hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("trace-host", otlpEndpointURL)).Persistent(isOperational())
-		tracePipeline := kittrace.NewPipeline(fmt.Sprintf("%s-%s", mockDeploymentName, "pipeline"), hostSecret.SecretKeyRef("trace-host")).Persistent(isOperational())
+		tracePipeline := kittrace.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline"), mockBackend.GetHostSecretRefKey()).Persistent(isOperational())
 		pipelines.Append(tracePipeline.Name())
 
-		objs = append(objs, []client.Object{
-			mockBackendConfigMap.K8sObject(),
-			mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-			mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-			hostSecret.K8sObject(),
-			tracePipeline.K8sObject(options.TracePipelineOptions...),
-		}...)
+		objs = append(objs, mockBackend.K8sObjects()...)
+		objs = append(objs, tracePipeline.K8sObject(mockBackend.TracePipelineOptions...))
 
-		urls.SetMockBackendExport(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), i)
+		urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
+			namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+		)
 	}
 
-	urls.SetOTLPPush(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", httpOTLPPort))
+	urls.SetOTLPPush(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP))
 
 	// Kyma-system namespace objects.
 	traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kymaSystemNamespaceName).
-		WithPort("grpc-otlp", grpcOTLPPort).
-		WithPort("http-metrics", httpMetricsPort)
-	urls.SetMetrics(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", httpMetricsPort))
+		WithPort("grpc-otlp", ports.OTLPGRPC).
+		WithPort("http-metrics", ports.Metrics)
+	urls.SetMetrics(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
 
 	objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", traceGatewayBaseName)))
 

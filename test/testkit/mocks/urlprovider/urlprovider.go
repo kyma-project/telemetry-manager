@@ -1,15 +1,15 @@
 package urlprovider
 
 type URLProvider struct {
-	metrics   string
-	pipelines map[string]map[string]string
-	otlpPush  string
-	metricPod string
+	metrics        string
+	mockBackendURL map[string]string
+	otlpPush       string
+	metricPod      string
 }
 
 func New() *URLProvider {
 	return &URLProvider{
-		pipelines: map[string]map[string]string{},
+		mockBackendURL: map[string]string{},
 	}
 }
 
@@ -31,18 +31,14 @@ func (p *URLProvider) OTLPPush() string {
 	return p.otlpPush
 }
 
-func (p *URLProvider) SetMockBackendExport(url, backendName string) *URLProvider {
-	if p.pipelines[backendName] == nil {
-		p.pipelines[backendName] = map[string]string{}
-	}
-
-	p.pipelines[backendName]["mockBackendExport"] = url
+func (p *URLProvider) SetMockBackendExport(backendName, url string) *URLProvider {
+	p.mockBackendURL[backendName] = url
 
 	return p
 }
 
 func (p *URLProvider) MockBackendExport(backendName string) string {
-	return p.pipelines[backendName]["mockBackendExport"]
+	return p.mockBackendURL[backendName]
 }
 
 func (p *URLProvider) SetMetricPodURL(url string) *URLProvider {

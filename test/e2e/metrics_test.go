@@ -46,7 +46,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		BeforeAll(func() {
 			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(
 				mockNs,
-				backend.NewOptions(mockBackendName),
+				backend.New(mockNs, mockBackendName, backend.SignalTypeMetrics),
 			)
 			pipelines = pipelinesProvider
 			urls = urlProvider
@@ -124,7 +124,9 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		BeforeAll(func() {
 			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(
 				mockNs,
-				backend.NewOptions(mockBackendName),
+				backend.New(mockNs, mockBackendName, backend.SignalTypeMetrics,
+					backend.WithMetricPipelineOption(getCumulativeToDeltaConversionMetricPipelineOption()),
+				),
 			)
 			pipelines = pipelinesProvider
 			urls = urlProvider
@@ -254,7 +256,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		BeforeAll(func() {
 			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(
 				mockNs,
-				backend.NewOptions(mockBackendName),
+				backend.New(mockNs, mockBackendName, backend.SignalTypeMetrics),
 			)
 			pipelines = pipelinesProvider
 			urls = urlProvider
@@ -300,8 +302,8 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		BeforeAll(func() {
 			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(
 				mockNs,
-				backend.NewOptions(primaryMockDeploymentName),
-				backend.NewOptions(auxiliaryMockDeploymentName),
+				backend.New(mockNs, primaryMockDeploymentName, backend.SignalTypeMetrics),
+				backend.New(mockNs, auxiliaryMockDeploymentName, backend.SignalTypeMetrics),
 			)
 			pipelines = pipelinesProvider
 			urls = urlProvider
@@ -346,10 +348,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		BeforeAll(func() {
 			k8sObjects, metricsURLProvider, pipelinesProvider := makeMetricsTestK8sObjects(
 				mockNs,
-				backend.NewOptions(
-					mockBackendName,
-					backend.WithTLS(),
-				),
+				backend.New(mockNs, mockBackendName, backend.SignalTypeMetrics, backend.WithTLS()),
 			)
 			pipelines = pipelinesProvider
 			urls = metricsURLProvider
@@ -416,7 +415,7 @@ func metricPipelineShouldNotBeDeployed(pipelineName string) {
 }
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeMetricsTestK8sObjects(namespace string, backendOptions ...*backend.Options) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
+func makeMetricsTestK8sObjects(namespace string, backends ...*backend.Backend) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
 	var (
 		objs      []client.Object
 		pipelines = kyma.NewPipelineList()
@@ -426,34 +425,31 @@ func makeMetricsTestK8sObjects(namespace string, backendOptions ...*backend.Opti
 	mocksNamespace := kitk8s.NewNamespace(namespace)
 	objs = append(objs, mocksNamespace.K8sObject())
 
-	// new backend
-	for _, options := range backendOptions {
-		options.WithPersistentHostSecret = isOperational()
-		options.SignalType = backend.SignalTypeMetrics
+	for _, mockBackend := range backends {
+		// Mocks namespace objects.
+		mockBackend.PersistentHostSecret = isOperational()
 
-		if options.WithTLS {
-			backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", options.Name, mocksNamespace.Name())
+		if mockBackend.WithTLS {
+			backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", mockBackend.Name(), mocksNamespace.Name())
 			certs, err := testkit.GenerateTLSCerts(backendDNSName)
 			Expect(err).NotTo(HaveOccurred())
-			options.TLSCerts = certs
-			options.MetricPipelineOptions = append(options.MetricPipelineOptions, getTLSConfigMetricPipelineOption(
+			mockBackend.TLSCerts = certs
+			mockBackend.MetricPipelineOptions = append(mockBackend.MetricPipelineOptions, getTLSConfigMetricPipelineOption(
 				certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()),
 			)
 		}
-
-		// Mocks namespace objects.
-		mockBackend := backend.New(mocksNamespace.Name(), options)
+		mockBackend = mockBackend.Build()
 
 		// Default namespace objects.
-		metricPipeline := kitmetric.NewPipeline(fmt.Sprintf("%s-%s", options.Name, "pipeline"),
+		metricPipeline := kitmetric.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline"),
 			mockBackend.GetHostSecretRefKey()).Persistent(isOperational())
 		pipelines.Append(metricPipeline.Name())
 
 		objs = append(objs, mockBackend.K8sObjects()...)
-		objs = append(objs, metricPipeline.K8sObject(options.MetricPipelineOptions...))
+		objs = append(objs, metricPipeline.K8sObject(mockBackend.MetricPipelineOptions...))
 
-		urls.SetMockBackendExport(options.Name, proxyClient.ProxyURLForService(
-			namespace, options.Name, backend.TelemetryDataFilename, backend.HTTPWebPort),
+		urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
+			namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
 		)
 	}
 

@@ -12,9 +12,6 @@ const (
 	telemetryDeliveryTimeout = time.Second * 20
 	interval                 = time.Millisecond * 250
 
-	// The filename for the OpenTelemetry collector's file exporter.
-	telemetryDataFilename = "otlp-data.jsonl"
-
 	defaultNamespaceName    = "default"
 	kymaSystemNamespaceName = "kyma-system"
 )

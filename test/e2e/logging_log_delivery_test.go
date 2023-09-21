@@ -35,11 +35,11 @@ var _ = Describe("Logging", Label("logging"), func() {
 			urls               *urlprovider.URLProvider
 			mockDeploymentName = "log-receiver"
 			mockNs             = "log-http-output"
-			logProducerPodName = "log-producer-http-output" //#nosec G101 -- This is a false positive
+			logProducerName    = "log-producer-http-output" //#nosec G101 -- This is a false positive
 		)
 
 		BeforeAll(func() {
-			k8sObjects, logsURLProvider := makeLogDeliveryTestK8sObjects(mockNs, mockDeploymentName, logProducerPodName, OutputTypeHTTP)
+			k8sObjects, logsURLProvider := makeLogDeliveryTestK8sObjects(mockNs, mockDeploymentName, logProducerName, OutputTypeHTTP)
 			urls = logsURLProvider
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -51,8 +51,12 @@ var _ = Describe("Logging", Label("logging"), func() {
 			logBackendShouldBeRunning(mockDeploymentName, mockNs)
 		})
 
+		It("Should have a log producer running", func() {
+			deploymentShouldBeReady(logProducerName, mockNs)
+		})
+
 		It("Should verify end-to-end log delivery with http ", Label("operational"), func() {
-			logsShouldBeDelivered(logProducerPodName, urls)
+			logsShouldBeDelivered(logProducerName, urls.MockBackendExport(mockDeploymentName))
 		})
 	})
 
@@ -61,11 +65,11 @@ var _ = Describe("Logging", Label("logging"), func() {
 			urls               *urlprovider.URLProvider
 			mockDeploymentName = "log-receiver"
 			mockNs             = "log-custom-output"
-			logProducerPodName = "log-producer-custom-output" //#nosec G101 -- This is a false positive
+			logProducerName    = "log-producer-custom-output" //#nosec G101 -- This is a false positive
 		)
 
 		BeforeAll(func() {
-			k8sObjects, logsURLProvider := makeLogDeliveryTestK8sObjects(mockNs, mockDeploymentName, logProducerPodName, OutputTypeCustom)
+			k8sObjects, logsURLProvider := makeLogDeliveryTestK8sObjects(mockNs, mockDeploymentName, logProducerName, OutputTypeCustom)
 			urls = logsURLProvider
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -78,11 +82,12 @@ var _ = Describe("Logging", Label("logging"), func() {
 		})
 
 		It("Should verify end-to-end log delivery with custom output", func() {
-			logsShouldBeDelivered(logProducerPodName, urls)
+			logsShouldBeDelivered(logProducerName, urls.MockBackendExport(mockDeploymentName))
 		})
 	})
 })
 
+// TODO this function is the same as deploymentShouldBeRunning except that the timeout is doubled
 func logBackendShouldBeRunning(mockDeploymentName, mockNs string) {
 	Eventually(func(g Gomega) {
 		key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
@@ -92,64 +97,43 @@ func logBackendShouldBeRunning(mockDeploymentName, mockNs string) {
 	}, timeout*2, interval).Should(Succeed())
 }
 
-func logsShouldBeDelivered(logProducerPodName string, urls *urlprovider.URLProvider) {
+func logsShouldBeDelivered(logProducerName string, mockBackendExportUrl string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(urls.MockBackendExport())
+		resp, err := proxyClient.Get(mockBackendExportUrl)
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-			ContainLogs(WithPod(logProducerPodName)))))
+			ContainLogs(WithPod(logProducerName)))))
 	}, timeout, interval).Should(Succeed())
 }
 
-func makeLogDeliveryTestK8sObjects(namespace string, mockDeploymentName string, logProducerPodName string, outputType OutputType) ([]client.Object, *urlprovider.URLProvider) {
+func makeLogDeliveryTestK8sObjects(namespace string, mockDeploymentName string, logProducerName string, outputType OutputType) ([]client.Object, *urlprovider.URLProvider) {
 	var (
 		objs []client.Object
 		urls = urlprovider.New()
-
-		grpcOTLPPort = 4317
-		httpOTLPPort = 4318
-		httpWebPort  = 80
-		httpLogPort  = 9880
 	)
+
 	mocksNamespace := kitk8s.NewNamespace(namespace)
+	objs = append(objs, mocksNamespace.K8sObject())
 
 	//// Mocks namespace objects.
-	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/logs/"+telemetryDataFilename, backend.SignalTypeLogs)
-
-	mockBackendConfigMap := mockBackend.ConfigMap("log-receiver-config")
-	mockFluentdConfigMap := mockBackend.FluentdConfigMap("log-receiver-config-fluentd")
-	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name()).WithFluentdConfigName(mockFluentdConfigMap.Name())
-	mockBackendExternalService := mockBackend.ExternalService().
-		WithPort("grpc-otlp", grpcOTLPPort).
-		WithPort("http-otlp", httpOTLPPort).
-		WithPort("http-web", httpWebPort).
-		WithPort("http-log", httpLogPort)
-	mockLogProducer := logproducer.New(logProducerPodName, mocksNamespace.Name())
+	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeLogs).Build()
+	mockLogProducer := logproducer.New(logProducerName, mocksNamespace.Name())
+	objs = append(objs, mockBackend.K8sObjects()...)
+	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
 
 	// Default namespace objects.
-	logEndpointURL := mockBackendExternalService.Host()
-	hostSecret := kitk8s.NewOpaqueSecret("log-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("log-host", logEndpointURL))
 	var logPipeline *kitlog.Pipeline
 	if outputType == OutputTypeHTTP {
-		logPipeline = kitlog.NewPipeline("http-output-pipeline").WithSecretKeyRef(hostSecret.SecretKeyRef("log-host")).WithHTTPOutput()
+		logPipeline = kitlog.NewPipeline("http-output-pipeline").WithSecretKeyRef(mockBackend.GetHostSecretRefKey()).WithHTTPOutput()
 	} else {
-		logPipeline = kitlog.NewPipeline("custom-output-pipeline").WithCustomOutput(logEndpointURL)
+		logPipeline = kitlog.NewPipeline("custom-output-pipeline").WithCustomOutput(mockBackend.ExternalService.Host()) // TODO check if it makes sense to extract the host into a Backend function
 	}
+	objs = append(objs, logPipeline.K8sObject())
 
-	objs = append(objs, []client.Object{
-		mocksNamespace.K8sObject(),
-		mockBackendConfigMap.K8sObject(),
-		mockFluentdConfigMap.K8sObject(),
-		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		hostSecret.K8sObject(),
-		logPipeline.K8sObject(),
-		mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")),
-	}...)
-
-	urls.SetMockBackendExport(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
-
+	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
+		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+	)
 	return objs, urls
 }
