@@ -24,7 +24,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 	Context("Container Excludes", Ordered, func() {
 		var (
 			urls               *urlprovider.URLProvider
-			mockNs             = "log-exclude-cntnr-mocks"
+			mockNs             = "log-exclude-container-mocks"
 			mockDeploymentName = "log-receiver-exclude-container"
 			logProducerName    = "log-producer-exclude-container"
 		)

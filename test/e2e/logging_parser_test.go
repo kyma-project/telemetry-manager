@@ -46,11 +46,11 @@ var _ = Describe("Logging", Label("logging"), func() {
 		})
 
 		It("Should have a log backend running", func() {
-			logBackendShouldBeRunning(mockDeploymentName, mockNs)
+			deploymentShouldBeReady(mockDeploymentName, mockNs)
 		})
 
 		It("Should have a log producer running", func() {
-			logBackendShouldBeRunning(logProducerName, mockNs)
+			deploymentShouldBeReady(logProducerName, mockNs)
 		})
 
 		It("Should parse the logs using regex", func() {

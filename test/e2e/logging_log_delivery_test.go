@@ -7,11 +7,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -48,7 +46,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 		})
 
 		It("Should have a log backend running", Label("operational"), func() {
-			logBackendShouldBeRunning(mockDeploymentName, mockNs)
+			deploymentShouldBeReady(mockDeploymentName, mockNs)
 		})
 
 		It("Should have a log producer running", func() {
@@ -78,7 +76,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 		})
 
 		It("Should have a log backend running", func() {
-			logBackendShouldBeRunning(mockDeploymentName, mockNs)
+			deploymentShouldBeReady(mockDeploymentName, mockNs)
 		})
 
 		It("Should verify end-to-end log delivery with custom output", func() {
@@ -86,16 +84,6 @@ var _ = Describe("Logging", Label("logging"), func() {
 		})
 	})
 })
-
-// TODO this function is the same as deploymentShouldBeRunning except that the timeout is doubled
-func logBackendShouldBeRunning(mockDeploymentName, mockNs string) {
-	Eventually(func(g Gomega) {
-		key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-		ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(ready).To(BeTrue())
-	}, timeout*2, interval).Should(Succeed())
-}
 
 func logsShouldBeDelivered(logProducerName string, proxyURL string) {
 	Eventually(func(g Gomega) {
