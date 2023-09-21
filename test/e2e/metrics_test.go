@@ -23,7 +23,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
@@ -556,9 +556,7 @@ func metricsShouldBeDelivered(proxyURL string, metrics []pmetric.Metric) {
 		resp, err := proxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-			ConsistOfNumberOfMetrics(len(metrics)),
-			ContainMetrics(metrics...))))
+		g.Expect(resp).To(HaveHTTPBody(ConsistOfMds(WithMetrics(BeEquivalentTo(metrics)))))
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 	}, timeout, interval).Should(Succeed())

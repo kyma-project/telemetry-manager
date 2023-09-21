@@ -1,6 +1,7 @@
 package metricproducer
 
 import (
+	"maps"
 	"strconv"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -19,6 +20,13 @@ type Metric struct {
 	Name   string
 	Labels []string
 }
+
+type ScrapingScheme string
+
+const (
+	SchemeHTTP  ScrapingScheme = "http"
+	SchemeHTTPS ScrapingScheme = "https"
+)
 
 var (
 	MetricCPUTemperature = Metric{
@@ -41,28 +49,29 @@ var (
 		Labels: []string{"sensor"},
 	}
 
-	metricsPort           = 8080
-	metricsPortName       = "http-metrics"
-	metricsEndpoint       = "/metrics"
-	baseName              = "metric-producer"
-	prometheusAnnotations = map[string]string{
-		"prometheus.io/path":   metricsEndpoint,
-		"prometheus.io/port":   strconv.Itoa(metricsPort),
-		"prometheus.io/scrape": "true",
-		"prometheus.io/scheme": "http",
+	AllMetricNames = []string{
+		MetricCPUTemperature.Name,
+		MetricHardDiskErrorsTotal.Name,
+		MetricCPUEnergyHistogram.Name,
+		MetricHardwareHumidity.Name,
 	}
-	selectorLabels = map[string]string{
+
+	metricsPort     = 8080
+	metricsPortName = "http-metrics"
+	metricsEndpoint = "/metrics"
+	selectorLabels  = map[string]string{
 		"app": "sample-metrics",
 	}
 )
 
 // MetricProducer represents a workload that exposes dummy metrics in the Prometheus exposition format
 type MetricProducer struct {
+	name      string
 	namespace string
 }
 
 func (mp *MetricProducer) Name() string {
-	return baseName
+	return mp.name
 }
 
 func (mp *MetricProducer) MetricsEndpoint() string {
@@ -74,38 +83,74 @@ func (mp *MetricProducer) MetricsPort() int {
 }
 
 type Pod struct {
+	name        string
 	namespace   string
+	labels      map[string]string
 	annotations map[string]string
 }
 
 type Service struct {
+	name        string
 	namespace   string
 	annotations map[string]string
 }
 
-func New(namespace string) *MetricProducer {
-	return &MetricProducer{
+type Options = func(mp *MetricProducer)
+
+func WithName(name string) Options {
+	return func(mp *MetricProducer) {
+		mp.name = name
+	}
+}
+
+func New(namespace string, opts ...Options) *MetricProducer {
+	mp := &MetricProducer{
+		name:      "metric-producer",
 		namespace: namespace,
 	}
+	for _, opt := range opts {
+		opt(mp)
+	}
+	return mp
 }
 
 func (mp *MetricProducer) Pod() *Pod {
 	return &Pod{
-		namespace: mp.namespace,
+		name:        mp.name,
+		namespace:   mp.namespace,
+		labels:      make(map[string]string),
+		annotations: make(map[string]string),
 	}
 }
 
-func (p *Pod) WithPrometheusAnnotations() *Pod {
-	p.annotations = prometheusAnnotations
+func (p *Pod) WithPrometheusAnnotations(scheme ScrapingScheme) *Pod {
+	maps.Copy(p.annotations, makePrometheusAnnotations(scheme))
 	return p
 }
 
+func (p *Pod) WithSidecarInjection() *Pod {
+	p.labels["sidecar.istio.io/inject"] = "true"
+	return p
+}
+
+func makePrometheusAnnotations(scheme ScrapingScheme) map[string]string {
+	return map[string]string{
+		"prometheus.io/scrape": "true",
+		"prometheus.io/path":   metricsEndpoint,
+		"prometheus.io/port":   strconv.Itoa(metricsPort),
+		"prometheus.io/scheme": string(scheme),
+	}
+}
+
 func (p *Pod) K8sObject() *corev1.Pod {
+	labels := p.labels
+	maps.Copy(labels, selectorLabels)
+
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        baseName,
+			Name:        p.name,
 			Namespace:   p.namespace,
-			Labels:      selectorLabels,
+			Labels:      labels,
 			Annotations: p.annotations,
 		},
 		Spec: corev1.PodSpec{
@@ -142,19 +187,20 @@ func (p *Pod) K8sObject() *corev1.Pod {
 
 func (mp *MetricProducer) Service() *Service {
 	return &Service{
+		name:      mp.name,
 		namespace: mp.namespace,
 	}
 }
 
-func (s *Service) WithPrometheusAnnotations() *Service {
-	s.annotations = prometheusAnnotations
+func (s *Service) WithPrometheusAnnotations(scheme ScrapingScheme) *Service {
+	s.annotations = makePrometheusAnnotations(scheme)
 	return s
 }
 
 func (s *Service) K8sObject() *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        baseName,
+			Name:        s.name,
 			Namespace:   s.namespace,
 			Annotations: s.annotations,
 			Labels:      selectorLabels,

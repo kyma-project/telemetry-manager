@@ -26,9 +26,10 @@ import (
 var _ = Describe("Istio tracing", Label("tracing"), func() {
 	Context("App with istio-sidecar", Ordered, func() {
 		const (
-			mockNs                 = "istio-tracing-mock"
-			mockDeploymentName     = "istio-tracing-backend"
-			sampleAppNs            = "istio-tracing-sample-app"
+			mockNs             = "istio-tracing-mock"
+			mockDeploymentName = "istio-tracing-backend"
+			//creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
+			sampleAppNs            = "istio-permissive-mtls"
 			traceCollectorBaseName = "telemetry-trace-collector"
 		)
 		var (
@@ -155,9 +156,6 @@ func makeIstioTracingK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) 
 	mocksNamespace := kitk8s.NewNamespace(mockNs)
 	objs = append(objs, mocksNamespace.K8sObject())
 
-	appNamespace := kitk8s.NewNamespace(sampleAppNs, kitk8s.WithIstioInjection())
-	objs = append(objs, appNamespace.K8sObject())
-
 	// Mocks namespace objects.
 	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/traces/"+telemetryDataFilename, backend.SignalTypeTraces)
 	mockBackendConfigMap := mockBackend.ConfigMap("trace-receiver-config")
@@ -178,7 +176,7 @@ func makeIstioTracingK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) 
 	urls.SetMetrics(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", httpMetricsPort))
 
 	// Abusing metrics provider for istio traces
-	sampleApp := metricproducer.New(sampleAppNs)
+	sampleApp := metricproducer.New(sampleAppNs, metricproducer.WithName("trace-emitter"))
 
 	objs = append(objs, []client.Object{
 		mockBackendConfigMap.K8sObject(),

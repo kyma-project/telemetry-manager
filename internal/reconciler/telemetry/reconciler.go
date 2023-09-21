@@ -72,11 +72,9 @@ func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config) 
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-
 	var telemetry operatorv1alpha1.Telemetry
 	if err := r.Client.Get(ctx, req.NamespacedName, &telemetry); err != nil {
-		logger.Info(req.NamespacedName.String() + " got deleted!")
+		log.FromContext(ctx).Info(req.NamespacedName.String() + " got deleted!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -85,15 +83,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if err := r.updateStatus(ctx, &telemetry); err != nil {
-		return ctrl.Result{Requeue: true}, fmt.Errorf("failed to update status: %w", err)
+		return ctrl.Result{}, fmt.Errorf("failed to update status: %w", err)
 	}
 
 	if err := r.reconcileWebhook(ctx, &telemetry); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
-	// Keep requeueing until dependent resources are removed
-	requeue := telemetry.Status.State == operatorv1alpha1.StateError
+	requeue := telemetry.Status.State == operatorv1alpha1.StateWarning
 	return ctrl.Result{Requeue: requeue}, nil
 }
 
@@ -112,6 +109,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 	if controllerutil.ContainsFinalizer(telemetry, finalizer) {
 		if r.dependentCRsFound(ctx) {
 			// Block deletion of the resource if there are still some dependent resources
+			log.FromContext(ctx).Info("Telemetry CR deletion is blocked because one or more dependent CRs (LogPipeline, LogParser, MetricPipeline, TracePipeline) still exist")
 			return nil
 		}
 

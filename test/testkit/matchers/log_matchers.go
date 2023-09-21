@@ -220,7 +220,7 @@ func getAllLogRecords(lds []plog.Logs) []plog.LogRecord {
 }
 
 func unmarshalLogs(jsonlLogs []byte) ([]plog.Logs, error) {
-	return unmarshalSignals[plog.Logs](jsonlLogs, func(buf []byte) (plog.Logs, error) {
+	return UnmarshalSignals[plog.Logs](jsonlLogs, func(buf []byte) (plog.Logs, error) {
 		var unmarshaler plog.JSONUnmarshaler
 		return unmarshaler.UnmarshalLogs(buf)
 	})
