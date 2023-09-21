@@ -1,4 +1,4 @@
-package reconciler
+package conditions
 
 const (
 	ReasonNoPipelineDeployed      = "NoPipelineDeployed"
@@ -18,7 +18,7 @@ const (
 	ReasonTraceResourceBlocksDeletion    = "TraceResourceBlocksDeletion"
 )
 
-var conditionsMessage = map[string]string{
+var message = map[string]string{
 	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
 	ReasonReferencedSecretMissing: "One or more referenced Secrets are missing",
 	ReasonWaitingForLock:          "Waiting for the lock",
@@ -36,8 +36,10 @@ var conditionsMessage = map[string]string{
 	ReasonTraceResourceBlocksDeletion:    "One or more TracePipelines still exist",
 }
 
-func ConditionMessage(reason string) string {
-	if condMessage, found := conditionsMessage[reason]; found {
+// CommonMessageFor returns a human-readable message corresponding to a given reason.
+// In more advanced scenarios, you may craft custom messages tailored to specific use cases.
+func CommonMessageFor(reason string) string {
+	if condMessage, found := message[reason]; found {
 		return condMessage
 	}
 	return ""

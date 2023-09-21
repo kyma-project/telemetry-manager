@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
@@ -37,9 +37,9 @@ func TestLogComponentsCheck(t *testing.T) {
 			name: "should be healthy if all pipelines running",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
@@ -53,9 +53,9 @@ func TestLogComponentsCheck(t *testing.T) {
 			name: "should not be healthy if one pipeline refs missing secret",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
+					testutils.LogPendingCondition(conditions.ReasonReferencedSecretMissing)).Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
@@ -69,9 +69,9 @@ func TestLogComponentsCheck(t *testing.T) {
 			name: "should not be healthy if one pipeline waiting for gateway",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady)).Build(),
+					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady)).Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
@@ -85,9 +85,9 @@ func TestLogComponentsCheck(t *testing.T) {
 			name: "should ignore pipelines waiting for lock",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(reconciler.ReasonWaitingForLock)).Build(),
+					testutils.LogPendingCondition(conditions.ReasonWaitingForLock)).Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
@@ -101,9 +101,9 @@ func TestLogComponentsCheck(t *testing.T) {
 			name: "should prioritize unready gateway reason over missing secret",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady)).Build(),
+					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady)).Build(),
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
+					testutils.LogPendingCondition(conditions.ReasonReferencedSecretMissing)).Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
@@ -117,7 +117,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			name: "should block deletion if there are existing pipelines",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(reconciler.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
 			},
 			telemetryInDeletion: true,
 			expectedCondition: &metav1.Condition{

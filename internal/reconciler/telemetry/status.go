@@ -11,8 +11,8 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 )
 
 //go:generate mockery --name ComponentHealthChecker --filename component_health_checker.go
@@ -102,7 +102,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, telemetr
 	if err != nil {
 		return nil, fmt.Errorf("failed to check trace components: %w", err)
 	}
-	if cond.Status != metav1.ConditionTrue || cond.Reason != reconciler.ReasonTraceGatewayDeploymentReady {
+	if cond.Status != metav1.ConditionTrue || cond.Reason != conditions.ReasonTraceGatewayDeploymentReady {
 		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
