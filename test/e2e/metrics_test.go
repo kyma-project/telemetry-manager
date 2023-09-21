@@ -413,7 +413,7 @@ func metricPipelineShouldNotBeDeployed(pipelineName string) {
 }
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeMetricsTestK8sObjects(mockNs string, mockBackendNames []string, setters ...backend.Setter) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
+func makeMetricsTestK8sObjects(mockNs string, mockBackendNames []string, opts ...backend.Option) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
 	var (
 		objs      []client.Object
 		pipelines = kyma.NewPipelineList()
@@ -424,8 +424,8 @@ func makeMetricsTestK8sObjects(mockNs string, mockBackendNames []string, setters
 
 	for _, backendName := range mockBackendNames {
 		// Mocks namespace objects.
-		setters = append(setters, backend.WithPersistentHostSecret(isOperational()))
-		mockBackend, err := backend.New(backendName, mockNs, backend.SignalTypeMetrics, setters...)
+		opts = append(opts, backend.WithPersistentHostSecret(isOperational()))
+		mockBackend, err := backend.New(backendName, mockNs, backend.SignalTypeMetrics, opts...)
 		Expect(err).NotTo(HaveOccurred())
 		objs = append(objs, mockBackend.K8sObjects()...)
 

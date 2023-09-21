@@ -26,7 +26,7 @@ const (
 	SignalTypeLogs    = "logs"
 )
 
-type Setter func(*Backend)
+type Option func(*Backend)
 
 type Backend struct {
 	name       string
@@ -47,34 +47,34 @@ type Backend struct {
 	HostSecret       *kitk8s.Secret
 }
 
-func New(name, namespace string, signalType SignalType, setters ...Setter) (*Backend, error) {
+func New(name, namespace string, signalType SignalType, opts ...Option) (*Backend, error) {
 	backend := &Backend{
 		name:       name,
 		namespace:  namespace,
 		signalType: signalType,
 	}
 
-	for _, setter := range setters {
-		setter(backend)
+	for _, opt := range opts {
+		opt(backend)
 	}
 
 	err := backend.build()
 	return backend, err
 }
 
-func WithTLS() Setter {
+func WithTLS() Option {
 	return func(b *Backend) {
 		b.WithTLS = true
 	}
 }
 
-func WithMetricPipelineOption(option kitmetric.PipelineOption) Setter {
+func WithMetricPipelineOption(option kitmetric.PipelineOption) Option {
 	return func(b *Backend) {
 		b.MetricPipelineOptions = append(b.MetricPipelineOptions, option)
 	}
 }
 
-func WithPersistentHostSecret(persistentHostSecret bool) Setter {
+func WithPersistentHostSecret(persistentHostSecret bool) Option {
 	return func(b *Backend) {
 		b.PersistentHostSecret = persistentHostSecret
 	}
