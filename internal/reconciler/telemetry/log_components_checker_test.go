@@ -124,7 +124,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
 				Reason:  "ResourceBlocksDeletion",
-				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines: (bar,foo)",
+				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (bar,foo)",
 			},
 		},
 		{
@@ -138,7 +138,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
 				Reason:  "ResourceBlocksDeletion",
-				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogParsers: (bar,foo)",
+				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogParsers (bar,foo)",
 			},
 		},
 		{
@@ -155,7 +155,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
 				Reason:  "ResourceBlocksDeletion",
-				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines: (baz,foo), LogParsers: (bar)",
+				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (baz,foo), LogParsers (bar)",
 			},
 		},
 	}

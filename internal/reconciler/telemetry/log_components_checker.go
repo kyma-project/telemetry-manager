@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/extslices"
-	"strings"
 )
 
 type logComponentsChecker struct {
@@ -74,25 +73,17 @@ func (l *logComponentsChecker) createMessageForReason(pipelines []v1alpha1.LogPi
 		return conditions.CommonMessageFor(reason)
 	}
 
-	separator := ","
-	var affectedResources []string
-	if len(pipelines) > 0 {
-		pipelineNames := extslices.TransformFunc(pipelines, func(p v1alpha1.LogPipeline) string {
+	return generateDeletionBlockedMessage(blockingResources{
+		resourceType: "LogPipelines",
+		resourceNames: extslices.TransformFunc(pipelines, func(p v1alpha1.LogPipeline) string {
 			return p.Name
-		})
-		slices.Sort(pipelineNames)
-		affectedResources = append(affectedResources, fmt.Sprintf("LogPipelines: (%s)", strings.Join(pipelineNames, separator)))
-	}
-	if len(parsers) > 0 {
-		parserNames := extslices.TransformFunc(parsers, func(p v1alpha1.LogParser) string {
+		}),
+	}, blockingResources{
+		resourceType: "LogParsers",
+		resourceNames: extslices.TransformFunc(parsers, func(p v1alpha1.LogParser) string {
 			return p.Name
-		})
-		slices.Sort(parserNames)
-		affectedResources = append(affectedResources, fmt.Sprintf("LogParsers: (%s)", strings.Join(parserNames, separator)))
-	}
-
-	return fmt.Sprintf("The deletion of the module is blocked. To unblock the deletion, delete the following resources: %s",
-		strings.Join(affectedResources, ", "))
+		}),
+	})
 }
 
 func (l *logComponentsChecker) createConditionFromReason(reason, message string) *metav1.Condition {

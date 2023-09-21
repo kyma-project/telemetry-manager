@@ -3,11 +3,9 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"slices"
-	"strings"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"slices"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
@@ -69,13 +67,12 @@ func (t *traceComponentsChecker) createMessageForReason(pipelines []v1alpha1.Tra
 
 	}
 
-	pipelineNames := extslices.TransformFunc(pipelines, func(p v1alpha1.TracePipeline) string {
-		return p.Name
+	return generateDeletionBlockedMessage(blockingResources{
+		resourceType: "TracePipelines",
+		resourceNames: extslices.TransformFunc(pipelines, func(p v1alpha1.TracePipeline) string {
+			return p.Name
+		}),
 	})
-	slices.Sort(pipelineNames)
-	separator := ","
-	return fmt.Sprintf("The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (%s)",
-		strings.Join(pipelineNames, separator))
 }
 
 func (t *traceComponentsChecker) createConditionFromReason(reason, message string) *metav1.Condition {
