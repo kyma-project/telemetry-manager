@@ -96,28 +96,28 @@ func logsShouldBeDelivered(logProducerName string, proxyURL string) {
 	}, timeout, interval).Should(Succeed())
 }
 
-func makeLogDeliveryTestK8sObjects(namespace string, mockDeploymentName string, logProducerName string, outputType OutputType) ([]client.Object, *urlprovider.URLProvider) {
+func makeLogDeliveryTestK8sObjects(mockNs string, mockDeploymentName string, logProducerName string, outputType OutputType) ([]client.Object, *urlprovider.URLProvider) {
 	var (
 		objs []client.Object
 		urls = urlprovider.New()
 	)
 
-	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, mocksNamespace.K8sObject())
+	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 	//// Mocks namespace objects.
-	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeLogs).Build()
-	mockLogProducer := logproducer.New(logProducerName, mocksNamespace.Name())
+	mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
+	Expect(err).NotTo(HaveOccurred())
+	mockLogProducer := logproducer.New(logProducerName, mockNs)
 	objs = append(objs, mockBackend.K8sObjects()...)
 	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
 	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+		mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
 	)
 
 	// Default namespace objects.
 	var logPipeline *kitlog.Pipeline
 	if outputType == OutputTypeHTTP {
-		logPipeline = kitlog.NewPipeline("http-output-pipeline").WithSecretKeyRef(mockBackend.GetHostSecretRefKey()).WithHTTPOutput()
+		logPipeline = kitlog.NewPipeline("http-output-pipeline").WithSecretKeyRef(mockBackend.HostSecretRefKey()).WithHTTPOutput()
 	} else {
 		logPipeline = kitlog.NewPipeline("custom-output-pipeline").WithCustomOutput(mockBackend.ExternalService.Host()) // TODO check if it makes sense to extract the host into a Backend function
 	}

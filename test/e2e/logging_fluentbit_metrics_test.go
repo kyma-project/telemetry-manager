@@ -85,15 +85,15 @@ var _ = Describe("Logging", Label("logging"), func() {
 	})
 })
 
-func makeLogsTestK8sObjects(namespace string, mockDeploymentName string) []client.Object {
+func makeLogsTestK8sObjects(mockNs string, mockDeploymentName string) []client.Object {
 	var (
 		objs []client.Object
 	)
-	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, mocksNamespace.K8sObject())
+	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 	//// Mocks namespace objects.
-	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeLogs).Build()
+	mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
+	Expect(err).NotTo(HaveOccurred())
 	objs = append(objs, mockBackend.K8sObjects()...)
 
 	// Default namespace objects.

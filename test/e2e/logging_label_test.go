@@ -63,26 +63,26 @@ var _ = Describe("Logging", Label("logging"), func() {
 	})
 })
 
-func makeLogsLabelTestK8sObjects(namespace string, mockDeploymentName, logProducerName string) ([]client.Object, *urlprovider.URLProvider) {
+func makeLogsLabelTestK8sObjects(mockNs string, mockDeploymentName, logProducerName string) ([]client.Object, *urlprovider.URLProvider) {
 	var (
 		objs []client.Object
 		urls = urlprovider.New()
 	)
-	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, mocksNamespace.K8sObject())
+	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 	//// Mocks namespace objects.
-	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeLogs).Build()
-	mockLogProducer := logproducer.New(logProducerName, mocksNamespace.Name()).
+	mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
+	Expect(err).NotTo(HaveOccurred())
+	mockLogProducer := logproducer.New(logProducerName, mockNs).
 		WithAnnotations(map[string]string{"release": "v1.0.0"})
 	objs = append(objs, mockBackend.K8sObjects()...)
 	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-label-test")))
 	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+		mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
 	)
 
 	// Default namespace objects.
-	logPipeline := kitlog.NewPipeline("pipeline-label-test").WithSecretKeyRef(mockBackend.GetHostSecretRefKey()).WithHTTPOutput()
+	logPipeline := kitlog.NewPipeline("pipeline-label-test").WithSecretKeyRef(mockBackend.HostSecretRefKey()).WithHTTPOutput()
 	logPipeline.KeepAnnotations(false)
 	logPipeline.DropLabels(false)
 	objs = append(objs, logPipeline.K8sObject())

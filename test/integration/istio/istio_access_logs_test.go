@@ -100,11 +100,11 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 		urls = urlprovider.New()
 	)
 
-	mocksNamespace := kitk8s.NewNamespace(mockNs)
-	objs = append(objs, mocksNamespace.K8sObject())
+	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 	// Mocks namespace objects.
-	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeLogs).Build()
+	mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
+	Expect(err).NotTo(HaveOccurred())
 	objs = append(objs, mockBackend.K8sObjects()...)
 	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
 		mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
@@ -112,7 +112,7 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 
 	// Default namespace objects.
 	istioAccessLogsPipeline := kitlog.NewPipeline("pipeline-istio-access-logs").
-		WithSecretKeyRef(mockBackend.GetHostSecretRefKey()).
+		WithSecretKeyRef(mockBackend.HostSecretRefKey()).
 		WithIncludeContainer([]string{"istio-proxy"}).
 		WithHTTPOutput()
 	objs = append(objs, istioAccessLogsPipeline.K8sObject())

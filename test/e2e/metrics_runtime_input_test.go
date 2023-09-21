@@ -87,25 +87,25 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 	})
 })
 
-func makeMetricsRuntimeInputTestK8sObjects(mocksNamespaceName string, mockDeploymentName string) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
+func makeMetricsRuntimeInputTestK8sObjects(mockNs string, mockDeploymentName string) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
 	var (
 		objs      []client.Object
 		pipelines = kyma.NewPipelineList()
 		urls      = urlprovider.New()
 	)
 
-	mocksNamespace := kitk8s.NewNamespace(mocksNamespaceName)
-	objs = append(objs, kitk8s.NewNamespace(mocksNamespaceName).K8sObject())
+	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 	// Mocks namespace objects.
-	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeMetrics).Build()
+	mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeMetrics)
+	Expect(err).NotTo(HaveOccurred())
 	objs = append(objs, mockBackend.K8sObjects()...)
 	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-		mocksNamespaceName, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+		mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
 	)
 
 	// Default namespace objects.
-	metricPipeline := kitmetric.NewPipeline("pipeline-with-runtime-input-enabled", mockBackend.GetHostSecretRefKey()).RuntimeInput(true)
+	metricPipeline := kitmetric.NewPipeline("pipeline-with-runtime-input-enabled", mockBackend.HostSecretRefKey()).RuntimeInput(true)
 	pipelines.Append(metricPipeline.Name())
 	objs = append(objs, metricPipeline.K8sObject())
 

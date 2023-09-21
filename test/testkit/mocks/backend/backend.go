@@ -47,10 +47,10 @@ type Backend struct {
 	HostSecret       *kitk8s.Secret
 }
 
-func New(namespace, name string, signalType SignalType, setters ...Setter) *Backend {
+func New(name, namespace string, signalType SignalType, setters ...Setter) (*Backend, error) {
 	backend := &Backend{
-		namespace:  namespace,
 		name:       name,
+		namespace:  namespace,
 		signalType: signalType,
 	}
 
@@ -58,7 +58,8 @@ func New(namespace, name string, signalType SignalType, setters ...Setter) *Back
 		setter(backend)
 	}
 
-	return backend
+	err := backend.build()
+	return backend, err
 }
 
 func WithTLS() Setter {
@@ -73,7 +74,32 @@ func WithMetricPipelineOption(option kitmetric.PipelineOption) Setter {
 	}
 }
 
-func (b *Backend) Build() *Backend {
+func WithPersistentHostSecret(persistentHostSecret bool) Setter {
+	return func(b *Backend) {
+		b.PersistentHostSecret = persistentHostSecret
+	}
+}
+
+func (b *Backend) build() error {
+	if b.WithTLS {
+		backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
+		certs, err := testkit.GenerateTLSCerts(backendDNSName)
+		if err != nil {
+			return err
+		}
+		b.TLSCerts = certs
+
+		if b.signalType == SignalTypeMetrics {
+			b.MetricPipelineOptions = append(b.MetricPipelineOptions, getTLSConfigMetricPipelineOption(
+				certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()),
+			)
+		} else {
+			b.TracePipelineOptions = append(b.TracePipelineOptions, getTLSConfigTracePipelineOption(
+				certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()),
+			)
+		}
+	}
+
 	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), TelemetryDataFilename)
 
 	b.ConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.WithTLS, b.TLSCerts)
@@ -94,14 +120,14 @@ func (b *Backend) Build() *Backend {
 	b.HostSecret = kitk8s.NewOpaqueSecret(fmt.Sprintf("%s-receiver-hostname", b.name), defaultNamespaceName,
 		kitk8s.WithStringData("host", endpoint)).Persistent(b.PersistentHostSecret)
 
-	return b
+	return nil
 }
 
 func (b *Backend) Name() string {
 	return b.name
 }
 
-func (b *Backend) GetHostSecretRefKey() *telemetryv1alpha1.SecretKeyRef {
+func (b *Backend) HostSecretRefKey() *telemetryv1alpha1.SecretKeyRef {
 	return b.HostSecret.SecretKeyRef("host")
 }
 
@@ -116,4 +142,40 @@ func (b *Backend) K8sObjects() []client.Object {
 	objects = append(objects, b.ExternalService.K8sObject(kitk8s.WithLabel("app", b.Name())))
 	objects = append(objects, b.HostSecret.K8sObject())
 	return objects
+}
+
+func getTLSConfigMetricPipelineOption(caCertPem, clientCertPem, clientKeyPem string) kitmetric.PipelineOption {
+	return func(metricPipeline telemetryv1alpha1.MetricPipeline) {
+		metricPipeline.Spec.Output.Otlp.TLS = &telemetryv1alpha1.OtlpTLS{
+			Insecure:           false,
+			InsecureSkipVerify: false,
+			CA: telemetryv1alpha1.ValueType{
+				Value: caCertPem,
+			},
+			Cert: telemetryv1alpha1.ValueType{
+				Value: clientCertPem,
+			},
+			Key: telemetryv1alpha1.ValueType{
+				Value: clientKeyPem,
+			},
+		}
+	}
+}
+
+func getTLSConfigTracePipelineOption(caCertPem, clientCertPem, clientKeyPem string) kittrace.PipelineOption {
+	return func(tracePipeline telemetryv1alpha1.TracePipeline) {
+		tracePipeline.Spec.Output.Otlp.TLS = &telemetryv1alpha1.OtlpTLS{
+			Insecure:           false,
+			InsecureSkipVerify: false,
+			CA: telemetryv1alpha1.ValueType{
+				Value: caCertPem,
+			},
+			Cert: telemetryv1alpha1.ValueType{
+				Value: clientCertPem,
+			},
+			Key: telemetryv1alpha1.ValueType{
+				Value: clientKeyPem,
+			},
+		}
+	}
 }

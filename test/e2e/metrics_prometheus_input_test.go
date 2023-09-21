@@ -129,30 +129,31 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 	})
 })
 
-func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDeploymentName string) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
+func makeMetricsPrometheusInputTestK8sObjects(mockNs string, mockDeploymentName string) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
 	var (
 		objs      []client.Object
 		pipelines = kyma.NewPipelineList()
 		urls      = urlprovider.New()
 	)
 
-	mocksNamespace := kitk8s.NewNamespace(mocksNamespaceName)
-	objs = append(objs, kitk8s.NewNamespace(mocksNamespaceName).K8sObject())
+	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 	// Mocks namespace objects.
-	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeMetrics).Build()
-	mockMetricProducer := metricproducer.New(mocksNamespaceName)
+	mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeMetrics)
+	Expect(err).NotTo(HaveOccurred())
+
+	mockMetricProducer := metricproducer.New(mockNs)
 	objs = append(objs, mockBackend.K8sObjects()...)
 	objs = append(objs, []client.Object{
 		mockMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 		mockMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 	}...)
 	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-		mocksNamespaceName, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+		mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
 	)
 
 	// Default namespace objects.
-	metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", mockBackend.GetHostSecretRefKey()).PrometheusInput(true)
+	metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", mockBackend.HostSecretRefKey()).PrometheusInput(true)
 	pipelines.Append(metricPipeline.Name())
 	objs = append(objs, metricPipeline.K8sObject())
 

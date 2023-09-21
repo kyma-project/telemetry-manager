@@ -19,7 +19,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
@@ -46,7 +45,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		BeforeAll(func() {
 			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(
 				mockNs,
-				backend.New(mockNs, mockBackendName, backend.SignalTypeMetrics),
+				[]string{mockBackendName},
 			)
 			pipelines = pipelinesProvider
 			urls = urlProvider
@@ -124,9 +123,8 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		BeforeAll(func() {
 			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(
 				mockNs,
-				backend.New(mockNs, mockBackendName, backend.SignalTypeMetrics,
-					backend.WithMetricPipelineOption(getCumulativeToDeltaConversionMetricPipelineOption()),
-				),
+				[]string{mockBackendName},
+				backend.WithMetricPipelineOption(getCumulativeToDeltaConversionMetricPipelineOption()),
 			)
 			pipelines = pipelinesProvider
 			urls = urlProvider
@@ -256,7 +254,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		BeforeAll(func() {
 			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(
 				mockNs,
-				backend.New(mockNs, mockBackendName, backend.SignalTypeMetrics),
+				[]string{mockBackendName},
 			)
 			pipelines = pipelinesProvider
 			urls = urlProvider
@@ -302,8 +300,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		BeforeAll(func() {
 			k8sObjects, urlProvider, pipelinesProvider := makeMetricsTestK8sObjects(
 				mockNs,
-				backend.New(mockNs, primaryMockDeploymentName, backend.SignalTypeMetrics),
-				backend.New(mockNs, auxiliaryMockDeploymentName, backend.SignalTypeMetrics),
+				[]string{primaryMockDeploymentName, auxiliaryMockDeploymentName},
 			)
 			pipelines = pipelinesProvider
 			urls = urlProvider
@@ -348,7 +345,8 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		BeforeAll(func() {
 			k8sObjects, metricsURLProvider, pipelinesProvider := makeMetricsTestK8sObjects(
 				mockNs,
-				backend.New(mockNs, mockBackendName, backend.SignalTypeMetrics, backend.WithTLS()),
+				[]string{mockBackendName},
+				backend.WithTLS(),
 			)
 			pipelines = pipelinesProvider
 			urls = metricsURLProvider
@@ -415,41 +413,31 @@ func metricPipelineShouldNotBeDeployed(pipelineName string) {
 }
 
 // makeMetricsTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeMetricsTestK8sObjects(namespace string, backends ...*backend.Backend) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
+func makeMetricsTestK8sObjects(mockNs string, mockBackendNames []string, setters ...backend.Setter) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
 	var (
 		objs      []client.Object
 		pipelines = kyma.NewPipelineList()
 		urls      = urlprovider.New()
 	)
 
-	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, mocksNamespace.K8sObject())
+	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-	for _, mockBackend := range backends {
+	for _, backendName := range mockBackendNames {
 		// Mocks namespace objects.
-		mockBackend.PersistentHostSecret = isOperational()
+		setters = append(setters, backend.WithPersistentHostSecret(isOperational()))
+		mockBackend, err := backend.New(backendName, mockNs, backend.SignalTypeMetrics, setters...)
+		Expect(err).NotTo(HaveOccurred())
+		objs = append(objs, mockBackend.K8sObjects()...)
 
-		if mockBackend.WithTLS {
-			backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", mockBackend.Name(), mocksNamespace.Name())
-			certs, err := testkit.GenerateTLSCerts(backendDNSName)
-			Expect(err).NotTo(HaveOccurred())
-			mockBackend.TLSCerts = certs
-			mockBackend.MetricPipelineOptions = append(mockBackend.MetricPipelineOptions, getTLSConfigMetricPipelineOption(
-				certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()),
-			)
-		}
-		mockBackend = mockBackend.Build()
-
-		// Default namespace objects.
+		// Default mockNs objects.
 		metricPipeline := kitmetric.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline"),
-			mockBackend.GetHostSecretRefKey()).Persistent(isOperational())
+			mockBackend.HostSecretRefKey()).Persistent(isOperational())
 		pipelines.Append(metricPipeline.Name())
 
-		objs = append(objs, mockBackend.K8sObjects()...)
 		objs = append(objs, metricPipeline.K8sObject(mockBackend.MetricPipelineOptions...))
 
 		urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-			namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+			mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
 		)
 	}
 
@@ -457,7 +445,7 @@ func makeMetricsTestK8sObjects(namespace string, backends ...*backend.Backend) (
 		kymaSystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP),
 	)
 
-	// Kyma-system namespace objects.
+	// Kyma-system mockNs objects.
 	metricGatewayExternalService := kitk8s.NewService("telemetry-otlp-metrics-external", kymaSystemNamespaceName).
 		WithPort("grpc-otlp", ports.OTLPGRPC).
 		WithPort("http-metrics", ports.Metrics)
@@ -483,24 +471,6 @@ func makeBrokenMetricPipeline(name string) ([]client.Object, string) {
 func getCumulativeToDeltaConversionMetricPipelineOption() kitmetric.PipelineOption {
 	return func(metricPipeline telemetryv1alpha1.MetricPipeline) {
 		metricPipeline.Spec.Output.ConvertToDelta = true
-	}
-}
-
-func getTLSConfigMetricPipelineOption(caCertPem, clientCertPem, clientKeyPem string) kitmetric.PipelineOption {
-	return func(metricPipeline telemetryv1alpha1.MetricPipeline) {
-		metricPipeline.Spec.Output.Otlp.TLS = &telemetryv1alpha1.OtlpTLS{
-			Insecure:           false,
-			InsecureSkipVerify: false,
-			CA: telemetryv1alpha1.ValueType{
-				Value: caCertPem,
-			},
-			Cert: telemetryv1alpha1.ValueType{
-				Value: clientCertPem,
-			},
-			Key: telemetryv1alpha1.ValueType{
-				Value: clientKeyPem,
-			},
-		}
 	}
 }
 

@@ -68,27 +68,27 @@ var _ = Describe("Logging", Label("logging"), func() {
 	})
 })
 
-func makeLogsRegExTestK8sObjects(namespace string, mockDeploymentName, logProducerName string) ([]client.Object, *urlprovider.URLProvider) {
+func makeLogsRegExTestK8sObjects(mockNs string, mockDeploymentName, logProducerName string) ([]client.Object, *urlprovider.URLProvider) {
 	var (
 		objs []client.Object
 		urls = urlprovider.New()
 	)
-	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, mocksNamespace.K8sObject())
+	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 	// Mocks namespace objects.
-	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeLogs).Build()
-	mockLogProducer := logproducer.New(logProducerName, mocksNamespace.Name()).WithAnnotations(map[string]string{
+	mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
+	Expect(err).NotTo(HaveOccurred())
+	mockLogProducer := logproducer.New(logProducerName, mockNs).WithAnnotations(map[string]string{
 		"fluentbit.io/parser": "my-regex-parser",
 	})
 	objs = append(objs, mockBackend.K8sObjects()...)
 	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "regex-parser-testing-service")))
 	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+		mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
 	)
 
 	// Default namespace objects.
-	logHTTPPipeline := kitlog.NewPipeline("pipeline-regex-parser").WithSecretKeyRef(mockBackend.GetHostSecretRefKey()).WithHTTPOutput()
+	logHTTPPipeline := kitlog.NewPipeline("pipeline-regex-parser").WithSecretKeyRef(mockBackend.HostSecretRefKey()).WithHTTPOutput()
 	logRegExParser := kitlog.NewParser("my-regex-parser", configParser)
 	objs = append(objs, logHTTPPipeline.K8sObject())
 	objs = append(objs, logRegExParser.K8sObject())

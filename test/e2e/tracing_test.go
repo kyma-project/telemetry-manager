@@ -22,7 +22,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -50,7 +49,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		BeforeAll(func() {
 			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
 				mockNs,
-				backend.New(mockNs, mockDeploymentName, backend.SignalTypeTraces),
+				[]string{mockDeploymentName},
 			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
@@ -214,7 +213,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		BeforeAll(func() {
 			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
 				mockNs,
-				backend.New(mockNs, mockDeploymentName, backend.SignalTypeTraces),
+				[]string{mockDeploymentName},
 			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
@@ -255,8 +254,7 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		BeforeAll(func() {
 			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
 				mockNs,
-				backend.New(mockNs, primaryMockDeploymentName, backend.SignalTypeTraces),
-				backend.New(mockNs, auxiliaryMockDeploymentName, backend.SignalTypeTraces),
+				[]string{primaryMockDeploymentName, auxiliaryMockDeploymentName},
 			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
@@ -290,7 +288,8 @@ var _ = Describe("Tracing", Label("tracing"), func() {
 		BeforeAll(func() {
 			k8sObjects, tracesURLProvider, pipelinesProvider := makeTracingTestK8sObjects(
 				mockNs,
-				backend.New(mockNs, mockDeploymentName, backend.SignalTypeTraces, backend.WithTLS()),
+				[]string{mockDeploymentName},
+				backend.WithTLS(),
 			)
 			pipelines = pipelinesProvider
 			urls = tracesURLProvider
@@ -376,39 +375,29 @@ func tracePipelineShouldNotBeDeployed(pipelineName string) {
 }
 
 // makeTracingTestK8sObjects returns the list of mandatory E2E test suite k8s objects.
-func makeTracingTestK8sObjects(namespace string, backends ...*backend.Backend) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
+func makeTracingTestK8sObjects(mockNs string, mockBackendNames []string, setters ...backend.Setter) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
 	var (
 		objs      []client.Object
 		pipelines = kyma.NewPipelineList()
 		urls      = urlprovider.New()
 	)
 
-	mocksNamespace := kitk8s.NewNamespace(namespace)
-	objs = append(objs, mocksNamespace.K8sObject())
+	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-	for _, mockBackend := range backends {
+	for _, backendName := range mockBackendNames {
 		// Mocks namespace objects.
-		mockBackend.PersistentHostSecret = isOperational()
-		if mockBackend.WithTLS {
-			backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", mockBackend.Name(), mocksNamespace.Name())
-			certs, err := testkit.GenerateTLSCerts(backendDNSName)
-			Expect(err).NotTo(HaveOccurred())
-			mockBackend.TLSCerts = certs
-			mockBackend.TracePipelineOptions = append(mockBackend.TracePipelineOptions, getTLSConfigTracePipelineOption(
-				certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()),
-			)
-		}
-		mockBackend = mockBackend.Build()
+		setters = append(setters, backend.WithPersistentHostSecret(isOperational()))
+		mockBackend, err := backend.New(backendName, mockNs, backend.SignalTypeTraces, setters...)
+		Expect(err).NotTo(HaveOccurred())
+		objs = append(objs, mockBackend.K8sObjects()...)
 
 		// Default namespace objects.
-		tracePipeline := kittrace.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline"), mockBackend.GetHostSecretRefKey()).Persistent(isOperational())
+		tracePipeline := kittrace.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline"), mockBackend.HostSecretRefKey()).Persistent(isOperational())
 		pipelines.Append(tracePipeline.Name())
-
-		objs = append(objs, mockBackend.K8sObjects()...)
 		objs = append(objs, tracePipeline.K8sObject(mockBackend.TracePipelineOptions...))
 
 		urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-			namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+			mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
 		)
 	}
 
@@ -433,24 +422,6 @@ func makeBrokenTracePipeline(name string) ([]client.Object, string) {
 		hostSecret.K8sObject(),
 		tracePipeline.K8sObject(),
 	}, tracePipeline.Name()
-}
-
-func getTLSConfigTracePipelineOption(caCertPem, clientCertPem, clientKeyPem string) kittrace.PipelineOption {
-	return func(tracePipeline telemetryv1alpha1.TracePipeline) {
-		tracePipeline.Spec.Output.Otlp.TLS = &telemetryv1alpha1.OtlpTLS{
-			Insecure:           false,
-			InsecureSkipVerify: false,
-			CA: telemetryv1alpha1.ValueType{
-				Value: caCertPem,
-			},
-			Cert: telemetryv1alpha1.ValueType{
-				Value: clientCertPem,
-			},
-			Key: telemetryv1alpha1.ValueType{
-				Value: clientKeyPem,
-			},
-		}
-	}
 }
 
 func makeAndSendTraces(otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map) {

@@ -24,7 +24,7 @@ import (
 var _ = Describe("Istio metrics", Label("metrics"), func() {
 	const (
 		mockNs                           = "istio-metric-mock"
-		mockBackendName                  = "metric-agent-receiver"
+		mockDeploymentName               = "metric-agent-receiver"
 		httpsAnnotatedMetricProducerName = "metric-producer-https"
 		httpAnnotatedMetricProducerName  = "metric-producer-http"
 		unannotatedMetricProducerName    = "metric-producer"
@@ -41,7 +41,8 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		// Mocks namespace objects
-		mockBackend := backend.New(mockNs, mockBackendName, backend.SignalTypeMetrics).Build()
+		mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeMetrics)
+		Expect(err).NotTo(HaveOccurred())
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
 			mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
@@ -60,7 +61,7 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		}...)
 
 		// Default namespace objects
-		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", mockBackend.GetHostSecretRefKey()).
+		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", mockBackend.HostSecretRefKey()).
 			PrometheusInput(true)
 		objs = append(objs, metricPipeline.K8sObject())
 
@@ -88,7 +89,7 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 
 		It("Should have a metrics backend running", func() {
 			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockBackendName, Namespace: mockNs}
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
@@ -107,15 +108,15 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		// targets discovered via annotated pods must have no service label
 		Context("Annotated pods", func() {
 			It("Should scrape if prometheus.io/scheme=https", func() {
-				podScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockBackendName), httpsAnnotatedMetricProducerName)
+				podScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), httpsAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme=http", func() {
-				podScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockBackendName), httpAnnotatedMetricProducerName)
+				podScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), httpAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme unset", func() {
-				podScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockBackendName), unannotatedMetricProducerName)
+				podScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), unannotatedMetricProducerName)
 			})
 		})
 
@@ -123,15 +124,15 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		// targets discovered via annotated service must have the service label
 		Context("Annotated services", func() {
 			It("Should scrape if prometheus.io/scheme=https", func() {
-				serviceScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockBackendName), httpsAnnotatedMetricProducerName)
+				serviceScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), httpsAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme=http", func() {
-				serviceScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockBackendName), httpAnnotatedMetricProducerName)
+				serviceScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), httpAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme unset", func() {
-				serviceScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockBackendName), unannotatedMetricProducerName)
+				serviceScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), unannotatedMetricProducerName)
 			})
 		})
 	})
