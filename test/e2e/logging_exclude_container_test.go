@@ -62,7 +62,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					Not(ContainLogs(WithContainer("log-producer"))))))
+					Not(ContainLogs(WithContainer(logProducerName))))))
 			}, telemetryDeliveryTimeout, interval).Should(Succeed())
 		})
 
@@ -90,7 +90,7 @@ func makeLogsTestExcludeContainerK8sObjects(namespace string, mockDeploymentName
 	logPipeline := kitlog.NewPipeline("pipeline-exclude-container").
 		WithSecretKeyRef(mockBackend.GetHostSecretRefKey()).
 		WithHTTPOutput().
-		WithExcludeContainer([]string{"log-producer"})
+		WithExcludeContainer([]string{logProducerName})
 	objs = append(objs, logPipeline.K8sObject())
 
 	return objs, urls

@@ -78,7 +78,7 @@ func makeLogsDeDotTestK8sObjects(namespace string, mockDeploymentName, logProduc
 	logPipeline := kitlog.NewPipeline("pipeline-dedot-test").
 		WithSecretKeyRef(mockBackend.GetHostSecretRefKey()).
 		WithHTTPOutput().
-		WithIncludeContainer([]string{"log-producer"})
+		WithIncludeContainer([]string{logProducerName})
 	objs = append(objs, logPipeline.K8sObject())
 
 	return objs, urls
