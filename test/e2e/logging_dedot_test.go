@@ -73,7 +73,7 @@ func makeLogsDeDotTestK8sObjects(namespace string, mockDeploymentName, logProduc
 	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
 		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
 	)
-	
+
 	// Default namespace objects.
 	logPipeline := kitlog.NewPipeline("pipeline-dedot-test").
 		WithSecretKeyRef(mockBackend.GetHostSecretRefKey()).
