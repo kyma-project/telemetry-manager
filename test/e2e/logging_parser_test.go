@@ -83,16 +83,15 @@ func makeLogsRegExTestK8sObjects(namespace string, mockDeploymentName, logProduc
 	})
 	objs = append(objs, mockBackend.K8sObjects()...)
 	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "regex-parser-testing-service")))
+	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
+		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+	)
 
 	// Default namespace objects.
 	logHTTPPipeline := kitlog.NewPipeline("pipeline-regex-parser").WithSecretKeyRef(mockBackend.GetHostSecretRefKey()).WithHTTPOutput()
 	logRegExParser := kitlog.NewParser("my-regex-parser", configParser)
 	objs = append(objs, logHTTPPipeline.K8sObject())
 	objs = append(objs, logRegExParser.K8sObject())
-
-	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
-	)
 
 	return objs, urls
 }

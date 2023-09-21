@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
 	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
@@ -35,7 +36,7 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 		var (
 			urls               *urlprovider.URLProvider
 			tracePipelineName  string
-			traceCollectorname = types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
+			traceCollectorName = types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
 		)
 
 		BeforeAll(func() {
@@ -77,7 +78,7 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 
 		It("Should have a running trace collector deployment", func() {
 			Eventually(func(g Gomega) {
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, traceCollectorname)
+				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, traceCollectorName)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
 			}, timeout, interval).Should(Succeed())
@@ -118,7 +119,7 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 			proxyAttrs.PutStr("component", "proxy")
 
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport())
+				resp, err := proxyClient.Get(urls.MockBackendExport(mockDeploymentName))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -132,7 +133,7 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 			customResourceAttr.PutStr("service.name", "monitoring-custom-metrics")
 
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport())
+				resp, err := proxyClient.Get(urls.MockBackendExport(mockDeploymentName))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -146,48 +147,34 @@ func makeIstioTracingK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) 
 	var (
 		objs []client.Object
 		urls = urlprovider.New()
-
-		grpcOTLPPort    = 4317
-		httpOTLPPort    = 4318
-		httpWebPort     = 80
-		httpMetricsPort = 8888
 	)
 
 	mocksNamespace := kitk8s.NewNamespace(mockNs)
-	objs = append(objs, mocksNamespace.K8sObject())
+	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-	// Mocks namespace objects.
-	mockBackend := backend.New(mockDeploymentName, mocksNamespace.Name(), "/traces/"+telemetryDataFilename, backend.SignalTypeTraces)
-	mockBackendConfigMap := mockBackend.ConfigMap("trace-receiver-config")
-	mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
-	mockBackendExternalService := mockBackend.ExternalService().
-		WithPort("grpc-otlp", grpcOTLPPort).
-		WithPort("http-otlp", httpOTLPPort).
-		WithPort("http-web", httpWebPort)
+	// Mocks namespace objects
+	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeTraces).Build()
+	objs = append(objs, mockBackend.K8sObjects()...)
+	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
+		mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+	)
 
-	traceEndpointURL := mockBackendExternalService.OTLPGrpcEndpointURL(grpcOTLPPort)
-	hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("trace-host", traceEndpointURL))
-	istioTracePipeline := kittrace.NewPipeline("pipeline-istio-traces", hostSecret.SecretKeyRef("trace-host"))
+	// Default namespace objects
+	istioTracePipeline := kittrace.NewPipeline("pipeline-istio-traces", mockBackend.GetHostSecretRefKey())
+	objs = append(objs, istioTracePipeline.K8sObject())
 
-	// Kyma-system namespace objects.
+	// Kyma-system namespace objects
 	traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kymaSystemNamespaceName).
-		WithPort("grpc-otlp", grpcOTLPPort).
-		WithPort("http-metrics", httpMetricsPort)
-	urls.SetMetrics(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", httpMetricsPort))
+		WithPort("grpc-otlp", ports.OTLPGRPC).
+		WithPort("http-metrics", ports.Metrics)
+	urls.SetMetrics(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
+	objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")))
 
+	// Sample App namespace objects
 	// Abusing metrics provider for istio traces
 	sampleApp := metricproducer.New(sampleAppNs, metricproducer.WithName("trace-emitter"))
-
-	objs = append(objs, []client.Object{
-		mockBackendConfigMap.K8sObject(),
-		mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-		sampleApp.Pod().K8sObject(),
-		hostSecret.K8sObject(),
-		istioTracePipeline.K8sObject(),
-		traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")),
-	}...)
-	urls.SetMockBackendExport(proxyClient.ProxyURLForService(mocksNamespace.Name(), mockBackend.Name(), telemetryDataFilename, httpWebPort), 0)
+	objs = append(objs, sampleApp.Pod().K8sObject())
 	urls.SetMetricPodURL(proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
+
 	return objs, urls, istioTracePipeline.Name()
 }

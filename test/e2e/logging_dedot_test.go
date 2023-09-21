@@ -70,6 +70,10 @@ func makeLogsDeDotTestK8sObjects(namespace string, mockDeploymentName, logProduc
 	mockLogProducer := logproducer.New(logProducerName, mocksNamespace.Name())
 	objs = append(objs, mockBackend.K8sObjects()...)
 	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("dedot.label", "logging-dedot-value")))
+	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
+		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+	)
+	
 	// Default namespace objects.
 	logPipeline := kitlog.NewPipeline("pipeline-dedot-test").
 		WithSecretKeyRef(mockBackend.GetHostSecretRefKey()).
@@ -77,8 +81,5 @@ func makeLogsDeDotTestK8sObjects(namespace string, mockDeploymentName, logProduc
 		WithIncludeContainer([]string{"log-producer"})
 	objs = append(objs, logPipeline.K8sObject())
 
-	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
-	)
 	return objs, urls
 }

@@ -37,7 +37,7 @@ func NewExternalService(name, namespace string, signalType SignalType) *External
 }
 
 func (s *ExternalService) OTLPGrpcEndpointURL() string {
-	port, _ := s.Ports[OTLPGRPCServiceName]
+	port := s.Ports[OTLPGRPCServiceName]
 
 	return fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", s.name, s.namespace, port)
 }

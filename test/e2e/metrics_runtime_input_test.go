@@ -100,14 +100,14 @@ func makeMetricsRuntimeInputTestK8sObjects(mocksNamespaceName string, mockDeploy
 	// Mocks namespace objects.
 	mockBackend := backend.New(mocksNamespace.Name(), mockDeploymentName, backend.SignalTypeMetrics).Build()
 	objs = append(objs, mockBackend.K8sObjects()...)
+	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
+		mocksNamespaceName, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+	)
 
 	// Default namespace objects.
 	metricPipeline := kitmetric.NewPipeline("pipeline-with-runtime-input-enabled", mockBackend.GetHostSecretRefKey()).RuntimeInput(true)
 	pipelines.Append(metricPipeline.Name())
 	objs = append(objs, metricPipeline.K8sObject())
 
-	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-		mocksNamespaceName, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
-	)
 	return objs, urls, pipelines
 }

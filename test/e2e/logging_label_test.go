@@ -77,6 +77,9 @@ func makeLogsLabelTestK8sObjects(namespace string, mockDeploymentName, logProduc
 		WithAnnotations(map[string]string{"release": "v1.0.0"})
 	objs = append(objs, mockBackend.K8sObjects()...)
 	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-label-test")))
+	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
+		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+	)
 
 	// Default namespace objects.
 	logPipeline := kitlog.NewPipeline("pipeline-label-test").WithSecretKeyRef(mockBackend.GetHostSecretRefKey()).WithHTTPOutput()
@@ -84,8 +87,5 @@ func makeLogsLabelTestK8sObjects(namespace string, mockDeploymentName, logProduc
 	logPipeline.DropLabels(false)
 	objs = append(objs, logPipeline.K8sObject())
 
-	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
-	)
 	return objs, urls
 }

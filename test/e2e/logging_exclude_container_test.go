@@ -82,6 +82,9 @@ func makeLogsTestExcludeContainerK8sObjects(namespace string, mockDeploymentName
 	mockLogProducer := logproducer.New(logProducerName, mocksNamespace.Name())
 	objs = append(objs, mockBackend.K8sObjects()...)
 	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
+	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
+		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+	)
 
 	// Default namespace objects.
 	logPipeline := kitlog.NewPipeline("pipeline-exclude-container").
@@ -90,8 +93,5 @@ func makeLogsTestExcludeContainerK8sObjects(namespace string, mockDeploymentName
 		WithExcludeContainer([]string{"log-producer"})
 	objs = append(objs, logPipeline.K8sObject())
 
-	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
-	)
 	return objs, urls
 }

@@ -97,9 +97,9 @@ func logBackendShouldBeRunning(mockDeploymentName, mockNs string) {
 	}, timeout*2, interval).Should(Succeed())
 }
 
-func logsShouldBeDelivered(logProducerName string, mockBackendExportUrl string) {
+func logsShouldBeDelivered(logProducerName string, proxyURL string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(mockBackendExportUrl)
+		resp, err := proxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
@@ -122,6 +122,9 @@ func makeLogDeliveryTestK8sObjects(namespace string, mockDeploymentName string, 
 	mockLogProducer := logproducer.New(logProducerName, mocksNamespace.Name())
 	objs = append(objs, mockBackend.K8sObjects()...)
 	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
+	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
+		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+	)
 
 	// Default namespace objects.
 	var logPipeline *kitlog.Pipeline
@@ -132,8 +135,5 @@ func makeLogDeliveryTestK8sObjects(namespace string, mockDeploymentName string, 
 	}
 	objs = append(objs, logPipeline.K8sObject())
 
-	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-		namespace, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
-	)
 	return objs, urls
 }

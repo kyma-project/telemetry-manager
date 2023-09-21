@@ -557,11 +557,3 @@ func metricsShouldBeDelivered(proxyURL string, metrics []pmetric.Metric) {
 		g.Expect(err).NotTo(HaveOccurred())
 	}, timeout, interval).Should(Succeed())
 }
-
-func suffixize(name string, idx int) string {
-	if idx == 0 {
-		return name
-	}
-
-	return fmt.Sprintf("%s-%d", name, idx)
-}

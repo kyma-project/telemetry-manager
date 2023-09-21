@@ -147,14 +147,14 @@ func makeMetricsPrometheusInputTestK8sObjects(mocksNamespaceName string, mockDep
 		mockMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 		mockMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 	}...)
+	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
+		mocksNamespaceName, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+	)
 
 	// Default namespace objects.
 	metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", mockBackend.GetHostSecretRefKey()).PrometheusInput(true)
 	pipelines.Append(metricPipeline.Name())
 	objs = append(objs, metricPipeline.K8sObject())
 
-	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-		mocksNamespaceName, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
-	)
 	return objs, urls, pipelines
 }
