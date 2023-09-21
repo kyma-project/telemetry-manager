@@ -154,7 +154,7 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 					"LogComponentsHealthy": {
 						Status:  "False",
 						Reason:  "ResourceBlocksDeletion",
-						Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources LogPipelines: (telemetry-test)",
+						Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (telemetry-test)",
 					},
 					"MetricComponentsHealthy": {
 						Status:  "True",
