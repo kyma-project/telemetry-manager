@@ -7,10 +7,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
-	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/fluentd"
 )
 
@@ -33,12 +31,9 @@ type Backend struct {
 	namespace  string
 	signalType SignalType
 
-	PersistentHostSecret bool
-	WithTLS              bool
-	TLSCerts             testkit.TLSCerts
-
-	TracePipelineOptions  []kittrace.PipelineOption
-	MetricPipelineOptions []kitmetric.PipelineOption
+	persistentHostSecret bool
+	withTLS              bool
+	TLSCerts             TLSCerts
 
 	ConfigMap        *ConfigMap
 	FluentDConfigMap *fluentd.ConfigMap
@@ -65,45 +60,29 @@ func New(name, namespace string, signalType SignalType, opts ...Option) *Backend
 
 func WithTLS() Option {
 	return func(b *Backend) {
-		b.WithTLS = true
-	}
-}
-
-func WithMetricPipelineOption(option kitmetric.PipelineOption) Option {
-	return func(b *Backend) {
-		b.MetricPipelineOptions = append(b.MetricPipelineOptions, option)
+		b.withTLS = true
 	}
 }
 
 func WithPersistentHostSecret(persistentHostSecret bool) Option {
 	return func(b *Backend) {
-		b.PersistentHostSecret = persistentHostSecret
+		b.persistentHostSecret = persistentHostSecret
 	}
 }
 
 func (b *Backend) buildResources() {
-	if b.WithTLS {
+	if b.withTLS {
 		backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
-		certs, err := testkit.GenerateTLSCerts(backendDNSName)
+		certs, err := GenerateTLSCerts(backendDNSName)
 		if err != nil {
 			panic(fmt.Errorf("could not generate TLS certs: %v", err))
 		}
 		b.TLSCerts = certs
-
-		if b.signalType == SignalTypeMetrics {
-			b.MetricPipelineOptions = append(b.MetricPipelineOptions, getTLSConfigMetricPipelineOption(
-				certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()),
-			)
-		} else {
-			b.TracePipelineOptions = append(b.TracePipelineOptions, getTLSConfigTracePipelineOption(
-				certs.CaCertPem.String(), certs.ClientCertPem.String(), certs.ClientKeyPem.String()),
-			)
-		}
 	}
 
 	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), TelemetryDataFilename)
 
-	b.ConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.WithTLS, b.TLSCerts)
+	b.ConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.withTLS, b.TLSCerts)
 	b.Deployment = NewDeployment(b.name, b.namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.signalType)
 	if b.signalType == SignalTypeLogs {
 		b.FluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace)
@@ -119,7 +98,7 @@ func (b *Backend) buildResources() {
 		endpoint = b.ExternalService.OTLPGrpcEndpointURL()
 	}
 	b.HostSecret = kitk8s.NewOpaqueSecret(fmt.Sprintf("%s-receiver-hostname", b.name), defaultNamespaceName,
-		kitk8s.WithStringData("host", endpoint)).Persistent(b.PersistentHostSecret)
+		kitk8s.WithStringData("host", endpoint)).Persistent(b.persistentHostSecret)
 }
 
 func (b *Backend) Name() string {
@@ -128,6 +107,10 @@ func (b *Backend) Name() string {
 
 func (b *Backend) HostSecretRefKey() *telemetryv1alpha1.SecretKeyRef {
 	return b.HostSecret.SecretKeyRef("host")
+}
+
+func (b *Backend) TelemetryExportURL(proxyClient *apiserver.ProxyClient) string {
+	return proxyClient.ProxyURLForService(b.namespace, b.name, TelemetryDataFilename, HTTPWebPort)
 }
 
 func (b *Backend) K8sObjects() []client.Object {
@@ -141,40 +124,4 @@ func (b *Backend) K8sObjects() []client.Object {
 	objects = append(objects, b.ExternalService.K8sObject(kitk8s.WithLabel("app", b.Name())))
 	objects = append(objects, b.HostSecret.K8sObject())
 	return objects
-}
-
-func getTLSConfigMetricPipelineOption(caCertPem, clientCertPem, clientKeyPem string) kitmetric.PipelineOption {
-	return func(metricPipeline telemetryv1alpha1.MetricPipeline) {
-		metricPipeline.Spec.Output.Otlp.TLS = &telemetryv1alpha1.OtlpTLS{
-			Insecure:           false,
-			InsecureSkipVerify: false,
-			CA: telemetryv1alpha1.ValueType{
-				Value: caCertPem,
-			},
-			Cert: telemetryv1alpha1.ValueType{
-				Value: clientCertPem,
-			},
-			Key: telemetryv1alpha1.ValueType{
-				Value: clientKeyPem,
-			},
-		}
-	}
-}
-
-func getTLSConfigTracePipelineOption(caCertPem, clientCertPem, clientKeyPem string) kittrace.PipelineOption {
-	return func(tracePipeline telemetryv1alpha1.TracePipeline) {
-		tracePipeline.Spec.Output.Otlp.TLS = &telemetryv1alpha1.OtlpTLS{
-			Insecure:           false,
-			InsecureSkipVerify: false,
-			CA: telemetryv1alpha1.ValueType{
-				Value: caCertPem,
-			},
-			Cert: telemetryv1alpha1.ValueType{
-				Value: clientCertPem,
-			},
-			Key: telemetryv1alpha1.ValueType{
-				Value: clientKeyPem,
-			},
-		}
-	}
 }

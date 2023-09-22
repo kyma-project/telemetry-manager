@@ -13,9 +13,7 @@ import (
 )
 
 var _ = Describe("Logging", Label("logging"), func() {
-
 	Context("When a validating webhook exists", Ordered, func() {
-
 		BeforeAll(func() {
 			Eventually(func(g Gomega) {
 				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration

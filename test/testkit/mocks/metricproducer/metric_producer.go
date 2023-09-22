@@ -95,15 +95,15 @@ type Service struct {
 	annotations map[string]string
 }
 
-type Options = func(mp *MetricProducer)
+type Option = func(mp *MetricProducer)
 
-func WithName(name string) Options {
+func WithName(name string) Option {
 	return func(mp *MetricProducer) {
 		mp.name = name
 	}
 }
 
-func New(namespace string, opts ...Options) *MetricProducer {
+func New(namespace string, opts ...Option) *MetricProducer {
 	mp := &MetricProducer{
 		name:      "metric-producer",
 		namespace: namespace,

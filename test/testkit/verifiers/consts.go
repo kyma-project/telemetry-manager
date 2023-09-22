@@ -1,6 +1,4 @@
-//go:build e2e
-
-package e2e
+package verifiers
 
 import (
 	"time"
@@ -9,10 +7,9 @@ import (
 )
 
 const (
-	timeout                  = time.Second * 60
-	reconciliationTimeout    = time.Second * 10
-	telemetryDeliveryTimeout = time.Second * 20
-	interval                 = time.Millisecond * 250
+	timeout               = time.Second * 60
+	interval              = time.Millisecond * 250
+	reconciliationTimeout = time.Second * 10
 
 	defaultNamespaceName    = "default"
 	kymaSystemNamespaceName = "kyma-system"

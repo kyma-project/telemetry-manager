@@ -7,30 +7,53 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
+	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
-	Context("When a metricpipeline exists", Ordered, func() {
-		var (
-			pipelines          *kyma.PipelineList
-			urls               *urlprovider.URLProvider
-			mockDeploymentName = "metric-agent-receiver"
-			mockNs             = "metric-prometheus-input"
-		)
+var _ = Describe("Metrics", Label("metrics"), func() {
+	const (
+		mockNs          = "metric-prometheus-input"
+		mockBackendName = "metric-agent-receiver"
+	)
 
+	var (
+		pipelineName       string
+		telemetryExportURL string
+	)
+
+	makeResources := func() []client.Object {
+		var objs []client.Object
+		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+
+		// Mocks namespace objects.
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
+		mockMetricProducer := metricproducer.New(mockNs)
+		objs = append(objs, mockBackend.K8sObjects()...)
+		objs = append(objs, []client.Object{
+			mockMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+			mockMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+		}...)
+		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+
+		// Default namespace objects.
+		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", mockBackend.HostSecretRefKey()).PrometheusInput(true)
+		pipelineName = metricPipeline.Name()
+		objs = append(objs, metricPipeline.K8sObject())
+
+		return objs
+	}
+
+	Context("When a metricpipeline with prometheus input exists", Ordered, func() {
 		BeforeAll(func() {
-			k8sObjects, urlProvider, pipelinesProvider := makeMetricsPrometheusInputTestK8sObjects(mockNs, mockDeploymentName)
-			pipelines = pipelinesProvider
-			urls = urlProvider
+			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -40,25 +63,25 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			deploymentShouldBeReady(metricGatewayBaseName, kymaSystemNamespaceName)
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, metricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			deploymentShouldBeReady(mockDeploymentName, mockNs)
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			daemonsetShouldBeReady(metricAgentBaseName, kymaSystemNamespaceName)
+			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, metricAgentName)
 		})
 
 		It("Should have a running pipeline", func() {
-			metricPipelineShouldBeRunning(pipelines.First())
+			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should verify custom metric scraping via annotated pods", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport(mockDeploymentName))
+				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
@@ -87,7 +110,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 
 		It("Should verify custom metric scraping via annotated services", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport(mockDeploymentName))
+				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
@@ -118,7 +141,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 
 		It("Should verify no kubelet metrics", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport(mockDeploymentName))
+				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -128,33 +151,3 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		})
 	})
 })
-
-func makeMetricsPrometheusInputTestK8sObjects(mockNs string, mockDeploymentName string) ([]client.Object, *urlprovider.URLProvider, *kyma.PipelineList) {
-	var (
-		objs      []client.Object
-		pipelines = kyma.NewPipelineList()
-		urls      = urlprovider.New()
-	)
-
-	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
-
-	// Mocks namespace objects.
-	mockBackend := backend.New(mockDeploymentName, mockNs, backend.SignalTypeMetrics)
-
-	mockMetricProducer := metricproducer.New(mockNs)
-	objs = append(objs, mockBackend.K8sObjects()...)
-	objs = append(objs, []client.Object{
-		mockMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-		mockMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-	}...)
-	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-		mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
-	)
-
-	// Default namespace objects.
-	metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", mockBackend.HostSecretRefKey()).PrometheusInput(true)
-	pipelines.Append(metricPipeline.Name())
-	objs = append(objs, metricPipeline.K8sObject())
-
-	return objs, urls, pipelines
-}
