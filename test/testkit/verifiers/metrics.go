@@ -38,8 +38,7 @@ func MetricPipelineShouldStayPending(ctx context.Context, k8sClient client.Clien
 func MetricGatewayConfigShouldContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
-		metricGatewayName
-		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
+		g.Expect(k8sClient.Get(ctx, metricGatewayName, &collectorConfig)).To(Succeed())
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return strings.Contains(configString, pipelineAlias)
@@ -49,17 +48,16 @@ func MetricGatewayConfigShouldContainPipeline(ctx context.Context, k8sClient cli
 func MetricGatewayConfigShouldNotContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Consistently(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
-		metricGatewayName
-		g.Expect(k8sClient.Get(ctx, key, &collectorConfig)).To(Succeed())
+		g.Expect(k8sClient.Get(ctx, metricGatewayName, &collectorConfig)).To(Succeed())
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return !strings.Contains(configString, pipelineAlias)
 	}, reconciliationTimeout, interval).Should(BeTrue())
 }
 
-func MetricsShouldBeDelivered(proxyClient *apiserver.ProxyClient, proxyURL string, metrics []pmetric.Metric) {
+func MetricsShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL string, metrics []pmetric.Metric) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(proxyURL)
+		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(ConsistOfMds(WithMetrics(BeEquivalentTo(metrics)))))

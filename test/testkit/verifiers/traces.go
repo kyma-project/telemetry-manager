@@ -38,7 +38,7 @@ func TracePipelineShouldStayPending(ctx context.Context, k8sClient client.Client
 func TraceCollectorConfigShouldContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
-		g.Expect(k8sClient.Get(ctx, traceCollectorName, &collectorConfig)).To(Succeed())
+		g.Expect(k8sClient.Get(ctx, traceGatewayName, &collectorConfig)).To(Succeed())
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return strings.Contains(configString, pipelineAlias)
@@ -48,16 +48,16 @@ func TraceCollectorConfigShouldContainPipeline(ctx context.Context, k8sClient cl
 func TraceCollectorConfigShouldNotContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Consistently(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
-		g.Expect(k8sClient.Get(ctx, traceCollectorName, &collectorConfig)).To(Succeed())
+		g.Expect(k8sClient.Get(ctx, traceGatewayName, &collectorConfig)).To(Succeed())
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return !strings.Contains(configString, pipelineAlias)
 	}, reconciliationTimeout, interval).Should(BeTrue())
 }
 
-func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, proxyURL string, traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attrs pcommon.Map) {
+func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL string, traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attrs pcommon.Map) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(proxyURL)
+		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(SatisfyAll(

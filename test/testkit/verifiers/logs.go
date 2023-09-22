@@ -9,9 +9,9 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-func LogsShouldBeDelivered(proxyClient *apiserver.ProxyClient, logProducerName string, proxyURL string) {
+func LogsShouldBeDelivered(proxyClient *apiserver.ProxyClient, logProducerName string, telemetryExportURL string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(proxyURL)
+		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
