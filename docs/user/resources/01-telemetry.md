@@ -23,12 +23,6 @@ Status:
       grpc: http://telemetry-otlp-traces.kyma-system:4317
       http: http://telemetry-otlp-traces.kyma-system:4318
   conditions:
-  - lastTransitionTime: "2023-09-01T15:11:09Z"
-    message: installation is ready and resources can be used
-    observedGeneration: 2
-    reason: Ready
-    status: "True"
-    type: Installation
   - lastTransitionTime: "2023-09-01T15:28:28Z"
     message: Fluent Bit DaemonSet is ready
     observedGeneration: 2
