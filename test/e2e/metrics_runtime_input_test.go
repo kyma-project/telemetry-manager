@@ -22,7 +22,7 @@ var (
 	kubeletMetricAttributes = []string{"k8s.cluster.name", "k8s.container.name", "k8s.namespace.name", "k8s.node.name", "k8s.pod.name", "k8s.pod.uid"}
 )
 
-var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
+var _ = Describe("Metrics", Label("metrics"), func() {
 	const (
 		mockNs          = "metric-runtime-input-mocks"
 		mockBackendName = "metric-agent-receiver"
@@ -48,7 +48,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 		return objs
 	}
 
-	Context("When a metricpipeline exists", Ordered, func() {
+	Context("When a metricpipeline with runtime input exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 

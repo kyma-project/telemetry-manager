@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
 )
 
-var _ = Describe("Logging", Label("logging"), func() {
+var _ = Describe("Logs", Label("logging"), func() {
 	const (
 		mockNs          = "log-keep-label-mocks"
 		mockBackendName = "log-receiver-label"

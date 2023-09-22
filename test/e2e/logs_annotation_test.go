@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logging", Label("logging"), func() {
+var _ = Describe("Logs", Label("logging"), func() {
 	const (
 		mockNs          = "log-keep-anno-mocks"
 		mockBackendName = "log-receiver-annotation"

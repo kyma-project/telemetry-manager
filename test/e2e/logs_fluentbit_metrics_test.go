@@ -21,7 +21,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-var _ = Describe("Logging", Label("logging"), func() {
+var _ = Describe("Logs", Label("logging"), func() {
 
 	const (
 		telemetryFluentbitName              = "telemetry-fluent-bit"

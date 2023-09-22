@@ -12,7 +12,7 @@ import (
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 )
 
-var _ = Describe("Logging", Label("logging"), func() {
+var _ = Describe("Logs", Label("logging"), func() {
 	Context("When a validating webhook exists", Ordered, func() {
 		BeforeAll(func() {
 			Eventually(func(g Gomega) {
