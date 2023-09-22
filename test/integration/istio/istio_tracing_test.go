@@ -152,8 +152,7 @@ func makeIstioTracingK8sObjects(mockNs, mockDeploymentName, sampleAppNs string) 
 	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 	// Mocks namespace objects
-	mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeTraces)
-	Expect(err).NotTo(HaveOccurred())
+	mockBackend := backend.New(mockDeploymentName, mockNs, backend.SignalTypeTraces)
 	objs = append(objs, mockBackend.K8sObjects()...)
 	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
 		mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),

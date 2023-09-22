@@ -41,8 +41,7 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		// Mocks namespace objects
-		mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeMetrics)
-		Expect(err).NotTo(HaveOccurred())
+		mockBackend := backend.New(mockDeploymentName, mockNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
 			mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
