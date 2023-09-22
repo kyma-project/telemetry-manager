@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -34,8 +35,7 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 	)
 
 	var (
-		urls               *urlprovider.URLProvider
-		traceCollectorName = types.NamespacedName{Name: traceCollectorBaseName, Namespace: kymaSystemNamespaceName}
+		urls *urlprovider.URLProvider
 	)
 
 	makeResources := func() []client.Object {
@@ -50,10 +50,10 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 		istioTracePipeline := kittrace.NewPipeline(pipelineName, mockBackend.HostSecretRefKey())
 		objs = append(objs, istioTracePipeline.K8sObject())
 
-		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kymaSystemNamespaceName).
+		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.KymaSystemNamespaceName).
 			WithPort("grpc-otlp", ports.OTLPGRPC).
 			WithPort("http-metrics", ports.Metrics)
-		urls.SetMetrics(proxyClient.ProxyURLForService(kymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
+		urls.SetMetrics(proxyClient.ProxyURLForService(kitkyma.KymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
 		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")))
 
 		// Abusing metrics provider for istio traces
@@ -96,7 +96,7 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 		})
 
 		It("Should have a running trace collector deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, traceCollectorName)
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have the trace pipeline running", func() {

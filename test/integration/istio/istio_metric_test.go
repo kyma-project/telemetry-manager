@@ -15,6 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
@@ -30,8 +31,6 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 	)
 	var (
 		telemetryExportURL string
-		metricGatewayName  = types.NamespacedName{Name: "telemetry-metric-gateway", Namespace: kymaSystemNamespaceName}
-		metricAgentName    = types.NamespacedName{Name: "telemetry-metric-agent", Namespace: kymaSystemNamespaceName}
 	)
 
 	makeResources := func() []client.Object {
@@ -76,7 +75,7 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, metricGatewayName)
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
@@ -84,7 +83,7 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, metricAgentName)
+			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
 		// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod

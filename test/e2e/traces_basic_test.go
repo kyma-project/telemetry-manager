@@ -16,6 +16,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
@@ -49,16 +50,16 @@ var _ = Describe("Traces", Label("tracing"), func() {
 		objs = append(objs, pipeline.K8sObject())
 
 		urls.SetOTLPPush(proxyClient.ProxyURLForService(
-			kymaSystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
+			kitkyma.KymaSystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
 		)
 
-		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kymaSystemNamespaceName).
+		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.KymaSystemNamespaceName).
 			WithPort("grpc-otlp", ports.OTLPGRPC).
 			WithPort("http-metrics", ports.Metrics)
 		urls.SetMetrics(proxyClient.ProxyURLForService(
-			kymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
+			kitkyma.KymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
 
-		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", traceCollectorBaseName)))
+		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", kitkyma.TraceGatewayBaseName)))
 		return objs
 	}
 
@@ -73,14 +74,14 @@ var _ = Describe("Traces", Label("tracing"), func() {
 		})
 
 		It("Should have a running trace gateway deployment", Label(operationalTest), func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, traceCollectorName)
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 
 		})
 
 		It("Should have 2 trace gateway replicas", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
-				err := k8sClient.Get(ctx, traceCollectorName, &deployment)
+				err := k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
 				g.Expect(err).NotTo(HaveOccurred())
 				return *deployment.Spec.Replicas
 			}, timeout, interval).Should(Equal(int32(2)))
@@ -109,16 +110,15 @@ var _ = Describe("Traces", Label("tracing"), func() {
 
 		It("Should have a working network policy", Label(operationalTest), func() {
 			var networkPolicy networkingv1.NetworkPolicy
-			key := types.NamespacedName{Name: traceCollectorBaseName + "-pprof-deny-ingress", Namespace: kymaSystemNamespaceName}
-			Expect(k8sClient.Get(ctx, key, &networkPolicy)).To(Succeed())
+			Expect(k8sClient.Get(ctx, kitkyma.TraceGatewayNetworkPolicy, &networkPolicy)).To(Succeed())
 
 			Eventually(func(g Gomega) {
 				var podList corev1.PodList
-				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kymaSystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": traceCollectorBaseName})).To(Succeed())
+				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kitkyma.KymaSystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.TraceGatewayBaseName})).To(Succeed())
 				g.Expect(podList.Items).NotTo(BeEmpty())
 
 				traceGatewayPodName := podList.Items[0].Name
-				pprofEndpoint := proxyClient.ProxyURLForPod(kymaSystemNamespaceName, traceGatewayPodName, "debug/pprof/", ports.Pprof)
+				pprofEndpoint := proxyClient.ProxyURLForPod(kitkyma.KymaSystemNamespaceName, traceGatewayPodName, "debug/pprof/", ports.Pprof)
 
 				resp, err := proxyClient.Get(pprofEndpoint)
 				g.Expect(err).NotTo(HaveOccurred())

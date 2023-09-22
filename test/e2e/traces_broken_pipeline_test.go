@@ -13,6 +13,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
@@ -43,13 +44,13 @@ var _ = Describe("Traces", Label("tracing"), func() {
 		pipelineName = pipeline.Name()
 		objs = append(objs, pipeline.K8sObject())
 
-		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-"+brokenPipelineName, defaultNamespaceName, kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
+		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-"+brokenPipelineName, kitkyma.DefaultNamespaceName, kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
 		brokenTracePipeline := kittrace.NewPipeline(brokenPipelineName, hostSecret.SecretKeyRef("metric-host"))
 		brokenPipelineObjs := []client.Object{hostSecret.K8sObject(), brokenTracePipeline.K8sObject()}
 		objs = append(objs, brokenPipelineObjs...)
 
 		urls.SetOTLPPush(proxyClient.ProxyURLForService(
-			kymaSystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
+			kitkyma.DefaultNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
 		)
 
 		return objs
@@ -70,7 +71,7 @@ var _ = Describe("Traces", Label("tracing"), func() {
 		})
 
 		It("Should have a running trace collector deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, traceCollectorName)
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 
 		})
 

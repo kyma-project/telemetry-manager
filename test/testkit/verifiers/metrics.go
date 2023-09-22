@@ -14,6 +14,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 )
 
@@ -38,7 +39,7 @@ func MetricPipelineShouldStayPending(ctx context.Context, k8sClient client.Clien
 func MetricGatewayConfigShouldContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
-		g.Expect(k8sClient.Get(ctx, metricGatewayName, &collectorConfig)).To(Succeed())
+		g.Expect(k8sClient.Get(ctx, kitkyma.MetricGatewayName, &collectorConfig)).To(Succeed())
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return strings.Contains(configString, pipelineAlias)
@@ -48,7 +49,7 @@ func MetricGatewayConfigShouldContainPipeline(ctx context.Context, k8sClient cli
 func MetricGatewayConfigShouldNotContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Consistently(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
-		g.Expect(k8sClient.Get(ctx, metricGatewayName, &collectorConfig)).To(Succeed())
+		g.Expect(k8sClient.Get(ctx, kitkyma.MetricGatewayName, &collectorConfig)).To(Succeed())
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return !strings.Contains(configString, pipelineAlias)

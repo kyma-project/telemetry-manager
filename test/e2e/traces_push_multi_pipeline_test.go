@@ -12,7 +12,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
@@ -28,7 +28,7 @@ var _ = Describe("Traces", Label("tracing"), func() {
 			mockBackendName2 = "trace-receiver-2"
 		)
 		var (
-			pipelines = kyma.NewPipelineList()
+			pipelines = kitkyma.NewPipelineList()
 			urls      = urlprovider.New()
 		)
 
@@ -52,7 +52,7 @@ var _ = Describe("Traces", Label("tracing"), func() {
 			}
 
 			urls.SetOTLPPush(proxyClient.ProxyURLForService(
-				kymaSystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
+				kitkyma.KymaSystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
 			)
 			return objs
 		}
@@ -86,14 +86,14 @@ var _ = Describe("Traces", Label("tracing"), func() {
 
 		var (
 			pipelineObjectsToDelete []client.Object
-			pipelines               = kyma.NewPipelineList()
+			pipelines               = kitkyma.NewPipelineList()
 		)
 
 		makeResources := func() []client.Object {
 			var allObjs []client.Object
 			for i := 0; i < maxNumberOfTracePipelines; i++ {
 				name := fmt.Sprintf("pipeline-%d", i)
-				hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-"+name, defaultNamespaceName, kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
+				hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-"+name, kitkyma.DefaultNamespaceName, kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
 				brokenTracePipeline := kittrace.NewPipeline(name, hostSecret.SecretKeyRef("metric-host"))
 				objs := []client.Object{hostSecret.K8sObject(), brokenTracePipeline.K8sObject()}
 				pipelines.Append(name)
@@ -126,7 +126,7 @@ var _ = Describe("Traces", Label("tracing"), func() {
 		It("Should have a pending pipeline", func() {
 			By("Creating an additional pipeline", func() {
 				name := "exceeding-pipeline"
-				hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-"+name, defaultNamespaceName, kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
+				hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-"+name, kitkyma.DefaultNamespaceName, kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
 				brokenTracePipeline := kittrace.NewPipeline(name, hostSecret.SecretKeyRef("metric-host"))
 				newObjs := []client.Object{hostSecret.K8sObject(), brokenTracePipeline.K8sObject()}
 				pipelines.Append(name)
