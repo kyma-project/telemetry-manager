@@ -8,9 +8,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
@@ -23,7 +24,7 @@ import (
 var _ = Describe("Istio metrics", Label("metrics"), func() {
 	const (
 		mockNs                           = "istio-metric-mock"
-		mockBackendName                  = "metric-agent-receiver"
+		mockDeploymentName               = "metric-agent-receiver"
 		httpsAnnotatedMetricProducerName = "metric-producer-https"
 		httpAnnotatedMetricProducerName  = "metric-producer-http"
 		unannotatedMetricProducerName    = "metric-producer"
@@ -34,55 +35,41 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		metricAgentName   = types.NamespacedName{Name: "telemetry-metric-agent", Namespace: kymaSystemNamespaceName}
 	)
 
-	makeResources := func() ([]client.Object, *urlprovider.URLProvider) {
-		var (
-			objs         []client.Object
-			grpcOTLPPort = 4317
-			httpWebPort  = 80
-		)
+	makeResources := func() []client.Object {
+		var objs []client.Object
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		// Mocks namespace objects.
-		mockBackend := backend.New(mockBackendName, mockNs, "/metrics/"+telemetryDataFilename, backend.SignalTypeMetrics)
-		mockBackendConfigMap := mockBackend.ConfigMap("metric-receiver-config")
-		mockBackendDeployment := mockBackend.Deployment(mockBackendConfigMap.Name())
-		mockBackendExternalService := mockBackend.ExternalService().
-			WithPort("grpc-otlp", grpcOTLPPort).
-			WithPort("http-web", httpWebPort)
+		// Mocks namespace objects
+		mockBackend := backend.New(mockDeploymentName, mockNs, backend.SignalTypeMetrics)
+		objs = append(objs, mockBackend.K8sObjects()...)
+		urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
+			mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
+		)
 
 		httpsAnnotatedMetricProducer := metricproducer.New(mockNs, metricproducer.WithName(httpsAnnotatedMetricProducerName))
 		httpAnnotatedMetricProducer := metricproducer.New(mockNs, metricproducer.WithName(httpAnnotatedMetricProducerName))
 		unannotatedMetricProducer := metricproducer.New(mockNs, metricproducer.WithName(unannotatedMetricProducerName))
-
-		// Default namespace objects.
-		otlpEndpointURL := mockBackendExternalService.OTLPEndpointURL(grpcOTLPPort)
-		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", defaultNamespaceName, kitk8s.WithStringData("metric-host", otlpEndpointURL))
-		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", hostSecret.SecretKeyRef("metric-host")).PrometheusInput(true)
-
 		objs = append(objs, []client.Object{
-			mockBackendConfigMap.K8sObject(),
-			mockBackendDeployment.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
-			mockBackendExternalService.K8sObject(kitk8s.WithLabel("app", mockBackend.Name())),
 			httpsAnnotatedMetricProducer.Pod().WithSidecarInjection().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
 			httpsAnnotatedMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
 			httpAnnotatedMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 			httpAnnotatedMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 			unannotatedMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 			unannotatedMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-			hostSecret.K8sObject(),
-			metricPipeline.K8sObject(),
 		}...)
 
-		urls.SetMockBackendExport(proxyClient.ProxyURLForService(mockNs, mockBackend.Name(), telemetryDataFilename, httpWebPort))
+		// Default namespace objects
+		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", mockBackend.HostSecretRefKey()).
+			PrometheusInput(true)
+		objs = append(objs, metricPipeline.K8sObject())
 
-		return objs, urls
+		return objs
 	}
 
 	Context("App with istio-sidecar", Ordered, func() {
 		BeforeAll(func() {
-			k8sObjects, urlProvider := makeResources()
-			urls = urlProvider
+			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -101,7 +88,7 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 
 		It("Should have a metrics backend running", func() {
 			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockBackendName, Namespace: mockNs}
+				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
 				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
@@ -120,15 +107,15 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		// targets discovered via annotated pods must have no service label
 		Context("Annotated pods", func() {
 			It("Should scrape if prometheus.io/scheme=https", func() {
-				podScrapedMetricsShouldBeDelivered(urls, httpsAnnotatedMetricProducerName)
+				podScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), httpsAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme=http", func() {
-				podScrapedMetricsShouldBeDelivered(urls, httpAnnotatedMetricProducerName)
+				podScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), httpAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme unset", func() {
-				podScrapedMetricsShouldBeDelivered(urls, unannotatedMetricProducerName)
+				podScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), unannotatedMetricProducerName)
 			})
 		})
 
@@ -136,23 +123,23 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		// targets discovered via annotated service must have the service label
 		Context("Annotated services", func() {
 			It("Should scrape if prometheus.io/scheme=https", func() {
-				serviceScrapedMetricsShouldBeDelivered(urls, httpsAnnotatedMetricProducerName)
+				serviceScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), httpsAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme=http", func() {
-				serviceScrapedMetricsShouldBeDelivered(urls, httpAnnotatedMetricProducerName)
+				serviceScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), httpAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme unset", func() {
-				serviceScrapedMetricsShouldBeDelivered(urls, unannotatedMetricProducerName)
+				serviceScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), unannotatedMetricProducerName)
 			})
 		})
 	})
 })
 
-func podScrapedMetricsShouldBeDelivered(urls *urlprovider.URLProvider, podName string) {
+func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(urls.MockBackendExport())
+		resp, err := proxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
@@ -162,9 +149,9 @@ func podScrapedMetricsShouldBeDelivered(urls *urlprovider.URLProvider, podName s
 	}, timeout, telemetryDeliveryInterval).Should(Succeed())
 }
 
-func serviceScrapedMetricsShouldBeDelivered(urls *urlprovider.URLProvider, serviceName string) {
+func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(urls.MockBackendExport())
+		resp, err := proxyClient.Get(proxyURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(ContainMd(

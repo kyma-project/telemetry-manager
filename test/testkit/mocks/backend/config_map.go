@@ -9,14 +9,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit"
 )
 
-type SignalType string
-
-const (
-	SignalTypeTraces  = "traces"
-	SignalTypeMetrics = "metrics"
-	SignalTypeLogs    = "logs"
-)
-
 type ConfigMap struct {
 	name             string
 	namespace        string
@@ -116,8 +108,6 @@ func (cm *ConfigMap) Name() string {
 
 func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	var configTemplate string
-	data := make(map[string]string)
-
 	if cm.signalType == SignalTypeLogs {
 		configTemplate = LogConfigTemplate
 	} else if cm.withTLS {
@@ -127,6 +117,8 @@ func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	}
 	config := strings.Replace(configTemplate, "{{ FILEPATH }}", cm.exportedFilePath, 1)
 	config = strings.Replace(config, "{{ SIGNAL_TYPE }}", string(cm.signalType), 1)
+
+	data := make(map[string]string)
 	if cm.withTLS {
 		certPem := strings.ReplaceAll(cm.certs.ServerCertPem.String(), "\n", "\\n")
 		keyPem := strings.ReplaceAll(cm.certs.ServerKeyPem.String(), "\n", "\\n")
