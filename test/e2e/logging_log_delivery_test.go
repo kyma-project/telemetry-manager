@@ -105,8 +105,7 @@ func makeLogDeliveryTestK8sObjects(mockNs string, mockDeploymentName string, log
 	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 	//// Mocks namespace objects.
-	mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
-	Expect(err).NotTo(HaveOccurred())
+	mockBackend := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
 	mockLogProducer := logproducer.New(logProducerName, mockNs)
 	objs = append(objs, mockBackend.K8sObjects()...)
 	objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))

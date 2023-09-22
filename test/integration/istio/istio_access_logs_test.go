@@ -103,8 +103,7 @@ func makeIstioAccessLogsK8sObjects(mockNs, mockDeploymentName, sampleAppNs strin
 	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 	// Mocks namespace objects.
-	mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
-	Expect(err).NotTo(HaveOccurred())
+	mockBackend := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
 	objs = append(objs, mockBackend.K8sObjects()...)
 	urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
 		mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),

@@ -76,8 +76,7 @@ func makeLogsRegExTestK8sObjects(mockNs string, mockDeploymentName, logProducerN
 	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 	// Mocks namespace objects.
-	mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
-	Expect(err).NotTo(HaveOccurred())
+	mockBackend := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
 	mockLogProducer := logproducer.New(logProducerName, mockNs).WithAnnotations(map[string]string{
 		"fluentbit.io/parser": "my-regex-parser",
 	})

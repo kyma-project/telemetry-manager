@@ -92,8 +92,7 @@ func makeLogsTestK8sObjects(mockNs string, mockDeploymentName string) []client.O
 	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 	//// Mocks namespace objects.
-	mockBackend, err := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
-	Expect(err).NotTo(HaveOccurred())
+	mockBackend := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
 	objs = append(objs, mockBackend.K8sObjects()...)
 
 	// Default namespace objects.

@@ -47,7 +47,7 @@ type Backend struct {
 	HostSecret       *kitk8s.Secret
 }
 
-func New(name, namespace string, signalType SignalType, opts ...Option) (*Backend, error) {
+func New(name, namespace string, signalType SignalType, opts ...Option) *Backend {
 	backend := &Backend{
 		name:       name,
 		namespace:  namespace,
@@ -58,8 +58,9 @@ func New(name, namespace string, signalType SignalType, opts ...Option) (*Backen
 		opt(backend)
 	}
 
-	err := backend.build()
-	return backend, err
+	backend.build()
+
+	return backend
 }
 
 func WithTLS() Option {
@@ -80,12 +81,12 @@ func WithPersistentHostSecret(persistentHostSecret bool) Option {
 	}
 }
 
-func (b *Backend) build() error {
+func (b *Backend) build() {
 	if b.WithTLS {
 		backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
 		certs, err := testkit.GenerateTLSCerts(backendDNSName)
 		if err != nil {
-			return err
+			panic(fmt.Errorf("could not generate TLS certs: %v", err))
 		}
 		b.TLSCerts = certs
 
@@ -119,8 +120,6 @@ func (b *Backend) build() error {
 	}
 	b.HostSecret = kitk8s.NewOpaqueSecret(fmt.Sprintf("%s-receiver-hostname", b.name), defaultNamespaceName,
 		kitk8s.WithStringData("host", endpoint)).Persistent(b.PersistentHostSecret)
-
-	return nil
 }
 
 func (b *Backend) Name() string {

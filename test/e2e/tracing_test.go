@@ -387,8 +387,7 @@ func makeTracingTestK8sObjects(mockNs string, mockBackendNames []string, opts ..
 	for _, backendName := range mockBackendNames {
 		// Mocks namespace objects.
 		opts = append(opts, backend.WithPersistentHostSecret(isOperational()))
-		mockBackend, err := backend.New(backendName, mockNs, backend.SignalTypeTraces, opts...)
-		Expect(err).NotTo(HaveOccurred())
+		mockBackend := backend.New(backendName, mockNs, backend.SignalTypeTraces, opts...)
 		objs = append(objs, mockBackend.K8sObjects()...)
 
 		// Default namespace objects.

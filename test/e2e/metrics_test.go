@@ -425,8 +425,7 @@ func makeMetricsTestK8sObjects(mockNs string, mockBackendNames []string, opts ..
 	for _, backendName := range mockBackendNames {
 		// Mocks namespace objects.
 		opts = append(opts, backend.WithPersistentHostSecret(isOperational()))
-		mockBackend, err := backend.New(backendName, mockNs, backend.SignalTypeMetrics, opts...)
-		Expect(err).NotTo(HaveOccurred())
+		mockBackend := backend.New(backendName, mockNs, backend.SignalTypeMetrics, opts...)
 		objs = append(objs, mockBackend.K8sObjects()...)
 
 		// Default mockNs objects.

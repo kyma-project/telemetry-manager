@@ -7,12 +7,6 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
-type ExternalService struct {
-	*kitk8s.Service
-	name      string
-	namespace string
-}
-
 const (
 	OTLPGRPCServiceName = "grpc-otlp"
 	OTLPHTTPServiceName = "http-otlp"
@@ -22,6 +16,12 @@ const (
 	HTTPWebPort = 80
 	HTTPLogPort = 9880
 )
+
+type ExternalService struct {
+	*kitk8s.Service
+	name      string
+	namespace string
+}
 
 func NewExternalService(name, namespace string, signalType SignalType) *ExternalService {
 	svc := kitk8s.NewService(name, namespace).
