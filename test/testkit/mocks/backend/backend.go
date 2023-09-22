@@ -58,7 +58,7 @@ func New(name, namespace string, signalType SignalType, opts ...Option) *Backend
 		opt(backend)
 	}
 
-	backend.build()
+	backend.buildResources()
 
 	return backend
 }
@@ -81,7 +81,7 @@ func WithPersistentHostSecret(persistentHostSecret bool) Option {
 	}
 }
 
-func (b *Backend) build() {
+func (b *Backend) buildResources() {
 	if b.WithTLS {
 		backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
 		certs, err := testkit.GenerateTLSCerts(backendDNSName)
