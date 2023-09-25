@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Traces", Label("tracing"), func() {
+var _ = Describe("Traces Secret Rotation", Label("tracing"), func() {
 	Context("When tracepipeline with missing secret reference exists", Ordered, func() {
 		hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", kitkyma.DefaultNamespaceName, kitk8s.WithStringData("trace-host", "http://localhost:4317"))
 		tracePipeline := kittrace.NewPipeline("without-secret").WithOutputEndpointFromSecret(hostSecret.SecretKeyRef("trace-host"))

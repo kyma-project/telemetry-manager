@@ -24,7 +24,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces", Label("tracing"), func() {
+var _ = Describe("Traces Basic", Label("tracing"), func() {
 	const (
 		mockBackendName = "traces-receiver"
 		mockNs          = "traces-basic-test"
@@ -46,7 +46,7 @@ var _ = Describe("Traces", Label("tracing"), func() {
 
 		pipeline := kittrace.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefKey()).
-			Persistent(true)
+			Persistent(isOperational())
 		pipelineName = pipeline.Name()
 		objs = append(objs, pipeline.K8sObject())
 

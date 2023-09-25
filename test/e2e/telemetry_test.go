@@ -31,7 +31,7 @@ var (
 	}
 )
 
-var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ordered, func() {
+var _ = Describe("Telemetry Module", Label("logging", "tracing", "metrics"), Ordered, func() {
 	Context("After creating Telemetry resources", Ordered, func() {
 		It("Should have ValidatingWebhookConfiguration", func() {
 			Eventually(func(g Gomega) {

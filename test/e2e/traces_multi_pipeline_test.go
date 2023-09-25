@@ -22,7 +22,7 @@ import (
 	"slices"
 )
 
-var _ = Describe("Traces", Label("tracing"), func() {
+var _ = Describe("Traces Multi-Pipeline", Label("tracing"), func() {
 	Context("When multiple tracepipelines exist", Ordered, func() {
 		const (
 			mockNs           = "traces-multi-pipeline"
@@ -84,6 +84,7 @@ var _ = Describe("Traces", Label("tracing"), func() {
 		var (
 			pipelines     = kitkyma.NewPipelineList()
 			firstPipeline *telemetryv1alpha1.TracePipeline
+			lastPipeline  *telemetryv1alpha1.TracePipeline
 		)
 
 		makeResources := func() []client.Object {
@@ -107,6 +108,7 @@ var _ = Describe("Traces", Label("tracing"), func() {
 				k8sObjectsToDelete := slices.DeleteFunc(k8sObjects, func(obj client.Object) bool {
 					return obj.GetName() == firstPipeline.GetName() //first pipeline is deleted separately in one of the specs
 				})
+				k8sObjectsToDelete = append(k8sObjectsToDelete, lastPipeline)
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjectsToDelete...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -122,6 +124,7 @@ var _ = Describe("Traces", Label("tracing"), func() {
 		It("Should have a pending pipeline", func() {
 			By("Creating an additional pipeline", func() {
 				pipeline := kittrace.NewPipeline("exceeding-pipeline")
+				lastPipeline = pipeline.K8sObject()
 				pipelines.Append(pipeline.Name())
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())

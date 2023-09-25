@@ -17,7 +17,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Telemetry-manager", func() {
+var _ = Describe("Telemetry Manager", func() {
 	Context("After deploying manifest", func() {
 		It("Should have kyma-system namespace", Label("logging", "tracing", "metrics"), func() {
 			var namespace corev1.Namespace
