@@ -393,21 +393,23 @@ func main() {
 
 		// Temporary solution for non-modularized telemetry operator
 		if !enableTelemetryManagerModule {
-			go func(certconfig webhookcert.Config, k8sClientCopy client.Client) {
-				ensureWebhookLog := ctrl.Log.WithName("ensureWebhook")
-				for range time.Tick(1 * time.Hour) {
-					if ensureErr := webhookcert.EnsureCertificate(context.Background(), k8sClientCopy, certconfig); ensureErr != nil {
-						ensureWebhookLog.Error(ensureErr, "Failed to ensure webhook cert")
-					}
-					ensureWebhookLog.Info("Ensured webhook cert")
-				}
-			}(webhookConfig.CertConfig, k8sClient)
+			go reconcileWebhook(webhookConfig.CertConfig, k8sClient)
 		}
 	}
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
+	}
+}
+
+func reconcileWebhook(certconfig webhookcert.Config, k8sClient client.Client) {
+	ensureWebhookLog := ctrl.Log.WithName("ensureWebhook")
+	for range time.Tick(1 * time.Hour) {
+		if ensureErr := webhookcert.EnsureCertificate(context.Background(), k8sClient, certconfig); ensureErr != nil {
+			ensureWebhookLog.Error(ensureErr, "Failed to ensure webhook cert")
+		}
+		ensureWebhookLog.Info("Ensured webhook cert")
 	}
 }
 
