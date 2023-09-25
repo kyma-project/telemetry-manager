@@ -234,8 +234,8 @@ processors:
         send_batch_max_size: 1024
     memory_limiter:
         check_interval: 1s
-        limit_percentage: 75
-        spike_limit_percentage: 10
+        limit_percentage: 60
+        spike_limit_percentage: 40
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false
