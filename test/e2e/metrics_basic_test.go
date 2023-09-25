@@ -50,14 +50,14 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		objs = append(objs, metricPipeline.K8sObject())
 
 		urls.SetOTLPPush(proxyClient.ProxyURLForService(
-			kitkyma.KymaSystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP),
+			kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP),
 		)
 
-		metricGatewayExternalService := kitk8s.NewService("telemetry-otlp-metrics-external", kitkyma.KymaSystemNamespaceName).
+		metricGatewayExternalService := kitk8s.NewService("telemetry-otlp-metrics-external", kitkyma.SystemNamespaceName).
 			WithPort("grpc-otlp", ports.OTLPGRPC).
 			WithPort("http-metrics", ports.Metrics)
 		urls.SetMetrics(proxyClient.ProxyURLForService(
-			kitkyma.KymaSystemNamespaceName, "telemetry-otlp-metrics-external", "metrics", ports.Metrics),
+			kitkyma.SystemNamespaceName, "telemetry-otlp-metrics-external", "metrics", ports.Metrics),
 		)
 
 		objs = append(objs, metricGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", kitkyma.MetricGatewayBaseName)))
@@ -113,11 +113,11 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 
 			Eventually(func(g Gomega) {
 				var podList corev1.PodList
-				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kitkyma.KymaSystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.MetricGatewayBaseName})).To(Succeed())
+				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kitkyma.SystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.MetricGatewayBaseName})).To(Succeed())
 				g.Expect(podList.Items).NotTo(BeEmpty())
 
 				metricGatewayPodName := podList.Items[0].Name
-				pprofEndpoint := proxyClient.ProxyURLForPod(kitkyma.KymaSystemNamespaceName, metricGatewayPodName, "debug/pprof/", ports.Pprof)
+				pprofEndpoint := proxyClient.ProxyURLForPod(kitkyma.SystemNamespaceName, metricGatewayPodName, "debug/pprof/", ports.Pprof)
 
 				resp, err := proxyClient.Get(pprofEndpoint)
 				g.Expect(err).NotTo(HaveOccurred())

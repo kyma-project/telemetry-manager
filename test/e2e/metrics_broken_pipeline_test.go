@@ -3,8 +3,6 @@
 package e2e
 
 import (
-	"fmt"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
@@ -12,6 +10,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
@@ -21,13 +20,13 @@ import (
 
 var _ = Describe("Metrics", Label("metrics"), func() {
 	const (
-		mockBackendName    = "metric-receiver"
-		mockNs             = "metric-mocks-broken-pipeline"
-		brokenPipelineName = "broken-metric-pipeline"
+		mockBackendName = "metric-receiver"
+		mockNs          = "metric-mocks-broken-pipeline"
 	)
 	var (
-		pipelineName string
-		urls         *urlprovider.URLProvider
+		urls                = urlprovider.New()
+		healthyPipelineName string
+		brokenPipelineName  string
 	)
 
 	makeResources := func() []client.Object {
@@ -38,21 +37,23 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		metricPipeline := kitmetric.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline"), mockBackend.HostSecretRefKey())
-		pipelineName = metricPipeline.Name()
-		objs = append(objs, metricPipeline.K8sObject())
+		healthyPipeline := kitmetric.NewPipeline("healthy", mockBackend.HostSecretRefKey())
+		healthyPipelineName = healthyPipeline.Name()
+		objs = append(objs, healthyPipeline.K8sObject())
 
-		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-"+brokenPipelineName, defaultNamespaceName, kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
-		brokenMetricPipeline := kitmetric.NewPipeline(brokenPipelineName, hostSecret.SecretKeyRef("metric-host"))
-		brokenPipelineObjs := []client.Object{hostSecret.K8sObject(), brokenMetricPipeline.K8sObject()}
-		objs = append(objs, brokenPipelineObjs...)
+		unreachableHostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-broken", kitkyma.DefaultNamespaceName,
+			kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
+		brokenPipeline := kitmetric.NewPipeline("broken", unreachableHostSecret.SecretKeyRef("metric-host"))
+		brokenPipelineName = brokenPipeline.Name()
+		objs = append(objs, brokenPipeline.K8sObject(), unreachableHostSecret.K8sObject())
 
 		urls.SetOTLPPush(proxyClient.ProxyURLForService(
-			kymaSystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP),
+			kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP),
 		)
 
 		return objs
 	}
+
 	Context("When a broken metricpipeline exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
@@ -64,13 +65,12 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, healthyPipelineName)
 			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, brokenPipelineName)
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, metricGatewayName)
-
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {

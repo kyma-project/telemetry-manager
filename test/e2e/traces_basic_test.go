@@ -27,7 +27,7 @@ import (
 var _ = Describe("Traces", Label("tracing"), func() {
 	const (
 		mockBackendName = "traces-receiver"
-		mockNs          = "traces-mocks"
+		mockNs          = "traces-basic-test"
 	)
 
 	var (
@@ -44,20 +44,21 @@ var _ = Describe("Traces", Label("tracing"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		pipeline := kittrace.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline"),
-			mockBackend.HostSecretRefKey()).Persistent(true)
+		pipeline := kittrace.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRefKey()).
+			Persistent(true)
 		pipelineName = pipeline.Name()
 		objs = append(objs, pipeline.K8sObject())
 
 		urls.SetOTLPPush(proxyClient.ProxyURLForService(
-			kitkyma.KymaSystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
+			kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
 		)
 
-		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.KymaSystemNamespaceName).
+		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
 			WithPort("grpc-otlp", ports.OTLPGRPC).
 			WithPort("http-metrics", ports.Metrics)
 		urls.SetMetrics(proxyClient.ProxyURLForService(
-			kitkyma.KymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
+			kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
 
 		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", kitkyma.TraceGatewayBaseName)))
 		return objs
@@ -114,11 +115,11 @@ var _ = Describe("Traces", Label("tracing"), func() {
 
 			Eventually(func(g Gomega) {
 				var podList corev1.PodList
-				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kitkyma.KymaSystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.TraceGatewayBaseName})).To(Succeed())
+				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kitkyma.SystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.TraceGatewayBaseName})).To(Succeed())
 				g.Expect(podList.Items).NotTo(BeEmpty())
 
 				traceGatewayPodName := podList.Items[0].Name
-				pprofEndpoint := proxyClient.ProxyURLForPod(kitkyma.KymaSystemNamespaceName, traceGatewayPodName, "debug/pprof/", ports.Pprof)
+				pprofEndpoint := proxyClient.ProxyURLForPod(kitkyma.SystemNamespaceName, traceGatewayPodName, "debug/pprof/", ports.Pprof)
 
 				resp, err := proxyClient.Get(pprofEndpoint)
 				g.Expect(err).NotTo(HaveOccurred())

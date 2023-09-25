@@ -50,10 +50,10 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 		istioTracePipeline := kittrace.NewPipeline(pipelineName, mockBackend.HostSecretRefKey())
 		objs = append(objs, istioTracePipeline.K8sObject())
 
-		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.KymaSystemNamespaceName).
+		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
 			WithPort("grpc-otlp", ports.OTLPGRPC).
 			WithPort("http-metrics", ports.Metrics)
-		urls.SetMetrics(proxyClient.ProxyURLForService(kitkyma.KymaSystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
+		urls.SetMetrics(proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
 		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")))
 
 		// Abusing metrics provider for istio traces

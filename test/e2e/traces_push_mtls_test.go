@@ -23,11 +23,11 @@ import (
 var _ = Describe("Traces", Label("tracing"), func() {
 	const (
 		mockBackendName = "traces-tls-receiver"
-		mockNs          = "traces-mocks-tls-pipeline"
+		mockNs          = "traces-mtls"
 	)
 	var (
 		pipelineName string
-		urls         *urlprovider.URLProvider
+		urls         = urlprovider.New()
 	)
 
 	makeResources := func() []client.Object {
@@ -38,16 +38,15 @@ var _ = Describe("Traces", Label("tracing"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		pipeline := kittrace.NewPipeline(
-			fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline"),
-			mockBackend.HostSecretRefKey(),
-		).WithTLS(mockBackend.TLSCerts)
+		pipeline := kittrace.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRefKey()).
+			WithTLS(mockBackend.TLSCerts)
 		pipelineName = pipeline.Name()
 
 		objs = append(objs, pipeline.K8sObject())
 
 		urls.SetOTLPPush(proxyClient.ProxyURLForService(
-			kitkyma.KymaSystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
+			kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
 		)
 
 		return objs
@@ -66,6 +65,10 @@ var _ = Describe("Traces", Label("tracing"), func() {
 		It("Should have running pipelines", func() {
 			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+		})
+
+		It("Should have a running trace gateway deployment", func() {
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have a trace backend running", func() {

@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -63,7 +64,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, metricGatewayName)
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
@@ -72,7 +73,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, metricAgentName)
+			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
 		It("Should have a running pipeline", func() {

@@ -27,7 +27,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 	)
 	var (
 		pipelineName string
-		urls         *urlprovider.URLProvider
+		urls         = urlprovider.New()
 	)
 
 	makeResources := func() []client.Object {
@@ -46,7 +46,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 
 		objs = append(objs, metricPipeline.K8sObject())
 		urls.SetOTLPPush(proxyClient.ProxyURLForService(
-			kitkyma.KymaSystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP),
+			kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP),
 		)
 
 		return objs

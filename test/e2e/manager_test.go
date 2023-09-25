@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -21,7 +22,7 @@ var _ = Describe("Telemetry-manager", func() {
 		It("Should have kyma-system namespace", Label("logging", "tracing", "metrics"), func() {
 			var namespace corev1.Namespace
 			key := types.NamespacedName{
-				Name: kymaSystemNamespaceName,
+				Name: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &namespace)
 			Expect(err).NotTo(HaveOccurred())
@@ -31,7 +32,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var deployment appsv1.Deployment
 			key := types.NamespacedName{
 				Name:      "telemetry-operator",
-				Namespace: kymaSystemNamespaceName,
+				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &deployment)
 			Expect(err).NotTo(HaveOccurred())
@@ -39,7 +40,7 @@ var _ = Describe("Telemetry-manager", func() {
 			Eventually(func() bool {
 				listOptions := client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels),
-					Namespace:     kymaSystemNamespaceName,
+					Namespace:     kitkyma.SystemNamespaceName,
 				}
 				var pods corev1.PodList
 				err := k8sClient.List(ctx, &pods, &listOptions)
@@ -60,7 +61,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var service corev1.Service
 			key := types.NamespacedName{
 				Name:      "telemetry-operator-webhook",
-				Namespace: kymaSystemNamespaceName,
+				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &service)
 			Expect(err).NotTo(HaveOccurred())
@@ -78,7 +79,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var service corev1.Service
 			key := types.NamespacedName{
 				Name:      "telemetry-operator-metrics",
-				Namespace: kymaSystemNamespaceName,
+				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &service)
 			Expect(err).NotTo(HaveOccurred())
@@ -148,7 +149,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-fluent-bit-dashboard-fluent-bit",
-				Namespace: kymaSystemNamespaceName,
+				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &cm)
 			Expect(err).NotTo(HaveOccurred())
@@ -158,7 +159,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-otel-collector-grafana-dashboard",
-				Namespace: kymaSystemNamespaceName,
+				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &cm)
 			Expect(err).NotTo(HaveOccurred())
@@ -168,7 +169,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-otel-metric-gateway-grafana-dashboard",
-				Namespace: kymaSystemNamespaceName,
+				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &cm)
 			Expect(err).NotTo(HaveOccurred())
@@ -178,7 +179,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-logparsers",
-				Namespace: kymaSystemNamespaceName,
+				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &cm)
 			Expect(err).NotTo(HaveOccurred())
@@ -188,7 +189,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-logpipelines",
-				Namespace: kymaSystemNamespaceName,
+				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &cm)
 			Expect(err).NotTo(HaveOccurred())
@@ -198,7 +199,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-tracepipelines",
-				Namespace: kymaSystemNamespaceName,
+				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &cm)
 			Expect(err).NotTo(HaveOccurred())
@@ -208,7 +209,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-module",
-				Namespace: kymaSystemNamespaceName,
+				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &cm)
 			Expect(err).NotTo(HaveOccurred())
@@ -218,7 +219,7 @@ var _ = Describe("Telemetry-manager", func() {
 			var networkPolicy networkingv1.NetworkPolicy
 			key := types.NamespacedName{
 				Name:      "telemetry-operator-pprof-deny-ingress",
-				Namespace: kymaSystemNamespaceName,
+				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &networkPolicy)
 			Expect(err).NotTo(HaveOccurred())
@@ -230,7 +231,7 @@ var _ = Describe("Telemetry-manager", func() {
 			for _, prioClass := range priorityClassNames {
 				key := types.NamespacedName{
 					Name:      prioClass,
-					Namespace: kymaSystemNamespaceName,
+					Namespace: kitkyma.SystemNamespaceName,
 				}
 				err := k8sClient.Get(ctx, key, &priorityClass)
 				Expect(err).NotTo(HaveOccurred())

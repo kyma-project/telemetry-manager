@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	DefaultNamespaceName    = "default"
-	KymaSystemNamespaceName = "kyma-system"
+	DefaultNamespaceName = "default"
+	SystemNamespaceName  = "kyma-system"
 
 	MetricGatewayBaseName = "telemetry-metric-gateway"
 	MetricAgentBaseName   = "telemetry-metric-agent"
@@ -14,11 +14,11 @@ const (
 )
 
 var (
-	MetricGatewayName          = types.NamespacedName{Name: MetricGatewayBaseName, Namespace: KymaSystemNamespaceName}
-	MetricGatewayNetworkPolicy = types.NamespacedName{Name: MetricGatewayBaseName + "-pprof-deny-ingress", Namespace: KymaSystemNamespaceName}
+	MetricGatewayName          = types.NamespacedName{Name: MetricGatewayBaseName, Namespace: SystemNamespaceName}
+	MetricGatewayNetworkPolicy = types.NamespacedName{Name: MetricGatewayBaseName + "-pprof-deny-ingress", Namespace: SystemNamespaceName}
 
-	MetricAgentName = types.NamespacedName{Name: MetricAgentBaseName, Namespace: KymaSystemNamespaceName}
+	MetricAgentName = types.NamespacedName{Name: MetricAgentBaseName, Namespace: SystemNamespaceName}
 
-	TraceGatewayName          = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: KymaSystemNamespaceName}
-	TraceGatewayNetworkPolicy = types.NamespacedName{Name: TraceGatewayBaseName + "-pprof-deny-ingress", Namespace: KymaSystemNamespaceName}
+	TraceGatewayName          = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
+	TraceGatewayNetworkPolicy = types.NamespacedName{Name: TraceGatewayBaseName + "-pprof-deny-ingress", Namespace: SystemNamespaceName}
 )

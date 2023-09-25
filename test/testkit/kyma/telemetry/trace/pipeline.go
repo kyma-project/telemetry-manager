@@ -3,9 +3,9 @@ package trace
 import (
 	"fmt"
 
-	"github.com/google/uuid"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/google/uuid"
 	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -14,19 +14,31 @@ import (
 const version = "1.0.0"
 
 type Pipeline struct {
-	name                 string
-	endpointSecretKeyRef *telemetry.SecretKeyRef
-	persistent           bool
-	id                   string
-	tls                  *telemetry.OtlpTLS
+	persistent bool
+
+	id              string
+	name            string
+	otlpEndpointRef *telemetry.SecretKeyRef
+	otlpEndpoint    string
+	tls             *telemetry.OtlpTLS
 }
 
-func NewPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
+func NewPipeline(name string) *Pipeline {
 	return &Pipeline{
-		name:                 name,
-		endpointSecretKeyRef: secretKeyRef,
-		id:                   uuid.New().String(),
+		id:           uuid.New().String(),
+		name:         name,
+		otlpEndpoint: "http://unreachable:4317",
 	}
+}
+
+func (p *Pipeline) WithOutputEndpoint(otlpEndpoint string) *Pipeline {
+	p.otlpEndpoint = otlpEndpoint
+	return p
+}
+
+func (p *Pipeline) WithOutputEndpointFromSecret(otlpEndpointRef *telemetry.SecretKeyRef) *Pipeline {
+	p.otlpEndpointRef = otlpEndpointRef
+	return p
 }
 
 func (p *Pipeline) WithTLS(certs backend.TLSCerts) *Pipeline {
@@ -68,6 +80,18 @@ func (p *Pipeline) K8sObject() *telemetry.TracePipeline {
 	}
 	labels.Version(version)
 
+	otlpOutput := &telemetry.OtlpOutput{
+		Endpoint: telemetry.ValueType{},
+		TLS:      p.tls,
+	}
+	if p.otlpEndpointRef != nil {
+		otlpOutput.Endpoint.ValueFrom = &telemetry.ValueFromSource{
+			SecretKeyRef: p.otlpEndpointRef,
+		}
+	} else {
+		otlpOutput.Endpoint.Value = p.otlpEndpoint
+	}
+
 	pipeline := telemetry.TracePipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
 			Name:   p.Name(),
@@ -75,14 +99,7 @@ func (p *Pipeline) K8sObject() *telemetry.TracePipeline {
 		},
 		Spec: telemetry.TracePipelineSpec{
 			Output: telemetry.TracePipelineOutput{
-				Otlp: &telemetry.OtlpOutput{
-					Endpoint: telemetry.ValueType{
-						ValueFrom: &telemetry.ValueFromSource{
-							SecretKeyRef: p.endpointSecretKeyRef,
-						},
-					},
-					TLS: p.tls,
-				},
+				Otlp: otlpOutput,
 			},
 		},
 	}
