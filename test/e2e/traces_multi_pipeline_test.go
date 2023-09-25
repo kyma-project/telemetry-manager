@@ -82,9 +82,9 @@ var _ = Describe("Traces Multi-Pipeline", Label("tracing"), func() {
 	Context("When reaching the pipeline limit", Ordered, func() {
 		const maxNumberOfTracePipelines = 3
 		var (
-			pipelines     = kitkyma.NewPipelineList()
-			firstPipeline *telemetryv1alpha1.TracePipeline
-			lastPipeline  *telemetryv1alpha1.TracePipeline
+			pipelines            = kitkyma.NewPipelineList()
+			pipelineCreatedFirst *telemetryv1alpha1.TracePipeline
+			pipelineCreatedLater *telemetryv1alpha1.TracePipeline
 		)
 
 		makeResources := func() []client.Object {
@@ -95,7 +95,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("tracing"), func() {
 				objs = append(objs, pipeline.K8sObject())
 
 				if i == 0 {
-					firstPipeline = pipeline.K8sObject()
+					pipelineCreatedFirst = pipeline.K8sObject()
 				}
 			}
 
@@ -106,9 +106,9 @@ var _ = Describe("Traces Multi-Pipeline", Label("tracing"), func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				k8sObjectsToDelete := slices.DeleteFunc(k8sObjects, func(obj client.Object) bool {
-					return obj.GetName() == firstPipeline.GetName() //first pipeline is deleted separately in one of the specs
+					return obj.GetName() == pipelineCreatedFirst.GetName() //first pipeline is deleted separately in one of the specs
 				})
-				k8sObjectsToDelete = append(k8sObjectsToDelete, lastPipeline)
+				k8sObjectsToDelete = append(k8sObjectsToDelete, pipelineCreatedLater)
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjectsToDelete...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -124,7 +124,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("tracing"), func() {
 		It("Should have a pending pipeline", func() {
 			By("Creating an additional pipeline", func() {
 				pipeline := kittrace.NewPipeline("exceeding-pipeline")
-				lastPipeline = pipeline.K8sObject()
+				pipelineCreatedLater = pipeline.K8sObject()
 				pipelines.Append(pipeline.Name())
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
@@ -135,7 +135,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("tracing"), func() {
 
 		It("Should have only running pipelines", func() {
 			By("Deleting a pipeline", func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, firstPipeline)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipelineCreatedFirst)).Should(Succeed())
 
 				for _, pipeline := range pipelines.All()[1:] {
 					verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipeline)
