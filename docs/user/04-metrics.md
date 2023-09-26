@@ -384,7 +384,7 @@ You activated a MetricPipeline and metrics start streaming to your backend. To v
 
 ## Operations
 
-A MetricPipeline will result in a Deployment running OTel Collector instances in your cluster. That instances will serve OTLP endpoints and ship received data to the configured backend. The module will assure that the instances are operational at any time and running healthy. It will try to deliver the data to the backend using typical patterns like buffering and retries (see the Limitations section). However, there are scenarios where the instances will drop data as the backend is either not reachable for some duration or cannot handle the load and is causing backpressure.
+A MetricPipeline creates a Deployment running OTel Collector instances in your cluster. That instances will serve OTLP endpoints and ship received data to the configured backend. The Telemetry module assures that the OTel Collector instances are operational and healthy at any time. The Telemetry module delivers the data to the backend using typical patterns like buffering and retries (see [Limitations](#limitations)). However, there are scenarios where the instances will drop logs because the backend is either not reachable for some duration, or cannot handle the log load and is causing back pressure.
 
 To avoid and detect these situations, you should monitor the instances by collecting relevant metrics. For that, a service `telemetry-metric-gateway-metrics` is located in the `kyma-system` namespace being annotated with `prometheus.io` annotations so that a discovery of the metrics is possible.
 
@@ -432,7 +432,7 @@ Cause: The backend is not reachable or wrong authentication credentials are used
 
 Remedy:
 
-1. To check the `telemetry-trace-collector` Pods for error logs, call `kubectl logs -n kyma-system {POD_NAME}`.
+1. To check the `telemetry-metric-gateway` Pods for error logs, call `kubectl logs -n kyma-system {POD_NAME}`.
 2. Fix the errors.
 
 ### Only Istio metrics arrive at the destination

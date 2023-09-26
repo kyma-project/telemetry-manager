@@ -432,7 +432,7 @@ As per the LogPipeline definition, a dedicated [rewrite_tag](https://docs.fluent
 
 ## Operations
 
-A LogPipeline will result in a DaemonSet running one FluentBit instance per Node in your cluster. That instances will collect and ship application logs to the configured backend. The module will assure that the FluentBit instances are operational at any time and running healthy. It will try to deliver the log data to the backend using typical patterns like buffering and retries (see the Limitations section). However, there are scenarios where the instances will drop logs as the backend is either not reachable for some duration or cannot handle the log load and is causing backpressure.
+A LogPipeline creates a DaemonSet running one Fluent Bit instance per Node in your cluster. That instance collects and ships application logs to the configured backend. The Telemetry module assures that the Fluent Bit instances are operational and healthy at any time. The Telemetry module delivers the data to the backend using typical patterns like buffering and retries (see [Limitations](#limitations)). However, there are scenarios where the instances will drop logs because the backend is either not reachable for some duration, or cannot handle the log load and is causing back pressure.
 
 To avoid and detect these situations, you should monitor the instances by collecting relevant metrics. For that, two Services `telemetry-fluent-bit-metrics` and `telemetry-fluent-bit-exporter-metrics` are located in the `kyma-system` namespace being annotated with `prometheus.io` annotations so that a discovery of the metrics is possible.
 
