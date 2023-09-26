@@ -29,11 +29,13 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 		mockNs          = "istio-tracing-mock"
 		mockBackendName = "istio-tracing-backend"
 		//creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
-		sampleAppNs  = "istio-permissive-mtls"
-		pipelineName = "pipeline-istio-traces"
+		sampleAppNs = "istio-permissive-mtls"
 	)
 
-	var urls = urlprovider.New()
+	var (
+		urls         = urlprovider.New()
+		pipelineName string
+	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -44,7 +46,8 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		istioTracePipeline := kittrace.NewPipeline(pipelineName).WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+		istioTracePipeline := kittrace.NewPipeline("pipeline-istio-traces").WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+		pipelineName = istioTracePipeline.Name()
 		objs = append(objs, istioTracePipeline.K8sObject())
 
 		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).

@@ -29,10 +29,13 @@ var _ = Describe("Istio Access Logs", Label("logging"), func() {
 		mockNs          = "istio-access-logs-mocks"
 		mockBackendName = "istio-access-logs-backend"
 		//creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
-		sampleAppNs     = "istio-permissive-mtls"
-		logPipelineName = "pipeline-istio-access-logs"
+		sampleAppNs = "istio-permissive-mtls"
 	)
-	urls := urlprovider.New()
+
+	var (
+		urls         = urlprovider.New()
+		pipelineName string
+	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -42,10 +45,11 @@ var _ = Describe("Istio Access Logs", Label("logging"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		istioAccessLogsPipeline := kitlog.NewPipeline(logPipelineName).
+		istioAccessLogsPipeline := kitlog.NewPipeline("pipeline-istio-access-logs").
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithIncludeContainer([]string{"istio-proxy"}).
 			WithHTTPOutput()
+		pipelineName = istioAccessLogsPipeline.Name()
 		objs = append(objs, istioAccessLogsPipeline.K8sObject())
 
 		// Abusing metrics provider for istio access logs
@@ -84,7 +88,7 @@ var _ = Describe("Istio Access Logs", Label("logging"), func() {
 		It("Should have the log pipeline running", func() {
 			Eventually(func(g Gomega) bool {
 				var pipeline telemetryv1alpha1.LogPipeline
-				key := types.NamespacedName{Name: logPipelineName}
+				key := types.NamespacedName{Name: pipelineName}
 				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 				return pipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning)
 			}, timeout, interval).Should(BeTrue())
