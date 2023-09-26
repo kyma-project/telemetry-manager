@@ -104,7 +104,7 @@ issues:
       linters:
         - govet
     - linters: [ gci ]
-      path: test/e2e/(tracing.*|metrics.*|logging.*)_test.go
+      path: test/e2e/(traces.*|metrics.*|logs.*)_test.go
     - linters: [ gci ]
       path: test/integration/(istio.*)_test.go
     - linters: [ dupl ]
@@ -116,11 +116,11 @@ issues:
     - linters: [ dupl ]
       path: test/testkit/matchers/prometheus_matcher_test.go
     - linters: [ dupl ]
+      path: test/testkit/verifiers/(deployment|daemonset).go
+    - linters: [ dupl ]
       path: test/e2e/metrics_test.go
     - linters: [ dupl ]
       path: test/e2e/logging_test.go
-    - linters: [ dupl ]
-      path: test/e2e/metrics_kubeletstats_test.go
     - linters: [ dupl ]
       path: test/e2e/tracing_test.go
     - linters: [ dupl ]

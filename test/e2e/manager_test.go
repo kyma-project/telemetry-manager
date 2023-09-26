@@ -16,8 +16,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 )
 
 var _ = Describe("Telemetry Manager", func() {

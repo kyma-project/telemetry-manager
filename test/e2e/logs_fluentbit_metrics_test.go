@@ -15,10 +15,8 @@ import (
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
-
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 )
 
 var _ = Describe("Logs", Label("logging"), func() {

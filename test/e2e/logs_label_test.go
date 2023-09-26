@@ -15,9 +15,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
 var _ = Describe("Logs", Label("logging"), func() {
