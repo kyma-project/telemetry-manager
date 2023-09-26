@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 )
 
 type LogPipelineBuilder struct {
@@ -39,7 +39,7 @@ func LogPendingCondition(reason string) telemetryv1alpha1.LogPipelineCondition {
 
 func LogRunningCondition() telemetryv1alpha1.LogPipelineCondition {
 	return telemetryv1alpha1.LogPipelineCondition{
-		Reason: reconciler.ReasonFluentBitDSReady,
+		Reason: conditions.ReasonFluentBitDSReady,
 		Type:   telemetryv1alpha1.LogPipelinePending,
 	}
 }

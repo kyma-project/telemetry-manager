@@ -9,7 +9,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -78,7 +78,7 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 			})
 			Expect(k8sClient.Create(ctx, &runningTracePipeline)).Should(Succeed())
 			runningTracePipeline.Status.SetCondition(telemetryv1alpha1.TracePipelineCondition{
-				Reason: reconciler.ReasonTraceGatewayDeploymentReady,
+				Reason: conditions.ReasonTraceGatewayDeploymentReady,
 				Type:   telemetryv1alpha1.TracePipelineRunning,
 			})
 			Expect(k8sClient.Status().Update(ctx, &runningTracePipeline)).Should(Succeed())
@@ -121,7 +121,7 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 			})
 			Expect(k8sClient.Create(ctx, &pendingTracePipeline)).Should(Succeed())
 			pendingTracePipeline.Status.SetCondition(telemetryv1alpha1.TracePipelineCondition{
-				Reason: reconciler.ReasonTraceGatewayDeploymentNotReady,
+				Reason: conditions.ReasonTraceGatewayDeploymentNotReady,
 				Type:   telemetryv1alpha1.TracePipelinePending,
 			})
 			Expect(k8sClient.Status().Update(ctx, &pendingTracePipeline)).Should(Succeed())
