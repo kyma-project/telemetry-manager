@@ -386,7 +386,7 @@ You activated a MetricPipeline and metrics start streaming to your backend. To v
 
 A MetricPipeline creates a Deployment running OTel Collector instances in your cluster. That instances will serve OTLP endpoints and ship received data to the configured backend. The Telemetry module assures that the OTel Collector instances are operational and healthy at any time. The Telemetry module delivers the data to the backend using typical patterns like buffering and retries (see [Limitations](#limitations)). However, there are scenarios where the instances will drop logs because the backend is either not reachable for some duration, or cannot handle the log load and is causing back pressure.
 
-To avoid and detect these situations, you should monitor the instances by collecting relevant metrics. For that, a service `telemetry-metric-gateway-metrics` is located in the `kyma-system` namespace being annotated with `prometheus.io` annotations so that a discovery of the metrics is possible.
+To avoid and detect these scenarios, you must monitor the instances by collecting relevant metrics. For that, a service `telemetry-metric-gateway-metrics` is located in the `kyma-system` namespace. For easier discovery, they have the `prometheus.io` annotation.
 
 The relevant metrics are:
 | Name | Threshold | Description |
