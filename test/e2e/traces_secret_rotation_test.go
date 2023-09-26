@@ -1,12 +1,14 @@
 package e2e
 
 import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+
 )
 
 var _ = Describe("Traces Secret Rotation", Label("tracing"), func() {

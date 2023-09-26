@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"fmt"
+	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -13,14 +14,12 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
-	"slices"
 )
 
 var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
@@ -31,7 +30,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 			mockBackendName2 = "metric-receiver-2"
 		)
 		var (
-			pipelines = kyma.NewPipelineList()
+			pipelines = kitkyma.NewPipelineList()
 			urls      = urlprovider.New()
 		)
 
@@ -91,7 +90,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 		const maxNumberOfMetricPipelines = 3
 
 		var (
-			pipelines            = kyma.NewPipelineList()
+			pipelines            = kitkyma.NewPipelineList()
 			pipelineCreatedFirst *telemetryv1alpha1.MetricPipeline
 			pipelineCreatedLater *telemetryv1alpha1.MetricPipeline
 		)

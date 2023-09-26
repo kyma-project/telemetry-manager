@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
@@ -24,7 +24,7 @@ func MakeAndSendTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) (
 	attrs.PutStr("attrC", "vanilla")
 	traces := MakeTraces(traceID, spanIDs, attrs)
 
-	Expect(sendTraces(context.Background(), proxyClient, traces, otlpPushURL)).To(Succeed())
+	gomega.Expect(sendTraces(context.Background(), proxyClient, traces, otlpPushURL)).To(gomega.Succeed())
 
 	return traceID, spanIDs, attrs
 }

@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	. "github.com/onsi/gomega"
-
+	"github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
@@ -19,7 +18,7 @@ func MakeAndSendGaugeMetrics(proxyClient *apiserver.ProxyClient, otlpPushURL str
 		gauges = append(gauges, gauge)
 		builder.WithMetric(gauge)
 	}
-	Expect(sendGaugeMetrics(context.Background(), proxyClient, builder.Build(), otlpPushURL)).To(Succeed())
+	gomega.Expect(sendGaugeMetrics(context.Background(), proxyClient, builder.Build(), otlpPushURL)).To(gomega.Succeed())
 
 	return gauges
 }
@@ -41,7 +40,7 @@ func MakeAndSendSumMetrics(proxyClient *apiserver.ProxyClient, otlpPushURL strin
 		cumulativeSums = append(cumulativeSums, sum)
 		builder.WithMetric(sum)
 	}
-	Expect(sendSumMetrics(context.Background(), proxyClient, builder.Build(), otlpPushURL)).To(Succeed())
+	gomega.Expect(sendSumMetrics(context.Background(), proxyClient, builder.Build(), otlpPushURL)).To(gomega.Succeed())
 
 	return cumulativeSums
 }
