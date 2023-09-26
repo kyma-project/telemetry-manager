@@ -4,379 +4,395 @@ The aim of this exercise is to harden the metric agent so that it can satisfy th
 
 ## Setup
 
-For the test environment following setup used:
+For the test environment, the following setup was used:
 - Provision a GCP cluster with Kubernetes (n2-standard-16, 16 CPU, 64Gi memory)
 - Deploy Telemetry Manager
 - Deploy Prometheus to visualize the metrics
-- Deploy Istio deployment (needed for Prometheus)
-- Deploy [Avalanche prometheus metric load generator](https://blog.freshtracks.io/load-testing-prometheus-metric-ingestion-5b878711711c)
+- Deploy Istio (needed for Prometheus)
+- Deploy [Avalanche Prometheus metric load generator](https://blog.freshtracks.io/load-testing-prometheus-metric-ingestion-5b878711711c)
 
 
 ### Preparing test environment
 
-1. Deploy Telemetry Manager
+1. Deploy Telemetry Manager:
 
-```shell
-make deploy-dev
-```
+   ```shell
+   make deploy-dev
+   ```
 
-2. Deploy monitoring and istio
-```unix
-kyma deploy -s main --component istio --component monitoring
-```
+2. Deploy monitoring and Istio:
+
+   ```unix
+   kyma deploy -s main --component istio --component monitoring
+   ```
 
 > NOTE: alternatively istio CRDS can be installed from [here](https://github.com/istio/api/blob/master/kubernetes/customresourcedefinitions.gen.yaml) and only monitoring stack can be installed with `kyma deploy -s main --component monitoring`
 
 3. Deploy Metricpipeline
+    <details>
+      <summary>Expand</summary>
 
-```yaml
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: metric-receiver
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: mock-metric-receiver
-  namespace: metric-receiver
-  labels:
-    app: mock-metric-receiver
-data:
-  config.yaml: |
-    receivers:
-      otlp:
-        protocols:
-          grpc: {}
-          http: {}
-    exporters:
-      logging:
-        loglevel: debug
-    service:
-      pipelines:
-        metrics:
-          receivers:
-            - otlp
-          exporters:
-            - logging
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    app: mock-metric-receiver
-  name: mock-metric-receiver
-  namespace: metric-receiver
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: mock-metric-receiver
-  strategy: {}
-  template:
+    ```yaml
+    ---
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: metric-receiver
+    ---
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: mock-metric-receiver
+      namespace: metric-receiver
+      labels:
+        app: mock-metric-receiver
+    data:
+      config.yaml: |
+        receivers:
+          otlp:
+            protocols:
+              grpc: {}
+              http: {}
+        exporters:
+          logging:
+            loglevel: debug
+        service:
+          pipelines:
+            metrics:
+              receivers:
+                - otlp
+              exporters:
+                - logging
+    ---
+    apiVersion: apps/v1
+    kind: Deployment
     metadata:
       labels:
         app: mock-metric-receiver
+      name: mock-metric-receiver
+      namespace: metric-receiver
     spec:
-      volumes:
-        - name: collector-config
-          configMap:
-            name: mock-metric-receiver
-      securityContext:
-        fsGroup: 101
-      containers:
-        - image: otel/opentelemetry-collector-contrib:0.70.0
-          name: otel-collector
-          volumeMounts:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: mock-metric-receiver
+      strategy: {}
+      template:
+        metadata:
+          labels:
+            app: mock-metric-receiver
+        spec:
+          volumes:
             - name: collector-config
-              mountPath: /etc/collector
-          args:
-            - --config=/etc/collector/config.yaml
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app: mock-metric-receiver
-  name: mock-metric-receiver
-  namespace: metric-receiver
-spec:
-  ports:
-    - name: http-otlp
-      port: 4317
-      protocol: TCP
-      targetPort: 4317
-    - name: grpc-otlp
-      port: 4318
-      protocol: TCP
-      targetPort: 4318
-  selector:
-    app: mock-metric-receiver
----
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  labels:
-    app.kubernetes.io/name: metricpipeline
-    app.kubernetes.io/instance: metricpipeline-sample
-    app.kubernetes.io/part-of: telemetry-operator
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: telemetry-operator
-  name: metricpipeline-sample
-spec:
-  input:
-    application:
-      runtime:
-        enabled: true
-      prometheus:
-        enabled: true
-  output:
-    otlp:
-      endpoint:
-        value: http://mock-metric-receiver.metric-receiver:4317
----
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    prometheus.io/port: "8888"
-    prometheus.io/scrape: "true"
-    prometheus.io/scheme: "http"
-  labels:
-    app.kubernetes.io/name: telemetry-metric-agent
-  name: telemetry-metric-agent-metrics
-  namespace: kyma-system
-spec:
-  clusterIP: None
-  ports:
-    - name: http-metrics
-      port: 8888
-      protocol: TCP
-      targetPort: 8888
-  selector:
-    app.kubernetes.io/name: telemetry-metric-agent
-  sessionAffinity: None
-  type: ClusterIP
-```
-
-Following configurations are changed for metric agent
-```yaml
-    processors:
-        batch:
-            send_batch_size: 1024
-            timeout: 10s
-            send_batch_max_size: 1024
-        memory_limiter:
-            check_interval: 0.5s
-            limit_percentage: 85
-            spike_limit_percentage: 10
-```
-
-Final ConfigMap of the metrics agent should look like for
-```yaml
-apiVersion: v1
-data:
-  relay.conf: |
-    extensions:
-        health_check:
-            endpoint: ${MY_POD_IP}:13133
-    service:
-        pipelines:
-            metrics/prometheus:
-                receivers:
-                    - prometheus/app-pods
-                processors:
-                    - memory_limiter
-                    - resource/delete-service-name
-                    - resource/insert-input-source-prometheus
-                    - batch
-                exporters:
-                    - otlp
-        telemetry:
-            metrics:
-                address: ${MY_POD_IP}:8888
-            logs:
-                level: info
-        extensions:
-            - health_check
-    receivers:
-        prometheus/app-pods:
-            config:
-                scrape_configs:
-                    - job_name: app-pods
-                      scrape_interval: 30s
-                      relabel_configs:
-                        - source_labels: [__meta_kubernetes_pod_node_name]
-                          regex: $MY_NODE_NAME
-                          action: keep
-                        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-                          regex: "true"
-                          action: keep
-                        - source_labels: [__meta_kubernetes_pod_phase]
-                          regex: Pending|Succeeded|Failed
-                          action: drop
-                        - source_labels: [__meta_kubernetes_pod_container_init]
-                          regex: (true)
-                          action: drop
-                        - source_labels: [__meta_kubernetes_pod_container_name]
-                          regex: (istio-proxy)
-                          action: drop
-                        - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
-                          regex: (istio)
-                          target_label: __scheme__
-                          replacement: https
-                          action: replace
-                        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
-                          regex: (https?)
-                          target_label: __scheme__
-                          action: replace
-                        - source_labels: [__scheme__]
-                          regex: (https)
-                          action: drop
-                        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-                          regex: (.+)
-                          target_label: __metrics_path__
-                          action: replace
-                        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-                          regex: ([^:]+)(?::\d+)?;(\d+)
-                          target_label: __address__
-                          replacement: $$1:$$2
-                          action: replace
-                      kubernetes_sd_configs:
-                        - role: pod
-        prometheus/app-services:
-            config:
-                scrape_configs:
-                    - job_name: app-services
-                      scrape_interval: 30s
-                      relabel_configs:
-                        - source_labels: [__meta_kubernetes_endpoint_node_name]
-                          regex: $MY_NODE_NAME
-                          action: keep
-                        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
-                          regex: "true"
-                          action: keep
-                        - source_labels: [__meta_kubernetes_pod_phase]
-                          regex: Pending|Succeeded|Failed
-                          action: drop
-                        - source_labels: [__meta_kubernetes_pod_container_init]
-                          regex: (true)
-                          action: drop
-                        - source_labels: [__meta_kubernetes_pod_container_name]
-                          regex: (istio-proxy)
-                          action: drop
-                        - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
-                          regex: (istio)
-                          target_label: __scheme__
-                          replacement: https
-                          action: replace
-                        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
-                          regex: (https?)
-                          target_label: __scheme__
-                          action: replace
-                        - source_labels: [__scheme__]
-                          regex: (https)
-                          action: drop
-                        - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
-                          regex: (.+)
-                          target_label: __metrics_path__
-                          action: replace
-                        - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
-                          regex: ([^:]+)(?::\d+)?;(\d+)
-                          target_label: __address__
-                          replacement: $$1:$$2
-                          action: replace
-                        - source_labels: [__meta_kubernetes_service_name]
-                          target_label: service
-                          action: replace
-                      kubernetes_sd_configs:
-                        - role: endpoints
-    processors:
-        batch:
-            send_batch_size: 1024
-            timeout: 10s
-            send_batch_max_size: 1024
-        memory_limiter:
-            check_interval: 0.5s
-            limit_percentage: 85
-            spike_limit_percentage: 10
-        resource/delete-service-name:
-            attributes:
-                - action: delete
-                  key: service.name
-        resource/insert-input-source-runtime:
-            attributes:
-                - action: insert
-                  key: kyma.source
-                  value: runtime
-        resource/insert-input-source-prometheus:
-            attributes:
-                - action: insert
-                  key: kyma.source
-                  value: prometheus
-    exporters:
-        otlp:
-            endpoint: telemetry-otlp-metrics.kyma-system.svc.cluster.local:4317
-            tls:
-                insecure: true
-            sending_queue:
-                enabled: true
-                queue_size: 512
-            retry_on_failure:
-                enabled: true
-                initial_interval: 5s
-                max_interval: 30s
-                max_elapsed_time: 300s
-kind: ConfigMap
-metadata:
-  labels:
-    app.kubernetes.io/name: telemetry-metric-agent
-  name: telemetry-metric-agent
-  namespace: kyma-system
-  ownerReferences:
-  - apiVersion: telemetry.kyma-project.io/v1alpha1
-    kind: MetricPipeline
-    name: metricpipeline-sample
-```
-
-4. Deploy Avalanche load generator deployment
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: avalanche-metric-load-generator
-spec:      
-  selector:
-    matchLabels:
-      app: avalanche-metric-load-generator
-  template:
+              configMap:
+                name: mock-metric-receiver
+          securityContext:
+            fsGroup: 101
+          containers:
+            - image: otel/opentelemetry-collector-contrib:0.70.0
+              name: otel-collector
+              volumeMounts:
+                - name: collector-config
+                  mountPath: /etc/collector
+              args:
+                - --config=/etc/collector/config.yaml
+    ---
+    apiVersion: v1
+    kind: Service
     metadata:
       labels:
-        app: avalanche-metric-load-generator
-      annotations:
-        prometheus.io/path: /metrics
-        prometheus.io/port: "8080"
-        prometheus.io/scrape: "true"
+        app: mock-metric-receiver
+      name: mock-metric-receiver
+      namespace: metric-receiver
     spec:
-      containers:
-      - name: avalanche-metric-load-generator
-        image: quay.io/freshtracks.io/avalanche
-        imagePullPolicy: IfNotPresent
-        args:
-        - --metric-count=500
-        - --series-count=20
-        - --port=8080
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "200m"
-        ports:
-        - containerPort: 8080
+      ports:
+        - name: http-otlp
+          port: 4317
           protocol: TCP
-          name: metrics
-```
+          targetPort: 4317
+        - name: grpc-otlp
+          port: 4318
+          protocol: TCP
+          targetPort: 4318
+      selector:
+        app: mock-metric-receiver
+    ---
+    apiVersion: telemetry.kyma-project.io/v1alpha1
+    kind: MetricPipeline
+    metadata:
+      labels:
+        app.kubernetes.io/name: metricpipeline
+        app.kubernetes.io/instance: metricpipeline-sample
+        app.kubernetes.io/part-of: telemetry-operator
+        app.kubernetes.io/managed-by: kustomize
+        app.kubernetes.io/created-by: telemetry-operator
+      name: metricpipeline-sample
+    spec:
+      input:
+        application:
+          runtime:
+            enabled: true
+          prometheus:
+            enabled: true
+      output:
+        otlp:
+          endpoint:
+            value: http://mock-metric-receiver.metric-receiver:4317
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        prometheus.io/port: "8888"
+        prometheus.io/scrape: "true"
+        prometheus.io/scheme: "http"
+      labels:
+        app.kubernetes.io/name: telemetry-metric-agent
+      name: telemetry-metric-agent-metrics
+      namespace: kyma-system
+    spec:
+      clusterIP: None
+      ports:
+        - name: http-metrics
+          port: 8888
+          protocol: TCP
+          targetPort: 8888
+      selector:
+        app.kubernetes.io/name: telemetry-metric-agent
+      sessionAffinity: None
+      type: ClusterIP
+    ```
+    </details>
+
+   Following configurations are changed for metric agent
+    <details>
+      <summary>Expand</summary>
+
+    ```yaml
+        processors:
+            batch:
+                send_batch_size: 1024
+                timeout: 10s
+                send_batch_max_size: 1024
+            memory_limiter:
+                check_interval: 0.5s
+                limit_percentage: 85
+                spike_limit_percentage: 10
+    ```
+    </details>
+
+   Final ConfigMap of the metrics agent should look like for
+
+    <details>
+      <summary>Expand</summary>
+
+    ```yaml
+    apiVersion: v1
+    data:
+      relay.conf: |
+        extensions:
+            health_check:
+                endpoint: ${MY_POD_IP}:13133
+        service:
+            pipelines:
+                metrics/prometheus:
+                    receivers:
+                        - prometheus/app-pods
+                    processors:
+                        - memory_limiter
+                        - resource/delete-service-name
+                        - resource/insert-input-source-prometheus
+                        - batch
+                    exporters:
+                        - otlp
+            telemetry:
+                metrics:
+                    address: ${MY_POD_IP}:8888
+                logs:
+                    level: info
+            extensions:
+                - health_check
+        receivers:
+            prometheus/app-pods:
+                config:
+                    scrape_configs:
+                        - job_name: app-pods
+                          scrape_interval: 30s
+                          relabel_configs:
+                            - source_labels: [__meta_kubernetes_pod_node_name]
+                              regex: $MY_NODE_NAME
+                              action: keep
+                            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+                              regex: "true"
+                              action: keep
+                            - source_labels: [__meta_kubernetes_pod_phase]
+                              regex: Pending|Succeeded|Failed
+                              action: drop
+                            - source_labels: [__meta_kubernetes_pod_container_init]
+                              regex: (true)
+                              action: drop
+                            - source_labels: [__meta_kubernetes_pod_container_name]
+                              regex: (istio-proxy)
+                              action: drop
+                            - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
+                              regex: (istio)
+                              target_label: __scheme__
+                              replacement: https
+                              action: replace
+                            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+                              regex: (https?)
+                              target_label: __scheme__
+                              action: replace
+                            - source_labels: [__scheme__]
+                              regex: (https)
+                              action: drop
+                            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+                              regex: (.+)
+                              target_label: __metrics_path__
+                              action: replace
+                            - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+                              regex: ([^:]+)(?::\d+)?;(\d+)
+                              target_label: __address__
+                              replacement: $$1:$$2
+                              action: replace
+                          kubernetes_sd_configs:
+                            - role: pod
+            prometheus/app-services:
+                config:
+                    scrape_configs:
+                        - job_name: app-services
+                          scrape_interval: 30s
+                          relabel_configs:
+                            - source_labels: [__meta_kubernetes_endpoint_node_name]
+                              regex: $MY_NODE_NAME
+                              action: keep
+                            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+                              regex: "true"
+                              action: keep
+                            - source_labels: [__meta_kubernetes_pod_phase]
+                              regex: Pending|Succeeded|Failed
+                              action: drop
+                            - source_labels: [__meta_kubernetes_pod_container_init]
+                              regex: (true)
+                              action: drop
+                            - source_labels: [__meta_kubernetes_pod_container_name]
+                              regex: (istio-proxy)
+                              action: drop
+                            - source_labels: [__meta_kubernetes_pod_label_security_istio_io_tlsMode]
+                              regex: (istio)
+                              target_label: __scheme__
+                              replacement: https
+                              action: replace
+                            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+                              regex: (https?)
+                              target_label: __scheme__
+                              action: replace
+                            - source_labels: [__scheme__]
+                              regex: (https)
+                              action: drop
+                            - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+                              regex: (.+)
+                              target_label: __metrics_path__
+                              action: replace
+                            - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+                              regex: ([^:]+)(?::\d+)?;(\d+)
+                              target_label: __address__
+                              replacement: $$1:$$2
+                              action: replace
+                            - source_labels: [__meta_kubernetes_service_name]
+                              target_label: service
+                              action: replace
+                          kubernetes_sd_configs:
+                            - role: endpoints
+        processors:
+            batch:
+                send_batch_size: 1024
+                timeout: 10s
+                send_batch_max_size: 1024
+            memory_limiter:
+                check_interval: 0.5s
+                limit_percentage: 85
+                spike_limit_percentage: 10
+            resource/delete-service-name:
+                attributes:
+                    - action: delete
+                      key: service.name
+            resource/insert-input-source-runtime:
+                attributes:
+                    - action: insert
+                      key: kyma.source
+                      value: runtime
+            resource/insert-input-source-prometheus:
+                attributes:
+                    - action: insert
+                      key: kyma.source
+                      value: prometheus
+        exporters:
+            otlp:
+                endpoint: telemetry-otlp-metrics.kyma-system.svc.cluster.local:4317
+                tls:
+                    insecure: true
+                sending_queue:
+                    enabled: true
+                    queue_size: 512
+                retry_on_failure:
+                    enabled: true
+                    initial_interval: 5s
+                    max_interval: 30s
+                    max_elapsed_time: 300s
+    kind: ConfigMap
+    metadata:
+      labels:
+        app.kubernetes.io/name: telemetry-metric-agent
+      name: telemetry-metric-agent
+      namespace: kyma-system
+      ownerReferences:
+      - apiVersion: telemetry.kyma-project.io/v1alpha1
+        kind: MetricPipeline
+        name: metricpipeline-sample
+    ```
+   </details>
+
+4. Deploy Avalanche load generator deployment
+   <details>                   
+     <summary>Expand</summary>
+
+   ```yaml
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: avalanche-metric-load-generator
+   spec:      
+     selector:
+       matchLabels:
+         app: avalanche-metric-load-generator
+     template:
+       metadata:
+         labels:
+           app: avalanche-metric-load-generator
+         annotations:
+           prometheus.io/path: /metrics
+           prometheus.io/port: "8080"
+           prometheus.io/scrape: "true"
+       spec:
+         containers:
+         - name: avalanche-metric-load-generator
+           image: quay.io/freshtracks.io/avalanche
+           imagePullPolicy: IfNotPresent
+           args:
+           - --metric-count=500
+           - --series-count=20
+           - --port=8080
+           resources:
+             limits:
+               memory: "128Mi"
+               cpu: "200m"
+           ports:
+           - containerPort: 8080
+             protocol: TCP
+             name: metrics
+   ```
+   </details>
 
 ## Testcases
 
@@ -387,9 +403,10 @@ We tweak metrics and series value with 10 labels in each metric data point. The 
 We identified the following test cases:
 1. To test how many workloads are supported: [Multiple Pods, all running on a single node, export metrics](#multiple_pods_all_running_on_a_single_note_export_metrics).
 2. To understand how scraping works when the workload exposes several MB of metrics: [One workload generating huge amount of metrics](#one-workload-generating-huge-amount-of-metrics).
-3. To understand prometheus SDS behaviour with multiple services: Multiple workloads across different Nodes](#multiple-workloads-across-different-nodes).
-4. [Scrape sample limit test](#scrape-sample-limit-test).
-5. [Scrape multiple Pods and services from multiple receivers](#scrape-multiple-pods-and-services-from-multiple-receivers).
+3. To understand prometheus SDS behaviour with multiple services: [Multiple workloads across different Nodes](#multiple-workloads-across-different-nodes).
+4. [Scrape multiple Pods and services from multiple receivers](#scrape-multiple-pods-and-services-from-multiple-receivers).
+5. [Scrape sample limit test](#scrape-sample-limit-test).
+
 
 ### Multiple Pods, all running on a single node, export metrics
 Setup:
@@ -406,7 +423,7 @@ To determine the limits of a single metric agent, this test was executed on a si
 The following graph shows the average metric points processed by the prometheus metric receiver per second. The agent reaches an average of 14K metric points/sec.
 ![Peak accepted metric points](./assets/overall-peak-metric-point.jpg)
 
-The following graph shows the refused metric points from the configured memory_limiter, with traffic above 14K metric points/sec results in  metrics being refused by the memory_limiter. 
+The following graph shows the refused metric points from the configured memory_limiter, with traffic above 14K metric points/sec results in  metrics being refused by the memory_limiter.
 ![Peak refused metric points](./assets/overall-peak-metric-point-refused.jpg)
 
 The following graph shows memory utilization of metric agent during test phase.
@@ -435,7 +452,7 @@ In both configurations, the metric agent reached a peak of ~7K metric points/sec
 
 In both configurations, the Avalanche load generator generated 120K metric points/scrape.
 
-> **NOTE:** Avalanche load generator resources must be changed for this scenario. For this test, CPU settings were changed to 400m and Memory to 1Gi. 
+> **NOTE:** Avalanche load generator resources must be changed for this scenario. For this test, CPU settings were changed to 400m and Memory to 1Gi.
 ### Multiple workloads across different Nodes
 
 Setup:
@@ -488,6 +505,9 @@ Avalanche load generator configuration:
 Metric agent:
 
 The metric agent pipeline metrics/prometheus has been configured with an additional receiver prometheus/app-services; see the following configuration:
+<details>                    
+  <summary>Expand</summary>
+
 ```yaml
 apiVersion: v1
 data:
@@ -509,7 +529,11 @@ data:
                 exporters:
                     - otlp
 ```
+</details>
+
 To enable metric scraping from the second receiver prometheus/app-services, the following service was created for the Avalanche load generator:
+<details>                    
+   <summary>Expand</summary>
 
 ```yaml
 apiVersion: v1
@@ -533,6 +557,7 @@ spec:
   sessionAffinity: None
   type: ClusterIP
 ```
+</details>
 
 The purpose of this test was to determine the scraping behavior of the metric agent, and especially the memory impact with multiple receivers under high load.
 
@@ -565,21 +590,24 @@ Avalanche load generator was configured to generate `2000` metric points per scr
 
 Metric agent scrape job configuration:
 - prometheus/app-pods and prometheus/app-service configured with parameter `sample_limit: 1000` to limit time series for each scrape loop to max 1000 time series.
+   <details>                    
+     <summary>Expand</summary>  
 
-```yaml
-        prometheus/app-pods:
-            config:
-                scrape_configs:
-                    - job_name: app-pods
-                      sample_limit: 1000
-                      scrape_interval: 30s
-                      relabel_configs:
-                        - source_labels: [__meta_kubernetes_pod_node_name]
-                          regex: $MY_NODE_NAME
-                          action: keep
-```
+  ```yaml
+          prometheus/app-pods:
+              config:
+                  scrape_configs:
+                      - job_name: app-pods
+                        sample_limit: 1000
+                        scrape_interval: 30s
+                        relabel_configs:
+                          - source_labels: [__meta_kubernetes_pod_node_name]
+                            regex: $MY_NODE_NAME
+                            action: keep
+  ```
+</details>
 
-With this limit, if the target exposes more than 1000 metrics, the target won't be scraped. Instead, log messages show `up` label being set to 0 as if the target is unhealthy. 
+With this limit, if the target exposes more than 1000 metrics, the target won't be scraped. Instead, log messages show `up` label being set to 0 as if the target is unhealthy.
 Example message ` "target_labels": "{__name__=\"up\", instance=\"100.64.13.133:8080\", job=\"app-pods\"}"`:
 
 ```shell
@@ -612,7 +640,7 @@ The test resulted in the following findings:
   - Kubernetes API server request duration for `GET` operations reached ~750ms and for `LIST` operations ~900ms. There was only one short peak of 21s detected for the `GET` operation.
 - `sample_limit` configuration tested for multiple receivers. Configured limitation works but there are no metrics identified to see limit violations when they occur, only logs are present in this case.
 - Multi-receiver test reached same stable limit of ~280K metrics per scrape in total, to test OOM resilience of setup, 45% more load added on peak stable load. Metric agent stay stable over 12 hour running test, no OOM observed, load over ~280K refused successfully.
-- In all test cases backpressure from broken metric gateway handled by the metric agent successfully, no serious impact on metric agent observed, metric agent exporter successfully queued metric data and drop after unsuccessfully retry. 
+- In all test cases backpressure from broken metric gateway handled by the metric agent successfully, no serious impact on metric agent observed, metric agent exporter successfully queued metric data and drop after unsuccessfully retry.
 
 ## Conclusion
 
@@ -627,14 +655,16 @@ Batch processor was configured with a batch size of 1024 to avoid hitting the gR
 Default batch size of 8192 was over the default gRPC client payload limit of 4MByte.
 
 By the multi-receiver test some OOM observed, after further analysis result following finding:
-1. Under high load, memory limiter trigger GC to free memory and go back for normal operation
-2. Between GC and memory limiter cycles approximately 200MByte on top of live memory occupied
-3. Frequent GC result fragmented memory because go GC has no compaction (only Mark and Sweep)
-4. In certain cases memory get heavily fragmented, despite there are in total enough memory but non-of free memory blocks are big enough for in coming data
+- Under high load, memory limiter triggers garbage collector (GC) to free memory and go back for normal operation
+- Between GC cycles approximately 200MByte on top of live memory occupied
+- Frequent GC result fragmented memory because go GC has no compaction (only Mark and Sweep)
+- In certain cases memory get heavily fragmented, despite there are in total enough memory but none of free memory blocks are big enough for in coming data
 
-To solve problem described above, metric agent memory limit increased from 1Gi to 1200Mi, memory_limiter check intervals decreased from 0.5 second to 0.1 second. The test repeated with new configuration and 45% more load over 12 hours, no OOM issues occurred.
+To solve that problem, metric agent memory limit was increased from 1Gi to 1200Mi, and `memory_limiter` check intervals were decreased from 0.5 second to 0.1 second. When the test was repeated with this new configuration and 45% more load over 12 hours, no OOM issues occurred.
 
 The following ConfigMap contains all configuration adjustments for the metric agent, as well as the Prometheus receiver configuration changes. This configuration should be used as reference to implement Telemetry manager changes.
+<details>                    
+  <summary>Expand</summary>
 
 ```yaml
 apiVersion: v1
@@ -804,5 +834,5 @@ metadata:
     kind: MetricPipeline
     name: metricpipeline-sample
 ```
-
+</details>
 
