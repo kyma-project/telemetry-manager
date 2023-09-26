@@ -9,9 +9,10 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 var _ = Describe("Logs Validating Webhook", Label("logging"), func() {

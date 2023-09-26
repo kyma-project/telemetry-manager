@@ -13,8 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

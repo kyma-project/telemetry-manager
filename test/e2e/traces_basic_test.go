@@ -21,9 +21,10 @@ import (
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 var _ = Describe("Traces Basic", Label("tracing"), func() {
