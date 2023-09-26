@@ -56,7 +56,8 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		}...)
 
 		// Default namespace objects
-		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", mockBackend.HostSecretRef()).
+		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled").
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			PrometheusInput(true)
 		objs = append(objs, metricPipeline.K8sObject())
 
