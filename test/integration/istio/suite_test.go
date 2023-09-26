@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -90,7 +91,7 @@ var _ = AfterSuite(func() {
 			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 			var secret corev1.Secret
 			g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
-		}, timeout, interval).ShouldNot(Succeed())
+		}, periodic.Timeout, periodic.Interval).ShouldNot(Succeed())
 	}
 
 	cancel()
