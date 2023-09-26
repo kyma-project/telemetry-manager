@@ -37,7 +37,7 @@ var _ = Describe("Logs", Label("logging"), func() {
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		logPipeline := kitlog.NewPipeline("pipeline-dedot-test").
-			WithSecretKeyRef(mockBackend.HostSecretRefKey()).
+			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
 			WithIncludeContainer([]string{logProducerName})
 		objs = append(objs, logPipeline.K8sObject())

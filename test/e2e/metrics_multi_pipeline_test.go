@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -19,12 +20,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"slices"
 )
 
-var _ = Describe("Metrics", Label("metrics"), func() {
+var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 	Context("When multiple metricpipelines exist", Ordered, func() {
 		const (
-			mockNs           = "metric-mocks-multi-pipeline"
+			mockNs           = "metric-multi-pipeline"
 			mockBackendName1 = "metric-receiver-1"
 			mockBackendName2 = "metric-receiver-2"
 		)
@@ -44,10 +46,7 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 					mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
 				)
 
-				metricPipeline := kitmetric.NewPipeline(
-					fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline"),
-					mockBackend.HostSecretRefKey(),
-				)
+				metricPipeline := kitmetric.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
 				pipelines.Append(metricPipeline.Name())
 				objs = append(objs, metricPipeline.K8sObject())
 			}
@@ -92,32 +91,34 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		const maxNumberOfMetricPipelines = 3
 
 		var (
-			pipelineObjectsToDelete []client.Object
-			pipelines               = kyma.NewPipelineList()
+			pipelines            = kyma.NewPipelineList()
+			pipelineCreatedFirst *telemetryv1alpha1.MetricPipeline
+			pipelineCreatedLater *telemetryv1alpha1.MetricPipeline
 		)
 
 		makeResources := func() []client.Object {
-			var allObjs []client.Object
+			var objs []client.Object
 			for i := 0; i < maxNumberOfMetricPipelines; i++ {
-				name := fmt.Sprintf("pipeline-%d", i)
-				hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-"+name, kitkyma.DefaultNamespaceName,
-					kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
-				pipeline := kitmetric.NewPipeline(name, hostSecret.SecretKeyRef("metric-host"))
-				objs := []client.Object{hostSecret.K8sObject(), pipeline.K8sObject()}
+				pipeline := kitmetric.NewPipeline(fmt.Sprintf("pipeline-%d", i))
 				pipelines.Append(pipeline.Name())
-				allObjs = append(allObjs, objs...)
+				objs = append(objs, pipeline.K8sObject())
+
 				if i == 0 {
-					pipelineObjectsToDelete = objs
+					pipelineCreatedFirst = pipeline.K8sObject()
 				}
 			}
 
-			return allObjs
+			return objs
 		}
 
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				k8sObjectsToDelete := slices.DeleteFunc(k8sObjects, func(obj client.Object) bool {
+					return obj.GetName() == pipelineCreatedFirst.GetName() //first pipeline is deleted separately in one of the specs
+				})
+				k8sObjectsToDelete = append(k8sObjectsToDelete, pipelineCreatedLater)
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjectsToDelete...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
@@ -131,13 +132,11 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 
 		It("Should have a pending pipeline", func() {
 			By("Creating an additional pipeline", func() {
-				hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-exceeding-pipeline", kitkyma.DefaultNamespaceName,
-					kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
-				pipeline := kitmetric.NewPipeline("exceeding-pipeline", hostSecret.SecretKeyRef("metric-host"))
-				newObjs := []client.Object{hostSecret.K8sObject(), pipeline.K8sObject()}
+				pipeline := kitmetric.NewPipeline("exceeding-pipeline")
+				pipelineCreatedLater = pipeline.K8sObject()
 				pipelines.Append(pipeline.Name())
 
-				Expect(kitk8s.CreateObjects(ctx, k8sClient, newObjs...)).Should(Succeed())
+				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
 				verifiers.MetricPipelineShouldStayPending(ctx, k8sClient, pipeline.Name())
 				verifiers.MetricGatewayConfigShouldNotContainPipeline(ctx, k8sClient, pipeline.Name())
 			})
@@ -145,11 +144,76 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 
 		It("Should have only running pipeline", func() {
 			By("Deleting a pipeline", func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipelineObjectsToDelete...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipelineCreatedFirst)).Should(Succeed())
+
 				for _, pipeline := range pipelines.All()[1:] {
 					verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipeline)
 				}
 			})
+		})
+	})
+
+	Context("When a broken metricpipeline exists", Ordered, func() {
+		const (
+			mockBackendName = "metric-receiver"
+			mockNs          = "metric-mocks-broken-pipeline"
+		)
+		var (
+			urls                = urlprovider.New()
+			healthyPipelineName string
+			brokenPipelineName  string
+		)
+
+		makeResources := func() []client.Object {
+			var objs []client.Object
+			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+
+			mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
+			objs = append(objs, mockBackend.K8sObjects()...)
+			urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
+
+			healthyPipeline := kitmetric.NewPipeline("healthy").WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+			healthyPipelineName = healthyPipeline.Name()
+			objs = append(objs, healthyPipeline.K8sObject())
+
+			unreachableHostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-broken", kitkyma.DefaultNamespaceName,
+				kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
+			brokenPipeline := kitmetric.NewPipeline("broken").WithOutputEndpointFromSecret(unreachableHostSecret.SecretKeyRef("metric-host"))
+			brokenPipelineName = brokenPipeline.Name()
+			objs = append(objs, brokenPipeline.K8sObject(), unreachableHostSecret.K8sObject())
+
+			urls.SetOTLPPush(proxyClient.ProxyURLForService(
+				kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP),
+			)
+
+			return objs
+		}
+
+		BeforeAll(func() {
+			k8sObjects := makeResources()
+
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			})
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have running pipelines", func() {
+			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, healthyPipelineName)
+			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, brokenPipelineName)
+		})
+
+		It("Should have a running metric gateway deployment", func() {
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+		})
+
+		It("Should have a metrics backend running", func() {
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+		})
+
+		It("Should verify end-to-end metric delivery", func() {
+			gauges := kitmetrics.MakeAndSendGaugeMetrics(proxyClient, urls.OTLPPush())
+			verifiers.MetricsShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName), gauges)
 		})
 	})
 })

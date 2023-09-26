@@ -24,7 +24,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics", Label("metrics"), func() {
+var _ = Describe("Metrics Basic", Label("metrics"), func() {
 	const (
 		mockBackendName = "metric-receiver"
 		mockNs          = "metric-mocks"
@@ -44,8 +44,9 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		metricPipeline := kitmetric.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline"),
-			mockBackend.HostSecretRefKey()).Persistent(true)
+		metricPipeline := kitmetric.NewPipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
+			Persistent(isOperational())
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 

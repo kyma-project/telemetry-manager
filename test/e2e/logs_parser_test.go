@@ -45,7 +45,7 @@ Types user:string pass:string`
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		logHTTPPipeline := kitlog.NewPipeline("pipeline-regex-parser").
-			WithSecretKeyRef(mockBackend.HostSecretRefKey()).
+			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput()
 		logRegExParser := kitlog.NewParser("my-regex-parser", configParser)
 		objs = append(objs, logHTTPPipeline.K8sObject())

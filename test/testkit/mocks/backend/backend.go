@@ -105,7 +105,7 @@ func (b *Backend) Name() string {
 	return b.name
 }
 
-func (b *Backend) HostSecretRefKey() *telemetryv1alpha1.SecretKeyRef {
+func (b *Backend) HostSecretRef() *telemetryv1alpha1.SecretKeyRef {
 	return b.HostSecret.SecretKeyRef("host")
 }
 

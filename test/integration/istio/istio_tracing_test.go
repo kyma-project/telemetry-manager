@@ -46,7 +46,7 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		istioTracePipeline := kittrace.NewPipeline(pipelineName).WithOutputEndpointFromSecret(mockBackend.HostSecretRefKey())
+		istioTracePipeline := kittrace.NewPipeline(pipelineName).WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
 		objs = append(objs, istioTracePipeline.K8sObject())
 
 		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).

@@ -38,10 +38,9 @@ var _ = Describe("Metrics", Label("metrics"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		metricPipeline := kitmetric.NewPipeline(
-			fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline"),
-			mockBackend.HostSecretRefKey(),
-		).WithTLS(mockBackend.TLSCerts)
+		metricPipeline := kitmetric.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
+			WithTLS(mockBackend.TLSCerts)
 		pipelineName = metricPipeline.Name()
 
 		objs = append(objs, metricPipeline.K8sObject())

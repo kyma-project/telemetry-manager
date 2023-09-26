@@ -39,7 +39,7 @@ var _ = Describe("Logs", Label("logging"), func() {
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		logPipeline := kitlog.NewPipeline("pipeline-annotation-test").
-			WithSecretKeyRef(mockBackend.HostSecretRefKey()).
+			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
 			KeepAnnotations(true).
 			DropLabels(true)

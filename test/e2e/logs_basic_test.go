@@ -39,7 +39,7 @@ var _ = Describe("Logs", Label("logging"), func() {
 
 		var logPipeline *kitlog.Pipeline
 		if outputType == OutputTypeHTTP {
-			logPipeline = kitlog.NewPipeline("http-output-pipeline").WithSecretKeyRef(mockBackend.HostSecretRefKey()).WithHTTPOutput()
+			logPipeline = kitlog.NewPipeline("http-output-pipeline").WithSecretKeyRef(mockBackend.HostSecretRef()).WithHTTPOutput()
 		} else {
 			logPipeline = kitlog.NewPipeline("custom-output-pipeline").WithCustomOutput(mockBackend.ExternalService.Host())
 		}

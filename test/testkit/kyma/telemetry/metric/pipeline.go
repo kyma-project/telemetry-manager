@@ -14,22 +14,34 @@ import (
 const version = "1.0.0"
 
 type Pipeline struct {
-	name                 string
-	endpointSecretKeyRef *telemetry.SecretKeyRef
-	persistent           bool
-	id                   string
-	runtime              bool
-	prometheus           bool
-	convertToDelta       bool
-	tls                  *telemetry.OtlpTLS
+	persistent bool
+
+	id              string
+	name            string
+	otlpEndpointRef *telemetry.SecretKeyRef
+	otlpEndpoint    string
+	runtime         bool
+	prometheus      bool
+	convertToDelta  bool
+	tls             *telemetry.OtlpTLS
 }
 
-func NewPipeline(name string, secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
+func NewPipeline(name string) *Pipeline {
 	return &Pipeline{
-		name:                 name,
-		endpointSecretKeyRef: secretKeyRef,
-		id:                   uuid.New().String(),
+		id:           uuid.New().String(),
+		name:         name,
+		otlpEndpoint: "http://unreachable:4317",
 	}
+}
+
+func (p *Pipeline) WithOutputEndpoint(otlpEndpoint string) *Pipeline {
+	p.otlpEndpoint = otlpEndpoint
+	return p
+}
+
+func (p *Pipeline) WithOutputEndpointFromSecret(otlpEndpointRef *telemetry.SecretKeyRef) *Pipeline {
+	p.otlpEndpointRef = otlpEndpointRef
+	return p
 }
 
 func (p *Pipeline) Name() string {
@@ -89,6 +101,18 @@ func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
 	}
 	labels.Version(version)
 
+	otlpOutput := &telemetry.OtlpOutput{
+		Endpoint: telemetry.ValueType{},
+		TLS:      p.tls,
+	}
+	if p.otlpEndpointRef != nil {
+		otlpOutput.Endpoint.ValueFrom = &telemetry.ValueFromSource{
+			SecretKeyRef: p.otlpEndpointRef,
+		}
+	} else {
+		otlpOutput.Endpoint.Value = p.otlpEndpoint
+	}
+
 	metricPipeline := telemetry.MetricPipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
 			Name:   p.Name(),
@@ -106,14 +130,7 @@ func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
 				},
 			},
 			Output: telemetry.MetricPipelineOutput{
-				Otlp: &telemetry.OtlpOutput{
-					Endpoint: telemetry.ValueType{
-						ValueFrom: &telemetry.ValueFromSource{
-							SecretKeyRef: p.endpointSecretKeyRef,
-						},
-					},
-					TLS: p.tls,
-				},
+				Otlp:           otlpOutput,
 				ConvertToDelta: p.convertToDelta,
 			},
 		},
