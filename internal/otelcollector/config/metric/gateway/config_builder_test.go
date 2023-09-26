@@ -233,7 +233,7 @@ processors:
         timeout: 10s
         send_batch_max_size: 1024
     memory_limiter:
-        check_interval: 1s
+        check_interval: 0.1s
         limit_percentage: 75
         spike_limit_percentage: 10
     k8sattributes:
