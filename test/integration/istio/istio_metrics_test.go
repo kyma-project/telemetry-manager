@@ -21,7 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 )
 
-var _ = Describe("Istio metrics", Label("metrics"), func() {
+var _ = Describe("Istio Metrics", Label("metrics"), func() {
 	const (
 		mockNs                           = "istio-metric-mock"
 		mockBackendName                  = "metric-agent-receiver"
@@ -29,9 +29,7 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		httpAnnotatedMetricProducerName  = "metric-producer-http"
 		unannotatedMetricProducerName    = "metric-producer"
 	)
-	var (
-		telemetryExportURL string
-	)
+	var telemetryExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object

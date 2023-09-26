@@ -24,7 +24,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 )
 
-var _ = Describe("Istio access logs", Label("logging"), func() {
+var _ = Describe("Istio Access Logs", Label("logging"), func() {
 	const (
 		mockNs          = "istio-access-logs-mocks"
 		mockBackendName = "istio-access-logs-backend"
@@ -32,9 +32,8 @@ var _ = Describe("Istio access logs", Label("logging"), func() {
 		sampleAppNs     = "istio-permissive-mtls"
 		logPipelineName = "pipeline-istio-access-logs"
 	)
-	var (
-		urls *urlprovider.URLProvider
-	)
+	urls := urlprovider.New()
+
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())

@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Istio tracing", Label("tracing"), func() {
+var _ = Describe("Istio Traces", Label("tracing"), func() {
 	const (
 		mockNs          = "istio-tracing-mock"
 		mockBackendName = "istio-tracing-backend"
@@ -33,9 +33,7 @@ var _ = Describe("Istio tracing", Label("tracing"), func() {
 		pipelineName = "pipeline-istio-traces"
 	)
 
-	var (
-		urls *urlprovider.URLProvider
-	)
+	var urls = urlprovider.New()
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
