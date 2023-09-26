@@ -391,9 +391,9 @@ To avoid and detect these scenarios, you must monitor the instances by collectin
 The relevant metrics are:
 | Name | Threshold | Description |
 |---|---|---|
-| otelcol_exporter_enqueue_failed_metric_points | total[5m] > 0 | Indicates that new or retried items could not be added to the exporter buffer anymore as the buffer is exhausted. That usually happens when the configured backend cannot handle the load on time and is causing backpressure. |
+| otelcol_exporter_enqueue_failed_metric_points | total[5m] > 0 | Indicates that new or retried items could not be added to the exporter buffer because the buffer is exhausted. Typically, that happens when the configured backend cannot handle the load on time and is causing back pressure. |
 | otelcol_exporter_send_failed_metric_points | total[5m] > 0 | Indicates that items are refused in an non-retryable way like a 400 status |
-| otelcol_processor_refused_metric_points | total[5m] > 0 | Indicates that items cannot be received anymore as a processor refuses them. That usually happens when memory of the collector is exhausted as too much data is arriving, then a throttling will start. |
+| otelcol_processor_refused_metric_points | total[5m] > 0 | Indicates that items cannot be received because a processor refuses them. That usually happens when memory of the collector is exhausted because too much data arrived and throttling started.. |
 
 ## Limitations
 

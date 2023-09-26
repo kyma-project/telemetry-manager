@@ -439,8 +439,8 @@ To avoid and detect these scenarios, you must monitor the instances by collectin
 The relevant metrics are:
 | Name | Threshold | Description |
 |---|---|---|
-| telemetry_fsbuffer_usage_bytes | (bytes/1000000000) * 100 > 90 | The metric indicates the current size of the persistent log buffer in bytes running on each instance. If the size reaches 1GB, logs will start getting dropped at that instance. At 90% buffer size an alert should get raised. |
-| fluentbit_output_dropped_records_total| total[5m] > 0 | The metric indicates that the instance is actively dropping logs. That typically happens when a log message got rejected with a un-retryable status code like a 400. Any occurence of such drop should be alerted. |
+| telemetry_fsbuffer_usage_bytes | (bytes/1000000000) * 100 > 90 | The metric indicates the current size (in bytes) of the persistent log buffer running on each instance. If the size reaches 1GB, logs are dropped at that instance. At 90% buffer size, an alert should be raised. |
+| fluentbit_output_dropped_records_total| total[5m] > 0 | The metric indicates that the instance is actively dropping logs. That typically happens when a log message was rejected with a un-retryable status code like a 400. If logs are dropped, an alert should be raised. |
 
 
 ## Limitations
