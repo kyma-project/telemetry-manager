@@ -9,7 +9,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/extslices"
 )
 
 type logComponentsChecker struct {
@@ -30,31 +31,32 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 	}
 
 	reason := l.determineReason(logPipelines.Items, logParsers.Items, telemetryInDeletion)
-	return l.createConditionFromReason(reason), nil
+	message := l.createMessageForReason(logPipelines.Items, logParsers.Items, reason)
+	return l.createConditionFromReason(reason, message), nil
 }
 
 func (l *logComponentsChecker) determineReason(pipelines []v1alpha1.LogPipeline, parsers []v1alpha1.LogParser, telemetryInDeletion bool) string {
 	if telemetryInDeletion && (len(pipelines) != 0 || len(parsers) != 0) {
-		return reconciler.ReasonLogResourceBlocksDeletion
+		return conditions.ReasonResourceBlocksDeletion
 	}
 
 	if len(pipelines) == 0 {
-		return reconciler.ReasonNoPipelineDeployed
+		return conditions.ReasonNoPipelineDeployed
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.LogPipeline) bool {
-		return l.isPendingWithReason(p, reconciler.ReasonFluentBitDSNotReady)
+		return l.isPendingWithReason(p, conditions.ReasonFluentBitDSNotReady)
 	}); found {
-		return reconciler.ReasonFluentBitDSNotReady
+		return conditions.ReasonFluentBitDSNotReady
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.LogPipeline) bool {
-		return l.isPendingWithReason(p, reconciler.ReasonReferencedSecretMissing)
+		return l.isPendingWithReason(p, conditions.ReasonReferencedSecretMissing)
 	}); found {
-		return reconciler.ReasonReferencedSecretMissing
+		return conditions.ReasonReferencedSecretMissing
 	}
 
-	return reconciler.ReasonFluentBitDSReady
+	return conditions.ReasonFluentBitDSReady
 }
 
 func (l *logComponentsChecker) isPendingWithReason(p v1alpha1.LogPipeline, reason string) bool {
@@ -66,20 +68,38 @@ func (l *logComponentsChecker) isPendingWithReason(p v1alpha1.LogPipeline, reaso
 	return lastCondition.Type == v1alpha1.LogPipelinePending && lastCondition.Reason == reason
 }
 
-func (l *logComponentsChecker) createConditionFromReason(reason string) *metav1.Condition {
+func (l *logComponentsChecker) createMessageForReason(pipelines []v1alpha1.LogPipeline, parsers []v1alpha1.LogParser, reason string) string {
+	if reason != conditions.ReasonResourceBlocksDeletion {
+		return conditions.CommonMessageFor(reason)
+	}
+
+	return generateDeletionBlockedMessage(blockingResources{
+		resourceType: "LogPipelines",
+		resourceNames: extslices.TransformFunc(pipelines, func(p v1alpha1.LogPipeline) string {
+			return p.Name
+		}),
+	}, blockingResources{
+		resourceType: "LogParsers",
+		resourceNames: extslices.TransformFunc(parsers, func(p v1alpha1.LogParser) string {
+			return p.Name
+		}),
+	})
+}
+
+func (l *logComponentsChecker) createConditionFromReason(reason, message string) *metav1.Condition {
 	conditionType := "LogComponentsHealthy"
-	if reason == reconciler.ReasonFluentBitDSReady || reason == reconciler.ReasonNoPipelineDeployed {
+	if reason == conditions.ReasonFluentBitDSReady || reason == conditions.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
 			Type:    conditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  reason,
-			Message: reconciler.ConditionMessage(reason),
+			Message: message,
 		}
 	}
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
-		Message: reconciler.ConditionMessage(reason),
+		Message: message,
 	}
 }

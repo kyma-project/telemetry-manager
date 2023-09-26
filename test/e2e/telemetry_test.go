@@ -13,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 
@@ -152,9 +151,21 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 				isMetricsEnabled, err := isMetricsEnabled()
 				g.Expect(err).ShouldNot(HaveOccurred())
 				expectedConditions := map[string]metav1.Condition{
-					"LogComponentsHealthy":    {Status: metav1.ConditionFalse, Reason: reconciler.ReasonLogResourceBlocksDeletion, Message: reconciler.ConditionMessage(reconciler.ReasonLogResourceBlocksDeletion)},
-					"MetricComponentsHealthy": {Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.ConditionMessage(reconciler.ReasonNoPipelineDeployed)},
-					"TraceComponentsHealthy":  {Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.ConditionMessage(reconciler.ReasonNoPipelineDeployed)},
+					"LogComponentsHealthy": {
+						Status:  "False",
+						Reason:  "ResourceBlocksDeletion",
+						Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (telemetry-test)",
+					},
+					"MetricComponentsHealthy": {
+						Status:  "True",
+						Reason:  "NoPipelineDeployed",
+						Message: "No pipelines have been deployed",
+					},
+					"TraceComponentsHealthy": {
+						Status:  "True",
+						Reason:  "NoPipelineDeployed",
+						Message: "No pipelines have been deployed",
+					},
 				}
 				expectedConditionsLength := expectedConditionsLength(isMetricsEnabled)
 				g.Expect(telemetry.Status.Conditions).Should(HaveLen(expectedConditionsLength))
