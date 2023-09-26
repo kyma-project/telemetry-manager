@@ -403,7 +403,7 @@ We tweak metrics and series value with 10 labels in each metric data point. The 
 We identified the following test cases:
 1. To test how many workloads are supported: [Multiple Pods, all running on a single node, export metrics](#multiple_pods_all_running_on_a_single_note_export_metrics).
 2. To understand how scraping works when the workload exposes several MB of metrics: [One workload generating huge amount of metrics](#one-workload-generating-huge-amount-of-metrics).
-3. To understand prometheus SDS behaviour with multiple services: Multiple workloads across different Nodes](#multiple-workloads-across-different-nodes).
+3. To understand prometheus SDS behaviour with multiple services: [Multiple workloads across different Nodes](#multiple-workloads-across-different-nodes).
 4. [Scrape multiple Pods and services from multiple receivers](#scrape-multiple-pods-and-services-from-multiple-receivers).
 5. [Scrape sample limit test](#scrape-sample-limit-test).
 
