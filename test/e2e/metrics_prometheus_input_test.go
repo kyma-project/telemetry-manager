@@ -16,6 +16,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -108,7 +109,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 					))),
 				),
 				))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 		})
 
 		It("Should verify custom metric scraping via annotated services", func() {
@@ -139,7 +140,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 					))),
 				),
 				))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 		})
 
 		It("Should verify no kubelet metrics", func() {
@@ -150,7 +151,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(resp).To(HaveHTTPBody(
 					Not(ContainMd(ContainMetric(WithName(BeElementOf(kubeletMetricNames))))),
 				))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 		})
 	})
 })

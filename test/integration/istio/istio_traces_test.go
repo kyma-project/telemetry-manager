@@ -20,6 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -92,7 +93,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 				hasIstioSidecar, err := verifiers.HasContainer(ctx, k8sClient, listOptions, "istio-proxy")
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(hasIstioSidecar).To(BeTrue())
-			}, timeout*2, interval).Should(Succeed())
+			}, periodic.Timeout*2, periodic.Interval).Should(Succeed())
 		})
 
 		It("Should have a running trace collector deployment", func() {
@@ -109,7 +110,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 					resp, err := proxyClient.Get(urls.Metrics())
 					g.Expect(err).NotTo(HaveOccurred())
 					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				}, timeout, interval).Should(Succeed())
+				}, periodic.Timeout, periodic.Interval).Should(Succeed())
 			})
 		})
 
@@ -120,7 +121,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 						resp, err := proxyClient.Get(urls.MetricPodURL())
 						g.Expect(err).NotTo(HaveOccurred())
 						g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-					}, timeout, interval).Should(Succeed())
+					}, periodic.Timeout, periodic.Interval).Should(Succeed())
 				}
 			})
 
@@ -134,7 +135,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainSpansWithAttributes(proxyAttrs))))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 		})
 
 		It("Should have custom spans in the backend", func() {
@@ -148,7 +149,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainSpansWithResourceAttributes(customResourceAttr))))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 		})
 	})
 })

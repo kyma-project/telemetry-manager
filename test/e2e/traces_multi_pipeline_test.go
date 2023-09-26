@@ -129,7 +129,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("tracing"), func() {
 				pipelines.Append(pipeline.Name())
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
-				verifiers.TracePipelineShouldStayPending(ctx, k8sClient, pipeline.Name())
+				verifiers.TracePipelineShouldNotBeRunning(ctx, k8sClient, pipeline.Name())
 				verifiers.TraceCollectorConfigShouldNotContainPipeline(ctx, k8sClient, pipeline.Name())
 			})
 		})

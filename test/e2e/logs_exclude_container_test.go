@@ -18,6 +18,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 var _ = Describe("Logs Exclude Container", Label("logging"), func() {
@@ -70,7 +71,7 @@ var _ = Describe("Logs Exclude Container", Label("logging"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainLogs(Any()))))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 		})
 
 		It("Should not collect any log-producer logs", func() {
@@ -80,7 +81,7 @@ var _ = Describe("Logs Exclude Container", Label("logging"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					Not(ContainLogs(WithContainer(logProducerName))))))
-			}, telemetryDeliveryTimeout, interval).Should(Succeed())
+			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 		})
 
 	})

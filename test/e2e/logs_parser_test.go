@@ -19,6 +19,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 var _ = Describe("Logs Parser", Label("logging"), func() {
@@ -82,7 +83,7 @@ Types user:string pass:string`
 					ContainLogs(WithAttributeKeyValue("user", "foo")),
 					ContainLogs(WithAttributeKeyValue("pass", "bar")),
 				)))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 		})
 	})
 })

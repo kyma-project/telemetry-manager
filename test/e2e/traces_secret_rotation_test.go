@@ -26,7 +26,7 @@ var _ = Describe("Traces Secret Rotation", Label("tracing"), func() {
 		})
 
 		It("Should have pending tracepipeline", func() {
-			verifiers.TracePipelineShouldStayPending(ctx, k8sClient, tracePipeline.Name())
+			verifiers.TracePipelineShouldNotBeRunning(ctx, k8sClient, tracePipeline.Name())
 		})
 
 		It("Should have running tracepipeline", func() {

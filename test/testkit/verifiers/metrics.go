@@ -16,6 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 func MetricPipelineShouldBeRunning(ctx context.Context, k8sClient client.Client, pipelineName string) {
@@ -24,16 +25,16 @@ func MetricPipelineShouldBeRunning(ctx context.Context, k8sClient client.Client,
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(gomega.Succeed())
 		return pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)
-	}, timeout, interval).Should(gomega.BeTrue())
+	}, periodic.Timeout, periodic.Interval).Should(gomega.BeTrue())
 }
 
-func MetricPipelineShouldStayPending(ctx context.Context, k8sClient client.Client, pipelineName string) {
+func MetricPipelineShouldNotBeRunningPending(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	gomega.Consistently(func(g gomega.Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(gomega.Succeed())
 		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)).To(gomega.BeFalse())
-	}, reconciliationTimeout, interval).Should(gomega.Succeed())
+	}, periodic.NegativeCheckTimeout, periodic.Interval).Should(gomega.Succeed())
 }
 
 func MetricGatewayConfigShouldContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
@@ -43,7 +44,7 @@ func MetricGatewayConfigShouldContainPipeline(ctx context.Context, k8sClient cli
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return strings.Contains(configString, pipelineAlias)
-	}, timeout, interval).Should(gomega.BeTrue())
+	}, periodic.Timeout, periodic.Interval).Should(gomega.BeTrue())
 }
 
 func MetricGatewayConfigShouldNotContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
@@ -53,7 +54,7 @@ func MetricGatewayConfigShouldNotContainPipeline(ctx context.Context, k8sClient 
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return !strings.Contains(configString, pipelineAlias)
-	}, reconciliationTimeout, interval).Should(gomega.BeTrue())
+	}, periodic.NegativeCheckTimeout, periodic.Interval).Should(gomega.BeTrue())
 }
 
 func MetricsShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL string, metrics []pmetric.Metric) {
@@ -64,5 +65,5 @@ func MetricsShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExpor
 		g.Expect(resp).To(gomega.HaveHTTPBody(metric.ConsistOfMds(metric.WithMetrics(gomega.BeEquivalentTo(metrics)))))
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(gomega.HaveOccurred())
-	}, timeout, interval).Should(gomega.Succeed())
+	}, periodic.Timeout, periodic.TelemetryPollInterval).Should(gomega.Succeed())
 }

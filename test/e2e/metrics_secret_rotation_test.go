@@ -27,7 +27,7 @@ var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 		})
 
 		It("Should have pending metricpipeline", func() {
-			verifiers.MetricPipelineShouldStayPending(ctx, k8sClient, metricPipeline.Name())
+			verifiers.MetricPipelineShouldNotBeRunningPending(ctx, k8sClient, metricPipeline.Name())
 		})
 
 		It("Should have running metricpipeline", func() {

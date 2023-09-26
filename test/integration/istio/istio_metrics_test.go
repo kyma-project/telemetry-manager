@@ -19,6 +19,7 @@ import (
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 var _ = Describe("Istio Metrics", Label("metrics"), func() {
@@ -128,7 +129,7 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", podName)),
 			ContainMetric(WithName(BeElementOf(metricproducer.AllMetricNames))),
 		))))
-	}, timeout, telemetryDeliveryInterval).Should(Succeed())
+	}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 }
 
 func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
@@ -141,5 +142,5 @@ func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
 				WithName(BeElementOf(metricproducer.AllMetricNames)),
 				ContainDataPointAttrs(HaveKeyWithValue("service", serviceName)),
 			)))))
-	}, timeout, telemetryDeliveryInterval).Should(Succeed())
+	}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 }

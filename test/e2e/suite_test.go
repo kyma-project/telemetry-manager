@@ -19,6 +19,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -40,7 +41,7 @@ var (
 
 func TestE2e(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "E2e Suite")
+	RunSpecs(t, "E2E Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -80,7 +81,7 @@ var _ = AfterSuite(func() {
 			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 			var secret corev1.Secret
 			g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
-		}, timeout, interval).ShouldNot(Succeed())
+		}, periodic.Timeout, periodic.Interval).ShouldNot(Succeed())
 	}
 
 	cancel()

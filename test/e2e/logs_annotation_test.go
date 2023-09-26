@@ -19,6 +19,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 var _ = Describe("Logs Keep Annotations", Label("logging"), func() {
@@ -76,7 +77,7 @@ var _ = Describe("Logs Keep Annotations", Label("logging"), func() {
 					ContainLogs(WithKubernetesAnnotations("release", "v1.0.0")),
 					Not(ContainLogs(WithKubernetesLabels())),
 				)))
-			}, telemetryDeliveryTimeout, interval).Should(Succeed())
+			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 		})
 	})
 })

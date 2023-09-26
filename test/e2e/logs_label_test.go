@@ -19,6 +19,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 var _ = Describe("Logs Drop Labels", Label("logging"), func() {
@@ -77,8 +78,7 @@ var _ = Describe("Logs Drop Labels", Label("logging"), func() {
 					ContainLogs(WithKubernetesLabels("app", "logging-label-test")),
 					Not(ContainLogs(WithKubernetesAnnotations())),
 				)))
-			}, telemetryDeliveryTimeout, interval).Should(Succeed())
+			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 		})
-
 	})
 })

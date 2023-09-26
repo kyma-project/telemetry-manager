@@ -8,6 +8,8 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 func DaemonSetShouldBeReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
@@ -15,7 +17,7 @@ func DaemonSetShouldBeReady(ctx context.Context, k8sClient client.Client, name t
 		ready, err := isDaemonSetReady(ctx, k8sClient, name)
 		g.Expect(err).NotTo(gomega.HaveOccurred())
 		g.Expect(ready).To(gomega.BeTrue())
-	}, timeout, interval).Should(gomega.Succeed())
+	}, periodic.Timeout, periodic.Interval).Should(gomega.Succeed())
 }
 
 func isDaemonSetReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {

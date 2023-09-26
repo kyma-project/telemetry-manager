@@ -14,6 +14,7 @@ import (
 
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -55,7 +56,7 @@ var _ = Describe("Telemetry Manager", func() {
 				}
 
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, periodic.Timeout, periodic.Interval).Should(BeTrue())
 		})
 
 		It("Should have a webhook service", Label("logging", "tracing", "metrics"), func() {
@@ -73,7 +74,7 @@ var _ = Describe("Telemetry Manager", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(endpoints.Subsets).NotTo(BeEmpty())
 				return endpoints.Subsets[0].Addresses
-			}, timeout, interval).ShouldNot(BeEmpty())
+			}, periodic.Timeout, periodic.Interval).ShouldNot(BeEmpty())
 		})
 
 		It("Should have a metrics service", Label("logging", "tracing", "metrics"), func() {
@@ -93,7 +94,7 @@ var _ = Describe("Telemetry Manager", func() {
 				err := k8sClient.Get(ctx, key, &endpoints)
 				Expect(err).NotTo(HaveOccurred())
 				return endpoints.Subsets[0].Addresses
-			}, timeout, interval).ShouldNot(BeEmpty())
+			}, periodic.Timeout, periodic.Interval).ShouldNot(BeEmpty())
 		})
 
 		It("Should have LogPipelines CRD", Label("logging"), func() {

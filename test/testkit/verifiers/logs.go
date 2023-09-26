@@ -7,6 +7,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 func LogsShouldBeDelivered(proxyClient *apiserver.ProxyClient, logProducerName string, telemetryExportURL string) {
@@ -17,5 +18,5 @@ func LogsShouldBeDelivered(proxyClient *apiserver.ProxyClient, logProducerName s
 		g.Expect(resp).To(gomega.HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(gomega.HaveHTTPBody(gomega.SatisfyAll(
 			matchers.ContainLogs(matchers.WithPod(logProducerName)))))
-	}, timeout, interval).Should(gomega.Succeed())
+	}, periodic.Timeout, periodic.TelemetryPollInterval).Should(gomega.Succeed())
 }

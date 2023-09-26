@@ -22,6 +22,7 @@ import (
 
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 var _ = Describe("Istio Access Logs", Label("logging"), func() {
@@ -82,7 +83,7 @@ var _ = Describe("Istio Access Logs", Label("logging"), func() {
 				ready, err := verifiers.IsPodReady(ctx, k8sClient, listOptions)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
-			}, timeout*2, interval).Should(Succeed())
+			}, periodic.Timeout*2, periodic.Interval).Should(Succeed())
 		})
 
 		It("Should have the log pipeline running", func() {
@@ -91,7 +92,7 @@ var _ = Describe("Istio Access Logs", Label("logging"), func() {
 				key := types.NamespacedName{Name: pipelineName}
 				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 				return pipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning)
-			}, timeout, interval).Should(BeTrue())
+			}, periodic.Timeout, periodic.Interval).Should(BeTrue())
 		})
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {
@@ -99,7 +100,7 @@ var _ = Describe("Istio Access Logs", Label("logging"), func() {
 				resp, err := proxyClient.Get(urls.MetricPodURL())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.Timeout, periodic.Interval).Should(Succeed())
 		})
 
 		It("Should verify istio logs are present", func() {
@@ -109,7 +110,7 @@ var _ = Describe("Istio Access Logs", Label("logging"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainLogs(WithAttributeKeys(istio.AccessLogAttributeKeys...)))))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 		})
 	})
 })

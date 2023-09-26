@@ -15,6 +15,7 @@ import (
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -86,7 +87,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 				g.Expect(resp).To(HaveHTTPBody(
 					ContainMd(ContainMetric(WithName(BeElementOf(kubeletMetricNames)))),
 				))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 		})
 
 		It("Should verify kubelet metric attributes", func() {
@@ -97,7 +98,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 				g.Expect(resp).To(HaveHTTPBody(
 					ConsistOfMds(ContainResourceAttrs(HaveKey(BeElementOf(kubeletMetricAttributes)))),
 				))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
 		})
 	})
 })

@@ -3,6 +3,7 @@ package verifiers
 import (
 	"context"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -15,7 +16,7 @@ func DeploymentShouldBeReady(ctx context.Context, k8sClient client.Client, name 
 		ready, err := isDeploymentReady(ctx, k8sClient, name)
 		g.Expect(err).NotTo(gomega.HaveOccurred())
 		g.Expect(ready).To(gomega.BeTrue())
-	}, timeout, interval).Should(gomega.Succeed())
+	}, periodic.Timeout, periodic.Interval).Should(gomega.Succeed())
 }
 
 func isDeploymentReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {

@@ -21,6 +21,7 @@ import (
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -86,7 +87,7 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
 				g.Expect(err).NotTo(HaveOccurred())
 				return *deployment.Spec.Replicas
-			}, timeout, interval).Should(Equal(int32(2)))
+			}, periodic.Timeout, periodic.Interval).Should(Equal(int32(2)))
 		})
 
 		It("Should have a trace backend running", Label(operationalTest), func() {
@@ -98,7 +99,7 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 				resp, err := proxyClient.Get(urls.Metrics())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.Timeout, periodic.Interval).Should(Succeed())
 		})
 
 		It("Should have a running pipeline", Label(operationalTest), func() {
@@ -125,7 +126,7 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 				resp, err := proxyClient.Get(pprofEndpoint)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.Timeout, periodic.Interval).Should(Succeed())
 		})
 	})
 })
