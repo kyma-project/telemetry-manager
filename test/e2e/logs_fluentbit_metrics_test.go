@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 )
 
-var _ = Describe("Logs", Label("logging"), func() {
+var _ = Describe("Logs Fluent Bit Metrics", Label("logging"), func() {
 
 	const (
 		telemetryFluentbitName              = "telemetry-fluent-bit"

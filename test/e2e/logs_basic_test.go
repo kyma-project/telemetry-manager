@@ -24,7 +24,7 @@ const (
 	OutputTypeCustom = "custom"
 )
 
-var _ = Describe("Logs", Label("logging"), func() {
+var _ = Describe("Logs Basic", Label("logging"), func() {
 	var urls = urlprovider.New()
 
 	makeResources := func(mockNs, mockBackendName, logProducerName string, outputType OutputType) []client.Object {

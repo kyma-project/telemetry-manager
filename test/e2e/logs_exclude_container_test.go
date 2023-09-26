@@ -20,7 +20,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-var _ = Describe("Logs", Label("logging"), func() {
+var _ = Describe("Logs Exclude Container", Label("logging"), func() {
 	const (
 		mockNs          = "log-exclude-container-mocks"
 		mockBackendName = "log-receiver-exclude-container"

@@ -20,7 +20,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-var _ = Describe("Logs", Label("logging"), func() {
+var _ = Describe("Logs Dedot", Label("logging"), func() {
 	const (
 		mockNs          = "log-dedot-labels-mocks"
 		mockBackendName = "log-receiver-dedot-labels"

@@ -21,7 +21,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-var _ = Describe("Logs", Label("logging"), func() {
+var _ = Describe("Logs Parser", Label("logging"), func() {
 	const (
 		mockNs          = "log-parser-mocks"
 		mockBackendName = "log-receiver-parser"
