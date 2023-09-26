@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Metrics", Label("metrics"), func() {
+var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 	Context("When a metricpipeline with missing secret reference exists", Ordered, func() {
 		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", kitkyma.DefaultNamespaceName,
 			kitk8s.WithStringData("metric-host", "http://localhost:4317"))

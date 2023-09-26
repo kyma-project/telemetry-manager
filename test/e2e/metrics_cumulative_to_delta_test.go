@@ -21,7 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics", Label("metrics"), func() {
+var _ = Describe("Metrics Cumulative To Delta", Label("metrics"), func() {
 	const (
 		mockNs          = "metric-mocks-delta"
 		mockBackendName = "metric-receiver"

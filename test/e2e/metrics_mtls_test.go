@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics", Label("metrics"), func() {
+var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 	const (
 		mockBackendName = "metric-tls-receiver"
 		mockNs          = "metric-mocks-tls-pipeline"
