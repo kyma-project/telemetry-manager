@@ -22,6 +22,9 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    deprecated: true
+    deprecationWarning: The LogParser API is deprecated, use logging in JSON format
+      instead and leverage the JSON parsing feature of the LogPipeline
     name: v1alpha1
     schema:
       openAPIV3Schema:

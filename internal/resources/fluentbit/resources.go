@@ -360,7 +360,7 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
     Match tele.*
     Merge_Log On
     K8S-Logging.Parser On
-    K8S-Logging.Exclude On
+    K8S-Logging.Exclude Off
     Buffer_Size 1MB
 
 `
