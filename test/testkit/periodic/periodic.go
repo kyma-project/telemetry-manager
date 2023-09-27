@@ -16,7 +16,7 @@ const (
 	TelemetryEventuallyTimeout = time.Second * 90
 
 	// TelemetryConsistentlyTimeout is used for asynchronous checks when polling Telemetry data from a mock backend via the export URL.
-	// For example, to verify that a certain signal does not have provided resource attributes.
+	// For example, to verify that a certain signal *does not* have provided resource attributes.
 	TelemetryConsistentlyTimeout = time.Second * 20
 
 	// DefaultInterval is the default interval duration used when no specialized interval is applicable.

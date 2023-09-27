@@ -83,6 +83,5 @@ var _ = Describe("Logs Exclude Container", Label("logging"), func() {
 					Not(ContainLogs(WithContainer(logProducerName))))))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
-
 	})
 })
