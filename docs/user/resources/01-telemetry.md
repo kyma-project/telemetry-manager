@@ -88,7 +88,8 @@ The state of the log components is determined by the status condition of type `L
 | True             | FluentBitDaemonSetReady    | Fluent Bit DaemonSet is ready                   |
 | False            | ReferencedSecretMissing    | One or more referenced Secrets are missing      |
 | False            | FluentBitDaemonSetNotReady | Fluent Bit DaemonSet is not ready               |
-| False            | LogResourceBlocksDeletion  | One or more LogPipelines/LogParsers still exist |
+| False            | ResourceBlocksDeletion     | The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (resource-1, resource-2,...), LogParsers (resource-1, resource-2,...) |
+
 
 ### Trace Components State
 
@@ -100,7 +101,8 @@ The state of the trace components is determined by the status condition of type 
 | True             | TraceGatewayDeploymentReady    | Trace gateway Deployment is ready          |
 | False            | ReferencedSecretMissing        | One or more referenced Secrets are missing |
 | False            | TraceGatewayDeploymentNotReady | Trace gateway Deployment is not ready      |
-| False            | TraceResourceBlocksDeletion    | One or more TracePipelines still exist     |
+| False            | ResourceBlocksDeletion         | The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (resource-1, resource-2,...) |
+
 
 ### Metric Components State
 
@@ -112,7 +114,8 @@ The state of the metric components is determined by the status condition of type
 | True             | MetricGatewayDeploymentReady    | Metric gateway Deployment is ready         |
 | False            | ReferencedSecretMissing         | One or more referenced Secrets are missing |
 | False            | MetricGatewayDeploymentNotReady | Metric gateway Deployment is not ready     |
-| False            | MetricResourceBlocksDeletion    | One or more MetricPipelines still exist    |
+| False            | ResourceBlocksDeletion          | The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (resource-1, resource-2,...) |
+
 
 
 ### Telemetry CR State
