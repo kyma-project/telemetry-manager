@@ -2,10 +2,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-    app.kubernetes.io/name: telemetry-tracepipelines
+    app.kubernetes.io/name: telemetry-metricpipelines
     busola.io/extension: resource
     busola.io/extension-version: "0.5"
-  name: tracepipelines
+  name: metricpipelines
 data:
   details: |-
     header:
@@ -21,6 +21,34 @@ data:
         name: Status
         widget: Badge
     body:
+      - widget: Panel
+        name: Input
+        children:
+          - name: Application
+            widget: Panel
+            visibility: $exists(spec.input.application)
+            children:
+              - name: Prometheus
+                widget: Panel
+                visibility: $exists(spec.input.application.prometheus)
+                children:
+                  - name: Enabled
+                    source: spec.input.application.prometheus.enabled
+                    visibility: $exists(spec.input.application.prometheus.enabled)
+              - name: Istio
+                widget: Panel
+                visibility: $exists(spec.input.application.istio)
+                children:
+                  - name: Enabled
+                    source: spec.input.application.istio.enabled
+                    visibility: $exists(spec.input.application.istio.enabled)
+              - name: Runtime
+                widget: Panel
+                visibility: $exists(spec.input.application.runtime)
+                children:
+                  - name: Enabled
+                    source: spec.input.application.runtime.enabled
+                    visibility: $exists(spec.input.application.runtime.enabled)
       - widget: Panel
         name: Output
         children:
@@ -148,6 +176,38 @@ data:
                   - name: Protocol
                     source: spec.output.otlp.protocol
   form: |
+    - path: spec.input
+      widget: FormGroup
+      defaultExpanded: true
+      simple: true
+      children:
+        - name: Application
+          path: application
+          widget: FormGroup
+          defaultExpanded: true
+          simple: true
+          children:
+            - name: Prometheus
+              path: prometheus
+              widget: FormGroup
+              simple: true
+              children:
+                - name: Enabled
+                  path: enabled
+            - name: Istio
+              path: istio
+              widget: FormGroup
+              simple: true
+              children:
+                - name: Enabled
+                  path: enabled
+            - name: Runtime
+              path: runtime
+              widget: FormGroup
+              simple: true
+              children:
+                - name: Enabled
+                  path: enabled
     - path: spec.output
       widget: FormGroup
       defaultExpanded: true
@@ -325,15 +385,15 @@ data:
                           enum: $keys($secret.data)
   general: |-
     resource:
-      kind: TracePipeline
+      kind: MetricPipeline
       group: telemetry.kyma-project.io
       version: v1alpha1
-    name: Trace Pipelines
+    name: Metric Pipelines
     category: Observability
-    urlPath: tracepipelines
+    urlPath: metricpipelines
     scope: cluster
     description: >-
-      {{[TracePipeline](https://kyma-project.io/#/telemetry-manager/user/resources/04-tracepipeline)}} configures a custom Trace Pipeline
+      {{[MetricPipeline](https://kyma-project.io/#/telemetry-manager/user/resources/05-metricpipeline)}} configures a custom Metric Pipeline
   list: |-
     - source: >-
         $each(spec.output, function($v, $k) {$v.endpoint.value or
