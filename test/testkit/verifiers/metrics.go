@@ -25,7 +25,7 @@ func MetricPipelineShouldBeRunning(ctx context.Context, k8sClient client.Client,
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(gomega.Succeed())
 		return pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)
-	}, periodic.Timeout, periodic.Interval).Should(gomega.BeTrue())
+	}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(gomega.BeTrue())
 }
 
 func MetricPipelineShouldNotBeRunningPending(ctx context.Context, k8sClient client.Client, pipelineName string) {
@@ -34,7 +34,7 @@ func MetricPipelineShouldNotBeRunningPending(ctx context.Context, k8sClient clie
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(gomega.Succeed())
 		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)).To(gomega.BeFalse())
-	}, periodic.NegativeCheckTimeout, periodic.Interval).Should(gomega.Succeed())
+	}, periodic.NegativeCheckTimeout, periodic.DefaultInterval).Should(gomega.Succeed())
 }
 
 func MetricGatewayConfigShouldContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
@@ -44,7 +44,7 @@ func MetricGatewayConfigShouldContainPipeline(ctx context.Context, k8sClient cli
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return strings.Contains(configString, pipelineAlias)
-	}, periodic.Timeout, periodic.Interval).Should(gomega.BeTrue())
+	}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(gomega.BeTrue())
 }
 
 func MetricGatewayConfigShouldNotContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
@@ -54,7 +54,7 @@ func MetricGatewayConfigShouldNotContainPipeline(ctx context.Context, k8sClient 
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return !strings.Contains(configString, pipelineAlias)
-	}, periodic.NegativeCheckTimeout, periodic.Interval).Should(gomega.BeTrue())
+	}, periodic.NegativeCheckTimeout, periodic.DefaultInterval).Should(gomega.BeTrue())
 }
 
 func MetricsShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL string, metrics []pmetric.Metric) {
@@ -65,5 +65,5 @@ func MetricsShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExpor
 		g.Expect(resp).To(gomega.HaveHTTPBody(metric.ConsistOfMds(metric.WithMetrics(gomega.BeEquivalentTo(metrics)))))
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(gomega.HaveOccurred())
-	}, periodic.Timeout, periodic.TelemetryPollInterval).Should(gomega.Succeed())
+	}, periodic.DefaultTimeout, periodic.TelemetryPollInterval).Should(gomega.Succeed())
 }

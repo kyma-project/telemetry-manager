@@ -85,7 +85,7 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 				err := k8sClient.Get(ctx, kitkyma.MetricGatewayName, &deployment)
 				g.Expect(err).NotTo(HaveOccurred())
 				return *deployment.Spec.Replicas
-			}, periodic.Timeout, periodic.Interval).Should(Equal(int32(2)))
+			}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 
 		It("Should have a metrics backend running", Label(operationalTest), func() {
@@ -97,7 +97,7 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 				resp, err := proxyClient.Get(urls.Metrics())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-			}, periodic.Timeout, periodic.Interval).Should(Succeed())
+			}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have a running pipeline", Label(operationalTest), func() {
@@ -124,7 +124,7 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 				resp, err := proxyClient.Get(pprofEndpoint)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
-			}, periodic.Timeout, periodic.Interval).Should(Succeed())
+			}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
 })

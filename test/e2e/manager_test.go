@@ -56,7 +56,7 @@ var _ = Describe("Telemetry Manager", func() {
 				}
 
 				return true
-			}, periodic.Timeout, periodic.Interval).Should(BeTrue())
+			}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(BeTrue())
 		})
 
 		It("Should have a webhook service", Label("logging", "tracing", "metrics"), func() {
@@ -74,7 +74,7 @@ var _ = Describe("Telemetry Manager", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(endpoints.Subsets).NotTo(BeEmpty())
 				return endpoints.Subsets[0].Addresses
-			}, periodic.Timeout, periodic.Interval).ShouldNot(BeEmpty())
+			}, periodic.DefaultTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty())
 		})
 
 		It("Should have a metrics service", Label("logging", "tracing", "metrics"), func() {
@@ -94,7 +94,7 @@ var _ = Describe("Telemetry Manager", func() {
 				err := k8sClient.Get(ctx, key, &endpoints)
 				Expect(err).NotTo(HaveOccurred())
 				return endpoints.Subsets[0].Addresses
-			}, periodic.Timeout, periodic.Interval).ShouldNot(BeEmpty())
+			}, periodic.DefaultTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty())
 		})
 
 		It("Should have LogPipelines CRD", Label("logging"), func() {

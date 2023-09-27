@@ -83,7 +83,7 @@ var _ = Describe("Istio Access Logs", Label("logging"), func() {
 				ready, err := verifiers.IsPodReady(ctx, k8sClient, listOptions)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(ready).To(BeTrue())
-			}, periodic.Timeout*2, periodic.Interval).Should(Succeed())
+			}, periodic.DefaultTimeout*2, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have the log pipeline running", func() {
@@ -92,7 +92,7 @@ var _ = Describe("Istio Access Logs", Label("logging"), func() {
 				key := types.NamespacedName{Name: pipelineName}
 				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 				return pipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning)
-			}, periodic.Timeout, periodic.Interval).Should(BeTrue())
+			}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(BeTrue())
 		})
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {
@@ -100,7 +100,7 @@ var _ = Describe("Istio Access Logs", Label("logging"), func() {
 				resp, err := proxyClient.Get(urls.MetricPodURL())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-			}, periodic.Timeout, periodic.Interval).Should(Succeed())
+			}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should verify istio logs are present", func() {

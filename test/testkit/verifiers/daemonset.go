@@ -17,7 +17,7 @@ func DaemonSetShouldBeReady(ctx context.Context, k8sClient client.Client, name t
 		ready, err := isDaemonSetReady(ctx, k8sClient, name)
 		g.Expect(err).NotTo(gomega.HaveOccurred())
 		g.Expect(ready).To(gomega.BeTrue())
-	}, periodic.Timeout, periodic.Interval).Should(gomega.Succeed())
+	}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(gomega.Succeed())
 }
 
 func isDaemonSetReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {

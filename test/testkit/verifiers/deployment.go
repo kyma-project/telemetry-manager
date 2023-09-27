@@ -17,7 +17,7 @@ func DeploymentShouldBeReady(ctx context.Context, k8sClient client.Client, name 
 		ready, err := isDeploymentReady(ctx, k8sClient, name)
 		g.Expect(err).NotTo(gomega.HaveOccurred())
 		g.Expect(ready).To(gomega.BeTrue())
-	}, periodic.Timeout, periodic.Interval).Should(gomega.Succeed())
+	}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(gomega.Succeed())
 }
 
 func isDeploymentReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {

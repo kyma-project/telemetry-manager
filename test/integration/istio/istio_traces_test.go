@@ -93,7 +93,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 				hasIstioSidecar, err := verifiers.HasContainer(ctx, k8sClient, listOptions, "istio-proxy")
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(hasIstioSidecar).To(BeTrue())
-			}, periodic.Timeout*2, periodic.Interval).Should(Succeed())
+			}, periodic.DefaultTimeout*2, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have a running trace collector deployment", func() {
@@ -110,7 +110,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 					resp, err := proxyClient.Get(urls.Metrics())
 					g.Expect(err).NotTo(HaveOccurred())
 					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				}, periodic.Timeout, periodic.Interval).Should(Succeed())
+				}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Succeed())
 			})
 		})
 
@@ -121,7 +121,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 						resp, err := proxyClient.Get(urls.MetricPodURL())
 						g.Expect(err).NotTo(HaveOccurred())
 						g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-					}, periodic.Timeout, periodic.Interval).Should(Succeed())
+					}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Succeed())
 				}
 			})
 
