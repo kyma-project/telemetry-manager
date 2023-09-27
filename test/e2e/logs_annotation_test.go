@@ -77,7 +77,7 @@ var _ = Describe("Logs Keep Annotations", Label("logging"), func() {
 					ContainLogs(WithKubernetesAnnotations("release", "v1.0.0")),
 					Not(ContainLogs(WithKubernetesLabels())),
 				)))
-			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })

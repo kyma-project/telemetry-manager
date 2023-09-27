@@ -78,7 +78,7 @@ var _ = Describe("Logs Drop Labels", Label("logging"), func() {
 					ContainLogs(WithKubernetesLabels("app", "logging-label-test")),
 					Not(ContainLogs(WithKubernetesAnnotations())),
 				)))
-			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })

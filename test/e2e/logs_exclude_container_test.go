@@ -71,7 +71,7 @@ var _ = Describe("Logs Exclude Container", Label("logging"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainLogs(Any()))))
-			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should not collect any log-producer logs", func() {
@@ -81,7 +81,7 @@ var _ = Describe("Logs Exclude Container", Label("logging"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					Not(ContainLogs(WithContainer(logProducerName))))))
-			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 	})

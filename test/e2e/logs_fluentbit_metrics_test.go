@@ -57,7 +57,7 @@ var _ = Describe("Logs Fluent Bit Metrics", Label("logging"), func() {
 				key := types.NamespacedName{Name: telemetryWebhookEndpoint, Namespace: kymaSystemNamespaceName}
 				g.Expect(k8sClient.Get(ctx, key, &endPoint)).To(Succeed())
 				g.Expect(endPoint.Subsets).NotTo(BeEmpty())
-			}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have a running fluent-bit daemonset", func() {
@@ -79,7 +79,7 @@ var _ = Describe("Logs Fluent Bit Metrics", Label("logging"), func() {
 				}
 
 				return true
-			}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
 		})
 
 		It("Should be able to get fluent-bit metrics endpoint", Label(operationalTest), func() {
@@ -90,7 +90,7 @@ var _ = Describe("Logs Fluent Bit Metrics", Label("logging"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainPrometheusMetric("fluentbit_uptime"))))
-			}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
 })

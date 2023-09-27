@@ -18,5 +18,5 @@ func LogsShouldBeDelivered(proxyClient *apiserver.ProxyClient, logProducerName s
 		g.Expect(resp).To(gomega.HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(gomega.HaveHTTPBody(gomega.SatisfyAll(
 			matchers.ContainLogs(matchers.WithPod(logProducerName)))))
-	}, periodic.DefaultTimeout, periodic.TelemetryPollInterval).Should(gomega.Succeed())
+	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
 }

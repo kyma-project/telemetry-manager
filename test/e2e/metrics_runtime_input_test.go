@@ -87,7 +87,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 				g.Expect(resp).To(HaveHTTPBody(
 					ContainMd(ContainMetric(WithName(BeElementOf(kubeletMetricNames)))),
 				))
-			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should verify kubelet metric attributes", func() {
@@ -98,7 +98,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 				g.Expect(resp).To(HaveHTTPBody(
 					ConsistOfMds(ContainResourceAttrs(HaveKey(BeElementOf(kubeletMetricAttributes)))),
 				))
-			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })

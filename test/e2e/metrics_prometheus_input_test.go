@@ -109,7 +109,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 					))),
 				),
 				))
-			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should verify custom metric scraping via annotated services", func() {
@@ -140,7 +140,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 					))),
 				),
 				))
-			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should verify no kubelet metrics", func() {
@@ -151,7 +151,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(resp).To(HaveHTTPBody(
 					Not(ContainMd(ContainMetric(WithName(BeElementOf(kubeletMetricNames))))),
 				))
-			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })

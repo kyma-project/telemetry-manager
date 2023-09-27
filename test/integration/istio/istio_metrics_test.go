@@ -129,7 +129,7 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", podName)),
 			ContainMetric(WithName(BeElementOf(metricproducer.AllMetricNames))),
 		))))
-	}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
 func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
@@ -142,5 +142,5 @@ func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
 				WithName(BeElementOf(metricproducer.AllMetricNames)),
 				ContainDataPointAttrs(HaveKeyWithValue("service", serviceName)),
 			)))))
-	}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

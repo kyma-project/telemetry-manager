@@ -73,7 +73,7 @@ var _ = Describe("Logs Dedot", Label("logging"), func() {
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainLogs(WithKubernetesLabels("dedot_label", "logging-dedot-value"))),
 				))
-			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })

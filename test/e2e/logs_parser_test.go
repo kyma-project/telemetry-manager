@@ -83,7 +83,7 @@ Types user:string pass:string`
 					ContainLogs(WithAttributeKeyValue("user", "foo")),
 					ContainLogs(WithAttributeKeyValue("pass", "bar")),
 				)))
-			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })

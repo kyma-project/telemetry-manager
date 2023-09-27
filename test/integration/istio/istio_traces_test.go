@@ -93,7 +93,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 				hasIstioSidecar, err := verifiers.HasContainer(ctx, k8sClient, listOptions, "istio-proxy")
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(hasIstioSidecar).To(BeTrue())
-			}, periodic.DefaultTimeout*2, periodic.DefaultInterval).Should(Succeed())
+			}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have a running trace collector deployment", func() {
@@ -110,7 +110,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 					resp, err := proxyClient.Get(urls.Metrics())
 					g.Expect(err).NotTo(HaveOccurred())
 					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Succeed())
+				}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 			})
 		})
 
@@ -121,7 +121,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 						resp, err := proxyClient.Get(urls.MetricPodURL())
 						g.Expect(err).NotTo(HaveOccurred())
 						g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-					}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Succeed())
+					}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 				}
 			})
 
@@ -135,7 +135,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainSpansWithAttributes(proxyAttrs))))
-			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should have custom spans in the backend", func() {
@@ -149,7 +149,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainSpansWithResourceAttributes(customResourceAttr))))
-			}, periodic.TelemetryPollTimeout, periodic.TelemetryPollInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })

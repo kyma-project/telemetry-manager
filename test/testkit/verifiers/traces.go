@@ -25,7 +25,7 @@ func TracePipelineShouldBeRunning(ctx context.Context, k8sClient client.Client, 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(gomega.Succeed())
 		return pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning)
-	}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(gomega.BeTrue())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(gomega.BeTrue())
 }
 
 func TracePipelineShouldNotBeRunning(ctx context.Context, k8sClient client.Client, pipelineName string) {
@@ -34,7 +34,7 @@ func TracePipelineShouldNotBeRunning(ctx context.Context, k8sClient client.Clien
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(gomega.Succeed())
 		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning)).To(gomega.BeFalse())
-	}, periodic.NegativeCheckTimeout, periodic.DefaultInterval).Should(gomega.Succeed())
+	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(gomega.Succeed())
 }
 
 func TraceCollectorConfigShouldContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
@@ -44,7 +44,7 @@ func TraceCollectorConfigShouldContainPipeline(ctx context.Context, k8sClient cl
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return strings.Contains(configString, pipelineAlias)
-	}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(gomega.BeTrue())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(gomega.BeTrue())
 }
 
 func TraceCollectorConfigShouldNotContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
@@ -54,7 +54,7 @@ func TraceCollectorConfigShouldNotContainPipeline(ctx context.Context, k8sClient
 		configString := collectorConfig.Data["relay.conf"]
 		pipelineAlias := fmt.Sprintf("otlp/%s", pipelineName)
 		return !strings.Contains(configString, pipelineAlias)
-	}, periodic.NegativeCheckTimeout, periodic.DefaultInterval).Should(gomega.BeTrue())
+	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(gomega.BeTrue())
 }
 
 func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL string, traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attrs pcommon.Map) {
@@ -69,5 +69,5 @@ func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExport
 			matchers.ConsistOfSpansWithAttributes(attrs))))
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(gomega.HaveOccurred())
-	}, periodic.DefaultTimeout, periodic.TelemetryPollInterval).Should(gomega.Succeed())
+	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
 }

@@ -22,7 +22,7 @@ var _ = Describe("Logs Validating Webhook", Label("logging"), func() {
 				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
 				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 				g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(2))
-			}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should reject a logpipeline with unknown custom filter", func() {

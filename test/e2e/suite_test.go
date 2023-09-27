@@ -81,7 +81,7 @@ var _ = AfterSuite(func() {
 			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 			var secret corev1.Secret
 			g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
-		}, periodic.DefaultTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
+		}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
 	}
 
 	cancel()

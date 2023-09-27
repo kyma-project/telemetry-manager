@@ -88,7 +88,7 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
 				g.Expect(err).NotTo(HaveOccurred())
 				return *deployment.Spec.Replicas
-			}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 
 		It("Should have a trace backend running", Label(operationalTest), func() {
@@ -100,7 +100,7 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 				resp, err := proxyClient.Get(urls.Metrics())
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-			}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have a running pipeline", Label(operationalTest), func() {
@@ -127,7 +127,7 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 				resp, err := proxyClient.Get(pprofEndpoint)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
-			}, periodic.DefaultTimeout, periodic.DefaultInterval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
 })
