@@ -15,27 +15,36 @@ import (
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
-
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-var (
-	telemetryFluentbitName              = "telemetry-fluent-bit"
-	telemetryWebhookEndpoint            = "telemetry-operator-webhook"
-	telemetryFluentbitMetricServiceName = "telemetry-fluent-bit-metrics"
-)
+var _ = Describe("Logs Fluent Bit Metrics", Label("logging"), func() {
 
-var _ = Describe("Logging", Label("logging"), func() {
+	const (
+		telemetryFluentbitName              = "telemetry-fluent-bit"
+		telemetryWebhookEndpoint            = "telemetry-operator-webhook"
+		telemetryFluentbitMetricServiceName = "telemetry-fluent-bit-metrics"
+
+		mockNs          = "log-pipeline-mocks"
+		mockBackendName = "log-receiver"
+	)
+	makeResources := func() []client.Object {
+		var objs []client.Object
+		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs)
+		objs = append(objs, mockBackend.K8sObjects()...)
+
+		logPipeline := kitlog.NewPipeline("pipeline-mock-backend").WithStdout()
+		objs = append(objs, logPipeline.K8sObject())
+		return objs
+	}
+
 	Context("When a logpipeline exists", Ordered, func() {
-		var (
-			mockNs             = "log-pipeline-mocks"
-			mockDeploymentName = "log-receiver"
-		)
-
 		BeforeAll(func() {
-			k8sObjects := makeLogsTestK8sObjects(mockNs, mockDeploymentName)
+			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
@@ -48,7 +57,7 @@ var _ = Describe("Logging", Label("logging"), func() {
 				key := types.NamespacedName{Name: telemetryWebhookEndpoint, Namespace: kymaSystemNamespaceName}
 				g.Expect(k8sClient.Get(ctx, key, &endPoint)).To(Succeed())
 				g.Expect(endPoint.Subsets).NotTo(BeEmpty())
-			}, timeout, interval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have a running fluent-bit daemonset", func() {
@@ -70,34 +79,18 @@ var _ = Describe("Logging", Label("logging"), func() {
 				}
 
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
 		})
 
 		It("Should be able to get fluent-bit metrics endpoint", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(proxyClient.ProxyURLForService("kyma-system", telemetryFluentbitMetricServiceName, "/metrics", 2020))
+				resp, err := proxyClient.Get(proxyClient.ProxyURLForService(
+					"kyma-system", telemetryFluentbitMetricServiceName, "/metrics", 2020))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainPrometheusMetric("fluentbit_uptime"))))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
 })
-
-func makeLogsTestK8sObjects(mockNs string, mockDeploymentName string) []client.Object {
-	var (
-		objs []client.Object
-	)
-	objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
-
-	//// Mocks namespace objects.
-	mockBackend := backend.New(mockDeploymentName, mockNs, backend.SignalTypeLogs)
-	objs = append(objs, mockBackend.K8sObjects()...)
-
-	// Default namespace objects.
-	logPipeline := kitlog.NewPipeline("pipeline-mock-backend").WithStdout()
-	objs = append(objs, logPipeline.K8sObject())
-
-	return objs
-}

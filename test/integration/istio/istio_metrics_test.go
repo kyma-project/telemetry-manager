@@ -12,28 +12,25 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/verifiers"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-var _ = Describe("Istio metrics", Label("metrics"), func() {
+var _ = Describe("Istio Metrics", Label("metrics"), func() {
 	const (
 		mockNs                           = "istio-metric-mock"
-		mockDeploymentName               = "metric-agent-receiver"
+		mockBackendName                  = "metric-agent-receiver"
 		httpsAnnotatedMetricProducerName = "metric-producer-https"
 		httpAnnotatedMetricProducerName  = "metric-producer-http"
 		unannotatedMetricProducerName    = "metric-producer"
 	)
-	var (
-		urls              = urlprovider.New()
-		metricGatewayName = types.NamespacedName{Name: "telemetry-metric-gateway", Namespace: kymaSystemNamespaceName}
-		metricAgentName   = types.NamespacedName{Name: "telemetry-metric-agent", Namespace: kymaSystemNamespaceName}
-	)
+	var telemetryExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -41,11 +38,9 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		// Mocks namespace objects
-		mockBackend := backend.New(mockDeploymentName, mockNs, backend.SignalTypeMetrics)
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		urls.SetMockBackendExport(mockBackend.Name(), proxyClient.ProxyURLForService(
-			mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
-		)
+		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		httpsAnnotatedMetricProducer := metricproducer.New(mockNs, metricproducer.WithName(httpsAnnotatedMetricProducerName))
 		httpAnnotatedMetricProducer := metricproducer.New(mockNs, metricproducer.WithName(httpAnnotatedMetricProducerName))
@@ -60,7 +55,8 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		}...)
 
 		// Default namespace objects
-		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled", mockBackend.HostSecretRefKey()).
+		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled").
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			PrometheusInput(true)
 		objs = append(objs, metricPipeline.K8sObject())
 
@@ -79,43 +75,30 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		})
 
 		It("Should have a running metric gateway deployment", func() {
-			Eventually(func(g Gomega) {
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, metricGatewayName)
-				g.Expect(err).ShouldNot(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout, interval).Should(Succeed())
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
 		It("Should have a metrics backend running", func() {
-			Eventually(func(g Gomega) {
-				key := types.NamespacedName{Name: mockDeploymentName, Namespace: mockNs}
-				ready, err := verifiers.IsDeploymentReady(ctx, k8sClient, key)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout, interval).Should(Succeed())
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 		})
 
 		It("Should have a running metric agent daemonset", func() {
-			Eventually(func(g Gomega) {
-				ready, err := verifiers.IsDaemonSetReady(ctx, k8sClient, metricAgentName)
-				g.Expect(err).ShouldNot(HaveOccurred())
-				g.Expect(ready).To(BeTrue())
-			}, timeout, interval).Should(Succeed())
+			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
 		// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
 		// targets discovered via annotated pods must have no service label
 		Context("Annotated pods", func() {
 			It("Should scrape if prometheus.io/scheme=https", func() {
-				podScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), httpsAnnotatedMetricProducerName)
+				podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme=http", func() {
-				podScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), httpAnnotatedMetricProducerName)
+				podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme unset", func() {
-				podScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), unannotatedMetricProducerName)
+				podScrapedMetricsShouldBeDelivered(telemetryExportURL, unannotatedMetricProducerName)
 			})
 		})
 
@@ -123,15 +106,15 @@ var _ = Describe("Istio metrics", Label("metrics"), func() {
 		// targets discovered via annotated service must have the service label
 		Context("Annotated services", func() {
 			It("Should scrape if prometheus.io/scheme=https", func() {
-				serviceScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), httpsAnnotatedMetricProducerName)
+				serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme=http", func() {
-				serviceScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), httpAnnotatedMetricProducerName)
+				serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
 			})
 
 			It("Should scrape if prometheus.io/scheme unset", func() {
-				serviceScrapedMetricsShouldBeDelivered(urls.MockBackendExport(mockDeploymentName), unannotatedMetricProducerName)
+				serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, unannotatedMetricProducerName)
 			})
 		})
 	})
@@ -146,7 +129,7 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", podName)),
 			ContainMetric(WithName(BeElementOf(metricproducer.AllMetricNames))),
 		))))
-	}, timeout, telemetryDeliveryInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
 func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
@@ -159,5 +142,5 @@ func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
 				WithName(BeElementOf(metricproducer.AllMetricNames)),
 				ContainDataPointAttrs(HaveKeyWithValue("service", serviceName)),
 			)))))
-	}, timeout, telemetryDeliveryInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
