@@ -23,8 +23,8 @@ spec:
       name: Age
       type: date
     deprecated: true
-    deprecationWarning: The LogParser API is deprecated, use logging in JSON format
-      instead and leverage the JSON parsing feature of the LogPipeline
+    deprecationWarning: The LogParser API is deprecated. Instead, log in JSON format
+      and use the JSON parsing feature of the LogPipeline
     name: v1alpha1
     schema:
       openAPIV3Schema:
