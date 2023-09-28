@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
@@ -54,14 +55,35 @@ func ContainSpan(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return WithSpans(gomega.ContainElement(matcher))
 }
 
-func WithSpanAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(s ptrace.Span) map[string]any {
-		return s.Attributes().AsRaw()
+// ConsistOfSpans is an alias for WithSpans(gomega.ConsistOf()).
+func ConsistOfSpans(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return WithSpans(gomega.ConsistOf(matcher))
+}
+
+func WithTraceID(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(s ptrace.Span) pcommon.TraceID {
+		return s.TraceID()
+	}, matcher)
+}
+
+func WithSpanIDs(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(spans []ptrace.Span) []pcommon.SpanID {
+		var spansIDs []pcommon.SpanID
+		for _, span := range spans {
+			spansIDs = append(spansIDs, span.SpanID())
+		}
+		return spansIDs
 	}, matcher)
 }
 
 func WithSpanID(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(s ptrace.Span) string {
-		return s.SpanID().String()
+	return gomega.WithTransform(func(s ptrace.Span) pcommon.SpanID {
+		return s.SpanID()
+	}, matcher)
+}
+
+func WithSpanAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(s ptrace.Span) map[string]any {
+		return s.Attributes().AsRaw()
 	}, matcher)
 }

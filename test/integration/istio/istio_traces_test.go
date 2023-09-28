@@ -5,22 +5,21 @@ package istio
 import (
 	"net/http"
 
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -125,30 +124,26 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 				}
 			})
 
-			// Identify istio-proxy traces by component=proxy attribute
-			proxyAttrs := pcommon.NewMap()
-			proxyAttrs.PutStr("component", "proxy")
-
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport(mockBackendName))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainSpansWithAttributes(proxyAttrs))))
+				g.Expect(resp).To(HaveHTTPBody(ContainTd(
+					// Identify istio-proxy traces by component=proxy attribute
+					ContainSpan(WithSpanAttrs(HaveKeyWithValue("component", "proxy"))),
+				)))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		It("Should have custom spans in the backend", func() {
-			// Identify sample app by serviceName attribute
-			customResourceAttr := pcommon.NewMap()
-			customResourceAttr.PutStr("service.name", "monitoring-custom-metrics")
-
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.MockBackendExport(mockBackendName))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainSpansWithResourceAttributes(customResourceAttr))))
+				g.Expect(resp).To(HaveHTTPBody(ContainTd(
+					// Identify sample app by serviceName attribute
+					ContainResourceAttrs(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
+				)))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
