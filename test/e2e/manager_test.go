@@ -177,10 +177,10 @@ var _ = Describe("Telemetry Manager", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have a Busola extension for LogParsers CRD", Label("logging"), func() {
+		It("Should have a Busola extension for MetricPipelines CRD", Label("metrics"), func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
-				Name:      "telemetry-logparsers",
+				Name:      "telemetry-metricpipelines",
 				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &cm)
