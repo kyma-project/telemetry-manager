@@ -114,6 +114,12 @@ type TLSConfig struct {
 	Disabled bool `json:"disabled,omitempty"`
 	// If `true`, the validation of certificates is skipped. Default is `false`.
 	SkipCertificateValidation bool `json:"skipCertificateValidation,omitempty"`
+	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate needs to be provided in PEM format.
+	CA ValueType `json:"ca,omitempty"`
+	// Defines a client certificate to use when using TLS. The certificate needs to be provided in PEM format.
+	Cert ValueType `json:"cert,omitempty"`
+	// Defines the client key to use when using TLS. The key needs to be provided in PEM format.
+	Key ValueType `json:"key,omitempty"`
 }
 
 // Output describes a Fluent Bit output configuration section.

@@ -8,7 +8,7 @@ import (
 
 	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
 const version = "1.0.0"
@@ -76,7 +76,7 @@ func (p *Pipeline) WithConvertToDelta(convertToDelta bool) *Pipeline {
 	return p
 }
 
-func (p *Pipeline) WithTLS(certs backend.TLSCerts) *Pipeline {
+func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
 	p.tls = &telemetry.OtlpTLS{
 		Insecure:           false,
 		InsecureSkipVerify: false,

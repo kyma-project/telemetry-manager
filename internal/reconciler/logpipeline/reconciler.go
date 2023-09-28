@@ -46,6 +46,7 @@ type Config struct {
 	LuaConfigMap      types.NamespacedName
 	ParsersConfigMap  types.NamespacedName
 	EnvSecret         types.NamespacedName
+	TLSConfigSecret   types.NamespacedName
 	OverrideConfigMap types.NamespacedName
 	PipelineDefaults  configbuilder.PipelineDefaults
 	Overrides         overrides.Config

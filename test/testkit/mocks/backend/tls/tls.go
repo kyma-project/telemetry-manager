@@ -1,4 +1,4 @@
-package backend
+package tls
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type TLSCerts struct {
+type Certs struct {
 	CaCertPem     bytes.Buffer
 	ServerCertPem bytes.Buffer
 	ServerKeyPem  bytes.Buffer
@@ -30,8 +30,8 @@ func certTemplate(serialNumber int64) *x509.Certificate {
 	}
 }
 
-func GenerateTLSCerts(serverDNSName string) (TLSCerts, error) {
-	var certs TLSCerts
+func GenerateTLSCerts(serverDNSName string) (Certs, error) {
+	var certs Certs
 
 	// CA Certificate
 	caPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)

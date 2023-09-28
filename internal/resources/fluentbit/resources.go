@@ -133,6 +133,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 								{MountPath: "/var/log", Name: "varlog", ReadOnly: true},
 								{MountPath: "/data", Name: "varfluentbit"},
 								{MountPath: "/files", Name: "dynamic-files"},
+								{MountPath: "/fluent-bit/tls/", Name: "output-tls-config"},
 							},
 						},
 						{
@@ -224,6 +225,14 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Name: "varfluentbit",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", name.Name)},
+							},
+						},
+						{
+							Name: "output-tls-config",
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: fmt.Sprintf("%s-output-tls-config", name.Name),
+								},
 							},
 						},
 					},

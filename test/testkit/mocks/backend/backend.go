@@ -10,6 +10,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/fluentd"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
 type SignalType string
@@ -33,7 +34,7 @@ type Backend struct {
 
 	persistentHostSecret bool
 	withTLS              bool
-	TLSCerts             TLSCerts
+	TLSCerts             tls.Certs
 
 	ConfigMap        *ConfigMap
 	FluentDConfigMap *fluentd.ConfigMap
@@ -73,7 +74,7 @@ func WithPersistentHostSecret(persistentHostSecret bool) Option {
 func (b *Backend) buildResources() {
 	if b.withTLS {
 		backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
-		certs, err := GenerateTLSCerts(backendDNSName)
+		certs, err := tls.GenerateTLSCerts(backendDNSName)
 		if err != nil {
 			panic(fmt.Errorf("could not generate TLS certs: %v", err))
 		}
@@ -85,7 +86,7 @@ func (b *Backend) buildResources() {
 	b.ConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.withTLS, b.TLSCerts)
 	b.Deployment = NewDeployment(b.name, b.namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.signalType)
 	if b.signalType == SignalTypeLogs {
-		b.FluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace)
+		b.FluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.withTLS, b.TLSCerts)
 		b.Deployment.WithFluentdConfigName(b.FluentDConfigMap.Name())
 	}
 
