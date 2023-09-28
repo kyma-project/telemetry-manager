@@ -430,6 +430,19 @@ The record **after** applying the JSON parser:
 
 As per the LogPipeline definition, a dedicated [rewrite_tag](https://docs.fluentbit.io/manual/pipeline/filters/rewrite-tag) filter is introduced. The filter brings a dedicated filesystem buffer for the outputs defined in the related pipeline, and with that, ensures a shipment of the logs isolated from outputs of other pipelines. As a consequence, each pipeline runs on its own [tag](https://docs.fluentbit.io/manual/concepts/key-concepts#tag).
 
+## Operations
+
+A LogPipeline creates a DaemonSet running one Fluent Bit instance per Node in your cluster. That instance collects and ships application logs to the configured backend. The Telemetry module assures that the Fluent Bit instances are operational and healthy at any time. The Telemetry module delivers the data to the backend using typical patterns like buffering and retries (see [Limitations](#limitations)). However, there are scenarios where the instances will drop logs because the backend is either not reachable for some duration, or cannot handle the log load and is causing back pressure.
+
+To avoid and detect these scenarios, you must monitor the instances by collecting relevant metrics. For that, two Services `telemetry-fluent-bit-metrics` and `telemetry-fluent-bit-exporter-metrics` are located in the `kyma-system` namespace. For easier discovery, they have the `prometheus.io` annotation.
+
+The relevant metrics are:
+| Name | Threshold | Description |
+|---|---|---|
+| telemetry_fsbuffer_usage_bytes | (bytes/1000000000) * 100 > 90 | The metric indicates the current size (in bytes) of the persistent log buffer running on each instance. If the size reaches 1GB, logs are dropped at that instance. At 90% buffer size, an alert should be raised. |
+| fluentbit_output_dropped_records_total| total[5m] > 0 | The metric indicates that the instance is actively dropping logs. That typically happens when a log message was rejected with a un-retryable status code like a 400. If logs are dropped, an alert should be raised. |
+
+
 ## Limitations
 
 Currently, there are the following limitations for LogPipelines that are served by Fluent Bit:

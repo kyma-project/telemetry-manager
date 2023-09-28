@@ -13,9 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -26,11 +27,11 @@ var (
 	telemetryTestK8SObjectName = "telemetry-test"
 	webhookCertSecret          = types.NamespacedName{
 		Name:      "telemetry-webhook-cert",
-		Namespace: kymaSystemNamespaceName,
+		Namespace: kitkyma.SystemNamespaceName,
 	}
 )
 
-var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ordered, func() {
+var _ = Describe("Telemetry Module", Label("logging", "tracing", "metrics"), Ordered, func() {
 	Context("After creating Telemetry resources", Ordered, func() {
 		It("Should have ValidatingWebhookConfiguration", func() {
 			Eventually(func(g Gomega) {
@@ -43,7 +44,7 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 				g.Expect(logPipelineWebhook.Name).Should(Equal("validation.logpipelines.telemetry.kyma-project.io"))
 				g.Expect(logPipelineWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
 				g.Expect(logPipelineWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-operator-webhook"))
-				g.Expect(logPipelineWebhook.ClientConfig.Service.Namespace).Should(Equal(kymaSystemNamespaceName))
+				g.Expect(logPipelineWebhook.ClientConfig.Service.Namespace).Should(Equal(kitkyma.SystemNamespaceName))
 				g.Expect(*logPipelineWebhook.ClientConfig.Service.Port).Should(Equal(int32(443)))
 				g.Expect(*logPipelineWebhook.ClientConfig.Service.Path).Should(Equal("/validate-logpipeline"))
 				g.Expect(logPipelineWebhook.Rules).Should(HaveLen(1))
@@ -55,14 +56,14 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 				g.Expect(logParserWebhook.Name).Should(Equal("validation.logparsers.telemetry.kyma-project.io"))
 				g.Expect(logParserWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
 				g.Expect(logParserWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-operator-webhook"))
-				g.Expect(logParserWebhook.ClientConfig.Service.Namespace).Should(Equal(kymaSystemNamespaceName))
+				g.Expect(logParserWebhook.ClientConfig.Service.Namespace).Should(Equal(kitkyma.SystemNamespaceName))
 				g.Expect(*logParserWebhook.ClientConfig.Service.Port).Should(Equal(int32(443)))
 				g.Expect(*logParserWebhook.ClientConfig.Service.Path).Should(Equal("/validate-logparser"))
 				g.Expect(logParserWebhook.Rules).Should(HaveLen(1))
 				g.Expect(logParserWebhook.Rules[0].Resources).Should(ContainElement("logparsers"))
 				g.Expect(logParserWebhook.Rules[0].Operations).Should(ContainElement(admissionv1.Create))
 				g.Expect(logParserWebhook.Rules[0].Operations).Should(ContainElement(admissionv1.Update))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have secret with webhook CA bundle", func() {
@@ -74,7 +75,7 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 				g.Expect(secret.OwnerReferences[0].Kind).Should(Equal("Telemetry"))
 				g.Expect(secret.Data).Should(HaveKeyWithValue("ca.crt", Not(BeEmpty())))
 				g.Expect(secret.Data).Should(HaveKeyWithValue("ca.key", Not(BeEmpty())))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should reconcile ValidatingWebhookConfiguration", func() {
@@ -95,7 +96,7 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 				g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
 				g.Expect(secret.OwnerReferences).Should(HaveLen(1))
 				g.Expect(secret.UID).ShouldNot(Equal(oldUID))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
 
@@ -109,7 +110,7 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 		BeforeAll(func() {
 			Eventually(func(g Gomega) {
 				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sLogPipelineObject...)).Should(Succeed())
-			}, timeout, interval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		AfterAll(func() {
@@ -117,13 +118,13 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 			Eventually(func(g Gomega) {
 				newTelemetry := []client.Object{kitk8s.NewTelemetry("default", "kyma-system").K8sObject()}
 				g.Expect(kitk8s.CreateObjects(ctx, k8sClient, newTelemetry...)).Should(Succeed())
-			}, timeout, interval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
 			Eventually(func(g Gomega) {
 				var telemetry v1alpha1.Telemetry
 				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
 				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateReady))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have Telemetry resource", func() {
@@ -131,7 +132,7 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 				var telemetry v1alpha1.Telemetry
 				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
 				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateReady))
-			}, timeout, interval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should reconcile ValidatingWebhookConfiguration if LogPipeline exists", func() {
@@ -152,9 +153,21 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 				isMetricsEnabled, err := isMetricsEnabled()
 				g.Expect(err).ShouldNot(HaveOccurred())
 				expectedConditions := map[string]metav1.Condition{
-					"LogComponentsHealthy":    {Status: metav1.ConditionFalse, Reason: reconciler.ReasonLogResourceBlocksDeletion, Message: reconciler.ConditionMessage(reconciler.ReasonLogResourceBlocksDeletion)},
-					"MetricComponentsHealthy": {Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.ConditionMessage(reconciler.ReasonNoPipelineDeployed)},
-					"TraceComponentsHealthy":  {Status: metav1.ConditionTrue, Reason: reconciler.ReasonNoPipelineDeployed, Message: reconciler.ConditionMessage(reconciler.ReasonNoPipelineDeployed)},
+					"LogComponentsHealthy": {
+						Status:  "False",
+						Reason:  "ResourceBlocksDeletion",
+						Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (telemetry-test)",
+					},
+					"MetricComponentsHealthy": {
+						Status:  "True",
+						Reason:  "NoPipelineDeployed",
+						Message: "No pipelines have been deployed",
+					},
+					"TraceComponentsHealthy": {
+						Status:  "True",
+						Reason:  "NoPipelineDeployed",
+						Message: "No pipelines have been deployed",
+					},
 				}
 				expectedConditionsLength := expectedConditionsLength(isMetricsEnabled)
 				g.Expect(telemetry.Status.Conditions).Should(HaveLen(expectedConditionsLength))
@@ -166,7 +179,7 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 					g.Expect(actualCond.LastTransitionTime).NotTo(BeZero())
 				}
 
-			}, timeout, interval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should delete Telemetry", func() {
@@ -177,19 +190,19 @@ var _ = Describe("Telemetry-module", Label("logging", "tracing", "metrics"), Ord
 			Eventually(func(g Gomega) {
 				var telemetry v1alpha1.Telemetry
 				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).ShouldNot(Succeed())
-			}, timeout, interval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should not have Webhook and CA bundle", func() {
 			Eventually(func(g Gomega) {
 				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
 				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
-			}, timeout, interval).ShouldNot(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
 
 			Eventually(func(g Gomega) {
 				var secret corev1.Secret
 				g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
-			}, timeout, interval).ShouldNot(Succeed())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
 		})
 	})
 })
@@ -207,7 +220,7 @@ func testWebhookReconciliation() {
 		var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
 		g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 		g.Expect(validatingWebhookConfiguration.UID).ShouldNot(Equal(oldUID))
-	}, timeout, interval).Should(Succeed())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
 func makeTestPipelineK8sObjects() []client.Object {

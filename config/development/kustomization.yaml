@@ -29,6 +29,7 @@ resources:
 - ../networking
 - telemetry.kyma-project.io_metricpipelines.yaml
 - configmap_opentelemetry_metric_gateway_dashboard.yaml
+- metricpipeline_busola_extension_cm.yaml
 
 patches:
   - path: manager_deployment_patch.yaml

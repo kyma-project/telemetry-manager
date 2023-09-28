@@ -411,6 +411,19 @@ The Kyma [Eventing](https://kyma-project.io/#/01-overview/eventing/README) compo
 ### Serverless
 By default, all engines for the [Serverless](https://kyma-project.io/#/serverless-manager/user/README) module integrate the [Open Telemetry SDK](https://opentelemetry.io/docs/reference/specification/metrics/sdk/). With that, trace propagation no longer is your concern, because the used middlewares are configured to automatically propagate the context for chained calls. Because the Telemetry endpoints are configured by default, Serverless also reports custom spans for incoming and outgoing requests. You can [customize Function traces](https://kyma-project.io/#/03-tutorials/00-serverless/svls-12-customize-function-traces) to add more spans as part of your Serverless source code.
 
+## Operations
+
+A TracePipeline creates a Deployment running OTel Collector instances in your cluster. That instances will serve OTLP endpoints and ship received data to the configured backend. The Telemetry module assures that the OTel Collector instances are operational and healthy at any time. The Telemetry module delivers the data to the backend using typical patterns like buffering and retries (see [Limitations](#limitations)). However, there are scenarios where the instances will drop logs because the backend is either not reachable for some duration, or cannot handle the log load and is causing back pressure.
+
+To avoid and detect these scenarios, you must monitor the instances by collecting relevant metrics. For that, a service `telemetry-trace-collector-metrics` is located in the `kyma-system` namespace. For easier discovery, they have the `prometheus.io` annotation.
+
+The relevant metrics are:
+| Name | Threshold | Description |
+|---|---|---|
+| otelcol_exporter_enqueue_failed_spans | total[5m] > 0 | Indicates that new or retried items could not be added to the exporter buffer because the buffer is exhausted. Typically, that happens when the configured backend cannot handle the load on time and is causing back pressure. |
+| otelcol_exporter_send_failed_spans | total[5m] > 0 | Indicates that items are refused in an non-retryable way like a 400 status |
+| otelcol_processor_refused_spans | total[5m] > 0 | Indicates that items cannot be received anymore because a processor refuses them. Typically, that happens when memory of the collector is exhausted because too much data arrived and throttling started. |
+
 ## Limitations
 
 The trace gateway setup is designed using the following assumptions:

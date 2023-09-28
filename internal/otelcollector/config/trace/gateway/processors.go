@@ -53,8 +53,8 @@ func makeProcessorsConfig() Processors {
 			},
 			MemoryLimiter: &config.MemoryLimiter{
 				CheckInterval:        "1s",
-				LimitPercentage:      75,
-				SpikeLimitPercentage: 10,
+				LimitPercentage:      60,
+				SpikeLimitPercentage: 40,
 			},
 			K8sAttributes: &config.K8sAttributesProcessor{
 				AuthType:    "serviceAccount",

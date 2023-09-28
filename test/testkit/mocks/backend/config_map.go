@@ -5,8 +5,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/kyma-project/telemetry-manager/test/testkit"
 )
 
 type ConfigMap struct {
@@ -15,10 +13,10 @@ type ConfigMap struct {
 	exportedFilePath string
 	signalType       SignalType
 	withTLS          bool
-	certs            testkit.TLSCerts
+	certs            TLSCerts
 }
 
-func NewConfigMap(name, namespace, path string, signalType SignalType, withTLS bool, certs testkit.TLSCerts) *ConfigMap {
+func NewConfigMap(name, namespace, path string, signalType SignalType, withTLS bool, certs TLSCerts) *ConfigMap {
 	return &ConfigMap{
 		name:             name,
 		namespace:        namespace,

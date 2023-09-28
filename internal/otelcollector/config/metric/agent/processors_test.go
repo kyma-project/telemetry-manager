@@ -22,6 +22,28 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, "service.name", collectorConfig.Processors.DeleteServiceName.Attributes[0].Key)
 	})
 
+	t.Run("memory limiter proessor", func(t *testing.T) {
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).Build(),
+		}, false)
+
+		require.NotNil(t, collectorConfig.Processors.MemoryLimiter)
+		require.Equal(t, collectorConfig.Processors.MemoryLimiter.LimitPercentage, 80)
+		require.Equal(t, collectorConfig.Processors.MemoryLimiter.SpikeLimitPercentage, 15)
+		require.Equal(t, collectorConfig.Processors.MemoryLimiter.CheckInterval, "0.1s")
+	})
+
+	t.Run("batch processor", func(t *testing.T) {
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).Build(),
+		}, false)
+
+		require.NotNil(t, collectorConfig.Processors.Batch)
+		require.Equal(t, collectorConfig.Processors.Batch.SendBatchSize, 1024)
+		require.Equal(t, collectorConfig.Processors.Batch.SendBatchMaxSize, 1024)
+		require.Equal(t, collectorConfig.Processors.Batch.Timeout, "10s")
+	})
+
 	t.Run("insert input source runtime", func(t *testing.T) {
 		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).Build(),
