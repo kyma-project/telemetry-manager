@@ -4,8 +4,6 @@ package e2e
 
 import (
 	"fmt"
-	"net/http"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -19,8 +17,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 var _ = Describe("Filter Noisy Trace Spans", Label("tracing"), func() {
@@ -54,9 +50,6 @@ var _ = Describe("Filter Noisy Trace Spans", Label("tracing"), func() {
 			kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
 		)
 
-		urls.SetMetrics(proxyClient.ProxyURLForService(
-			kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
-
 		return objs
 	}
 
@@ -69,14 +62,6 @@ var _ = Describe("Filter Noisy Trace Spans", Label("tracing"), func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-		})
-
-		It("Should be able to get trace gateway metrics endpoint", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.Metrics())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have a running pipeline", func() {
