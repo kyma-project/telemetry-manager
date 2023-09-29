@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-var _ = Describe("Traces Noisy Span Filter", Label("tracing"), func() {
+var _ = Describe("Filter Noisy Trace Spans", Label("tracing"), func() {
 
 	const (
 		mockBackendName = "traces-filter-receiver"
@@ -75,7 +75,7 @@ var _ = Describe("Traces Noisy Span Filter", Label("tracing"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should be able to get trace gateway metrics endpoint", Label(operationalTest), func() {
+		It("Should be able to get trace gateway metrics endpoint", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(urls.Metrics())
 				g.Expect(err).NotTo(HaveOccurred())

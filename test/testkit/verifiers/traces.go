@@ -84,5 +84,5 @@ func TracesShouldNotBePresent(proxyClient *apiserver.ProxyClient, telemetryExpor
 			matchers.ContainSpansWithResourceAttributes(resAttrs)))))
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(gomega.HaveOccurred())
-	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
+	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
 }
