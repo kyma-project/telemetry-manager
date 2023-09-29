@@ -3,6 +3,7 @@ package traces
 import (
 	"context"
 	"fmt"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 
 	"github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -48,7 +49,7 @@ func MakeAndSendVictoriaMetricsTraces(proxyClient *apiserver.ProxyClient, otlpPu
 	attrs.PutStr("user_agent", "vm_promscrape")
 
 	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", "mock-namespace")
+	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
 	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
 	return traceIds, spanIds, attrs, resAttrs
@@ -62,7 +63,7 @@ func MakeAndSendMetricsEndpointTraces(proxyClient *apiserver.ProxyClient, otlpPu
 	attrs.PutStr("http.url", "http://some-url/metrics")
 
 	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", "kyma-system")
+	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
 	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
 	return traceIds, spanIds, attrs, resAttrs
@@ -76,7 +77,7 @@ func MakeAndSendHealthzEndpointTraces(proxyClient *apiserver.ProxyClient, otlpPu
 	attrs.PutStr("http.url", "http://some-url/healthz")
 
 	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", "kyma-system")
+	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
 	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
 	return traceIds, spanIds, attrs, resAttrs
@@ -90,7 +91,7 @@ func MakeAndSendTracePushServiceEndpointTraces(proxyClient *apiserver.ProxyClien
 	attrs.PutStr("http.url", "http://telemetry-otlp-traces.kyma-system:4317")
 
 	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", "kyma-system")
+	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
 	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
 	return traceIds, spanIds, attrs, resAttrs
@@ -104,7 +105,7 @@ func MakeAndSendTraceInternalServiceEndpointTraces(proxyClient *apiserver.ProxyC
 	attrs.PutStr("http.url", "http://telemetry-trace-collector-internal.kyma-system:55678")
 
 	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", "kyma-system")
+	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
 	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
 	return traceIds, spanIds, attrs, resAttrs
@@ -131,7 +132,7 @@ func MakeAndSendMetricGatewayEgressTraces(proxyClient *apiserver.ProxyClient, ot
 	attrs.PutStr("http.url", "http://telemetry-otlp-metrics.kyma-system:4317")
 
 	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", "kyma-system")
+	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
 	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
 	return traceIds, spanIds, attrs, resAttrs
