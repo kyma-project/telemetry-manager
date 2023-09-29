@@ -8,8 +8,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 )
 
 func MakeAndSendTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map) {
