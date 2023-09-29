@@ -1,8 +1,9 @@
 package trace
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
 func unmarshalTraces(jsonlMetrics []byte) ([]ptrace.Traces, error) {

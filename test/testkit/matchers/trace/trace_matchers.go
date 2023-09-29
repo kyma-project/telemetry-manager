@@ -2,6 +2,7 @@ package trace
 
 import (
 	"fmt"
+
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"go.opentelemetry.io/collector/pdata/pcommon"
