@@ -449,6 +449,7 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 		LuaConfigMap:      types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: telemetryNamespace},
 		ParsersConfigMap:  types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
 		EnvSecret:         types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: telemetryNamespace},
+		TLSConfigSecret:   types.NamespacedName{Name: "telemetry-fluent-bit-output-tls-config", Namespace: telemetryNamespace},
 		DaemonSet:         types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 		OverrideConfigMap: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		PipelineDefaults:  createPipelineDefaults(),

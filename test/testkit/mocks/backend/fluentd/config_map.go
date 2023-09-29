@@ -87,12 +87,13 @@ func (cm *ConfigMap) Name() string {
 
 func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	data := make(map[string]string)
-	data["fluent.conf"] = configTemplateFluentd
 	if cm.withTLS {
 		data["fluent.conf"] = configTemplateFluentdTLS
 		data["server.crt"] = cm.certs.ServerCertPem.String()
 		data["server.key"] = cm.certs.ServerKeyPem.String()
 		data["ca.crt"] = cm.certs.CaCertPem.String()
+	} else {
+		data["fluent.conf"] = configTemplateFluentd
 	}
 
 	return &corev1.ConfigMap{

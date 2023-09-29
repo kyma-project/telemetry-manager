@@ -77,6 +77,7 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit 
 		value := resolveValue(httpOutput.User, name)
 		sb.AddConfigParam("http_user", value)
 	}
+
 	tlsEnabled := "on"
 	if httpOutput.TLSConfig.Disabled {
 		tlsEnabled = "off"
@@ -87,6 +88,7 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit 
 		tlsVerify = "off"
 	}
 	sb.AddConfigParam("tls.verify", tlsVerify)
+
 	if httpOutput.TLSConfig.CA.IsDefined() {
 		sb.AddConfigParam("tls.ca_file", fmt.Sprintf("/fluent-bit/tls/%s-ca.crt", name))
 	}
