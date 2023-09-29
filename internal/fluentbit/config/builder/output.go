@@ -90,13 +90,13 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit 
 	sb.AddConfigParam("tls.verify", tlsVerify)
 
 	if httpOutput.TLSConfig.CA.IsDefined() {
-		sb.AddConfigParam("tls.ca_file", fmt.Sprintf("/fluent-bit/tls/%s-ca.crt", name))
+		sb.AddConfigParam("tls.ca_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-ca.crt", name))
 	}
 	if httpOutput.TLSConfig.Cert.IsDefined() {
-		sb.AddConfigParam("tls.crt_file", fmt.Sprintf("/fluent-bit/tls/%s-cert.crt", name))
+		sb.AddConfigParam("tls.crt_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-cert.crt", name))
 	}
 	if httpOutput.TLSConfig.Key.IsDefined() {
-		sb.AddConfigParam("tls.key_file", fmt.Sprintf("/fluent-bit/tls/%s-key.key", name))
+		sb.AddConfigParam("tls.key_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-key.key", name))
 	}
 
 	return sb.Build()

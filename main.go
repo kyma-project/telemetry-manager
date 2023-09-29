@@ -444,15 +444,15 @@ func validateFlags() error {
 
 func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.LogPipelineReconciler {
 	config := logpipeline.Config{
-		SectionsConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
-		FilesConfigMap:    types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
-		LuaConfigMap:      types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: telemetryNamespace},
-		ParsersConfigMap:  types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
-		EnvSecret:         types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: telemetryNamespace},
-		TLSConfigSecret:   types.NamespacedName{Name: "telemetry-fluent-bit-output-tls-config", Namespace: telemetryNamespace},
-		DaemonSet:         types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
-		OverrideConfigMap: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
-		PipelineDefaults:  createPipelineDefaults(),
+		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
+		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
+		LuaConfigMap:          types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: telemetryNamespace},
+		ParsersConfigMap:      types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
+		EnvSecret:             types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: telemetryNamespace},
+		OutputTLSConfigSecret: types.NamespacedName{Name: "telemetry-fluent-bit-output-tls-config", Namespace: telemetryNamespace},
+		DaemonSet:             types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
+		OverrideConfigMap:     types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
+		PipelineDefaults:      createPipelineDefaults(),
 		DaemonSetConfig: fluentbit.DaemonSetConfig{
 			FluentBitImage:              fluentBitImageVersion,
 			FluentBitConfigPrepperImage: fluentBitConfigPrepperImageVersion,

@@ -46,7 +46,6 @@ const configTemplateFluentd = `<source>
     port 8006
     weight 60
   </server>
-  
 </match>`
 
 const configTemplateFluentdTLS = `<source>
@@ -78,7 +77,6 @@ const configTemplateFluentdTLS = `<source>
     port 8006
     weight 60
   </server>
-  
 </match>`
 
 func (cm *ConfigMap) Name() string {

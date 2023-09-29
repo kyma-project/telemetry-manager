@@ -133,7 +133,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 								{MountPath: "/var/log", Name: "varlog", ReadOnly: true},
 								{MountPath: "/data", Name: "varfluentbit"},
 								{MountPath: "/files", Name: "dynamic-files"},
-								{MountPath: "/fluent-bit/tls/", Name: "output-tls-config"},
+								{MountPath: "/fluent-bit/etc/output-tls-config/", Name: "output-tls-config", ReadOnly: true},
 							},
 						},
 						{

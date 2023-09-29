@@ -156,7 +156,7 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 }
 
 func (s *syncer) syncTLSConfigSecrets(ctx context.Context, logPipelines *telemetryv1alpha1.LogPipelineList) error {
-	oldSecret, err := utils.GetOrCreateSecret(ctx, s, s.config.TLSConfigSecret)
+	oldSecret, err := utils.GetOrCreateSecret(ctx, s, s.config.OutputTLSConfigSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get tls config secret: %w", err)
 	}

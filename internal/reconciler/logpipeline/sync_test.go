@@ -21,11 +21,12 @@ import (
 
 var (
 	testConfig = Config{
-		DaemonSet:         types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
-		SectionsConfigMap: types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
-		FilesConfigMap:    types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
-		EnvSecret:         types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
-		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "default"},
+		DaemonSet:             types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
+		SectionsConfigMap:     types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
+		FilesConfigMap:        types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
+		EnvSecret:             types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
+		OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+		OverrideConfigMap:     types.NamespacedName{Name: "override-config", Namespace: "default"},
 		DaemonSetConfig: resources.DaemonSetConfig{
 			FluentBitImage:              "my-fluent-bit-image",
 			FluentBitConfigPrepperImage: "my-fluent-bit-config-image",
@@ -394,5 +395,126 @@ func TestSyncReferencedSecrets(t *testing.T) {
 		err = fakeClient.Get(context.Background(), envSecretName, &envSecret)
 		require.NoError(t, err)
 		require.NotContains(t, envSecret.Data, "HTTP_DEFAULT_CREDS_PASSWORD")
+	})
+}
+
+func TestSyncTLSConfigSecrets(t *testing.T) {
+	allPipelines := telemetryv1alpha1.LogPipelineList{
+		Items: []telemetryv1alpha1.LogPipeline{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "pipeline-1"},
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Output: telemetryv1alpha1.Output{
+						HTTP: &telemetryv1alpha1.HTTPOutput{
+							TLSConfig: telemetryv1alpha1.TLSConfig{
+								Disabled:                  false,
+								SkipCertificateValidation: false,
+								CA: telemetryv1alpha1.ValueType{
+									Value: "fake-ca-value",
+								},
+								Cert: telemetryv1alpha1.ValueType{
+									Value: "fake-cert-value",
+								},
+								Key: telemetryv1alpha1.ValueType{
+									ValueFrom: &telemetryv1alpha1.ValueFromSource{
+										SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+											Name:      "my-key-secret",
+											Namespace: "default",
+											Key:       "my-key.key",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	t.Run("should add output TLS config to secret during first sync", func(t *testing.T) {
+		keySecret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-key-secret",
+				Namespace: "default",
+			},
+			Data: map[string][]byte{"my-key.key": []byte("fake-key-value")},
+		}
+
+		fakeClient := fake.NewClientBuilder().WithObjects(&keySecret).Build()
+		sut := syncer{fakeClient, testConfig}
+		err := sut.syncReferencedSecrets(context.Background(), &allPipelines)
+		require.NoError(t, err)
+
+		var tlsConfigSecret corev1.Secret
+		err = fakeClient.Get(context.Background(), testConfig.OutputTLSConfigSecret, &tlsConfigSecret)
+		require.NoError(t, err)
+		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
+		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")
+		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-key.crt")
+		require.Equal(t, []byte("fake-ca-value"), tlsConfigSecret.Data["pipeline-1-ca.crt"])
+		require.Equal(t, []byte("fake-cert-value"), tlsConfigSecret.Data["pipeline-1-cert.crt"])
+		require.Equal(t, []byte("fake-key-value"), tlsConfigSecret.Data["pipeline-1-key.crt"])
+		require.Len(t, tlsConfigSecret.OwnerReferences, 1)
+		require.Equal(t, allPipelines.Items[0].Name, tlsConfigSecret.OwnerReferences[0].Name)
+	})
+
+	t.Run("should update output TLS config in secret during subsequent sync", func(t *testing.T) {
+		keySecret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-key-secret",
+				Namespace: "default",
+			},
+			Data: map[string][]byte{"my-key.key": []byte("fake-key-value")},
+		}
+		fakeClient := fake.NewClientBuilder().WithObjects(&keySecret).Build()
+
+		sut := syncer{fakeClient, testConfig}
+		err := sut.syncReferencedSecrets(context.Background(), &allPipelines)
+		require.NoError(t, err)
+
+		keySecret.Data["my-key.key"] = []byte("new-fake-key-value")
+		err = fakeClient.Update(context.Background(), &keySecret)
+		require.NoError(t, err)
+
+		err = sut.syncReferencedSecrets(context.Background(), &allPipelines)
+		require.NoError(t, err)
+
+		var tlsConfigSecret corev1.Secret
+		err = fakeClient.Get(context.Background(), testConfig.OutputTLSConfigSecret, &tlsConfigSecret)
+		require.NoError(t, err)
+		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
+		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")
+		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-key.crt")
+		require.Equal(t, []byte("fake-ca-value"), tlsConfigSecret.Data["pipeline-1-ca.crt"])
+		require.Equal(t, []byte("fake-cert-value"), tlsConfigSecret.Data["pipeline-1-cert.crt"])
+		require.Equal(t, []byte("new-fake-key-value"), tlsConfigSecret.Data["pipeline-1-key.crt"])
+	})
+
+	t.Run("should delete value in env secret if marked for deletion", func(t *testing.T) {
+		keySecret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-key-secret",
+				Namespace: "default",
+			},
+			Data: map[string][]byte{"my-key.key": []byte("fake-key-value")},
+		}
+		fakeClient := fake.NewClientBuilder().WithObjects(&keySecret).Build()
+
+		sut := syncer{fakeClient, testConfig}
+		err := sut.syncReferencedSecrets(context.Background(), &allPipelines)
+		require.NoError(t, err)
+
+		now := metav1.Now()
+		allPipelines.Items[0].SetDeletionTimestamp(&now)
+		err = sut.syncReferencedSecrets(context.Background(), &allPipelines)
+		require.NoError(t, err)
+
+		var tlsConfigSecret corev1.Secret
+		err = fakeClient.Get(context.Background(), testConfig.OutputTLSConfigSecret, &tlsConfigSecret)
+		require.NoError(t, err)
+		require.NotContains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
+		require.NotContains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")
+		require.NotContains(t, tlsConfigSecret.Data, "pipeline-1-key.crt")
 	})
 }

@@ -14,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kymakit "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -55,7 +54,7 @@ var _ = Describe("Logs Fluent Bit Metrics", Label("logging"), func() {
 		It("Should have a healthy webhook", func() {
 			Eventually(func(g Gomega) {
 				var endPoint corev1.Endpoints
-				key := types.NamespacedName{Name: telemetryWebhookEndpoint, Namespace: kymakit.SystemNamespaceName}
+				key := types.NamespacedName{Name: telemetryWebhookEndpoint, Namespace: kymaSystemNamespaceName}
 				g.Expect(k8sClient.Get(ctx, key, &endPoint)).To(Succeed())
 				g.Expect(endPoint.Subsets).NotTo(BeEmpty())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
@@ -64,12 +63,12 @@ var _ = Describe("Logs Fluent Bit Metrics", Label("logging"), func() {
 		It("Should have a running fluent-bit daemonset", func() {
 			Eventually(func(g Gomega) bool {
 				var daemonSet appsv1.DaemonSet
-				key := types.NamespacedName{Name: telemetryFluentbitName, Namespace: kymakit.SystemNamespaceName}
+				key := types.NamespacedName{Name: telemetryFluentbitName, Namespace: kymaSystemNamespaceName}
 				g.Expect(k8sClient.Get(ctx, key, &daemonSet)).To(Succeed())
 
 				listOptions := client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(daemonSet.Spec.Selector.MatchLabels),
-					Namespace:     kymakit.SystemNamespaceName,
+					Namespace:     kymaSystemNamespaceName,
 				}
 				var pods corev1.PodList
 				g.Expect(k8sClient.List(ctx, &pods, &listOptions)).To(Succeed())
@@ -86,7 +85,7 @@ var _ = Describe("Logs Fluent Bit Metrics", Label("logging"), func() {
 		It("Should be able to get fluent-bit metrics endpoint", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(proxyClient.ProxyURLForService(
-					kymakit.SystemNamespaceName, telemetryFluentbitMetricServiceName, "/metrics", 2020))
+					kymaSystemNamespaceName, telemetryFluentbitMetricServiceName, "/metrics", 2020))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(

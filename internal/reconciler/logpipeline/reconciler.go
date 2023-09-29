@@ -40,17 +40,17 @@ import (
 )
 
 type Config struct {
-	DaemonSet         types.NamespacedName
-	SectionsConfigMap types.NamespacedName
-	FilesConfigMap    types.NamespacedName
-	LuaConfigMap      types.NamespacedName
-	ParsersConfigMap  types.NamespacedName
-	EnvSecret         types.NamespacedName
-	TLSConfigSecret   types.NamespacedName
-	OverrideConfigMap types.NamespacedName
-	PipelineDefaults  configbuilder.PipelineDefaults
-	Overrides         overrides.Config
-	DaemonSetConfig   resources.DaemonSetConfig
+	DaemonSet             types.NamespacedName
+	SectionsConfigMap     types.NamespacedName
+	FilesConfigMap        types.NamespacedName
+	LuaConfigMap          types.NamespacedName
+	ParsersConfigMap      types.NamespacedName
+	EnvSecret             types.NamespacedName
+	OutputTLSConfigSecret types.NamespacedName
+	OverrideConfigMap     types.NamespacedName
+	PipelineDefaults      configbuilder.PipelineDefaults
+	Overrides             overrides.Config
+	DaemonSetConfig       resources.DaemonSetConfig
 }
 
 //go:generate mockery --name DaemonSetProber --filename daemon_set_prober.go
