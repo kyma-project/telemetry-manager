@@ -88,7 +88,7 @@ The state of the log components is determined by the status condition of type `L
 | True             | FluentBitDaemonSetReady    | Fluent Bit DaemonSet is ready                   |
 | False            | ReferencedSecretMissing    | One or more referenced Secrets are missing      |
 | False            | FluentBitDaemonSetNotReady | Fluent Bit DaemonSet is not ready               |
-| False            | ResourceBlocksDeletion     | The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (resource-1, resource-2,...) |
+| False            | ResourceBlocksDeletion     | The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (resource-1, resource-2,...), LogParsers (resource-1, resource-2,...) |
 
 
 ### Trace Components State
