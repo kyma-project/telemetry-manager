@@ -406,6 +406,7 @@ func TestSyncTLSConfigSecrets(t *testing.T) {
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Output: telemetryv1alpha1.Output{
 						HTTP: &telemetryv1alpha1.HTTPOutput{
+							Host: telemetryv1alpha1.ValueType{Value: "localhost"},
 							TLSConfig: telemetryv1alpha1.TLSConfig{
 								Disabled:                  false,
 								SkipCertificateValidation: false,
@@ -443,7 +444,7 @@ func TestSyncTLSConfigSecrets(t *testing.T) {
 
 		fakeClient := fake.NewClientBuilder().WithObjects(&keySecret).Build()
 		sut := syncer{fakeClient, testConfig}
-		err := sut.syncReferencedSecrets(context.Background(), &allPipelines)
+		err := sut.syncTLSConfigSecrets(context.Background(), &allPipelines)
 		require.NoError(t, err)
 
 		var tlsConfigSecret corev1.Secret
@@ -451,10 +452,10 @@ func TestSyncTLSConfigSecrets(t *testing.T) {
 		require.NoError(t, err)
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")
-		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-key.crt")
+		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-key.key")
 		require.Equal(t, []byte("fake-ca-value"), tlsConfigSecret.Data["pipeline-1-ca.crt"])
 		require.Equal(t, []byte("fake-cert-value"), tlsConfigSecret.Data["pipeline-1-cert.crt"])
-		require.Equal(t, []byte("fake-key-value"), tlsConfigSecret.Data["pipeline-1-key.crt"])
+		require.Equal(t, []byte("fake-key-value"), tlsConfigSecret.Data["pipeline-1-key.key"])
 		require.Len(t, tlsConfigSecret.OwnerReferences, 1)
 		require.Equal(t, allPipelines.Items[0].Name, tlsConfigSecret.OwnerReferences[0].Name)
 	})
@@ -470,14 +471,14 @@ func TestSyncTLSConfigSecrets(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(&keySecret).Build()
 
 		sut := syncer{fakeClient, testConfig}
-		err := sut.syncReferencedSecrets(context.Background(), &allPipelines)
+		err := sut.syncTLSConfigSecrets(context.Background(), &allPipelines)
 		require.NoError(t, err)
 
 		keySecret.Data["my-key.key"] = []byte("new-fake-key-value")
 		err = fakeClient.Update(context.Background(), &keySecret)
 		require.NoError(t, err)
 
-		err = sut.syncReferencedSecrets(context.Background(), &allPipelines)
+		err = sut.syncTLSConfigSecrets(context.Background(), &allPipelines)
 		require.NoError(t, err)
 
 		var tlsConfigSecret corev1.Secret
@@ -485,13 +486,13 @@ func TestSyncTLSConfigSecrets(t *testing.T) {
 		require.NoError(t, err)
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
 		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")
-		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-key.crt")
+		require.Contains(t, tlsConfigSecret.Data, "pipeline-1-key.key")
 		require.Equal(t, []byte("fake-ca-value"), tlsConfigSecret.Data["pipeline-1-ca.crt"])
 		require.Equal(t, []byte("fake-cert-value"), tlsConfigSecret.Data["pipeline-1-cert.crt"])
-		require.Equal(t, []byte("new-fake-key-value"), tlsConfigSecret.Data["pipeline-1-key.crt"])
+		require.Equal(t, []byte("new-fake-key-value"), tlsConfigSecret.Data["pipeline-1-key.key"])
 	})
 
-	t.Run("should delete value in env secret if marked for deletion", func(t *testing.T) {
+	t.Run("should delete value in output TLS config secret if marked for deletion", func(t *testing.T) {
 		keySecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-key-secret",
@@ -502,12 +503,12 @@ func TestSyncTLSConfigSecrets(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(&keySecret).Build()
 
 		sut := syncer{fakeClient, testConfig}
-		err := sut.syncReferencedSecrets(context.Background(), &allPipelines)
+		err := sut.syncTLSConfigSecrets(context.Background(), &allPipelines)
 		require.NoError(t, err)
 
 		now := metav1.Now()
 		allPipelines.Items[0].SetDeletionTimestamp(&now)
-		err = sut.syncReferencedSecrets(context.Background(), &allPipelines)
+		err = sut.syncTLSConfigSecrets(context.Background(), &allPipelines)
 		require.NoError(t, err)
 
 		var tlsConfigSecret corev1.Secret
@@ -515,6 +516,6 @@ func TestSyncTLSConfigSecrets(t *testing.T) {
 		require.NoError(t, err)
 		require.NotContains(t, tlsConfigSecret.Data, "pipeline-1-ca.crt")
 		require.NotContains(t, tlsConfigSecret.Data, "pipeline-1-cert.crt")
-		require.NotContains(t, tlsConfigSecret.Data, "pipeline-1-key.crt")
+		require.NotContains(t, tlsConfigSecret.Data, "pipeline-1-key.key")
 	})
 }

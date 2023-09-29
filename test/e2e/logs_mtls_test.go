@@ -58,7 +58,7 @@ var _ = Describe("Logs mTLS", Label("logging"), func() {
 			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a log backend running", Label("operational"), func() {
+		It("Should have a log backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
 		})
 
@@ -68,7 +68,6 @@ var _ = Describe("Logs mTLS", Label("logging"), func() {
 
 		It("Should verify log delivery", func() {
 			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
-
 		})
 
 	})

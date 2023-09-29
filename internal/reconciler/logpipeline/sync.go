@@ -22,7 +22,6 @@ type syncer struct {
 }
 
 func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines telemetryv1alpha1.LogPipelineList, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
-
 	log := logf.FromContext(ctx)
 
 	if err := s.syncSectionsConfigMap(ctx, pipeline, deployableLogPipelines); err != nil {

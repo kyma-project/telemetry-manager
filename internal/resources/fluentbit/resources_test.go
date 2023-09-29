@@ -37,6 +37,7 @@ func TestMakeDaemonSet(t *testing.T) {
 		{MountPath: "/var/log", Name: "varlog", ReadOnly: true},
 		{MountPath: "/data", Name: "varfluentbit"},
 		{MountPath: "/files", Name: "dynamic-files"},
+		{MountPath: "/fluent-bit/etc/output-tls-config/", Name: "output-tls-config", ReadOnly: true},
 	}
 
 	expectedAnnotations := map[string]string{
@@ -71,7 +72,7 @@ func TestMakeDaemonSet(t *testing.T) {
 	require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
 
 	volMounts := daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts
-	require.True(t, reflect.DeepEqual(volMounts, expectedVolMounts))
+	require.True(t, reflect.DeepEqual(volMounts, expectedVolMounts), "volume mounts do not match")
 }
 
 func TestMakeClusterRole(t *testing.T) {
