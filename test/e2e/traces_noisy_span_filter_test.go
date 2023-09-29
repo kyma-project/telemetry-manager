@@ -83,16 +83,16 @@ var _ = Describe("Filter Noisy Trace Spans", Label("tracing"), func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
-		It("Should have a running pipeline", Label(operationalTest), func() {
+		It("Should have a running pipeline", func() {
 			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should verify end-to-end trace delivery", Label(operationalTest), func() {
+		It("Should verify end-to-end trace delivery", func() {
 			traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, urls.OTLPPush())
 			verifiers.TracesShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, attrs)
 		})
 
-		It("Should filter noisy traces and spans", Label(operationalTest), func() {
+		It("Should filter noisy traces and spans", func() {
 			traceID, spanIDs, attrs, resAttrs := kittraces.MakeAndSendVictoriaMetricsTraces(proxyClient, urls.OTLPPush())
 			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, attrs, resAttrs)
 

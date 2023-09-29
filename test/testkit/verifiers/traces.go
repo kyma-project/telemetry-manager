@@ -73,7 +73,7 @@ func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExport
 }
 
 func TracesShouldNotBePresent(proxyClient *apiserver.ProxyClient, telemetryExportURL string, traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attrs pcommon.Map, resAttrs pcommon.Map) {
-	gomega.Eventually(func(g gomega.Gomega) {
+	gomega.Consistently(func(g gomega.Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(gomega.HaveOccurred())
 		g.Expect(resp).To(gomega.HaveHTTPStatus(http.StatusOK))
