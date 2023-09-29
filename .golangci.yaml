@@ -112,6 +112,8 @@ issues:
     - linters: [ dupl ]
       path: internal/kubernetes/utils.go
     - linters: [ dupl ]
+      path: internal/resources/fluentbit/resources_test.go
+    - linters: [ dupl ]
       path: test/testkit/matchers/trace_matchers_test.go
     - linters: [ dupl ]
       path: test/testkit/matchers/prometheus_matcher_test.go
