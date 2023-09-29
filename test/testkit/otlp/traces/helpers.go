@@ -3,12 +3,12 @@ package traces
 import (
 	"context"
 	"fmt"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 
 	"github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 )
 
