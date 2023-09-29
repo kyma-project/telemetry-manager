@@ -46,12 +46,12 @@ func NewTraceID() pcommon.TraceID {
 	return tid
 }
 
-func MakeTraces(traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attributes pcommon.Map) ptrace.Traces {
+func MakeTraces(traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attributes pcommon.Map, resAttributes pcommon.Map) ptrace.Traces {
 	traces := ptrace.NewTraces()
+	rs := traces.ResourceSpans().AppendEmpty()
+	resAttributes.CopyTo(rs.Resource().Attributes())
 
-	spans := traces.ResourceSpans().
-		AppendEmpty().
-		ScopeSpans().
+	spans := rs.ScopeSpans().
 		AppendEmpty().
 		Spans()
 

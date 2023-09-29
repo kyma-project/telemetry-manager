@@ -78,3 +78,18 @@ func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExport
 		g.Expect(err).NotTo(HaveOccurred())
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
+
+func TracesShouldNotBePresent(proxyClient *apiserver.ProxyClient, telemetryExportURL string, traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attrs pcommon.Map, resAttrs pcommon.Map) {
+	gomega.Consistently(func(g gomega.Gomega) {
+		resp, err := proxyClient.Get(telemetryExportURL)
+		g.Expect(err).NotTo(gomega.HaveOccurred())
+		g.Expect(resp).To(gomega.HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(gomega.HaveHTTPBody(gomega.Not(gomega.SatisfyAny(
+			matchers.ConsistOfSpansWithIDs(spanIDs...),
+			matchers.ConsistOfSpansWithTraceID(traceID),
+			matchers.ConsistOfSpansWithAttributes(attrs),
+			matchers.ContainSpansWithResourceAttributes(resAttrs)))))
+		err = resp.Body.Close()
+		g.Expect(err).NotTo(gomega.HaveOccurred())
+	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
+}
