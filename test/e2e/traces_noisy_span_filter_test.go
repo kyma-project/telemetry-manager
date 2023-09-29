@@ -54,13 +54,9 @@ var _ = Describe("Filter Noisy Trace Spans", Label("tracing"), func() {
 			kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
 		)
 
-		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
-			WithPort("grpc-otlp", ports.OTLPGRPC).
-			WithPort("http-metrics", ports.Metrics)
 		urls.SetMetrics(proxyClient.ProxyURLForService(
 			kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
 
-		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", kitkyma.TraceGatewayBaseName)))
 		return objs
 	}
 
