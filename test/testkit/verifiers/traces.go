@@ -58,7 +58,10 @@ func TraceCollectorConfigShouldNotContainPipeline(ctx context.Context, k8sClient
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(BeTrue())
 }
 
-func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL string, traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attrs pcommon.Map) {
+func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL string,
+	traceID pcommon.TraceID,
+	spanIDs []pcommon.SpanID,
+	spanAttrs pcommon.Map) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -70,7 +73,7 @@ func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExport
 					WithSpanIDs(ConsistOf(spanIDs)),
 					HaveEach(SatisfyAll(
 						WithTraceID(Equal(traceID)),
-						WithSpanAttrs(BeEquivalentTo(attrs.AsRaw())),
+						WithSpanAttrs(BeEquivalentTo(spanAttrs.AsRaw())),
 					)),
 				),
 			))))
@@ -79,17 +82,25 @@ func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExport
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func TracesShouldNotBePresent(proxyClient *apiserver.ProxyClient, telemetryExportURL string, traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attrs pcommon.Map, resAttrs pcommon.Map) {
-	gomega.Consistently(func(g gomega.Gomega) {
+func TracesShouldNotBePresent(proxyClient *apiserver.ProxyClient, telemetryExportURL string,
+	traceID pcommon.TraceID,
+	spanIDs []pcommon.SpanID,
+	spanAttrs pcommon.Map,
+	resourceAttrs pcommon.Map) {
+	Consistently(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
-		g.Expect(err).NotTo(gomega.HaveOccurred())
-		g.Expect(resp).To(gomega.HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(gomega.HaveHTTPBody(gomega.Not(gomega.SatisfyAny(
-			matchers.ConsistOfSpansWithIDs(spanIDs...),
-			matchers.ConsistOfSpansWithTraceID(traceID),
-			matchers.ConsistOfSpansWithAttributes(attrs),
-			matchers.ContainSpansWithResourceAttributes(resAttrs)))))
-		err = resp.Body.Close()
-		g.Expect(err).NotTo(gomega.HaveOccurred())
-	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(Not(ContainTd(SatisfyAny(
+			WithResourceAttrs(BeEquivalentTo(resourceAttrs.AsRaw())),
+			WithSpans(
+				SatisfyAny(
+					WithSpanIDs(ConsistOf(spanIDs)),
+					HaveEach(SatisfyAny(
+						WithTraceID(Equal(traceID)),
+						WithSpanAttrs(BeEquivalentTo(spanAttrs.AsRaw())),
+					)),
+				),
+			))))))
+	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
