@@ -20,12 +20,12 @@ func WithTds(matcher types.GomegaMatcher) types.GomegaMatcher {
 	}, matcher)
 }
 
-// ContainTd is an alias for WithMds(gomega.ContainElement()).
+// ContainTd is an alias for WithTds(gomega.ContainElement()).
 func ContainTd(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return WithTds(gomega.ContainElement(matcher))
 }
 
-// ConsistOfTds is an alias for WithMds(gomega.ConsistOf()).
+// ConsistOfTds is an alias for WithTds(gomega.ConsistOf()).
 func ConsistOfTds(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return WithTds(gomega.ConsistOf(matcher))
 }
