@@ -15,7 +15,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
@@ -57,31 +57,50 @@ func TraceCollectorConfigShouldNotContainPipeline(ctx context.Context, k8sClient
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(gomega.BeTrue())
 }
 
-func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL string, traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attrs pcommon.Map) {
+func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL string,
+	traceID pcommon.TraceID,
+	spanIDs []pcommon.SpanID,
+	spanAttrs pcommon.Map) {
 	gomega.Eventually(func(g gomega.Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(gomega.HaveOccurred())
 		g.Expect(resp).To(gomega.HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(gomega.HaveHTTPBody(gomega.SatisfyAll(
-			matchers.ConsistOfNumberOfSpans(len(spanIDs)),
-			matchers.ConsistOfSpansWithIDs(spanIDs...),
-			matchers.ConsistOfSpansWithTraceID(traceID),
-			matchers.ConsistOfSpansWithAttributes(attrs))))
+		g.Expect(resp).To(gomega.HaveHTTPBody(trace.ConsistOfTds(
+			trace.WithSpans(
+				gomega.SatisfyAll(
+					gomega.HaveLen(len(spanIDs)),
+					trace.WithSpanIDs(gomega.ConsistOf(spanIDs)),
+					gomega.HaveEach(gomega.SatisfyAll(
+						trace.WithTraceID(gomega.Equal(traceID)),
+						trace.WithSpanAttrs(gomega.BeEquivalentTo(spanAttrs.AsRaw())),
+					)),
+				),
+			))))
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(gomega.HaveOccurred())
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
 }
 
-func TracesShouldNotBePresent(proxyClient *apiserver.ProxyClient, telemetryExportURL string, traceID pcommon.TraceID, spanIDs []pcommon.SpanID, attrs pcommon.Map, resAttrs pcommon.Map) {
+func TracesShouldNotBePresent(proxyClient *apiserver.ProxyClient, telemetryExportURL string,
+	traceID pcommon.TraceID,
+	spanIDs []pcommon.SpanID,
+	spanAttrs pcommon.Map,
+	resourceAttrs pcommon.Map) {
 	gomega.Consistently(func(g gomega.Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(gomega.HaveOccurred())
 		g.Expect(resp).To(gomega.HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(gomega.HaveHTTPBody(gomega.Not(gomega.SatisfyAny(
-			matchers.ConsistOfSpansWithIDs(spanIDs...),
-			matchers.ConsistOfSpansWithTraceID(traceID),
-			matchers.ConsistOfSpansWithAttributes(attrs),
-			matchers.ContainSpansWithResourceAttributes(resAttrs)))))
+		g.Expect(resp).To(gomega.HaveHTTPBody(gomega.Not(trace.ContainTd(gomega.SatisfyAny(
+			trace.WithResourceAttrs(gomega.BeEquivalentTo(resourceAttrs.AsRaw())),
+			trace.WithSpans(
+				gomega.SatisfyAny(
+					trace.WithSpanIDs(gomega.ConsistOf(spanIDs)),
+					gomega.HaveEach(gomega.SatisfyAny(
+						trace.WithTraceID(gomega.Equal(traceID)),
+						trace.WithSpanAttrs(gomega.BeEquivalentTo(spanAttrs.AsRaw())),
+					)),
+				),
+			))))))
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(gomega.HaveOccurred())
 	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
