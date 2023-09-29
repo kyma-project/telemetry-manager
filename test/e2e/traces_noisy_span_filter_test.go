@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -41,8 +42,7 @@ var _ = Describe("Filter Noisy Trace Spans", Label("tracing"), func() {
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
 		pipeline := kittrace.NewPipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			Persistent(isOperational())
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
 		pipelineName = pipeline.Name()
 		objs = append(objs, pipeline.K8sObject())
 
@@ -66,6 +66,10 @@ var _ = Describe("Filter Noisy Trace Spans", Label("tracing"), func() {
 
 		It("Should have a running pipeline", func() {
 			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+		})
+
+		It("Should have a trace backend running", func() {
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 		})
 
 		It("Should verify end-to-end trace delivery", func() {
