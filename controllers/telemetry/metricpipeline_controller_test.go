@@ -20,18 +20,19 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
-	gatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
-
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var (
 	testMetricPipelineReconcilerConfig = metricpipeline.Config{
-		Gateway: gatewayresources.Config{
-			BaseName:  "telemetry-metric-gateway",
-			Namespace: "telemetry-system",
-			Deployment: gatewayresources.DeploymentConfig{
+		Gateway: otelcollector.GatewayConfig{
+			Config: otelcollector.Config{
+				BaseName:  "telemetry-metric-gateway",
+				Namespace: "telemetry-system",
+			},
+			Deployment: otelcollector.DeploymentConfig{
 				Image:             "otel/opentelemetry-collector-contrib:0.60.0",
 				BaseCPULimit:      resource.MustParse("1"),
 				BaseMemoryLimit:   resource.MustParse("1Gi"),
@@ -39,9 +40,7 @@ var (
 				BaseMemoryRequest: resource.MustParse("256Mi"),
 				PriorityClassName: "telemetry-priority-class",
 			},
-			Service: gatewayresources.ServiceConfig{
-				OTLPServiceName: "telemetry-otlp-metrics",
-			},
+			OTLPServiceName: "telemetry-otlp-metrics",
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: "override-config", Namespace: "telemetry-system"},
 	}

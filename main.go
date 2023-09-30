@@ -59,7 +59,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
@@ -73,6 +72,7 @@ import (
 	_ "net/http/pprof"
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
 	//+kubebuilder:scaffold:imports
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
 var (
@@ -509,10 +509,12 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 
 func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.TracePipelineReconciler {
 	config := tracepipeline.Config{
-		Gateway: gateway.Config{
-			Namespace: telemetryNamespace,
-			BaseName:  "telemetry-trace-collector",
-			Deployment: gateway.DeploymentConfig{
+		Gateway: otelcollector.GatewayConfig{
+			Config: otelcollector.Config{
+				Namespace: telemetryNamespace,
+				BaseName:  "telemetry-trace-collector",
+			},
+			Deployment: otelcollector.DeploymentConfig{
 				Image:                traceGatewayImage,
 				PriorityClassName:    traceGatewayPriorityClass,
 				BaseCPULimit:         resource.MustParse(traceGatewayCPULimit),
@@ -524,9 +526,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 				BaseMemoryRequest:    resource.MustParse(traceGatewayMemoryRequest),
 				DynamicMemoryRequest: resource.MustParse(traceGatewayDynamicMemoryRequest),
 			},
-			Service: gateway.ServiceConfig{
-				OTLPServiceName: traceOTLPServiceName,
-			},
+			OTLPServiceName: traceOTLPServiceName,
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		MaxPipelines:           maxTracePipelines,
@@ -553,10 +553,12 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 				MemoryRequest:     resource.MustParse("50Mi"),
 			},
 		},
-		Gateway: gateway.Config{
-			Namespace: telemetryNamespace,
-			BaseName:  "telemetry-metric-gateway",
-			Deployment: gateway.DeploymentConfig{
+		Gateway: otelcollector.GatewayConfig{
+			Config: otelcollector.Config{
+				Namespace: telemetryNamespace,
+				BaseName:  "telemetry-metric-gateway",
+			},
+			Deployment: otelcollector.DeploymentConfig{
 				Image:                metricGatewayImage,
 				PriorityClassName:    metricGatewayPriorityClass,
 				BaseCPULimit:         resource.MustParse(metricGatewayCPULimit),
@@ -568,9 +570,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 				BaseMemoryRequest:    resource.MustParse(metricGatewayMemoryRequest),
 				DynamicMemoryRequest: resource.MustParse(metricGatewayDynamicMemoryRequest),
 			},
-			Service: gateway.ServiceConfig{
-				OTLPServiceName: metricOTLPServiceName,
-			},
+			OTLPServiceName: metricOTLPServiceName,
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		MaxPipelines:           maxMetricPipelines,

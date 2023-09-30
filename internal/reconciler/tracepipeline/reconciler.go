@@ -20,30 +20,20 @@ import (
 	"context"
 	"fmt"
 
-	"gopkg.in/yaml.v3"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
-	otelgatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
 type Config struct {
-	Gateway                otelgatewayresources.Config
+	Gateway                otelcollector.GatewayConfig
 	OverridesConfigMapName types.NamespacedName
 	MaxPipelines           int
 }
@@ -161,115 +151,8 @@ func getDeployableTracePipelines(ctx context.Context, allPipelines []telemetryv1
 }
 
 func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, allPipelines []telemetryv1alpha1.TracePipeline) error {
-	namespacedBaseName := types.NamespacedName{
-		Name:      r.config.Gateway.BaseName,
-		Namespace: r.config.Gateway.Namespace,
+	if err := otelcollector.ApplyGatewayResources(ctx, r.Client, &r.config.Gateway, len(allPipelines)); err != nil {
+		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
-
-	var err error
-	serviceAccount := commonresources.MakeServiceAccount(namespacedBaseName)
-	if err = controllerutil.SetOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
-		return fmt.Errorf("failed to create otel collector service account: %w", err)
-	}
-
-	clusterRole := otelgatewayresources.MakeClusterRole(namespacedBaseName)
-	if err = controllerutil.SetOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
-		return fmt.Errorf("failed to create otel collector cluster role: %w", err)
-	}
-
-	clusterRoleBinding := commonresources.MakeClusterRoleBinding(namespacedBaseName)
-	if err = controllerutil.SetOwnerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
-		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
-	}
-
-	gatewayConfig, envVars, err := gateway.MakeConfig(ctx, r, allPipelines)
-	if err != nil {
-		return fmt.Errorf("failed to make otel collector config: %v", err)
-	}
-
-	var gatewayConfigYAML []byte
-	gatewayConfigYAML, err = yaml.Marshal(gatewayConfig)
-	if err != nil {
-		return fmt.Errorf("failed to marshal collector config: %w", err)
-	}
-
-	secret := otelgatewayresources.MakeSecret(r.config.Gateway, envVars)
-	if err = controllerutil.SetOwnerReference(pipeline, secret, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateSecret(ctx, r.Client, secret); err != nil {
-		return fmt.Errorf("failed to create otel collector env secret: %w", err)
-	}
-
-	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, string(gatewayConfigYAML))
-	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateConfigMap(ctx, r.Client, configMap); err != nil {
-		return fmt.Errorf("failed to create otel collector configmap: %w", err)
-	}
-
-	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	deployment := otelgatewayresources.MakeDeployment(r.config.Gateway, configHash, len(allPipelines),
-		config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName)
-	if err = controllerutil.SetOwnerReference(pipeline, deployment, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateDeployment(ctx, r.Client, deployment); err != nil {
-		return fmt.Errorf("failed to create otel collector deployment: %w", err)
-	}
-
-	otlpService := otelgatewayresources.MakeOTLPService(r.config.Gateway)
-	if err = controllerutil.SetOwnerReference(pipeline, otlpService, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateService(ctx, r.Client, otlpService); err != nil {
-		return fmt.Errorf("failed to create otel collector otlp service: %w", err)
-	}
-
-	openCensusService := otelgatewayresources.MakeOpenCensusService(r.config.Gateway)
-	if err = controllerutil.SetOwnerReference(pipeline, openCensusService, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateService(ctx, r.Client, openCensusService); err != nil {
-		return fmt.Errorf("failed to create otel collector open census service: %w", err)
-	}
-
-	metricsService := otelgatewayresources.MakeMetricsService(r.config.Gateway)
-	if err = controllerutil.SetOwnerReference(pipeline, metricsService, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateService(ctx, r.Client, metricsService); err != nil {
-		return fmt.Errorf("failed to create otel collector metrics service: %w", err)
-	}
-
-	networkPolicyPorts := makeNetworkPolicyPorts()
-	networkPolicy := otelgatewayresources.MakeNetworkPolicy(r.config.Gateway, networkPolicyPorts)
-	if err = controllerutil.SetOwnerReference(pipeline, networkPolicy, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateNetworkPolicy(ctx, r.Client, networkPolicy); err != nil {
-		return fmt.Errorf("failed to create otel collector network policy: %w", err)
-	}
-
 	return nil
-}
-
-func makeNetworkPolicyPorts() []intstr.IntOrString {
-	return []intstr.IntOrString{
-		intstr.FromInt(ports.OTLPHTTP),
-		intstr.FromInt(ports.OTLPGRPC),
-		intstr.FromInt(ports.OpenCensus),
-		intstr.FromInt(ports.Metrics),
-		intstr.FromInt(ports.HealthCheck),
-	}
 }
