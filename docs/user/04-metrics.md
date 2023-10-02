@@ -382,6 +382,19 @@ You activated a MetricPipeline and metrics start streaming to your backend. To v
     NAME              STATUS    AGE
     backend           Ready     44s
 
+## Operations
+
+A MetricPipeline creates a Deployment running OTel Collector instances in your cluster. That instances will serve OTLP endpoints and ship received data to the configured backend. The Telemetry module assures that the OTel Collector instances are operational and healthy at any time. The Telemetry module delivers the data to the backend using typical patterns like buffering and retries (see [Limitations](#limitations)). However, there are scenarios where the instances will drop logs because the backend is either not reachable for some duration, or cannot handle the log load and is causing back pressure.
+
+To avoid and detect these scenarios, you must monitor the instances by collecting relevant metrics. For that, a service `telemetry-metric-gateway-metrics` is located in the `kyma-system` namespace. For easier discovery, they have the `prometheus.io` annotation.
+
+The relevant metrics are:
+| Name | Threshold | Description |
+|---|---|---|
+| otelcol_exporter_enqueue_failed_metric_points | total[5m] > 0 | Indicates that new or retried items could not be added to the exporter buffer because the buffer is exhausted. Typically, that happens when the configured backend cannot handle the load on time and is causing back pressure. |
+| otelcol_exporter_send_failed_metric_points | total[5m] > 0 | Indicates that items are refused in an non-retryable way like a 400 status |
+| otelcol_processor_refused_metric_points | total[5m] > 0 | Indicates that items cannot be received because a processor refuses them. That usually happens when memory of the collector is exhausted because too much data arrived and throttling started.. |
+
 ## Limitations
 
 The metric gateway setup is based on the following assumptions:
@@ -419,7 +432,7 @@ Cause: The backend is not reachable or wrong authentication credentials are used
 
 Remedy:
 
-1. To check the `telemetry-trace-collector` Pods for error logs, call `kubectl logs -n kyma-system {POD_NAME}`.
+1. To check the `telemetry-metric-gateway` Pods for error logs, call `kubectl logs -n kyma-system {POD_NAME}`.
 2. Fix the errors.
 
 ### Only Istio metrics arrive at the destination

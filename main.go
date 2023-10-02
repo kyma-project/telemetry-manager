@@ -134,10 +134,10 @@ var (
 )
 
 const (
-	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.83.0-da21e9f9"
+	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.86.0-897be16e"
 	overridesConfigMapName = "telemetry-override-config"
-	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.8-da21e9f9"
-	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20230824-2d68935f"
+	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.9-6130ed2c"
+	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20230911-5d49c958"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
@@ -223,13 +223,13 @@ func main() {
 
 	flag.StringVar(&traceGatewayImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceGatewayPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayCPULimit, "trace-collector-cpu-limit", "900m", "CPU limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicCPULimit, "trace-collector-dynamic-cpu-limit", "100m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceGatewayMemoryLimit, "trace-collector-memory-limit", "512Mi", "Memory limit for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicMemoryLimit, "trace-collector-dynamic-memory-limit", "512Mi", "Additional memory limit for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceGatewayCPURequest, "trace-collector-cpu-request", "25m", "CPU request for tracing OpenTelemetry Collector")
-	flag.StringVar(&traceGatewayDynamicCPURequest, "trace-collector-dynamic-cpu-request", "0", "Additional CPU request for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceGatewayMemoryRequest, "trace-collector-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayCPULimit, "trace-collector-cpu-limit", "700m", "CPU limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicCPULimit, "trace-collector-dynamic-cpu-limit", "500m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayMemoryLimit, "trace-collector-memory-limit", "500Mi", "Memory limit for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicMemoryLimit, "trace-collector-dynamic-memory-limit", "1500Mi", "Additional memory limit for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayCPURequest, "trace-collector-cpu-request", "100m", "CPU request for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayDynamicCPURequest, "trace-collector-dynamic-cpu-request", "100m", "Additional CPU request for tracing OpenTelemetry Collector per TracePipeline")
+	flag.StringVar(&traceGatewayMemoryRequest, "trace-collector-memory-request", "256Mi", "Memory request for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceGatewayDynamicMemoryRequest, "trace-collector-dynamic-memory-request", "0", "Additional memory request for tracing OpenTelemetry Collector per TracePipeline")
 	flag.IntVar(&maxTracePipelines, "trace-collector-pipelines", 3, "Maximum number of TracePipelines to be created. If 0, no limit is applied.")
 
@@ -407,20 +407,23 @@ func main() {
 
 		// Temporary solution for non-modularized telemetry operator
 		if !enableTelemetryManagerModule {
-			go func() {
-				for range time.Tick(1 * time.Hour) {
-					if ensureErr := webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); ensureErr != nil {
-						setupLog.Error(ensureErr, "Failed to ensure webhook cert")
-					}
-					setupLog.Info("Ensured webhook cert")
-				}
-			}()
+			go reconcileWebhook(webhookConfig.CertConfig, k8sClient)
 		}
 	}
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
+	}
+}
+
+func reconcileWebhook(certconfig webhookcert.Config, k8sClient client.Client) {
+	ensureWebhookLog := ctrl.Log.WithName("ensureWebhook")
+	for range time.Tick(1 * time.Hour) {
+		if ensureErr := webhookcert.EnsureCertificate(context.Background(), k8sClient, certconfig); ensureErr != nil {
+			ensureWebhookLog.Error(ensureErr, "Failed to ensure webhook cert")
+		}
+		ensureWebhookLog.Info("Ensured webhook cert")
 	}
 }
 
@@ -544,7 +547,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 				Image:             metricGatewayImage,
 				PriorityClassName: metricGatewayPriorityClass,
 				CPULimit:          resource.MustParse("1"),
-				MemoryLimit:       resource.MustParse("1Gi"),
+				MemoryLimit:       resource.MustParse("1200Mi"),
 				CPURequest:        resource.MustParse("15m"),
 				MemoryRequest:     resource.MustParse("50Mi"),
 			},

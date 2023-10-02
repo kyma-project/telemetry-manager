@@ -18,6 +18,14 @@ kind: MetricPipeline
 metadata:
   name: otlp
 spec:
+  input:
+    application:
+      prometheus:
+        enabled: false
+      istio:
+        enabled: false
+      runtime:
+        enabled: false
   output:
     otlp:
       endpoint:

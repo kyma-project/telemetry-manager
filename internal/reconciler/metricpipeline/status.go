@@ -10,7 +10,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
@@ -31,7 +31,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 	}
 
 	if !lockAcquired {
-		pending := telemetryv1alpha1.NewMetricPipelineCondition(reconciler.ReasonWaitingForLock, telemetryv1alpha1.MetricPipelinePending)
+		pending := telemetryv1alpha1.NewMetricPipelineCondition(conditions.ReasonWaitingForLock, telemetryv1alpha1.MetricPipelinePending)
 
 		if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
 			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))
@@ -43,7 +43,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, &pipeline)
 	if referencesNonExistentSecret {
-		pending := telemetryv1alpha1.NewMetricPipelineCondition(reconciler.ReasonReferencedSecretMissing, telemetryv1alpha1.MetricPipelinePending)
+		pending := telemetryv1alpha1.NewMetricPipelineCondition(conditions.ReasonReferencedSecretMissing, telemetryv1alpha1.MetricPipelinePending)
 
 		if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
 			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))
@@ -63,11 +63,11 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 			return nil
 		}
 
-		running := telemetryv1alpha1.NewMetricPipelineCondition(reconciler.ReasonMetricGatewayDeploymentReady, telemetryv1alpha1.MetricPipelineRunning)
+		running := telemetryv1alpha1.NewMetricPipelineCondition(conditions.ReasonMetricGatewayDeploymentReady, telemetryv1alpha1.MetricPipelineRunning)
 		return setCondition(ctx, r.Client, &pipeline, running)
 	}
 
-	pending := telemetryv1alpha1.NewMetricPipelineCondition(reconciler.ReasonMetricGatewayDeploymentNotReady, telemetryv1alpha1.MetricPipelinePending)
+	pending := telemetryv1alpha1.NewMetricPipelineCondition(conditions.ReasonMetricGatewayDeploymentNotReady, telemetryv1alpha1.MetricPipelinePending)
 
 	if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
 		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))

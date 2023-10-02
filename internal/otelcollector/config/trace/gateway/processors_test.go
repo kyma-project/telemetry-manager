@@ -30,8 +30,8 @@ func TestProcessors(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, "1s", collectorConfig.Processors.MemoryLimiter.CheckInterval)
-		require.Equal(t, 75, collectorConfig.Processors.MemoryLimiter.LimitPercentage)
-		require.Equal(t, 10, collectorConfig.Processors.MemoryLimiter.SpikeLimitPercentage)
+		require.Equal(t, 60, collectorConfig.Processors.MemoryLimiter.LimitPercentage)
+		require.Equal(t, 40, collectorConfig.Processors.MemoryLimiter.SpikeLimitPercentage)
 	})
 
 	t.Run("batch processors", func(t *testing.T) {
@@ -75,14 +75,18 @@ func TestProcessors(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
 		require.NoError(t, err)
 
-		require.Equal(t, len(collectorConfig.Processors.SpanFilter.Traces.Span), 8, "Span filter list size is wrong")
-		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (resource.attributes[\"service.name\"] == \"grafana.kyma-system\")", "Grafana span filter egress missing")
-		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"grafana.kyma-system\")", "Grafana span filter ingress GET missing")
+		require.Equal(t, len(collectorConfig.Processors.SpanFilter.Traces.Span), 11, "Span filter list size is wrong")
+		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"grafana.kyma-system\")", "grafana incoming auth call filter missing")
+		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"monitoring-auth-proxy-grafana.kyma-system\")", "monitoring-auth-proxy-grafana filter missing")
+		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \".+/frontend-metrics\") == true) and (resource.attributes[\"service.name\"] == \"monitoring-auth-proxy-grafana.kyma-system\")", "grafana auth proxy /frontend-metrics filter missing")
+		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \".+/frontend-metrics\") == true) and (resource.attributes[\"service.name\"] == \"istio-ingressgateway.istio-system\")", "grafana /frontend-metrics filter missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (IsMatch(attributes[\"http.url\"], \".+/metrics\") == true) and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\")", "/metrics endpoint span filter missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (IsMatch(attributes[\"http.url\"], \".+/healthz(/.*)?\") == true) and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\")", "/healthz endpoint span filter missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (attributes[\"user_agent\"] == \"vm_promscrape\")", "Victoria Metrics agent span filter missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-otlp-traces\\\\.kyma-system(\\\\..*)?:(4318|4317).*\") == true)", "Telemetry OTLP service span filter missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-trace-collector-internal\\\\.kyma-system(\\\\..*)?:(55678).*\") == true)", "Telemetry Opencensus service span filter missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (resource.attributes[\"service.name\"] == \"telemetry-fluent-bit.kyma-system\")", "Fluent-Bit service span filter missing")
+		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, "(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-otlp-metrics\\\\.kyma-system(\\\\..*)?:(4318|4317).*\") == true)", "Telemetry OTLP metric gateway service span filter missing")
+
 	})
 }

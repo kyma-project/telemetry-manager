@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 )
 
 type TracePipelineBuilder struct {
@@ -54,7 +54,7 @@ func TracePendingCondition(reason string) telemetryv1alpha1.TracePipelineConditi
 
 func TraceRunningCondition() telemetryv1alpha1.TracePipelineCondition {
 	return telemetryv1alpha1.TracePipelineCondition{
-		Reason: reconciler.ReasonTraceGatewayDeploymentReady,
+		Reason: conditions.ReasonTraceGatewayDeploymentReady,
 		Type:   telemetryv1alpha1.TracePipelineRunning,
 	}
 }
