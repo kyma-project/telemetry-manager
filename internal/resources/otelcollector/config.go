@@ -14,9 +14,9 @@ type Config struct {
 type GatewayConfig struct {
 	Config
 
-	Deployment       DeploymentConfig
-	OTLPServiceName  string
-	CreateOpenCensus bool
+	Deployment           DeploymentConfig
+	OTLPServiceName      string
+	CanReceiveOpenCensus bool
 }
 
 type DeploymentConfig struct {
@@ -30,4 +30,19 @@ type DeploymentConfig struct {
 	DynamicCPURequest    resource.Quantity
 	BaseMemoryRequest    resource.Quantity
 	DynamicMemoryRequest resource.Quantity
+}
+
+type AgentConfig struct {
+	Config
+
+	DaemonSet DaemonSetConfig
+}
+
+type DaemonSetConfig struct {
+	Image             string
+	PriorityClassName string
+	CPULimit          resource.Quantity
+	CPURequest        resource.Quantity
+	MemoryLimit       resource.Quantity
+	MemoryRequest     resource.Quantity
 }

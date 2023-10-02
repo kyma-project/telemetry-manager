@@ -4,24 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"gopkg.in/yaml.v3"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	otelagentresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
-	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
@@ -164,63 +156,6 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 }
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
-	namespacedBaseName := types.NamespacedName{
-		Name:      r.config.Agent.BaseName,
-		Namespace: r.config.Agent.Namespace,
-	}
-
-	var err error
-	serviceAccount := commonresources.MakeServiceAccount(namespacedBaseName)
-	if err = controllerutil.SetOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
-		return fmt.Errorf("failed to create otel collector service account: %w", err)
-	}
-
-	clusterRole := otelagentresources.MakeClusterRole(namespacedBaseName)
-	if err = controllerutil.SetOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
-		return fmt.Errorf("failed to create otel collector cluster role: %w", err)
-	}
-
-	clusterRoleBinding := commonresources.MakeClusterRoleBinding(namespacedBaseName)
-	if err = controllerutil.SetOwnerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
-		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
-	}
-
-	isIstioActive := r.istioStatusChecker.isIstioActive(ctx)
-	agentConfig := agent.MakeConfig(types.NamespacedName{
-		Namespace: r.config.Gateway.Namespace,
-		Name:      r.config.Gateway.OTLPServiceName,
-	}, allPipelines, isIstioActive)
-	var agentConfigYAML []byte
-	agentConfigYAML, err = yaml.Marshal(agentConfig)
-	if err != nil {
-		return fmt.Errorf("failed to marshal collector config: %w", err)
-	}
-
-	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, string(agentConfigYAML))
-	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateConfigMap(ctx, r.Client, configMap); err != nil {
-		return fmt.Errorf("failed to create otel collector configmap: %w", err)
-	}
-
-	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
-	daemonSet := otelagentresources.MakeDaemonSet(r.config.Agent, configHash, config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName, agent.IstioCertPath)
-	if err = controllerutil.SetOwnerReference(pipeline, daemonSet, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateDaemonSet(ctx, r.Client, daemonSet); err != nil {
-		return fmt.Errorf("failed to create otel collector deployment: %w", err)
-	}
 
 	return nil
 }

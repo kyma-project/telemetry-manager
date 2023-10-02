@@ -18,7 +18,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 )
 
 func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayConfig, pipelineCount int) error {
@@ -31,7 +30,6 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 
 func applyCommonResources(ctx context.Context, c client.Client, cfg *GatewayConfig, pipelineCount int) error {
 	var err error
-
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
 	serviceAccount := commonresources.MakeServiceAccount(name)
@@ -55,18 +53,12 @@ func applyCommonResources(ctx context.Context, c client.Client, cfg *GatewayConf
 		return fmt.Errorf("failed to create env secret: %w", err)
 	}
 
-	configMap := otelcoreresources.MakeConfigMap(name, cfg.CollectorConfig)
+	configMap := makeConfigMap(name, cfg.CollectorConfig)
 	if err = kubernetes.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
-	var configChecksum string
-	if cfg.CollectorEnvVars != nil {
-		configChecksum = configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	} else {
-		configChecksum = configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	}
-
+	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
 	deployment := makeGatewayDeployment(cfg, configChecksum, pipelineCount)
 	if err = kubernetes.CreateOrUpdateDeployment(ctx, c, deployment); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
@@ -87,7 +79,7 @@ func applyCommonResources(ctx context.Context, c client.Client, cfg *GatewayConf
 		return fmt.Errorf("failed to create otel collector network policy: %w", err)
 	}
 
-	if cfg.CreateOpenCensus {
+	if cfg.CanReceiveOpenCensus {
 		openCensusService := makeOpenCensusService(&cfg.Config)
 		if err = kubernetes.CreateOrUpdateService(ctx, c, openCensusService); err != nil {
 			return fmt.Errorf("failed to create otel collector metrics service: %w", err)

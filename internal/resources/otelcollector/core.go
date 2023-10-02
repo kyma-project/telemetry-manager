@@ -17,6 +17,19 @@ func defaultLabels(baseName string) map[string]string {
 	}
 }
 
+func makeConfigMap(name types.NamespacedName, collectorConfig string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
+		},
+		Data: map[string]string{
+			configMapKey: collectorConfig,
+		},
+	}
+}
+
 func makeSecret(name types.NamespacedName, secretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
