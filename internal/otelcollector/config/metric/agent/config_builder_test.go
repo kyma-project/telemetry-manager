@@ -42,6 +42,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, false)
 
 		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
+		require.Equal(t, "json", collectorConfig.Service.Telemetry.Logs.Encoding)
 		require.Equal(t, "${MY_POD_IP}:8888", collectorConfig.Service.Telemetry.Metrics.Address)
 	})
 

@@ -74,6 +74,7 @@ func TestMakeConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
+		require.Equal(t, "json", collectorConfig.Service.Telemetry.Logs.Encoding)
 		require.Equal(t, "${MY_POD_IP}:8888", collectorConfig.Service.Telemetry.Metrics.Address)
 	})
 
@@ -172,6 +173,7 @@ service:
             address: ${MY_POD_IP}:8888
         logs:
             level: info
+            encoding: json
     extensions:
         - health_check
         - pprof
