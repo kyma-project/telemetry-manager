@@ -35,6 +35,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/setup"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // MetricPipelineReconciler reconciles a MetricPipeline object
@@ -92,21 +93,21 @@ func (r *MetricPipelineReconciler) mapSecret(ctx context.Context, object client.
 	var requests []reconcile.Request
 	err := r.List(ctx, &pipelines)
 	if err != nil {
-		ctrl.Log.Error(err, "Secret UpdateEvent: fetching MetricPipelineList failed!", err.Error())
+		logf.FromContext(ctx).Error(err, "Secret UpdateEvent: fetching MetricPipelineList failed!", err.Error())
 		return requests
 	}
 
 	secret, ok := object.(*corev1.Secret)
 	if !ok {
-		ctrl.Log.V(1).Error(errIncorrectSecretObject, "Secret object of incompatible type")
+		logf.FromContext(ctx).V(1).Error(errIncorrectSecretObject, "Secret object of incompatible type")
 		return requests
 	}
-	ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
+	logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]
 		if secretref.ReferencesSecret(secret.Name, secret.Namespace, &pipeline) {
 			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-			ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
+			logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Secret UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
 		}
 	}
 	return requests
@@ -117,21 +118,21 @@ func (r *MetricPipelineReconciler) mapCRDChanges(ctx context.Context, object cli
 	var requests []reconcile.Request
 	err := r.List(ctx, &pipelines)
 	if err != nil {
-		ctrl.Log.Error(err, "CRD UpdateEvent: fetching MetricPipelineList failed!", err.Error())
+		logf.FromContext(ctx).Error(err, "CRD UpdateEvent: fetching MetricPipelineList failed!", err.Error())
 		return requests
 	}
 
 	crd, ok := object.(*apiextensionsv1.CustomResourceDefinition)
 	if !ok {
-		ctrl.Log.V(1).Error(errIncorrectCRDObject, "CRD object of incompatible type")
+		logf.FromContext(ctx).V(1).Error(errIncorrectCRDObject, "CRD object of incompatible type")
 		return requests
 	}
-	ctrl.Log.V(1).Info(fmt.Sprintf("CRD UpdateEvent: handling Secret: %s", crd.Name))
+	logf.FromContext(ctx).V(1).Info(fmt.Sprintf("CRD UpdateEvent: handling Secret: %s", crd.Name))
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]
 
 		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		ctrl.Log.V(1).Info(fmt.Sprintf("CRD UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
+		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("CRD UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
 
 	}
 	return requests
