@@ -173,7 +173,7 @@ service:
             address: ${MY_POD_IP}:8888
         logs:
             level: info
-			encoding: json
+            encoding: json
     extensions:
         - health_check
         - pprof
