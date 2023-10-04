@@ -77,7 +77,8 @@ func makeServiceConfig() config.Service {
 				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
 			},
 			Logs: config.Logs{
-				Level: "info",
+				Level:    "info",
+				Encoding: "json",
 			},
 		},
 		Extensions: []string{"health_check", "pprof"},
