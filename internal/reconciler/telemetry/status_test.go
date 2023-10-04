@@ -214,8 +214,7 @@ func TestUpdateStatus(t *testing.T) {
 			_ = clientgoscheme.AddToScheme(scheme)
 			_ = telemetryv1alpha1.AddToScheme(scheme)
 			_ = operatorv1alpha1.AddToScheme(scheme)
-			fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-			require.NoError(t, fakeClient.Create(context.Background(), tt.telemetry))
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.telemetry).WithStatusSubresource(tt.telemetry).Build()
 			for _, res := range tt.resources {
 				require.NoError(t, fakeClient.Create(context.Background(), res))
 			}

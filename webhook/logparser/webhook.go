@@ -42,10 +42,11 @@ type ValidatingWebhookHandler struct {
 	decoder   *admission.Decoder
 }
 
-func NewValidatingWebhookHandler(client client.Client, dryRunner DryRunner) *ValidatingWebhookHandler {
+func NewValidatingWebhookHandler(client client.Client, dryRunner DryRunner, decoder *admission.Decoder) *ValidatingWebhookHandler {
 	return &ValidatingWebhookHandler{
 		Client:    client,
 		dryRunner: dryRunner,
+		decoder:   decoder,
 	}
 }
 

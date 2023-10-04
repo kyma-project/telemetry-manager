@@ -44,7 +44,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				}},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		sut := Reconciler{
 			Client: fakeClient,
@@ -91,7 +91,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			Data: map[string][]byte{"host": nil},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
@@ -141,7 +141,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			Data: map[string][]byte{"host": nil},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
@@ -197,7 +197,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			Data: map[string][]byte{"host": nil},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
@@ -245,7 +245,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				}},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		sut := Reconciler{
 			Client: fakeClient,
@@ -279,7 +279,7 @@ func TestUpdateStatus(t *testing.T) {
 				Filters: []telemetryv1alpha1.Filter{{Custom: "some-filter"}},
 			},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 		sut := Reconciler{
@@ -310,7 +310,7 @@ func TestUpdateStatus(t *testing.T) {
 				UnsupportedMode: true,
 			},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 		sut := Reconciler{

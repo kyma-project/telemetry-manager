@@ -256,7 +256,7 @@ KUSTOMIZE_VERSION ?= v5.0.1
 TABLE_GEN_VERSION ?= v0.0.0-20230523174756-3dae9f177ffd
 CONTROLLER_TOOLS_VERSION ?= v0.11.3
 K3D_VERSION ?= v5.4.7
-GINKGO_VERSION ?= v2.9.5
+GINKGO_VERSION ?= v2.11.0
 GORELEASER_VERSION ?= v1.17.1
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"

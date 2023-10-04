@@ -37,7 +37,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				}},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
@@ -70,7 +70,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				}},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
@@ -109,7 +109,7 @@ func TestUpdateStatus(t *testing.T) {
 				},
 			},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
@@ -159,7 +159,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		sut := Reconciler{
 			Client: fakeClient,
@@ -206,7 +206,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			Data: map[string][]byte{"host": nil},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
@@ -240,7 +240,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				}},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
@@ -273,7 +273,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				}},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
