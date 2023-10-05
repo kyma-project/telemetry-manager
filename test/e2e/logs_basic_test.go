@@ -24,7 +24,7 @@ const (
 	OutputTypeCustom = "custom"
 )
 
-var _ = Describe("Logs Basic", Label("logging"), func() {
+var _ = Describe("Logs Basic", Label("logging"), Ordered, func() {
 	var urls = urlprovider.New()
 
 	makeResources := func(mockNs, mockBackendName, logProducerName string, outputType OutputType) []client.Object {
@@ -47,6 +47,13 @@ var _ = Describe("Logs Basic", Label("logging"), func() {
 
 		return objs
 	}
+
+	Context("Before deploying a logpipeline", func() {
+		It("Should have a healthy webhook", func() {
+			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+		})
+	})
+
 	Context("When a logpipeline with HTTP output exists", Ordered, func() {
 		const (
 			mockBackendName = "log-receiver"

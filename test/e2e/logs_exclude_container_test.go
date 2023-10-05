@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Logs Exclude Container", Label("logging"), func() {
+var _ = Describe("Logs Exclude Container", Label("logging"), Ordered, func() {
 	const (
 		mockNs          = "log-exclude-container-mocks"
 		mockBackendName = "log-receiver-exclude-container"
@@ -46,6 +46,13 @@ var _ = Describe("Logs Exclude Container", Label("logging"), func() {
 
 		return objs
 	}
+
+	Context("Before deploying a logpipeline", func() {
+		It("Should have a healthy webhook", func() {
+			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+		})
+	})
+
 	Context("When a logpipeline that excludes containers exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
@@ -68,16 +75,18 @@ var _ = Describe("Logs Exclude Container", Label("logging"), func() {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(Not(BeEmpty())))))
+				g.Expect(resp).To(HaveHTTPBody(ContainLd(WithLogRecords(Not(BeEmpty())))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should have log-produceer logs in the backend", func() {
+		It("Should have no log-producer logs in the backend", func() {
 			Consistently(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(WithContainerName(ContainSubstring(logProducerName))))))
+				g.Expect(resp).To(HaveHTTPBody(Not(ContainLd(ContainLogRecord(
+					WithContainerName(ContainSubstring(logProducerName))))),
+				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})

@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Logs Dedot", Label("logging"), func() {
+var _ = Describe("Logs Dedot", Label("logging"), Ordered, func() {
 	const (
 		mockNs          = "log-dedot-labels-mocks"
 		mockBackendName = "log-receiver-dedot-labels"
@@ -47,6 +47,12 @@ var _ = Describe("Logs Dedot", Label("logging"), func() {
 		return objs
 	}
 
+	Context("Before deploying a logpipeline", func() {
+		It("Should have a healthy webhook", func() {
+			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+		})
+	})
+
 	Context("When a logpipeline that dedots labels exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
@@ -71,7 +77,7 @@ var _ = Describe("Logs Dedot", Label("logging"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					ContainLd(ContainLogRecord(WithKubernetesAnnotations(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
+					ContainLd(ContainLogRecord(WithKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})

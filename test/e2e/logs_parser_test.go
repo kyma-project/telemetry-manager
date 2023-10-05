@@ -22,7 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-var _ = Describe("Logs Parser", Label("logging"), func() {
+var _ = Describe("Logs Parser", Label("logging"), Ordered, func() {
 	const (
 		mockNs          = "log-parser-mocks"
 		mockBackendName = "log-receiver-parser"
@@ -55,6 +55,12 @@ Types user:string pass:string`
 
 		return objs
 	}
+
+	Context("Before deploying a logpipeline", func() {
+		It("Should have a healthy webhook", func() {
+			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+		})
+	})
 
 	Context("When a LogParser exists", Ordered, func() {
 		BeforeAll(func() {

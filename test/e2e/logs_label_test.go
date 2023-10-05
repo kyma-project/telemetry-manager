@@ -19,7 +19,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Logs Drop Labels", Label("logging"), func() {
+var _ = Describe("Logs Drop Labels", Label("logging"), Ordered, func() {
 	const (
 		mockNs          = "log-keep-label-mocks"
 		mockBackendName = "log-receiver-label"
@@ -48,6 +48,12 @@ var _ = Describe("Logs Drop Labels", Label("logging"), func() {
 		return objs
 	}
 
+	Context("Before deploying a logpipeline", func() {
+		It("Should have a healthy webhook", func() {
+			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+		})
+	})
+
 	Context("When a logpipeline that keeps labels and drops annotations exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
@@ -70,9 +76,9 @@ var _ = Describe("Logs Drop Labels", Label("logging"), func() {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLd(ContainLogRecord(WithKubernetesLabels(HaveKeyWithValue("app", "logging-label-test")))),
-				)))
+				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(
+					WithKubernetesLabels(HaveKeyWithValue("app", "logging-label-test")))),
+				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
@@ -81,9 +87,9 @@ var _ = Describe("Logs Drop Labels", Label("logging"), func() {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					Not(ContainLd(ContainLogRecord(WithKubernetesAnnotations(Not(BeEmpty()))))),
-				)))
+				g.Expect(resp).To(HaveHTTPBody(Not(ContainLd(ContainLogRecord(
+					WithKubernetesAnnotations(Not(BeEmpty()))))),
+				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})

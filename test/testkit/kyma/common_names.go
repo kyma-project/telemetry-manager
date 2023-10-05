@@ -14,6 +14,8 @@ const (
 )
 
 var (
+	TelemetryOperatorWebhookServiceName = types.NamespacedName{Name: "telemetry-operator-webhook", Namespace: SystemNamespaceName}
+
 	MetricGatewayName          = types.NamespacedName{Name: MetricGatewayBaseName, Namespace: SystemNamespaceName}
 	MetricGatewayNetworkPolicy = types.NamespacedName{Name: MetricGatewayBaseName + "-pprof-deny-ingress", Namespace: SystemNamespaceName}
 
