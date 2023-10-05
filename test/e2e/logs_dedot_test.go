@@ -12,13 +12,12 @@ import (
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 var _ = Describe("Logs Dedot", Label("logging"), func() {
@@ -47,6 +46,7 @@ var _ = Describe("Logs Dedot", Label("logging"), func() {
 
 		return objs
 	}
+
 	Context("When a logpipeline that dedots labels exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
@@ -70,8 +70,8 @@ var _ = Describe("Logs Dedot", Label("logging"), func() {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogs(WithKubernetesLabels("dedot_label", "logging-dedot-value"))),
+				g.Expect(resp).To(HaveHTTPBody(
+					ContainLd(ContainLogRecord(WithKubernetesAnnotations(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
