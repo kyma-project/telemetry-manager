@@ -70,7 +70,7 @@ var _ = Describe("Logs Basic", Label("logging"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
 		})
 
-		It("Should verify end-to-end log delivery with http ", Label("operational"), func() {
+		It("Should have produced logs in the backend ", Label("operational"), func() {
 			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, urls.MockBackendExport(mockBackendName))
 		})
 	})

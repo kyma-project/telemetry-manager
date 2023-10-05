@@ -41,6 +41,24 @@ func ContainLogRecord(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return WithLogRecords(gomega.ContainElement(matcher))
 }
 
+func WithPodName(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(lr plog.LogRecord) string {
+		const kubernetesAttrKey = "kubernetes"
+		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().Get(kubernetesAttrKey)
+		if !hasKubernetesAttrs || kubernetesAttrs.Type() != pcommon.ValueTypeMap {
+			return ""
+		}
+
+		const podNameAttrKey = "pod_name"
+		podName, hasPodName := kubernetesAttrs.Map().Get(podNameAttrKey)
+		if !hasPodName || podName.Type() != pcommon.ValueTypeStr {
+			return ""
+		}
+
+		return podName.Str()
+	}, matcher)
+}
+
 func WithKubernetesAnnotations(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) map[string]any {
 		const kubernetesAttrKey = "kubernetes"
