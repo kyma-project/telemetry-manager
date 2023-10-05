@@ -69,6 +69,5 @@ For more information, see [Metrics](04-metrics.md).
 
 - [Telemetry](resources/01-telemetry.md)
 - [LogPipeline](resources/02-logpipeline.md)
-- [LogParser](resources/03-logparser.md)
 - [TracePipeline](resources/04-tracepipeline.md)
 - [MetricPipeline](resources/05-metricpipeline.md)
