@@ -6,6 +6,7 @@ import (
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
 type Pipeline struct {
@@ -79,6 +80,28 @@ func (p *Pipeline) WithHTTPOutput() *Pipeline {
 			},
 		},
 	}
+	return p
+}
+
+func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
+	if !p.output.IsHTTPDefined() {
+		return p
+	}
+
+	p.output.HTTP.TLSConfig = telemetry.TLSConfig{
+		Disabled:                  false,
+		SkipCertificateValidation: false,
+		CA: &telemetry.ValueType{
+			Value: certs.CaCertPem.String(),
+		},
+		Cert: &telemetry.ValueType{
+			Value: certs.ClientCertPem.String(),
+		},
+		Key: &telemetry.ValueType{
+			Value: certs.ClientKeyPem.String(),
+		},
+	}
+
 	return p
 }
 

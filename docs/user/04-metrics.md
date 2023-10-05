@@ -65,8 +65,10 @@ To ship metrics to a new OTLP output, create a resource of the kind `MetricPipel
 This configures the underlying OTel Collector of the gateway with a pipeline for metrics. The receiver of the pipeline is of the OTLP type and is accessible using the `telemetry-otlp-metrics` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, depending on the configured protocol. Ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
 
 <div tabs>
-  <details>
-    <summary>GRPC</summary>
+  <details open>
+  <summary>
+    GRPC
+  </summary>
     For GRPC, use:
 
   ```yaml
@@ -82,7 +84,9 @@ This configures the underlying OTel Collector of the gateway with a pipeline for
   ```
   </details>
   <details>
-    <summary>HTTP</summary>
+  <summary>
+    HTTP
+  </summary>
     To use the HTTP protocol, use the <code>protocol</code> attribute:
   
   ```yaml
@@ -102,12 +106,13 @@ This configures the underlying OTel Collector of the gateway with a pipeline for
 
 ### Step 2a: Add authentication details from plain text
 
-To integrate with external systems, you must configure authentication details. At the moment, Basic Authentication and custom headers are supported.
+To integrate with external systems, you must configure authentication details. At the moment, mutual TLS (mTLS), Basic Authentication and custom headers are supported.
 
-See the following code examples for mTLS, basic, and token-based custom authentication:
 <div tabs>
-  <details>
-    <summary>Mutual TLS</summary>
+  <details open>
+  <summary>
+    Mutual TLS
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -131,7 +136,9 @@ See the following code examples for mTLS, basic, and token-based custom authenti
   ```
   </details>
   <details>
-    <summary>Basic authentication</summary>
+  <summary>
+    Basic Authentication
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -152,7 +159,9 @@ See the following code examples for mTLS, basic, and token-based custom authenti
   ```
   </details>
   <details>
-    <summary>Token-based with custom headers</summary>
+  <summary>
+    Token-based with custom headers
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -177,9 +186,12 @@ Integrations into external systems usually need authentication details dealing w
 
 Use the **valueFrom** attribute to map Secret keys as in the following examples:
 
+
 <div tabs>
-  <details>
-    <summary>Mutual TLS</summary>
+  <details open>
+  <summary>
+    Mutual TLS
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -207,7 +219,9 @@ Use the **valueFrom** attribute to map Secret keys as in the following examples:
   ```
   </details>
   <details>
-    <summary>Basic authentication</summary>
+  <summary>
+    Basic Authentication
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -238,9 +252,11 @@ Use the **valueFrom** attribute to map Secret keys as in the following examples:
                   namespace: default
                   key: password
   ```
-</details>
+  </details>
   <details>
-    <summary>Token-based with custom headers</summary>
+  <summary>
+    Token-based with custom headers
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1

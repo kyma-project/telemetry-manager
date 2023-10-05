@@ -85,7 +85,7 @@ var _ = Describe("Logs Fluent Bit Metrics", Label("logging"), func() {
 		It("Should be able to get fluent-bit metrics endpoint", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(proxyClient.ProxyURLForService(
-					"kyma-system", telemetryFluentbitMetricServiceName, "/metrics", 2020))
+					kymaSystemNamespaceName, telemetryFluentbitMetricServiceName, "/metrics", 2020))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(

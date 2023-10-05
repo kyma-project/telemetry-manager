@@ -27,13 +27,14 @@ import (
 
 var (
 	testLogPipelineConfig = logpipelinereconciler.Config{
-		DaemonSet:         types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
-		ParsersConfigMap:  types.NamespacedName{Name: "test-telemetry-fluent-bit-parsers", Namespace: "default"},
-		LuaConfigMap:      types.NamespacedName{Name: "test-telemetry-fluent-bit-luascripts", Namespace: "default"},
-		SectionsConfigMap: types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
-		FilesConfigMap:    types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
-		EnvSecret:         types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
-		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "default"},
+		DaemonSet:             types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
+		ParsersConfigMap:      types.NamespacedName{Name: "test-telemetry-fluent-bit-parsers", Namespace: "default"},
+		LuaConfigMap:          types.NamespacedName{Name: "test-telemetry-fluent-bit-luascripts", Namespace: "default"},
+		SectionsConfigMap:     types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
+		FilesConfigMap:        types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
+		EnvSecret:             types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
+		OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+		OverrideConfigMap:     types.NamespacedName{Name: "override-config", Namespace: "default"},
 		DaemonSetConfig: logpipelineresources.DaemonSetConfig{
 			FluentBitImage:              "my-fluent-bit-image",
 			FluentBitConfigPrepperImage: "my-fluent-bit-config-image",
