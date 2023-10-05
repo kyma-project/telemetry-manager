@@ -52,6 +52,7 @@ var (
 
 func TestIstioIntegration(t *testing.T) {
 	format.MaxDepth = 20
+	format.MaxLength = 8000
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Istio Integration Suite")
 }
