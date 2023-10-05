@@ -74,7 +74,7 @@ func (p *Pipeline) WithHTTPOutput() *Pipeline {
 			Port:   "9880",
 			URI:    "/",
 			Format: "json",
-			TLSConfig: telemetry.TLSConfig{
+			TLSConfig: &telemetry.TLSConfig{
 				Disabled:                  true,
 				SkipCertificateValidation: true,
 			},
@@ -88,7 +88,7 @@ func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
 		return p
 	}
 
-	p.output.HTTP.TLSConfig = telemetry.TLSConfig{
+	p.output.HTTP.TLSConfig = &telemetry.TLSConfig{
 		Disabled:                  false,
 		SkipCertificateValidation: false,
 		CA: telemetry.ValueType{
