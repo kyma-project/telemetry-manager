@@ -22,6 +22,8 @@ import (
 
 type State string
 
+type Strategy string
+
 // Valid Module CR States.
 const (
 	// StateReady signifies Module CR is Ready and has been installed successfully.
@@ -34,12 +36,24 @@ const (
 	// StateWarning signifies specified resource has been deployed, but cannot be used due to misconfiguration,
 	// usually it means that user interaction is required.
 	StateWarning State = "Warning"
+
+	StrategyStatic Strategy = "static"
 )
 
 // TelemetrySpec defines the desired state of Telemetry
 type TelemetrySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+}
+
+type Scaling struct {
+	ScalingStrategy `json:",inline"`
+}
+
+type ScalingStrategy struct {
+	// +kubebuilder:validation:Enum=static;auto
+	// +kubebuilder:default:=static
+	Strategy Strategy `json:"strategy"`
 }
 
 // TelemetryStatus defines the observed state of Telemetry
