@@ -4,12 +4,20 @@ func (lp *LogPipeline) GetSecretRefs() []SecretKeyRef {
 	var refs []SecretKeyRef
 
 	for _, v := range lp.Spec.Variables {
-		if !v.ValueFrom.IsSecretKeyRef() {
-			continue
+		if v.ValueFrom.IsSecretKeyRef() {
+			refs = append(refs, *v.ValueFrom.SecretKeyRef)
 		}
-
-		refs = append(refs, *v.ValueFrom.SecretKeyRef)
 	}
+
+	refs = append(refs, lp.GetEnvSecretRefs()...)
+	refs = append(refs, lp.GetTLSSecretRefs()...)
+
+	return refs
+}
+
+// GetEnvSecretRefs returns the secret references of a LogPipeline that should be stored in the env secret
+func (lp *LogPipeline) GetEnvSecretRefs() []SecretKeyRef {
+	var refs []SecretKeyRef
 
 	output := lp.Spec.Output
 	if output.IsHTTPDefined() {
@@ -19,6 +27,22 @@ func (lp *LogPipeline) GetSecretRefs() []SecretKeyRef {
 	}
 	if output.IsLokiDefined() {
 		refs = appendIfSecretRef(refs, output.Loki.URL)
+	}
+
+	return refs
+}
+
+func (lp *LogPipeline) GetTLSSecretRefs() []SecretKeyRef {
+	var refs []SecretKeyRef
+
+	output := lp.Spec.Output
+	if output.IsHTTPDefined() {
+		tlsConfig := output.HTTP.TLSConfig
+		if tlsConfig != nil {
+			refs = appendIfSecretRef(refs, tlsConfig.CA)
+			refs = appendIfSecretRef(refs, tlsConfig.Cert)
+			refs = appendIfSecretRef(refs, tlsConfig.Key)
+		}
 	}
 
 	return refs

@@ -32,7 +32,7 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 		return fmt.Errorf("failed to sync mounted files: %v", err)
 	}
 
-	if err := s.syncReferencedSecrets(ctx, &allPipelines); err != nil {
+	if err := s.syncEnvSecret(ctx, &allPipelines); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.V(1).Info(fmt.Sprintf("referenced secret not found: %v", err))
 			return nil
@@ -40,7 +40,7 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 		return err
 	}
 
-	if err := s.syncTLSConfigSecrets(ctx, &allPipelines); err != nil {
+	if err := s.syncTLSConfigSecret(ctx, &allPipelines); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.V(1).Info(fmt.Sprintf("referenced tls config secret not found: %v", err))
 			return nil
@@ -113,7 +113,7 @@ func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1al
 	return nil
 }
 
-func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *telemetryv1alpha1.LogPipelineList) error {
+func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines *telemetryv1alpha1.LogPipelineList) error {
 	oldSecret, err := utils.GetOrCreateSecret(ctx, s, s.config.EnvSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get env secret: %w", err)
@@ -128,13 +128,14 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 			continue
 		}
 
-		for _, ref := range logPipeline.GetSecretRefs() {
+		for _, ref := range logPipeline.GetEnvSecretRefs() {
 			targetKey := envvar.FormatEnvVarName(logPipeline.Name, ref.Namespace, ref.Name, ref.Key)
 			if copyErr := s.copySecretData(ctx, ref, targetKey, newSecret.Data); copyErr != nil {
 				return fmt.Errorf("unable to copy secret data: %w", copyErr)
 			}
 		}
 
+		// we also store the variables in the env secret
 		for _, ref := range logPipeline.Spec.Variables {
 			if ref.ValueFrom.IsSecretKeyRef() {
 				if copyErr := s.copySecretData(ctx, *ref.ValueFrom.SecretKeyRef, ref.Name, newSecret.Data); copyErr != nil {
@@ -154,7 +155,7 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 	return nil
 }
 
-func (s *syncer) syncTLSConfigSecrets(ctx context.Context, logPipelines *telemetryv1alpha1.LogPipelineList) error {
+func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines *telemetryv1alpha1.LogPipelineList) error {
 	oldSecret, err := utils.GetOrCreateSecret(ctx, s, s.config.OutputTLSConfigSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get tls config secret: %w", err)
