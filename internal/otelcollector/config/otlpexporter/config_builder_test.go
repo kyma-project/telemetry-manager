@@ -7,12 +7,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 func TestExporterIDHTTP(t *testing.T) {
-	output := &v1alpha1.OtlpOutput{
-		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
+	output := &telemetryv1alpha1.OtlpOutput{
+		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		Protocol: "http",
 	}
 
@@ -20,8 +20,8 @@ func TestExporterIDHTTP(t *testing.T) {
 }
 
 func TestExporterIDGRPC(t *testing.T) {
-	output := &v1alpha1.OtlpOutput{
-		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
+	output := &telemetryv1alpha1.OtlpOutput{
+		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		Protocol: "grpc",
 	}
 
@@ -29,16 +29,16 @@ func TestExporterIDGRPC(t *testing.T) {
 }
 
 func TestExorterIDDefault(t *testing.T) {
-	output := &v1alpha1.OtlpOutput{
-		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
+	output := &telemetryv1alpha1.OtlpOutput{
+		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
 	require.Equal(t, "otlp/test", ExporterID(output, "test"))
 }
 
 func TestMakeConfig(t *testing.T) {
-	output := &v1alpha1.OtlpOutput{
-		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
+	output := &telemetryv1alpha1.OtlpOutput{
+		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
 	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512)
@@ -60,16 +60,16 @@ func TestMakeConfig(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
-	headers := []v1alpha1.Header{
+	headers := []telemetryv1alpha1.Header{
 		{
 			Name: "Authorization",
-			ValueType: v1alpha1.ValueType{
+			ValueType: telemetryv1alpha1.ValueType{
 				Value: "Bearer xyz",
 			},
 		},
 	}
-	output := &v1alpha1.OtlpOutput{
-		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
+	output := &telemetryv1alpha1.OtlpOutput{
+		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		Headers:  headers,
 	}
 
@@ -83,11 +83,11 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
-	tls := &v1alpha1.OtlpTLS{
+	tls := &telemetryv1alpha1.OtlpTLS{
 		Insecure: true,
 	}
-	output := &v1alpha1.OtlpOutput{
-		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
+	output := &telemetryv1alpha1.OtlpOutput{
+		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		TLS:      tls,
 	}
 
@@ -100,12 +100,12 @@ func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
-	tls := &v1alpha1.OtlpTLS{
+	tls := &telemetryv1alpha1.OtlpTLS{
 		Insecure:           false,
 		InsecureSkipVerify: true,
 	}
-	output := &v1alpha1.OtlpOutput{
-		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
+	output := &telemetryv1alpha1.OtlpOutput{
+		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		TLS:      tls,
 	}
 
@@ -120,21 +120,21 @@ func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
 }
 
 func TestMakeExporterConfigWithmTLS(t *testing.T) {
-	tls := &v1alpha1.OtlpTLS{
+	tls := &telemetryv1alpha1.OtlpTLS{
 		Insecure:           false,
 		InsecureSkipVerify: false,
-		CA: v1alpha1.ValueType{
+		CA: &telemetryv1alpha1.ValueType{
 			Value: "test ca cert pem",
 		},
-		Cert: v1alpha1.ValueType{
+		Cert: &telemetryv1alpha1.ValueType{
 			Value: "test client cert pem",
 		},
-		Key: v1alpha1.ValueType{
+		Key: &telemetryv1alpha1.ValueType{
 			Value: "test client key pem",
 		},
 	}
-	output := &v1alpha1.OtlpOutput{
-		Endpoint: v1alpha1.ValueType{Value: "otlp-endpoint"},
+	output := &telemetryv1alpha1.OtlpOutput{
+		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 		TLS:      tls,
 	}
 

@@ -178,19 +178,19 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines *telemetr
 		tls := output.HTTP.TLSConfig
 		if tls.CA.IsDefined() {
 			targetKey := fmt.Sprintf("%s-ca.crt", logPipeline.Name)
-			if err := s.copyFromValueOrSecret(ctx, tls.CA, targetKey, newSecret.Data); err != nil {
+			if err := s.copyFromValueOrSecret(ctx, *tls.CA, targetKey, newSecret.Data); err != nil {
 				return err
 			}
 		}
 		if tls.Cert.IsDefined() {
 			targetKey := fmt.Sprintf("%s-cert.crt", logPipeline.Name)
-			if err := s.copyFromValueOrSecret(ctx, tls.Cert, targetKey, newSecret.Data); err != nil {
+			if err := s.copyFromValueOrSecret(ctx, *tls.Cert, targetKey, newSecret.Data); err != nil {
 				return err
 			}
 		}
 		if tls.Key.IsDefined() {
 			targetKey := fmt.Sprintf("%s-key.key", logPipeline.Name)
-			if err := s.copyFromValueOrSecret(ctx, tls.Key, targetKey, newSecret.Data); err != nil {
+			if err := s.copyFromValueOrSecret(ctx, *tls.Key, targetKey, newSecret.Data); err != nil {
 				return err
 			}
 		}

@@ -12,6 +12,9 @@ type ValueType struct {
 }
 
 func (v *ValueType) IsDefined() bool {
+	if v == nil {
+		return false
+	}
 	if v.Value != "" {
 		return true
 	}
@@ -58,11 +61,11 @@ type OtlpTLS struct {
 	// Defines whether to skip server certificate verification when using TLS.
 	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
 	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
-	CA ValueType `json:"ca,omitempty"`
+	CA *ValueType `json:"ca,omitempty"`
 	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
-	Cert ValueType `json:"cert,omitempty"`
+	Cert *ValueType `json:"cert,omitempty"`
 	// Defines the client key to use when using TLS. The key must be provided in PEM format.
-	Key ValueType `json:"key,omitempty"`
+	Key *ValueType `json:"key,omitempty"`
 }
 
 type OtlpOutput struct {

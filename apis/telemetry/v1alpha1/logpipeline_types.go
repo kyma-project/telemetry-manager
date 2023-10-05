@@ -104,7 +104,7 @@ type HTTPOutput struct {
 	// Data format to be used in the HTTP request body. Default is `json`.
 	Format string `json:"format,omitempty"`
 	// Configures TLS for the HTTP target server.
-	TLSConfig *TLSConfig `json:"tls,omitempty"`
+	TLSConfig TLSConfig `json:"tls,omitempty"`
 	// Enables de-dotting of Kubernetes labels and annotations for compatibility with ElasticSearch based backends. Dots (.) will be replaced by underscores (_). Default is `false`.
 	Dedot bool `json:"dedot,omitempty"`
 }
@@ -115,11 +115,11 @@ type TLSConfig struct {
 	// If `true`, the validation of certificates is skipped. Default is `false`.
 	SkipCertificateValidation bool `json:"skipCertificateValidation,omitempty"`
 	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
-	CA ValueType `json:"ca,omitempty"`
+	CA *ValueType `json:"ca,omitempty"`
 	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
-	Cert ValueType `json:"cert,omitempty"`
+	Cert *ValueType `json:"cert,omitempty"`
 	// Defines the client key to use when using TLS. The key must be provided in PEM format.
-	Key ValueType `json:"key,omitempty"`
+	Key *ValueType `json:"key,omitempty"`
 }
 
 // Output describes a Fluent Bit output configuration section.

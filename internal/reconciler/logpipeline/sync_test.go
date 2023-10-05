@@ -407,16 +407,16 @@ func TestSyncTLSConfigSecret(t *testing.T) {
 					Output: telemetryv1alpha1.Output{
 						HTTP: &telemetryv1alpha1.HTTPOutput{
 							Host: telemetryv1alpha1.ValueType{Value: "localhost"},
-							TLSConfig: &telemetryv1alpha1.TLSConfig{
+							TLSConfig: telemetryv1alpha1.TLSConfig{
 								Disabled:                  false,
 								SkipCertificateValidation: false,
-								CA: telemetryv1alpha1.ValueType{
+								CA: &telemetryv1alpha1.ValueType{
 									Value: "fake-ca-value",
 								},
-								Cert: telemetryv1alpha1.ValueType{
+								Cert: &telemetryv1alpha1.ValueType{
 									Value: "fake-cert-value",
 								},
-								Key: telemetryv1alpha1.ValueType{
+								Key: &telemetryv1alpha1.ValueType{
 									ValueFrom: &telemetryv1alpha1.ValueFromSource{
 										SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
 											Name:      "my-key-secret",

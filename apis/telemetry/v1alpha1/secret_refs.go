@@ -38,10 +38,14 @@ func (lp *LogPipeline) GetTLSSecretRefs() []SecretKeyRef {
 	output := lp.Spec.Output
 	if output.IsHTTPDefined() {
 		tlsConfig := output.HTTP.TLSConfig
-		if tlsConfig != nil {
-			refs = appendIfSecretRef(refs, tlsConfig.CA)
-			refs = appendIfSecretRef(refs, tlsConfig.Cert)
-			refs = appendIfSecretRef(refs, tlsConfig.Key)
+		if tlsConfig.CA != nil {
+			refs = appendIfSecretRef(refs, *tlsConfig.CA)
+		}
+		if tlsConfig.Cert != nil {
+			refs = appendIfSecretRef(refs, *tlsConfig.Cert)
+		}
+		if tlsConfig.Key != nil {
+			refs = appendIfSecretRef(refs, *tlsConfig.Key)
 		}
 	}
 
@@ -71,9 +75,15 @@ func getRefsInOtlpOutput(otlpOut *OtlpOutput) []SecretKeyRef {
 	}
 
 	if otlpOut.TLS != nil && !otlpOut.TLS.Insecure {
-		refs = appendIfSecretRef(refs, otlpOut.TLS.Cert)
-		refs = appendIfSecretRef(refs, otlpOut.TLS.Key)
-		refs = appendIfSecretRef(refs, otlpOut.TLS.CA)
+		if otlpOut.TLS.CA != nil {
+			refs = appendIfSecretRef(refs, *otlpOut.TLS.CA)
+		}
+		if otlpOut.TLS.Cert != nil {
+			refs = appendIfSecretRef(refs, *otlpOut.TLS.Cert)
+		}
+		if otlpOut.TLS.Key != nil {
+			refs = appendIfSecretRef(refs, *otlpOut.TLS.Key)
+		}
 	}
 
 	return refs

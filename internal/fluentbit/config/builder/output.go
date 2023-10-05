@@ -78,27 +78,25 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit 
 		sb.AddConfigParam("http_user", value)
 	}
 
-	if httpOutput.TLSConfig != nil {
-		tlsEnabled := "on"
-		if httpOutput.TLSConfig.Disabled {
-			tlsEnabled = "off"
-		}
-		sb.AddConfigParam("tls", tlsEnabled)
-		tlsVerify := "on"
-		if httpOutput.TLSConfig.SkipCertificateValidation {
-			tlsVerify = "off"
-		}
-		sb.AddConfigParam("tls.verify", tlsVerify)
+	tlsEnabled := "on"
+	if httpOutput.TLSConfig.Disabled {
+		tlsEnabled = "off"
+	}
+	sb.AddConfigParam("tls", tlsEnabled)
+	tlsVerify := "on"
+	if httpOutput.TLSConfig.SkipCertificateValidation {
+		tlsVerify = "off"
+	}
+	sb.AddConfigParam("tls.verify", tlsVerify)
 
-		if httpOutput.TLSConfig.CA.IsDefined() {
-			sb.AddConfigParam("tls.ca_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-ca.crt", name))
-		}
-		if httpOutput.TLSConfig.Cert.IsDefined() {
-			sb.AddConfigParam("tls.crt_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-cert.crt", name))
-		}
-		if httpOutput.TLSConfig.Key.IsDefined() {
-			sb.AddConfigParam("tls.key_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-key.key", name))
-		}
+	if httpOutput.TLSConfig.CA.IsDefined() {
+		sb.AddConfigParam("tls.ca_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-ca.crt", name))
+	}
+	if httpOutput.TLSConfig.Cert.IsDefined() {
+		sb.AddConfigParam("tls.crt_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-cert.crt", name))
+	}
+	if httpOutput.TLSConfig.Key.IsDefined() {
+		sb.AddConfigParam("tls.key_file", fmt.Sprintf("/fluent-bit/etc/output-tls-config/%s-key.key", name))
 	}
 
 	return sb.Build()
