@@ -42,7 +42,7 @@ var (
 
 func TestE2E(t *testing.T) {
 	format.MaxDepth = 20
-	format.MaxLength = 8000
+	format.MaxLength = 12000
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "E2E Suite")
 }
