@@ -65,7 +65,7 @@ var _ = Describe("Logs Dedot", Label("logging"), func() {
 		})
 
 		// label foo.bar: value should be represented as foo_bar:value
-		It("Should dedot the labels", func() {
+		It("Should have logs with dedotted labels in the backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
