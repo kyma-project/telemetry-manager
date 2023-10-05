@@ -179,8 +179,10 @@ Integrations into external systems usually need authentication details dealing w
 Using the **http** output definition and the **valueFrom** attribute, you can map Secret keys as in the following examples:
 
 <div tabs>
-  <details>
-    <summary>Mutual TLS</summary>
+  <details open>
+  <summary>
+    Mutual TLS
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -217,11 +219,11 @@ Using the **http** output definition and the **valueFrom** attribute, you can ma
   filters:
     ...
   ```
-
   </details>
-
   <details>
-    <summary>Basic Authentication</summary>
+  <summary>
+    Basic Authentication
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -257,9 +259,7 @@ Using the **http** output definition and the **valueFrom** attribute, you can ma
     filters:
       ...
   ```
-
   </details>
-
 </div>
 
 The related Secret must fulfill the referenced name and Namespace, and contain the mapped key as in the following example:

@@ -107,11 +107,13 @@ spec:
 
 ### Step 3a: Add authentication details from plain text
 
-To integrate with external systems, you must configure authentication details. At the moment, Basic Authentication and custom headers are supported.
+To integrate with external systems, you must configure authentication details. At the moment, mutual TLS (mTLS), Basic Authentication and custom headers are supported.
 
 <div tabs>
-  <details>
-    <summary>Mutual TLS</summary>
+  <details open>
+  <summary>
+    Mutual TLS
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -134,9 +136,10 @@ To integrate with external systems, you must configure authentication details. A
               ...
   ```
   </details>
-
   <details>
-    <summary>Basic authentication</summary>
+  <summary>
+    Basic Authentication
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -156,9 +159,10 @@ To integrate with external systems, you must configure authentication details. A
               value: myPwd
   ```
   </details>
-
   <details>
-    <summary>Token-based with custom headers</summary>
+  <summary>
+    Token-based with custom headers
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -175,7 +179,6 @@ To integrate with external systems, you must configure authentication details. A
             value: "Bearer myToken"
   ```
   </details>
-
 </div>
 
 ### Step 3b: Add authentication details from Secrets
@@ -185,8 +188,10 @@ Integrations into external systems usually require authentication details dealin
 Use the **valueFrom** attribute to map Secret keys as in the following examples:
 
 <div tabs>
-  <details>
-    <summary>Mutual TLS</summary>
+  <details open>
+  <summary>
+    Mutual TLS
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -214,7 +219,9 @@ Use the **valueFrom** attribute to map Secret keys as in the following examples:
   ```
   </details>
   <details>
-    <summary>Basic authentication</summary>
+  <summary>
+    Basic Authentication
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -245,9 +252,11 @@ Use the **valueFrom** attribute to map Secret keys as in the following examples:
                   namespace: default
                   key: password
   ```
-</details>
+  </details>
   <details>
-    <summary>Token-based with custom headers</summary>
+  <summary>
+    Token-based with custom headers
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
