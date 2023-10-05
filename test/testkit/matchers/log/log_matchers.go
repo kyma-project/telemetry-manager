@@ -11,6 +11,10 @@ import (
 
 func WithLds(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonlLogs []byte) ([]plog.Logs, error) {
+		if jsonlLogs == nil {
+			return nil, nil
+		}
+
 		lds, err := unmarshalLogs(jsonlLogs)
 		if err != nil {
 			return nil, fmt.Errorf("WithLds requires a valid OTLP JSON document: %v", err)
@@ -104,5 +108,11 @@ func WithKubernetesLabels(matcher types.GomegaMatcher) types.GomegaMatcher {
 			return nil
 		}
 		return annotationAttrs.Map().AsRaw()
+	}, matcher)
+}
+
+func WithLogRecordAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(lr plog.LogRecord) map[string]any {
+		return lr.Attributes().AsRaw()
 	}, matcher)
 }

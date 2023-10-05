@@ -13,13 +13,12 @@ import (
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 var _ = Describe("Logs Parser", Label("logging"), Ordered, func() {
@@ -79,16 +78,16 @@ Types user:string pass:string`
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
 		})
 
-		It("Should parse the logs using regex", func() {
+		It("Should have parsed logs in the backend", func() {
 			Eventually(func(g Gomega) {
 				time.Sleep(20 * time.Second)
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogs(WithAttributeKeyValue("user", "foo")),
-					ContainLogs(WithAttributeKeyValue("pass", "bar")),
-				)))
+				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(SatisfyAll(
+					WithLogRecordAttrs(HaveKeyWithValue("user", "foo")),
+					WithLogRecordAttrs(HaveKeyWithValue("pass", "bar")),
+				)))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
