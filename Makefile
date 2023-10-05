@@ -96,7 +96,7 @@ test: manifests generate fmt vet tidy envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 test-matchers: ginkgo
-	$(GINKGO) run -v ./test/testkit/matchers
+	$(GINKGO) run -v ./test/testkit/matchers/...
 
 .PHONY: provision-test-env
 provision-test-env:
