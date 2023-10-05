@@ -1,4 +1,4 @@
-package matchers
+package prometheus
 
 import (
 	"bytes"
