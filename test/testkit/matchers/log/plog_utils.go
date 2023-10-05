@@ -1,10 +1,9 @@
 package log
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
 func unmarshalLogs(jsonlMetrics []byte) ([]plog.Logs, error) {
@@ -28,13 +27,4 @@ func getLogRecords(ld plog.Logs) []plog.LogRecord {
 	}
 
 	return logRecords
-}
-
-func getKubernetesAttributes(lr plog.LogRecord) map[string]any {
-	const kubernetesAttrKey = "kubernetes"
-	kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().Get(kubernetesAttrKey)
-	if !hasKubernetesAttrs || kubernetesAttrs.Type() != pcommon.ValueTypeMap {
-		return nil
-	}
-	return kubernetesAttrs.Map().AsRaw()
 }
