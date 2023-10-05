@@ -267,7 +267,7 @@ spec:
                           ca:
                             description: Defines an optional CA certificate for server
                               certificate verification when using TLS. The certificate
-                              needs to be provided in PEM format.
+                              must be provided in PEM format.
                             properties:
                               value:
                                 description: The value as plain text.
@@ -298,8 +298,7 @@ spec:
                             type: object
                           cert:
                             description: Defines a client certificate to use when
-                              using TLS. The certificate needs to be provided in PEM
-                              format.
+                              using TLS. The certificate must be provided in PEM format.
                             properties:
                               value:
                                 description: The value as plain text.
@@ -334,7 +333,7 @@ spec:
                             type: boolean
                           key:
                             description: Defines the client key to use when using
-                              TLS. The key needs to be provided in PEM format.
+                              TLS. The key must be provided in PEM format.
                             properties:
                               value:
                                 description: The value as plain text.

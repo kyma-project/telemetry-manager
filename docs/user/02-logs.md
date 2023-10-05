@@ -174,7 +174,7 @@ Telemetry Manager supports different types of [Fluent Bit filter](https://docs.f
 
 ### Step 4: Add authentication details from Secrets
 
-Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, the LogPipeline supports the reference of Secrets. At the moment, mTLS and Basic Authentication are supported.
+Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, the LogPipeline supports the reference of Secrets. At the moment, mutual TLS (mTLS) and Basic Authentication are supported.
 
 Using the **http** output definition and the **valueFrom** attribute, you can map Secret keys as in the following examples:
 
