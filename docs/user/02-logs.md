@@ -52,7 +52,8 @@ In the following steps, you can see how to construct and deploy a typical LogPip
 
 ### Step 1: Create a LogPipeline and output
 
-To ship application logs to a new output, create a resource of the kind `LogPipeline`: 
+To ship application logs to a new output, create a resource of the kind `LogPipeline`:
+
 ```yaml
 kind: LogPipeline
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -71,15 +72,17 @@ spec:
       password:
         value: "not-required"
 ```
+
 An output is a data destination configured by a [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) of the relevant type. The LogPipeline supports the following output types:
 
 - **http**, which sends the data to the specified HTTP destination. The output is designed to integrate with a [Fluentd HTTP Input](https://docs.fluentd.org/input/http), which opens up a huge ecosystem of integration possibilities.
 - **grafana-loki**, which sends the data to the Kyma-internal Loki instance.
   >**NOTE:** This output is considered legacy and is only provided for backward compatibility with the [deprecated](https://github.com/kyma-project/kyma/releases/tag/2.9.0) in-cluster Loki instance. It might not be compatible with the latest Loki versions. For integration with a custom Loki installation, use the `custom` output with the name `loki` instead. See also [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).
-- **custom**, which supports the configuration of any destination in the Fluent Bit configuration syntax. 
+- **custom**, which supports the configuration of any destination in the Fluent Bit configuration syntax.
   >**CAUTION:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
   See the following example of the `custom` output:
+
   ```yaml
   spec:
     output:
@@ -95,12 +98,13 @@ An output is a data destination configured by a [Fluent Bit output](https://docs
         tls.verify         on
   ```
 
-### Step 2: Create an input
+### Step 2: Add filters
 
 If you need selection mechanisms for application logs on the Namespace or container level, you can use an input spec to restrict or specify from which resources logs are included.
 If you don't define any input, it's collected from all Namespaces, except the system Namespaces `kube-system`, `istio-system`, `kyma-system`, which are excluded by default. For example, you can define the Namespaces to include in the input collection, exclude Namespaces from the input collection, or choose that only system Namespaces are included. Learn more about the available [parameters and attributes](resources/02-logpipeline.md).
 
 The following example collects input from all Namespaces excluding `kyma-system` and only from the `istio-proxy` containers:
+
 ```yaml
 kind: LogPipeline
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -133,9 +137,7 @@ spec:
         - fluent-bit
 ```
 
-### Step 3: Add filters
-
-To enrich logs with attributes or drop whole lines, add filters to the existing pipeline.
+Alternatively, add filters to enrich logs with attributes or drop whole lines.
 The following example contains three filters, which are executed in sequence.
 
 ```yaml
@@ -168,47 +170,95 @@ Telemetry Manager supports different types of [Fluent Bit filter](https://docs.f
 - The second filter drops all log records fulfilling the given rule. In the example, typical Namespaces are dropped based on the **kubernetes** attribute.
 - A log record is modified by adding a new attribute. In the example, a constant attribute is added to every log record to record the actual cluster Node name at the record for later filtering in the backend system. As a value, a placeholder is used referring to a Kubernetes-specific environment variable.
 
-### Step 4: Add authentication details from Secrets
+### Step 3: Add authentication details from Secrets
 
-Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, the LogPipeline supports the reference of Secrets.
+Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, the LogPipeline supports the reference of Secrets. At the moment, mutual TLS (mTLS) and Basic Authentication are supported.
 
-Using the **http** output definition and the **valueFrom** attribute, you can map Secret keys as in the following **http** output example:
+Using the **http** output definition and the **valueFrom** attribute, you can map Secret keys as in the following examples:
 
-```yaml
-kind: LogPipeline
-apiVersion: telemetry.kyma-project.io/v1alpha1
-metadata:
-  name: http-backend
-spec:
-  output:
-     http:
+<div tabs>
+  <details open>
+  <summary>
+    Mutual TLS
+  </summary>
+
+  ```yaml
+  apiVersion: telemetry.kyma-project.io/v1alpha1
+  kind: LogPipeline
+  metadata:
+    name: http-backend
+  spec:
+    output:
+      http:
         dedot: false
         port: "80"
         uri: "/"
         host:
-           valueFrom:
+          valueFrom:
               secretKeyRef:
-                 name: http-backend-credentials
-                 namespace: default
-                 key: HTTP_ENDPOINT
-        user:
-           valueFrom:
+                name: http-backend-credentials
+                namespace: default
+                key: HTTP_ENDPOINT
+        tls:
+          cert:
+            valueFrom:
               secretKeyRef:
-                 name: http-backend-credentials
-                 namespace: default
-                 key: HTTP_USER
-        password:
-           valueFrom:
+                  name: http-backend-credentials
+                  namespace: default
+                  key: TLS_CERT
+          key:
+            valueFrom:
               secretKeyRef:
-                 name: http-backend-credentials
-                 namespace: default
-                 key: HTTP_PASSWORD
+                  name: http-backend-credentials
+                  namespace: default
+                  key: TLS_KEY
   input:
     ...
   filters:
     ...
-```
+  ```
+  </details>
+  <details>
+  <summary>
+    Basic Authentication
+  </summary>
 
+  ```yaml
+  apiVersion: telemetry.kyma-project.io/v1alpha1
+  kind: LogPipeline
+  metadata:
+    name: http-backend
+  spec:
+    output:
+      http:
+        dedot: false
+        port: "80"
+        uri: "/"
+        host:
+          valueFrom:
+              secretKeyRef:
+                name: http-backend-credentials
+                namespace: default
+                key: HTTP_ENDPOINT
+        user:
+          valueFrom:
+              secretKeyRef:
+                name: http-backend-credentials
+                namespace: default
+                key: HTTP_USER
+        password:
+          valueFrom:
+              secretKeyRef:
+                name: http-backend-credentials
+                namespace: default
+                key: HTTP_PASSWORD
+    input:
+      ...
+    filters:
+      ...
+  ```
+  </details>
+</div>
 
 The related Secret must fulfill the referenced name and Namespace, and contain the mapped key as in the following example:
 
@@ -221,6 +271,8 @@ stringData:
   HTTP_ENDPOINT: https://myhost/logs
   HTTP_USER: myUser
   HTTP_PASSWORD: XXX
+  TLS_CERT: ...
+  TLS_KEY: ...
 ```
 
 To leverage data provided by the Kubernetes Secrets in a `custom` output definition, use placeholder expressions for the data provided by the Secret, then specify the actual mapping to the Secret keys in the **variables** section, like in the following example:
@@ -252,62 +304,12 @@ spec:
 ```
 > **NOTE:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
-### Step 5: Rotate the Secret
+### Step 4: Rotate the Secret
 
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
 If you use a Secret owned by the [SAP BTP Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
-### Step 6: Add a parser
-
-Typically, you want your logs shipped in a structured format so that a backend like [OpenSearch](https://opensearch.org/) can immediately index the content according to the log attributes. By default, a LogPipeline tries to parse all logs as a JSON document and enrich the record with the parsed attributes on the root record. Thus, logging in JSON format in the application results in structured log records. Sometimes, logging in JSON is not an option (the log configuration is not under your control), and the logs are in an unstructured or plain format. To adjust this, you can define your custom [parser](https://docs.fluentbit.io/manual/concepts/data-pipeline/parser) and activate it with a filter or a Pod annotation.
-
-The following example defines a parser named `dummy_test` using a dedicated `LogParser` resource type:
-
-```yaml
-kind: LogParser
-apiVersion: telemetry.kyma-project.io/v1alpha1
-metadata:
-  name: dummy_test
-spec:
-  parser:
-    content: |
-      Format regex
-      Regex ^(?<INT>[^ ]+) (?<FLOAT>[^ ]+) (?<BOOL>[^ ]+) (?<STRING>.+)$
-```
-
-The parser is referenced by its name in a filter of the pipeline and is activated for all logs of the pipeline.
-
-```yaml
-kind: LogPipeline
-apiVersion: telemetry.kyma-project.io/v1alpha1
-metadata:
-  name: http-backend
-spec:
-  filters:
-    - custom: |
-        Name parser
-        Parser dummy_test
-  input:
-    ...
-  output:
-    ...
-```
-> **NOTE:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
-
-Instead of defining a filter, you can [annotate](https://docs.fluentbit.io/manual/pipeline/filters/kubernetes#kubernetes-annotations) your workload in the following way (here, the parser is activated only for the annotated workload):
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: dummy
-  annotations:
-    fluentbit.io/parser: dummy_test
-spec:
-  ...
-```
-
-### Step 7: Deploy the Pipeline
+### Step 5: Deploy the Pipeline
 
 To activate the constructed LogPipeline, follow these steps:
 1. Place the snippet in a file named for example `logpipeline.yaml`.

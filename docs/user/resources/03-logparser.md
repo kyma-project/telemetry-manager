@@ -34,6 +34,8 @@ For details, see the [LogParser specification file](https://github.com/kyma-proj
 <!-- TABLE-START -->
 ### LogParser.telemetry.kyma-project.io/v1alpha1
 
+>**CAUTION**: The LogParser API is deprecated. Instead, log in JSON format and use the JSON parsing feature of the LogPipeline
+
 **Spec:**
 
 | Parameter | Type | Description |

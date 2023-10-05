@@ -25,11 +25,11 @@ The Telemetry module provides an in-cluster central deployment of an [OTel Colle
 
 1. An end-to-end request is triggered and populates across the distributed application. Every involved component propagates the trace context using the [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
 2. The involved components that have contributed a new span to the trace send the related span data to the trace gateway using the `telemetry-otlp-traces` service. The communication happens based on the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) protocol either using GRPC or HTTP.
-1. The trace gateway enriches the span data with relevant metadata, typical for sources running on Kubernetes, like Pod identifiers.
-1. With the `TracePipeline` resource, the trace gateway is configured with a target backend.
-1. The backend can run in-cluster.
-1. The backend can also run out-cluster, if authentication has been set up.
-1. The trace data can be consumed using the backend system.
+3. The trace gateway enriches the span data with relevant metadata, typical for sources running on Kubernetes, like Pod identifiers.
+4. With the `TracePipeline` resource, the trace gateway is configured with a target backend.
+5. The backend can run in-cluster.
+6. The backend can also run out-cluster, if authentication has been set up.
+7. The trace data can be consumed using the backend system.
 
 ### Trace Gateway
 In a Kyma cluster, the Trace Gateway is the central component to which all parties of traces can send their individual span. The gateway collects, enriches, and dispatches the data to the configured backend. The gateway is based on the Otel Collector and comes with a concept of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together (see [Otel Collector: Configuration](https://opentelemetry.io/docs/collector/configuration/)). Kyma's TracePipeline provides a hardened setup of an OTel Collector, and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
@@ -107,11 +107,13 @@ spec:
 
 ### Step 3a: Add authentication details from plain text
 
-To integrate with external systems, you must configure authentication details. At the moment, Basic Authentication and custom headers are supported.
+To integrate with external systems, you must configure authentication details. At the moment, mutual TLS (mTLS), Basic Authentication and custom headers are supported.
 
 <div tabs>
-  <details>
-    <summary>Mutual TLS</summary>
+  <details open>
+  <summary>
+    Mutual TLS
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -135,7 +137,9 @@ To integrate with external systems, you must configure authentication details. A
   ```
   </details>
   <details>
-    <summary>Basic authentication</summary>
+  <summary>
+    Basic Authentication
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -156,7 +160,9 @@ To integrate with external systems, you must configure authentication details. A
   ```
   </details>
   <details>
-    <summary>Token-based with custom headers</summary>
+  <summary>
+    Token-based with custom headers
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -182,8 +188,10 @@ Integrations into external systems usually require authentication details dealin
 Use the **valueFrom** attribute to map Secret keys as in the following examples:
 
 <div tabs>
-  <details>
-    <summary>Mutual TLS</summary>
+  <details open>
+  <summary>
+    Mutual TLS
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -211,7 +219,9 @@ Use the **valueFrom** attribute to map Secret keys as in the following examples:
   ```
   </details>
   <details>
-    <summary>Basic authentication</summary>
+  <summary>
+    Basic Authentication
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -242,9 +252,11 @@ Use the **valueFrom** attribute to map Secret keys as in the following examples:
                   namespace: default
                   key: password
   ```
-</details>
+  </details>
   <details>
-    <summary>Token-based with custom headers</summary>
+  <summary>
+    Token-based with custom headers
+  </summary>
 
   ```yaml
   apiVersion: telemetry.kyma-project.io/v1alpha1

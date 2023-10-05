@@ -1,4 +1,4 @@
-package backend
+package tls
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type TLSCerts struct {
+type Certs struct {
 	CaCertPem     bytes.Buffer
 	ServerCertPem bytes.Buffer
 	ServerKeyPem  bytes.Buffer
@@ -20,18 +20,18 @@ type TLSCerts struct {
 }
 
 // helper function to create a cert template with a serial number and other required fields
-func certTemplate(serialNumber int64) *x509.Certificate {
+func certTemplate(serialNumber int64, commonName string) *x509.Certificate {
 	return &x509.Certificate{
 		SerialNumber:          big.NewInt(serialNumber),
-		Subject:               pkix.Name{Organization: []string{"Kyma E2E Test"}},
+		Subject:               pkix.Name{CommonName: commonName},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().Add(time.Hour),
 		BasicConstraintsValid: true,
 	}
 }
 
-func GenerateTLSCerts(serverDNSName string) (TLSCerts, error) {
-	var certs TLSCerts
+func GenerateTLSCerts(serverDNSName string) (Certs, error) {
+	var certs Certs
 
 	// CA Certificate
 	caPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -39,7 +39,7 @@ func GenerateTLSCerts(serverDNSName string) (TLSCerts, error) {
 		return certs, err
 	}
 
-	caTemplate := certTemplate(1)
+	caTemplate := certTemplate(1, "ca.com")
 	caTemplate.IsCA = true
 	caTemplate.KeyUsage = x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature
 	caTemplate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
@@ -65,7 +65,7 @@ func GenerateTLSCerts(serverDNSName string) (TLSCerts, error) {
 		return certs, err
 	}
 
-	serverTemplate := certTemplate(2)
+	serverTemplate := certTemplate(2, "server.com")
 	serverTemplate.KeyUsage = x509.KeyUsageDigitalSignature
 	serverTemplate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
 	serverTemplate.DNSNames = []string{serverDNSName}
@@ -91,7 +91,7 @@ func GenerateTLSCerts(serverDNSName string) (TLSCerts, error) {
 		return certs, err
 	}
 
-	clientTemplate := certTemplate(3)
+	clientTemplate := certTemplate(3, "client.com")
 	serverTemplate.KeyUsage = x509.KeyUsageDigitalSignature
 	serverTemplate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
 
