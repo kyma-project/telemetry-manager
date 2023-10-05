@@ -22,6 +22,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 )
 
 const (
@@ -39,7 +40,8 @@ var (
 	telemetryK8sObjects []client.Object
 )
 
-func TestE2e(t *testing.T) {
+func TestE2E(t *testing.T) {
+	format.MaxDepth = 20
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "E2E Suite")
 }
