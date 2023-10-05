@@ -47,14 +47,8 @@ func ContainLogRecord(matcher types.GomegaMatcher) types.GomegaMatcher {
 
 func WithContainerName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) string {
-		const kubernetesAttrKey = "kubernetes"
-		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().Get(kubernetesAttrKey)
-		if !hasKubernetesAttrs || kubernetesAttrs.Type() != pcommon.ValueTypeMap {
-			return ""
-		}
-
-		const containerNameAttrKey = "container_name"
-		containerName, hasContainerName := kubernetesAttrs.Map().Get(containerNameAttrKey)
+		kubernetesAttrs := getKubernetesAttributes(lr)
+		containerName, hasContainerName := kubernetesAttrs.Get("container_name")
 		if !hasContainerName || containerName.Type() != pcommon.ValueTypeStr {
 			return ""
 		}
@@ -65,14 +59,8 @@ func WithContainerName(matcher types.GomegaMatcher) types.GomegaMatcher {
 
 func WithPodName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) string {
-		const kubernetesAttrKey = "kubernetes"
-		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().Get(kubernetesAttrKey)
-		if !hasKubernetesAttrs || kubernetesAttrs.Type() != pcommon.ValueTypeMap {
-			return ""
-		}
-
-		const podNameAttrKey = "pod_name"
-		podName, hasPodName := kubernetesAttrs.Map().Get(podNameAttrKey)
+		kubernetesAttrs := getKubernetesAttributes(lr)
+		podName, hasPodName := kubernetesAttrs.Get("pod_name")
 		if !hasPodName || podName.Type() != pcommon.ValueTypeStr {
 			return ""
 		}
@@ -83,13 +71,9 @@ func WithPodName(matcher types.GomegaMatcher) types.GomegaMatcher {
 
 func WithKubernetesAnnotations(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) map[string]any {
-		const kubernetesAttrKey = "kubernetes"
-		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().Get(kubernetesAttrKey)
-		if !hasKubernetesAttrs || kubernetesAttrs.Type() != pcommon.ValueTypeMap {
-			return nil
-		}
-		annotationAttrs, hasAnnotations := kubernetesAttrs.Map().Get("annotations")
-		if !hasAnnotations || kubernetesAttrs.Type() != pcommon.ValueTypeMap {
+		kubernetesAttrs := getKubernetesAttributes(lr)
+		annotationAttrs, hasAnnotations := kubernetesAttrs.Get("annotations")
+		if !hasAnnotations || annotationAttrs.Type() != pcommon.ValueTypeMap {
 			return nil
 		}
 		return annotationAttrs.Map().AsRaw()
@@ -98,16 +82,12 @@ func WithKubernetesAnnotations(matcher types.GomegaMatcher) types.GomegaMatcher 
 
 func WithKubernetesLabels(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) map[string]any {
-		const kubernetesAttrKey = "kubernetes"
-		kubernetesAttrs, hasKubernetesAttrs := lr.Attributes().Get(kubernetesAttrKey)
-		if !hasKubernetesAttrs || kubernetesAttrs.Type() != pcommon.ValueTypeMap {
+		kubernetesAttrs := getKubernetesAttributes(lr)
+		labelAttrs, hasLabels := kubernetesAttrs.Get("labels")
+		if !hasLabels || labelAttrs.Type() != pcommon.ValueTypeMap {
 			return nil
 		}
-		annotationAttrs, hasAnnotations := kubernetesAttrs.Map().Get("labels")
-		if !hasAnnotations || kubernetesAttrs.Type() != pcommon.ValueTypeMap {
-			return nil
-		}
-		return annotationAttrs.Map().AsRaw()
+		return labelAttrs.Map().AsRaw()
 	}, matcher)
 }
 
