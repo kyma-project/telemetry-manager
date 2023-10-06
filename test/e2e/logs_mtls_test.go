@@ -60,7 +60,7 @@ var _ = Describe("Logs mTLS", Label("logging"), Ordered, func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running pipeline", func() {
+		It("Should have a running logpipeline", func() {
 			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
@@ -72,7 +72,7 @@ var _ = Describe("Logs mTLS", Label("logging"), Ordered, func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
 		})
 
-		It("Should verify log delivery", func() {
+		It("Should have no log-producer logs in the backend", func() {
 			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
 		})
 	})

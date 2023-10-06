@@ -26,6 +26,7 @@ var _ = Describe("Logs Dedot", Label("logging"), Ordered, func() {
 		mockNs          = "log-dedot-labels-mocks"
 		mockBackendName = "log-receiver-dedot-labels"
 		logProducerName = "log-producer"
+		pipelineName    = "pipeline-dedot-test"
 	)
 	var telemetryExportURL string
 
@@ -39,7 +40,7 @@ var _ = Describe("Logs Dedot", Label("logging"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("dedot.label", "logging-dedot-value")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitlog.NewPipeline("pipeline-dedot-test").
+		logPipeline := kitlog.NewPipeline(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
 			WithIncludeContainer([]string{logProducerName})
@@ -61,6 +62,10 @@ var _ = Describe("Logs Dedot", Label("logging"), Ordered, func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have a running logpipeline", func() {
+			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a log backend running", func() {

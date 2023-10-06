@@ -26,6 +26,7 @@ var _ = Describe("Logs Exclude Container", Label("logging"), Ordered, func() {
 		mockNs          = "log-exclude-container-mocks"
 		mockBackendName = "log-receiver-exclude-container"
 		logProducerName = "log-producer-exclude-container"
+		pipelineName    = "pipeline-exclude-container-test"
 	)
 	var telemetryExportURL string
 
@@ -39,7 +40,7 @@ var _ = Describe("Logs Exclude Container", Label("logging"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-exclude-container")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitlog.NewPipeline("pipeline-exclude-container").
+		logPipeline := kitlog.NewPipeline(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
 			WithExcludeContainer([]string{logProducerName})
@@ -63,6 +64,10 @@ var _ = Describe("Logs Exclude Container", Label("logging"), Ordered, func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
+		It("Should have a running logpipeline", func() {
+			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+		})
+
 		It("Should have a log backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
 		})
@@ -71,7 +76,7 @@ var _ = Describe("Logs Exclude Container", Label("logging"), Ordered, func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
 		})
 
-		It("Should have logs in the backend", func() {
+		It("Should have any logs in the backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())

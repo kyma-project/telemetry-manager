@@ -27,7 +27,7 @@ const (
 var _ = Describe("Logs Basic", Label("logging"), Ordered, func() {
 	var urls = urlprovider.New()
 
-	makeResources := func(mockNs, mockBackendName, logProducerName string, outputType OutputType) []client.Object {
+	makeResources := func(mockNs, mockBackendName, logProducerName, pipelineName string, outputType OutputType) []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
@@ -39,9 +39,9 @@ var _ = Describe("Logs Basic", Label("logging"), Ordered, func() {
 
 		var logPipeline *kitlog.Pipeline
 		if outputType == OutputTypeHTTP {
-			logPipeline = kitlog.NewPipeline("http-output-pipeline").WithSecretKeyRef(mockBackend.HostSecretRef()).WithHTTPOutput()
+			logPipeline = kitlog.NewPipeline(pipelineName).WithSecretKeyRef(mockBackend.HostSecretRef()).WithHTTPOutput()
 		} else {
-			logPipeline = kitlog.NewPipeline("custom-output-pipeline").WithCustomOutput(mockBackend.ExternalService.Host())
+			logPipeline = kitlog.NewPipeline(pipelineName).WithCustomOutput(mockBackend.ExternalService.Host())
 		}
 		objs = append(objs, logPipeline.K8sObject())
 
@@ -59,14 +59,19 @@ var _ = Describe("Logs Basic", Label("logging"), Ordered, func() {
 			mockBackendName = "log-receiver"
 			mockNs          = "log-http-output"
 			logProducerName = "log-producer-http-output" //#nosec G101 -- This is a false positive
+			pipelineName    = "http-output-pipeline"
 		)
 
 		BeforeAll(func() {
-			k8sObjects := makeResources(mockNs, mockBackendName, logProducerName, OutputTypeHTTP)
+			k8sObjects := makeResources(mockNs, mockBackendName, pipelineName, logProducerName, OutputTypeHTTP)
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have a running logpipeline", func() {
+			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a log backend running", Label("operational"), func() {
@@ -87,14 +92,19 @@ var _ = Describe("Logs Basic", Label("logging"), Ordered, func() {
 			mockBackendName = "log-receiver"
 			mockNs          = "log-custom-output"
 			logProducerName = "log-producer-custom-output" //#nosec G101 -- This is a false positive
+			pipelineName    = "custom-output-pipeline"
 		)
 
 		BeforeAll(func() {
-			k8sObjects := makeResources(mockNs, mockBackendName, logProducerName, OutputTypeCustom)
+			k8sObjects := makeResources(mockNs, mockBackendName, logProducerName, pipelineName, OutputTypeCustom)
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have a running logpipeline", func() {
+			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a log backend running", func() {
@@ -105,7 +115,7 @@ var _ = Describe("Logs Basic", Label("logging"), Ordered, func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
 		})
 
-		It("Should verify end-to-end log delivery with custom output", func() {
+		It("Should have no log-producer logs in the backend", func() {
 			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, urls.MockBackendExport(mockBackendName))
 		})
 	})

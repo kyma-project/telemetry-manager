@@ -26,6 +26,7 @@ var _ = Describe("Logs Keep Annotations", Label("logging"), Ordered, func() {
 		mockNs          = "log-keep-anno-mocks"
 		mockBackendName = "log-receiver-annotation"
 		logProducerName = "log-producer"
+		pipelineName    = "pipeline-annotation-test"
 	)
 	var telemetryExportURL string
 
@@ -40,7 +41,7 @@ var _ = Describe("Logs Keep Annotations", Label("logging"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-annotation-test")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitlog.NewPipeline("pipeline-annotation-test").
+		logPipeline := kitlog.NewPipeline(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
 			KeepAnnotations(true).
@@ -63,6 +64,10 @@ var _ = Describe("Logs Keep Annotations", Label("logging"), Ordered, func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have a running logpipeline", func() {
+			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a log backend running", func() {

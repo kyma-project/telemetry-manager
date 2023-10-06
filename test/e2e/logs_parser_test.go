@@ -27,11 +27,7 @@ var _ = Describe("Logs Parser", Label("logging"), Ordered, func() {
 		mockNs          = "log-parser-mocks"
 		mockBackendName = "log-receiver-parser"
 		logProducerName = "log-producer"
-		configParser    = `Format regex
-Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$
-Time_Key time
-Time_Format %d/%b/%Y:%H:%M:%S %z
-Types user:string pass:string`
+		pipelineName    = "pipeline-parser-test"
 	)
 	var telemetryExportURL string
 
@@ -46,12 +42,18 @@ Types user:string pass:string`
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "regex-parser-testing-service")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logHTTPPipeline := kitlog.NewPipeline("pipeline-regex-parser").
+		logHTTPPipeline := kitlog.NewPipeline(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput()
-		logRegExParser := kitlog.NewParser("my-regex-parser", configParser)
+
+		parser := `Format regex
+Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$
+Time_Key time
+Time_Format %d/%b/%Y:%H:%M:%S %z
+Types user:string pass:string`
+		logRegexParser := kitlog.NewParser("my-regex-parser", parser)
 		objs = append(objs, logHTTPPipeline.K8sObject())
-		objs = append(objs, logRegExParser.K8sObject())
+		objs = append(objs, logRegexParser.K8sObject())
 
 		return objs
 	}
@@ -69,6 +71,10 @@ Types user:string pass:string`
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have a running logpipeline", func() {
+			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a log backend running", func() {
