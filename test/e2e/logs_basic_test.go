@@ -17,13 +17,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type OutputType string
-
-const (
-	OutputTypeHTTP   = "http"
-	OutputTypeCustom = "custom"
-)
-
 var _ = Describe("Logs Basic", Label("logging"), Ordered, func() {
 	const (
 		mockBackendName = "log-receiver"
