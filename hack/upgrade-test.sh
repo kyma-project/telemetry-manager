@@ -5,6 +5,24 @@ CURRENT_COMMIT=$(git rev-parse --abbrev-ref HEAD)
 TAG_LIST=$(git tag --sort=-creatordate)
 LATEST_TAG=${TAG_LIST[0]}
 
+get_test_namespaces() {
+  kubectl get namespaces --no-headers=true | awk '{print $1}' | grep -vE "(kube-system|kube-public|kube-node-lease|default|kyma-system)"
+}
+
+wait_for_test_namespace_termination() {
+  while true; do
+    namespaces=$(get_test_namespaces)
+
+    if [ -z "$namespaces" ]; then
+      echo "All test namespaces have terminated."
+      break
+    else
+      echo "Waiting for test namespaces to terminate: $namespaces"
+      sleep 10
+    fi
+  done
+}
+
 test_at_revision()
 {
     GIT_COMMIT="$1"
@@ -21,6 +39,8 @@ test_at_revision()
     IMG=k3d-kyma-registry:5000/telemetry-manager:$DOCKER_TAG make deploy
 
     ./bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational && !metrics" -v ./test/e2e
+
+    wait_for_test_namespace_termination
 }
 
 bin/k3d registry create kyma-registry --port 5001
