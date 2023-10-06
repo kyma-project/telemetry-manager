@@ -42,17 +42,37 @@ const (
 
 // TelemetrySpec defines the desired state of Telemetry
 type TelemetrySpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Trace  TelemetryTrace  `json:"trace,omitempty"`
+	Metric TelemetryMetric `json:"metric,omitempty"`
+}
+
+type TelemetryMetric struct {
+	Gateway TelemetryMetricGateway `json:"gateway,omitempty"`
+}
+
+type TelemetryMetricGateway struct {
+	Scaling `json:",inline"`
+}
+
+type TelemetryTrace struct {
+	Gateway TelemetryTraceGateway `json:"gateway,omitempty"`
+}
+
+type TelemetryTraceGateway struct {
+	Scaling `json:",inline"`
 }
 
 type Scaling struct {
 	ScalingStrategy `json:",inline"`
+	StaticScaling   `json:"static,omitempty"`
+}
+
+type StaticScaling struct {
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 type ScalingStrategy struct {
-	// +kubebuilder:validation:Enum=static;auto
-	// +kubebuilder:default:=static
+	// +kubebuilder:validation:Enum=static
 	Strategy Strategy `json:"strategy"`
 }
 
