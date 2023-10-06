@@ -17,7 +17,7 @@ func IsPodReady(ctx context.Context, k8sClient client.Client, listOptions client
 	for _, pod := range pods.Items {
 		for _, containerStatus := range pod.Status.ContainerStatuses {
 			if containerStatus.State.Running == nil {
-				return false, generateContainerError(pod.Name, containerStatus
+				return false, generateContainerError(pod.Name, containerStatus)
 			}
 		}
 	}
