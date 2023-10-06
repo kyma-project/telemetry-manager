@@ -72,7 +72,7 @@ var _ = Describe("Logs mTLS", Label("logging"), Ordered, func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
 		})
 
-		It("Should have no log-producer logs in the backend", func() {
+		It("Should have log-producer logs in the backend", func() {
 			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
 		})
 	})
