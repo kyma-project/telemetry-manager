@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/onsi/gomega/format"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -39,7 +40,9 @@ var (
 	telemetryK8sObjects []client.Object
 )
 
-func TestE2e(t *testing.T) {
+func TestE2E(t *testing.T) {
+	format.MaxDepth = 20
+	format.MaxLength = 16000
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "E2E Suite")
 }

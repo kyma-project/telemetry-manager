@@ -13,25 +13,21 @@ import (
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 )
 
-var _ = Describe("Logs Parser", Label("logging"), func() {
+var _ = Describe("Logs Parser", Label("logging"), Ordered, func() {
 	const (
 		mockNs          = "log-parser-mocks"
 		mockBackendName = "log-receiver-parser"
 		logProducerName = "log-producer"
-		configParser    = `Format regex
-Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$
-Time_Key time
-Time_Format %d/%b/%Y:%H:%M:%S %z
-Types user:string pass:string`
+		pipelineName    = "pipeline-parser-test"
 	)
 	var telemetryExportURL string
 
@@ -46,15 +42,27 @@ Types user:string pass:string`
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "regex-parser-testing-service")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logHTTPPipeline := kitlog.NewPipeline("pipeline-regex-parser").
+		logHTTPPipeline := kitlog.NewPipeline(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput()
-		logRegExParser := kitlog.NewParser("my-regex-parser", configParser)
+
+		parser := `Format regex
+Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$
+Time_Key time
+Time_Format %d/%b/%Y:%H:%M:%S %z
+Types user:string pass:string`
+		logRegexParser := kitlog.NewParser("my-regex-parser", parser)
 		objs = append(objs, logHTTPPipeline.K8sObject())
-		objs = append(objs, logRegExParser.K8sObject())
+		objs = append(objs, logRegexParser.K8sObject())
 
 		return objs
 	}
+
+	Context("Before deploying a logpipeline", func() {
+		It("Should have a healthy webhook", func() {
+			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+		})
+	})
 
 	Context("When a LogParser exists", Ordered, func() {
 		BeforeAll(func() {
@@ -65,6 +73,10 @@ Types user:string pass:string`
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
+		It("Should have a running logpipeline", func() {
+			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+		})
+
 		It("Should have a log backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
 		})
@@ -73,16 +85,16 @@ Types user:string pass:string`
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
 		})
 
-		It("Should parse the logs using regex", func() {
+		It("Should have parsed logs in the backend", func() {
 			Eventually(func(g Gomega) {
 				time.Sleep(20 * time.Second)
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogs(WithAttributeKeyValue("user", "foo")),
-					ContainLogs(WithAttributeKeyValue("pass", "bar")),
-				)))
+				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(SatisfyAll(
+					WithLogRecordAttrs(HaveKeyWithValue("user", "foo")),
+					WithLogRecordAttrs(HaveKeyWithValue("pass", "bar")),
+				)))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})

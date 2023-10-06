@@ -16,7 +16,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Logs mTLS", Label("logging"), func() {
+var _ = Describe("Logs mTLS", Label("logging"), Ordered, func() {
 	const (
 		mockBackendName = "logs-tls-receiver"
 		mockNs          = "logs-mtls"
@@ -44,6 +44,12 @@ var _ = Describe("Logs mTLS", Label("logging"), func() {
 		return objs
 	}
 
+	Context("Before deploying a logpipeline", func() {
+		It("Should have a healthy webhook", func() {
+			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+		})
+	})
+
 	Context("When a logpipeline with TLS activated exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
@@ -54,7 +60,7 @@ var _ = Describe("Logs mTLS", Label("logging"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running pipeline", func() {
+		It("Should have a running logpipeline", func() {
 			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
@@ -66,9 +72,8 @@ var _ = Describe("Logs mTLS", Label("logging"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
 		})
 
-		It("Should verify log delivery", func() {
+		It("Should have log-producer logs in the backend", func() {
 			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
 		})
-
 	})
 })
