@@ -101,6 +101,10 @@ var _ = Describe("Logs Basic", Label("logging"), Ordered, func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
 		})
 
+		It("Should have a log producer running", func() {
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
+		})
+
 		It("Should verify end-to-end log delivery with custom output", func() {
 			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, urls.MockBackendExport(mockBackendName))
 		})
