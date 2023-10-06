@@ -94,9 +94,9 @@ var _ = Describe("Logs Drop Labels", Label("logging"), Ordered, func() {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ConsistOf(ConsistOfLogRecords(
-					WithKubernetesAnnotations(BeEmpty()),
-				))))
+				g.Expect(resp).To(HaveHTTPBody(Not(ContainLd(ContainLogRecord(
+					WithKubernetesAnnotations(Not(BeEmpty()))))),
+				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})

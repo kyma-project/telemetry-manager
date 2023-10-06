@@ -94,9 +94,9 @@ var _ = Describe("Logs Keep Annotations", Label("logging"), Ordered, func() {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ConsistOfLds(ConsistOfLogRecords(
-					WithKubernetesLabels(BeEmpty()),
-				))))
+				g.Expect(resp).To(HaveHTTPBody(Not(ContainLd(ContainLogRecord(
+					WithKubernetesLabels(Not(BeEmpty()))))),
+				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
