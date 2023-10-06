@@ -1,8 +1,6 @@
 package backend
 
 import (
-	"maps"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,8 +18,6 @@ const (
 )
 
 type Deployment struct {
-	persistent bool
-
 	name              string
 	namespace         string
 	configmapName     string
@@ -45,16 +41,8 @@ func (d *Deployment) WithFluentdConfigName(fluentdConfigName string) *Deployment
 	return d
 }
 
-func (d *Deployment) Persistent(persistent bool) *Deployment {
-	d.persistent = persistent
-	return d
-}
-
 func (d *Deployment) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Deployment {
 	labels := k8s.ProcessLabelOptions(labelOpts...)
-	if d.persistent {
-		maps.Copy(labels, k8s.PersistentLabel)
-	}
 
 	containers := d.containers()
 	volumes := d.volumes()

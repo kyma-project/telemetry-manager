@@ -5,25 +5,32 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type NamespaceOption func(*Namespace)
+type NamepaceOption func(*Namespace)
 
 type Namespace struct {
-	persistent bool
-
-	name string
+	name   string
+	labels map[string]string
 }
 
-func NewNamespace(name string) *Namespace {
+func NewNamespace(name string, opts ...NamepaceOption) *Namespace {
 	namespace := &Namespace{
 		name: name,
+	}
+
+	for _, opt := range opts {
+		opt(namespace)
 	}
 
 	return namespace
 }
 
-func (n *Namespace) Persistent(persistent bool) *Namespace {
-	n.persistent = persistent
-	return n
+func WithIstioInjection() func(*Namespace) {
+	return func(n *Namespace) {
+		if n.labels == nil {
+			n.labels = make(map[string]string)
+		}
+		n.labels["istio-injection"] = "enabled"
+	}
 }
 
 func (n *Namespace) Name() string {
@@ -31,15 +38,10 @@ func (n *Namespace) Name() string {
 }
 
 func (n *Namespace) K8sObject() *corev1.Namespace {
-	var labels Labels
-	if n.persistent {
-		labels = PersistentLabel
-	}
-
 	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   n.name,
-			Labels: labels,
+			Labels: n.labels,
 		},
 	}
 }
