@@ -109,11 +109,8 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
 	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
-	loggingExporterID := fmt.Sprintf("logging/%s", pipeline.Name)
-	cfg.Exporters[loggingExporterID] = Exporter{Logging: config.DefaultLoggingExporter()}
-
 	pipelineID := fmt.Sprintf("metrics/%s", pipeline.Name)
-	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(pipeline, otlpExporterID, loggingExporterID)
+	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(pipeline, otlpExporterID)
 
 	return nil
 }

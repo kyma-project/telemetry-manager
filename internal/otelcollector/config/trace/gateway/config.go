@@ -34,6 +34,5 @@ type Traces struct {
 type Exporters map[string]Exporter
 
 type Exporter struct {
-	OTLP    *config.OTLPExporter    `yaml:",inline,omitempty"`
-	Logging *config.LoggingExporter `yaml:",inline,omitempty"`
+	OTLP *config.OTLPExporter `yaml:",inline,omitempty"`
 }

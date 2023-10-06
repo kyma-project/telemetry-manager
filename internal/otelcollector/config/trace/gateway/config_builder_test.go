@@ -111,7 +111,6 @@ func TestMakeConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "otlp/test")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "logging/test")
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
@@ -126,7 +125,6 @@ func TestMakeConfig(t *testing.T) {
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-1")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Exporters, "otlp/test-1")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Exporters, "logging/test-1")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Receivers, "otlp")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Receivers, "opencensus")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[0], "memory_limiter")
@@ -137,7 +135,6 @@ func TestMakeConfig(t *testing.T) {
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Exporters, "otlp/test-2")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Exporters, "logging/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Receivers, "otlp")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Receivers, "opencensus")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[0], "memory_limiter")
@@ -166,7 +163,6 @@ service:
                 - resource
                 - batch
             exporters:
-                - logging/test
                 - otlp/test
     telemetry:
         metrics:
@@ -237,8 +233,6 @@ processors:
                 - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (resource.attributes["service.name"] == "telemetry-fluent-bit.kyma-system")
                 - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-otlp-metrics\\.kyma-system(\\..*)?:(4318|4317).*") == true)
 exporters:
-    logging/test:
-        verbosity: basic
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:

@@ -108,7 +108,6 @@ func TestMakeConfig(t *testing.T) {
 
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
-			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 			require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-prometheus", "filter/drop-if-input-source-istio", "batch"})
 		})
@@ -123,7 +122,6 @@ func TestMakeConfig(t *testing.T) {
 
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
-			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 			require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-istio", "batch"})
 		})
@@ -138,7 +136,6 @@ func TestMakeConfig(t *testing.T) {
 
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
-			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 			require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-prometheus", "filter/drop-if-input-source-istio", "batch"})
 		})
@@ -153,7 +150,6 @@ func TestMakeConfig(t *testing.T) {
 
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
-			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "logging/test")
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 			require.Equal(t, collectorConfig.Service.Pipelines["metrics/test"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-prometheus", "batch"})
 		})
@@ -173,19 +169,16 @@ func TestMakeConfig(t *testing.T) {
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-1")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-1"].Exporters, "otlp/test-1")
-		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-1"].Exporters, "logging/test-1")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-1"].Receivers, "otlp")
 		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-1"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-prometheus", "filter/drop-if-input-source-istio", "batch"})
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-2"].Exporters, "otlp/test-2")
-		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-2"].Exporters, "logging/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-2"].Receivers, "otlp")
 		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-2"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-istio", "batch"})
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-3")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-3"].Exporters, "otlp/test-3")
-		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-3"].Exporters, "logging/test-3")
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-3"].Receivers, "otlp")
 		require.Equal(t, collectorConfig.Service.Pipelines["metrics/test-3"].Processors, []string{"memory_limiter", "k8sattributes", "resource", "filter/drop-if-input-source-runtime", "filter/drop-if-input-source-prometheus", "batch"})
 
@@ -211,7 +204,6 @@ service:
                 - filter/drop-if-input-source-istio
                 - batch
             exporters:
-                - logging/test
                 - otlp/test
     telemetry:
         metrics:
@@ -279,8 +271,6 @@ processors:
             datapoint:
                 - resource.attributes["kyma.source"] == "istio"
 exporters:
-    logging/test:
-        verbosity: basic
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}
         sending_queue:
