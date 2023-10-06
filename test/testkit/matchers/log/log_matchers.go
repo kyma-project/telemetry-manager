@@ -45,6 +45,11 @@ func ContainLogRecord(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return WithLogRecords(gomega.ContainElement(matcher))
 }
 
+// ConsistOfLogRecords is an alias for WithLogRecords(gomega.ConsistOf()).
+func ConsistOfLogRecords(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return WithLogRecords(gomega.ConsistOf(matcher))
+}
+
 func WithContainerName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) string {
 		kubernetesAttrs := getKubernetesAttributes(lr)

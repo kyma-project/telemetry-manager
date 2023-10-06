@@ -10,7 +10,6 @@ import (
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -24,7 +23,7 @@ var _ = Describe("Logs Custom Output", Label("logging"), Ordered, func() {
 		logProducerName = "log-producer-custom-output" //#nosec G101 -- This is a false positive
 		pipelineName    = "custom-output-pipeline"
 	)
-	var urls = urlprovider.New()
+	var telemetryExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -34,7 +33,7 @@ var _ = Describe("Logs Custom Output", Label("logging"), Ordered, func() {
 		mockLogProducer := logproducer.New(logProducerName, mockNs)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
-		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
+		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		logPipeline := kitlog.NewPipeline(pipelineName).WithCustomOutput(mockBackend.ExternalService.Host())
 		objs = append(objs, logPipeline.K8sObject())
@@ -70,7 +69,7 @@ var _ = Describe("Logs Custom Output", Label("logging"), Ordered, func() {
 		})
 
 		It("Should have log-producer logs in the backend", func() {
-			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, urls.MockBackendExport(mockBackendName))
+			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
 		})
 	})
 })
