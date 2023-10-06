@@ -4,10 +4,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
 type ConfigMap struct {
+	persistent bool
+
 	name      string
 	namespace string
 	withTLS   bool
@@ -83,6 +86,11 @@ func (cm *ConfigMap) Name() string {
 	return cm.name
 }
 
+func (cm *ConfigMap) Persistent(persistent bool) *ConfigMap {
+	cm.persistent = persistent
+	return cm
+}
+
 func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	data := make(map[string]string)
 	if cm.withTLS {
@@ -94,10 +102,16 @@ func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 		data["fluent.conf"] = configTemplateFluentd
 	}
 
+	var labels k8s.Labels
+	if cm.persistent {
+		labels = k8s.PersistentLabel
+	}
+
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cm.name,
 			Namespace: cm.namespace,
+			Labels:    labels,
 		},
 		Data: data,
 	}

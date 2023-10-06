@@ -39,9 +39,9 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(mockNs).Persistent(isOperational()).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithPersistentHostSecret(isOperational()))
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.Persistent(isOperational()))
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 

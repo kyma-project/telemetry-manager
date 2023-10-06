@@ -11,7 +11,7 @@ import (
 
 func WithLds(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonlLogs []byte) ([]plog.Logs, error) {
-		if jsonlLogs == nil {
+		if len(jsonlLogs) == 0 {
 			return nil, nil
 		}
 

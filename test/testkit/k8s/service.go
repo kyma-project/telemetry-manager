@@ -1,6 +1,8 @@
 package k8s
 
 import (
+	"maps"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -10,6 +12,8 @@ import (
 
 type Service struct {
 	testkit.PortRegistry
+
+	persistent bool
 
 	name      string
 	namespace string
@@ -28,8 +32,16 @@ func (s *Service) WithPort(name string, port int) *Service {
 	return s
 }
 
+func (s *Service) Persistent(persistent bool) *Service {
+	s.persistent = persistent
+	return s
+}
+
 func (s *Service) K8sObject(labelOpts ...testkit.OptFunc) *corev1.Service {
 	labels := ProcessLabelOptions(labelOpts...)
+	if s.persistent {
+		maps.Copy(labels, PersistentLabel)
+	}
 
 	ports := make([]corev1.ServicePort, 0)
 	for name, port := range s.PortRegistry.Ports {

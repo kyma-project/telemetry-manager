@@ -36,7 +36,7 @@ var _ = Describe("Logs Custom Output", Label("logging"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		logPipeline := kitlog.NewPipeline(pipelineName).WithCustomOutput(mockBackend.ExternalService.Host())
+		logPipeline := kitlog.NewPipeline(pipelineName).WithCustomOutput(mockBackend.Host)
 		objs = append(objs, logPipeline.K8sObject())
 
 		return objs

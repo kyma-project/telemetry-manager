@@ -38,7 +38,7 @@ var _ = Describe("Traces Noisy Span Filter", Label("tracing"), func() {
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces, backend.WithPersistentHostSecret(true))
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
