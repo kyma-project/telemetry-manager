@@ -342,7 +342,10 @@ spec:
 
 #### **Sampling Rate**
 
-By default, the sampling rate is configured to 1 percent. That means that only 1 trace out of 100 traces is reported to the trace gateway, and all others are dropped. Hereby, the sampling decision itself is propagated as part of the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) so that either all involved components are reporting the span data of a trace, or none. Increasing the sampling rate results in much higher network utilization in the cluster and also increases the amount of data sent to your tracing backend. Usually, a very low percentage of around 5% is used in a production setup to reduce costs and performance impacts.
+By default, the sampling rate is configured to 1 %. That means that only 1 trace out of 100 traces is reported to the trace gateway, and all others are dropped. The sampling decision itself is propagated as part of the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) so that either all involved components are reporting the span data of a trace, or none. 
+
+>**TIP:** If you increase the sampling rate, you send more data your tracing backend and cause much higher network utilization in the cluster. 
+>To reduce costs and performance impacts in a production setup, a very low percentage of around 5% is recommended.
 
 To configure an "always-on" sampling, configure a sampling rate of 100%:
 
