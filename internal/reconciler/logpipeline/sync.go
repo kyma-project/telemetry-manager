@@ -22,7 +22,6 @@ type syncer struct {
 }
 
 func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, allPipelines telemetryv1alpha1.LogPipelineList, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
-
 	log := logf.FromContext(ctx)
 
 	if err := s.syncSectionsConfigMap(ctx, pipeline, deployableLogPipelines); err != nil {
@@ -33,9 +32,17 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 		return fmt.Errorf("failed to sync mounted files: %v", err)
 	}
 
-	if err := s.syncReferencedSecrets(ctx, &allPipelines); err != nil {
+	if err := s.syncEnvSecret(ctx, &allPipelines); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.V(1).Info(fmt.Sprintf("referenced secret not found: %v", err))
+			return nil
+		}
+		return err
+	}
+
+	if err := s.syncTLSConfigSecret(ctx, &allPipelines); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.V(1).Info(fmt.Sprintf("referenced tls config secret not found: %v", err))
 			return nil
 		}
 		return err
@@ -106,7 +113,7 @@ func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1al
 	return nil
 }
 
-func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *telemetryv1alpha1.LogPipelineList) error {
+func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines *telemetryv1alpha1.LogPipelineList) error {
 	oldSecret, err := utils.GetOrCreateSecret(ctx, s, s.config.EnvSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get env secret: %w", err)
@@ -121,13 +128,14 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 			continue
 		}
 
-		for _, ref := range logPipeline.GetSecretRefs() {
+		for _, ref := range logPipeline.GetEnvSecretRefs() {
 			targetKey := envvar.FormatEnvVarName(logPipeline.Name, ref.Namespace, ref.Name, ref.Key)
 			if copyErr := s.copySecretData(ctx, ref, targetKey, newSecret.Data); copyErr != nil {
 				return fmt.Errorf("unable to copy secret data: %w", copyErr)
 			}
 		}
 
+		// we also store the variables in the env secret
 		for _, ref := range logPipeline.Spec.Variables {
 			if ref.ValueFrom.IsSecretKeyRef() {
 				if copyErr := s.copySecretData(ctx, *ref.ValueFrom.SecretKeyRef, ref.Name, newSecret.Data); copyErr != nil {
@@ -137,13 +145,77 @@ func (s *syncer) syncReferencedSecrets(ctx context.Context, logPipelines *teleme
 		}
 
 		if err = controllerutil.SetOwnerReference(&logPipeline, &newSecret, s.Scheme()); err != nil {
-			return fmt.Errorf("unable to set owner reference for files configmap: %w", err)
+			return fmt.Errorf("unable to set owner reference for env secret: %w", err)
 		}
 	}
 
 	if err = s.Update(ctx, &newSecret); err != nil {
 		return fmt.Errorf("unable to update env secret: %w", err)
 	}
+	return nil
+}
+
+func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines *telemetryv1alpha1.LogPipelineList) error {
+	oldSecret, err := utils.GetOrCreateSecret(ctx, s, s.config.OutputTLSConfigSecret)
+	if err != nil {
+		return fmt.Errorf("unable to get tls config secret: %w", err)
+	}
+
+	newSecret := oldSecret
+	newSecret.Data = make(map[string][]byte)
+
+	for i := range logPipelines.Items {
+		logPipeline := logPipelines.Items[i]
+		if !logPipeline.DeletionTimestamp.IsZero() {
+			continue
+		}
+
+		output := logPipeline.Spec.Output
+		if !output.IsHTTPDefined() {
+			continue
+		}
+
+		tls := output.HTTP.TLSConfig
+		if tls.CA.IsDefined() {
+			targetKey := fmt.Sprintf("%s-ca.crt", logPipeline.Name)
+			if err := s.copyFromValueOrSecret(ctx, *tls.CA, targetKey, newSecret.Data); err != nil {
+				return err
+			}
+		}
+		if tls.Cert.IsDefined() {
+			targetKey := fmt.Sprintf("%s-cert.crt", logPipeline.Name)
+			if err := s.copyFromValueOrSecret(ctx, *tls.Cert, targetKey, newSecret.Data); err != nil {
+				return err
+			}
+		}
+		if tls.Key.IsDefined() {
+			targetKey := fmt.Sprintf("%s-key.key", logPipeline.Name)
+			if err := s.copyFromValueOrSecret(ctx, *tls.Key, targetKey, newSecret.Data); err != nil {
+				return err
+			}
+		}
+
+		if err = controllerutil.SetOwnerReference(&logPipeline, &newSecret, s.Scheme()); err != nil {
+			return fmt.Errorf("unable to set owner reference for tls config secret: %w", err)
+		}
+	}
+
+	if err = s.Update(ctx, &newSecret); err != nil {
+		return fmt.Errorf("unable to update tls config secret: %w", err)
+	}
+	return nil
+}
+
+func (s *syncer) copyFromValueOrSecret(ctx context.Context, value telemetryv1alpha1.ValueType, targetKey string, target map[string][]byte) error {
+	if value.Value != "" {
+		target[targetKey] = []byte(value.Value)
+		return nil
+	}
+
+	if copyErr := s.copySecretData(ctx, *value.ValueFrom.SecretKeyRef, targetKey, target); copyErr != nil {
+		return fmt.Errorf("unable to copy secret data: %w", copyErr)
+	}
+
 	return nil
 }
 

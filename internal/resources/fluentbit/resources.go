@@ -133,6 +133,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 								{MountPath: "/var/log", Name: "varlog", ReadOnly: true},
 								{MountPath: "/data", Name: "varfluentbit"},
 								{MountPath: "/files", Name: "dynamic-files"},
+								{MountPath: "/fluent-bit/etc/output-tls-config/", Name: "output-tls-config", ReadOnly: true},
 							},
 						},
 						{
@@ -224,6 +225,14 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Name: "varfluentbit",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{Path: fmt.Sprintf("/var/%s", name.Name)},
+							},
+						},
+						{
+							Name: "output-tls-config",
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: fmt.Sprintf("%s-output-tls-config", name.Name),
+								},
 							},
 						},
 					},
@@ -360,7 +369,7 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
     Match tele.*
     Merge_Log On
     K8S-Logging.Parser On
-    K8S-Logging.Exclude On
+    K8S-Logging.Exclude Off
     Buffer_Size 1MB
 
 `

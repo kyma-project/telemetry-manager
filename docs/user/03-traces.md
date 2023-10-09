@@ -9,6 +9,7 @@ The diagram shows how distributed tracing helps to track the request path:
 ![Distributed tracing](./assets/traces-intro.drawio.svg)
 
 The goal of the Telemetry Module is to support you in collecting all relevant trace data in a Kyma cluster, enrich them and ship them to a backend for further analysis. Kyma modules like Istio or Serverless contribute traces transparently. You can choose among multiple [vendors for OTLP-based backends](https://opentelemetry.io/ecosystem/vendors/).
+
 ## Prerequisites
 
 For a complete recording of a distributed trace, it is [essential](https://www.w3.org/TR/trace-context/#problem-statement) that every involved component is at least propagating the trace context. In Kyma, all components involved in users' requests support the [W3C Trace Context protocol](https://www.w3.org/TR/trace-context), which is a vendor-neutral protocol gaining more and more support by all kinds of vendors and tools. The involved Kyma components are mainly Istio, Serverless, and Eventing.
@@ -25,14 +26,16 @@ The Telemetry module provides an in-cluster central deployment of an [OTel Colle
 
 1. An end-to-end request is triggered and populates across the distributed application. Every involved component propagates the trace context using the [W3C Trace Context](https://www.w3.org/TR/trace-context/) protocol.
 2. The involved components that have contributed a new span to the trace send the related span data to the trace gateway using the `telemetry-otlp-traces` service. The communication happens based on the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) protocol either using GRPC or HTTP.
-1. The trace gateway enriches the span data with relevant metadata, typical for sources running on Kubernetes, like Pod identifiers.
-1. With the `TracePipeline` resource, the trace gateway is configured with a target backend.
-1. The backend can run in-cluster.
-1. The backend can also run out-cluster, if authentication has been set up.
-1. The trace data can be consumed using the backend system.
+3. The trace gateway enriches the span data with relevant metadata, typical for sources running on Kubernetes, like Pod identifiers.
+4. With the `TracePipeline` resource, the trace gateway is configured with a target backend.
+5. The backend can run in-cluster.
+6. The backend can also run out-cluster, if authentication has been set up.
+7. The trace data can be consumed using the backend system.
 
 ### Trace Gateway
+
 In a Kyma cluster, the Trace Gateway is the central component to which all parties of traces can send their individual span. The gateway collects, enriches, and dispatches the data to the configured backend. The gateway is based on the Otel Collector and comes with a concept of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together (see [Otel Collector: Configuration](https://opentelemetry.io/docs/collector/configuration/)). Kyma's TracePipeline provides a hardened setup of an OTel Collector, and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
+
 - Supportability - all features are tested and supported
 - Migratability - smooth migration experiences when switching underlying technologies or architectures
 - Native Kubernetes support - API provided by Kyma allows for an easy integration with Secrets, for example, served by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator#readme). Telemetry Manager takes care of the full lifecycle.
@@ -41,6 +44,7 @@ In a Kyma cluster, the Trace Gateway is the central component to which all parti
 The downside is that only a limited set of features is available. If you want to avoid this downside, bring your own collector setup. The current feature set focuses on providing the full configurability of backends integrated by OTLP. As a next step, meaningful filter options will be provided, especially head- and tail-based sampling configurations.
 
 ### Telemetry Manager
+
 The TracePipeline resource is managed by Telemetry Manager, a typical Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) responsible for managing the custom parts of the OTel Collector configuration.
 
 ![Manager resources](./assets/traces-resources.drawio.svg)
@@ -53,6 +57,7 @@ Furthermore, the manager takes care of the full lifecycle of the OTel Collector 
 In the following steps, you can see how to construct and deploy a typical TracePipeline. Learn more about the available [parameters and attributes](resources/04-tracepipeline.md).
 
 ### Step 1a. Create a TracePipeline with an OTLP GRPC output
+
 To ship traces to a new OTLP output, create a resource of the kind `TracePipeline`:
 
 ```yaml
@@ -72,6 +77,7 @@ This configures the underlying OTel Collector with a pipeline for traces. The re
 ### Step 1b. Create a TracePipeline with an OTLP HTTP output
 
 To use the HTTP protocol instead of the default GRPC, use the `protocol` attribute and ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
+
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: TracePipeline
@@ -107,73 +113,71 @@ spec:
 
 ### Step 3a: Add authentication details from plain text
 
-To integrate with external systems, you must configure authentication details. At the moment, Basic Authentication and custom headers are supported.
+To integrate with external systems, you must configure authentication details. At the moment, mutual TLS (mTLS), Basic Authentication and custom headers are supported.
 
-<div tabs>
-  <details>
-    <summary>Mutual TLS</summary>
+<!-- tabs:start -->
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: TracePipeline
-  metadata:
-    name: backend
-  spec:
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com/otlp:4317
-        tls:
-          cert:
-            value: |
-              -----BEGIN CERTIFICATE-----
-              ...
-          key:
-            value: |
-              -----BEGIN RSA PRIVATE KEY-----
-              ...
-  ```
-  </details>
-  <details>
-    <summary>Basic authentication</summary>
+#### **Mutual TLS**
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: TracePipeline
-  metadata:
-    name: backend
-  spec:
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com/otlp:4317
-        authentication:
-          basic:
-            user:
-              value: myUser
-            password:
-              value: myPwd
-  ```
-  </details>
-  <details>
-    <summary>Token-based with custom headers</summary>
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      tls:
+        cert:
+          value: |
+            -----BEGIN CERTIFICATE-----
+            ...
+        key:
+          value: |
+            -----BEGIN RSA PRIVATE KEY-----
+            ...
+```
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: TracePipeline
-  metadata:
-    name: backend
-  spec:
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com/otlp:4317
-        headers:
-          - name: Authorization
-            value: "Bearer myToken"
-  ```
-  </details>
-</div>
+#### **Basic Authentication**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      authentication:
+        basic:
+          user:
+            value: myUser
+          password:
+            value: myPwd
+```
+
+#### **Token-based with custom headers**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      headers:
+      - name: Authorization
+        value: "Bearer myToken"
+```
+
+<!-- tabs:end -->
 
 ### Step 3b: Add authentication details from Secrets
 
@@ -181,91 +185,89 @@ Integrations into external systems usually require authentication details dealin
 
 Use the **valueFrom** attribute to map Secret keys as in the following examples:
 
-<div tabs>
-  <details>
-    <summary>Mutual TLS</summary>
+<!-- tabs:start -->
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: TracePipeline
-  metadata:
-    name: backend
-  spec:
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com/otlp:4317
-        tls:
-          cert:
-            valueFrom:
-              secretKeyRef:
-                  name: backend
-                  namespace: default
-                  key: cert
-          key:
-            valueFrom:
-              secretKeyRef:
-                  name: backend
-                  namespace: default
-                  key: key
-  ```
-  </details>
-  <details>
-    <summary>Basic authentication</summary>
+#### **Mutual TLS**
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: TracePipeline
-  metadata:
-    name: backend
-  spec:
-    output:
-      otlp:
-        endpoint:
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      tls:
+        cert:
           valueFrom:
-              secretKeyRef:
-                  name: backend
-                  namespace: default
-                  key: endpoint
-        authentication:
-          basic:
-            user:
-              valueFrom:
-                secretKeyRef:
-                  name: backend
-                  namespace: default
-                  key: user
-            password:
-              valueFrom:
-                secretKeyRef:
-                  name: backend
-                  namespace: default
-                  key: password
-  ```
-</details>
-  <details>
-    <summary>Token-based with custom headers</summary>
+            secretKeyRef:
+              name: backend
+              namespace: default
+              key: cert
+        key:
+          valueFrom:
+            secretKeyRef:
+              name: backend
+              namespace: default
+              key: key
+```
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: TracePipeline
-  metadata:
-    name: backend
-  spec:
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com:4317
-        headers:
-          - name: Authorization
+#### **Basic Authentication**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        valueFrom:
+          secretKeyRef:
+              name: backend
+              namespace: default
+              key: endpoint
+      authentication:
+        basic:
+          user:
             valueFrom:
               secretKeyRef:
-                  name: backend
-                  namespace: default
-                  key: token 
-  ```
-  </details>
-</div>
+                name: backend
+                namespace: default
+                key: user
+          password:
+            valueFrom:
+              secretKeyRef:
+                name: backend
+                namespace: default
+                key: password
+```
+
+#### **Token-based with custom headers**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+      headers:
+      - name: Authorization
+        valueFrom:
+          secretKeyRef:
+              name: backend
+              namespace: default
+              key: token 
+```
+
+<!-- tabs:end -->
 
 The related Secret must have the referenced name and needs to be located in the referenced Namespace, and contain the mapped key as in the following example:
 
@@ -290,20 +292,23 @@ If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/S
 ### Step 5: Deploy the Pipeline
 
 To activate the constructed TracePipeline, follow these steps:
+
 1. Place the snippet in a file named for example `tracepipeline.yaml`.
 2. Apply the resource file in your cluster:
-    ```bash
-    kubectl apply -f tracepipeline.yaml
-    ```
+
+  ```bash
+  kubectl apply -f tracepipeline.yaml
+  ```
 
 ### Result
 
 You activated a TracePipeline and traces start streaming to your backend. To verify that the pipeline is running, verify that the status of the LogPipeline in your cluster is `Ready`:
-    ```bash
-    kubectl get tracepipeline
-    NAME              STATUS    AGE
-    backend           Ready     44s
-    ```
+
+  ```bash
+  kubectl get tracepipeline
+  NAME              STATUS    AGE
+  backend           Ready     44s
+  ```
 
 ## Kyma Components with tracing capabilities
 
@@ -315,55 +320,51 @@ The Istio module is crucial in distributed tracing because it provides the [ingr
 
 >**CAUTION:** The provided Istio feature uses an API in alpha state, which may change in future releases.
 
- The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#Tracing), place a resource to the `istio-system` Namespace.
+ The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#Tracing), place a resource to the `istio-system` Namespace. The following snippets help setting up the Istio tracing feature:
 
-<div tabs name="Configure Istio traces" group="configuration-options">
-  <details>
-  <summary label="extension-provider">
-  Set up extension provider
-  </summary>
-  The following example configures all Istio proxies with the `kyma-traces` extension provider, which, by default, reports span data to the trace gateway of the Telemetry module.
+<!-- tabs:start -->
 
-  ```yaml
-  apiVersion: telemetry.istio.io/v1alpha1
-  kind: Telemetry
-  metadata:
-    name: tracing-default
-    namespace: istio-system
-  spec:
-    tracing:
-    - providers:
-      - name: "kyma-traces"
-  ```
+#### **Extension Provider**
 
-  </details>
-  <details>
-  <summary label="sampling-rate">
-  Set sampling rate
-  </summary>
-  By default, the sampling rate is configured to 1 percent. That means that only 1 trace out of 100 traces is reported to the trace gateway, and all others are dropped. Hereby, the sampling decision itself is propagated as part of the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) so that either all involved components are reporting the span data of a trace, or none. Increasing the sampling rate results in much higher network utilization in the cluster and also increases the amount of data sent to your tracing backend. Usually, a very low percentage of around 5% is used in a production setup to reduce costs and performance impacts.
+The following example configures all Istio proxies with the `kyma-traces` extension provider, which, by default, reports span data to the trace gateway of the Telemetry module.
 
-  To configure an "always-on" sampling, configure a sampling rate of 100%:
+```yaml
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: tracing-default
+  namespace: istio-system
+spec:
+  tracing:
+  - providers:
+    - name: "kyma-traces"
+```
 
-  ```yaml
-  apiVersion: telemetry.istio.io/v1alpha1
-  kind: Telemetry
-  metadata:
-    name: tracing-default
-    namespace: istio-system
-  spec:
-    tracing:
-    - providers:
-      - name: "kyma-traces"
-        randomSamplingPercentage: 100.00
-  ```
+#### **Sampling Rate**
 
-  </details>
-  <details>
-  <summary label="namespaces-workload-settings">
-  Configure single Namespaces or workloads
-  </summary>
-  Namespaces or workloads can selectively be configured with individual settings by placing further resources. If you don't want to report spans at all for a specific workload, activate the `disableSpanReporting` flag with the selector expression.
+By default, the sampling rate is configured to 1%. That means that only 1 trace out of 100 traces is reported to the trace gateway, and all others are dropped. The sampling decision itself is propagated as part of the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) so that either all involved components are reporting the span data of a trace, or none. 
+
+>**TIP:** If you increase the sampling rate, you send more data your tracing backend and cause much higher network utilization in the cluster. 
+>To reduce costs and performance impacts in a production setup, a very low percentage of around 5% is recommended.
+
+To configure an "always-on" sampling, set the sampling rate to 100%:
+
+```yaml
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: tracing-default
+  namespace: istio-system
+spec:
+  tracing:
+  - providers:
+    - name: "kyma-traces"
+    randomSamplingPercentage: 100.00
+```
+
+#### **Namespaces or Workloads**
+
+If you need specific settings for individual Namespaces or workloads, place additional Telemetry resources. If you don't want to report spans at all for a specific workload, activate the `disableSpanReporting` flag with the selector expression.
 
 ```yaml
 apiVersion: telemetry.istio.io/v1alpha1
@@ -381,13 +382,9 @@ spec:
     randomSamplingPercentage: 100.00
 ```
 
-  </details>
-  <details>
-  <summary label="trace-context-only">
-  Collect trace context without spans
-  </summary>
+#### **Trace Context without Spans**
   
-  To enable the propagation of the [w3c-tracecontext](https://www.w3.org/TR/trace-context/) only, without reporting any spans (so the actual tracing feature is disabled), you must enable the `kyma-traces` provider with a sampling rate of 0. With this configuration, you get the relevant trace context into the [access logs](https://kyma-project.io/#/04-operation-guides/operations/obsv-03-enable-istio-access-logs) without any active trace reporting.
+To enable the propagation of the [w3c-tracecontext](https://www.w3.org/TR/trace-context/) only, without reporting any spans (so the actual tracing feature is disabled), you must enable the `kyma-traces` provider with a sampling rate of 0. With this configuration, you get the relevant trace context into the [access logs](https://kyma-project.io/#/04-operation-guides/operations/obsv-03-enable-istio-access-logs) without any active trace reporting.
 
   ```yaml
   apiVersion: telemetry.istio.io/v1alpha1
@@ -402,13 +399,14 @@ spec:
       randomSamplingPercentage: 0
   ```
 
-  </details>
-</div>
+ <!-- tabs:end -->
 
 ### Eventing
+
 The Kyma [Eventing](https://kyma-project.io/#/01-overview/eventing/README) component dispatches events from an in- or out-cluster backend to your workload. It leverages the [CloudEvents](https://cloudevents.io/) protocol, which natively supports the [W3C Trace Context](https://www.w3.org/TR/trace-context) propagation. That said, the Eventing component already propagates trace context properly but does not enrich a trace with more advanced span data.
 
 ### Serverless
+
 By default, all engines for the [Serverless](https://kyma-project.io/#/serverless-manager/user/README) module integrate the [Open Telemetry SDK](https://opentelemetry.io/docs/reference/specification/metrics/sdk/). With that, trace propagation no longer is your concern, because the used middlewares are configured to automatically propagate the context for chained calls. Because the Telemetry endpoints are configured by default, Serverless also reports custom spans for incoming and outgoing requests. You can [customize Function traces](https://kyma-project.io/#/03-tutorials/00-serverless/svls-12-customize-function-traces) to add more spans as part of your Serverless source code.
 
 ## Operations
@@ -427,19 +425,24 @@ The relevant metrics are:
 ## Limitations
 
 The trace gateway setup is designed using the following assumptions:
+
 - The collector has no autoscaling options yet and has a limited resource setup of 1 CPU and 1 GiB memory.
 - Batching is enabled, and a batch will contain up to 512 Spans/batch.
 - An unavailability of a destination must be survived for 5 minutes without direct loss of trace data.
 - An average span consists of 40 attributes with 64 character length.
 
 This leads to the following limitations:
+
 ### Throughput
+
 The maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If more data must be ingested, it can result in a refusal of more data.
 
 ### Unavailability of output
+
 For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 
 ### No guaranteed delivery
+
 The used buffers are volatile. If the OTel collector instance crashes, trace data can be lost.
 
 ### Multiple TracePipeline support
@@ -447,7 +450,9 @@ The used buffers are volatile. If the OTel collector instance crashes, trace dat
 Up to 3 TracePipelines at a time are supported at the moment.
 
 ### System span filtering
+
 System-related spans reported by Istio are filtered out without the opt-out option. Here are a few examples of such spans:
+
 - `/healthz` endpoint of a component deployed in the `kyma-system` Namespace
 - `/metrics` endpoint of a component deployed in the `kyma-system` Namespace
 - All outgoing spans reported by Grafana
@@ -464,8 +469,8 @@ System-related spans reported by Istio are filtered out without the opt-out opti
 - Symptom: Custom spans don't arrive at the destination, but Istio spans do.
 
    Cause: Your SDK version is incompatible with the OTel collector version.
-   
+
    Remedy:
-   1. Check which SDK version you are using for instrumentation. 
+   1. Check which SDK version you are using for instrumentation.
    1. Investigate whether it is compatible with the OTel collector version.
    1. If required, upgrade to a supported SDK version.

@@ -3,8 +3,6 @@
 package e2e
 
 import (
-	"net/http"
-
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -12,21 +10,18 @@ import (
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 )
 
-var _ = Describe("Logs Dedot", Label("logging"), Ordered, func() {
+var _ = Describe("Logs Custom Output", Label("logging"), Ordered, func() {
 	const (
-		mockNs          = "log-dedot-labels-mocks"
-		mockBackendName = "log-receiver-dedot-labels"
-		logProducerName = "log-producer"
-		pipelineName    = "pipeline-dedot-test"
+		mockBackendName = "log-receiver"
+		mockNs          = "log-custom-output"
+		logProducerName = "log-producer-custom-output" //#nosec G101 -- This is a false positive
+		pipelineName    = "custom-output-pipeline"
 	)
 	var telemetryExportURL string
 
@@ -37,13 +32,10 @@ var _ = Describe("Logs Dedot", Label("logging"), Ordered, func() {
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs)
 		mockLogProducer := logproducer.New(logProducerName, mockNs)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("dedot.label", "logging-dedot-value")))
+		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitlog.NewPipeline(pipelineName).
-			WithSecretKeyRef(mockBackend.HostSecretRef()).
-			WithHTTPOutput().
-			WithIncludeContainer([]string{logProducerName})
+		logPipeline := kitlog.NewPipeline(pipelineName).WithCustomOutput(mockBackend.ExternalService.Host())
 		objs = append(objs, logPipeline.K8sObject())
 
 		return objs
@@ -55,7 +47,7 @@ var _ = Describe("Logs Dedot", Label("logging"), Ordered, func() {
 		})
 	})
 
-	Context("When a logpipeline that dedots labels exists", Ordered, func() {
+	Context("When a logpipeline with custom output exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
@@ -76,16 +68,8 @@ var _ = Describe("Logs Dedot", Label("logging"), Ordered, func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
 		})
 
-		// label foo.bar: value should be represented as foo_bar:value
-		It("Should have logs with dedotted labels in the backend", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					ContainLd(ContainLogRecord(WithKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
-				))
-			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		It("Should have log-producer logs in the backend", func() {
+			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
 		})
 	})
 })

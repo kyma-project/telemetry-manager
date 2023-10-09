@@ -264,10 +264,104 @@ spec:
                       tls:
                         description: Configures TLS for the HTTP target server.
                         properties:
+                          ca:
+                            description: Defines an optional CA certificate for server
+                              certificate verification when using TLS. The certificate
+                              must be provided in PEM format.
+                            properties:
+                              value:
+                                description: The value as plain text.
+                                type: string
+                              valueFrom:
+                                description: The value as a reference to a resource.
+                                properties:
+                                  secretKeyRef:
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
+                                    properties:
+                                      key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
+                                        type: string
+                                      name:
+                                        description: The name of the Secret containing
+                                          the referenced value
+                                        type: string
+                                      namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
+                          cert:
+                            description: Defines a client certificate to use when
+                              using TLS. The certificate must be provided in PEM format.
+                            properties:
+                              value:
+                                description: The value as plain text.
+                                type: string
+                              valueFrom:
+                                description: The value as a reference to a resource.
+                                properties:
+                                  secretKeyRef:
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
+                                    properties:
+                                      key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
+                                        type: string
+                                      name:
+                                        description: The name of the Secret containing
+                                          the referenced value
+                                        type: string
+                                      namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
                           disabled:
                             description: Indicates if TLS is disabled or enabled.
                               Default is `false`.
                             type: boolean
+                          key:
+                            description: Defines the client key to use when using
+                              TLS. The key must be provided in PEM format.
+                            properties:
+                              value:
+                                description: The value as plain text.
+                                type: string
+                              valueFrom:
+                                description: The value as a reference to a resource.
+                                properties:
+                                  secretKeyRef:
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
+                                    properties:
+                                      key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
+                                        type: string
+                                      name:
+                                        description: The name of the Secret containing
+                                          the referenced value
+                                        type: string
+                                      namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
                           skipCertificateValidation:
                             description: If `true`, the validation of certificates
                               is skipped. Default is `false`.

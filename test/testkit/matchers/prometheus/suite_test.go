@@ -1,4 +1,4 @@
-package matchers
+package prometheus
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestCustomMatchers(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Custom Matcher Suite")
+	RunSpecs(t, "Prometheus Matcher Suite")
 }

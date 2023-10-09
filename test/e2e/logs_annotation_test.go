@@ -4,7 +4,6 @@ package e2e
 
 import (
 	"net/http"
-	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -13,20 +12,21 @@ import (
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 )
 
-var _ = Describe("Logs Keep Annotations", Label("logging"), func() {
+var _ = Describe("Logs Keep Annotations", Label("logging"), Ordered, func() {
 	const (
 		mockNs          = "log-keep-anno-mocks"
 		mockBackendName = "log-receiver-annotation"
 		logProducerName = "log-producer"
+		pipelineName    = "pipeline-annotation-test"
 	)
 	var telemetryExportURL string
 
@@ -41,7 +41,7 @@ var _ = Describe("Logs Keep Annotations", Label("logging"), func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-annotation-test")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitlog.NewPipeline("pipeline-annotation-test").
+		logPipeline := kitlog.NewPipeline(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
 			KeepAnnotations(true).
@@ -50,13 +50,24 @@ var _ = Describe("Logs Keep Annotations", Label("logging"), func() {
 
 		return objs
 	}
-	Context("When a logpipeline that keep annotations and drops labels exists", Ordered, func() {
+
+	Context("Before deploying a logpipeline", func() {
+		It("Should have a healthy webhook", func() {
+			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+		})
+	})
+
+	Context("When a logpipeline that keeps annotations and drops labels exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have a running logpipeline", func() {
+			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a log backend running", func() {
@@ -67,16 +78,25 @@ var _ = Describe("Logs Keep Annotations", Label("logging"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
 		})
 
-		It("Should collect only annotations and drop label", func() {
-			Consistently(func(g Gomega) {
-				time.Sleep(20 * time.Second)
+		It("Should have logs with annotations in the backend", func() {
+			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogs(WithKubernetesAnnotations("release", "v1.0.0")),
-					Not(ContainLogs(WithKubernetesLabels())),
-				)))
+				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(
+					WithKubernetesAnnotations(HaveKeyWithValue("release", "v1.0.0")))),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should have no logs with labels in the backend", func() {
+			Consistently(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(Not(ContainLd(ContainLogRecord(
+					WithKubernetesLabels(Not(BeEmpty()))))),
+				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})

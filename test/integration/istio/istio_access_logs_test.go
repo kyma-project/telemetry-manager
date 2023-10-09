@@ -14,15 +14,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 var _ = Describe("Istio Access Logs", Label("logging"), func() {
@@ -108,8 +107,9 @@ var _ = Describe("Istio Access Logs", Label("logging"), func() {
 				resp, err := proxyClient.Get(urls.MockBackendExport(mockBackendName))
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogs(WithAttributeKeys(istio.AccessLogAttributeKeys...)))))
+				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(
+					WithLogRecordAttrs(HaveKey(BeElementOf(istio.AccessLogAttributeKeys))),
+				))))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})

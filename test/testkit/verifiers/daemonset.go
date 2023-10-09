@@ -2,6 +2,7 @@ package verifiers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -24,7 +25,7 @@ func isDaemonSetReady(ctx context.Context, k8sClient client.Client, name types.N
 	var daemonSet appsv1.DaemonSet
 	err := k8sClient.Get(ctx, name, &daemonSet)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to get daemonset: %w", err)
 	}
 	listOptions := client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(daemonSet.Spec.Selector.MatchLabels),
