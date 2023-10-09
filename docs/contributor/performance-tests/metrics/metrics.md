@@ -54,15 +54,15 @@ For the test environment, the following setup was used:
               grpc: {}
               http: {}
         exporters:
-          logging:
-            loglevel: debug
+          debug:
+            verbosity: detailed
         service:
           pipelines:
             metrics:
               receivers:
                 - otlp
               exporters:
-                - logging
+                - debug
     ---
     apiVersion: apps/v1
     kind: Deployment
