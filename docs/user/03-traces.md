@@ -347,7 +347,7 @@ By default, the sampling rate is configured to 1 %. That means that only 1 trace
 >**TIP:** If you increase the sampling rate, you send more data your tracing backend and cause much higher network utilization in the cluster. 
 >To reduce costs and performance impacts in a production setup, a very low percentage of around 5% is recommended.
 
-To configure an "always-on" sampling, configure a sampling rate of 100%:
+To configure an "always-on" sampling, set the sampling rate to 100%:
 
 ```yaml
 apiVersion: telemetry.istio.io/v1alpha1
@@ -364,7 +364,7 @@ spec:
 
 #### **Namespaces or Workloads**
 
-Namespaces or workloads can selectively be configured with individual settings by placing further resources. If you don't want to report spans at all for a specific workload, activate the `disableSpanReporting` flag with the selector expression.
+If you need specific settings for individual Namespaces or workloads, place additional Telemetry resources. If you don't want to report spans at all for a specific workload, activate the `disableSpanReporting` flag with the selector expression.
 
 ```yaml
 apiVersion: telemetry.istio.io/v1alpha1
