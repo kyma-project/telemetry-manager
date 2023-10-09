@@ -1,6 +1,6 @@
 # Application Logs
 
-With application logs, you can debug an application and derive the internal state of an application. They can be very useful if the logs are emitted with the right severity level and context, and are essential for observing an application. However, they usually lack contextual information, such as where they were called from. 
+With application logs, you can debug an application and derive the internal state of an application. They can be very useful if the logs are emitted with the correct severity level and context, and are essential for observing an application. However, they usually lack contextual information, such as where they were called from.
 
 The Telemetry module provides the [Fluent Bit](https://fluentbit.io/) log agent for the collection and shipment of application logs of any container running in the Kyma runtime. You can configure the log agent with external systems using runtime configuration with a dedicated Kubernetes API (CRD) named `LogPipeline`. With the LogPipeline's HTTP output, you can natively integrate with vendors that support this output, or with any vendor using a [Fluentd integration](https://medium.com/hepsiburadatech/fluent-logging-architecture-fluent-bit-fluentd-elasticsearch-ca4a898e28aa). The support for the aimed vendor-neutral OTLP protocol will be [added in future](https://github.com/kyma-project/kyma/issues/16307). To overcome the missing flexibility of the current proprietary protocol, you can run the agent in the [unsupported mode](#unsupported-mode), leveraging the full vendor-specific output options of Fluent Bit. If you need advanced configuration options, you can also bring your own log agent.
 
@@ -176,89 +176,84 @@ Integrations into external systems usually need authentication details dealing w
 
 Using the **http** output definition and the **valueFrom** attribute, you can map Secret keys as in the following examples:
 
-<div tabs>
-  <details open>
-  <summary>
-    Mutual TLS
-  </summary>
+<!-- tabs:start -->
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: LogPipeline
-  metadata:
-    name: http-backend
-  spec:
-    output:
-      http:
-        dedot: false
-        port: "80"
-        uri: "/"
-        host:
+#### **Mutual TLS**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: http-backend
+spec:
+  output:
+    http:
+      dedot: false
+      port: "80"
+      uri: "/"
+      host:
+        valueFrom:
+            secretKeyRef:
+              name: http-backend-credentials
+              namespace: default
+              key: HTTP_ENDPOINT
+      tls:
+        cert:
           valueFrom:
-              secretKeyRef:
-                name: http-backend-credentials
-                namespace: default
-                key: HTTP_ENDPOINT
-        tls:
-          cert:
-            valueFrom:
-              secretKeyRef:
-                  name: http-backend-credentials
-                  namespace: default
-                  key: TLS_CERT
-          key:
-            valueFrom:
-              secretKeyRef:
-                  name: http-backend-credentials
-                  namespace: default
-                  key: TLS_KEY
+            secretKeyRef:
+              name: http-backend-credentials
+              namespace: default
+              key: TLS_CERT
+        key:
+          valueFrom:
+            secretKeyRef:
+              name: http-backend-credentials
+              namespace: default
+              key: TLS_KEY
   input:
     ...
   filters:
     ...
-  ```
-  </details>
-  <details>
-  <summary>
-    Basic Authentication
-  </summary>
+```
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: LogPipeline
-  metadata:
-    name: http-backend
-  spec:
-    output:
-      http:
-        dedot: false
-        port: "80"
-        uri: "/"
-        host:
-          valueFrom:
-              secretKeyRef:
-                name: http-backend-credentials
-                namespace: default
-                key: HTTP_ENDPOINT
-        user:
-          valueFrom:
-              secretKeyRef:
-                name: http-backend-credentials
-                namespace: default
-                key: HTTP_USER
-        password:
-          valueFrom:
-              secretKeyRef:
-                name: http-backend-credentials
-                namespace: default
-                key: HTTP_PASSWORD
-    input:
-      ...
-    filters:
-      ...
-  ```
-  </details>
-</div>
+#### **Basic Authentication**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: http-backend
+spec:
+  output:
+    http:
+      dedot: false
+      port: "80"
+      uri: "/"
+      host:
+        valueFrom:
+          secretKeyRef:
+            name: http-backend-credentials
+            namespace: default
+            key: HTTP_ENDPOINT
+      user:
+        valueFrom:
+          secretKeyRef:
+            name: http-backend-credentials
+            namespace: default
+            key: HTTP_USER
+      password:
+        valueFrom:
+          secretKeyRef:
+            name: http-backend-credentials
+            namespace: default
+            key: HTTP_PASSWORD
+  input:
+    ...
+  filters:
+    ...
+```
+
+<!-- tabs:end -->
 
 The related Secret must fulfill the referenced name and Namespace, and contain the mapped key as in the following example:
 
@@ -302,6 +297,7 @@ spec:
   filters:
     ...
 ```
+
 > **NOTE:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
 ### Step 4: Rotate the Secret
@@ -312,8 +308,10 @@ If you use a Secret owned by the [SAP BTP Operator](https://github.com/SAP/sap-b
 ### Step 5: Deploy the Pipeline
 
 To activate the constructed LogPipeline, follow these steps:
+
 1. Place the snippet in a file named for example `logpipeline.yaml`.
 2. Apply the resource file in your cluster:
+
     ```bash
     kubectl apply -f logpipeline.yaml
     ```
@@ -321,11 +319,12 @@ To activate the constructed LogPipeline, follow these steps:
 ### Result
 
 You activated a LogPipeline and logs start streaming to your backend. To verify that the pipeline is running, verify that the status of the LogPipeline in your cluster is `Ready`:
-    ```bash
-    kubectl get logpipeline
-    NAME              STATUS    AGE
-    backend           Ready     44s
-    ```
+
+  ```bash
+  kubectl get logpipeline
+  NAME              STATUS    AGE
+  backend           Ready     44s
+  ```
 
 ## Log record processing
 
@@ -444,7 +443,6 @@ The relevant metrics are:
 | telemetry_fsbuffer_usage_bytes | (bytes/1000000000) * 100 > 90 | The metric indicates the current size (in bytes) of the persistent log buffer running on each instance. If the size reaches 1GB, logs are dropped at that instance. At 90% buffer size, an alert should be raised. |
 | fluentbit_output_dropped_records_total| total[5m] > 0 | The metric indicates that the instance is actively dropping logs. That typically happens when a log message was rejected with a un-retryable status code like a 400. If logs are dropped, an alert should be raised. |
 
-
 ## Limitations
 
 Currently, there are the following limitations for LogPipelines that are served by Fluent Bit:
@@ -462,6 +460,7 @@ You cannot enable the following plugins, because they potentially harm the stabi
 - Rewrite_Tag Filter
 
 ### Reserved log attributes
+
 The log attribute named `kubernetes` is a special attribute that's enriched by the `kubernetes` filter. When you use that attribute as part of your structured log payload, the metadata enriched by the filter are overwritten by the payload data. Filters that rely on the original metadata might no longer work as expected.
 
 Furthermore, the `__kyma__` prefix is used internally by Telemetry Manager. When you use the prefix attribute in your log data, the data might be overwritten.
