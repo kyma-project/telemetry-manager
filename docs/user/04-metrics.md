@@ -393,18 +393,19 @@ The relevant metrics are:
 
 ## Limitations
 
-The metric gateway setup is based on the following assumptions:
+The metric agent setup is based on the following assumptions:
 
-- The collector has no autoscaling options and has a limited resource setup of 1 CPU and 1 GiB memory.
-- Batching is enabled, and a batch contains up to 512 metrics/batch.
+- The collector has no autoscaling options and has a limited resource setup of 1 CPU and 1.2 GiB memory.
+- Batching is enabled, and a batch contains up to 1024 metrics/batch.
 - A destination can be unavailable for up to 5 minutes without direct loss of metric data.
-- An average metric consists of 7 attributes with 64 character length.
+- An average metric consists of 20 metric data points and 10 labels.
+- Max sample limit is configured to 50.000 metric data points per scrape loop
 
 This leads to the following limitations:
 
 ### Throughput
 
-The maximum throughput is 4200 metric/sec ~= 15.000.000 metrics/hour. If more data must be ingested, it can be refused.
+The maximum throughput is 14K metric data points/sec ~= 50.000.000 metric data points/hour. If more data must be ingested, it can be refused. If a metric data endpoint emits more than 50.000 metric data points per scrape loop, all the data is refused by the agent.
 
 ### Unavailability of output
 
