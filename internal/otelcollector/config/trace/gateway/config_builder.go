@@ -100,11 +100,8 @@ func addComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otl
 	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
 	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
-	loggingExporterID := fmt.Sprintf("logging/%s", pipeline.Name)
-	cfg.Exporters[loggingExporterID] = Exporter{Logging: config.DefaultLoggingExporter()}
-
 	pipelineID := fmt.Sprintf("traces/%s", pipeline.Name)
-	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(otlpExporterID, loggingExporterID)
+	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(otlpExporterID)
 
 	return nil
 }
