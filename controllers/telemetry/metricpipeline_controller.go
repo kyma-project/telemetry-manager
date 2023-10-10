@@ -88,7 +88,7 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			builder.WithPredicates(setup.CreateOrDelete()),
 		).Watches(
 		&operatorv1alpha1.Telemetry{},
-		handler.EnqueueRequestsFromMapFunc(r.mapCRDChanges),
+		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
 	).Complete(r)
 }
