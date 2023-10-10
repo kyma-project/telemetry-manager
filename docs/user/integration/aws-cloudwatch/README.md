@@ -2,7 +2,7 @@
 
 ## Overview 
 
-The Kyma Telemetry module supports you in integrating with observability backends in a convenient way. This example outlines how to integrate with [AWS CloudWatch](https://aws.amazon.com/cloudwatch) as a backend. As CloudWatch is not supporting OTLP ingestion natively, it will require to deploy the [AWS Distro for OpenTelemetry](https://aws-otel.github.io) additionally. 
+The Kyma Telemetry module supports you in integrating with observability backends in a convenient way. The following example outlines how to integrate with [AWS CloudWatch](https://aws.amazon.com/cloudwatch) as a backend. Because CloudWatch does not support OTLP ingestion natively, you must deploy the [AWS Distro for OpenTelemetry](https://aws-otel.github.io) additionally. 
 
 ![overview](../../assets/cloudwatch-integration-diagram.svg)
 
@@ -10,55 +10,53 @@ The Kyma Telemetry module supports you in integrating with observability backend
 
 - Kyma as the target deployment environment
 - AWS account with permissions to create new users and security policies
-- Helm 3.x if you want to deploy open-telemetry sample application
 
 ## Installation
 
 ### Preparation
 
-1. Export your Namespace as a variable. Replace `{NAMESPACE}` placeholder in the following command and run it:
+1. Export your Namespace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
 
     ```bash
     export KYMA_NS="{NAMESPACE}"
     ```
-1. If you don't have created a Namespace yet, do it now:
+1. If you haven't created a Namespace yet, do it now:
     ```bash
     kubectl create namespace $KYMA_NS
     ```
 
 ### Create AWS IAM User
 
-Create an IAM User and assign to the specific IAM policies needed to let the AWS distro communicate with the AWS services
+Create an IAM user and assign it to the specific IAM policies that are needed to let the AWS distro communicate with the AWS services.
 
-Firstly, we need to create IAM policy for pushing our metrics:
-1. Go to the AWS searchbar, and search for IAM service
-1. Go to the `Policies` section. and click `Create policy`
-1. Remove the `Popular services` flag, and select `CloudWatch` service. 
-1. Now, select `GetMetricData`, `PutMetricData`, `ListMetrics` actions and click `Next`
-1. Enter the policy name and click `Create policy`
+First, create the IAM policy for pushing your metrics:
+1. In your AWS account, search for the IAM service, go to **Policies** > **Create policy**, and remove the `Popular services` flag.
+1. Select the **CloudWatch** service. 
+1. Select the actions **GetMetricData**, **PutMetricData**, **ListMetrics** and click **Next**.
+1. Enter the policy name and click **Create policy**.
 
-Now, we should create the policy for CloudWatch Logs:
-1. Repeat the first two steps you did while creating the policy for metrics
-1. Remove the `Popular services` flag, and select `CloudWatch Logs` service.
-1. Now, select `CreateLogGroup`, `CreateLogStream`, `PutLogEvents` actions and click `Next`
-1. Specify resource ARN for selected actions
-1. Enter the policy name and click `Create policy` 
+Next, create the policy for CloudWatch Logs:
+1. In your AWS account, search for the IAM service, go to **Policies** > **Create policy**, and remove the `Popular services` flag.
+1. Select the `CloudWatch Logs` service.
+1. Select the actions **CreateLogGroup**, **CreateLogStream**, **PutLogEvents** and click **Next**.
+1. Specify the resource ARN for the selected actions.
+1. Enter the policy name and click `Create policy`.
 
-After creating the IAM Policies, we can finally create an IAM User:
-1. Go to the `Users` section and click `Add user`
-1. Enter the user name and click next
-1. Click to the `Attach policies directly`
-1. Select two new policies you added on previous steps as well as the `AWSXrayWriteOnlyAccess`
-1. Click `Next` and then `Create User`
-1. Open the new user
-1. Go to the `Security credentials` tab and click `Create access key`
-1. Select `Application running outside AWS` and then click `Next`
-1. Describe the purpose of this access key and click `Create access key`
-1. Now copy and save `Access key` and `Secret access key`
+After creating the IAM Policies, create an IAM user:
+1. In your AWS account, go to **Users** > **Add user**.
+1. Enter the user name and click **Next**.
+1. Select **Attach policies directly**.
+1. Select the two policies you created previously, as well as the policy `AWSXrayWriteOnlyAccess`.
+1. Click **Next** > **Create User**.
+1. Open the new user.
+1. Under **Security credentials**, click **Create access key**.
+1. Select **Application running outside AWS** and then click **Next**.
+1. Describe the purpose of this access key and click **Create access key**.
+1. Copy and save the access key and the Secret access key.
 
 ### Create a secret with AWS Credentials
 
-In order to connect the AWS Distro to the AWS services we need to define place the credentials of the created user into the cluster. 
+To connect the AWS Distro to the AWS services, put the credentials of the created IAM user into the Kyma cluster. 
 
 1. Create the secret by using the following command. Replace the `{ACCESS_KEY}` and `{SECRET_ACCESS_KEY}` to your access keys, and `{AWS_REGION}` with the AWS region you want to use
     ```bash
