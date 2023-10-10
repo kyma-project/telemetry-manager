@@ -58,73 +58,72 @@ After creating the IAM Policies, create an IAM user:
 
 To connect the AWS Distro to the AWS services, put the credentials of the created IAM user into the Kyma cluster. 
 
-1. Create the secret by using the following command. Replace the `{ACCESS_KEY}` and `{SECRET_ACCESS_KEY}` to your access keys, and `{AWS_REGION}` with the AWS region you want to use
+1. Create the Secret with kubectl. In the following command, replace the `{ACCESS_KEY}` and `{SECRET_ACCESS_KEY}` to your access keys, and `{AWS_REGION}` with the AWS region you want to use:
     ```bash
     kubectl create secret generic aws-credentials --from-literal=AWS_ACCESS_KEY_ID={ACCESS_KEY} --from-literal=AWS_SECRET_ACCESS_KEY={SECRET_ACCESS_KEY} --from-literal=AWS_REGION={AWS_REGION}
     ```
 
 ### Deploy the AWS Distro
 
-After creating a secret and configuring the required users in AWS, we finally can deploy the AWS Distro. That is a specific distribution of an otel-collector which will take care of the conversion and dispatching of the OTLP based metrics and trace data in the cluster, to the AWS specific format and protocol.
+After creating a Secret and configuring the required users in AWS, deploy the AWS Distro. It is a specific distribution of an OTel collector, which converts and dispatches the OTLP-based metrics and trace data in the cluster to the AWS-specific format and protocol.
 
-1. Deploy the AWS Distro by calling 
+1. Deploy the AWS Distro:
     ```bash
     kubectl -n $KYMA_NS apply -f ./resources/aws-otel.yaml
     ```
 
-### Setup Kyma Telemetry
+### Set up Kyma Telemetry
 
-Enable ingestion of the signals from your workloads, using the available features of the Kyma Telemetry module:
+Use the Kyma Telemetry module to enable ingestion of the signals from your workloads:
 
-1. Enable a LogPipeline which is shipping container logs of all workload directly to the AWS X-Ray service, leveraging the same secret as the AWS Distro is using, bypassing the AWS Distro. As logs are not yet supported by the AWS Distro and the Kyma feature is not based on OTLP yet, the integration here is not consistent with the rest for now. For that replace `{NAMESPACE}` and enable the LogPipeline by running:
+1. Enable a LogPipeline that ships container logs of all workloads directly to the AWS X-Ray service. Use the same Secret as for the AWS Distro, bypassing the AWS Distro. Replace the `{NAMESPACE}` placeholder in the following command and run it:
     ```bash
     kubectl apply -f ./resources/logpipeline.yaml
     ```
-1. Enable a TracePipeline in the cluster so that all components have a well-defined OTLP based push URL in the cluster to send trace data to. For that replace `{NAMESPACE}` and apply a TracePipeline by calling 
+     > **NOTE:** For now, the logging integration is inconsistent with the metrics and tracing integration. It will be updated to the common approach as soon as the AWS Distro supports logs, and the Kyma logging module uses OTLP.
+1. Enable a TracePipeline in the cluster so that all components have a well-defined OTLP-based push URL in the cluster to send trace data to. Replace the `{NAMESPACE}` placeholder in the following command and run it:
     ```bash
     kubectl apply -f ./resources/tracepipeline.yaml
     ```
-1. Enable a MetricPipeline in the cluster so that all components have a well-defined OTLP based push URL in the cluster to send metric data to. Also it will activate annotation based metric scraping for workloads. For that replace `{NAMESPACE}` and apply a MetricPipeline by calling
+1. Enable a MetricPipeline in the cluster so that all components have a well-defined OTLP-based push URL in the cluster to send metric data to. Also, the MetricPipeline activates annotation-based metric scraping for workloads. Replace the `{NAMESPACE}` placeholder in the following command and run it:
     ```bash
     kubectl apply -f ./resources/metricpipeline.yaml
     ```
 
-## Verifying the results by deploying sample apps
+## Verify the results by deploying sample apps
 
-In order to verify the results of CloudWatch and X-Ray we will deploy sample applications for each service accordingly.
+To verify the results of CloudWatch and X-Ray, deploy sample applications for each service.
 
-### Verifying CloudWatch traces, logs, and metrics arrival 
+### Verify CloudWatch traces, logs, and metrics arrival 
 
-In order to deploy sample app which generates traces that we took from [aws-otel tutorial](https://docs.aws.amazon.com/eks/latest/userguide/sample-app.html):
-1. Deploy traffic generator app
+The sample app that generates traces in the following example is documented by AWS in their documentation: [Deploy a sample application to test the AWS Distro for OpenTelemetry Collector](https://docs.aws.amazon.com/eks/latest/userguide/sample-app.html).
+1. Deploy the traffic generator app:
     ```bash
     kubectl apply -n ${KYMA_NS} -f ./sample-app/traffic-generator.yaml
     ```
-1. Deploy an app using 
+1. Deploy an example app:
     ```bash
     kubectl apply -n ${KYMA_NS} -f ./sample-app/deployment.yaml
     ```
-1. Port-forward an application in order to be able to access it by calling 
+1. To access the application, port-forward it: 
     ```bash
     kubectl -n ${KYMA_NS} port-forward svc/sample-app 4567
     ```
-1. Make some requests to the application like `localhost:4567` or `localhost:4567/outgoing-http-call`
-1. Go to the `AWS X-Ray` tab, and check out the `Traces` section
-1. To verify the logs, you can go to `AWS CloudWatch`, then open the `Log groups` and select your cluster. Now, you can open `aws-integration.sample-app-*` and check out the logs of your application.
-1. To verify metrics, you can go to the `All metrics`, and open the `aws-integration/otel-collector`
+1. Make some requests to the application, for example, `localhost:4567` or `localhost:4567/outgoing-http-call`.
+1. Go to **AWS X-Ray** > **Traces**.
+1. To verify the logs, go to **AWS CloudWatch** > **Log groups** and select your cluster. Now, you can open `aws-integration.sample-app-*` and view the logs of your application.
+1. To verify metrics, go to **All metrics** and open the `aws-integration/otel-collector`.
 
-### Creating the dashboard to observe incoming metrics and logs
+### Create the dashboard to observe incoming metrics and logs
 
-In order to create a dashboard, you should:
-1. Go to the `Dashboards` section
-1. Click `Create dashboard` and enter the name
-1. Select the widget type and click `Next`
-1. Select what you want to observe, either metrics or logs, and click `Next`
-1. Decide on which metrics and logs to include and click `Create widget`
+1. Go to **Dashboards** > **Create dashboard** and enter the name.
+1. Select the widget type and click **Next**.
+1. Select what you want to observe, either metrics or logs, and click **Next**.
+1. Decide which metrics or logs to include and click **Create widget**.
 
 ## AWS OTEL Collector and TraceId specifics
 
-Currently, there is no mechanism to properly convert TraceId from W3C context into the AWS TraceId format. Because of that, your application should emit traces with ids of the format compatible with AWS TraceId. In order to do that, you can use one of the available ADOT(AWS Distro for OpenTelemetry) SDKs:
+Currently, there is no mechanism to convert TraceId from W3C context into the AWS TraceId format. Because of that, your application should emit traces with IDs of the format compatible with AWS TraceId. To do that, you can use one of the available ADOT(AWS Distro for OpenTelemetry) SDKs:
 * [Go](https://aws-otel.github.io/docs/getting-started/go-sdk)
 * [Java](https://aws-otel.github.io/docs/getting-started/java-sdk)
 * [JavaScript](https://aws-otel.github.io/docs/getting-started/javascript-sdk)
