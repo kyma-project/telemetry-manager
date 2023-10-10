@@ -19,6 +19,7 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -85,7 +86,11 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&apiextensionsv1.CustomResourceDefinition{},
 			handler.EnqueueRequestsFromMapFunc(r.mapCRDChanges),
 			builder.WithPredicates(setup.CreateOrDelete()),
-		).Complete(r)
+		).Watches(
+		&operatorv1alpha1.Telemetry{},
+		handler.EnqueueRequestsFromMapFunc(r.mapCRDChanges),
+		builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
+	).Complete(r)
 }
 
 func (r *MetricPipelineReconciler) mapSecret(ctx context.Context, object client.Object) []reconcile.Request {
@@ -133,6 +138,31 @@ func (r *MetricPipelineReconciler) mapCRDChanges(ctx context.Context, object cli
 
 		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
 		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("CRD UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
+
+	}
+	return requests
+}
+
+func (r *MetricPipelineReconciler) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	var pipelines telemetryv1alpha1.MetricPipelineList
+	var requests []reconcile.Request
+	err := r.List(ctx, &pipelines)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Telemetry UpdateEvent: fetching MetricPipelineList failed!", err.Error())
+		return requests
+	}
+
+	telemetry, ok := object.(*operatorv1alpha1.Telemetry)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(errIncorrectCRDObject, "Telemetry object of incompatible type")
+		return requests
+	}
+	logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Telemetry UpdateEvent: handling Telemetry: %s", telemetry.Name))
+	for i := range pipelines.Items {
+		var pipeline = pipelines.Items[i]
+
+		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Telemetry UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
 
 	}
 	return requests

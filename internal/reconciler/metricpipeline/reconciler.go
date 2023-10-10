@@ -3,6 +3,7 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -291,5 +292,14 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 }
 
 func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
+	var allTelemetryList operatorv1alpha1.TelemetryList
+	var err error
+	if err = r.List(ctx, &allTelemetryList); err != nil {
+		fmt.Errorf("failed to list metric pipelines: %w", err)
+		return 2
+	}
+	for i := range allTelemetryList.Items {
+		return allTelemetryList.Items[i].Spec.Metric.Gateway.Scaling.Replicas
+	}
 	return 2
 }
