@@ -295,7 +295,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	var allTelemetryList operatorv1alpha1.TelemetryList
 	var err error
 	if err = r.List(ctx, &allTelemetryList); err != nil {
-		fmt.Errorf("failed to list metric pipelines: %w", err)
+		fmt.Errorf("failed to list telemetry: %w", err)
 		return 2
 	}
 	for i := range allTelemetryList.Items {
