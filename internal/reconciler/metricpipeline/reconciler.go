@@ -199,7 +199,11 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	}
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	deployment := otelgatewayresources.MakeDeployment(r.config.Gateway, configHash, len(allPipelines),
+	scaling := otelgatewayresources.Scaling{
+		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
+		ResourceRequirementsMultiplier: len(allPipelines),
+	}
+	deployment := otelgatewayresources.MakeDeployment(r.config.Gateway, configHash, scaling,
 		config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName)
 	if err = kubernetes.CreateOrUpdateDeployment(ctx, ownerRefSetter, deployment); err != nil {
 		return fmt.Errorf("failed to create otel collector deployment: %w", err)
@@ -284,4 +288,8 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	}
 
 	return nil
+}
+
+func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
+	return 2
 }
