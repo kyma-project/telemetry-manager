@@ -43,7 +43,12 @@ type ServiceConfig struct {
 }
 
 type Scaling struct {
-	Replicas                       int32
+	// Replicas specifies the desired number of gateway replicas.
+	Replicas int32
+
+	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
+	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
+	// A value of 1 will apply the base limits, values greater than 1 will proportionally increase those limits.
 	ResourceRequirementsMultiplier int
 }
 
@@ -245,7 +250,7 @@ func MakeOpenCensusService(config Config) *corev1.Service {
 					Name:       "http-opencensus",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       ports.OpenCensus,
-					TargetPort: intstr.FromInt32(ports.OpenCensus),
+					TargetPort: intstr.FromInt(ports.OpenCensus),
 				},
 			},
 			Selector:        labels,
