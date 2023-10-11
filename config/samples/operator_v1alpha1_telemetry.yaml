@@ -8,3 +8,11 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: telemetry-operator
   name: default
+spec:
+  metric:
+    gateway:
+      scaling:
+        strategy: static
+        static:
+          replicas: 4
+

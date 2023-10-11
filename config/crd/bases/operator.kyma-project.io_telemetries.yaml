@@ -49,32 +49,38 @@ spec:
                 properties:
                   gateway:
                     properties:
-                      static:
+                      scaling:
                         properties:
-                          replicas:
-                            format: int32
-                            type: integer
+                          static:
+                            properties:
+                              replicas:
+                                format: int32
+                                type: integer
+                            type: object
+                          strategy:
+                            enum:
+                            - static
+                            type: string
                         type: object
-                      strategy:
-                        enum:
-                        - static
-                        type: string
                     type: object
                 type: object
               trace:
                 properties:
                   gateway:
                     properties:
-                      static:
+                      scaling:
                         properties:
-                          replicas:
-                            format: int32
-                            type: integer
+                          static:
+                            properties:
+                              replicas:
+                                format: int32
+                                type: integer
+                            type: object
+                          strategy:
+                            enum:
+                            - static
+                            type: string
                         type: object
-                      strategy:
-                        enum:
-                        - static
-                        type: string
                     type: object
                 type: object
             type: object

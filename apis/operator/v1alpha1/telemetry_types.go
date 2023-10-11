@@ -37,7 +37,7 @@ const (
 	// usually it means that user interaction is required.
 	StateWarning State = "Warning"
 
-	StrategyStatic Strategy = "static"
+	ScalingStrategyStatic Strategy = "static"
 )
 
 // TelemetrySpec defines the desired state of Telemetry
@@ -51,7 +51,7 @@ type TelemetryMetric struct {
 }
 
 type TelemetryMetricGateway struct {
-	Scaling `json:",inline"`
+	Scaling Scaling `json:"scaling,omitempty"`
 }
 
 type TelemetryTrace struct {
@@ -59,14 +59,14 @@ type TelemetryTrace struct {
 }
 
 type TelemetryTraceGateway struct {
-	Scaling `json:",inline"`
+	Scaling Scaling `json:"scaling,omitempty"`
 }
 
 type Scaling struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	ScalingStrategy `json:",inline"`
-	StaticScaling   `json:"static,omitempty"`
+	StaticScaling   StaticScaling `json:"static,omitempty"`
 }
 
 type StaticScaling struct {

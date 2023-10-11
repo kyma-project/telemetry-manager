@@ -42,6 +42,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
+const defaultReplicaCount int32 = 2
+
 type Config struct {
 	Gateway                otelgatewayresources.Config
 	OverridesConfigMapName types.NamespacedName
@@ -253,10 +255,18 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	var err error
 	if err = r.List(ctx, &allTelemetryList); err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
-		return 2
+		return defaultReplicaCount
 	}
 	for i := range allTelemetryList.Items {
-		return allTelemetryList.Items[i].Spec.Metric.Gateway.Scaling.Replicas
+		telemetry := allTelemetryList.Items[i]
+		if &telemetry.Spec != nil && &telemetry.Spec.Trace != nil &&
+			&telemetry.Spec.Trace.Gateway != nil && &telemetry.Spec.Trace.Gateway.Scaling != nil &&
+			&telemetry.Spec.Trace.Gateway.Scaling.StaticScaling != nil {
+			replicas := allTelemetryList.Items[i].Spec.Trace.Gateway.Scaling.StaticScaling.Replicas
+			if replicas > 0 {
+				return replicas
+			}
+		}
 	}
-	return 2
+	return defaultReplicaCount
 }
