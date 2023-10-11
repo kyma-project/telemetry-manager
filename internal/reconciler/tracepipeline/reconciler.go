@@ -258,14 +258,9 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 		return defaultReplicaCount
 	}
 	for i := range allTelemetryList.Items {
-		telemetry := allTelemetryList.Items[i]
-		if &telemetry.Spec != nil && &telemetry.Spec.Trace != nil &&
-			&telemetry.Spec.Trace.Gateway != nil && &telemetry.Spec.Trace.Gateway.Scaling != nil &&
-			&telemetry.Spec.Trace.Gateway.Scaling.StaticScaling != nil {
-			replicas := allTelemetryList.Items[i].Spec.Trace.Gateway.Scaling.StaticScaling.Replicas
-			if replicas > 0 {
-				return replicas
-			}
+		replicas := allTelemetryList.Items[i].Spec.Trace.Gateway.Scaling.StaticScaling.Replicas
+		if replicas > 0 {
+			return replicas
 		}
 	}
 	return defaultReplicaCount
