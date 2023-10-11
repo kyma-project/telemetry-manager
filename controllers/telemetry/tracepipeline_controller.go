@@ -83,7 +83,8 @@ func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&operatorv1alpha1.Telemetry{},
 			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-			builder.WithPredicates(setup.CreateOrUpdateOrDelete())).Complete(r)
+			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
+		).Complete(r)
 }
 
 func (r *TracePipelineReconciler) mapSecret(ctx context.Context, object client.Object) []reconcile.Request {

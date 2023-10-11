@@ -57,6 +57,21 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 <!-- TABLE-START -->
 ### Telemetry.operator.kyma-project.io/v1alpha1
 
+**Spec:**
+
+| Parameter | Type | Description |
+| ---- | ----------- | ---- |
+| **metric**  | object |  |
+| **metric.&#x200b;gateway**  | object |  |
+| **metric.&#x200b;gateway.&#x200b;static**  | object |  |
+| **metric.&#x200b;gateway.&#x200b;static.&#x200b;replicas**  | integer |  |
+| **metric.&#x200b;gateway.&#x200b;strategy** (required) | string |  |
+| **trace**  | object |  |
+| **trace.&#x200b;gateway**  | object |  |
+| **trace.&#x200b;gateway.&#x200b;static**  | object |  |
+| **trace.&#x200b;gateway.&#x200b;static.&#x200b;replicas**  | integer |  |
+| **trace.&#x200b;gateway.&#x200b;strategy** (required) | string |  |
+
 **Status:**
 
 | Parameter | Type | Description |

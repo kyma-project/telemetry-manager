@@ -86,11 +86,12 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&apiextensionsv1.CustomResourceDefinition{},
 			handler.EnqueueRequestsFromMapFunc(r.mapCRDChanges),
 			builder.WithPredicates(setup.CreateOrDelete()),
-		).Watches(
-		&operatorv1alpha1.Telemetry{},
-		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-		builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
-	).Complete(r)
+		).
+		Watches(
+			&operatorv1alpha1.Telemetry{},
+			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
+			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
+		).Complete(r)
 }
 
 func (r *MetricPipelineReconciler) mapSecret(ctx context.Context, object client.Object) []reconcile.Request {
