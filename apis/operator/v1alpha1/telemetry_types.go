@@ -63,9 +63,9 @@ type Scaling struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=static
-	Strategy ScalingStrategyType `json:"strategy,omitempty"`
+	Type ScalingStrategyType `json:"type,omitempty"`
 
-	// Static scaling config params. Present only if Strategy =
+	// Static scaling config params. Present only if Type =
 	// StaticScalingStrategyType.
 	// +optional
 	Static *StaticScaling `json:"static,omitempty"`

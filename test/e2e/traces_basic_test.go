@@ -99,7 +99,12 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas = 4
+				telemetry.Spec.Trace.Gateway.Scaling = v1alpha1.Scaling{
+					Type: v1alpha1.StaticScalingStrategyType,
+					Static: &v1alpha1.StaticScaling{
+						Replicas: 4,
+					},
+				}
 				err = k8sClient.Update(ctx, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 				return telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas
@@ -121,7 +126,12 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas = 2
+				telemetry.Spec.Trace.Gateway.Scaling = v1alpha1.Scaling{
+					Type: v1alpha1.StaticScalingStrategyType,
+					Static: &v1alpha1.StaticScaling{
+						Replicas: 2,
+					},
+				}
 				err = k8sClient.Update(ctx, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 				return telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas

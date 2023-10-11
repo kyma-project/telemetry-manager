@@ -258,7 +258,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	}
 	for i := range telemetries.Items {
 		scaling := telemetries.Items[i].Spec.Metric.Gateway.Scaling
-		if scaling.Strategy == operatorv1alpha1.StaticScalingStrategyType && scaling.Static != nil && scaling.Static.Replicas > 0 {
+		if scaling.Type == operatorv1alpha1.StaticScalingStrategyType && scaling.Static != nil && scaling.Static.Replicas > 0 {
 			return scaling.Static.Replicas
 		}
 	}
