@@ -65,12 +65,12 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **metric.&#x200b;gateway**  | object |  |
 | **metric.&#x200b;gateway.&#x200b;static**  | object |  |
 | **metric.&#x200b;gateway.&#x200b;static.&#x200b;replicas**  | integer |  |
-| **metric.&#x200b;gateway.&#x200b;strategy** (required) | string |  |
+| **metric.&#x200b;gateway.&#x200b;strategy**  | string |  |
 | **trace**  | object |  |
 | **trace.&#x200b;gateway**  | object |  |
 | **trace.&#x200b;gateway.&#x200b;static**  | object |  |
 | **trace.&#x200b;gateway.&#x200b;static.&#x200b;replicas**  | integer |  |
-| **trace.&#x200b;gateway.&#x200b;strategy** (required) | string |  |
+| **trace.&#x200b;gateway.&#x200b;strategy**  | string |  |
 
 **Status:**
 

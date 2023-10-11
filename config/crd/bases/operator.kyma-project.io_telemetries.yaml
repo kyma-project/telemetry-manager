@@ -59,8 +59,6 @@ spec:
                         enum:
                         - static
                         type: string
-                    required:
-                    - strategy
                     type: object
                 type: object
               trace:
@@ -77,8 +75,6 @@ spec:
                         enum:
                         - static
                         type: string
-                    required:
-                    - strategy
                     type: object
                 type: object
             type: object

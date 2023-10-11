@@ -63,7 +63,9 @@ type TelemetryTraceGateway struct {
 }
 
 type Scaling struct {
-	ScalingStrategy `json:",inline"`
+	// +optional
+	// +kubebuilder:validation:Optional
+	ScalingStrategy `json:",inline,omitempty"`
 	StaticScaling   `json:"static,omitempty"`
 }
 
@@ -73,7 +75,7 @@ type StaticScaling struct {
 
 type ScalingStrategy struct {
 	// +kubebuilder:validation:Enum=static
-	Strategy Strategy `json:"strategy"`
+	Strategy Strategy `json:"strategy,omitempty"`
 }
 
 // TelemetryStatus defines the observed state of Telemetry
