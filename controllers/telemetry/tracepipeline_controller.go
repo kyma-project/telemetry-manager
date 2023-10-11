@@ -113,26 +113,31 @@ func (r *TracePipelineReconciler) mapSecret(ctx context.Context, object client.O
 }
 
 func (r *TracePipelineReconciler) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	_, ok := object.(*operatorv1alpha1.Telemetry)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+	return requests
+}
+
+func (r *TracePipelineReconciler) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
 	var pipelines telemetryv1alpha1.TracePipelineList
 	var requests []reconcile.Request
 	err := r.List(ctx, &pipelines)
 	if err != nil {
-		logf.FromContext(ctx).Error(err, "Telemetry UpdateEvent: fetching TracePipelineList failed!", err.Error())
-		return requests
+		return nil, fmt.Errorf("failed to list TracePipelines: %w", err)
 	}
 
-	telemetry, ok := object.(*operatorv1alpha1.Telemetry)
-	if !ok {
-		logf.FromContext(ctx).V(1).Error(errIncorrectCRDObject, "Telemetry object of incompatible type")
-		return requests
-	}
-	logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Telemetry UpdateEvent: handling Telemetry: %s", telemetry.Name))
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]
-
 		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Telemetry UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
-
 	}
-	return requests
+
+	return requests, nil
 }

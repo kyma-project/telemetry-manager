@@ -120,51 +120,45 @@ func (r *MetricPipelineReconciler) mapSecret(ctx context.Context, object client.
 }
 
 func (r *MetricPipelineReconciler) mapCRDChanges(ctx context.Context, object client.Object) []reconcile.Request {
-	var pipelines telemetryv1alpha1.MetricPipelineList
-	var requests []reconcile.Request
-	err := r.List(ctx, &pipelines)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "CRD UpdateEvent: fetching MetricPipelineList failed!", err.Error())
-		return requests
-	}
-
-	crd, ok := object.(*apiextensionsv1.CustomResourceDefinition)
+	_, ok := object.(*apiextensionsv1.CustomResourceDefinition)
 	if !ok {
-		logf.FromContext(ctx).V(1).Error(errIncorrectCRDObject, "CRD object of incompatible type")
-		return requests
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected CRD")
+		return nil
 	}
-	logf.FromContext(ctx).V(1).Info(fmt.Sprintf("CRD UpdateEvent: handling Secret: %s", crd.Name))
-	for i := range pipelines.Items {
-		var pipeline = pipelines.Items[i]
 
-		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("CRD UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
-
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
 	}
 	return requests
 }
 
 func (r *MetricPipelineReconciler) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	_, ok := object.(*operatorv1alpha1.Telemetry)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+	return requests
+}
+
+func (r *MetricPipelineReconciler) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
 	var pipelines telemetryv1alpha1.MetricPipelineList
 	var requests []reconcile.Request
 	err := r.List(ctx, &pipelines)
 	if err != nil {
-		logf.FromContext(ctx).Error(err, "Telemetry UpdateEvent: fetching MetricPipelineList failed!", err.Error())
-		return requests
+		return nil, fmt.Errorf("failed to list MetricPipelines: %w", err)
 	}
 
-	telemetry, ok := object.(*operatorv1alpha1.Telemetry)
-	if !ok {
-		logf.FromContext(ctx).V(1).Error(errIncorrectCRDObject, "Telemetry object of incompatible type")
-		return requests
-	}
-	logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Telemetry UpdateEvent: handling Telemetry: %s", telemetry.Name))
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]
-
 		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Telemetry UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
-
 	}
-	return requests
+
+	return requests, nil
 }
