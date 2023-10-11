@@ -29,6 +29,7 @@ func TestReceivers(t *testing.T) {
 
 		require.NotNil(t, collectorConfig.Receivers.KubeletStats)
 		require.Equal(t, "serviceAccount", collectorConfig.Receivers.KubeletStats.AuthType)
+		require.Equal(t, true, collectorConfig.Receivers.KubeletStats.InsecureSkipVerify)
 		require.Equal(t, "https://${env:MY_NODE_NAME}:10250", collectorConfig.Receivers.KubeletStats.Endpoint)
 		require.Equal(t, false, collectorConfig.Receivers.KubeletStats.InsecureSkipVerify)
 
