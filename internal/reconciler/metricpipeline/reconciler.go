@@ -3,7 +3,6 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -13,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
@@ -295,7 +295,7 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	var allTelemetryList operatorv1alpha1.TelemetryList
 	var err error
 	if err = r.List(ctx, &allTelemetryList); err != nil {
-		fmt.Errorf("failed to list telemetry: %w", err)
+		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
 		return 2
 	}
 	for i := range allTelemetryList.Items {
