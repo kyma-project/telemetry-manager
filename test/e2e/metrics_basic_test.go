@@ -87,10 +87,10 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				telemetry.Spec.Metric.Gateway.Scaling.StaticScaling.Replicas = 4
+				telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas = 4
 				err = k8sClient.Update(ctx, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
-				return telemetry.Spec.Metric.Gateway.Scaling.StaticScaling.Replicas
+				return telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(4)))
 		})
 
@@ -109,10 +109,15 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				telemetry.Spec.Metric.Gateway.Scaling.StaticScaling.Replicas = 2
+				telemetry.Spec.Metric.Gateway.Scaling = v1alpha1.Scaling{
+					Strategy: v1alpha1.StaticScalingStrategyType,
+					Static: &v1alpha1.StaticScaling{
+						Replicas: 2,
+					},
+				}
 				err = k8sClient.Update(ctx, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
-				return telemetry.Spec.Metric.Gateway.Scaling.StaticScaling.Replicas
+				return telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 

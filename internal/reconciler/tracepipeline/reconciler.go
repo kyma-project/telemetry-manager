@@ -251,16 +251,15 @@ func makeNetworkPolicyPorts() []intstr.IntOrString {
 }
 
 func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
-	var allTelemetryList operatorv1alpha1.TelemetryList
-	var err error
-	if err = r.List(ctx, &allTelemetryList); err != nil {
+	var telemetries operatorv1alpha1.TelemetryList
+	if err := r.List(ctx, &telemetries); err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
 		return defaultReplicaCount
 	}
-	for i := range allTelemetryList.Items {
-		replicas := allTelemetryList.Items[i].Spec.Trace.Gateway.Scaling.StaticScaling.Replicas
-		if replicas > 0 {
-			return replicas
+	for i := range telemetries.Items {
+		scaling := telemetries.Items[i].Spec.Metric.Gateway.Scaling
+		if scaling.Strategy == operatorv1alpha1.StaticScalingStrategyType && scaling.Static != nil && scaling.Static.Replicas > 0 {
+			return scaling.Static.Replicas
 		}
 	}
 	return defaultReplicaCount

@@ -22,8 +22,6 @@ import (
 
 type State string
 
-type Strategy string
-
 // Valid Module CR States.
 const (
 	// StateReady signifies Module CR is Ready and has been installed successfully.
@@ -36,48 +34,52 @@ const (
 	// StateWarning signifies specified resource has been deployed, but cannot be used due to misconfiguration,
 	// usually it means that user interaction is required.
 	StateWarning State = "Warning"
-
-	ScalingStrategyStatic Strategy = "static"
 )
 
 // TelemetrySpec defines the desired state of Telemetry
 type TelemetrySpec struct {
-	Trace  TelemetryTrace  `json:"trace,omitempty"`
-	Metric TelemetryMetric `json:"metric,omitempty"`
+	Trace  TraceSpec  `json:"trace,omitempty"`
+	Metric MetricSpec `json:"metric,omitempty"`
 }
 
-type TelemetryMetric struct {
-	Gateway TelemetryMetricGateway `json:"gateway,omitempty"`
+type MetricSpec struct {
+	Gateway MetricGatewaySpec `json:"gateway,omitempty"`
 }
 
-type TelemetryMetricGateway struct {
+type MetricGatewaySpec struct {
 	Scaling Scaling `json:"scaling,omitempty"`
 }
 
-type TelemetryTrace struct {
-	Gateway TelemetryTraceGateway `json:"gateway,omitempty"`
+type TraceSpec struct {
+	Gateway TraceGatewaySpec `json:"gateway,omitempty"`
 }
 
-type TelemetryTraceGateway struct {
+type TraceGatewaySpec struct {
 	Scaling Scaling `json:"scaling,omitempty"`
 }
 
 type Scaling struct {
-	// +optional
-	// +kubebuilder:validation:Optional
-	ScalingStrategy `json:",inline"`
-	StaticScaling   StaticScaling `json:"static,omitempty"`
-}
-
-type StaticScaling struct {
-	Replicas int32 `json:"replicas,omitempty"`
-}
-
-type ScalingStrategy struct {
+	// Type of scaling strategy. Default is Static.
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=static
-	Strategy Strategy `json:"strategy,omitempty"`
+	Strategy ScalingStrategyType `json:"strategy,omitempty"`
+
+	// Static scaling config params. Present only if Strategy =
+	// StaticScalingStrategyType.
+	// +optional
+	Static *StaticScaling `json:"static,omitempty"`
+}
+
+// +enum
+type ScalingStrategyType string
+
+const (
+	StaticScalingStrategyType ScalingStrategyType = "Static"
+)
+
+type StaticScaling struct {
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 // TelemetryStatus defines the observed state of Telemetry

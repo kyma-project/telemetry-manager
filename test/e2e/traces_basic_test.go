@@ -99,10 +99,10 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				telemetry.Spec.Trace.Gateway.Scaling.StaticScaling.Replicas = 4
+				telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas = 4
 				err = k8sClient.Update(ctx, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
-				return telemetry.Spec.Trace.Gateway.Scaling.StaticScaling.Replicas
+				return telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(4)))
 		})
 
@@ -121,10 +121,10 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				telemetry.Spec.Trace.Gateway.Scaling.StaticScaling.Replicas = 2
+				telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas = 2
 				err = k8sClient.Update(ctx, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
-				return telemetry.Spec.Trace.Gateway.Scaling.StaticScaling.Replicas
+				return telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 

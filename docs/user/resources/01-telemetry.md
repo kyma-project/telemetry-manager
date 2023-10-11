@@ -64,15 +64,15 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **metric**  | object |  |
 | **metric.&#x200b;gateway**  | object |  |
 | **metric.&#x200b;gateway.&#x200b;scaling**  | object |  |
-| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object |  |
+| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static scaling config params. Present only if Strategy = StaticScalingStrategyType. |
 | **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer |  |
-| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;strategy**  | string |  |
+| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;strategy**  | string | Type of scaling strategy. Default is Static. |
 | **trace**  | object |  |
 | **trace.&#x200b;gateway**  | object |  |
 | **trace.&#x200b;gateway.&#x200b;scaling**  | object |  |
-| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object |  |
+| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static scaling config params. Present only if Strategy = StaticScalingStrategyType. |
 | **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer |  |
-| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;strategy**  | string |  |
+| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;strategy**  | string | Type of scaling strategy. Default is Static. |
 
 **Status:**
 

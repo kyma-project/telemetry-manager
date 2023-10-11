@@ -52,12 +52,15 @@ spec:
                       scaling:
                         properties:
                           static:
+                            description: Static scaling config params. Present only
+                              if Strategy = StaticScalingStrategyType.
                             properties:
                               replicas:
                                 format: int32
                                 type: integer
                             type: object
                           strategy:
+                            description: Type of scaling strategy. Default is Static.
                             enum:
                             - static
                             type: string
@@ -71,12 +74,15 @@ spec:
                       scaling:
                         properties:
                           static:
+                            description: Static scaling config params. Present only
+                              if Strategy = StaticScalingStrategyType.
                             properties:
                               replicas:
                                 format: int32
                                 type: integer
                             type: object
                           strategy:
+                            description: Type of scaling strategy. Default is Static.
                             enum:
                             - static
                             type: string
