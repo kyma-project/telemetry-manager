@@ -314,3 +314,39 @@ $(KYMA):
 	$(if $(KYMA_FILENAME),,$(call os_error, ${OS_TYPE}, ${OS_ARCH}))
 	test -f $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILENAME)
 	chmod 0100 $(KYMA)
+
+##@ Gardener
+
+HIBERNATION_HOUR=$(shell echo $$(( ( $(shell date +%H | sed s/^0//g) + 5 ) % 24 )))
+GIT_COMMIT_SHA=$(shell git rev-parse --short=8 HEAD)
+GARDENER_INFRASTRUCTURE ?= gcp
+ifneq (,$(GARDENER_SA_PATH))
+GARDENER_K8S_VERSION?=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud ${GARDENER_INFRASTRUCTURE} -o=jsonpath='{.spec.kubernetes.versions[0].version}')
+else
+GARDENER_K8S_VERSION?=1.27.4
+endif
+
+GIT_COMMIT_DATE=$(shell git show -s --format=%cd --date=format:'v%Y%m%d' 7c81ad8e)
+
+.PHONY: run-tests
+run-tests: ginkgo
+	kubectl create namespace kyma-system
+	IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
+	$(GINKGO) run --tags e2e --junit-report=junit.xml ./test/e2e
+
+.PHONY: gardener-integration-test
+gardener-integration-test: ## Provision gardener cluster and run integration test on it.
+	make provision-gardener \
+		run-tests \
+		deprovision-gardener || \
+		(make deprovision-gardener && false)
+
+.PHONY: provision-gardener
+provision-gardener: kyma ## Provision gardener cluster with latest k8s version
+	${KYMA} provision gardener ${GARDENER_INFRASTRUCTURE} -c ${GARDENER_SA_PATH} -n test-${GIT_COMMIT_SHA} -p ${GARDENER_PROJECT} -s ${GARDENER_SECRET_NAME} -k ${GARDENER_K8S_VERSION}\
+		--hibernation-start="00 ${HIBERNATION_HOUR} * * ?"
+
+.PHONY: deprovision-gardener
+deprovision-gardener: kyma ## Deprovision gardener cluster
+	kubectl --kubeconfig=${GARDENER_SA_PATH} annotate shoot test-${GIT_COMMIT_SHA} confirmation.gardener.cloud/deletion=true
+	kubectl --kubeconfig=${GARDENER_SA_PATH} delete shoot test-${GIT_COMMIT_SHA} --wait=false
