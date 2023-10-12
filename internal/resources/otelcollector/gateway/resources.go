@@ -43,12 +43,12 @@ type ServiceConfig struct {
 }
 
 type Scaling struct {
-	// Replicas specifies the desired number of gateway replicas.
+	// Replicas specifies the number of gateway replicas.
 	Replicas int32
 
 	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
 	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
-	// A value of 1 will apply the base limits, values greater than 1 will proportionally increase those limits.
+	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
 	ResourceRequirementsMultiplier int
 }
 
