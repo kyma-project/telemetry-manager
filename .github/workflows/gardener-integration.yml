@@ -1,0 +1,23 @@
+name: Gardener integration
+
+on:
+  pull_request:
+  push:
+    branches: [ "main", "release-*" ]
+  
+  workflow_dispatch:
+
+jobs:
+  gardener-integration-test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: run test
+      run: make gardener-integration-test
+      env:
+        GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
+        GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
+        KUBECONFIG: ${{ secrets.GARDENER_SA }}
