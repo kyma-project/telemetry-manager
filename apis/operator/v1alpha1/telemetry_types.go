@@ -38,8 +38,55 @@ const (
 
 // TelemetrySpec defines the desired state of Telemetry
 type TelemetrySpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// +optional
+	Trace *TraceSpec `json:"trace,omitempty"`
+
+	// +optional
+	Metric *MetricSpec `json:"metric,omitempty"`
+}
+
+// MetricSpec defines the behavior of the metric gateway
+type MetricSpec struct {
+	Gateway MetricGatewaySpec `json:"gateway,omitempty"`
+}
+
+type MetricGatewaySpec struct {
+	Scaling Scaling `json:"scaling,omitempty"`
+}
+
+// TraceSpec defines the behavior of the trace gateway
+type TraceSpec struct {
+	Gateway TraceGatewaySpec `json:"gateway,omitempty"`
+}
+
+type TraceGatewaySpec struct {
+	Scaling Scaling `json:"scaling,omitempty"`
+}
+
+// Scaling defines the scaling type and number of pods.
+type Scaling struct {
+	// Type of scaling strategy. Default is Static.
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=Static
+	Type ScalingStrategyType `json:"type,omitempty"`
+
+	// Static scaling config params. Present only if Type =
+	// StaticScalingStrategyType.
+	// +optional
+	Static *StaticScaling `json:"static,omitempty"`
+}
+
+// +enum
+type ScalingStrategyType string
+
+const (
+	StaticScalingStrategyType ScalingStrategyType = "Static"
+)
+
+type StaticScaling struct {
+	// Replicas defines the number of pod instances.
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 // TelemetryStatus defines the observed state of Telemetry

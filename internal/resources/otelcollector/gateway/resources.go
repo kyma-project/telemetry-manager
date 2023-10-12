@@ -42,6 +42,16 @@ type ServiceConfig struct {
 	OTLPServiceName string
 }
 
+type Scaling struct {
+	// Replicas specifies the number of gateway replicas.
+	Replicas int32
+
+	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
+	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
+	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
+	ResourceRequirementsMultiplier int
+}
+
 func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	clusterRole := rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
@@ -75,14 +85,14 @@ func MakeSecret(config Config, secretData map[string][]byte) *corev1.Secret {
 	}
 }
 
-func MakeDeployment(config Config, configHash string, pipelineCount int, envVarPodIP, envVarNodeName string) *appsv1.Deployment {
+func MakeDeployment(config Config, configHash string, scaling Scaling, envVarPodIP, envVarNodeName string) *appsv1.Deployment {
 	selectorLabels := core.MakeDefaultLabels(config.BaseName)
 	podLabels := maps.Clone(selectorLabels)
 	podLabels["sidecar.istio.io/inject"] = "false"
 
 	annotations := core.MakeCommonPodAnnotations(configHash)
 
-	resources := makeResourceRequirements(config, pipelineCount)
+	resources := makeResourceRequirements(config, scaling)
 	affinity := makePodAffinity(selectorLabels)
 	podSpec := core.MakePodSpec(config.BaseName, config.Deployment.Image,
 		core.WithPriorityClass(config.Deployment.PriorityClassName),
@@ -98,7 +108,7 @@ func MakeDeployment(config Config, configHash string, pipelineCount int, envVarP
 			Namespace: config.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: pointer.Int32(2),
+			Replicas: pointer.Int32(scaling.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},
@@ -114,13 +124,13 @@ func MakeDeployment(config Config, configHash string, pipelineCount int, envVarP
 }
 
 // makeResourceRequirements returns the resource requirements for the opentelemetry-collector. We calculate the resources based on the initial base value and a dynamic part per pipeline.
-func makeResourceRequirements(config Config, pipelineCount int) corev1.ResourceRequirements {
+func makeResourceRequirements(config Config, scaling Scaling) corev1.ResourceRequirements {
 	memoryRequest := config.Deployment.BaseMemoryRequest.DeepCopy()
 	memoryLimit := config.Deployment.BaseMemoryLimit.DeepCopy()
 	cpuRequest := config.Deployment.BaseCPURequest.DeepCopy()
 	cpuLimit := config.Deployment.BaseCPULimit.DeepCopy()
 
-	for i := 0; i < pipelineCount; i++ {
+	for i := 0; i < scaling.ResourceRequirementsMultiplier; i++ {
 		memoryRequest.Add(config.Deployment.DynamicMemoryRequest)
 		memoryLimit.Add(config.Deployment.DynamicMemoryLimit)
 		cpuRequest.Add(config.Deployment.DynamicCPURequest)

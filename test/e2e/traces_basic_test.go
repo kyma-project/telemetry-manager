@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -83,6 +85,68 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 		})
 
 		It("Should have 2 trace gateway replicas", Label(operationalTest), func() {
+			Eventually(func(g Gomega) int32 {
+				var deployment appsv1.Deployment
+				err := k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
+				g.Expect(err).NotTo(HaveOccurred())
+				return *deployment.Spec.Replicas
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
+		})
+
+		It("Should scale up trace gateway replicas", Label(operationalTest), func() {
+			Eventually(func(g Gomega) int32 {
+				var telemetry v1alpha1.Telemetry
+				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
+				g.Expect(err).NotTo(HaveOccurred())
+
+				telemetry.Spec.Trace = &v1alpha1.TraceSpec{
+					Gateway: v1alpha1.TraceGatewaySpec{
+						Scaling: v1alpha1.Scaling{
+							Type: v1alpha1.StaticScalingStrategyType,
+							Static: &v1alpha1.StaticScaling{
+								Replicas: 4,
+							},
+						},
+					},
+				}
+				err = k8sClient.Update(ctx, &telemetry)
+				g.Expect(err).NotTo(HaveOccurred())
+				return telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(4)))
+		})
+
+		It("Should have 4 trace gateway replicas after scaling up", Label(operationalTest), func() {
+			Eventually(func(g Gomega) int32 {
+				var deployment appsv1.Deployment
+				err := k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
+				g.Expect(err).NotTo(HaveOccurred())
+				return *deployment.Spec.Replicas
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(4)))
+		})
+
+		It("Should scale down trace gateway replicas", Label(operationalTest), func() {
+			Eventually(func(g Gomega) int32 {
+				var telemetry v1alpha1.Telemetry
+				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
+				g.Expect(err).NotTo(HaveOccurred())
+
+				telemetry.Spec.Trace = &v1alpha1.TraceSpec{
+					Gateway: v1alpha1.TraceGatewaySpec{
+						Scaling: v1alpha1.Scaling{
+							Type: v1alpha1.StaticScalingStrategyType,
+							Static: &v1alpha1.StaticScaling{
+								Replicas: 2,
+							},
+						},
+					},
+				}
+				err = k8sClient.Update(ctx, &telemetry)
+				g.Expect(err).NotTo(HaveOccurred())
+				return telemetry.Spec.Trace.Gateway.Scaling.Static.Replicas
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
+		})
+
+		It("Should have 2 trace gateway replicas after scaling down", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)

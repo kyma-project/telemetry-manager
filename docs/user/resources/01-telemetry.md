@@ -57,6 +57,23 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 <!-- TABLE-START -->
 ### Telemetry.operator.kyma-project.io/v1alpha1
 
+**Spec:**
+
+| Parameter | Type | Description |
+| ---- | ----------- | ---- |
+| **metric**  | object | MetricSpec defines the behavior of the metric gateway |
+| **metric.&#x200b;gateway**  | object |  |
+| **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines the scaling type and number of pods. |
+| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static scaling config params. Present only if Type = StaticScalingStrategyType. |
+| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines the number of pod instances. |
+| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is Static. |
+| **trace**  | object | TraceSpec defines the behavior of the trace gateway |
+| **trace.&#x200b;gateway**  | object |  |
+| **trace.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines the scaling type and number of pods. |
+| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static scaling config params. Present only if Type = StaticScalingStrategyType. |
+| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines the number of pod instances. |
+| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is Static. |
+
 **Status:**
 
 | Parameter | Type | Description |

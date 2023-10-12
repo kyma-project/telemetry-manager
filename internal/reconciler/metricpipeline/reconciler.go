@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
@@ -26,6 +27,8 @@ import (
 	otelgatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
+
+const defaultReplicaCount int32 = 2
 
 type Config struct {
 	Agent                  otelagentresources.Config
@@ -199,7 +202,11 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	}
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	deployment := otelgatewayresources.MakeDeployment(r.config.Gateway, configHash, len(allPipelines),
+	scaling := otelgatewayresources.Scaling{
+		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
+		ResourceRequirementsMultiplier: len(allPipelines),
+	}
+	deployment := otelgatewayresources.MakeDeployment(r.config.Gateway, configHash, scaling,
 		config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName)
 	if err = kubernetes.CreateOrUpdateDeployment(ctx, ownerRefSetter, deployment); err != nil {
 		return fmt.Errorf("failed to create otel collector deployment: %w", err)
@@ -284,4 +291,29 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	}
 
 	return nil
+}
+
+func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
+	var telemetries operatorv1alpha1.TelemetryList
+	if err := r.List(ctx, &telemetries); err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
+		return defaultReplicaCount
+	}
+	for i := range telemetries.Items {
+		telemetrySpec := telemetries.Items[i].Spec
+		if telemetrySpec.Metric == nil {
+			continue
+		}
+
+		scaling := telemetrySpec.Metric.Gateway.Scaling
+		if scaling.Type != operatorv1alpha1.StaticScalingStrategyType {
+			continue
+		}
+
+		static := scaling.Static
+		if static != nil && static.Replicas > 0 {
+			return static.Replicas
+		}
+	}
+	return defaultReplicaCount
 }

@@ -31,6 +31,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
@@ -78,6 +79,11 @@ func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&corev1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
+		).
+		Watches(
+			&operatorv1alpha1.Telemetry{},
+			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
+			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
 		).Complete(r)
 }
 
@@ -104,4 +110,34 @@ func (r *TracePipelineReconciler) mapSecret(ctx context.Context, object client.O
 		}
 	}
 	return requests
+}
+
+func (r *TracePipelineReconciler) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	_, ok := object.(*operatorv1alpha1.Telemetry)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+	return requests
+}
+
+func (r *TracePipelineReconciler) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
+	var pipelines telemetryv1alpha1.TracePipelineList
+	var requests []reconcile.Request
+	err := r.List(ctx, &pipelines)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list TracePipelines: %w", err)
+	}
+
+	for i := range pipelines.Items {
+		var pipeline = pipelines.Items[i]
+		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+	}
+
+	return requests, nil
 }
