@@ -14,6 +14,11 @@ data:
         widget: Badge
 
     body:
+      - name: Trace
+        widget: Panel
+        children:
+        - name: Gateway Replicas
+          source: spec.trace.gateway.scaling.static.replicas
       - name: Status
         widget: Panel
         children:
@@ -43,7 +48,47 @@ data:
             name: Last transition
             sort: true
   form: |
-    [ ]
+    - advanced: true
+      defaultExpanded: false
+      readOnly: false
+      decodable: false
+      path: spec.trace
+      name: Trace
+      widget: FormGroup
+      children:
+        - advanced: true
+          defaultExpanded: false
+          readOnly: false
+          decodable: false
+          path: gateway
+          name: Gateway
+          widget: FormGroup
+          children:
+            - advanced: true
+              defaultExpanded: false
+              readOnly: false
+              decodable: false
+              path: scaling
+              name: Trace Gateway Scaling
+              widget: FormGroup
+              children:
+                - advanced: true
+                  defaultExpanded: false
+                  readOnly: false
+                  decodable: false
+                  path: static
+                  name: Static Scaling
+                  widget: FormGroup
+                  children:
+                    - advanced: true
+                      defaultExpanded: false
+                      readOnly: false
+                      decodable: false
+                      path: replicas
+                      name: Replicas
+                      simple: false
+                      widget: Text
+
   general: |
     resource:
       kind: Telemetry
