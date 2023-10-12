@@ -38,8 +38,11 @@ const (
 
 // TelemetrySpec defines the desired state of Telemetry
 type TelemetrySpec struct {
-	Trace  TraceSpec  `json:"trace,omitempty"`
-	Metric MetricSpec `json:"metric,omitempty"`
+	// +optional
+	Trace *TraceSpec `json:"trace,omitempty"`
+
+	// +optional
+	Metric *MetricSpec `json:"metric,omitempty"`
 }
 
 // MetricSpec defines the behavior of the metric gateway

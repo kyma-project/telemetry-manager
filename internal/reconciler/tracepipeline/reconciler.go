@@ -257,9 +257,19 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 		return defaultReplicaCount
 	}
 	for i := range telemetries.Items {
-		scaling := telemetries.Items[i].Spec.Trace.Gateway.Scaling
-		if scaling.Type == operatorv1alpha1.StaticScalingStrategyType && scaling.Static != nil && scaling.Static.Replicas > 0 {
-			return scaling.Static.Replicas
+		telemetrySpec := telemetries.Items[i].Spec
+		if telemetrySpec.Trace == nil {
+			continue
+		}
+
+		scaling := telemetrySpec.Trace.Gateway.Scaling
+		if scaling.Type != operatorv1alpha1.StaticScalingStrategyType {
+			continue
+		}
+
+		static := scaling.Static
+		if static != nil && static.Replicas > 0 {
+			return static.Replicas
 		}
 	}
 	return defaultReplicaCount

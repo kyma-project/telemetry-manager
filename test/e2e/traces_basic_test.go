@@ -99,10 +99,14 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				telemetry.Spec.Trace.Gateway.Scaling = v1alpha1.Scaling{
-					Type: v1alpha1.StaticScalingStrategyType,
-					Static: &v1alpha1.StaticScaling{
-						Replicas: 4,
+				telemetry.Spec.Trace = &v1alpha1.TraceSpec{
+					Gateway: v1alpha1.TraceGatewaySpec{
+						Scaling: v1alpha1.Scaling{
+							Type: v1alpha1.StaticScalingStrategyType,
+							Static: &v1alpha1.StaticScaling{
+								Replicas: 4,
+							},
+						},
 					},
 				}
 				err = k8sClient.Update(ctx, &telemetry)
@@ -126,10 +130,14 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				telemetry.Spec.Trace.Gateway.Scaling = v1alpha1.Scaling{
-					Type: v1alpha1.StaticScalingStrategyType,
-					Static: &v1alpha1.StaticScaling{
-						Replicas: 2,
+				telemetry.Spec.Trace = &v1alpha1.TraceSpec{
+					Gateway: v1alpha1.TraceGatewaySpec{
+						Scaling: v1alpha1.Scaling{
+							Type: v1alpha1.StaticScalingStrategyType,
+							Static: &v1alpha1.StaticScaling{
+								Replicas: 2,
+							},
+						},
 					},
 				}
 				err = k8sClient.Update(ctx, &telemetry)
