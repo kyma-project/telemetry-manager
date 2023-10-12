@@ -82,6 +82,7 @@ const (
 )
 
 type StaticScaling struct {
+	// Replicas defines the number of pod instances.
 	Replicas int32 `json:"replicas,omitempty"`
 }
 

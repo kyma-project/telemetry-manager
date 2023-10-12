@@ -46,20 +46,20 @@ spec:
             description: TelemetrySpec defines the desired state of Telemetry
             properties:
               metric:
-                description: MetricSpec is the specification of the desired behavior
-                  of the metric gateway
+                description: MetricSpec defines the behavior of the metric gateway
                 properties:
                   gateway:
                     properties:
                       scaling:
-                        description: Scaling defines desired type scaling and number
-                          of desired pods.
+                        description: Scaling defines the scaling type and number of
+                          pods.
                         properties:
                           static:
                             description: Static scaling config params. Present only
                               if Type = StaticScalingStrategyType.
                             properties:
                               replicas:
+                                description: Replicas defines the number of pod instances.
                                 format: int32
                                 type: integer
                             type: object
@@ -72,20 +72,20 @@ spec:
                     type: object
                 type: object
               trace:
-                description: TraceSpec is the specification of the desired behavior
-                  of the trace gateway
+                description: TraceSpec defines the behavior of the trace gateway
                 properties:
                   gateway:
                     properties:
                       scaling:
-                        description: Scaling defines desired type scaling and number
-                          of desired pods.
+                        description: Scaling defines the scaling type and number of
+                          pods.
                         properties:
                           static:
                             description: Static scaling config params. Present only
                               if Type = StaticScalingStrategyType.
                             properties:
                               replicas:
+                                description: Replicas defines the number of pod instances.
                                 format: int32
                                 type: integer
                             type: object
