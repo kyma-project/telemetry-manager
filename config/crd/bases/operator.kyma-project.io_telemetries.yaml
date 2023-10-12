@@ -46,10 +46,14 @@ spec:
             description: TelemetrySpec defines the desired state of Telemetry
             properties:
               metric:
+                description: MetricSpec is the specification of the desired behavior
+                  of the metric gateway
                 properties:
                   gateway:
                     properties:
                       scaling:
+                        description: Scaling defines desired type scaling and number
+                          of desired pods.
                         properties:
                           static:
                             description: Static scaling config params. Present only
@@ -68,10 +72,14 @@ spec:
                     type: object
                 type: object
               trace:
+                description: TraceSpec is the specification of the desired behavior
+                  of the trace gateway
                 properties:
                   gateway:
                     properties:
                       scaling:
+                        description: Scaling defines desired type scaling and number
+                          of desired pods.
                         properties:
                           static:
                             description: Static scaling config params. Present only

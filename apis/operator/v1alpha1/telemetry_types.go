@@ -42,6 +42,7 @@ type TelemetrySpec struct {
 	Metric MetricSpec `json:"metric,omitempty"`
 }
 
+// MetricSpec is the specification of the desired behavior of the metric gateway
 type MetricSpec struct {
 	Gateway MetricGatewaySpec `json:"gateway,omitempty"`
 }
@@ -50,6 +51,7 @@ type MetricGatewaySpec struct {
 	Scaling Scaling `json:"scaling,omitempty"`
 }
 
+// TraceSpec is the specification of the desired behavior of the trace gateway
 type TraceSpec struct {
 	Gateway TraceGatewaySpec `json:"gateway,omitempty"`
 }
@@ -58,6 +60,7 @@ type TraceGatewaySpec struct {
 	Scaling Scaling `json:"scaling,omitempty"`
 }
 
+// Scaling defines desired type scaling and number of desired pods.
 type Scaling struct {
 	// Type of scaling strategy. Default is Static.
 	// +optional
