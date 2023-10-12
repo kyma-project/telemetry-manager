@@ -78,10 +78,12 @@ data:
                 - path: type
                   override: false
                   enum:
+                    - None
                 - advanced: true
                   defaultExpanded: false
                   readOnly: false
                   decodable: false
+                  visibility: "$item.spec.trace.gateway.scaling.type = 'Static'"
                   path: static
                   name: Static
                   widget: FormGroup
