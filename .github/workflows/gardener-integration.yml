@@ -1,7 +1,6 @@
 name: Gardener integration
 
 on:
-  pull_request:
   push:
     branches: [ "main", "release-*" ]
   

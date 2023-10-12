@@ -322,15 +322,13 @@ GIT_COMMIT_SHA=$(shell git rev-parse --short=8 HEAD)
 GARDENER_INFRASTRUCTURE ?= gcp
 ifneq (,$(GARDENER_SA_PATH))
 GARDENER_K8S_VERSION?=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud ${GARDENER_INFRASTRUCTURE} -o=jsonpath='{.spec.kubernetes.versions[0].version}')
-else
-GARDENER_K8S_VERSION?=1.27.4
 endif
 
-GIT_COMMIT_DATE=$(shell git show -s --format=%cd --date=format:'v%Y%m%d' 7c81ad8e)
+GIT_COMMIT_DATE=$(shell git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_COMMIT_SHA})
 
 .PHONY: run-tests
-run-tests: ginkgo
-	kubectl create namespace kyma-system
+run-tests: ginkgo ## Run e2e tests on existing cluster using image related to git commit sha
+	kubectl --kubeconfig=${GARDENER_SA_PATH} create namespace kyma-system
 	IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
 	$(GINKGO) run --tags e2e --junit-report=junit.xml ./test/e2e
 
