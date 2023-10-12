@@ -126,7 +126,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					ConsistOfMds(ContainResourceAttrs(HaveKey(BeElementOf(kubeletMetricAttributes)))),
+					ConsistOfMds(ContainResourceAttrs(HaveKey(BeElementOf(kubeletMetricResourceAttributes)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
