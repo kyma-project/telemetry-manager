@@ -16,9 +16,12 @@ data:
     body:
       - name: Trace
         widget: Panel
+        visibility: $exists(spec.trace.gateway.scaling.static.replicas)
         children:
         - name: Gateway Replicas
           source: spec.trace.gateway.scaling.static.replicas
+        - name: Scaling Type
+          source: spec.trace.gateway.scaling.type
       - name: Status
         widget: Panel
         children:
@@ -69,15 +72,18 @@ data:
               readOnly: false
               decodable: false
               path: scaling
-              name: Trace Gateway Scaling
+              name: Scaling
               widget: FormGroup
               children:
+                - path: type
+                  override: false
+                  enum:
                 - advanced: true
                   defaultExpanded: false
                   readOnly: false
                   decodable: false
                   path: static
-                  name: Static Scaling
+                  name: Static
                   widget: FormGroup
                   children:
                     - advanced: true
