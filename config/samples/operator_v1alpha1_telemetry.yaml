@@ -12,7 +12,7 @@ spec:
   metric:
     gateway:
       scaling:
-        strategy: static
+        type: Static
         static:
           replicas: 4
 
