@@ -62,7 +62,7 @@ spec:
                           type:
                             description: Type of scaling strategy. Default is Static.
                             enum:
-                            - static
+                            - Static
                             type: string
                         type: object
                     type: object
@@ -84,7 +84,7 @@ spec:
                           type:
                             description: Type of scaling strategy. Default is Static.
                             enum:
-                            - static
+                            - Static
                             type: string
                         type: object
                     type: object

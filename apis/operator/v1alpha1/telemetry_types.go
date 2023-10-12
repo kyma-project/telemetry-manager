@@ -62,7 +62,7 @@ type Scaling struct {
 	// Type of scaling strategy. Default is Static.
 	// +optional
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Enum=static
+	// +kubebuilder:validation:Enum=Static
 	Type ScalingStrategyType `json:"type,omitempty"`
 
 	// Static scaling config params. Present only if Type =
