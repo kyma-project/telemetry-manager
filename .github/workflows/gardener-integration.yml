@@ -42,7 +42,8 @@ jobs:
         GARDENER_SA: ${{ secrets.GARDENER_SA }}
 
     # provision cluster and run tests
-    - name: run integration tests
+    - name: |
+        run integration tests
       run: make gardener-integration-test
       env:
         GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
@@ -53,4 +54,4 @@ jobs:
       if: success() || failure() # run this step even if previous step failed
       with:
         name: test-results
-        path: 'artifacts/*-junit.xml'
+        path: '**/artifacts/*-junit.xml'

@@ -332,12 +332,12 @@ run-tests: ginkgo ## Run e2e tests on existing cluster using image related to gi
 	kubectl create namespace kyma-system
 	IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
 	mkdir -p ${ARTIFACTS}
-	$(GINKGO) run --tags e2e --junit-report=logs-junit.xml --label-filter="logging" ./test/e2e
-	mv logs-junit.xml ${ARTIFACTS}
 	$(GINKGO) run --tags e2e --junit-report=traces-junit.xml --label-filter="tracing" ./test/e2e
 	mv traces-junit.xml ${ARTIFACTS}
 	$(GINKGO) run --tags e2e --junit-report=metrics-junit.xml --label-filter="metrics" ./test/e2e
 	mv metrics-junit.xml ${ARTIFACTS}
+	$(GINKGO) run --tags e2e --junit-report=logs-junit.xml --label-filter="logging" ./test/e2e
+	mv logs-junit.xml ${ARTIFACTS}
 	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
 	$(GINKGO) run --tags istio --flake-attempts=5 --junit-report=istio-junit.xml ./test/integration/istio
 	mv istio-junit.xml ${ARTIFACTS}
