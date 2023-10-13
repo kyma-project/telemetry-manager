@@ -316,6 +316,10 @@ $(KYMA):
 	chmod 0100 $(KYMA)
 
 ##@ Gardener
+## injected by the environment
+# GARDENER_SA_PATH=
+# GARDENER_PROJECT=
+# GARDENER_SECRET_NAME=
 GIT_COMMIT_SHA=$(shell git rev-parse --short=8 HEAD)
 GIT_COMMIT_DATE=$(shell git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_COMMIT_SHA})
 HIBERNATION_HOUR=$(shell echo $$(( ( $(shell date +%H | sed s/^0//g) + 5 ) % 24 )))
@@ -327,7 +331,16 @@ endif
 run-tests: ginkgo ## Run e2e tests on existing cluster using image related to git commit sha
 	kubectl create namespace kyma-system
 	IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
-	$(GINKGO) run --tags e2e --junit-report=junit.xml ./test/e2e
+	mkdir -p ${ARTIFACTS}
+	$(GINKGO) run --tags e2e --junit-report=logs-junit.xml --label-filter="logging" ./test/e2e
+	mv logs-junit.xml ${ARTIFACTS}
+	$(GINKGO) run --tags e2e --junit-report=traces-junit.xml --label-filter="tracing" ./test/e2e
+	mv traces-junit.xml ${ARTIFACTS}
+	$(GINKGO) run --tags e2e --junit-report=metrics-junit.xml --label-filter="metrics" ./test/e2e
+	mv metrics-junit.xml ${ARTIFACTS}
+	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
+	$(GINKGO) run --tags istio --flake-attempts=5 --junit-report=istio-junit.xml ./test/integration/istio
+	mv istio-junit.xml ${ARTIFACTS}
 
 .PHONY: gardener-integration-test
 gardener-integration-test: ## Provision gardener cluster and run integration test on it.
