@@ -1,4 +1,4 @@
-name: Gardener integration
+name: Integration
 
 on:
   push:
