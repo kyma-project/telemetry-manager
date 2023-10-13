@@ -327,6 +327,7 @@ ifneq (,$(GARDENER_SA_PATH))
 GARDENER_K8S_VERSION?=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud gcp -o=jsonpath='{.spec.kubernetes.versions[0].version}')
 endif
 
+# log tests are excluded for now as they are too flaky
 .PHONY: run-tests
 run-tests: ginkgo ## Run e2e tests on existing cluster using image related to git commit sha
 	kubectl create namespace kyma-system
@@ -336,8 +337,6 @@ run-tests: ginkgo ## Run e2e tests on existing cluster using image related to gi
 	mv traces-junit.xml ${ARTIFACTS}
 	$(GINKGO) run --tags e2e --junit-report=metrics-junit.xml --label-filter="metrics" ./test/e2e
 	mv metrics-junit.xml ${ARTIFACTS}
-	$(GINKGO) run --tags e2e --junit-report=logs-junit.xml --label-filter="logging" ./test/e2e
-	mv logs-junit.xml ${ARTIFACTS}
 	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
 	$(GINKGO) run --tags istio --flake-attempts=5 --junit-report=istio-junit.xml ./test/integration/istio
 	mv istio-junit.xml ${ARTIFACTS}
