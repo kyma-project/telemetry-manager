@@ -13,6 +13,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    # uses an older go version by default, so configure go with newest version
+    - uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        cache: true
   
     # wait for the build to succeed so that the manager image is available
     - name: Wait for the 'post-telemetry-manager-build' job to succeed
@@ -28,12 +34,14 @@ jobs:
         GITHUB_OWNER: "${{ github.repository_owner }}"
         GITHUB_REPO: "telemetry-manager"
 
+    # save gardener kubeconfig to a temp file in order to pass it to the command
     - name: save sa
       shell: bash
       run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
       env:
         GARDENER_SA: ${{ secrets.GARDENER_SA }}
 
+    # provision cluster and run tests
     - name: run test
       run: make gardener-integration-test
       env:
