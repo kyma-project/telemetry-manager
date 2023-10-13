@@ -221,17 +221,19 @@ processors:
     filter:
         traces:
             span:
-                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (resource.attributes["service.name"] == "grafana.kyma-system")
-                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (resource.attributes["service.name"] == "monitoring-auth-proxy-grafana.kyma-system")
-                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"], ".+/frontend-metrics") == true) and (resource.attributes["service.name"] == "monitoring-auth-proxy-grafana.kyma-system")
-                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"], ".+/frontend-metrics") == true) and (resource.attributes["service.name"] == "istio-ingressgateway.istio-system")
-                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (IsMatch(attributes["http.url"], ".+/metrics") == true) and (resource.attributes["k8s.namespace.name"] == "kyma-system")
-                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (IsMatch(attributes["http.url"], ".+/healthz(/.*)?") == true) and (resource.attributes["k8s.namespace.name"] == "kyma-system")
-                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (attributes["user_agent"] == "vm_promscrape")
-                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-otlp-traces\\.kyma-system(\\..*)?:(4318|4317).*") == true)
-                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-trace-collector-internal\\.kyma-system(\\..*)?:(55678).*") == true)
-                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (resource.attributes["service.name"] == "telemetry-fluent-bit.kyma-system")
-                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-otlp-metrics\\.kyma-system(\\..*)?:(4318|4317).*") == true)
+                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "grafana"
+                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "monitoring-auth-proxy-grafana"
+                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-fluent-bit"
+                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-trace-collector"
+                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-metric-gateway"
+                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-metric-agent"
+                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "istio-system" and attributes["http.method"] == "GET" and (attributes["OperationName"] == "Egress" or IsMatch(name, "egress .*") == true) and attributes["istio.canonical_service"] == "istio-ingressgateway" and IsMatch(attributes["http.url"], "https:\\/\\/healthz\\..+\\/healthz\\/ready") == true
+                - attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["OperationName"] == "Egress" or IsMatch(name, "egress .*") == true) and IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-otlp-traces\\.kyma-system(\\..*)?:(4317|4318).*") == true
+                - attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["OperationName"] == "Egress" or IsMatch(name, "egress .*") == true) and IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-trace-collector-internal\\.kyma-system(\\..*)?:(55678).*") == true
+                - attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["OperationName"] == "Egress" or IsMatch(name, "egress .*") == true) and IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-otlp-metrics\\.kyma-system(\\..*)?:(4317|4318).*") == true
+                - attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["OperationName"] == "Ingress" or IsMatch(name, "ingress .*") == true) and attributes["user_agent"] == "vm_promscrape"
+                - attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["OperationName"] == "Ingress" or IsMatch(name, "ingress .*") == true) and resource.attributes["k8s.namespace.name"] == "kyma-system" and IsMatch(attributes["user_agent"], "Prometheus\\/.*") == true
+                - attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["OperationName"] == "Ingress" or IsMatch(name, "ingress .*") == true) and IsMatch(attributes["user_agent"], "kyma-otelcol\\/.*") == true
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}

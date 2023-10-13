@@ -1,10 +1,7 @@
 package gateway
 
 import (
-	"fmt"
-
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 func makeProcessorsConfig() Processors {
@@ -82,18 +79,63 @@ func makeProcessorsConfig() Processors {
 	}
 }
 
+const (
+	methodIsGet                        = "attributes[\"http.method\"] == \"GET\""
+	methodIsPost                       = "attributes[\"http.method\"] == \"POST\""
+	componentIsProxy                   = "attributes[\"component\"] == \"proxy\""
+	operationIsIngress                 = "(attributes[\"OperationName\"] == \"Ingress\" or IsMatch(name, \"ingress .*\") == true)"
+	operationIsEgress                  = "(attributes[\"OperationName\"] == \"Egress\" or IsMatch(name, \"egress .*\") == true)"
+	namespacesIsKymaSystem             = "resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\""
+	namespacesIsIstioSystem            = "resource.attributes[\"k8s.namespace.name\"] == \"istio-system\""
+	istioNameIsGrafana                 = "attributes[\"istio.canonical_service\"] == \"grafana\""
+	istioNameIsAuthProxy               = "attributes[\"istio.canonical_service\"] == \"monitoring-auth-proxy-grafana\""
+	istioNameIsFluentBit               = "attributes[\"istio.canonical_service\"] == \"telemetry-fluent-bit\""
+	istioNameIsTraceGateway            = "attributes[\"istio.canonical_service\"] == \"telemetry-trace-collector\""
+	istioNameIsMetricAgent             = "attributes[\"istio.canonical_service\"] == \"telemetry-metric-agent\""
+	istioNameIsMetricGateway           = "attributes[\"istio.canonical_service\"] == \"telemetry-metric-gateway\""
+	istioNameIsIstioGateway            = "attributes[\"istio.canonical_service\"] == \"istio-ingressgateway\""
+	userAgentIsVmScrapeAgent           = "attributes[\"user_agent\"] == \"vm_promscrape\""
+	userAgentIsPrometheus              = "IsMatch(attributes[\"user_agent\"], \"Prometheus\\\\/.*\") == true"
+	userAgentIsKymaOtelCol             = "IsMatch(attributes[\"user_agent\"], \"kyma-otelcol\\\\/.*\") == true"
+	urlIsIstioHealthz                  = "IsMatch(attributes[\"http.url\"], \"https:\\\\/\\\\/healthz\\\\..+\\\\/healthz\\\\/ready\") == true"
+	urlIsTelemetryTraceService         = "IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-otlp-traces\\\\.kyma-system(\\\\..*)?:(4317|4318).*\") == true"
+	urlIsTelemetryTraceInternalService = "IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-trace-collector-internal\\\\.kyma-system(\\\\..*)?:(55678).*\") == true"
+	urlIsTelemetryMetricService        = "IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-otlp-metrics\\\\.kyma-system(\\\\..*)?:(4317|4318).*\") == true"
+	and                                = " and "
+
+	toFromKymaGrafana            = componentIsProxy + and + namespacesIsKymaSystem + and + istioNameIsGrafana
+	toFromKymaAuthProxy          = componentIsProxy + and + namespacesIsKymaSystem + and + istioNameIsAuthProxy
+	toFromTelemetryFluentBit     = componentIsProxy + and + namespacesIsKymaSystem + and + istioNameIsFluentBit
+	toFromTelemetryTraceGateway  = componentIsProxy + and + namespacesIsKymaSystem + and + istioNameIsTraceGateway
+	toFromTelemetryMetricGateway = componentIsProxy + and + namespacesIsKymaSystem + and + istioNameIsMetricGateway
+	toFromTelemetryMetricAgent   = componentIsProxy + and + namespacesIsKymaSystem + and + istioNameIsMetricAgent
+
+	toIstioGatewayWitHealthz = componentIsProxy + and + namespacesIsIstioSystem + and + methodIsGet + and + operationIsEgress + and + istioNameIsIstioGateway + and + urlIsIstioHealthz
+
+	toTelemetryTraceService         = componentIsProxy + and + methodIsPost + and + operationIsEgress + and + urlIsTelemetryTraceService
+	toTelemetryTraceInternalService = componentIsProxy + and + methodIsPost + and + operationIsEgress + and + urlIsTelemetryTraceInternalService
+	toTelemetryMetricService        = componentIsProxy + and + methodIsPost + and + operationIsEgress + and + urlIsTelemetryMetricService
+
+	//TODO: should be system namespaces after solving https://github.com/kyma-project/telemetry-manager/issues/380
+	fromVmScrapeAgent        = componentIsProxy + and + methodIsGet + and + operationIsIngress + and + userAgentIsVmScrapeAgent
+	fromPrometheusWithinKyma = componentIsProxy + and + methodIsGet + and + operationIsIngress + and + namespacesIsKymaSystem + and + userAgentIsPrometheus
+	fromTelemetryMetricAgent = componentIsProxy + and + methodIsGet + and + operationIsIngress + and + userAgentIsKymaOtelCol
+)
+
 func makeSpanFilterConfig() []string {
 	return []string{
-		"(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"grafana.kyma-system\")",
-		"(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (resource.attributes[\"service.name\"] == \"monitoring-auth-proxy-grafana.kyma-system\")",
-		"(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \".+/frontend-metrics\") == true) and (resource.attributes[\"service.name\"] == \"monitoring-auth-proxy-grafana.kyma-system\")",
-		"(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \".+/frontend-metrics\") == true) and (resource.attributes[\"service.name\"] == \"istio-ingressgateway.istio-system\")",
-		"(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (IsMatch(attributes[\"http.url\"], \".+/metrics\") == true) and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\")",
-		"(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (IsMatch(attributes[\"http.url\"], \".+/healthz(/.*)?\") == true) and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\")",
-		"(attributes[\"http.method\"] == \"GET\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Ingress\") and (attributes[\"user_agent\"] == \"vm_promscrape\")",
-		fmt.Sprintf("(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-otlp-traces\\\\.kyma-system(\\\\..*)?:(%d|%d).*\") == true)", ports.OTLPHTTP, ports.OTLPGRPC),
-		fmt.Sprintf("(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-trace-collector-internal\\\\.kyma-system(\\\\..*)?:(%d).*\") == true)", ports.OpenCensus),
-		"(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (resource.attributes[\"service.name\"] == \"telemetry-fluent-bit.kyma-system\")",
-		fmt.Sprintf("(attributes[\"http.method\"] == \"POST\") and (attributes[\"component\"] == \"proxy\") and (attributes[\"OperationName\"] == \"Egress\") and (IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-otlp-metrics\\\\.kyma-system(\\\\..*)?:(%d|%d).*\") == true)", ports.OTLPHTTP, ports.OTLPGRPC),
+		toFromKymaGrafana,
+		toFromKymaAuthProxy,
+		toFromTelemetryFluentBit,
+		toFromTelemetryTraceGateway,
+		toFromTelemetryMetricGateway,
+		toFromTelemetryMetricAgent,
+		toIstioGatewayWitHealthz,
+		toTelemetryTraceService,
+		toTelemetryTraceInternalService,
+		toTelemetryMetricService,
+		fromVmScrapeAgent,
+		fromPrometheusWithinKyma,
+		fromTelemetryMetricAgent,
 	}
 }
