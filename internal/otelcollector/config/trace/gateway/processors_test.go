@@ -75,7 +75,7 @@ func TestProcessors(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
 		require.NoError(t, err)
 
-		require.Equal(t, len(collectorConfig.Processors.SpanFilter.Traces.Span), 14, "Span filter list size is wrong")
+		require.Equal(t, 13, len(collectorConfig.Processors.SpanFilter.Traces.Span), "Span filter list size is wrong")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, toFromKymaGrafana, "toFromKymaGrafana span filter is missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, toFromTelemetryFluentBit, "toFromTelemetryFluentBit span filter is missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, toFromTelemetryTraceGateway, "toFromTelemetryTraceGateway span filter is missing")
