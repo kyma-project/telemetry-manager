@@ -317,13 +317,16 @@ $(KYMA):
 
 ##@ Gardener
 GIT_COMMIT_SHA=$(shell git rev-parse --short=8 HEAD)
+GIT_COMMIT_DATE=$(shell git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_COMMIT_SHA})
+HIBERNATION_HOUR=$(shell echo $$(( ( $(shell date +%H | sed s/^0//g) + 5 ) % 24 )))
+ifneq (,$(GARDENER_SA_PATH))
+GARDENER_K8S_VERSION?=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud gcp -o=jsonpath='{.spec.kubernetes.versions[0].version}')
+endif
 
 .PHONY: run-tests
 run-tests: ginkgo ## Run e2e tests on existing cluster using image related to git commit sha
 	kubectl create namespace kyma-system
-	GIT_COMMIT_DATE=$(shell git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_COMMIT_SHA})
-	IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA}
-	make deploy-dev
+	IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
 	$(GINKGO) run --tags e2e --junit-report=junit.xml ./test/e2e
 
 .PHONY: gardener-integration-test
@@ -335,8 +338,6 @@ gardener-integration-test: ## Provision gardener cluster and run integration tes
 
 .PHONY: provision-gardener
 provision-gardener: kyma ## Provision gardener cluster with latest k8s version
-	HIBERNATION_HOUR=$(shell echo $$(( ( $(shell date +%H | sed s/^0//g) + 5 ) % 24 )))
-    GARDENER_K8S_VERSION?=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud ${GARDENER_INFRASTRUCTURE} -o=jsonpath='{.spec.kubernetes.versions[0].version}')
 	${KYMA} provision gardener gcp -c ${GARDENER_SA_PATH} -n test-${GIT_COMMIT_SHA} -p ${GARDENER_PROJECT} -s ${GARDENER_SECRET_NAME} -k ${GARDENER_K8S_VERSION}\
 		--hibernation-start="00 ${HIBERNATION_HOUR} * * ?"
 
