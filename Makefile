@@ -328,7 +328,7 @@ GIT_COMMIT_DATE=$(shell git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_C
 
 .PHONY: run-tests
 run-tests: ginkgo ## Run e2e tests on existing cluster using image related to git commit sha
-	kubectl --kubeconfig=${GARDENER_SA_PATH} create namespace kyma-system
+	kubectl create namespace kyma-system
 	IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
 	$(GINKGO) run --tags e2e --junit-report=junit.xml ./test/e2e
 
