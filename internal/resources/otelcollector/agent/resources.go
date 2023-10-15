@@ -116,8 +116,8 @@ func makeIstioTLSPodAnnotations(istioCertPath string) map[string]string {
 proxyMetadata:
   OUTPUT_CERTS: %s
 `, istioCertPath),
-		"sidecar.istio.io/userVolumeMount":                 fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
-		"traffic.sidecar.istio.io/includeInboundPorts":     "",
-		"traffic.sidecar.istio.io/includeOutboundIPRanges": "",
+		"sidecar.istio.io/userVolumeMount":              fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
+		"traffic.sidecar.istio.io/includeInboundPorts":  "",
+		"traffic.sidecar.istio.io/includeOutboundPorts": "4317",
 	}
 }

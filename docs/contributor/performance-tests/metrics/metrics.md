@@ -836,3 +836,60 @@ metadata:
 ```
 </details>
 
+## Metric Gateway 
+
+Same test setup as metric agent used for metric gateway test, additionally metric gateway configured with a CLoud Logging Service backend go get more real world results.
+
+The metric agent used as lod source to push metric data with gRPC protocol and OTLP format, to ensure both metric gateway instances getting properly load balanced and get load evenly distributed, metric agent configured with annotation `"traffic.sidecar.istio.io/includeOutboundPorts": "4317"`.
+
+The Avalanche load generator configured with parameters metric-count 500 and series-count 20, the generated metric data collected by the metric agent (with pod and service receivers same time) and pushed to the metric gateway instances. The Avalanche load generator started with 2 instances and added every minute 2 additional instances until metric gateway instances reach peak throughput.
+
+### Summary
+
+#### Setup and parameters
+- Used metric size was 20 metric data points with 10 labels per each distinct metric
+- 1Gi memory and 1 CPU
+- memory_limiter configured for 75% memory limit, 10% spike limit with 0.1 second check interval which results in (75 -10) 65% hard limit equivalent to 650Mi memory.
+- Batch processor configured to create batches with 1024 metrics.
+- Exporter queue configured with size 256 batches
+- Metric gateway configured with a Cloud Logging Service instance as backend to pushed metric data
+
+#### Findings
+
+- Metric gateway run out of memory with when sending queue get full
+
+### Conclusion 
+
+By the test some OOM observed when exporter sending queue get full, after further analysis result following finding same as metric agent:
+- Under high load, memory limiter triggers garbage collector (GC) to free memory and go back for normal operation
+- Frequent GC result fragmented memory because go GC has no compaction (only Mark and Sweep)
+- In certain cases memory get heavily fragmented, despite there are in total enough memory but none of free memory blocks are big enough for in coming data
+
+To solve that problem, metric agent memory limit was increased from 1Gi to 1200Mi, and `memory_limiter` spike_limit_percentage parameter configured to 20.
+<details>                    
+  <summary>Expand</summary>
+
+```yaml
+    processors:
+        batch:
+            send_batch_size: 1024
+            timeout: 10s
+            send_batch_max_size: 1024
+        memory_limiter:
+            check_interval: 0.1s
+            limit_percentage: 75
+            spike_limit_percentage: 20
+```
+</details>
+
+The metric gateway with configured CLS instance reach max ~34K metric data point/sec in peak, any load over this value rejected by the configured CLS instance, by the peak limit ~34K metric data point/sec metric gateway instance memory utilization is around 20% any load over this value following:
+- CLS instance return 520 bad gateway HTTP result
+- Metric gateway begin queue exporting data
+- After sending queue size reach to configured limit 256, metric gateway memory utilization reach ~780 MB and memory_limiter start refuse incoming data.
+
+
+
+
+
+
+

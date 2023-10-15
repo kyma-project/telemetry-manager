@@ -393,6 +393,14 @@ The relevant metrics are:
 
 ## Limitations
 
+The metric gateway setup is based on the following assumptions:
+
+- Cloud Logging Service as Backend
+- The collector has no autoscaling options and has a limited resource setup of 1 CPU and 1.2 GiB memory.
+- Batching is enabled, and a batch contains up to 1024 metrics/batch.
+- A destination can be unavailable for up to 5 minutes without direct loss of metric data.
+- An average metric consists of 20 metric data points and 10 labels.
+
 The metric agent setup is based on the following assumptions:
 
 - The collector has no autoscaling options and has a limited resource setup of 1 CPU and 1.2 GiB memory.
@@ -405,7 +413,11 @@ This leads to the following limitations:
 
 ### Throughput
 
-The maximum throughput is 14K metric data points/sec ~= 50.000.000 metric data points/hour. If more data must be ingested, it can be refused. If a metric data endpoint emits more than 50.000 metric data points per scrape loop, all the data is refused by the agent.
+The metric gateway maximum throughput is 34K metric data points/sec ~= 122.000.000 metric data points/hour. If more data must be ingested, it can be refused.
+
+The metric agent maximum throughput is 14K metric data points/sec ~= 50.000.000 metric data points/hour. If more data must be ingested, it can be refused. If a metric data endpoint emits more than 50.000 metric data points per scrape loop, all the data is refused by the agent.
+
+> **NOTE:** By default metric gateway delivered with two instances to ensure load balancing work properly with gRPC, the metric source should be part of istio mesh and metric source should be configured with annotation `"traffic.sidecar.istio.io/includeOutboundPorts": "4317"`    
 
 ### Unavailability of output
 
