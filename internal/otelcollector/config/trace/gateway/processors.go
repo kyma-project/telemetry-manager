@@ -94,7 +94,7 @@ const (
 	istioNameIsMetricAgent             = "attributes[\"istio.canonical_service\"] == \"telemetry-metric-agent\""
 	istioNameIsMetricGateway           = "attributes[\"istio.canonical_service\"] == \"telemetry-metric-gateway\""
 	istioNameIsIstioGateway            = "attributes[\"istio.canonical_service\"] == \"istio-ingressgateway\""
-	userAgentIsVmScrapeAgent           = "attributes[\"user_agent\"] == \"vm_promscrape\""
+	userAgentIsVMScrapeAgent           = "attributes[\"user_agent\"] == \"vm_promscrape\""
 	userAgentIsPrometheus              = "IsMatch(attributes[\"user_agent\"], \"Prometheus\\\\/.*\") == true"
 	userAgentIsKymaOtelCol             = "IsMatch(attributes[\"user_agent\"], \"kyma-otelcol\\\\/.*\") == true"
 	urlIsIstioHealthz                  = "IsMatch(attributes[\"http.url\"], \"https:\\\\/\\\\/healthz\\\\..+\\\\/healthz\\\\/ready\") == true"
@@ -117,7 +117,7 @@ const (
 	toTelemetryMetricService        = componentIsProxy + and + methodIsPost + and + operationIsEgress + and + urlIsTelemetryMetricService
 
 	//TODO: should be system namespaces after solving https://github.com/kyma-project/telemetry-manager/issues/380
-	fromVmScrapeAgent        = componentIsProxy + and + methodIsGet + and + operationIsIngress + and + userAgentIsVmScrapeAgent
+	fromVMScrapeAgent        = componentIsProxy + and + methodIsGet + and + operationIsIngress + and + userAgentIsVMScrapeAgent
 	fromPrometheusWithinKyma = componentIsProxy + and + methodIsGet + and + operationIsIngress + and + namespacesIsKymaSystem + and + userAgentIsPrometheus
 	fromTelemetryMetricAgent = componentIsProxy + and + methodIsGet + and + operationIsIngress + and + userAgentIsKymaOtelCol
 )
@@ -134,7 +134,7 @@ func makeSpanFilterConfig() []string {
 		toTelemetryTraceService,
 		toTelemetryTraceInternalService,
 		toTelemetryMetricService,
-		fromVmScrapeAgent,
+		fromVMScrapeAgent,
 		fromPrometheusWithinKyma,
 		fromTelemetryMetricAgent,
 	}
