@@ -474,3 +474,28 @@ System-related spans reported by Istio are filtered out without the opt-out opti
    1. Check which SDK version you are using for instrumentation.
    1. Investigate whether it is compatible with the OTel collector version.
    1. If required, upgrade to a supported SDK version.
+
+- Symptom: Trace backend shows fewer traces than you would like to see.
+
+   Cause: By [default](#istio), only 1% of the requests are sent to the trace backend for trace recording.
+
+   Remedy:
+   
+   To see more traces in the trace backend, increase the percentage of requests by changing the default settings.
+   If you just want to see traces for one particular request, you can manually force sampling.
+
+   To override the default percentage, you deploy a YAML file to an existing Kyma installation.
+   1. To set the value for the **randomSamplingPercentage** attribute, create a values YAML file.
+   The following example sets the value to `60`, which means 60% of the requests are sent to tracing backend.
+    ```yaml
+      apiVersion: telemetry.istio.io/v1alpha1
+      kind: Telemetry
+      metadata:
+        name: kyma-traces
+        namespace: istio-system
+      spec:
+        tracing:
+        - providers:
+          - name: "kyma-traces"
+          randomSamplingPercentage: 60
+    ```
