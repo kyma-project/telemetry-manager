@@ -395,7 +395,7 @@ The relevant metrics are:
 
 The metric setup is based on the following assumptions:
 
-- A destination can be unavailable for up to 5 minutes without direct loss of metric data (having retries in place).
+- A destination can be unavailable for up to 5 minutes without direct loss of metric data (using retries).
 - An average metric consists of 20 metric data points and 10 labels.
 - Batching is enabled, and a batch contains up to 1024 metrics/batch.
 
@@ -403,15 +403,15 @@ This leads to the following limitations:
 
 ### Throughput
 
-The default metric gateway setup has a maximum throughput of 34K metric data points/sec. If more data is send to the gateway, it will be refused. Manual scaling can be used to increase the maximum troughput.
+The default metric gateway setup has a maximum throughput of 34K metric data points/sec. If more data is sent to the gateway, it is refused. Manual scaling can be used to increase the maximum throughput.
 
-The metric agent setup has a maximum throughput of 14K metric data points/sec per instance. If more data must be ingested, it can be refused. If a metric data endpoint emits more than 50.000 metric data points per scrape loop, all the data is refused by the agent.
+The metric agent setup has a maximum throughput of 14K metric data points/sec per instance. If more data must be ingested, it is refused. If a metric data endpoint emits more than 50.000 metric data points per scrape loop, the metric agent refuses all the data.
 
-> **NOTE:** By default, metric gateway is delivered with two instances to ensure load balancing works properly with gRPC. The metric source should be part of the Istio service mesh and metric source should be configured with the annotation `"traffic.sidecar.istio.io/includeOutboundPorts": "4317"`    
 
 ### Load Balancing with Istio
 
-The metric gateway runs with multiple instances in order to assure availability. With manual scaling, the amount of instances can be increased to increase the maximum throughput. As OTLP is based on GRPC and HTTP/2, by design the connections to the gateway are long-living connections. In order to leverage scaling of the gateway fully, the clients/application need to balance the connections across the available instances, which will automatically achieved by using an Istio sidecar. If not using an Istio sidecar with your application, the data will be send to one instance of the gateway always.
+To assure availability, the metric gateway runs with multiple instances. If you want to increase the maximum throughput, use manual scaling and enter a higher number of instances. 
+By design, the connections to the gateway are long-living connections (because OTLP is based on gRPC and HTTP/2). For optimal scaling of the gateway, the clients or applications must balance the connections across the available instances, which is automatically achieved if you use an Istio sidecar. If your application has no Istio sidecar, the data is always sent to one instance of the gateway.
 
 ### Unavailability of output
 
