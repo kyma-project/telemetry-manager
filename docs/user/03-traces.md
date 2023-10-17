@@ -485,7 +485,7 @@ System-related spans reported by Istio are filtered out without the opt-out opti
    If you just want to see traces for one particular request, you can manually force sampling.
 
    To override the default percentage, you deploy a YAML file to an existing Kyma installation.
-   1. To set the value for the **randomSamplingPercentage** attribute, create a values YAML file.
+   To set the value for the **randomSamplingPercentage** attribute, create a values YAML file.
    The following example sets the value to `60`, which means 60% of the requests are sent to tracing backend.
     ```yaml
       apiVersion: telemetry.istio.io/v1alpha1
