@@ -63,7 +63,7 @@ type TraceGatewaySpec struct {
 	Scaling Scaling `json:"scaling,omitempty"`
 }
 
-// Scaling defines which strategy will be used for scaling the gateway with detailed configuration options per strategy type.
+// Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
 type Scaling struct {
 	// Type of scaling strategy. Default is none, using a fixed amount of replicas.
 	// +optional
@@ -85,7 +85,7 @@ const (
 )
 
 type StaticScaling struct {
-	// Replicas defines a static number of pods to use for running the gateway. Minimum is 1.
+	// Replicas defines a static number of pods to run the gateway. Minimum is 1.
 	// +kubebuilder:validation:Minimum=1
 	Replicas int32 `json:"replicas,omitempty"`
 }
