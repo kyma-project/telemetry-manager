@@ -1,6 +1,8 @@
 package gateway
 
 import (
+	"strings"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
@@ -79,47 +81,38 @@ func makeProcessorsConfig() Processors {
 	}
 }
 
-const (
-	methodIsGet                        = "attributes[\"http.method\"] == \"GET\""
-	methodIsPost                       = "attributes[\"http.method\"] == \"POST\""
-	componentIsProxy                   = "attributes[\"component\"] == \"proxy\""
-	operationIsIngress                 = "(attributes[\"OperationName\"] == \"Ingress\" or IsMatch(name, \"ingress.*\") == true)"
-	operationIsEgress                  = "(attributes[\"OperationName\"] == \"Egress\" or IsMatch(name, \"egress.*\") == true)"
-	namespacesIsKymaSystem             = "resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\""
-	namespacesIsIstioSystem            = "resource.attributes[\"k8s.namespace.name\"] == \"istio-system\""
-	istioNameIsGrafana                 = "attributes[\"istio.canonical_service\"] == \"grafana\""
-	istioNameIsAuthProxy               = "attributes[\"istio.canonical_service\"] == \"monitoring-auth-proxy-grafana\""
-	istioNameIsFluentBit               = "attributes[\"istio.canonical_service\"] == \"telemetry-fluent-bit\""
-	istioNameIsTraceGateway            = "attributes[\"istio.canonical_service\"] == \"telemetry-trace-collector\""
-	istioNameIsMetricAgent             = "attributes[\"istio.canonical_service\"] == \"telemetry-metric-agent\""
-	istioNameIsMetricGateway           = "attributes[\"istio.canonical_service\"] == \"telemetry-metric-gateway\""
-	istioNameIsIstioGateway            = "attributes[\"istio.canonical_service\"] == \"istio-ingressgateway\""
-	userAgentIsVMScrapeAgent           = "attributes[\"user_agent\"] == \"vm_promscrape\""
-	userAgentIsPrometheus              = "IsMatch(attributes[\"user_agent\"], \"Prometheus\\\\/.*\") == true"
-	userAgentIsKymaOtelCol             = "IsMatch(attributes[\"user_agent\"], \"kyma-otelcol\\\\/.*\") == true"
-	urlIsIstioHealthz                  = "IsMatch(attributes[\"http.url\"], \"https:\\\\/\\\\/healthz\\\\..+\\\\/healthz\\\\/ready\") == true"
-	urlIsTelemetryTraceService         = "IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-otlp-traces\\\\.kyma-system(\\\\..*)?:(4317|4318).*\") == true"
-	urlIsTelemetryTraceInternalService = "IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-trace-collector-internal\\\\.kyma-system(\\\\..*)?:(55678).*\") == true"
-	urlIsTelemetryMetricService        = "IsMatch(attributes[\"http.url\"], \"http(s)?:\\\\/\\\\/telemetry-otlp-metrics\\\\.kyma-system(\\\\..*)?:(4317|4318).*\") == true"
-	and                                = " and "
+var (
+	namespacesIsKymaSystem  = namespaceEquals("kyma-system")
+	namespacesIsIstioSystem = namespaceEquals("istio-system")
+	methodIsGet             = spanAttributeEquals("http.method", "GET")
+	methodIsPost            = spanAttributeEquals("http.method", "POST")
+	componentIsProxy        = spanAttributeEquals("component", "proxy")
 
-	toFromKymaGrafana            = componentIsProxy + and + namespacesIsKymaSystem + and + istioNameIsGrafana
-	toFromKymaAuthProxy          = componentIsProxy + and + namespacesIsKymaSystem + and + istioNameIsAuthProxy
-	toFromTelemetryFluentBit     = componentIsProxy + and + namespacesIsKymaSystem + and + istioNameIsFluentBit
-	toFromTelemetryTraceGateway  = componentIsProxy + and + namespacesIsKymaSystem + and + istioNameIsTraceGateway
-	toFromTelemetryMetricGateway = componentIsProxy + and + namespacesIsKymaSystem + and + istioNameIsMetricGateway
-	toFromTelemetryMetricAgent   = componentIsProxy + and + namespacesIsKymaSystem + and + istioNameIsMetricAgent
+	urlIsIstioHealthz                  = urlMatches("https:\\\\/\\\\/healthz\\\\..+\\\\/healthz\\\\/ready")
+	urlIsTelemetryTraceService         = urlMatches("http(s)?:\\\\/\\\\/telemetry-otlp-traces\\\\.kyma-system(\\\\..*)?:(4317|4318).*")
+	urlIsTelemetryTraceInternalService = urlMatches("http(s)?:\\\\/\\\\/telemetry-trace-collector-internal\\\\.kyma-system(\\\\..*)?:(55678).*")
+	urlIsTelemetryMetricService        = urlMatches("http(s)?:\\\\/\\\\/telemetry-otlp-metrics\\\\.kyma-system(\\\\..*)?:(4317|4318).*")
 
-	toIstioGatewayWitHealthz = componentIsProxy + and + namespacesIsIstioSystem + and + methodIsGet + and + operationIsEgress + and + istioNameIsIstioGateway + and + urlIsIstioHealthz
+	operationIsIngress = joinWithOr(spanAttributeEquals("OperationName", "Ingress"), attributeMatches("name", "ingress.*"))
+	operationIsEgress  = joinWithOr(spanAttributeEquals("OperationName", "Egress"), attributeMatches("name", "egress.*"))
 
-	toTelemetryTraceService         = componentIsProxy + and + methodIsPost + and + operationIsEgress + and + urlIsTelemetryTraceService
-	toTelemetryTraceInternalService = componentIsProxy + and + methodIsPost + and + operationIsEgress + and + urlIsTelemetryTraceInternalService
-	toTelemetryMetricService        = componentIsProxy + and + methodIsPost + and + operationIsEgress + and + urlIsTelemetryMetricService
+	toFromKymaGrafana            = joinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("grafana"))
+	toFromKymaAuthProxy          = joinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("monitoring-auth-proxy-grafana"))
+	toFromTelemetryFluentBit     = joinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-fluent-bit"))
+	toFromTelemetryTraceGateway  = joinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-trace-collector"))
+	toFromTelemetryMetricGateway = joinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-metric-gateway"))
+	toFromTelemetryMetricAgent   = joinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-metric-agent"))
+
+	toIstioGatewayWitHealthz = joinWithAnd(componentIsProxy, namespacesIsIstioSystem, methodIsGet, operationIsEgress, istioCanonicalNameEquals("istio-ingressgateway"), urlIsIstioHealthz)
+
+	toTelemetryTraceService         = joinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryTraceService)
+	toTelemetryTraceInternalService = joinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryTraceInternalService)
+	toTelemetryMetricService        = joinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryMetricService)
 
 	//TODO: should be system namespaces after solving https://github.com/kyma-project/telemetry-manager/issues/380
-	fromVMScrapeAgent        = componentIsProxy + and + methodIsGet + and + operationIsIngress + and + userAgentIsVMScrapeAgent
-	fromPrometheusWithinKyma = componentIsProxy + and + methodIsGet + and + operationIsIngress + and + namespacesIsKymaSystem + and + userAgentIsPrometheus
-	fromTelemetryMetricAgent = componentIsProxy + and + methodIsGet + and + operationIsIngress + and + userAgentIsKymaOtelCol
+	fromVMScrapeAgent        = joinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, userAgentMatches("vm_promscrape"))
+	fromPrometheusWithinKyma = joinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, namespacesIsKymaSystem, userAgentMatches("Prometheus\\\\/.*"))
+	fromTelemetryMetricAgent = joinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, userAgentMatches("kyma-otelcol\\\\/.*"))
 )
 
 func makeSpanFilterConfig() []string {
@@ -138,4 +131,43 @@ func makeSpanFilterConfig() []string {
 		fromPrometheusWithinKyma,
 		fromTelemetryMetricAgent,
 	}
+}
+
+func spanAttributeEquals(key, value string) string {
+	return "attributes[\"" + key + "\"] == \"" + value + "\""
+}
+
+func istioCanonicalNameEquals(name string) string {
+	return spanAttributeEquals("istio.canonical_service", name)
+}
+
+func namespaceEquals(name string) string {
+	return resourceAttributeEquals("k8s.namespace.name", name)
+}
+func resourceAttributeEquals(key, value string) string {
+	return "resource.attributes[\"" + key + "\"] == \"" + value + "\""
+}
+
+func urlMatches(pattern string) string {
+	return spanAttributeMatches("http.url", pattern)
+}
+
+func userAgentMatches(pattern string) string {
+	return spanAttributeMatches("user_agent", pattern)
+}
+
+func spanAttributeMatches(key, pattern string) string {
+	return attributeMatches("attributes[\""+key+"\"]", pattern)
+}
+
+func attributeMatches(key, pattern string) string {
+	return "IsMatch(" + key + ", \"" + pattern + "\") == true"
+}
+
+func joinWithAnd(parts ...string) string {
+	return strings.Join(parts, " and ")
+}
+
+func joinWithOr(parts ...string) string {
+	return "(" + strings.Join(parts, " or ") + ")"
 }
