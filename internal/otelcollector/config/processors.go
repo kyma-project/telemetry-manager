@@ -19,19 +19,6 @@ type MemoryLimiter struct {
 	SpikeLimitPercentage int    `yaml:"spike_limit_percentage"`
 }
 
-type ExtractK8sMetadata struct {
-	Metadata []string `yaml:"metadata"`
-}
-
-type PodAssociation struct {
-	From string `yaml:"from"`
-	Name string `yaml:"name,omitempty"`
-}
-
-type PodAssociations struct {
-	Sources []PodAssociation `yaml:"sources"`
-}
-
 type K8sAttributesProcessor struct {
 	AuthType       string             `yaml:"auth_type"`
 	Passthrough    bool               `yaml:"passthrough"`
@@ -39,12 +26,32 @@ type K8sAttributesProcessor struct {
 	PodAssociation []PodAssociations  `yaml:"pod_association"`
 }
 
-type AttributeAction struct {
-	Action string `yaml:"action,omitempty"`
-	Key    string `yaml:"key,omitempty"`
-	Value  string `yaml:"value,omitempty"`
+type ExtractK8sMetadata struct {
+	Metadata []string       `yaml:"metadata"`
+	Labels   []ExtractLabel `yaml:"labels"`
+}
+
+type ExtractLabel struct {
+	From    string `yaml:"from"`
+	Key     string `yaml:"key"`
+	TagName string `yaml:"tag_name"`
+}
+
+type PodAssociations struct {
+	Sources []PodAssociation `yaml:"sources"`
+}
+
+type PodAssociation struct {
+	From string `yaml:"from"`
+	Name string `yaml:"name,omitempty"`
 }
 
 type ResourceProcessor struct {
 	Attributes []AttributeAction `yaml:"attributes"`
+}
+
+type AttributeAction struct {
+	Action string `yaml:"action,omitempty"`
+	Key    string `yaml:"key,omitempty"`
+	Value  string `yaml:"value,omitempty"`
 }

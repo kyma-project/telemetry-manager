@@ -44,6 +44,20 @@ func makeProcessorsConfig() Processors {
 			},
 		},
 	}
+
+	labels := []config.ExtractLabel{
+		{
+			From:    "pod",
+			Key:     "app.kubernetes.io/name",
+			TagName: "l1",
+		},
+		{
+			From:    "pod",
+			Key:     "app",
+			TagName: "l2",
+		},
+	}
+
 	return Processors{
 		BaseProcessors: config.BaseProcessors{
 			Batch: &config.BatchProcessor{
@@ -61,6 +75,7 @@ func makeProcessorsConfig() Processors {
 				Passthrough: false,
 				Extract: config.ExtractK8sMetadata{
 					Metadata: k8sAttributes,
+					Labels:   labels,
 				},
 				PodAssociation: podAssociations,
 			},

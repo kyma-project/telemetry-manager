@@ -59,11 +59,25 @@ func makeK8sAttributesProcessorConfig() *config.K8sAttributesProcessor {
 		},
 	}
 
+	labels := []config.ExtractLabel{
+		{
+			From:    "pod",
+			Key:     "app.kubernetes.io/name",
+			TagName: "l1",
+		},
+		{
+			From:    "pod",
+			Key:     "app",
+			TagName: "l2",
+		},
+	}
+
 	return &config.K8sAttributesProcessor{
 		AuthType:    "serviceAccount",
 		Passthrough: false,
 		Extract: config.ExtractK8sMetadata{
 			Metadata: k8sAttributes,
+			Labels:   labels,
 		},
 		PodAssociation: podAssociations,
 	}
