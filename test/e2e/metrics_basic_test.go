@@ -27,7 +27,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Basic", Label("icke"), func() {
+var _ = Describe("Metrics Basic", Label("metrics"), func() {
 	const (
 		mockBackendName = "metric-receiver"
 		mockNs          = "metric-mocks"
