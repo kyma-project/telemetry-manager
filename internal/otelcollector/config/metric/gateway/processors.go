@@ -5,6 +5,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/servicename"
 )
 
 func makeProcessorsConfig() Processors {
@@ -15,7 +16,8 @@ func makeProcessorsConfig() Processors {
 			K8sAttributes: makeK8sAttributesProcessorConfig(),
 			Resource:      makeResourceProcessorConfig(),
 		},
-		CumulativeToDelta: &CumulativeToDeltaConfig{},
+		CumulativeToDelta:  &CumulativeToDeltaProcessor{},
+		ResolveServiceName: makeResolveServiceNameConfig(),
 	}
 }
 
@@ -59,25 +61,12 @@ func makeK8sAttributesProcessorConfig() *config.K8sAttributesProcessor {
 		},
 	}
 
-	labels := []config.ExtractLabel{
-		{
-			From:    "pod",
-			Key:     "app.kubernetes.io/name",
-			TagName: "l1",
-		},
-		{
-			From:    "pod",
-			Key:     "app",
-			TagName: "l2",
-		},
-	}
-
 	return &config.K8sAttributesProcessor{
 		AuthType:    "serviceAccount",
 		Passthrough: false,
 		Extract: config.ExtractK8sMetadata{
 			Metadata: k8sAttributes,
-			Labels:   labels,
+			Labels:   servicename.ExtractLabels(),
 		},
 		PodAssociation: podAssociations,
 	}
@@ -120,6 +109,27 @@ func makeDropIfInputSourceIstioConfig() *FilterProcessor {
 		Metrics: FilterProcessorMetric{
 			DataPoint: []string{
 				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourceIstio),
+			},
+		},
+	}
+}
+
+func makeResolveServiceNameConfig() *TransformProcessor {
+	return &TransformProcessor{
+		ErrorMode: "ignore",
+		MetricStatements: []TransformProcessorMetricStatements{
+			{
+				Context: "resource",
+				Statements: []string{
+					"set(attributes[\"service.name\"], attributes[\"kyma.kubernetes_io_app_name\"]) where attributes[\"service.name\"] == nil",
+					"set(attributes[\"service.name\"], attributes[\"kyma.app_name\"]) where attributes[\"service.name\"] == nil",
+					"set(attributes[\"service.name\"], attributes[\"k8s.deployment.name\"]) where attributes[\"service.name\"] == nil",
+					"set(attributes[\"service.name\"], attributes[\"k8s.daemonset.name\"]) where attributes[\"service.name\"] == nil",
+					"set(attributes[\"service.name\"], attributes[\"k8s.statefulset.name\"]) where attributes[\"service.name\"] == nil",
+					"set(attributes[\"service.name\"], attributes[\"k8s.job.name\"]) where attributes[\"service.name\"] == nil",
+					"set(attributes[\"service.name\"], attributes[\"k8s.pod.name\"]) where attributes[\"service.name\"] == nil",
+					"set(attributes[\"service.name\"], \"unknown_service\") where attributes[\"service.name\"] == nil",
+				},
 			},
 		},
 	}
