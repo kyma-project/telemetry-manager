@@ -91,7 +91,7 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 					Scaling: v1alpha1.Scaling{
 						Type: v1alpha1.StaticScalingStrategyType,
 						Static: &v1alpha1.StaticScaling{
-							Replicas: 0,
+							Replicas: -1,
 						},
 					},
 				},
