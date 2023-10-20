@@ -32,6 +32,7 @@ var _ = Describe("Metrics Service Name", Label("stas"), func() {
 		deploymentName        = "deployment"
 		statefulSetName       = "stateful-set"
 		daemonSetName         = "daemon-set"
+		jobName               = "job"
 	)
 	var (
 		pipelineName       string
@@ -65,6 +66,7 @@ var _ = Describe("Metrics Service Name", Label("stas"), func() {
 			kitk8s.NewDeployment(deploymentName, mockNs).K8sObject(),
 			kitk8s.NewStatefulSet(statefulSetName, mockNs).K8sObject(),
 			kitk8s.NewDaemonSet(daemonSetName, mockNs).K8sObject(),
+			kitk8s.NewJob(jobName, mockNs).K8sObject(),
 		)
 
 		return objs
@@ -125,6 +127,10 @@ var _ = Describe("Metrics Service Name", Label("stas"), func() {
 
 		It("Should set service.name to DaemonSet name", func() {
 			verifyServiceNameAttr(daemonSetName, daemonSetName)
+		})
+
+		It("Should set service.name to Job name", func() {
+			verifyServiceNameAttr(jobName, jobName)
 		})
 	})
 })
