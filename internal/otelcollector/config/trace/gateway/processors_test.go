@@ -81,7 +81,7 @@ func TestProcessors(t *testing.T) {
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, toFromTelemetryTraceGateway, "toFromTelemetryTraceGateway span filter is missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, toFromTelemetryMetricGateway, "toFromTelemetryMetricGateway span filter is missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, toFromTelemetryMetricAgent, "toFromTelemetryMetricAgent span filter is missing")
-		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, toIstioGatewayWitHealthz, "toIstioGatewayWitHealthz span filter is missing")
+		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, toIstioGatewayWithHealthz, "toIstioGatewayWitHealthz span filter is missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, toTelemetryTraceService, "toTelemetryTraceService span filter is missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, toTelemetryTraceInternalService, "toTelemetryTraceInternalService span filter is missing")
 		require.Contains(t, collectorConfig.Processors.SpanFilter.Traces.Span, toTelemetryMetricService, "toTelemetryTraceInternalService span filter is missing")
