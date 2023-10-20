@@ -15,7 +15,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -131,6 +133,22 @@ var _ = Describe("Metrics Service Name", Label("stas"), func() {
 
 		It("Should set service.name to Job name", func() {
 			verifyServiceNameAttr(jobName, jobName)
+		})
+
+		It("Should set service.name to unknown_service", func() {
+			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP)
+			gauges := kitmetrics.MakeAndSendGaugeMetrics(proxyClient, gatewayPushURL)
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					ContainMd(SatisfyAll(
+						ContainResourceAttrs(HaveKeyWithValue("service.name", "unknown_service")),
+						WithMetrics(BeEquivalentTo(gauges))),
+					)),
+				)
+			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })
