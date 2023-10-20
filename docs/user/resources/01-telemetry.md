@@ -63,16 +63,16 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | ---- | ----------- | ---- |
 | **metric**  | object | MetricSpec defines the behavior of the metric gateway |
 | **metric.&#x200b;gateway**  | object |  |
-| **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines the scaling type and number of pods. |
-| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static scaling config params. Present only if Type = StaticScalingStrategyType. |
-| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines the number of pod instances. |
-| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is Static. |
+| **metric.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
+| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy allowing you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
+| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of pods to run the gateway. Minimum is 1. |
+| **metric.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
 | **trace**  | object | TraceSpec defines the behavior of the trace gateway |
 | **trace.&#x200b;gateway**  | object |  |
-| **trace.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines the scaling type and number of pods. |
-| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static scaling config params. Present only if Type = StaticScalingStrategyType. |
-| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines the number of pod instances. |
-| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is Static. |
+| **trace.&#x200b;gateway.&#x200b;scaling**  | object | Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type. |
+| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static**  | object | Static is a scaling strategy allowing you to define a custom amount of replicas to be used for the gateway. Present only if Type = StaticScalingStrategyType. |
+| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;static.&#x200b;replicas**  | integer | Replicas defines a static number of pods to run the gateway. Minimum is 1. |
+| **trace.&#x200b;gateway.&#x200b;scaling.&#x200b;type**  | string | Type of scaling strategy. Default is none, using a fixed amount of replicas. |
 
 **Status:**
 

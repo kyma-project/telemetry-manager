@@ -93,6 +93,25 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 
+		It("Should reject scaling below minimum", Label(operationalTest), func() {
+			var telemetry v1alpha1.Telemetry
+			err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
+			Expect(err).NotTo(HaveOccurred())
+
+			telemetry.Spec.Trace = &v1alpha1.TraceSpec{
+				Gateway: v1alpha1.TraceGatewaySpec{
+					Scaling: v1alpha1.Scaling{
+						Type: v1alpha1.StaticScalingStrategyType,
+						Static: &v1alpha1.StaticScaling{
+							Replicas: -1,
+						},
+					},
+				},
+			}
+			err = k8sClient.Update(ctx, &telemetry)
+			Expect(err).To(HaveOccurred())
+		})
+
 		It("Should scale up trace gateway replicas", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
 				var telemetry v1alpha1.Telemetry
