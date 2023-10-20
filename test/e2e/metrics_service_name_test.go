@@ -25,11 +25,12 @@ var _ = Describe("Metrics Service Name", Label("stas"), func() {
 		mockNs          = "metric-mocks-service-name"
 		mockBackendName = "metric-receiver"
 
-		kubeAppLabelValue = "kube-workload"
-		appLabelValue     = "workload"
-		podWithBothLabel  = "pod-with-both-app-labels"
-		podWithAppLabel   = "pod-with-app-label"
-		deployment        = "deployment"
+		kubeAppLabelValue     = "kube-workload"
+		appLabelValue         = "workload"
+		podWithBothLabelsName = "pod-with-both-app-labels"
+		podWithAppLabelName   = "pod-with-app-label"
+		deploymentName        = "deployment"
+		statefulSetName       = "stateful-set"
 	)
 	var (
 		pipelineName       string
@@ -53,14 +54,15 @@ var _ = Describe("Metrics Service Name", Label("stas"), func() {
 		objs = append(objs, metricPipeline.K8sObject())
 
 		objs = append(objs,
-			kitk8s.NewPod(podWithBothLabel, mockNs).
+			kitk8s.NewPod(podWithBothLabelsName, mockNs).
 				WithLabel("app.kubernetes.io/name", kubeAppLabelValue).
 				WithLabel("app", appLabelValue).
 				K8sObject(),
-			kitk8s.NewPod(podWithAppLabel, mockNs).
+			kitk8s.NewPod(podWithAppLabelName, mockNs).
 				WithLabel("app", appLabelValue).
 				K8sObject(),
-			kitk8s.NewDeployment(deployment, mockNs).K8sObject(),
+			kitk8s.NewDeployment(deploymentName, mockNs).K8sObject(),
+			kitk8s.NewStatefulSet(statefulSetName, mockNs).K8sObject(),
 		)
 
 		return objs
@@ -104,15 +106,19 @@ var _ = Describe("Metrics Service Name", Label("stas"), func() {
 		}
 
 		It("Should set service.name to app.kubernetes.io/name label value", func() {
-			verifyServiceNameAttr(podWithBothLabel, kubeAppLabelValue)
+			verifyServiceNameAttr(podWithBothLabelsName, kubeAppLabelValue)
 		})
 
 		It("Should set service.name to app label value", func() {
-			verifyServiceNameAttr(podWithBothLabel, appLabelValue)
+			verifyServiceNameAttr(podWithBothLabelsName, appLabelValue)
 		})
 
-		It("Should set service.name to deployment name", func() {
-			verifyServiceNameAttr(deployment, deployment)
+		It("Should set service.name to Deployment name", func() {
+			verifyServiceNameAttr(deploymentName, deploymentName)
+		})
+
+		It("Should set service.name to StatefulSet name", func() {
+			verifyServiceNameAttr(statefulSetName, statefulSetName)
 		})
 	})
 })

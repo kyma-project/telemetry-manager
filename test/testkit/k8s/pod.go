@@ -42,11 +42,11 @@ func (p *Pod) K8sObject() *corev1.Pod {
 			Namespace: p.namespace,
 			Labels:    labels,
 		},
-		Spec: defaultPodSpec(),
+		Spec: sleeperPodSpec(),
 	}
 }
 
-func defaultPodSpec() corev1.PodSpec {
+func sleeperPodSpec() corev1.PodSpec {
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
