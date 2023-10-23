@@ -1,5 +1,5 @@
 name: kyma-project.io/module/telemetry
-channel: fast
+channel: experimental
 version: 1.1.0-dev
 manifest: telemetry-manager-dev.yaml
 security: sec-scanners-config.yaml
