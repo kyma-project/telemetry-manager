@@ -393,19 +393,25 @@ The relevant metrics are:
 
 ## Limitations
 
-The metric agent setup is based on the following assumptions:
+The metric setup is based on the following assumptions:
 
-- The collector has no autoscaling options and has a limited resource setup of 1 CPU and 1.2 GiB memory.
-- Batching is enabled, and a batch contains up to 1024 metrics/batch.
-- A destination can be unavailable for up to 5 minutes without direct loss of metric data.
+- A destination can be unavailable for up to 5 minutes without direct loss of metric data (using retries).
 - An average metric consists of 20 metric data points and 10 labels.
-- Max sample limit is configured to 50.000 metric data points per scrape loop
+- Batching is enabled, and a batch contains up to 1024 metrics/batch.
 
 This leads to the following limitations:
 
 ### Throughput
 
-The maximum throughput is 14K metric data points/sec ~= 50.000.000 metric data points/hour. If more data must be ingested, it can be refused. If a metric data endpoint emits more than 50.000 metric data points per scrape loop, all the data is refused by the agent.
+The default metric gateway setup has a maximum throughput of 34K metric data points/sec. If more data is sent to the gateway, it is refused. Manual scaling can be used to increase the maximum throughput.
+
+The metric agent setup has a maximum throughput of 14K metric data points/sec per instance. If more data must be ingested, it is refused. If a metric data endpoint emits more than 50.000 metric data points per scrape loop, the metric agent refuses all the data.
+
+
+### Load Balancing with Istio
+
+To assure availability, the metric gateway runs with multiple instances. If you want to increase the maximum throughput, use manual scaling and enter a higher number of instances. 
+By design, the connections to the gateway are long-living connections (because OTLP is based on gRPC and HTTP/2). For optimal scaling of the gateway, the clients or applications must balance the connections across the available instances, which is automatically achieved if you use an Istio sidecar. If your application has no Istio sidecar, the data is always sent to one instance of the gateway.
 
 ### Unavailability of output
 
