@@ -103,44 +103,56 @@ provision-test-env:
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
 
 .PHONY: e2e-test
-e2e-test: ginkgo k3d  | test-matchers provision-test-env ## Provision k3d cluster and run end-to-end tests.
+e2e-test: k3d provision-test-env ## Provision k3d cluster and run end-to-end tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+	make run-e2e-test
+
+.PHONY: e2e-test-logging
+e2e-test-logging: k3d provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+	make run-e2e-test-logging
+
+.PHONY: e2e-test-tracing
+e2e-test-tracing: k3d provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end tracing tests.
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+	make run-e2e-test-tracing
+
+.PHONY: e2e-test-metrics
+e2e-test-metrics: k3d provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end metrics tests.
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+	make run-e2e-test-metrics
+
+.PHONY: e2e-test-logging-release
+e2e-test-logging-release: k3d provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end logging tests.
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
+	make run-e2e-test-logging
+
+.PHONY: e2e-test-tracing-release
+e2e-test-tracing-release: k3d provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end tracing tests.
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
+	make run-e2e-test-tracing
+
+.PHONY: run-e2e-test
+run-e2e-test: ginkgo test-matchers ## run all end-to-end tests using an existing cluster
 	$(GINKGO) run --tags e2e --junit-report=junit.xml ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
-.PHONY: e2e-test-logging
-e2e-test-logging: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
-	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+.PHONY: run-e2e-test-logging
+run-e2e-test-logging: ginkgo test-matchers ## run end-to-end metrics tests using an existing cluster
 	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="logging" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
-.PHONY: e2e-test-tracing
-e2e-test-tracing: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end tracing tests.
-	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+.PHONY: run-e2e-test-tracing
+run-e2e-test-tracing: ginkgo test-matchers ## run end-to-end tracing tests using an existing cluster
 	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="tracing" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
-.PHONY: e2e-test-metrics
- e2e-test-metrics: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end metrics tests.
-	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+.PHONY: run-e2e-test-metrics
+run-e2e-test-metrics: ginkgo test-matchers ## run end-to-end metrics tests using an existing cluster
 	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="metrics" ./test/e2e
-	mkdir -p ${ARTIFACTS}
-	mv junit.xml ${ARTIFACTS}
-
-.PHONY: e2e-test-logging-release
-e2e-test-logging-release: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end logging tests.
-	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
-	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="logging" ./test/e2e
-	mkdir -p ${ARTIFACTS}
-	mv junit.xml ${ARTIFACTS}
-
-.PHONY: e2e-test-tracing-release
-e2e-test-tracing-release: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end tracing tests.
-	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
-	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="tracing" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
@@ -161,8 +173,12 @@ e2e-coverage: ginkgo
 
 .PHONY: integration-test-istio
 integration-test-istio: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run integration tests with istio.
-	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+	make run-integration-test-istio
+
+.PHONY: run-integration-test-istio
+run-integration-test-istio: ginkgo test-matchers ## run integration tests with istio on an existing cluster
+	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
 	$(GINKGO) run --tags istio --flake-attempts=5 --junit-report=junit.xml ./test/integration/istio
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
@@ -328,23 +344,18 @@ GARDENER_K8S_VERSION?=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloud
 endif
 
 # log tests are excluded for now as they are too flaky
-.PHONY: run-tests
-run-tests: ginkgo ## Run e2e tests on existing cluster using image related to git commit sha
+.PHONY: run-tests-with-git-image
+run-tests-with-git-image: ## Run e2e tests on existing cluster using image related to git commit sha
 	kubectl create namespace kyma-system
 	IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
-	mkdir -p ${ARTIFACTS}
-	$(GINKGO) run --tags e2e --junit-report=traces-junit.xml --label-filter="tracing" ./test/e2e
-	mv traces-junit.xml ${ARTIFACTS}
-	$(GINKGO) run --tags e2e --junit-report=metrics-junit.xml --label-filter="metrics" ./test/e2e
-	mv metrics-junit.xml ${ARTIFACTS}
-	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
-	$(GINKGO) run --tags istio --flake-attempts=5 --junit-report=istio-junit.xml ./test/integration/istio
-	mv istio-junit.xml ${ARTIFACTS}
+	make run-e2e-test-tracing
+	make run-e2e-test-metrics
+	make run-integration-test-istio
 
 .PHONY: gardener-integration-test
 gardener-integration-test: ## Provision gardener cluster and run integration test on it.
 	make provision-gardener \
-		run-tests \
+		run-tests-with-git-image \
 		deprovision-gardener || \
 		(make deprovision-gardener && false)
 
