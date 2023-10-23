@@ -33,13 +33,8 @@ type Traces struct {
 }
 
 type TransformProcessor struct {
-	ErrorMode        string                              `yaml:"error_mode"`
-	MetricStatements []TransformProcessorTraceStatements `yaml:"trace_statements"`
-}
-
-type TransformProcessorTraceStatements struct {
-	Context    string   `yaml:"context"`
-	Statements []string `yaml:"statements"`
+	ErrorMode       string                                `yaml:"error_mode"`
+	TraceStatements []config.TransformProcessorStatements `yaml:"trace_statements"`
 }
 
 type Exporters map[string]Exporter

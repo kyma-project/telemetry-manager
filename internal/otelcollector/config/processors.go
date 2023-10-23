@@ -55,3 +55,8 @@ type AttributeAction struct {
 	Key    string `yaml:"key,omitempty"`
 	Value  string `yaml:"value,omitempty"`
 }
+
+type TransformProcessorStatements struct {
+	Context    string   `yaml:"context"`
+	Statements []string `yaml:"statements"`
+}

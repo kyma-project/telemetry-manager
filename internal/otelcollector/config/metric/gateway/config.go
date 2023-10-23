@@ -37,13 +37,8 @@ type FilterProcessorMetric struct {
 type CumulativeToDeltaProcessor struct{}
 
 type TransformProcessor struct {
-	ErrorMode        string                               `yaml:"error_mode"`
-	MetricStatements []TransformProcessorMetricStatements `yaml:"metric_statements"`
-}
-
-type TransformProcessorMetricStatements struct {
-	Context    string   `yaml:"context"`
-	Statements []string `yaml:"statements"`
+	ErrorMode        string                                `yaml:"error_mode"`
+	MetricStatements []config.TransformProcessorStatements `yaml:"metric_statements"`
 }
 
 type Exporters map[string]Exporter
