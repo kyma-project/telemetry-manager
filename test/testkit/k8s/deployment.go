@@ -13,6 +13,7 @@ type Deployment struct {
 	namespace string
 	replicas  int32
 	labels    map[string]string
+	podSpec   corev1.PodSpec
 }
 
 func NewDeployment(name, namespace string) *Deployment {
@@ -21,11 +22,17 @@ func NewDeployment(name, namespace string) *Deployment {
 		namespace: namespace,
 		replicas:  1,
 		labels:    make(map[string]string),
+		podSpec:   SleeperPodSpec(),
 	}
 }
 
 func (d *Deployment) WithLabel(key, value string) *Deployment {
 	d.labels[key] = value
+	return d
+}
+
+func (d *Deployment) WithPodSpec(podSpec corev1.PodSpec) *Deployment {
+	d.podSpec = podSpec
 	return d
 }
 
@@ -48,7 +55,7 @@ func (d *Deployment) K8sObject() *appsv1.Deployment {
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,
 				},
-				Spec: sleeperPodSpec(),
+				Spec: d.podSpec,
 			},
 		},
 	}

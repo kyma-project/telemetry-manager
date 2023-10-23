@@ -12,6 +12,7 @@ type Pod struct {
 	namespace  string
 	persistent bool
 	labels     map[string]string
+	podSpec    corev1.PodSpec
 }
 
 func NewPod(name, namespace string) *Pod {
@@ -19,11 +20,17 @@ func NewPod(name, namespace string) *Pod {
 		name:      name,
 		namespace: namespace,
 		labels:    make(map[string]string),
+		podSpec:   SleeperPodSpec(),
 	}
 }
 
 func (p *Pod) WithLabel(key, value string) *Pod {
 	p.labels[key] = value
+	return p
+}
+
+func (p *Pod) WithPodSpec(podSpec corev1.PodSpec) *Pod {
+	p.podSpec = podSpec
 	return p
 }
 
@@ -34,7 +41,12 @@ func (p *Pod) Persistent(persistent bool) *Pod {
 
 func (p *Pod) K8sObject() *corev1.Pod {
 	labels := p.labels
-	maps.Copy(labels, PersistentLabel)
+	if p.persistent {
+		maps.Copy(labels, PersistentLabel)
+	}
+
+	podSpec := p.podSpec
+	podSpec.RestartPolicy = corev1.RestartPolicyOnFailure
 
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -42,22 +54,6 @@ func (p *Pod) K8sObject() *corev1.Pod {
 			Namespace: p.namespace,
 			Labels:    labels,
 		},
-		Spec: sleeperPodSpec(),
-	}
-}
-
-func sleeperPodSpec() corev1.PodSpec {
-	return corev1.PodSpec{
-		Containers: []corev1.Container{
-			{
-				Name:  "sleeper",
-				Image: "busybox",
-				Command: []string{
-					"sh",
-					"-c",
-					"while true; do sleep 3600; done",
-				},
-			},
-		},
+		Spec: podSpec,
 	}
 }

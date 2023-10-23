@@ -13,6 +13,7 @@ type StatefulSet struct {
 	namespace string
 	replicas  int32
 	labels    map[string]string
+	podSpec   corev1.PodSpec
 }
 
 func NewStatefulSet(name, namespace string) *StatefulSet {
@@ -21,11 +22,17 @@ func NewStatefulSet(name, namespace string) *StatefulSet {
 		namespace: namespace,
 		replicas:  1,
 		labels:    make(map[string]string),
+		podSpec:   SleeperPodSpec(),
 	}
 }
 
 func (s *StatefulSet) WithLabel(key, value string) *StatefulSet {
 	s.labels[key] = value
+	return s
+}
+
+func (s *StatefulSet) WithPodSpec(podSpec corev1.PodSpec) *StatefulSet {
+	s.podSpec = podSpec
 	return s
 }
 
@@ -48,7 +55,7 @@ func (s *StatefulSet) K8sObject() *appsv1.StatefulSet {
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,
 				},
-				Spec: sleeperPodSpec(),
+				Spec: s.podSpec,
 			},
 		},
 	}

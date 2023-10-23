@@ -12,6 +12,7 @@ type DaemonSet struct {
 	name      string
 	namespace string
 	labels    map[string]string
+	podSpec   corev1.PodSpec
 }
 
 func NewDaemonSet(name, namespace string) *DaemonSet {
@@ -19,11 +20,17 @@ func NewDaemonSet(name, namespace string) *DaemonSet {
 		name:      name,
 		namespace: namespace,
 		labels:    make(map[string]string),
+		podSpec:   SleeperPodSpec(),
 	}
 }
 
 func (d *DaemonSet) WithLabel(key, value string) *DaemonSet {
 	d.labels[key] = value
+	return d
+}
+
+func (d *DaemonSet) WithPodSpec(podSpec corev1.PodSpec) *DaemonSet {
+	d.podSpec = podSpec
 	return d
 }
 
@@ -45,7 +52,7 @@ func (d *DaemonSet) K8sObject() *appsv1.DaemonSet {
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,
 				},
-				Spec: sleeperPodSpec(),
+				Spec: d.podSpec,
 			},
 		},
 	}

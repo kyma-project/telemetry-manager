@@ -119,14 +119,14 @@ e2e-test-logging: ginkgo k3d | test-matchers provision-test-env ## Provision k3d
 .PHONY: e2e-test-tracing
 e2e-test-tracing: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end tracing tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
-	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="tracing" ./test/e2e
+	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="stas" -v ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
 .PHONY: e2e-test-metrics
  e2e-test-metrics: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end metrics tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
-	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="stas" ./test/e2e
+	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="metrics" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 

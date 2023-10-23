@@ -20,7 +20,8 @@ type Receivers struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	SpanFilter FilterProcessor `yaml:"filter"`
+	SpanFilter         FilterProcessor     `yaml:"filter"`
+	ResolveServiceName *TransformProcessor `yaml:"transform/resolve-service-name,omitempty"`
 }
 
 type FilterProcessor struct {
@@ -29,6 +30,16 @@ type FilterProcessor struct {
 
 type Traces struct {
 	Span []string `yaml:"span"`
+}
+
+type TransformProcessor struct {
+	ErrorMode        string                              `yaml:"error_mode"`
+	MetricStatements []TransformProcessorTraceStatements `yaml:"trace_statements"`
+}
+
+type TransformProcessorTraceStatements struct {
+	Context    string   `yaml:"context"`
+	Statements []string `yaml:"statements"`
 }
 
 type Exporters map[string]Exporter

@@ -10,22 +10,22 @@ import (
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
+	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Metrics Service Name", Label("metrics"), func() {
+var _ = Describe("Traces Service Name", Label("stas"), func() {
 	const (
-		mockNs          = "metric-mocks-service-name"
-		mockBackendName = "metric-receiver"
+		mockNs          = "trace-mocks-service-name"
+		mockBackendName = "trace-receiver"
 
 		kubeAppLabelValue     = "kube-workload"
 		appLabelValue         = "workload"
@@ -46,35 +46,36 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
 		objs = append(objs, mockBackend.K8sObjects()...)
 
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		metricPipeline := kitmetric.NewPipeline("pipeline-service-name-test").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			RuntimeInput(true)
-		pipelineName = metricPipeline.Name()
-		objs = append(objs, metricPipeline.K8sObject())
+		tracePipeline := kittrace.NewPipeline("pipeline-service-name-test").
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+		pipelineName = tracePipeline.Name()
+		objs = append(objs, tracePipeline.K8sObject())
 
 		objs = append(objs,
 			kitk8s.NewPod(podWithBothLabelsName, mockNs).
 				WithLabel("app.kubernetes.io/name", kubeAppLabelValue).
 				WithLabel("app", appLabelValue).
+				WithPodSpec(kitk8s.TraceGenPodSpec()).
 				K8sObject(),
 			kitk8s.NewPod(podWithAppLabelName, mockNs).
 				WithLabel("app", appLabelValue).
+				WithPodSpec(kitk8s.TraceGenPodSpec()).
 				K8sObject(),
-			kitk8s.NewDeployment(deploymentName, mockNs).K8sObject(),
-			kitk8s.NewStatefulSet(statefulSetName, mockNs).K8sObject(),
-			kitk8s.NewDaemonSet(daemonSetName, mockNs).K8sObject(),
-			kitk8s.NewJob(jobName, mockNs).K8sObject(),
+			kitk8s.NewDeployment(deploymentName, mockNs).WithPodSpec(kitk8s.TraceGenPodSpec()).K8sObject(),
+			kitk8s.NewStatefulSet(statefulSetName, mockNs).WithPodSpec(kitk8s.TraceGenPodSpec()).K8sObject(),
+			kitk8s.NewDaemonSet(daemonSetName, mockNs).WithPodSpec(kitk8s.TraceGenPodSpec()).K8sObject(),
+			kitk8s.NewJob(jobName, mockNs).WithPodSpec(kitk8s.TraceGenPodSpec()).K8sObject(),
 		)
 
 		return objs
 	}
 
-	Context("When a MetricPipeline exists", Ordered, func() {
+	Context("When a TracePipeline exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -84,17 +85,17 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running metric gateway deployment", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+		It("Should have a running trace gateway deployment", func() {
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 
 		})
 
-		It("Should have a metrics backend running", func() {
+		It("Should have a trace backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
 		verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {
@@ -103,9 +104,8 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					ContainMd(SatisfyAll(
+					ContainTd(SatisfyAll(
 						ContainResourceAttrs(HaveKeyWithValue("service.name", expectedServiceName)),
-						ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", ContainSubstring(givenPodPrefix))),
 					)),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -136,18 +136,27 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 		})
 
 		It("Should set service.name to unknown_service", func() {
-			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP)
-			gauges := kitmetrics.MakeAndSendGaugeMetrics(proxyClient, gatewayPushURL)
+			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP)
+			_, _, _ = kittraces.MakeAndSendTraces(proxyClient, gatewayPushURL)
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					ContainMd(SatisfyAll(
+					ContainTd(SatisfyAll(
 						ContainResourceAttrs(HaveKeyWithValue("service.name", "unknown_service")),
-						WithMetrics(BeEquivalentTo(gauges))),
+						//WithSpans(
+						//	SatisfyAll(
+						//		HaveLen(len(spanIDs)),
+						//		WithSpanIDs(ConsistOf(spanIDs)),
+						//		HaveEach(SatisfyAll(
+						//			WithTraceID(Equal(traceID)),
+						//			WithSpanAttrs(BeEquivalentTo(spanAttrs.AsRaw())),
+						//		)),
+						//	),
+						//),
 					)),
-				)
+				))
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})

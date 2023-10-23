@@ -12,6 +12,7 @@ type Job struct {
 	name      string
 	namespace string
 	labels    map[string]string
+	podSpec   corev1.PodSpec
 }
 
 func NewJob(name, namespace string) *Job {
@@ -19,6 +20,7 @@ func NewJob(name, namespace string) *Job {
 		name:      name,
 		namespace: namespace,
 		labels:    make(map[string]string),
+		podSpec:   SleeperPodSpec(),
 	}
 }
 
@@ -27,11 +29,16 @@ func (j *Job) WithLabel(key, value string) *Job {
 	return j
 }
 
+func (j *Job) WithPodSpec(podSpec corev1.PodSpec) *Job {
+	j.podSpec = podSpec
+	return j
+}
+
 func (j *Job) K8sObject() *batchv1.Job {
 	labels := j.labels
 	maps.Copy(labels, PersistentLabel)
 
-	podSpec := sleeperPodSpec()
+	podSpec := j.podSpec
 	podSpec.RestartPolicy = corev1.RestartPolicyNever
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
