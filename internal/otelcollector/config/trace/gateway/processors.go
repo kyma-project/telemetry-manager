@@ -8,33 +8,29 @@ import (
 func makeProcessorsConfig() Processors {
 	return Processors{
 		BaseProcessors: config.BaseProcessors{
-			Batch: &config.BatchProcessor{
-				SendBatchSize:    512,
-				Timeout:          "10s",
-				SendBatchMaxSize: 512,
-			},
-			MemoryLimiter: &config.MemoryLimiter{
-				CheckInterval:        "1s",
-				LimitPercentage:      60,
-				SpikeLimitPercentage: 40,
-			},
-			K8sAttributes: gatewayprocs.MakeK8sAttributesProcessorConfig(),
-			Resource: &config.ResourceProcessor{
-				Attributes: []config.AttributeAction{
-					{
-						Action: "insert",
-						Key:    "k8s.cluster.name",
-						Value:  "${KUBERNETES_SERVICE_HOST}",
-					},
-				},
-			},
+			Batch:         makeBatchProcessorConfig(),
+			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		SpanFilter: FilterProcessor{
-			Traces: Traces{
-				Span: makeSpanFilterConfig(),
-			},
-		},
+		K8sAttributes:      gatewayprocs.MakeK8sAttributesProcessorConfig(),
+		InsertClusterName:  gatewayprocs.InsertClusterNameProcessorConfig(),
+		DropNoisySpans:     makeDropNoisySpansConfig(),
 		ResolveServiceName: makeResolveServiceNameConfig(),
+	}
+}
+
+func makeBatchProcessorConfig() *config.BatchProcessor {
+	return &config.BatchProcessor{
+		SendBatchSize:    512,
+		Timeout:          "10s",
+		SendBatchMaxSize: 512,
+	}
+}
+
+func makeMemoryLimiterConfig() *config.MemoryLimiter {
+	return &config.MemoryLimiter{
+		CheckInterval:        "1s",
+		LimitPercentage:      60,
+		SpikeLimitPercentage: 40,
 	}
 }
 

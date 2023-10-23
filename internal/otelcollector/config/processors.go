@@ -1,10 +1,8 @@
 package config
 
 type BaseProcessors struct {
-	Batch         *BatchProcessor         `yaml:"batch,omitempty"`
-	MemoryLimiter *MemoryLimiter          `yaml:"memory_limiter,omitempty"`
-	K8sAttributes *K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
-	Resource      *ResourceProcessor      `yaml:"resource,omitempty"`
+	Batch         *BatchProcessor `yaml:"batch,omitempty"`
+	MemoryLimiter *MemoryLimiter  `yaml:"memory_limiter,omitempty"`
 }
 
 type BatchProcessor struct {

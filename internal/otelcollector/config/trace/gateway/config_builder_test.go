@@ -106,8 +106,8 @@ func TestMakeConfig(t *testing.T) {
 
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "filter")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[3], "resource")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "filter/drop-noisy-spans")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[3], "resource/insert-cluster-name")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "otlp/test")
@@ -129,8 +129,8 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Receivers, "opencensus")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[2], "filter")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[3], "resource")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[2], "filter/drop-noisy-spans")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[3], "resource/attributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[4], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-2")
@@ -139,8 +139,8 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Receivers, "opencensus")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[2], "filter")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[3], "resource")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[2], "filter/drop-noisy-spans")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[3], "resource/insert-cluster-name")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[4], "batch")
 	})
 

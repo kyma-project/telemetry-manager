@@ -38,21 +38,25 @@ var (
 	fromTelemetryMetricAgent = joinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, userAgentMatches("kyma-otelcol\\\\/.*"))
 )
 
-func makeSpanFilterConfig() []string {
-	return []string{
-		toFromKymaGrafana,
-		toFromKymaAuthProxy,
-		toFromTelemetryFluentBit,
-		toFromTelemetryTraceGateway,
-		toFromTelemetryMetricGateway,
-		toFromTelemetryMetricAgent,
-		toIstioGatewayWitHealthz,
-		toTelemetryTraceService,
-		toTelemetryTraceInternalService,
-		toTelemetryMetricService,
-		fromVMScrapeAgent,
-		fromPrometheusWithinKyma,
-		fromTelemetryMetricAgent,
+func makeDropNoisySpansConfig() FilterProcessor {
+	return FilterProcessor{
+		Traces: Traces{
+			Span: []string{
+				toFromKymaGrafana,
+				toFromKymaAuthProxy,
+				toFromTelemetryFluentBit,
+				toFromTelemetryTraceGateway,
+				toFromTelemetryMetricGateway,
+				toFromTelemetryMetricAgent,
+				toIstioGatewayWitHealthz,
+				toTelemetryTraceService,
+				toTelemetryTraceInternalService,
+				toTelemetryMetricService,
+				fromVMScrapeAgent,
+				fromPrometheusWithinKyma,
+				fromTelemetryMetricAgent,
+			},
+		},
 	}
 }
 

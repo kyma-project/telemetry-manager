@@ -20,8 +20,10 @@ type Receivers struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	SpanFilter         FilterProcessor     `yaml:"filter"`
-	ResolveServiceName *TransformProcessor `yaml:"transform/resolve-service-name,omitempty"`
+	K8sAttributes      *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
+	InsertClusterName  *config.ResourceProcessor      `yaml:"resource/insert-cluster-name,omitempty"`
+	DropNoisySpans     FilterProcessor                `yaml:"filter/drop-noisy-spans"`
+	ResolveServiceName *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
 }
 
 type FilterProcessor struct {

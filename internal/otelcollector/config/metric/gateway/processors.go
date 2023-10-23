@@ -13,9 +13,9 @@ func makeProcessorsConfig() Processors {
 		BaseProcessors: config.BaseProcessors{
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
-			K8sAttributes: gatewayprocs.MakeK8sAttributesProcessorConfig(),
-			Resource:      makeResourceProcessorConfig(),
 		},
+		K8sAttributes:      gatewayprocs.MakeK8sAttributesProcessorConfig(),
+		InsertClusterName:  gatewayprocs.InsertClusterNameProcessorConfig(),
 		CumulativeToDelta:  &CumulativeToDeltaProcessor{},
 		ResolveServiceName: makeResolveServiceNameConfig(),
 	}
@@ -34,18 +34,6 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 		CheckInterval:        "0.1s",
 		LimitPercentage:      75,
 		SpikeLimitPercentage: 10,
-	}
-}
-
-func makeResourceProcessorConfig() *config.ResourceProcessor {
-	return &config.ResourceProcessor{
-		Attributes: []config.AttributeAction{
-			{
-				Action: "insert",
-				Key:    "k8s.cluster.name",
-				Value:  "${KUBERNETES_SERVICE_HOST}",
-			},
-		},
 	}
 }
 
