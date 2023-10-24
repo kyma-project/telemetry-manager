@@ -23,3 +23,18 @@ func TestInsertClusterNameProcessorConfig(t *testing.T) {
 
 	require.ElementsMatch(expectedAttributeActions, config.Attributes, "Attributes should match")
 }
+
+func TestDropKymaAttributesProcessorConfig(t *testing.T) {
+	require := require.New(t)
+
+	expectedAttributeActions := []config.AttributeAction{
+		{
+			Action:       "delete",
+			RegexPattern: "kyma.*",
+		},
+	}
+
+	config := DropKymaAttributesProcessorConfig()
+
+	require.ElementsMatch(expectedAttributeActions, config.Attributes, "Attributes should match")
+}
