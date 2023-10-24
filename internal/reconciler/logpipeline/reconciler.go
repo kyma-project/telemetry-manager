@@ -138,7 +138,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	deployableLogPipelines := r.getDeployableLogpipelines(ctx, allPipelines.Items)
-	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, allPipelines, deployableLogPipelines); err != nil {
+	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, deployableLogPipelines); err != nil {
 		return err
 	}
 
