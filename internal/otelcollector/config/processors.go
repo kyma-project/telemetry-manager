@@ -49,9 +49,10 @@ type ResourceProcessor struct {
 }
 
 type AttributeAction struct {
-	Action string `yaml:"action,omitempty"`
-	Key    string `yaml:"key,omitempty"`
-	Value  string `yaml:"value,omitempty"`
+	Action       string `yaml:"action,omitempty"`
+	Key          string `yaml:"key,omitempty"`
+	Value        string `yaml:"value,omitempty"`
+	RegexPattern string `yaml:"pattern,omitempty"`
 }
 
 type TransformProcessorStatements struct {

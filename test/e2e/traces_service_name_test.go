@@ -128,5 +128,18 @@ var _ = Describe("Traces Service Name", Label("tracing"), func() {
 				))
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
+
+		It("Should have no kyma resource attributes", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					Not(ContainTd(
+						ContainResourceAttrs(HaveKey(ContainSubstring("kyma"))),
+					)),
+				))
+			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
 	})
 })

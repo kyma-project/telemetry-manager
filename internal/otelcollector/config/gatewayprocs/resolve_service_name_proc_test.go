@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMakeResolveServiceNameStatements(t *testing.T) {
+func TestResolveServiceNameStatements(t *testing.T) {
 	require := require.New(t)
 
 	expectedStatements := []string{
@@ -20,7 +20,7 @@ func TestMakeResolveServiceNameStatements(t *testing.T) {
 		"set(attributes[\"service.name\"], \"unknown_service\") where attributes[\"service.name\"] == nil or attributes[\"service.name\"] == \"\" or attributes[\"service.name\"] == \"unknown_service\"",
 	}
 
-	statements := MakeResolveServiceNameStatements()
+	statements := ResolveServiceNameStatements()
 
 	require.Len(statements, 1)
 	require.Equal("resource", statements[0].Context)

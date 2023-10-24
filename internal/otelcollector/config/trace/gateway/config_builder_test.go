@@ -111,7 +111,8 @@ func TestMakeConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "filter/drop-noisy-spans")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[3], "resource/insert-cluster-name")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "transform/resolve-service-name")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[5], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[5], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[6], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "otlp/test")
 	})
@@ -135,7 +136,8 @@ func TestMakeConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[2], "filter/drop-noisy-spans")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[3], "resource/insert-cluster-name")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[4], "transform/resolve-service-name")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[5], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[5], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[6], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Exporters, "otlp/test-2")
@@ -145,8 +147,9 @@ func TestMakeConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[1], "k8sattributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[2], "filter/drop-noisy-spans")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[3], "resource/insert-cluster-name")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[4], "transform/resolve-service-name")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[5], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[4], "transform/resolve-service-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[5], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[6], "batch")
 	})
 
 	t.Run("marshaling", func(t *testing.T) {

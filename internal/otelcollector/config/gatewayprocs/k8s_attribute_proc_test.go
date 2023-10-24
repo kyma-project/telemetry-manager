@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
-func TestMakeK8sAttributesProcessorConfig(t *testing.T) {
+func TestK8sAttributesProcessorConfig(t *testing.T) {
 	require := require.New(t)
 
 	expectedPodAssociations := []config.PodAssociations{
@@ -45,7 +45,7 @@ func TestMakeK8sAttributesProcessorConfig(t *testing.T) {
 		},
 	}
 
-	config := MakeK8sAttributesProcessorConfig()
+	config := K8sAttributesProcessorConfig()
 
 	require.Equal("serviceAccount", config.AuthType)
 	require.Equal(false, config.Passthrough)

@@ -26,6 +26,7 @@ type Processors struct {
 	DropIfInputSourceIstio      *FilterProcessor               `yaml:"filter/drop-if-input-source-istio,omitempty"`
 	CumulativeToDelta           *CumulativeToDeltaProcessor    `yaml:"cumulativetodelta,omitempty"`
 	ResolveServiceName          *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
+	DropKymaAttributes          *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
 
 type FilterProcessor struct {

@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
-func MakeResolveServiceNameStatements() []config.TransformProcessorStatements {
+func ResolveServiceNameStatements() []config.TransformProcessorStatements {
 	attributes := []string{
 		"kyma.kubernetes_io_app_name",
 		"kyma.app_name",

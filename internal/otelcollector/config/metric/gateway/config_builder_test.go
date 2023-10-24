@@ -118,6 +118,7 @@ func TestMakeConfig(t *testing.T) {
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
+				"resource/drop-kyma-attributes",
 				"batch",
 			})
 		})
@@ -139,6 +140,7 @@ func TestMakeConfig(t *testing.T) {
 				"transform/resolve-service-name",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-istio",
+				"resource/drop-kyma-attributes",
 				"batch",
 			})
 		})
@@ -160,6 +162,7 @@ func TestMakeConfig(t *testing.T) {
 				"transform/resolve-service-name",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
+				"resource/drop-kyma-attributes",
 				"batch",
 			})
 		})
@@ -181,6 +184,7 @@ func TestMakeConfig(t *testing.T) {
 				"transform/resolve-service-name",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
+				"resource/drop-kyma-attributes",
 				"batch",
 			})
 		})
@@ -207,6 +211,7 @@ func TestMakeConfig(t *testing.T) {
 			"transform/resolve-service-name",
 			"filter/drop-if-input-source-prometheus",
 			"filter/drop-if-input-source-istio",
+			"resource/drop-kyma-attributes",
 			"batch",
 		})
 
@@ -219,6 +224,7 @@ func TestMakeConfig(t *testing.T) {
 			"transform/resolve-service-name",
 			"filter/drop-if-input-source-runtime",
 			"filter/drop-if-input-source-istio",
+			"resource/drop-kyma-attributes",
 			"batch",
 		})
 
@@ -231,6 +237,7 @@ func TestMakeConfig(t *testing.T) {
 			"transform/resolve-service-name",
 			"filter/drop-if-input-source-runtime",
 			"filter/drop-if-input-source-prometheus",
+			"resource/drop-kyma-attributes",
 			"batch",
 		})
 	})
@@ -249,7 +256,9 @@ func TestMakeConfig(t *testing.T) {
 			"transform/resolve-service-name",
 			"filter/drop-if-input-source-runtime",
 			"filter/drop-if-input-source-prometheus",
-			"filter/drop-if-input-source-istio", "batch"}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
+			"filter/drop-if-input-source-istio",
+			"resource/drop-kyma-attributes",
+			"batch"}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-delta")
 		require.Equal(t, []string{"memory_limiter",
@@ -260,6 +269,7 @@ func TestMakeConfig(t *testing.T) {
 			"filter/drop-if-input-source-prometheus",
 			"filter/drop-if-input-source-istio",
 			"cumulativetodelta",
+			"resource/drop-kyma-attributes",
 			"batch"}, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors)
 	})
 

@@ -14,10 +14,11 @@ func makeProcessorsConfig() Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes:      gatewayprocs.MakeK8sAttributesProcessorConfig(),
+		K8sAttributes:      gatewayprocs.K8sAttributesProcessorConfig(),
 		InsertClusterName:  gatewayprocs.InsertClusterNameProcessorConfig(),
 		CumulativeToDelta:  &CumulativeToDeltaProcessor{},
 		ResolveServiceName: makeResolveServiceNameConfig(),
+		DropKymaAttributes: gatewayprocs.DropKymaAttributesProcessorConfig(),
 	}
 }
 
@@ -70,6 +71,6 @@ func makeDropIfInputSourceIstioConfig() *FilterProcessor {
 func makeResolveServiceNameConfig() *TransformProcessor {
 	return &TransformProcessor{
 		ErrorMode:        "ignore",
-		MetricStatements: gatewayprocs.MakeResolveServiceNameStatements(),
+		MetricStatements: gatewayprocs.ResolveServiceNameStatements(),
 	}
 }

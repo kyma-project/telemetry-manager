@@ -24,6 +24,7 @@ type Processors struct {
 	InsertClusterName  *config.ResourceProcessor      `yaml:"resource/insert-cluster-name,omitempty"`
 	DropNoisySpans     FilterProcessor                `yaml:"filter/drop-noisy-spans"`
 	ResolveServiceName *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
+	DropKymaAttributes *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
 
 type FilterProcessor struct {

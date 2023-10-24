@@ -15,3 +15,14 @@ func InsertClusterNameProcessorConfig() *config.ResourceProcessor {
 		},
 	}
 }
+
+func DropKymaAttributesProcessorConfig() *config.ResourceProcessor {
+	return &config.ResourceProcessor{
+		Attributes: []config.AttributeAction{
+			{
+				Action:       "delete",
+				RegexPattern: "kyma.*",
+			},
+		},
+	}
+}

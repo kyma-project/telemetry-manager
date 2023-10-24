@@ -15,6 +15,7 @@ service:
                 - filter/drop-noisy-spans
                 - resource/insert-cluster-name
                 - transform/resolve-service-name
+                - resource/drop-kyma-attributes
                 - batch
             exporters:
                 - otlp/test
@@ -108,6 +109,10 @@ processors:
                 - set(attributes["service.name"], attributes["k8s.job.name"]) where attributes["service.name"] == nil or attributes["service.name"] == "" or attributes["service.name"] == "unknown_service"
                 - set(attributes["service.name"], attributes["k8s.pod.name"]) where attributes["service.name"] == nil or attributes["service.name"] == "" or attributes["service.name"] == "unknown_service"
                 - set(attributes["service.name"], "unknown_service") where attributes["service.name"] == nil or attributes["service.name"] == "" or attributes["service.name"] == "unknown_service"
+    resource/drop-kyma-attributes:
+        attributes:
+            - action: delete
+              pattern: kyma.*
 exporters:
     otlp/test:
         endpoint: ${OTLP_ENDPOINT_TEST}

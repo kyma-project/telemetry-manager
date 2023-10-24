@@ -136,7 +136,7 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 		processors = append(processors, "cumulativetodelta")
 	}
 
-	processors = append(processors, "batch")
+	processors = append(processors, "resource/drop-kyma-attributes", "batch")
 
 	return config.Pipeline{
 		Receivers:  []string{"otlp"},

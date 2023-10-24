@@ -11,10 +11,11 @@ func makeProcessorsConfig() Processors {
 			Batch:         makeBatchProcessorConfig(),
 			MemoryLimiter: makeMemoryLimiterConfig(),
 		},
-		K8sAttributes:      gatewayprocs.MakeK8sAttributesProcessorConfig(),
+		K8sAttributes:      gatewayprocs.K8sAttributesProcessorConfig(),
 		InsertClusterName:  gatewayprocs.InsertClusterNameProcessorConfig(),
 		DropNoisySpans:     makeDropNoisySpansConfig(),
 		ResolveServiceName: makeResolveServiceNameConfig(),
+		DropKymaAttributes: gatewayprocs.DropKymaAttributesProcessorConfig(),
 	}
 }
 
@@ -37,6 +38,6 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 func makeResolveServiceNameConfig() *TransformProcessor {
 	return &TransformProcessor{
 		ErrorMode:       "ignore",
-		TraceStatements: gatewayprocs.MakeResolveServiceNameStatements(),
+		TraceStatements: gatewayprocs.ResolveServiceNameStatements(),
 	}
 }
