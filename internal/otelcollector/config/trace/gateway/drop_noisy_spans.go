@@ -26,7 +26,7 @@ var (
 	toFromTelemetryMetricGateway = joinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-metric-gateway"))
 	toFromTelemetryMetricAgent   = joinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-metric-agent"))
 
-	toIstioGatewayWitHealthz = joinWithAnd(componentIsProxy, namespacesIsIstioSystem, methodIsGet, operationIsEgress, istioCanonicalNameEquals("istio-ingressgateway"), urlIsIstioHealthz)
+	toIstioGatewayWithHealthz = joinWithAnd(componentIsProxy, namespacesIsIstioSystem, methodIsGet, operationIsEgress, istioCanonicalNameEquals("istio-ingressgateway"), urlIsIstioHealthz)
 
 	toTelemetryTraceService         = joinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryTraceService)
 	toTelemetryTraceInternalService = joinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryTraceInternalService)
@@ -48,7 +48,7 @@ func makeDropNoisySpansConfig() FilterProcessor {
 				toFromTelemetryTraceGateway,
 				toFromTelemetryMetricGateway,
 				toFromTelemetryMetricAgent,
-				toIstioGatewayWitHealthz,
+				toIstioGatewayWithHealthz,
 				toTelemetryTraceService,
 				toTelemetryTraceInternalService,
 				toTelemetryMetricService,

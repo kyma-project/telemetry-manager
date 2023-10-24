@@ -86,7 +86,7 @@ func MakeAndSendIstioHealthzEndpointTraces(proxyClient *apiserver.ProxyClient, o
 	attrs.PutStr("http.method", "GET")
 	attrs.PutStr("component", "proxy")
 	attrs.PutStr("istio.canonical_service", "istio-ingressgateway")
-	attrs.PutStr("OperationName", "Ingress")
+	attrs.PutStr("OperationName", "Egress")
 	attrs.PutStr("http.url", "https://healthz.some-url/healthz/ready")
 
 	resAttrs := pcommon.NewMap()

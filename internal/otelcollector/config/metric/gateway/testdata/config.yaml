@@ -44,7 +44,7 @@ processors:
     memory_limiter:
         check_interval: 0.1s
         limit_percentage: 75
-        spike_limit_percentage: 10
+        spike_limit_percentage: 20
     k8sattributes:
         auth_type: serviceAccount
         passthrough: false

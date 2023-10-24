@@ -81,7 +81,26 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
-		It("Should scale up trace metric replicas", Label(operationalTest), func() {
+		It("Should reject scaling below minimum", Label(operationalTest), func() {
+			var telemetry v1alpha1.Telemetry
+			err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
+			Expect(err).NotTo(HaveOccurred())
+
+			telemetry.Spec.Metric = &v1alpha1.MetricSpec{
+				Gateway: v1alpha1.MetricGatewaySpec{
+					Scaling: v1alpha1.Scaling{
+						Type: v1alpha1.StaticScalingStrategyType,
+						Static: &v1alpha1.StaticScaling{
+							Replicas: -1,
+						},
+					},
+				},
+			}
+			err = k8sClient.Update(ctx, &telemetry)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("Should scale up metric gateway replicas", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
 				var telemetry v1alpha1.Telemetry
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
