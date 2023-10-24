@@ -15,12 +15,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Metrics Service Name", Label("metrics"), func() {

@@ -2,6 +2,7 @@ package gatewayprocs
 
 import (
 	"fmt"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 

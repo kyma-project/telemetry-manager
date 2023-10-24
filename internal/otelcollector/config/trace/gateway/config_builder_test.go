@@ -3,6 +3,8 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,8 +13,6 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
-	"os"
-	"path/filepath"
 )
 
 func TestMakeConfig(t *testing.T) {

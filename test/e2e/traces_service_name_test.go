@@ -15,17 +15,18 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Traces Service Name", Label("tracing"), func() {
 	const (
-		mockNs          = "trace-mocks-service-name"
+		mockNs          = "trace-mocks-service-name" //#nosec G101 -- This is a false positive
 		mockBackendName = "trace-receiver"
 	)
 	var (

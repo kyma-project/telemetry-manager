@@ -3,6 +3,8 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,8 +13,6 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
-	"os"
-	"path/filepath"
 )
 
 func TestMakeConfig(t *testing.T) {
@@ -236,7 +236,6 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("cumulative to delta", func(t *testing.T) {
-		fakeClient := fake.NewClientBuilder().Build()
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test-delta").WithConvertToDeltaFlag(true).Build(),
 			testutils.NewMetricPipelineBuilder().WithName("test").Build(),
