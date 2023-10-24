@@ -24,7 +24,9 @@ changelog:
 release:
   extra_files:
     - glob: moduletemplate.yaml
+    - glob: moduletemplate-dev.yaml
     - glob: telemetry-manager.yaml
+    - glob: telemetry-manager-dev.yaml
     - glob: telemetry-default-cr.yaml
 builds:
   -
