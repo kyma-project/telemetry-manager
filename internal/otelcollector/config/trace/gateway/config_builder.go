@@ -111,7 +111,7 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 
 	return config.Pipeline{
 		Receivers:  []string{"opencensus", "otlp"},
-		Processors: []string{"memory_limiter", "k8sattributes", "filter", "resource", "transform/resolve-service-name", "batch"},
+		Processors: []string{"memory_limiter", "k8sattributes", "filter/drop-noisy-spans", "resource/insert-cluster-name", "transform/resolve-service-name", "batch"},
 		Exporters:  exporterIDs,
 	}
 }

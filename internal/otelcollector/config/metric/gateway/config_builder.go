@@ -118,7 +118,7 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs ...string) config.Pipeline {
 	sort.Strings(exporterIDs)
 
-	processors := []string{"memory_limiter", "k8sattributes", "resource", "transform/resolve-service-name"}
+	processors := []string{"memory_limiter", "k8sattributes", "resource/insert-cluster-name", "transform/resolve-service-name"}
 
 	if enableDropIfInputSourceRuntime(pipeline) {
 		processors = append(processors, "filter/drop-if-input-source-runtime")

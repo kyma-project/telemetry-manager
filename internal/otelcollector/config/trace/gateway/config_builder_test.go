@@ -11,6 +11,8 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"os"
+	"path/filepath"
 )
 
 func TestMakeConfig(t *testing.T) {
@@ -108,7 +110,8 @@ func TestMakeConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[1], "k8sattributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "filter/drop-noisy-spans")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[3], "resource/insert-cluster-name")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "transform/resolve-service-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[5], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "otlp/test")
 	})
@@ -130,8 +133,9 @@ func TestMakeConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[1], "k8sattributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[2], "filter/drop-noisy-spans")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[3], "resource/attributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[4], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[3], "resource/insert-cluster-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[4], "transform/resolve-service-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[5], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Exporters, "otlp/test-2")
@@ -141,117 +145,24 @@ func TestMakeConfig(t *testing.T) {
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[1], "k8sattributes")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[2], "filter/drop-noisy-spans")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[3], "resource/insert-cluster-name")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[4], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[4], "transform/resolve-service-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[5], "batch")
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-		expected := `extensions:
-    health_check:
-        endpoint: ${MY_POD_IP}:13133
-    pprof:
-        endpoint: 127.0.0.1:1777
-service:
-    pipelines:
-        traces/test:
-            receivers:
-                - opencensus
-                - otlp
-            processors:
-                - memory_limiter
-                - k8sattributes
-                - filter
-                - resource
-                - batch
-            exporters:
-                - otlp/test
-    telemetry:
-        metrics:
-            address: ${MY_POD_IP}:8888
-        logs:
-            level: info
-            encoding: json
-    extensions:
-        - health_check
-        - pprof
-receivers:
-    opencensus:
-        endpoint: ${MY_POD_IP}:55678
-    otlp:
-        protocols:
-            http:
-                endpoint: ${MY_POD_IP}:4318
-            grpc:
-                endpoint: ${MY_POD_IP}:4317
-processors:
-    batch:
-        send_batch_size: 512
-        timeout: 10s
-        send_batch_max_size: 512
-    memory_limiter:
-        check_interval: 1s
-        limit_percentage: 60
-        spike_limit_percentage: 40
-    k8sattributes:
-        auth_type: serviceAccount
-        passthrough: false
-        extract:
-            metadata:
-                - k8s.pod.name
-                - k8s.node.name
-                - k8s.namespace.name
-                - k8s.deployment.name
-                - k8s.statefulset.name
-                - k8s.daemonset.name
-                - k8s.cronjob.name
-                - k8s.job.name
-        pod_association:
-            - sources:
-                - from: resource_attribute
-                  name: k8s.pod.ip
-            - sources:
-                - from: resource_attribute
-                  name: k8s.pod.uid
-            - sources:
-                - from: connection
-    resource:
-        attributes:
-            - action: insert
-              key: k8s.cluster.name
-              value: ${KUBERNETES_SERVICE_HOST}
-    filter:
-        traces:
-            span:
-                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "grafana"
-                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "monitoring-auth-proxy-grafana"
-                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-fluent-bit"
-                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-trace-collector"
-                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-metric-gateway"
-                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-metric-agent"
-                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "istio-system" and attributes["http.method"] == "GET" and (attributes["OperationName"] == "Egress" or IsMatch(name, "egress.*") == true) and attributes["istio.canonical_service"] == "istio-ingressgateway" and IsMatch(attributes["http.url"], "https:\\/\\/healthz\\..+\\/healthz\\/ready") == true
-                - attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["OperationName"] == "Egress" or IsMatch(name, "egress.*") == true) and IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-otlp-traces\\.kyma-system(\\..*)?:(4317|4318).*") == true
-                - attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["OperationName"] == "Egress" or IsMatch(name, "egress.*") == true) and IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-trace-collector-internal\\.kyma-system(\\..*)?:(55678).*") == true
-                - attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["OperationName"] == "Egress" or IsMatch(name, "egress.*") == true) and IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-otlp-metrics\\.kyma-system(\\..*)?:(4317|4318).*") == true
-                - attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["OperationName"] == "Ingress" or IsMatch(name, "ingress.*") == true) and IsMatch(attributes["user_agent"], "vm_promscrape") == true
-                - attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["OperationName"] == "Ingress" or IsMatch(name, "ingress.*") == true) and resource.attributes["k8s.namespace.name"] == "kyma-system" and IsMatch(attributes["user_agent"], "Prometheus\\/.*") == true
-                - attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["OperationName"] == "Ingress" or IsMatch(name, "ingress.*") == true) and IsMatch(attributes["user_agent"], "kyma-otelcol\\/.*") == true
-exporters:
-    otlp/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
-        sending_queue:
-            enabled: true
-            queue_size: 256
-        retry_on_failure:
-            enabled: true
-            initial_interval: 5s
-            max_interval: 30s
-            max_elapsed_time: 300s
-`
-
-		collectorConfig, _, err := MakeConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()})
+		config, _, err := MakeConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{
+			testutils.NewTracePipelineBuilder().WithName("test").Build(),
+		})
 		require.NoError(t, err)
 
-		yamlBytes, err := yaml.Marshal(collectorConfig)
+		configYAML, err := yaml.Marshal(config)
+		require.NoError(t, err, "failed to marshal config")
+
+		goldenFilePath := filepath.Join("testdata", "config.yaml")
+		goldenFile, err := os.ReadFile(goldenFilePath)
+		require.NoError(t, err, "failed to load golden file")
+
 		require.NoError(t, err)
-		require.Equal(t, expected, string(yamlBytes))
+		require.Equal(t, string(goldenFile), string(configYAML))
 	})
 }
