@@ -124,7 +124,6 @@ func TestMakeConfigMap(t *testing.T) {
 	require.Equal(t, cm.Namespace, name.Namespace)
 	require.NotEmpty(t, cm.Data["custom_parsers.conf"])
 	require.NotEmpty(t, cm.Data["fluent-bit.conf"])
-	require.NotEmpty(t, cm.Data["loki-labelmap.json"])
 }
 
 func TestMakeLuaConfigMap(t *testing.T) {

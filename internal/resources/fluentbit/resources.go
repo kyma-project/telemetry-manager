@@ -128,7 +128,6 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 								{MountPath: "/fluent-bit/etc/dynamic/", Name: "dynamic-config"},
 								{MountPath: "/fluent-bit/etc/dynamic-parsers/", Name: "dynamic-parsers-config"},
 								{MountPath: "/fluent-bit/etc/custom_parsers.conf", Name: "config", SubPath: "custom_parsers.conf"},
-								{MountPath: "/fluent-bit/etc/loki-labelmap.json", Name: "config", SubPath: "loki-labelmap.json"},
 								{MountPath: "/fluent-bit/scripts/filter-script.lua", Name: "luascripts", SubPath: "filter-script.lua"},
 								{MountPath: "/var/log", Name: "varlog", ReadOnly: true},
 								{MountPath: "/data", Name: "varfluentbit"},
@@ -373,23 +372,7 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
     Buffer_Size 1MB
 
 `
-	lokiLabelmap := `
-  {
-    "kubernetes": {
-      "container_name": "container",
-      "host": "node",
-      "labels": {
-        "app": "app",
-        "app.kubernetes.io/component": "component",
-        "app.kubernetes.io/name": "app",
-        "serverless.kyma-project.io/function-name": "function"
-      },
-      "namespace_name": "namespace",
-      "pod_name": "pod"
-    },
-    "stream": "stream"
-  }
-`
+
 	if includeSections {
 		fluentBitConfig = fluentBitConfig + "@INCLUDE dynamic/*.conf" + "\n"
 	}
@@ -403,7 +386,6 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
 		Data: map[string]string{
 			"custom_parsers.conf": parserConfig,
 			"fluent-bit.conf":     fluentBitConfig,
-			"loki-labelmap.json":  lokiLabelmap,
 		},
 	}
 }
