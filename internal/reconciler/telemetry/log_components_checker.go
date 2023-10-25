@@ -51,6 +51,12 @@ func (l *logComponentsChecker) determineReason(pipelines []v1alpha1.LogPipeline,
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.LogPipeline) bool {
+		return l.isPendingWithReason(p, conditions.ReasonUnsupportedLokiOutput)
+	}); found {
+		return conditions.ReasonUnsupportedLokiOutput
+	}
+
+	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.LogPipeline) bool {
 		return l.isPendingWithReason(p, conditions.ReasonReferencedSecretMissing)
 	}); found {
 		return conditions.ReasonReferencedSecretMissing
