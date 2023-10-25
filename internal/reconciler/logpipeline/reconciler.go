@@ -280,15 +280,18 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret}), nil
 }
 
-// isLogPipelineDeployable checks if logpipeline is ready to be rendered into the fluentbit configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
+// getDeployableLogpipelines retrieves logpipelines which are ready to be rendered into the fluentbit configuration.
+// A pipeline is deployable if it is not being deleted, all secret references exist, and it doesn't have the legacy grafana-loki output defined.
 func (r *Reconciler) getDeployableLogpipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.LogPipeline {
 	var deployablePipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
 		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
 			continue
 		}
-
 		if secretref.ReferencesNonExistentSecret(ctx, r.Client, &allPipelines[i]) {
+			continue
+		}
+		if allPipelines[i].Spec.Output.Loki != nil {
 			continue
 		}
 		deployablePipelines = append(deployablePipelines, allPipelines[i])
