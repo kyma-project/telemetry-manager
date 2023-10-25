@@ -58,6 +58,18 @@ func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName st
 	}
 
 	log := logf.FromContext(ctx)
+
+	if pipeline.Spec.Output.Loki != nil {
+		pending := telemetryv1alpha1.NewLogPipelineCondition(conditions.ReasonUnsupportedLokiOutput, telemetryv1alpha1.LogPipelinePending)
+
+		if pipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning) {
+			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))
+			pipeline.Status.Conditions = []telemetryv1alpha1.LogPipelineCondition{}
+		}
+
+		return setCondition(ctx, r.Client, &pipeline, pending)
+	}
+
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, &pipeline)
 	if referencesNonExistentSecret {
 		pending := telemetryv1alpha1.NewLogPipelineCondition(conditions.ReasonReferencedSecretMissing, telemetryv1alpha1.LogPipelinePending)
