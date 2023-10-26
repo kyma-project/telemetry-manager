@@ -11,108 +11,115 @@ import (
 	"testing"
 )
 
-var (
-	timestamp          = metav1.Now()
-	pipelineInDeletion = telemetryv1alpha1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              "pipelineInDeletion",
-			DeletionTimestamp: &timestamp,
+func TestGetDeployableLogPipelines(t *testing.T) {
+	timestamp := metav1.Now()
+	tests := []struct {
+		name                string
+		pipelines           []telemetryv1alpha1.LogPipeline
+		deployablePipelines bool
+	}{
+		{
+			name: "should reject LogPipelines which are being deleted",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "pipelineInDeletion",
+						DeletionTimestamp: &timestamp,
+					},
+					Spec: telemetryv1alpha1.LogPipelineSpec{
+						Output: telemetryv1alpha1.Output{
+							Custom: "Name	stdout\n",
+						}},
+				},
+			},
+			deployablePipelines: false,
 		},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.Output{
-				Custom: "Name	stdout\n",
-			}},
-	}
-
-	pipelineWithSecret = telemetryv1alpha1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "pipelineWithSecret",
-		},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.Output{
-				HTTP: &telemetryv1alpha1.HTTPOutput{
-					Host: telemetryv1alpha1.ValueType{
-						ValueFrom: &telemetryv1alpha1.ValueFromSource{
-							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-								Name:      "some-secret",
-								Namespace: "some-namespace",
-								Key:       "host",
+		{
+			name: "should reject LogPipelines with missing Secrets",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pipelineWithSecret",
+					},
+					Spec: telemetryv1alpha1.LogPipelineSpec{
+						Output: telemetryv1alpha1.Output{
+							HTTP: &telemetryv1alpha1.HTTPOutput{
+								Host: telemetryv1alpha1.ValueType{
+									ValueFrom: &telemetryv1alpha1.ValueFromSource{
+										SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+											Name:      "some-secret",
+											Namespace: "some-namespace",
+											Key:       "host",
+										},
+									},
+								},
 							},
-						},
-					},
+						}},
 				},
-			}},
-	}
-
-	pipelineWithLokiOutput = telemetryv1alpha1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "pipelineWithLokiOutput",
+			},
+			deployablePipelines: false,
 		},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.Output{
-				Loki: &telemetryv1alpha1.LokiOutput{
-					URL: telemetryv1alpha1.ValueType{
-						Value: "http://logging-loki:3100/loki/api/v1/push",
+		{
+			name: "should reject LogPipelines with Loki Output",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pipelineWithLokiOutput",
 					},
+					Spec: telemetryv1alpha1.LogPipelineSpec{
+						Output: telemetryv1alpha1.Output{
+							Loki: &telemetryv1alpha1.LokiOutput{
+								URL: telemetryv1alpha1.ValueType{
+									Value: "http://logging-loki:3100/loki/api/v1/push",
+								},
+							},
+						}},
 				},
-			}},
-	}
-
-	pipelineWithStdOut = telemetryv1alpha1.LogPipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "pipelineWithStdOut",
+			},
+			deployablePipelines: false,
 		},
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.Output{
-				Custom: "Name	stdout\n",
-			}},
+		{
+			name: "should accept healthy LogPipelines",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pipelineWithStdOut1",
+					},
+					Spec: telemetryv1alpha1.LogPipelineSpec{
+						Output: telemetryv1alpha1.Output{
+							Custom: "Name	stdout\n",
+						}},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pipelineWithStdOut2",
+					},
+					Spec: telemetryv1alpha1.LogPipelineSpec{
+						Output: telemetryv1alpha1.Output{
+							Custom: "Name	stdout\n",
+						}},
+				},
+			},
+			deployablePipelines: true,
+		},
 	}
-)
 
-func TestGetDeployableLogPipelinesWithPipelineInDeletion(t *testing.T) {
-	ctx := context.Background()
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := context.Background()
+			scheme := runtime.NewScheme()
+			_ = clientgoscheme.AddToScheme(scheme)
+			_ = telemetryv1alpha1.AddToScheme(scheme)
+			fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	pipelines := []telemetryv1alpha1.LogPipeline{pipelineInDeletion}
-	deployablePipelines := getDeployableLogPipelines(ctx, pipelines, fakeClient)
-	require.NotContains(t, deployablePipelines, pipelineInDeletion)
-}
-
-func TestGetDeployableLogPipelinesWithMissingSecret(t *testing.T) {
-	ctx := context.Background()
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-
-	pipelines := []telemetryv1alpha1.LogPipeline{pipelineWithSecret}
-	deployablePipelines := getDeployableLogPipelines(ctx, pipelines, fakeClient)
-	require.NotContains(t, deployablePipelines, pipelineWithSecret)
-}
-
-func TestGetDeployableLogPipelinesWithLokiOutput(t *testing.T) {
-	ctx := context.Background()
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-
-	pipelines := []telemetryv1alpha1.LogPipeline{pipelineWithLokiOutput}
-	deployablePipelines := getDeployableLogPipelines(ctx, pipelines, fakeClient)
-	require.NotContains(t, deployablePipelines, pipelineWithLokiOutput)
-}
-
-func TestGetDeployableLogPipelinesWithStdOut(t *testing.T) {
-	ctx := context.Background()
-	scheme := runtime.NewScheme()
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = telemetryv1alpha1.AddToScheme(scheme)
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-
-	pipelines := []telemetryv1alpha1.LogPipeline{pipelineWithStdOut}
-	deployablePipelines := getDeployableLogPipelines(ctx, pipelines, fakeClient)
-	require.Contains(t, deployablePipelines, pipelineWithStdOut)
+			deployablePipelines := getDeployableLogPipelines(ctx, test.pipelines, fakeClient)
+			for _, pipeline := range test.pipelines {
+				if test.deployablePipelines == true {
+					require.Contains(t, deployablePipelines, pipeline)
+				} else {
+					require.NotContains(t, deployablePipelines, pipeline)
+				}
+			}
+		})
+	}
 }
