@@ -21,7 +21,7 @@ var message = map[string]string{
 	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
 	ReasonReferencedSecretMissing: "One or more referenced Secrets are missing",
 	ReasonWaitingForLock:          "Waiting for the lock",
-	ReasonUnsupportedLokiOutput:   "grafana-loki output is not supported anymore. For integration with a custom Loki installation use the custom output, check https://kyma-project.io/#/telemetry-manager/user/resources/02-logpipeline",
+	ReasonUnsupportedLokiOutput:   "grafana-loki output is not supported anymore. For integration with a custom Loki installation use the custom output, check https://github.com/kyma-project/examples/tree/main/loki",
 
 	ReasonFluentBitDSNotReady: "Fluent Bit DaemonSet is not ready",
 	ReasonFluentBitDSReady:    "Fluent Bit DaemonSet is ready",
