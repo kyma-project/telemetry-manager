@@ -137,7 +137,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	deployableLogPipelines := r.getDeployableLogpipelines(ctx, allPipelines.Items)
+	deployableLogPipelines := getDeployableLogPipelines(ctx, allPipelines.Items, r.Client)
 	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, deployableLogPipelines); err != nil {
 		return err
 	}
@@ -280,15 +280,15 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret}), nil
 }
 
-// getDeployableLogpipelines retrieves logpipelines which are ready to be rendered into the fluentbit configuration.
+// getDeployableLogPipelines retrieves logpipelines which are ready to be rendered into the fluentbit configuration.
 // A pipeline is deployable if it is not being deleted, all secret references exist, and it doesn't have the legacy grafana-loki output defined.
-func (r *Reconciler) getDeployableLogpipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.LogPipeline {
+func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline, client client.Client) []telemetryv1alpha1.LogPipeline {
 	var deployablePipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
 		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
 			continue
 		}
-		if secretref.ReferencesNonExistentSecret(ctx, r.Client, &allPipelines[i]) {
+		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
 			continue
 		}
 		if allPipelines[i].Spec.Output.Loki != nil {
