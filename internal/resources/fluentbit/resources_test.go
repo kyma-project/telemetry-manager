@@ -57,7 +57,7 @@ func TestMakeDaemonSet(t *testing.T) {
 	require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
 
 	volMounts := daemonSet.Spec.Template.Spec.Containers[0].VolumeMounts
-	require.Equal(t, 11, len(volMounts), "volume mounts do not match")
+	require.Equal(t, 10, len(volMounts), "volume mounts do not match")
 }
 
 func TestMakeClusterRole(t *testing.T) {
