@@ -23,7 +23,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:              "pipelineInDeletion",
+						Name:              "pipeline-in-deletion",
 						DeletionTimestamp: &timestamp,
 					},
 					Spec: telemetryv1alpha1.LogPipelineSpec{
@@ -39,7 +39,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "pipelineWithSecret",
+						Name: "pipeline-with-secret",
 					},
 					Spec: telemetryv1alpha1.LogPipelineSpec{
 						Output: telemetryv1alpha1.Output{
@@ -64,7 +64,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "pipelineWithLokiOutput",
+						Name: "pipeline-with-loki-output",
 					},
 					Spec: telemetryv1alpha1.LogPipelineSpec{
 						Output: telemetryv1alpha1.Output{
@@ -83,7 +83,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "pipelineWithStdOut1",
+						Name: "pipeline-with-stdout-1",
 					},
 					Spec: telemetryv1alpha1.LogPipelineSpec{
 						Output: telemetryv1alpha1.Output{
@@ -92,7 +92,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "pipelineWithStdOut2",
+						Name: "pipeline-with-stdout-2",
 					},
 					Spec: telemetryv1alpha1.LogPipelineSpec{
 						Output: telemetryv1alpha1.Output{
