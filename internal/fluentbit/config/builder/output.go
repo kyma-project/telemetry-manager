@@ -2,9 +2,6 @@ package builder
 
 import (
 	"fmt"
-	"sort"
-	"strings"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
@@ -96,15 +93,6 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit 
 	}
 
 	return sb.Build()
-}
-
-func concatenateLabels(labels map[string]string) string {
-	var labelsSlice []string
-	for k, v := range labels {
-		labelsSlice = append(labelsSlice, fmt.Sprintf("%s=\"%s\"", k, v))
-	}
-	sort.Strings(labelsSlice)
-	return fmt.Sprintf("{%s}", strings.Join(labelsSlice, ", "))
 }
 
 func resolveValue(value telemetryv1alpha1.ValueType, logPipeline string) string {
