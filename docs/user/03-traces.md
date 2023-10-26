@@ -34,7 +34,7 @@ The Telemetry module provides an in-cluster central deployment of an [OTel Colle
 
 ### Trace Gateway
 
-In a Kyma cluster, the Trace Gateway is the central component to which all parties of traces can send their individual span. The gateway collects, enriches, and dispatches the data to the configured backend. The gateway is based on the Otel Collector and comes with a concept of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together (see [Otel Collector: Configuration](https://opentelemetry.io/docs/collector/configuration/)). Kyma's TracePipeline provides a hardened setup of an OTel Collector, and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
+In a Kyma cluster, the Trace Gateway is the central component to which all parties of traces can send their individual span. The gateway collects, [enriches](README.md#automatic-telemetry-enrichment), and dispatches the data to the configured backend. The gateway is based on the Otel Collector and comes with a concept of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together (see [Otel Collector: Configuration](https://opentelemetry.io/docs/collector/configuration/)). Kyma's TracePipeline provides a hardened setup of an OTel Collector, and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
 
 - Supportability - all features are tested and supported
 - Migratability - smooth migration experiences when switching underlying technologies or architectures
