@@ -76,7 +76,7 @@ Kyma's Telemetry module automatically enriches your data by adding the following
   3. Deployment/DaemonSet/StatefulSet/Job name.
   4. Pod name.
   5. If none of the above is available, the value is `unknown_service`.
-- `k8s.*` attributes: These attributes encapsulate various pieces of Kubernetes metadata associated with the pod, including but not limited to:
+- `k8s.*` attributes: These attributes encapsulate various pieces of Kubernetes metadata associated with the Pod, including but not limited to:
   1. Pod name.
   2. Deployment/DaemonSet/StatefulSet/Job name.
   3. Namespace.
