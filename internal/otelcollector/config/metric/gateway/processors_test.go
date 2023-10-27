@@ -15,23 +15,23 @@ func TestProcessors(t *testing.T) {
 	ctx := context.Background()
 	fakeClient := fake.NewClientBuilder().Build()
 
-	t.Run("resource processors", func(t *testing.T) {
+	t.Run("insert cluster name processor", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
 		require.NoError(t, err)
 
-		require.Equal(t, 1, len(collectorConfig.Processors.Resource.Attributes))
-		require.Equal(t, "insert", collectorConfig.Processors.Resource.Attributes[0].Action)
-		require.Equal(t, "k8s.cluster.name", collectorConfig.Processors.Resource.Attributes[0].Key)
-		require.Equal(t, "${KUBERNETES_SERVICE_HOST}", collectorConfig.Processors.Resource.Attributes[0].Value)
+		require.Equal(t, 1, len(collectorConfig.Processors.InsertClusterName.Attributes))
+		require.Equal(t, "insert", collectorConfig.Processors.InsertClusterName.Attributes[0].Action)
+		require.Equal(t, "k8s.cluster.name", collectorConfig.Processors.InsertClusterName.Attributes[0].Key)
+		require.Equal(t, "${KUBERNETES_SERVICE_HOST}", collectorConfig.Processors.InsertClusterName.Attributes[0].Value)
 	})
 
 	t.Run("memory limit processors", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
 		require.NoError(t, err)
 
-		require.Equal(t, "1s", collectorConfig.Processors.MemoryLimiter.CheckInterval)
+		require.Equal(t, "0.1s", collectorConfig.Processors.MemoryLimiter.CheckInterval)
 		require.Equal(t, 75, collectorConfig.Processors.MemoryLimiter.LimitPercentage)
-		require.Equal(t, 10, collectorConfig.Processors.MemoryLimiter.SpikeLimitPercentage)
+		require.Equal(t, 20, collectorConfig.Processors.MemoryLimiter.SpikeLimitPercentage)
 	})
 
 	t.Run("batch processors", func(t *testing.T) {

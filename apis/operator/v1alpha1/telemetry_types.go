@@ -20,20 +20,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 type State string
 
 // Valid Module CR States.
 const (
 	// StateReady signifies Module CR is Ready and has been installed successfully.
 	StateReady State = "Ready"
-
-	// StateError signifies an error for Module CR. This signifies that the Installation
-	// process encountered an error.
-	// Contrary to Processing, it can be expected that this state should change on the next retry.
-	StateError State = "Error"
 
 	// StateDeleting signifies Module CR is being deleted. This is the state that is used
 	// when a deletionTimestamp was detected and Finalizers are picked up.
@@ -46,8 +38,56 @@ const (
 
 // TelemetrySpec defines the desired state of Telemetry
 type TelemetrySpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// +optional
+	Trace *TraceSpec `json:"trace,omitempty"`
+
+	// +optional
+	Metric *MetricSpec `json:"metric,omitempty"`
+}
+
+// MetricSpec defines the behavior of the metric gateway
+type MetricSpec struct {
+	Gateway MetricGatewaySpec `json:"gateway,omitempty"`
+}
+
+type MetricGatewaySpec struct {
+	Scaling Scaling `json:"scaling,omitempty"`
+}
+
+// TraceSpec defines the behavior of the trace gateway
+type TraceSpec struct {
+	Gateway TraceGatewaySpec `json:"gateway,omitempty"`
+}
+
+type TraceGatewaySpec struct {
+	Scaling Scaling `json:"scaling,omitempty"`
+}
+
+// Scaling defines which strategy is used for scaling the gateway, with detailed configuration options for each strategy type.
+type Scaling struct {
+	// Type of scaling strategy. Default is none, using a fixed amount of replicas.
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=Static
+	Type ScalingStrategyType `json:"type,omitempty"`
+
+	// Static is a scaling strategy allowing you to define a custom amount of replicas to be used for the gateway. Present only if Type =
+	// StaticScalingStrategyType.
+	// +optional
+	Static *StaticScaling `json:"static,omitempty"`
+}
+
+// +enum
+type ScalingStrategyType string
+
+const (
+	StaticScalingStrategyType ScalingStrategyType = "Static"
+)
+
+type StaticScaling struct {
+	// Replicas defines a static number of pods to run the gateway. Minimum is 1.
+	// +kubebuilder:validation:Minimum=1
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 // TelemetryStatus defines the observed state of Telemetry
@@ -58,18 +98,21 @@ type TelemetryStatus struct {
 	// If all Conditions are met, State is expected to be in StateReady.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	// GatewayEndpoints for trace and metric gateway
+	// endpoints for trace and metric gateway.
 	// +nullable
 	GatewayEndpoints GatewayEndpoints `json:"endpoints,omitempty"`
 	// add other fields to status subresource here
 }
 
 type GatewayEndpoints struct {
+	//traces contains the endpoints for trace gateway supporting OTLP.
 	Traces *OTLPEndpoints `json:"traces,omitempty"`
 }
 
 type OTLPEndpoints struct {
+	//GRPC endpoint for OTLP.
 	GRPC string `json:"grpc,omitempty"`
+	//HTTP endpoint for OTLP.
 	HTTP string `json:"http,omitempty"`
 }
 
@@ -106,8 +149,8 @@ func init() {
 // Status defines the observed state of Module CR.
 type Status struct {
 	// State signifies current state of Module CR.
-	// Value can be one of ("Ready", "Processing", "Error", "Deleting", "Warning").
+	// Value can be one of these three: "Ready", "Deleting", or "Warning".
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=Processing;Deleting;Ready;Error;Warning
+	// +kubebuilder:validation:Enum=Deleting;Ready;Warning
 	State State `json:"state"`
 }

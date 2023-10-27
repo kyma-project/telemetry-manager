@@ -6,15 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit"
-)
-
-type SignalType string
-
-const (
-	SignalTypeTraces  = "traces"
-	SignalTypeMetrics = "metrics"
-	SignalTypeLogs    = "logs"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
 type ConfigMap struct {
@@ -23,10 +15,10 @@ type ConfigMap struct {
 	exportedFilePath string
 	signalType       SignalType
 	withTLS          bool
-	certs            testkit.TLSCerts
+	certs            tls.Certs
 }
 
-func NewConfigMap(name, namespace, path string, signalType SignalType, withTLS bool, certs testkit.TLSCerts) *ConfigMap {
+func NewConfigMap(name, namespace, path string, signalType SignalType, withTLS bool, certs tls.Certs) *ConfigMap {
 	return &ConfigMap{
 		name:             name,
 		namespace:        namespace,
@@ -45,8 +37,8 @@ const metricsAndTracesConfigTemplate = `receivers:
 exporters:
   file:
     path: {{ FILEPATH }}
-  logging:
-    loglevel: debug
+  debug:
+    verbosity: detailed
 service:
   telemetry:
     logs:
@@ -57,7 +49,7 @@ service:
         - otlp
       exporters:
         - file
-        - logging`
+        - debug`
 
 const tlsConfigTemplate = `receivers:
   otlp:
@@ -71,8 +63,8 @@ const tlsConfigTemplate = `receivers:
 exporters:
   file:
     path: {{ FILEPATH }}
-  logging:
-    loglevel: debug
+  debug:
+    verbosity: detailed
 service:
   telemetry:
     logs:
@@ -83,7 +75,7 @@ service:
         - otlp
       exporters:
         - file
-        - logging`
+        - debug`
 
 const LogConfigTemplate = `receivers:
   fluentforward:
@@ -95,8 +87,8 @@ const LogConfigTemplate = `receivers:
 exporters:
   file:
     path: {{ FILEPATH }}
-  logging:
-    loglevel: debug
+  debug:
+    verbosity: detailed
 service:
   telemetry:
     logs:
@@ -108,7 +100,7 @@ service:
         - fluentforward
       exporters:
         - file
-        - logging`
+        - debug`
 
 func (cm *ConfigMap) Name() string {
 	return cm.name
@@ -116,8 +108,6 @@ func (cm *ConfigMap) Name() string {
 
 func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	var configTemplate string
-	data := make(map[string]string)
-
 	if cm.signalType == SignalTypeLogs {
 		configTemplate = LogConfigTemplate
 	} else if cm.withTLS {
@@ -127,7 +117,9 @@ func (cm *ConfigMap) K8sObject() *corev1.ConfigMap {
 	}
 	config := strings.Replace(configTemplate, "{{ FILEPATH }}", cm.exportedFilePath, 1)
 	config = strings.Replace(config, "{{ SIGNAL_TYPE }}", string(cm.signalType), 1)
-	if cm.withTLS {
+
+	data := make(map[string]string)
+	if cm.withTLS && cm.signalType != SignalTypeLogs {
 		certPem := strings.ReplaceAll(cm.certs.ServerCertPem.String(), "\n", "\\n")
 		keyPem := strings.ReplaceAll(cm.certs.ServerKeyPem.String(), "\n", "\\n")
 		config = strings.Replace(config, "{{ CERT_PEM }}", certPem, 1)

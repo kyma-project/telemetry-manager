@@ -11,18 +11,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 func TestTraceComponentsCheck(t *testing.T) {
 	tests := []struct {
-		name              string
-		pipelines         []telemetryv1alpha1.TracePipeline
-		expectedCondition *metav1.Condition
+		name                string
+		pipelines           []telemetryv1alpha1.TracePipeline
+		telemetryInDeletion bool
+		expectedCondition   *metav1.Condition
 	}{
 		{
-			name: "should be healthy if no pipelines deployed",
+			name:                "should be healthy if no pipelines deployed",
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "True",
@@ -34,10 +36,11 @@ func TestTraceComponentsCheck(t *testing.T) {
 			name: "should be healthy if all pipelines running",
 			pipelines: []telemetryv1alpha1.TracePipeline{
 				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
+					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
 				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
+					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
 			},
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "True",
@@ -46,13 +49,14 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should fail if one pipeline refs missing secret",
+			name: "should not be healthy if one pipeline refs missing secret",
 			pipelines: []telemetryv1alpha1.TracePipeline{
 				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
+					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
 				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
+					testutils.TracePendingCondition(conditions.ReasonReferencedSecretMissing)).Build(),
 			},
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "False",
@@ -61,13 +65,14 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should fail if one pipeline waiting for gateway",
+			name: "should not be healthy if one pipeline waiting for gateway",
 			pipelines: []telemetryv1alpha1.TracePipeline{
 				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
+					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
 				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady)).Build(),
+					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady)).Build(),
 			},
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "False",
@@ -79,10 +84,11 @@ func TestTraceComponentsCheck(t *testing.T) {
 			name: "should ignore pipelines waiting for lock",
 			pipelines: []telemetryv1alpha1.TracePipeline{
 				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
+					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
 				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(reconciler.ReasonWaitingForLock)).Build(),
+					testutils.TracePendingCondition(conditions.ReasonWaitingForLock)).Build(),
 			},
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "True",
@@ -91,18 +97,33 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should prioritize missing secret over unready gateway reason",
+			name: "should prioritize unready gateway reason over missing secret",
 			pipelines: []telemetryv1alpha1.TracePipeline{
 				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(reconciler.ReasonTraceGatewayDeploymentNotReady)).Build(),
+					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady)).Build(),
 				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(reconciler.ReasonReferencedSecretMissing)).Build(),
+					testutils.TracePendingCondition(conditions.ReasonReferencedSecretMissing)).Build(),
 			},
+			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "False",
 				Reason:  "TraceGatewayDeploymentNotReady",
 				Message: "Trace gateway Deployment is not ready",
+			},
+		},
+		{
+			name: "should block deletion if there are existing pipelines",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().WithName("foo").Build(),
+				testutils.NewTracePipelineBuilder().WithName("bar").Build(),
+			},
+			telemetryInDeletion: true,
+			expectedCondition: &metav1.Condition{
+				Type:    "TraceComponentsHealthy",
+				Status:  "False",
+				Reason:  "ResourceBlocksDeletion",
+				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (bar,foo)",
 			},
 		},
 	}
@@ -123,7 +144,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 				client: fakeClient,
 			}
 
-			condition, err := m.Check(context.Background())
+			condition, err := m.Check(context.Background(), test.telemetryInDeletion)
 			require.NoError(t, err)
 			require.Equal(t, test.expectedCondition, condition)
 		})

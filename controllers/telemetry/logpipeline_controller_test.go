@@ -27,13 +27,14 @@ import (
 
 var (
 	testLogPipelineConfig = logpipelinereconciler.Config{
-		DaemonSet:         types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
-		ParsersConfigMap:  types.NamespacedName{Name: "test-telemetry-fluent-bit-parsers", Namespace: "default"},
-		LuaConfigMap:      types.NamespacedName{Name: "test-telemetry-fluent-bit-luascripts", Namespace: "default"},
-		SectionsConfigMap: types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
-		FilesConfigMap:    types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
-		EnvSecret:         types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
-		OverrideConfigMap: types.NamespacedName{Name: "override-config", Namespace: "default"},
+		DaemonSet:             types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
+		ParsersConfigMap:      types.NamespacedName{Name: "test-telemetry-fluent-bit-parsers", Namespace: "default"},
+		LuaConfigMap:          types.NamespacedName{Name: "test-telemetry-fluent-bit-luascripts", Namespace: "default"},
+		SectionsConfigMap:     types.NamespacedName{Name: "test-telemetry-fluent-bit-sections", Namespace: "default"},
+		FilesConfigMap:        types.NamespacedName{Name: "test-telemetry-fluent-bit-files", Namespace: "default"},
+		EnvSecret:             types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
+		OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
+		OverrideConfigMap:     types.NamespacedName{Name: "override-config", Namespace: "default"},
 		DaemonSetConfig: logpipelineresources.DaemonSetConfig{
 			FluentBitImage:              "my-fluent-bit-image",
 			FluentBitConfigPrepperImage: "my-fluent-bit-config-image",
@@ -157,7 +158,8 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			Expect(fluentBitDaemonSetList.Items).Should(BeEmpty())
 		})
 	})
-	Context("When creating a log pipeline", Ordered, func() {
+
+	Context("When creating a LogPipeline", Ordered, func() {
 		BeforeAll(func() {
 			ctx := context.Background()
 			secret := &corev1.Secret{
@@ -242,7 +244,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				return actualFluentBitConfig
 			}, timeout, interval).Should(Equal(expectedFluentBitConfig))
 		})
-		It("Should verify files have been copied into -files configmap", func() {
+		It("Should verify files have been copied into fluent-bit-files configmap", func() {
 			Eventually(func() string {
 				filesConfigMapLookupKey := types.NamespacedName{
 					Name:      testLogPipelineConfig.FilesConfigMap.Name,
@@ -257,7 +259,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			}, timeout, interval).Should(Equal("file-content"))
 		})
 
-		It("Should have created flunent-bit parsers configmap", func() {
+		It("Should have created fluent-bit-parsers configmap", func() {
 			Eventually(func() string {
 				parserCmName := fmt.Sprintf("%s-parsers", testLogPipelineConfig.DaemonSet.Name)
 				parserConfigMapLookupKey := types.NamespacedName{
@@ -352,7 +354,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 		})
 	})
 
-	Context("When deleting the log pipeline", Ordered, func() {
+	Context("When deleting the LogPipeline", Ordered, func() {
 
 		BeforeAll(func() {
 			Expect(k8sClient.Delete(ctx, logPipeline)).Should(Succeed())
@@ -390,7 +392,8 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			}, timeout, interval).Should(Equal(0.0))
 		})
 	})
-	Context("When another pipeline with missing secret reference is created then config is not updated", Ordered, func() {
+
+	Context("When another LogPipeline with missing secret reference is created, then config is not updated", Ordered, func() {
 		var pipelineSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "foo",
@@ -465,39 +468,80 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 				},
 			},
 		}
-		It("Creates a healthy logpipeline", func() {
+		It("Creates a healthy LogPipeline", func() {
 			Expect(k8sClient.Create(ctx, healthyLogPipeline)).Should(Succeed())
 		})
 
-		It("Creates a logpipeline with missing secret reference", func() {
+		It("Creates a LogPipeline with missing secret reference", func() {
 			Expect(k8sClient.Create(ctx, missingSecretRefLogPipeline)).Should(Succeed())
 		})
 
-		It("Should create a fluent bit configmap which contains healthy pipeline", func() {
+		It("Should create a fluent-bit-sections configmap which contains the healthy pipeline", func() {
 			Eventually(func() error {
 				return validateKeyExistsInFluentbitSectionsConf(ctx, "healthy-logpipeline.conf")
 			}, timeout, interval).Should(BeNil())
 		})
 
-		It("Should not have a unhealthy pipeline in fluent-bit configmap", func() {
+		It("Should not include the LogPipeline with missing secret in fluent-bit-sections configmap", func() {
 			expectedErr := errors.New("did not find the key: missing-secret-ref-logpipeline.conf")
-			Eventually(func() error {
+			Consistently(func() error {
 				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
 			}, timeout, interval).Should(Equal(expectedErr))
 		})
 
-		It("Should update config when secret is created", func() {
+		It("Should update fluent-bit-sections configmap when secret is created", func() {
 			Expect(k8sClient.Create(ctx, pipelineSecret)).Should(Succeed())
 			Eventually(func() error {
 				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
 			}, timeout, interval).Should(BeNil())
 		})
 
-		It("Should remove logpipeline from configmap when secret is deleted", func() {
+		It("Should remove LogPipeline from configmap when secret is deleted", func() {
 			Expect(k8sClient.Delete(ctx, pipelineSecret)).Should(Succeed())
 			Eventually(func() error {
 				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
 			}, timeout*3, interval).Should(BeNil())
+		})
+
+	})
+
+	Context("When creating a LogPipeline with Loki Output", Ordered, func() {
+		pipelineName := "pipeline-with-loki-output"
+		pipelineWithLokiOutput := &telemetryv1alpha1.LogPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: pipelineName,
+			},
+			Spec: telemetryv1alpha1.LogPipelineSpec{
+				Output: telemetryv1alpha1.Output{
+					Loki: &telemetryv1alpha1.LokiOutput{
+						URL: telemetryv1alpha1.ValueType{
+							Value: "http://logging-loki:3100/loki/api/v1/push",
+						},
+					},
+				}},
+		}
+
+		BeforeAll(func() {
+			Expect(k8sClient.Create(ctx, pipelineWithLokiOutput)).Should(Succeed())
+			DeferCleanup(func() {
+				Expect(k8sClient.Delete(ctx, pipelineWithLokiOutput)).Should(Succeed())
+			})
+		})
+
+		It("Should not include the LogPipeline in fluent-bit-sections configmap", func() {
+			expectedErr := errors.New("did not find the key: pipeline-with-loki-output.conf")
+			Consistently(func() error {
+				return validateKeyExistsInFluentbitSectionsConf(ctx, "pipeline-with-loki-output.conf")
+			}, timeout, interval).Should(Equal(expectedErr))
+		})
+
+		It("Should have a pending LogPipeline", func() {
+			Consistently(func(g Gomega) {
+				var pipeline telemetryv1alpha1.LogPipeline
+				key := types.NamespacedName{Name: pipelineName}
+				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+				g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning)).To(BeFalse())
+			}, timeout, interval).Should(Succeed())
 		})
 
 	})

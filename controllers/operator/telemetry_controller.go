@@ -25,8 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -57,26 +57,24 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr).
 		For(&operatorv1alpha1.Telemetry{}).
 		Watches(
-			&source.Kind{Type: &corev1.Secret{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &operatorv1alpha1.Telemetry{},
-				IsController: false}).
+			&corev1.Secret{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &operatorv1alpha1.Telemetry{})).
 		Watches(
-			&source.Kind{Type: &admissionv1.ValidatingWebhookConfiguration{}},
+			&admissionv1.ValidatingWebhookConfiguration{},
 			handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
 			builder.WithPredicates(setup.DeleteOrUpdate())).
 		Watches(
-			&source.Kind{Type: &v1alpha1.LogPipeline{}},
+			&v1alpha1.LogPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapLogPipeline),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete())).
 		Watches(
-			&source.Kind{Type: &v1alpha1.TracePipeline{}},
+			&v1alpha1.TracePipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapTracePipeline),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete()))
 
 	if r.config.Metrics.Enabled {
 		b.Watches(
-			&source.Kind{Type: &v1alpha1.MetricPipeline{}},
+			&v1alpha1.MetricPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapMetricPipeline),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete()))
 	}
@@ -84,63 +82,63 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return b.Complete(r)
 }
 
-func (r *TelemetryReconciler) mapWebhook(object client.Object) []reconcile.Request {
+func (r *TelemetryReconciler) mapWebhook(ctx context.Context, object client.Object) []reconcile.Request {
 	webhook, ok := object.(*admissionv1.ValidatingWebhookConfiguration)
 	if !ok {
-		ctrl.Log.Error(nil, "Unable to cast object to ValidatingWebhookConfiguration")
+		logf.FromContext(ctx).Error(nil, "Unable to cast object to ValidatingWebhookConfiguration")
 		return nil
 	}
 	if webhook.Name != r.config.Webhook.CertConfig.WebhookName.Name {
 		return nil
 	}
 
-	return r.createTelemetryRequests()
+	return r.createTelemetryRequests(ctx)
 }
 
-func (r *TelemetryReconciler) mapLogPipeline(object client.Object) []reconcile.Request {
+func (r *TelemetryReconciler) mapLogPipeline(ctx context.Context, object client.Object) []reconcile.Request {
 	logPipeline, ok := object.(*v1alpha1.LogPipeline)
 	if !ok {
-		ctrl.Log.Error(nil, "Unable to cast object to LogPipeline")
+		logf.FromContext(ctx).Error(nil, "Unable to cast object to LogPipeline")
 		return nil
 	}
 	if len(logPipeline.Status.Conditions) == 0 {
 		return nil
 	}
 
-	return r.createTelemetryRequests()
+	return r.createTelemetryRequests(ctx)
 }
 
-func (r *TelemetryReconciler) mapTracePipeline(object client.Object) []reconcile.Request {
+func (r *TelemetryReconciler) mapTracePipeline(ctx context.Context, object client.Object) []reconcile.Request {
 	tracePipeline, ok := object.(*v1alpha1.TracePipeline)
 	if !ok {
-		ctrl.Log.Error(nil, "Unable to cast object to TracePipeline")
+		logf.FromContext(ctx).Error(nil, "Unable to cast object to TracePipeline")
 		return nil
 	}
 	if len(tracePipeline.Status.Conditions) == 0 {
 		return nil
 	}
 
-	return r.createTelemetryRequests()
+	return r.createTelemetryRequests(ctx)
 }
 
-func (r *TelemetryReconciler) mapMetricPipeline(object client.Object) []reconcile.Request {
+func (r *TelemetryReconciler) mapMetricPipeline(ctx context.Context, object client.Object) []reconcile.Request {
 	tracePipeline, ok := object.(*v1alpha1.MetricPipeline)
 	if !ok {
-		ctrl.Log.Error(nil, "Unable to cast object to MetricPipeline")
+		logf.FromContext(ctx).Error(nil, "Unable to cast object to MetricPipeline")
 		return nil
 	}
 	if len(tracePipeline.Status.Conditions) == 0 {
 		return nil
 	}
 
-	return r.createTelemetryRequests()
+	return r.createTelemetryRequests(ctx)
 }
 
-func (r *TelemetryReconciler) createTelemetryRequests() []reconcile.Request {
+func (r *TelemetryReconciler) createTelemetryRequests(ctx context.Context) []reconcile.Request {
 	var telemetries operatorv1alpha1.TelemetryList
-	err := r.List(context.Background(), &telemetries)
+	err := r.List(ctx, &telemetries)
 	if err != nil {
-		ctrl.Log.Error(err, "Unable to list Telemetry CRs")
+		logf.FromContext(ctx).Error(err, "Unable to list Telemetry CRs")
 		return nil
 	}
 

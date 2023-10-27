@@ -90,7 +90,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **input.&#x200b;application.&#x200b;namespaces.&#x200b;system**  | boolean | Set to `true` if collecting from all Namespaces must also include the system Namespaces like kube-system, istio-system, and kyma-system. |
 | **output**  | object | [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified. |
 | **output.&#x200b;custom**  | string | Defines a custom output in the Fluent Bit syntax. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode. |
-| **output.&#x200b;grafana-loki**  | object | Configures an output to the Kyma-internal Loki instance. [Fluent Bit grafana-loki output](https://grafana.com/docs/loki/v2.2.x/clients/fluentbit/). **Note:** This output is considered legacy and is only provided for backward compatibility with the [deprecated](https://github.com/kyma-project/website/blob/main/content/blog-posts/2023-01-17-release-notes-2.10/index.md#deprecation-of-monitoring) in-cluster Loki instance. It might not be compatible with the latest Loki versions. For integration with a custom Loki installation use the `custom` output with the name `loki` instead, see also [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki). |
+| **output.&#x200b;grafana-loki**  | object | The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki). |
 | **output.&#x200b;grafana-loki.&#x200b;labels**  | map\[string\]string | Labels to set for each log record. |
 | **output.&#x200b;grafana-loki.&#x200b;removeKeys**  | \[\]string | Attributes to be removed from a log record. |
 | **output.&#x200b;grafana-loki.&#x200b;url**  | object | Grafana Loki URL. |
@@ -120,7 +120,28 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **output.&#x200b;http.&#x200b;password.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
 | **output.&#x200b;http.&#x200b;port**  | string | Defines the port of the HTTP receiver. Default is 443. |
 | **output.&#x200b;http.&#x200b;tls**  | object | Configures TLS for the HTTP target server. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca**  | object | Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca.&#x200b;value**  | string | The value as plain text. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom**  | object | The value as a reference to a resource. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string | The name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string | The name of the Secret containing the referenced value |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;ca.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert**  | object | Defines a client certificate to use when using TLS. The certificate must be provided in PEM format. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;value**  | string | The value as plain text. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom**  | object | The value as a reference to a resource. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string | The name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string | The name of the Secret containing the referenced value |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;cert.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
 | **output.&#x200b;http.&#x200b;tls.&#x200b;disabled**  | boolean | Indicates if TLS is disabled or enabled. Default is `false`. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key**  | object | Defines the client key to use when using TLS. The key must be provided in PEM format. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;value**  | string | The value as plain text. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;valueFrom**  | object | The value as a reference to a resource. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string | The name of the attribute of the Secret holding the referenced value. |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string | The name of the Secret containing the referenced value |
+| **output.&#x200b;http.&#x200b;tls.&#x200b;key.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
 | **output.&#x200b;http.&#x200b;tls.&#x200b;skipCertificateValidation**  | boolean | If `true`, the validation of certificates is skipped. Default is `false`. |
 | **output.&#x200b;http.&#x200b;uri**  | string | Defines the URI of the HTTP receiver. Default is "/". |
 | **output.&#x200b;http.&#x200b;user**  | object | Defines the basic auth user. |

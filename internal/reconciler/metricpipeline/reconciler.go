@@ -10,9 +10,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
@@ -27,6 +27,8 @@ import (
 	otelgatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
+
+const defaultReplicaCount int32 = 2
 
 type Config struct {
 	Agent                  otelagentresources.Config
@@ -161,28 +163,20 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		Namespace: r.config.Gateway.Namespace,
 	}
 
-	var err error
+	ownerRefSetter := kubernetes.NewOwnerReferenceSetter(r.Client, pipeline)
+
 	serviceAccount := commonresources.MakeServiceAccount(namespacedBaseName)
-	if err = controllerutil.SetOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
+	if err := kubernetes.CreateOrUpdateServiceAccount(ctx, ownerRefSetter, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create otel collector service account: %w", err)
 	}
 
 	clusterRole := otelgatewayresources.MakeClusterRole(namespacedBaseName)
-	if err = controllerutil.SetOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
+	if err := kubernetes.CreateOrUpdateClusterRole(ctx, ownerRefSetter, clusterRole); err != nil {
 		return fmt.Errorf("failed to create otel collector cluster role: %w", err)
 	}
 
 	clusterRoleBinding := commonresources.MakeClusterRoleBinding(namespacedBaseName)
-	if err = controllerutil.SetOwnerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
+	if err := kubernetes.CreateOrUpdateClusterRoleBinding(ctx, ownerRefSetter, clusterRoleBinding); err != nil {
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
@@ -198,54 +192,39 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	}
 
 	secret := otelgatewayresources.MakeSecret(r.config.Gateway, envVars)
-	if err = controllerutil.SetOwnerReference(pipeline, secret, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateSecret(ctx, r.Client, secret); err != nil {
+	if err = kubernetes.CreateOrUpdateSecret(ctx, ownerRefSetter, secret); err != nil {
 		return fmt.Errorf("failed to create otel collector env secret: %w", err)
 	}
 
 	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, string(gatewayConfigYAML))
-	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateConfigMap(ctx, r.Client, configMap); err != nil {
+	if err = kubernetes.CreateOrUpdateConfigMap(ctx, ownerRefSetter, configMap); err != nil {
 		return fmt.Errorf("failed to create otel collector configmap: %w", err)
 	}
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	deployment := otelgatewayresources.MakeDeployment(r.config.Gateway, configHash, len(allPipelines),
-		config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName)
-	if err = controllerutil.SetOwnerReference(pipeline, deployment, r.Scheme()); err != nil {
-		return err
+	scaling := otelgatewayresources.Scaling{
+		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
+		ResourceRequirementsMultiplier: len(allPipelines),
 	}
-	if err = kubernetes.CreateOrUpdateDeployment(ctx, r.Client, deployment); err != nil {
+	deployment := otelgatewayresources.MakeDeployment(r.config.Gateway, configHash, scaling,
+		config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName)
+	if err = kubernetes.CreateOrUpdateDeployment(ctx, ownerRefSetter, deployment); err != nil {
 		return fmt.Errorf("failed to create otel collector deployment: %w", err)
 	}
 
 	otlpService := otelgatewayresources.MakeOTLPService(r.config.Gateway)
-	if err = controllerutil.SetOwnerReference(pipeline, otlpService, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateService(ctx, r.Client, otlpService); err != nil {
-		//nolint:dupword // otel collector collector service is a real name.
-		return fmt.Errorf("failed to create otel collector collector service: %w", err)
+	if err = kubernetes.CreateOrUpdateService(ctx, ownerRefSetter, otlpService); err != nil {
+		return fmt.Errorf("failed to create otel collector otlp service: %w", err)
 	}
 
 	metricsService := otelgatewayresources.MakeMetricsService(r.config.Gateway)
-	if err = controllerutil.SetOwnerReference(pipeline, metricsService, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateService(ctx, r.Client, metricsService); err != nil {
+	if err = kubernetes.CreateOrUpdateService(ctx, ownerRefSetter, metricsService); err != nil {
 		return fmt.Errorf("failed to create otel collector metrics service: %w", err)
 	}
 
 	networkPolicyPorts := makeNetworkPolicyPorts()
 	networkPolicy := otelgatewayresources.MakeNetworkPolicy(r.config.Gateway, networkPolicyPorts)
-	if err = controllerutil.SetOwnerReference(pipeline, networkPolicy, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateNetworkPolicy(ctx, r.Client, networkPolicy); err != nil {
+	if err = kubernetes.CreateOrUpdateNetworkPolicy(ctx, ownerRefSetter, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create otel collector network policy: %w", err)
 	}
 
@@ -272,28 +251,20 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		Namespace: r.config.Agent.Namespace,
 	}
 
-	var err error
+	ownerRefSetter := kubernetes.NewOwnerReferenceSetter(r.Client, pipeline)
+
 	serviceAccount := commonresources.MakeServiceAccount(namespacedBaseName)
-	if err = controllerutil.SetOwnerReference(pipeline, serviceAccount, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, r, serviceAccount); err != nil {
+	if err := kubernetes.CreateOrUpdateServiceAccount(ctx, ownerRefSetter, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create otel collector service account: %w", err)
 	}
 
 	clusterRole := otelagentresources.MakeClusterRole(namespacedBaseName)
-	if err = controllerutil.SetOwnerReference(pipeline, clusterRole, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateClusterRole(ctx, r, clusterRole); err != nil {
+	if err := kubernetes.CreateOrUpdateClusterRole(ctx, ownerRefSetter, clusterRole); err != nil {
 		return fmt.Errorf("failed to create otel collector cluster role: %w", err)
 	}
 
 	clusterRoleBinding := commonresources.MakeClusterRoleBinding(namespacedBaseName)
-	if err = controllerutil.SetOwnerReference(pipeline, clusterRoleBinding, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateClusterRoleBinding(ctx, r, clusterRoleBinding); err != nil {
+	if err := kubernetes.CreateOrUpdateClusterRoleBinding(ctx, ownerRefSetter, clusterRoleBinding); err != nil {
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
 
@@ -303,27 +274,46 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		Name:      r.config.Gateway.Service.OTLPServiceName,
 	}, allPipelines, isIstioActive)
 	var agentConfigYAML []byte
-	agentConfigYAML, err = yaml.Marshal(agentConfig)
+	agentConfigYAML, err := yaml.Marshal(agentConfig)
 	if err != nil {
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
 	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, string(agentConfigYAML))
-	if err = controllerutil.SetOwnerReference(pipeline, configMap, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateConfigMap(ctx, r.Client, configMap); err != nil {
+	if err = kubernetes.CreateOrUpdateConfigMap(ctx, ownerRefSetter, configMap); err != nil {
 		return fmt.Errorf("failed to create otel collector configmap: %w", err)
 	}
 
 	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
 	daemonSet := otelagentresources.MakeDaemonSet(r.config.Agent, configHash, config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName, agent.IstioCertPath)
-	if err = controllerutil.SetOwnerReference(pipeline, daemonSet, r.Scheme()); err != nil {
-		return err
-	}
-	if err = kubernetes.CreateOrUpdateDaemonSet(ctx, r.Client, daemonSet); err != nil {
+	if err := kubernetes.CreateOrUpdateDaemonSet(ctx, ownerRefSetter, daemonSet); err != nil {
 		return fmt.Errorf("failed to create otel collector deployment: %w", err)
 	}
 
 	return nil
+}
+
+func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
+	var telemetries operatorv1alpha1.TelemetryList
+	if err := r.List(ctx, &telemetries); err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
+		return defaultReplicaCount
+	}
+	for i := range telemetries.Items {
+		telemetrySpec := telemetries.Items[i].Spec
+		if telemetrySpec.Metric == nil {
+			continue
+		}
+
+		scaling := telemetrySpec.Metric.Gateway.Scaling
+		if scaling.Type != operatorv1alpha1.StaticScalingStrategyType {
+			continue
+		}
+
+		static := scaling.Static
+		if static != nil && static.Replicas > 0 {
+			return static.Replicas
+		}
+	}
+	return defaultReplicaCount
 }

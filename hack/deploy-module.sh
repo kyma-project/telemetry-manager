@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-readonly CLUSTER_NAME="${CLUSTER_NAME:-kyma}" 
+readonly CLUSTER_NAME="${CLUSTER_NAME:-kyma}"
 readonly REGISTRY_NAME="${REGISTRY_NAME:-${CLUSTER_NAME}-registry}"
-readonly REGISTRY_PORT="${REGISTRY_PORT:-5001}" 
+readonly REGISTRY_PORT="${REGISTRY_PORT:-5001}"
 readonly MODULE_REGISTRY="${MODULE_REGISTRY:-localhost:${REGISTRY_PORT}}"
 
 function build_and_push_manager_image() {
@@ -16,7 +16,7 @@ function create_module() {
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
     ${KUSTOMIZE} build config/default > telemetry-manager.yaml
     git remote add origin https://github.com/kyma-project/telemetry-manager
-    ${KYMA} alpha create module --module-config-file=module_config.yaml --registry ${MODULE_REGISTRY} --insecure -o moduletemplate.yaml --ci
+    ${KYMA} alpha create module --module-config-file=module-config.yaml --registry ${MODULE_REGISTRY} --insecure -o moduletemplate.yaml --ci
 }
 
 function apply_local_template_label() {
@@ -57,10 +57,10 @@ function verify_kyma_status() {
 function main() {
     # Provision a k3d cluster using Kyma cli
     ${KYMA} provision k3d --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} --ci
-    
+
     # Build and push manager image to a local k3d registry
     build_and_push_manager_image
-    
+
     # Create the module and push its image to a local k3d registry
     create_module
 
@@ -68,7 +68,7 @@ function main() {
     sed -e "s/${REGISTRY_PORT}/5000/" \
 		-e "s/localhost/k3d-${REGISTRY_NAME}.localhost/" \
         -i "" moduletemplate.yaml
-	
+
     # Apply label needed by the lifecycle manager for local module deployment
     apply_local_template_label
 

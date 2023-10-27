@@ -9,43 +9,48 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/extslices"
 )
 
 type traceComponentsChecker struct {
 	client client.Client
 }
 
-func (t *traceComponentsChecker) Check(ctx context.Context) (*metav1.Condition, error) {
+func (t *traceComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
 	var tracePipelines v1alpha1.TracePipelineList
 	err := t.client.List(ctx, &tracePipelines)
 	if err != nil {
 		return &metav1.Condition{}, fmt.Errorf("failed to get all trace pipelines while syncing conditions: %w", err)
 	}
 
-	status := t.determineReason(tracePipelines.Items)
-	return t.createConditionFromReason(status), nil
+	reason := t.determineReason(tracePipelines.Items, telemetryInDeletion)
+	message := t.createMessageForReason(tracePipelines.Items, reason)
+	return t.createConditionFromReason(reason, message), nil
 
 }
 
-func (t *traceComponentsChecker) determineReason(pipelines []v1alpha1.TracePipeline) string {
+func (t *traceComponentsChecker) determineReason(pipelines []v1alpha1.TracePipeline, telemetryInDeletion bool) string {
 	if len(pipelines) == 0 {
-		return reconciler.ReasonNoPipelineDeployed
+		return conditions.ReasonNoPipelineDeployed
+	}
+
+	if telemetryInDeletion {
+		return conditions.ReasonResourceBlocksDeletion
+	}
+	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.TracePipeline) bool {
+		return t.isPendingWithReason(p, conditions.ReasonTraceGatewayDeploymentNotReady)
+	}); found {
+		return conditions.ReasonTraceGatewayDeploymentNotReady
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.TracePipeline) bool {
-		return t.isPendingWithReason(p, reconciler.ReasonTraceGatewayDeploymentNotReady)
+		return t.isPendingWithReason(p, conditions.ReasonReferencedSecretMissing)
 	}); found {
-		return reconciler.ReasonTraceGatewayDeploymentNotReady
+		return conditions.ReasonReferencedSecretMissing
 	}
 
-	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.TracePipeline) bool {
-		return t.isPendingWithReason(p, reconciler.ReasonReferencedSecretMissing)
-	}); found {
-		return reconciler.ReasonReferencedSecretMissing
-	}
-
-	return reconciler.ReasonTraceGatewayDeploymentReady
+	return conditions.ReasonTraceGatewayDeploymentReady
 }
 
 func (t *traceComponentsChecker) isPendingWithReason(p v1alpha1.TracePipeline, reason string) bool {
@@ -57,20 +62,34 @@ func (t *traceComponentsChecker) isPendingWithReason(p v1alpha1.TracePipeline, r
 	return lastCondition.Type == v1alpha1.TracePipelinePending && lastCondition.Reason == reason
 }
 
-func (t *traceComponentsChecker) createConditionFromReason(reason string) *metav1.Condition {
+func (t *traceComponentsChecker) createMessageForReason(pipelines []v1alpha1.TracePipeline, reason string) string {
+	if reason != conditions.ReasonResourceBlocksDeletion {
+		return conditions.CommonMessageFor(reason)
+
+	}
+
+	return generateDeletionBlockedMessage(blockingResources{
+		resourceType: "TracePipelines",
+		resourceNames: extslices.TransformFunc(pipelines, func(p v1alpha1.TracePipeline) string {
+			return p.Name
+		}),
+	})
+}
+
+func (t *traceComponentsChecker) createConditionFromReason(reason, message string) *metav1.Condition {
 	conditionType := "TraceComponentsHealthy"
-	if reason == reconciler.ReasonTraceGatewayDeploymentReady || reason == reconciler.ReasonNoPipelineDeployed {
+	if reason == conditions.ReasonTraceGatewayDeploymentReady || reason == conditions.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
 			Type:    conditionType,
 			Status:  metav1.ConditionTrue,
 			Reason:  reason,
-			Message: reconciler.Condition(reason),
+			Message: message,
 		}
 	}
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  reason,
-		Message: reconciler.Condition(reason),
+		Message: message,
 	}
 }

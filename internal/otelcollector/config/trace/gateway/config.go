@@ -20,7 +20,11 @@ type Receivers struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	SpanFilter FilterProcessor `yaml:"filter"`
+	K8sAttributes      *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
+	InsertClusterName  *config.ResourceProcessor      `yaml:"resource/insert-cluster-name,omitempty"`
+	DropNoisySpans     FilterProcessor                `yaml:"filter/drop-noisy-spans"`
+	ResolveServiceName *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
+	DropKymaAttributes *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
 
 type FilterProcessor struct {
@@ -31,9 +35,13 @@ type Traces struct {
 	Span []string `yaml:"span"`
 }
 
+type TransformProcessor struct {
+	ErrorMode       string                                `yaml:"error_mode"`
+	TraceStatements []config.TransformProcessorStatements `yaml:"trace_statements"`
+}
+
 type Exporters map[string]Exporter
 
 type Exporter struct {
-	OTLP    *config.OTLPExporter    `yaml:",inline,omitempty"`
-	Logging *config.LoggingExporter `yaml:",inline,omitempty"`
+	OTLP *config.OTLPExporter `yaml:",inline,omitempty"`
 }

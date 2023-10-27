@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	gatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
 )
@@ -37,7 +37,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				}},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
@@ -54,7 +54,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonMetricGatewayDeploymentNotReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricGatewayDeploymentNotReady)
 	})
 
 	t.Run("should add running condition if metric gateway deployment is ready", func(t *testing.T) {
@@ -70,7 +70,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				}},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
@@ -87,7 +87,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelineRunning)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonMetricGatewayDeploymentReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricGatewayDeploymentReady)
 	})
 
 	t.Run("should reset conditions and add pending condition if metric gateway deployment becomes not ready again", func(t *testing.T) {
@@ -104,12 +104,12 @@ func TestUpdateStatus(t *testing.T) {
 				}},
 			Status: telemetryv1alpha1.MetricPipelineStatus{
 				Conditions: []telemetryv1alpha1.MetricPipelineCondition{
-					{Reason: reconciler.ReasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
-					{Reason: reconciler.ReasonMetricGatewayDeploymentReady, Type: telemetryv1alpha1.MetricPipelineRunning},
+					{Reason: conditions.ReasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
+					{Reason: conditions.ReasonMetricGatewayDeploymentReady, Type: telemetryv1alpha1.MetricPipelineRunning},
 				},
 			},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
@@ -126,7 +126,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonMetricGatewayDeploymentNotReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricGatewayDeploymentNotReady)
 	})
 
 	t.Run("should reset conditions and add pending condition if some referenced secret does not exist anymore", func(t *testing.T) {
@@ -151,15 +151,15 @@ func TestUpdateStatus(t *testing.T) {
 				}},
 			Status: telemetryv1alpha1.MetricPipelineStatus{
 				Conditions: []telemetryv1alpha1.MetricPipelineCondition{
-					{Reason: reconciler.ReasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
-					{Reason: reconciler.ReasonMetricGatewayDeploymentReady, Type: telemetryv1alpha1.MetricPipelineRunning},
+					{Reason: conditions.ReasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
+					{Reason: conditions.ReasonMetricGatewayDeploymentReady, Type: telemetryv1alpha1.MetricPipelineRunning},
 				},
 			},
 		}
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		sut := Reconciler{
 			Client: fakeClient,
@@ -174,7 +174,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonReferencedSecretMissing)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonReferencedSecretMissing)
 	})
 
 	t.Run("should add running condition if referenced secret exists and metric gateway deployment is ready", func(t *testing.T) {
@@ -206,7 +206,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			Data: map[string][]byte{"host": nil},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
@@ -224,7 +224,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelineRunning)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonMetricGatewayDeploymentReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricGatewayDeploymentReady)
 	})
 
 	t.Run("should add pending condition if waiting for lock", func(t *testing.T) {
@@ -240,7 +240,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				}},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
@@ -257,7 +257,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonWaitingForLock)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonWaitingForLock)
 	})
 
 	t.Run("should add pending condition if acquired lock but metric gateway is not ready", func(t *testing.T) {
@@ -273,7 +273,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				}},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
@@ -292,6 +292,6 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, reconciler.ReasonMetricGatewayDeploymentNotReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricGatewayDeploymentNotReady)
 	})
 }

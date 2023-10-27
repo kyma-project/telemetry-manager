@@ -8,4 +8,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager
-  newTag: v20230911-69866791
+  newTag: v20231024-7403b034

@@ -101,7 +101,8 @@ func makeServiceConfig(inputs inputSources) config.Service {
 				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
 			},
 			Logs: config.Logs{
-				Level: "info",
+				Level:    "info",
+				Encoding: "json",
 			},
 		},
 		Extensions: []string{"health_check"},
@@ -114,7 +115,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 	if inputs.runtime {
 		pipelinesConfig["metrics/runtime"] = config.Pipeline{
 			Receivers:  []string{"kubeletstats"},
-			Processors: []string{"resource/delete-service-name", "resource/insert-input-source-runtime"},
+			Processors: []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-runtime", "batch"},
 			Exporters:  []string{"otlp"},
 		}
 	}
@@ -122,7 +123,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 	if inputs.prometheus {
 		pipelinesConfig["metrics/prometheus"] = config.Pipeline{
 			Receivers:  []string{"prometheus/self", "prometheus/app-pods", "prometheus/app-services"},
-			Processors: []string{"resource/delete-service-name", "resource/insert-input-source-prometheus"},
+			Processors: []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-prometheus", "batch"},
 			Exporters:  []string{"otlp"},
 		}
 	}
@@ -130,7 +131,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 	if inputs.istio {
 		pipelinesConfig["metrics/istio"] = config.Pipeline{
 			Receivers:  []string{"prometheus/istio"},
-			Processors: []string{"resource/delete-service-name", "resource/insert-input-source-istio"},
+			Processors: []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-istio", "batch"},
 			Exporters:  []string{"otlp"},
 		}
 	}

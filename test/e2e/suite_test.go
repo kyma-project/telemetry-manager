@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/onsi/gomega/format"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -18,6 +19,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -38,9 +40,11 @@ var (
 	telemetryK8sObjects []client.Object
 )
 
-func TestE2e(t *testing.T) {
+func TestE2E(t *testing.T) {
+	format.MaxDepth = 20
+	format.MaxLength = 16000
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "E2e Suite")
+	RunSpecs(t, "E2E Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -80,7 +84,7 @@ var _ = AfterSuite(func() {
 			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 			var secret corev1.Secret
 			g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
-		}, timeout, interval).ShouldNot(Succeed())
+		}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
 	}
 
 	cancel()

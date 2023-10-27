@@ -3,6 +3,8 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -74,6 +76,7 @@ func TestMakeConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
+		require.Equal(t, "json", collectorConfig.Service.Telemetry.Logs.Encoding)
 		require.Equal(t, "${MY_POD_IP}:8888", collectorConfig.Service.Telemetry.Metrics.Address)
 	})
 
@@ -105,12 +108,13 @@ func TestMakeConfig(t *testing.T) {
 
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "filter")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[3], "resource")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[2], "filter/drop-noisy-spans")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[3], "resource/insert-cluster-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[4], "transform/resolve-service-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[5], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test"].Processors[6], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "otlp/test")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test"].Exporters, "logging/test")
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
@@ -125,132 +129,43 @@ func TestMakeConfig(t *testing.T) {
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-1")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Exporters, "otlp/test-1")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Exporters, "logging/test-1")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Receivers, "otlp")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-1"].Receivers, "opencensus")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[2], "filter")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[3], "resource")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[4], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[2], "filter/drop-noisy-spans")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[3], "resource/insert-cluster-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[4], "transform/resolve-service-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[5], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-1"].Processors[6], "batch")
 
 		require.Contains(t, collectorConfig.Service.Pipelines, "traces/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Exporters, "otlp/test-2")
-		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Exporters, "logging/test-2")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Receivers, "otlp")
 		require.Contains(t, collectorConfig.Service.Pipelines["traces/test-2"].Receivers, "opencensus")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[0], "memory_limiter")
 		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[1], "k8sattributes")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[2], "filter")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[3], "resource")
-		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[4], "batch")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[2], "filter/drop-noisy-spans")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[3], "resource/insert-cluster-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[4], "transform/resolve-service-name")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[5], "resource/drop-kyma-attributes")
+		require.Equal(t, collectorConfig.Service.Pipelines["traces/test-2"].Processors[6], "batch")
 	})
 
 	t.Run("marshaling", func(t *testing.T) {
-		expected := `extensions:
-    health_check:
-        endpoint: ${MY_POD_IP}:13133
-    pprof:
-        endpoint: 127.0.0.1:1777
-service:
-    pipelines:
-        traces/test:
-            receivers:
-                - opencensus
-                - otlp
-            processors:
-                - memory_limiter
-                - k8sattributes
-                - filter
-                - resource
-                - batch
-            exporters:
-                - logging/test
-                - otlp/test
-    telemetry:
-        metrics:
-            address: ${MY_POD_IP}:8888
-        logs:
-            level: info
-    extensions:
-        - health_check
-        - pprof
-receivers:
-    opencensus:
-        endpoint: ${MY_POD_IP}:55678
-    otlp:
-        protocols:
-            http:
-                endpoint: ${MY_POD_IP}:4318
-            grpc:
-                endpoint: ${MY_POD_IP}:4317
-processors:
-    batch:
-        send_batch_size: 512
-        timeout: 10s
-        send_batch_max_size: 512
-    memory_limiter:
-        check_interval: 1s
-        limit_percentage: 75
-        spike_limit_percentage: 10
-    k8sattributes:
-        auth_type: serviceAccount
-        passthrough: false
-        extract:
-            metadata:
-                - k8s.pod.name
-                - k8s.node.name
-                - k8s.namespace.name
-                - k8s.deployment.name
-                - k8s.statefulset.name
-                - k8s.daemonset.name
-                - k8s.cronjob.name
-                - k8s.job.name
-        pod_association:
-            - sources:
-                - from: resource_attribute
-                  name: k8s.pod.ip
-            - sources:
-                - from: resource_attribute
-                  name: k8s.pod.uid
-            - sources:
-                - from: connection
-    resource:
-        attributes:
-            - action: insert
-              key: k8s.cluster.name
-              value: ${KUBERNETES_SERVICE_HOST}
-    filter:
-        traces:
-            span:
-                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (resource.attributes["service.name"] == "grafana.kyma-system")
-                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (resource.attributes["service.name"] == "grafana.kyma-system")
-                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (IsMatch(attributes["http.url"], ".+/metrics") == true) and (resource.attributes["k8s.namespace.name"] == "kyma-system")
-                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (IsMatch(attributes["http.url"], ".+/healthz(/.*)?") == true) and (resource.attributes["k8s.namespace.name"] == "kyma-system")
-                - (attributes["http.method"] == "GET") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Ingress") and (attributes["user_agent"] == "vm_promscrape")
-                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-otlp-traces\\.kyma-system(\\..*)?:(4318|4317).*") == true)
-                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (IsMatch(attributes["http.url"], "http(s)?:\\/\\/telemetry-trace-collector-internal\\.kyma-system(\\..*)?:(55678).*") == true)
-                - (attributes["http.method"] == "POST") and (attributes["component"] == "proxy") and (attributes["OperationName"] == "Egress") and (resource.attributes["service.name"] == "telemetry-fluent-bit.kyma-system")
-exporters:
-    logging/test:
-        verbosity: basic
-    otlp/test:
-        endpoint: ${OTLP_ENDPOINT_TEST}
-        sending_queue:
-            enabled: true
-            queue_size: 256
-        retry_on_failure:
-            enabled: true
-            initial_interval: 5s
-            max_interval: 30s
-            max_elapsed_time: 300s
-`
-
-		collectorConfig, _, err := MakeConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().WithName("test").Build()})
+		config, _, err := MakeConfig(context.Background(), fakeClient, []v1alpha1.TracePipeline{
+			testutils.NewTracePipelineBuilder().WithName("test").Build(),
+		})
 		require.NoError(t, err)
 
-		yamlBytes, err := yaml.Marshal(collectorConfig)
+		configYAML, err := yaml.Marshal(config)
+		require.NoError(t, err, "failed to marshal config")
+
+		goldenFilePath := filepath.Join("testdata", "config.yaml")
+		goldenFile, err := os.ReadFile(goldenFilePath)
+		require.NoError(t, err, "failed to load golden file")
+
 		require.NoError(t, err)
-		require.Equal(t, expected, string(yamlBytes))
+		require.Equal(t, string(goldenFile), string(configYAML))
 	})
 }

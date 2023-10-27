@@ -27,13 +27,13 @@ Optionally, the Telemetry module provides a DaemonSet of an [OTel Collector](htt
 4. The agent converts and pushes all collected metric data to the gateway in OTLP.
 5. The gateway enriches all received data with typical metadata of the source by communicating with the Kubernetes APIServer. Furthermore, it filters data according to the pipeline configuration.
 6. The `MetricPipeline` resource specifies the target backend for the metric gateway.
-1. The backend can run within the cluster.
-1. If authentication has been set up, the backend can also run outside the cluster.
-1. The metric data is consumed using the backend system.
+7. The backend can run within the cluster.
+8. If authentication has been set up, the backend can also run outside the cluster.
+9. The metric data is consumed using the backend system.
 
 ### Metric Gateway
 
-In a Kyma cluster, the metric gateway is the central component to which all components can send their individual metrics. The gateway collects, enriches, and dispatches the data to the configured backend. The gateway is based on the [OTel Collector](https://opentelemetry.io/docs/collector/) and comes with a concept of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together (see [Configuration](https://opentelemetry.io/docs/collector/configuration/). Kyma's MetricPipeline provides a hardened setup of an OTel Collector and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
+In a Kyma cluster, the metric gateway is the central component to which all components can send their individual metrics. The gateway collects, [enriches](README.md#automatic-telemetry-enrichment), and dispatches the data to the configured backend. The gateway is based on the [OTel Collector](https://opentelemetry.io/docs/collector/) and comes with a concept of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together (see [Configuration](https://opentelemetry.io/docs/collector/configuration/). Kyma's MetricPipeline provides a hardened setup of an OTel Collector and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
 
 - Supportability: All features are tested and supported.
 - Migratability: Smooth migration experiences when switching underlying technologies or architectures.
@@ -47,6 +47,7 @@ The downside is that only a limited set of features is available. If you want to
 If a MetricPipeline configures a feature in the `input.application` section, an additional DaemonSet is deployed acting as an agent. The agent is also based on an [OTel Collector](https://opentelemetry.io/docs/collector/) and encompasses the collection and conversion of Prometheus-based metrics. Hereby, the workload puts an `prometheus.io/scrape` annotation on the specification of the Pod or service, and the agent collects it. The agent pushes all data in OTLP to the central gateway.
 
 ### Telemetry Manager
+
 The MetricPipeline resource is managed by Telemetry Manager, a typical Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) responsible for managing the custom parts of the OTel Collector configuration.
 
 ![Manager resources](./assets/metrics-resources.drawio.svg)
@@ -64,204 +65,199 @@ To ship metrics to a new OTLP output, create a resource of the kind `MetricPipel
 
 This configures the underlying OTel Collector of the gateway with a pipeline for metrics. The receiver of the pipeline is of the OTLP type and is accessible using the `telemetry-otlp-metrics` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, depending on the configured protocol. Ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
 
-<div tabs>
-  <details>
-    <summary>GRPC</summary>
-    For GRPC, use:
+<!-- tabs:start -->
 
-  ```yaml
-    apiVersion: telemetry.kyma-project.io/v1alpha1
-    kind: MetricPipeline
-    metadata:
-      name: backend
-    spec:
-      output:
-        otlp:
-          endpoint:
-            value: https://backend.example.com:4317
-  ```
-  </details>
-  <details>
-    <summary>HTTP</summary>
-    To use the HTTP protocol, use the <code>protocol</code> attribute:
+#### **GRPC**
+
+For GRPC, use:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
+
+#### **HTTP**
+
+To use the HTTP protocol, use the `protocol` attribute:
   
-  ```yaml
-    apiVersion: telemetry.kyma-project.io/v1alpha1
-    kind: MetricPipeline
-    metadata:
-      name: backend
-    spec:
-      output:
-        otlp:
-          protocol: http
-          endpoint:
-            value: https://backend.example.com:4318
-  ```
-  </details>
-</div>
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      protocol: http
+      endpoint:
+        value: https://backend.example.com:4318
+```
+
+<!-- tabs:end -->
 
 ### Step 2a: Add authentication details from plain text
 
-To integrate with external systems, you must configure authentication details. At the moment, Basic Authentication and custom headers are supported.
+To integrate with external systems, you must configure authentication details. At the moment, mutual TLS (mTLS), Basic Authentication and custom headers are supported.
 
-See the following code examples for mTLS, basic, and token-based custom authentication:
-<div tabs>
-  <details>
-    <summary>Mutual TLS</summary>
+<!-- tabs:start -->
+  
+#### **Mutual TLS**
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: MetricPipeline
-  metadata:
-    name: backend
-  spec:
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com/otlp:4317
-        tls:
-          cert:
-            value: |
-              -----BEGIN CERTIFICATE-----
-              ...
-          key:
-            value: |
-              -----BEGIN RSA PRIVATE KEY-----
-              ...
-  ```
-  </details>
-  <details>
-    <summary>Basic authentication</summary>
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      tls:
+        cert:
+          value: |
+            -----BEGIN CERTIFICATE-----
+            ...
+        key:
+          value: |
+            -----BEGIN RSA PRIVATE KEY-----
+            ...
+```
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: MetricPipeline
-  metadata:
-    name: backend
-  spec:
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com/otlp:4317
-        authentication:
-          basic:
-            user:
-              value: myUser
-            password:
-              value: myPwd
-  ```
-  </details>
-  <details>
-    <summary>Token-based with custom headers</summary>
+#### **Basic Authentication**
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: MetricPipeline
-  metadata:
-    name: backend
-  spec:
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com/otlp:4317
-        headers:
-          - name: Authorization
-            value: "Bearer myToken"
-  ```
-  </details>
-</div>
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      authentication:
+        basic:
+          user:
+            value: myUser
+          password:
+            value: myPwd
+```
 
+#### **Token-based with custom headers**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      headers:
+        - name: Authorization
+          value: "Bearer myToken"
+```
+
+<!-- tabs:end -->
 ### Step 2b: Add authentication details from Secrets
 
 Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, MetricsPipeline supports the reference of Secrets.
 
 Use the **valueFrom** attribute to map Secret keys as in the following examples:
 
-<div tabs>
-  <details>
-    <summary>Mutual TLS</summary>
+<!-- tabs:start -->
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: MetricPipeline
-  metadata:
-    name: backend
-  spec:
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com/otlp:4317
-        tls:
-          cert:
-            valueFrom:
-              secretKeyRef:
-                  name: backend
-                  namespace: default
-                  key: cert
-          key:
-            valueFrom:
-              secretKeyRef:
-                  name: backend
-                  namespace: default
-                  key: key
-  ```
-  </details>
-  <details>
-    <summary>Basic authentication</summary>
+#### **Mutual TLS**
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: MetricPipeline
-  metadata:
-    name: backend
-  spec:
-    output:
-      otlp:
-        endpoint:
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com/otlp:4317
+      tls:
+        cert:
           valueFrom:
-              secretKeyRef:
-                  name: backend
-                  namespace: default
-                  key: endpoint
-        authentication:
-          basic:
-            user:
-              valueFrom:
-                secretKeyRef:
-                  name: backend
-                  namespace: default
-                  key: user
-            password:
-              valueFrom:
-                secretKeyRef:
-                  name: backend
-                  namespace: default
-                  key: password
-  ```
-</details>
-  <details>
-    <summary>Token-based with custom headers</summary>
+            secretKeyRef:
+                name: backend
+                namespace: default
+                key: cert
+        key:
+          valueFrom:
+            secretKeyRef:
+                name: backend
+                namespace: default
+                key: key
+```
 
-  ```yaml
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  kind: MetricPipeline
-  metadata:
-    name: backend
-  spec:
-    output:
-      otlp:
-        endpoint:
-          value: https://backend.example.com:4317
-        headers:
-          - name: Authorization
+#### **Basic Authentication**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        valueFrom:
+            secretKeyRef:
+                name: backend
+                namespace: default
+                key: endpoint
+      authentication:
+        basic:
+          user:
             valueFrom:
               secretKeyRef:
-                  name: backend
-                  namespace: default
-                  key: token 
-  ```
-  </details>
-</div>
+                name: backend
+                namespace: default
+                key: user
+          password:
+            valueFrom:
+              secretKeyRef:
+                name: backend
+                namespace: default
+                key: password
+```
+
+#### **Token-based with custom headers**
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+      headers:
+        - name: Authorization
+          valueFrom:
+            secretKeyRef:
+                name: backend
+                namespace: default
+                key: token 
+```
+
+<!-- tabs:end -->
 
 The related Secret must have the referenced name, must be located in the referenced Namespace, and must contain the mapped key as in the following example:
 
@@ -305,7 +301,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-The agent is configured with a generic scrape configuration, which uses annotations to specify the endpoints to scrape in the cluster. 
+The agent is configured with a generic scrape configuration, which uses annotations to specify the endpoints to scrape in the cluster.
 You only need to have the annotations in place for metrics ingestion to start automatically.
 
 Put the following annotations either to a Service that resolves your metrics port, or directly to the Pod:
@@ -382,20 +378,40 @@ You activated a MetricPipeline and metrics start streaming to your backend. To v
     NAME              STATUS    AGE
     backend           Ready     44s
 
+## Operations
+
+A MetricPipeline creates a Deployment running OTel Collector instances in your cluster. That instances will serve OTLP endpoints and ship received data to the configured backend. The Telemetry module assures that the OTel Collector instances are operational and healthy at any time. The Telemetry module delivers the data to the backend using typical patterns like buffering and retries (see [Limitations](#limitations)). However, there are scenarios where the instances will drop logs because the backend is either not reachable for some duration, or cannot handle the log load and is causing back pressure.
+
+To avoid and detect these scenarios, you must monitor the instances by collecting relevant metrics. For that, a service `telemetry-metric-gateway-metrics` is located in the `kyma-system` namespace. For easier discovery, they have the `prometheus.io` annotation.
+
+The relevant metrics are:
+| Name | Threshold | Description |
+|---|---|---|
+| otelcol_exporter_enqueue_failed_metric_points | total[5m] > 0 | Indicates that new or retried items could not be added to the exporter buffer because the buffer is exhausted. Typically, that happens when the configured backend cannot handle the load on time and is causing back pressure. |
+| otelcol_exporter_send_failed_metric_points | total[5m] > 0 | Indicates that items are refused in an non-retryable way like a 400 status |
+| otelcol_processor_refused_metric_points | total[5m] > 0 | Indicates that items cannot be received because a processor refuses them. That usually happens when memory of the collector is exhausted because too much data arrived and throttling started.. |
+
 ## Limitations
 
-The metric gateway setup is based on the following assumptions:
+The metric setup is based on the following assumptions:
 
-- The collector has no autoscaling options and has a limited resource setup of 1 CPU and 1 GiB memory.
-- Batching is enabled, and a batch contains up to 512 metrics/batch.
-- A destination can be unavailable for up to 5 minutes without direct loss of metric data.
-- An average metric consists of 7 attributes with 64 character length.
+- A destination can be unavailable for up to 5 minutes without direct loss of metric data (using retries).
+- An average metric consists of 20 metric data points and 10 labels.
+- Batching is enabled, and a batch contains up to 1024 metrics/batch.
 
 This leads to the following limitations:
 
 ### Throughput
 
-The maximum throughput is 4200 metric/sec ~= 15.000.000 metrics/hour. If more data must be ingested, it can be refused.
+The default metric gateway setup has a maximum throughput of 34K metric data points/sec. If more data is sent to the gateway, it is refused. Manual scaling can be used to increase the maximum throughput.
+
+The metric agent setup has a maximum throughput of 14K metric data points/sec per instance. If more data must be ingested, it is refused. If a metric data endpoint emits more than 50.000 metric data points per scrape loop, the metric agent refuses all the data.
+
+
+### Load Balancing with Istio
+
+To assure availability, the metric gateway runs with multiple instances. If you want to increase the maximum throughput, use manual scaling and enter a higher number of instances. 
+By design, the connections to the gateway are long-living connections (because OTLP is based on gRPC and HTTP/2). For optimal scaling of the gateway, the clients or applications must balance the connections across the available instances, which is automatically achieved if you use an Istio sidecar. If your application has no Istio sidecar, the data is always sent to one instance of the gateway.
 
 ### Unavailability of output
 
@@ -419,7 +435,7 @@ Cause: The backend is not reachable or wrong authentication credentials are used
 
 Remedy:
 
-1. To check the `telemetry-trace-collector` Pods for error logs, call `kubectl logs -n kyma-system {POD_NAME}`.
+1. To check the `telemetry-metric-gateway` Pods for error logs, call `kubectl logs -n kyma-system {POD_NAME}`.
 2. Fix the errors.
 
 ### Only Istio metrics arrive at the destination
@@ -445,13 +461,15 @@ Symptom: Custom metrics don't arrive at the destination and the OTel Collector p
 Cause: The workload is not configured to use 'STRICT' mTLS mode. For details, see [Activate Prometheus-based metrics](#step-4-activate-prometheus-based-metrics).
 
 Remedy: You can either set up 'STRICT' mTLS mode or HTTP scraping:
-<div tabs>
-  <details>
-    <summary>Strict mTLS</summary>
-    Configure the workload using 'STRICT' mTLS mode (for example, by applying a corresponding PeerAuthentication).
-  </details>
-  <details>
-    <summary>HTTP scraping</summary>
-    Set up scraping through HTTP by applying the <code>prometheus.io/scheme=http</code> annotation.
-  </details>
-</div>
+
+<!-- tabs:start -->
+
+#### **Strict mTLS**
+
+Configure the workload using 'STRICT' mTLS mode (for example, by applying a corresponding PeerAuthentication).
+
+#### **HTTP scraping**
+
+Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
+
+<!-- tabs:end -->

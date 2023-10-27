@@ -80,7 +80,8 @@ func makeServiceConfig() config.Service {
 				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
 			},
 			Logs: config.Logs{
-				Level: "info",
+				Level:    "info",
+				Encoding: "json",
 			},
 		},
 		Extensions: []string{"health_check", "pprof"},
@@ -99,11 +100,8 @@ func addComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otl
 	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
 	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
-	loggingExporterID := fmt.Sprintf("logging/%s", pipeline.Name)
-	cfg.Exporters[loggingExporterID] = Exporter{Logging: config.DefaultLoggingExporter()}
-
 	pipelineID := fmt.Sprintf("traces/%s", pipeline.Name)
-	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(otlpExporterID, loggingExporterID)
+	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(otlpExporterID)
 
 	return nil
 }
@@ -112,8 +110,15 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 	sort.Strings(exporterIDs)
 
 	return config.Pipeline{
-		Receivers:  []string{"opencensus", "otlp"},
-		Processors: []string{"memory_limiter", "k8sattributes", "filter", "resource", "batch"},
-		Exporters:  exporterIDs,
+		Receivers: []string{"opencensus", "otlp"},
+		Processors: []string{"memory_limiter",
+			"k8sattributes",
+			"filter/drop-noisy-spans",
+			"resource/insert-cluster-name",
+			"transform/resolve-service-name",
+			"resource/drop-kyma-attributes",
+			"batch",
+		},
+		Exporters: exporterIDs,
 	}
 }

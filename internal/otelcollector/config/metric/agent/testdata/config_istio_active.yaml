@@ -7,8 +7,10 @@ service:
             receivers:
                 - prometheus/istio
             processors:
+                - memory_limiter
                 - resource/delete-service-name
                 - resource/insert-input-source-istio
+                - batch
             exporters:
                 - otlp
         metrics/prometheus:
@@ -17,16 +19,20 @@ service:
                 - prometheus/app-pods
                 - prometheus/app-services
             processors:
+                - memory_limiter
                 - resource/delete-service-name
                 - resource/insert-input-source-prometheus
+                - batch
             exporters:
                 - otlp
         metrics/runtime:
             receivers:
                 - kubeletstats
             processors:
+                - memory_limiter
                 - resource/delete-service-name
                 - resource/insert-input-source-runtime
+                - batch
             exporters:
                 - otlp
     telemetry:
@@ -34,6 +40,7 @@ service:
             address: ${MY_POD_IP}:8888
         logs:
             level: info
+            encoding: json
     extensions:
         - health_check
 receivers:
@@ -41,7 +48,7 @@ receivers:
         collection_interval: 30s
         auth_type: serviceAccount
         endpoint: https://${env:MY_NODE_NAME}:10250
-        insecure_skip_verify: false
+        insecure_skip_verify: true
         metric_groups:
             - container
             - pod
@@ -57,6 +64,7 @@ receivers:
         config:
             scrape_configs:
                 - job_name: app-pods
+                  sample_limit: 50000
                   scrape_interval: 30s
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_pod_node_name]
@@ -98,6 +106,7 @@ receivers:
                   kubernetes_sd_configs:
                     - role: pod
                 - job_name: app-pods-secure
+                  sample_limit: 50000
                   scrape_interval: 30s
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_pod_node_name]
@@ -147,6 +156,7 @@ receivers:
         config:
             scrape_configs:
                 - job_name: app-services
+                  sample_limit: 50000
                   scrape_interval: 30s
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_endpoint_node_name]
@@ -191,6 +201,7 @@ receivers:
                   kubernetes_sd_configs:
                     - role: endpoints
                 - job_name: app-services-secure
+                  sample_limit: 50000
                   scrape_interval: 30s
                   relabel_configs:
                     - source_labels: [__meta_kubernetes_endpoint_node_name]
@@ -243,6 +254,7 @@ receivers:
         config:
             scrape_configs:
                 - job_name: istio-proxy
+                  sample_limit: 50000
                   scrape_interval: 30s
                   metrics_path: /stats/prometheus
                   relabel_configs:
@@ -265,6 +277,14 @@ receivers:
                   kubernetes_sd_configs:
                     - role: pod
 processors:
+    batch:
+        send_batch_size: 1024
+        timeout: 10s
+        send_batch_max_size: 1024
+    memory_limiter:
+        check_interval: 0.1s
+        limit_percentage: 80
+        spike_limit_percentage: 15
     resource/delete-service-name:
         attributes:
             - action: delete

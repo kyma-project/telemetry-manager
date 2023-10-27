@@ -69,7 +69,11 @@ func TestMakeClusterRole(t *testing.T) {
 }
 
 func TestMakeDeployment(t *testing.T) {
-	deployment := MakeDeployment(config, "123", 1, "MY_POD_IP", "MY_NODE_NAME")
+	scaling := Scaling{
+		Replicas:                       2,
+		ResourceRequirementsMultiplier: 1,
+	}
+	deployment := MakeDeployment(config, "123", scaling, "MY_POD_IP", "MY_NODE_NAME")
 
 	require.NotNil(t, deployment)
 	require.Equal(t, deployment.Name, config.BaseName)
@@ -163,7 +167,11 @@ func TestMakeOpenCensusService(t *testing.T) {
 }
 
 func TestMakeResourceRequirements(t *testing.T) {
-	requirements := makeResourceRequirements(config, 1)
+	scaling := Scaling{
+		Replicas:                       2,
+		ResourceRequirementsMultiplier: 1,
+	}
+	requirements := makeResourceRequirements(config, scaling)
 	require.Equal(t, config.Deployment.BaseCPURequest, *requirements.Requests.Cpu())
 	require.Equal(t, config.Deployment.BaseMemoryRequest.Value(), requirements.Requests.Memory().Value())
 	require.Equal(t, config.Deployment.BaseCPULimit.Value(), requirements.Limits.Cpu().Value())
@@ -171,7 +179,11 @@ func TestMakeResourceRequirements(t *testing.T) {
 }
 
 func TestMultiPipelineMakeResourceRequirements(t *testing.T) {
-	requirements := makeResourceRequirements(config, 3)
+	scaling := Scaling{
+		Replicas:                       2,
+		ResourceRequirementsMultiplier: 3,
+	}
+	requirements := makeResourceRequirements(config, scaling)
 	require.Equal(t, config.Deployment.BaseCPURequest, *requirements.Requests.Cpu())
 	require.Equal(t, config.Deployment.BaseMemoryRequest.Value(), requirements.Requests.Memory().Value())
 	require.Equal(t, config.Deployment.BaseCPULimit.Value(), requirements.Limits.Cpu().Value())

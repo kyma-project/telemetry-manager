@@ -79,87 +79,95 @@ func TestGetOrCreateSecretSuccess(t *testing.T) {
 	require.Equal(t, "secret-ns", secret.Namespace)
 }
 
-func TestMergeKubectlAnnotations(t *testing.T) {
-	existing := v1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "some-deployment",
-			Annotations: map[string]string{
+func TestMergePodAnnotations(t *testing.T) {
+	tests := []struct {
+		name           string
+		existing       map[string]string
+		desired        map[string]string
+		expectedMerged map[string]string
+	}{
+		{
+			name: "should preserve existing kubectl annotations",
+			existing: map[string]string{
 				"kubectl.kubernetes.io/1": "1",
 				"kubectl.kubernetes.io/2": "2",
 				"kubectl.kubernetes.io/3": "3",
+				"unrelated":               "foo",
 			},
-		},
-		Spec:   v1.DeploymentSpec{},
-		Status: v1.DeploymentStatus{},
-	}
-
-	desired := v1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "some-deployment",
-			Annotations: map[string]string{
+			desired: map[string]string{
 				"kubectl.kubernetes.io/2": "b",
 				"kubectl.kubernetes.io/3": "3",
 				"kubectl.kubernetes.io/4": "4",
-				"unrelated":               "4",
+			},
+			expectedMerged: map[string]string{
+				"kubectl.kubernetes.io/1": "1",
+				"kubectl.kubernetes.io/2": "b",
+				"kubectl.kubernetes.io/3": "3",
+				"kubectl.kubernetes.io/4": "4",
 			},
 		},
-		Spec:   v1.DeploymentSpec{},
-		Status: v1.DeploymentStatus{},
-	}
-
-	mergeKubectlAnnotations(&desired.ObjectMeta, existing.ObjectMeta)
-
-	require.Equal(t, len(desired.Annotations), 5)
-	require.Contains(t, desired.Annotations, "kubectl.kubernetes.io/1")
-	require.Contains(t, desired.Annotations, "kubectl.kubernetes.io/2")
-	require.Contains(t, desired.Annotations, "kubectl.kubernetes.io/3")
-	require.Contains(t, desired.Annotations, "kubectl.kubernetes.io/4")
-	require.Contains(t, desired.Annotations, "unrelated")
-	require.Equal(t, desired.Annotations["kubectl.kubernetes.io/1"], "1")
-	require.Equal(t, desired.Annotations["kubectl.kubernetes.io/2"], "b")
-	require.Equal(t, desired.Annotations["kubectl.kubernetes.io/3"], "3")
-	require.Equal(t, desired.Annotations["kubectl.kubernetes.io/4"], "4")
-	require.Equal(t, desired.Annotations["unrelated"], "4")
-}
-
-func TestMergeChecksumAnnotations(t *testing.T) {
-	existing := v1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "some-deployment",
-			Annotations: map[string]string{
+		{
+			name: "should preserve existing checksum annotations",
+			existing: map[string]string{
 				"checksum/1": "1",
 				"checksum/2": "2",
 				"checksum/3": "3",
+				"unrelated":  "foo",
 			},
-		},
-		Spec:   v1.DeploymentSpec{},
-		Status: v1.DeploymentStatus{},
-	}
-
-	desired := v1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "some-deployment",
-			Annotations: map[string]string{
+			desired: map[string]string{
+				"checksum/2": "b",
+				"checksum/3": "3",
+				"checksum/4": "4",
+			},
+			expectedMerged: map[string]string{
+				"checksum/1": "1",
 				"checksum/2": "b",
 				"checksum/3": "3",
 				"checksum/4": "4",
 			},
 		},
-		Spec:   v1.DeploymentSpec{},
-		Status: v1.DeploymentStatus{},
+		{
+			name: "should preserve existing istio restartedAt annotations",
+			existing: map[string]string{
+				"istio-operator.kyma-project.io/restartedAt": "2023-08-17T13:36:09Z",
+				"unrelated": "foo",
+			},
+			desired: map[string]string{
+				"checksum/1": "1",
+			},
+			expectedMerged: map[string]string{
+				"istio-operator.kyma-project.io/restartedAt": "2023-08-17T13:36:09Z",
+				"checksum/1": "1",
+			},
+		},
 	}
 
-	mergeChecksumAnnotations(&desired.ObjectMeta, existing.ObjectMeta)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			existing := v1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "some-deployment",
+					Annotations: tt.existing,
+				},
+			}
 
-	require.Equal(t, len(desired.Annotations), 4)
-	require.Contains(t, desired.Annotations, "checksum/1")
-	require.Contains(t, desired.Annotations, "checksum/2")
-	require.Contains(t, desired.Annotations, "checksum/3")
-	require.Contains(t, desired.Annotations, "checksum/4")
-	require.Equal(t, desired.Annotations["checksum/1"], "1")
-	require.Equal(t, desired.Annotations["checksum/2"], "b")
-	require.Equal(t, desired.Annotations["checksum/3"], "3")
-	require.Equal(t, desired.Annotations["checksum/4"], "4")
+			desired := v1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "some-deployment",
+					Annotations: tt.desired,
+				},
+			}
+
+			mergePodAnnotations(&desired.ObjectMeta, existing.ObjectMeta)
+
+			require.Equal(t, len(tt.expectedMerged), len(desired.Annotations))
+
+			for k, v := range tt.expectedMerged {
+				require.Contains(t, desired.Annotations, k)
+				require.Equal(t, v, desired.Annotations[k])
+			}
+		})
+	}
 }
 
 func TestMergeOwnerReference(t *testing.T) {

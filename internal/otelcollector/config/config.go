@@ -38,5 +38,6 @@ type Metrics struct {
 }
 
 type Logs struct {
-	Level string `yaml:"level"`
+	Level    string `yaml:"level"`
+	Encoding string `yaml:"encoding"`
 }

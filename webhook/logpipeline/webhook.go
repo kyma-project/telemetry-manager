@@ -56,6 +56,7 @@ func NewValidatingWebhookHandler(
 	variablesValidator validation.VariablesValidator,
 	maxPipelinesValidator validation.MaxPipelinesValidator,
 	fileValidator validation.FilesValidator,
+	decoder *admission.Decoder,
 	dryRunner DryRunner,
 	logPipelineValidationConfig *telemetryv1alpha1.LogPipelineValidationConfig,
 ) *ValidatingWebhookHandler {
@@ -63,6 +64,7 @@ func NewValidatingWebhookHandler(
 		Client:                      client,
 		variablesValidator:          variablesValidator,
 		maxPipelinesValidator:       maxPipelinesValidator,
+		decoder:                     decoder,
 		fileValidator:               fileValidator,
 		dryRunner:                   dryRunner,
 		logPipelineValidationConfig: logPipelineValidationConfig,
@@ -94,7 +96,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 	var warnMsg []string
 
 	if logPipeline.ContainsCustomPlugin() {
-		helpText := "https://kyma-project.io/docs/kyma/latest/01-overview/telemetry/telemetry-02-logs/"
+		helpText := "https://kyma-project.io/#/telemetry-manager/user/02-logs"
 		msg := fmt.Sprintf("Logpipeline '%s' uses unsupported custom filters or outputs. We recommend changing the pipeline to use supported filters or output. See the documentation: %s", logPipeline.Name, helpText)
 		warnMsg = append(warnMsg, msg)
 	}
@@ -144,10 +146,5 @@ func (v *ValidatingWebhookHandler) validateLogPipeline(ctx context.Context, logP
 		return err
 	}
 
-	return nil
-}
-
-func (v *ValidatingWebhookHandler) InjectDecoder(d *admission.Decoder) error {
-	v.decoder = d
 	return nil
 }

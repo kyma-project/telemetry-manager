@@ -20,9 +20,10 @@ Kyma's Telemetry module focuses exactly on the aspects of instrumentation, colle
 
 To support telemetry for your applications, Kyma's Telemetry module provides the following features:
 
-- Guidance for the instrumentation: Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) in nearly every programming language.
-- Tooling for collection, filtering, and shipment: Based on the [Open Telemetry Collector](https://opentelemetry.io/docs/collector/), you can configure basic pipelines to filter and ship telemetry data.
-- Integration in a vendor-neutral way to a vendor-specific observability system: Based on the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/reference/specification/protocol/), you can integrate backend systems.
+- Tooling for collection, filtering, and shipment: Based on the [Open Telemetry Collector](https://opentelemetry.io/docs/collector/) and [Fluent Bit](https://fluentbit.io/), you can configure basic pipelines to filter and ship telemetry data.
+- Integration in a vendor-neutral way to a vendor-specific observability system (traces and metrics only): Based on the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/reference/specification/protocol/), you can integrate backend systems.
+- Guidance for the instrumentation (traces and metrics only): Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) in nearly every programming language.
+- [Enriching](#automatic-telemetry-enrichment) telemetry data by automatically adding common attributes (traces and metrics only). This is done in compliance with established semantic conventions, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis.
 - Opt-out from features for advanced scenarios: At any time, you can opt out for each data type, and use custom tooling to collect and ship the telemetry data.
 - SAP BTP as first-class integration: Integration into BTP Observability services is prioritized.
 
@@ -59,14 +60,31 @@ For details, see [Traces](03-traces.md).
 
 ### Metric Gateway/Agent
 
+> **NOTE:** The feature is not available yet. To understand the current progress, watch this [epic](https://github.com/kyma-project/kyma/issues/13079).
+
 The metric gateway and agent are based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). The gateway provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the metric signals. The agent scrapes annotated Prometheus-based workloads. According to a MetricPipeline configuration, the gateway processes and ships the metric data to a target system.
 
 For more information, see [Metrics](04-metrics.md).
+
+### Automatic Telemetry Enrichment
+
+Kyma's Telemetry module automatically enriches your data by adding the following attributes (traces and metrics only):
+
+- `service.name`: The logical name of the service that emits the telemetry data. If not provided by the user, it is populated from Kubernetes metadata, based on the following hierarchy of labels and names:
+  1. `app.kubernetes.io/name` Pod label value.
+  2. `app` Pod label value.
+  3. Deployment/DaemonSet/StatefulSet/Job name.
+  4. Pod name.
+  5. If none of the above is available, the value is `unknown_service`.
+- `k8s.*` attributes: These attributes encapsulate various pieces of Kubernetes metadata associated with the Pod, including but not limited to:
+  1. Pod name.
+  2. Deployment/DaemonSet/StatefulSet/Job name.
+  3. Namespace.
+  4. Cluster name.
 
 ## API / Custom Resource Definitions
 
 - [Telemetry](resources/01-telemetry.md)
 - [LogPipeline](resources/02-logpipeline.md)
-- [LogParser](resources/03-logparser.md)
 - [TracePipeline](resources/04-tracepipeline.md)
 - [MetricPipeline](resources/05-metricpipeline.md)

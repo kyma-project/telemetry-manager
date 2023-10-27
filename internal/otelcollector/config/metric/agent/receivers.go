@@ -11,6 +11,7 @@ import (
 
 const scrapeInterval = 30 * time.Second
 const IstioCertPath = "/etc/istio-output-certs"
+const sampleLimit = 50000
 
 var (
 	istioCAFile   = filepath.Join(IstioCertPath, "root-cert.pem")
@@ -44,6 +45,7 @@ func makeKubeletStatsConfig() *KubeletStatsReceiver {
 	return &KubeletStatsReceiver{
 		CollectionInterval: collectionInterval,
 		AuthType:           "serviceAccount",
+		InsecureSkipVerify: true,
 		Endpoint:           fmt.Sprintf("https://${env:%s}:%d", config.EnvVarCurrentNodeName, portKubelet),
 		MetricGroups:       []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod},
 	}
@@ -80,6 +82,7 @@ func makePrometheusConfig(isIstioActive bool, jobNamePrefix string, role Role, r
 
 	baseScrapeConfig := ScrapeConfig{
 		ScrapeInterval:             scrapeInterval,
+		SampleLimit:                sampleLimit,
 		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: role}},
 	}
 
@@ -159,6 +162,7 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 			ScrapeConfigs: []ScrapeConfig{
 				{
 					JobName:                    "istio-proxy",
+					SampleLimit:                sampleLimit,
 					MetricsPath:                "/stats/prometheus",
 					ScrapeInterval:             scrapeInterval,
 					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
