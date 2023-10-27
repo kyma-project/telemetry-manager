@@ -94,7 +94,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
 				Reason:  "UnsupportedLokiOutput",
-				Message: "grafana-loki output is not supported anymore. For integration with a custom Loki installation use the custom output, check https://github.com/kyma-project/examples/tree/main/loki",
+				Message: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://github.com/kyma-project/examples/tree/main/loki",
 			},
 		},
 		{
