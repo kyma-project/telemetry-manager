@@ -68,7 +68,7 @@ func MakeAndSendPrometheusAgentTraces(proxyClient *apiserver.ProxyClient, otlpPu
 	return traceID
 }
 
-func MakeAndSendMetricAgentAgentTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
+func MakeAndSendMetricAgentScrapeTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
 	spanAttrs := pcommon.NewMap()
 	spanAttrs.PutStr("http.method", "GET")
 	spanAttrs.PutStr("component", "proxy")
