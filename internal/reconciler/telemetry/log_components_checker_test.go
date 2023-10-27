@@ -82,6 +82,22 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 		},
 		{
+			name: "should not be healthy if one pipeline has Loki output defined",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().WithStatusConditions(
+					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+				testutils.NewLogPipelineBuilder().WithStatusConditions(
+					testutils.LogPendingCondition(conditions.ReasonUnsupportedLokiOutput)).Build(),
+			},
+			telemetryInDeletion: false,
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "False",
+				Reason:  "UnsupportedLokiOutput",
+				Message: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://github.com/kyma-project/examples/tree/main/loki",
+			},
+		},
+		{
 			name: "should ignore pipelines waiting for lock",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().WithStatusConditions(

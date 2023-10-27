@@ -2,8 +2,6 @@ package builder
 
 import (
 	"fmt"
-	"sort"
-	"strings"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
@@ -23,10 +21,6 @@ func createOutputSection(pipeline *telemetryv1alpha1.LogPipeline, defaults Pipel
 
 	if output.IsHTTPDefined() {
 		return generateHTTPOutput(output.HTTP, defaults.FsBufferLimit, pipeline.Name)
-	}
-
-	if output.IsLokiDefined() {
-		return generateLokiOutput(output.Loki, defaults.FsBufferLimit, pipeline.Name)
 	}
 
 	return ""
@@ -100,36 +94,6 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit 
 	}
 
 	return sb.Build()
-}
-
-func generateLokiOutput(lokiOutput *telemetryv1alpha1.LokiOutput, fsBufferLimit string, name string) string {
-	sb := NewOutputSectionBuilder()
-	sb.AddConfigParam("labelMapPath", "/fluent-bit/etc/loki-labelmap.json")
-	sb.AddConfigParam("loglevel", "warn")
-	sb.AddConfigParam("lineformat", "json")
-	sb.AddConfigParam("match", fmt.Sprintf("%s.*", name))
-	sb.AddConfigParam("storage.total_limit_size", fsBufferLimit)
-	sb.AddConfigParam("name", "grafana-loki")
-	sb.AddConfigParam("alias", fmt.Sprintf("%s-grafana-loki", name))
-	sb.AddConfigParam("url", resolveValue(lokiOutput.URL, name))
-	if len(lokiOutput.Labels) != 0 {
-		value := concatenateLabels(lokiOutput.Labels)
-		sb.AddConfigParam("labels", value)
-	}
-	if len(lokiOutput.RemoveKeys) != 0 {
-		str := strings.Join(lokiOutput.RemoveKeys, ", ")
-		sb.AddConfigParam("removeKeys", str)
-	}
-	return sb.Build()
-}
-
-func concatenateLabels(labels map[string]string) string {
-	var labelsSlice []string
-	for k, v := range labels {
-		labelsSlice = append(labelsSlice, fmt.Sprintf("%s=\"%s\"", k, v))
-	}
-	sort.Strings(labelsSlice)
-	return fmt.Sprintf("{%s}", strings.Join(labelsSlice, ", "))
 }
 
 func resolveValue(value telemetryv1alpha1.ValueType, logPipeline string) string {

@@ -167,42 +167,6 @@ func TestCreateOutputSectionWithHTTPOutputWithTLS(t *testing.T) {
 	require.Equal(t, expected, actual)
 }
 
-func TestCreateOutputSectionWithLokiOutput(t *testing.T) {
-	expected := `[OUTPUT]
-    name                     grafana-loki
-    match                    foo.*
-    alias                    foo-grafana-loki
-    labelmappath             /fluent-bit/etc/loki-labelmap.json
-    labels                   {cluster-id="123", job="telemetry-fluent-bit"}
-    lineformat               json
-    loglevel                 warn
-    removekeys               key1, key2
-    storage.total_limit_size 1G
-    url                      http:loki:3100
-
-`
-	logPipeline := &telemetryv1alpha1.LogPipeline{
-		Spec: telemetryv1alpha1.LogPipelineSpec{
-			Output: telemetryv1alpha1.Output{
-				Loki: &telemetryv1alpha1.LokiOutput{
-					URL: telemetryv1alpha1.ValueType{Value: "http:loki:3100"},
-					Labels: map[string]string{
-						"job":        "telemetry-fluent-bit",
-						"cluster-id": "123"},
-					RemoveKeys: []string{"key1", "key2"},
-				},
-			},
-		},
-	}
-
-	logPipeline.Name = "foo"
-	pipelineConfig := PipelineDefaults{FsBufferLimit: "1G"}
-
-	actual := createOutputSection(logPipeline, pipelineConfig)
-	require.NotEmpty(t, actual)
-	require.Equal(t, expected, actual)
-}
-
 func TestResolveValueWithValue(t *testing.T) {
 	value := telemetryv1alpha1.ValueType{
 		Value: "test",
