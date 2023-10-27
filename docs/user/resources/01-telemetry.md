@@ -106,7 +106,7 @@ The state of the log components is determined by the status condition of type `L
 | False            | ReferencedSecretMissing    | One or more referenced Secrets are missing      |
 | False            | FluentBitDaemonSetNotReady | Fluent Bit DaemonSet is not ready               |
 | False            | ResourceBlocksDeletion     | The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (resource-1, resource-2,...), LogParsers (resource-1, resource-2,...) |
-
+| False            | UnsupportedLokiOutput | grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://github.com/kyma-project/examples/tree/main/loki              |
 
 ### Trace Components State
 
