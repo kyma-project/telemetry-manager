@@ -68,6 +68,7 @@ var (
 type MetricProducer struct {
 	name      string
 	namespace string
+	labels    map[string]string
 }
 
 func (mp *MetricProducer) Name() string {
@@ -107,6 +108,7 @@ func New(namespace string, opts ...Option) *MetricProducer {
 	mp := &MetricProducer{
 		name:      "metric-producer",
 		namespace: namespace,
+		labels:    make(map[string]string),
 	}
 	for _, opt := range opts {
 		opt(mp)
@@ -129,7 +131,11 @@ func (p *Pod) WithPrometheusAnnotations(scheme ScrapingScheme) *Pod {
 }
 
 func (p *Pod) WithSidecarInjection() *Pod {
-	p.labels["sidecar.istio.io/inject"] = "true"
+	return p.WithLabel("sidecar.istio.io/inject", "true")
+}
+
+func (p *Pod) WithLabel(key, value string) *Pod {
+	p.labels[key] = value
 	return p
 }
 
