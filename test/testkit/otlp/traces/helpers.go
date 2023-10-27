@@ -90,7 +90,7 @@ func MakeAndSendIstioHealthzEndpointTraces(proxyClient *apiserver.ProxyClient, o
 	spanAttrs.PutStr("http.url", "https://healthz.some-url/healthz/ready")
 
 	resourceAttrs := pcommon.NewMap()
-	resourceAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
+	resourceAttrs.PutStr("k8s.namespace.name", kitkyma.IstioSystemNamespaceName)
 
 	traceID, _ := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, spanAttrs, resourceAttrs)
 	return traceID
