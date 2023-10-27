@@ -41,149 +41,149 @@ func MakeAndSendTracesWithAttributes(proxyClient *apiserver.ProxyClient, otlpPus
 	return traceID, spanIDs
 }
 
-func MakeAndSendVictoriaMetricsAgentTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map, pcommon.Map) {
-	attrs := pcommon.NewMap()
-	attrs.PutStr("http.method", "GET")
-	attrs.PutStr("component", "proxy")
-	attrs.PutStr("OperationName", "Ingress")
-	attrs.PutStr("user_agent", "vm_promscrape")
+func MakeAndSendVictoriaMetricsAgentTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
+	spanAttrs := pcommon.NewMap()
+	spanAttrs.PutStr("http.method", "GET")
+	spanAttrs.PutStr("component", "proxy")
+	spanAttrs.PutStr("OperationName", "Ingress")
+	spanAttrs.PutStr("user_agent", "vm_promscrape")
 
-	resAttrs := pcommon.NewMap()
+	resourceAttrs := pcommon.NewMap()
 
-	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
-	return traceIds, spanIds, attrs, resAttrs
+	traceID, _ := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, spanAttrs, resourceAttrs)
+	return traceID
 }
 
-func MakeAndSendPrometheusAgentTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map, pcommon.Map) {
-	attrs := pcommon.NewMap()
-	attrs.PutStr("http.method", "GET")
-	attrs.PutStr("component", "proxy")
-	attrs.PutStr("OperationName", "Ingress")
-	attrs.PutStr("user_agent", "Prometheus/0.1.0")
+func MakeAndSendPrometheusAgentTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
+	spanAttrs := pcommon.NewMap()
+	spanAttrs.PutStr("http.method", "GET")
+	spanAttrs.PutStr("component", "proxy")
+	spanAttrs.PutStr("OperationName", "Ingress")
+	spanAttrs.PutStr("user_agent", "Prometheus/0.1.0")
 
-	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
+	resourceAttrs := pcommon.NewMap()
+	resourceAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
-	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
-	return traceIds, spanIds, attrs, resAttrs
+	traceID, _ := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, spanAttrs, resourceAttrs)
+	return traceID
 }
 
-func MakeAndSendMetricAgentAgentTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map, pcommon.Map) {
-	attrs := pcommon.NewMap()
-	attrs.PutStr("http.method", "GET")
-	attrs.PutStr("component", "proxy")
-	attrs.PutStr("OperationName", "Ingress")
-	attrs.PutStr("user_agent", "kyma-otelcol/0.1.0")
+func MakeAndSendMetricAgentAgentTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
+	spanAttrs := pcommon.NewMap()
+	spanAttrs.PutStr("http.method", "GET")
+	spanAttrs.PutStr("component", "proxy")
+	spanAttrs.PutStr("OperationName", "Ingress")
+	spanAttrs.PutStr("user_agent", "kyma-otelcol/0.1.0")
 
-	resAttrs := pcommon.NewMap()
+	resourceAttrs := pcommon.NewMap()
 
-	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
-	return traceIds, spanIds, attrs, resAttrs
+	traceID, _ := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, spanAttrs, resourceAttrs)
+	return traceID
 }
 
-func MakeAndSendIstioHealthzEndpointTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map, pcommon.Map) {
-	attrs := pcommon.NewMap()
-	attrs.PutStr("http.method", "GET")
-	attrs.PutStr("component", "proxy")
-	attrs.PutStr("istio.canonical_service", "istio-ingressgateway")
-	attrs.PutStr("OperationName", "Egress")
-	attrs.PutStr("http.url", "https://healthz.some-url/healthz/ready")
+func MakeAndSendIstioHealthzEndpointTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
+	spanAttrs := pcommon.NewMap()
+	spanAttrs.PutStr("http.method", "GET")
+	spanAttrs.PutStr("component", "proxy")
+	spanAttrs.PutStr("istio.canonical_service", "istio-ingressgateway")
+	spanAttrs.PutStr("OperationName", "Egress")
+	spanAttrs.PutStr("http.url", "https://healthz.some-url/healthz/ready")
 
-	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
+	resourceAttrs := pcommon.NewMap()
+	resourceAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
-	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
-	return traceIds, spanIds, attrs, resAttrs
+	traceID, _ := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, spanAttrs, resourceAttrs)
+	return traceID
 }
 
-func MakeAndSendTraceServiceTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map, pcommon.Map) {
-	attrs := pcommon.NewMap()
-	attrs.PutStr("http.method", "POST")
-	attrs.PutStr("component", "proxy")
-	attrs.PutStr("OperationName", "Egress")
-	attrs.PutStr("http.url", "http://telemetry-otlp-traces.kyma-system:4317")
+func MakeAndSendTraceServiceTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
+	spanAttrs := pcommon.NewMap()
+	spanAttrs.PutStr("http.method", "POST")
+	spanAttrs.PutStr("component", "proxy")
+	spanAttrs.PutStr("OperationName", "Egress")
+	spanAttrs.PutStr("http.url", "http://telemetry-otlp-traces.kyma-system:4317")
 
-	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
+	resourceAttrs := pcommon.NewMap()
+	resourceAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
-	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
-	return traceIds, spanIds, attrs, resAttrs
+	traceID, _ := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, spanAttrs, resourceAttrs)
+	return traceID
 }
 
-func MakeAndSendTraceInternalServiceTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map, pcommon.Map) {
-	attrs := pcommon.NewMap()
-	attrs.PutStr("http.method", "POST")
-	attrs.PutStr("component", "proxy")
-	attrs.PutStr("OperationName", "Egress")
-	attrs.PutStr("http.url", "http://telemetry-trace-collector-internal.kyma-system:55678")
+func MakeAndSendTraceInternalServiceTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
+	spanAttrs := pcommon.NewMap()
+	spanAttrs.PutStr("http.method", "POST")
+	spanAttrs.PutStr("component", "proxy")
+	spanAttrs.PutStr("OperationName", "Egress")
+	spanAttrs.PutStr("http.url", "http://telemetry-trace-collector-internal.kyma-system:55678")
 
-	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
+	resourceAttrs := pcommon.NewMap()
+	resourceAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
-	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
-	return traceIds, spanIds, attrs, resAttrs
+	traceID, _ := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, spanAttrs, resourceAttrs)
+	return traceID
 }
 
-func MakeAndSendMetricServiceTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map, pcommon.Map) {
-	attrs := pcommon.NewMap()
-	attrs.PutStr("http.method", "POST")
-	attrs.PutStr("component", "proxy")
-	attrs.PutStr("OperationName", "Egress")
-	attrs.PutStr("http.url", "http://telemetry-otlp-metrics.kyma-system:4317")
+func MakeAndSendMetricServiceTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
+	spanAttrs := pcommon.NewMap()
+	spanAttrs.PutStr("http.method", "POST")
+	spanAttrs.PutStr("component", "proxy")
+	spanAttrs.PutStr("OperationName", "Egress")
+	spanAttrs.PutStr("http.url", "http://telemetry-otlp-metrics.kyma-system:4317")
 
-	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
+	resourceAttrs := pcommon.NewMap()
+	resourceAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
-	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
-	return traceIds, spanIds, attrs, resAttrs
+	traceID, _ := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, spanAttrs, resourceAttrs)
+	return traceID
 }
 
-func MakeAndSendTraceGatewayTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map, pcommon.Map) {
-	attrs := pcommon.NewMap()
-	attrs.PutStr("component", "proxy")
-	attrs.PutStr("istio.canonical_service", "telemetry-trace-collector")
+func MakeAndSendTraceGatewayTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
+	spanAttrs := pcommon.NewMap()
+	spanAttrs.PutStr("component", "proxy")
+	spanAttrs.PutStr("istio.canonical_service", "telemetry-trace-collector")
 
-	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
+	resourceAttrs := pcommon.NewMap()
+	resourceAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
-	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
-	return traceIds, spanIds, attrs, resAttrs
+	traceID, _ := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, spanAttrs, resourceAttrs)
+	return traceID
 }
 
-func MakeAndSendMetricGatewayTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map, pcommon.Map) {
-	attrs := pcommon.NewMap()
-	attrs.PutStr("component", "proxy")
-	attrs.PutStr("istio.canonical_service", "telemetry-metric-gateway")
+func MakeAndSendMetricGatewayTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
+	spanAttrs := pcommon.NewMap()
+	spanAttrs.PutStr("component", "proxy")
+	spanAttrs.PutStr("istio.canonical_service", "telemetry-metric-gateway")
 
-	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
+	resourceAttrs := pcommon.NewMap()
+	resourceAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
-	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
-	return traceIds, spanIds, attrs, resAttrs
+	traceID, _ := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, spanAttrs, resourceAttrs)
+	return traceID
 }
 
-func MakeAndSendMetricAgentTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map, pcommon.Map) {
-	attrs := pcommon.NewMap()
-	attrs.PutStr("component", "proxy")
-	attrs.PutStr("istio.canonical_service", "telemetry-metric-agent")
+func MakeAndSendMetricAgentTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
+	spanAttrs := pcommon.NewMap()
+	spanAttrs.PutStr("component", "proxy")
+	spanAttrs.PutStr("istio.canonical_service", "telemetry-metric-agent")
 
-	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
+	resourceAttrs := pcommon.NewMap()
+	resourceAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
-	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
-	return traceIds, spanIds, attrs, resAttrs
+	traceID, _ := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, spanAttrs, resourceAttrs)
+	return traceID
 }
 
-func MakeAndSendFluentBitTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map, pcommon.Map) {
-	attrs := pcommon.NewMap()
-	attrs.PutStr("component", "proxy")
-	attrs.PutStr("istio.canonical_service", "telemetry-fluent-bit")
+func MakeAndSendFluentBitTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
+	spanAttrs := pcommon.NewMap()
+	spanAttrs.PutStr("component", "proxy")
+	spanAttrs.PutStr("istio.canonical_service", "telemetry-fluent-bit")
 
-	resAttrs := pcommon.NewMap()
-	resAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
+	resourceAttrs := pcommon.NewMap()
+	resourceAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
 
-	traceIds, spanIds := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, attrs, resAttrs)
-	return traceIds, spanIds, attrs, resAttrs
+	traceID, _ := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, spanAttrs, resourceAttrs)
+	return traceID
 }
 
 func sendTraces(ctx context.Context, proxyClient *apiserver.ProxyClient, traces ptrace.Traces, otlpPushURL string) error {
