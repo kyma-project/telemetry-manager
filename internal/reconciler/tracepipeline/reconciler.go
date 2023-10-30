@@ -28,9 +28,11 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"gopkg.in/yaml.v3"
 )
 
 const defaultReplicaCount int32 = 2
@@ -158,11 +160,23 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
-	cfg := r.config.Gateway.WithScaling(scaling)
 
-	if err := otelcollector.ApplyGatewayResources(ctx, kubernetes.NewOwnerReferenceSetter(r.Client, pipeline), &cfg); err != nil {
+	collectorConfig, collectorEnvVars, err := gateway.MakeConfig(ctx, r.Client, allPipelines)
+	if err != nil {
+		return fmt.Errorf("failed to create collector config: %w", err)
+	}
+
+	collectorConfigYAML, err := yaml.Marshal(collectorConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal collector config: %w", err)
+	}
+
+	if err := otelcollector.ApplyGatewayResources(ctx,
+		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
+		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
+
 	return nil
 }
 

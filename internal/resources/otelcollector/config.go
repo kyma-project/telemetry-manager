@@ -20,10 +20,17 @@ type GatewayConfig struct {
 	CanReceiveOpenCensus bool
 }
 
-func (cfg GatewayConfig) WithScaling(s GatewayScalingConfig) GatewayConfig {
-	copy := cfg
+func (cfg *GatewayConfig) WithScaling(s GatewayScalingConfig) *GatewayConfig {
+	copy := *cfg
 	copy.Scaling = s
-	return copy
+	return &copy
+}
+
+func (cfg *GatewayConfig) WithCollectorConfig(collectorCfgYAML string, collectorEnvVars map[string][]byte) *GatewayConfig {
+	copy := *cfg
+	copy.CollectorConfig = collectorCfgYAML
+	copy.CollectorEnvVars = collectorEnvVars
+	return &copy
 }
 
 type DeploymentConfig struct {
@@ -53,6 +60,12 @@ type AgentConfig struct {
 	Config
 
 	DaemonSet DaemonSetConfig
+}
+
+func (cfg *AgentConfig) WithCollectorConfig(collectorCfgYAML string) *AgentConfig {
+	copy := *cfg
+	copy.CollectorConfig = collectorCfgYAML
+	return &copy
 }
 
 type DaemonSetConfig struct {

@@ -13,6 +13,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
@@ -157,11 +158,20 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
 		ResourceRequirementsMultiplier: len(allPipelines),
 	}
-	cfg := r.config.Gateway.WithScaling(scaling)
+
+	collectorConfig, collectorEnvVars, err := gateway.MakeConfig(ctx, r.Client, allPipelines)
+	if err != nil {
+		return fmt.Errorf("failed to create collector config: %w", err)
+	}
+
+	collectorConfigYAML, err := yaml.Marshal(collectorConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal collector config: %w", err)
+	}
 
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
-		&cfg); err != nil {
+		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 
@@ -174,16 +184,15 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		Namespace: r.config.Gateway.Namespace,
 		Name:      r.config.Gateway.OTLPServiceName,
 	}, allPipelines, isIstioActive)
-	var agentConfigYAML []byte
+
 	agentConfigYAML, err := yaml.Marshal(agentConfig)
 	if err != nil {
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
-	r.config.Agent.CollectorConfig = string(agentConfigYAML)
 
 	if err := otelcollector.ApplyAgentResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
-		&r.config.Agent); err != nil {
+		r.config.Agent.WithCollectorConfig(string(agentConfigYAML))); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)
 	}
 
