@@ -34,6 +34,7 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, name, ds.Name)
 		require.Equal(t, namespace, ds.Namespace)
 
+		//labels
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
 		}, ds.Labels, "must have expected daemonset labels")
@@ -45,6 +46,7 @@ func TestApplyAgentResources(t *testing.T) {
 			"sidecar.istio.io/inject": "true",
 		}, ds.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
 
+		//annotations
 		podAnnotations := ds.Spec.Template.ObjectMeta.Annotations
 		require.NotEmpty(t, podAnnotations["checksum/config"])
 		require.Equal(t, "# configure an env variable OUTPUT_CERTS to write certificates to the given folder\nproxyMetadata:\n  OUTPUT_CERTS: /etc/istio-output-certs\n", podAnnotations["proxy.istio.io/config"])
@@ -52,12 +54,21 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, "", podAnnotations["traffic.sidecar.istio.io/includeInboundPorts"])
 		require.Equal(t, "4317", podAnnotations["traffic.sidecar.istio.io/includeOutboundPorts"])
 
+		//collector container
 		require.Len(t, ds.Spec.Template.Spec.Containers, 1)
 		container := ds.Spec.Template.Spec.Containers[0]
 
 		require.NotNil(t, container.LivenessProbe, "liveness probe must be defined")
 		require.NotNil(t, container.ReadinessProbe, "readiness probe must be defined")
 
+		envVars := container.Env
+		require.Len(t, envVars, 2)
+		require.Equal(t, envVars[0].Name, "MY_POD_IP")
+		require.Equal(t, envVars[1].Name, "MY_NODE_NAME")
+		require.Equal(t, envVars[0].ValueFrom.FieldRef.FieldPath, "status.podIP")
+		require.Equal(t, envVars[1].ValueFrom.FieldRef.FieldPath, "spec.nodeName")
+
+		//security contexts
 		podSecurityContext := ds.Spec.Template.Spec.SecurityContext
 		require.NotNil(t, podSecurityContext, "pod security context must be defined")
 		require.NotZero(t, podSecurityContext.RunAsUser, "must run as non-root")
@@ -70,13 +81,6 @@ func TestApplyAgentResources(t *testing.T) {
 		require.False(t, *containerSecurityContext.Privileged, "must not be privileged")
 		require.False(t, *containerSecurityContext.AllowPrivilegeEscalation, "must not escalate to privileged")
 		require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
-
-		envVars := container.Env
-		require.Len(t, envVars, 2)
-		require.Equal(t, envVars[0].Name, "MY_POD_IP")
-		require.Equal(t, envVars[1].Name, "MY_NODE_NAME")
-		require.Equal(t, envVars[0].ValueFrom.FieldRef.FieldPath, "status.podIP")
-		require.Equal(t, envVars[1].ValueFrom.FieldRef.FieldPath, "spec.nodeName")
 	})
 }
 
