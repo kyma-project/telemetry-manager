@@ -10,8 +10,8 @@ import (
 )
 
 func WithTds(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(jsonlMetrics []byte) ([]ptrace.Traces, error) {
-		tds, err := unmarshalTraces(jsonlMetrics)
+	return gomega.WithTransform(func(jsonlTraces []byte) ([]ptrace.Traces, error) {
+		tds, err := unmarshalTraces(jsonlTraces)
 		if err != nil {
 			return nil, fmt.Errorf("WithTds requires a valid OTLP JSON document: %v", err)
 		}

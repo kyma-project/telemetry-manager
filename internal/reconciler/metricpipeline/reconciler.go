@@ -9,16 +9,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	otelagentresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"gopkg.in/yaml.v3"
 )
 
+const defaultReplicaCount int32 = 2
+
 type Config struct {
-	Agent                  otelagentresources.Config
+	Agent                  otelcollector.AgentConfig
 	Gateway                otelcollector.GatewayConfig
 	OverridesConfigMapName types.NamespacedName
 	MaxPipelines           int
@@ -144,18 +148,69 @@ func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv
 	return deployablePipelines, nil
 }
 
-func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
-	if err := otelcollector.ApplyGatewayResources(ctx, r.Client, &r.config.Gateway, len(allPipelines)); err != nil {
-		return fmt.Errorf("failed to apply gateway resources: %w", err)
-	}
-	return nil
-}
-
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	return pipeline.Spec.Input.Application.Runtime.Enabled || pipeline.Spec.Input.Application.Prometheus.Enabled || pipeline.Spec.Input.Application.Istio.Enabled
 }
 
-func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
+func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
+	scaling := otelcollector.GatewayScalingConfig{
+		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
+		ResourceRequirementsMultiplier: len(allPipelines),
+	}
+	cfg := r.config.Gateway.WithScaling(scaling)
+
+	if err := otelcollector.ApplyGatewayResources(ctx,
+		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
+		&cfg); err != nil {
+		return fmt.Errorf("failed to apply gateway resources: %w", err)
+	}
 
 	return nil
+}
+
+func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
+	isIstioActive := r.istioStatusChecker.isIstioActive(ctx)
+	agentConfig := agent.MakeConfig(types.NamespacedName{
+		Namespace: r.config.Gateway.Namespace,
+		Name:      r.config.Gateway.OTLPServiceName,
+	}, allPipelines, isIstioActive)
+	var agentConfigYAML []byte
+	agentConfigYAML, err := yaml.Marshal(agentConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal collector config: %w", err)
+	}
+	r.config.Agent.CollectorConfig = string(agentConfigYAML)
+
+	if err := otelcollector.ApplyAgentResources(ctx,
+		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
+		&r.config.Agent); err != nil {
+		return fmt.Errorf("failed to apply agent resources: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
+	var telemetries operatorv1alpha1.TelemetryList
+	if err := r.List(ctx, &telemetries); err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
+		return defaultReplicaCount
+	}
+	for i := range telemetries.Items {
+		telemetrySpec := telemetries.Items[i].Spec
+		if telemetrySpec.Metric == nil {
+			continue
+		}
+
+		scaling := telemetrySpec.Metric.Gateway.Scaling
+		if scaling.Type != operatorv1alpha1.StaticScalingStrategyType {
+			continue
+		}
+
+		static := scaling.Static
+		if static != nil && static.Replicas > 0 {
+			return static.Replicas
+		}
+	}
+	return defaultReplicaCount
 }

@@ -77,7 +77,8 @@ func makeServiceConfig() config.Service {
 				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
 			},
 			Logs: config.Logs{
-				Level: "info",
+				Level:    "info",
+				Encoding: "json",
 			},
 		},
 		Extensions: []string{"health_check", "pprof"},
@@ -108,11 +109,8 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
 	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
-	loggingExporterID := fmt.Sprintf("logging/%s", pipeline.Name)
-	cfg.Exporters[loggingExporterID] = Exporter{Logging: config.DefaultLoggingExporter()}
-
 	pipelineID := fmt.Sprintf("metrics/%s", pipeline.Name)
-	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(pipeline, otlpExporterID, loggingExporterID)
+	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(pipeline, otlpExporterID)
 
 	return nil
 }
@@ -120,7 +118,7 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs ...string) config.Pipeline {
 	sort.Strings(exporterIDs)
 
-	processors := []string{"memory_limiter", "k8sattributes", "resource"}
+	processors := []string{"memory_limiter", "k8sattributes", "resource/insert-cluster-name", "transform/resolve-service-name"}
 
 	if enableDropIfInputSourceRuntime(pipeline) {
 		processors = append(processors, "filter/drop-if-input-source-runtime")
@@ -130,15 +128,15 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 		processors = append(processors, "filter/drop-if-input-source-prometheus")
 	}
 
-	if pipeline.Spec.Output.ConvertToDelta {
-		processors = append(processors, "cumulativetodelta")
-	}
-
 	if enableDropIfInputSourceIstio(pipeline) {
 		processors = append(processors, "filter/drop-if-input-source-istio")
 	}
 
-	processors = append(processors, "batch")
+	if pipeline.Spec.Output.ConvertToDelta {
+		processors = append(processors, "cumulativetodelta")
+	}
+
+	processors = append(processors, "resource/drop-kyma-attributes", "batch")
 
 	return config.Pipeline{
 		Receivers:  []string{"otlp"},

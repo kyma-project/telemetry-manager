@@ -321,7 +321,7 @@ func TestMetricPipeline_MapSecret(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tracePipeline).Build()
 			sut := TracePipelineReconciler{Client: fakeClient}
 
-			actualRequests := sut.mapSecret(&tc.secret)
+			actualRequests := sut.mapSecret(ctx, &tc.secret)
 
 			require.ElementsMatch(t, tc.expectedRequests, actualRequests)
 		})

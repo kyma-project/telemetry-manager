@@ -54,7 +54,7 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 
 	if output.TLS != nil {
 		if output.TLS.CA.IsDefined() {
-			ca, err := resolveValue(ctx, c, output.TLS.CA)
+			ca, err := resolveValue(ctx, c, *output.TLS.CA)
 			if err != nil {
 				return nil, err
 			}
@@ -62,7 +62,7 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 			secretData[tlsConfigCaVariable] = ca
 		}
 		if output.TLS.Cert.IsDefined() {
-			cert, err := resolveValue(ctx, c, output.TLS.Cert)
+			cert, err := resolveValue(ctx, c, *output.TLS.Cert)
 			if err != nil {
 				return nil, err
 			}
@@ -70,7 +70,7 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 			secretData[tlsConfigCertVariable] = cert
 		}
 		if output.TLS.Key.IsDefined() {
-			key, err := resolveValue(ctx, c, output.TLS.Key)
+			key, err := resolveValue(ctx, c, *output.TLS.Key)
 			if err != nil {
 				return nil, err
 			}

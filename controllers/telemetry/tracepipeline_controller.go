@@ -28,9 +28,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
@@ -60,58 +61,83 @@ func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&telemetryv1alpha1.TracePipeline{}).
 		Watches(
-			&source.Kind{Type: &corev1.ConfigMap{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.TracePipeline{},
-				IsController: false}).
+			&corev1.ConfigMap{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
 		Watches(
-			&source.Kind{Type: &appsv1.Deployment{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.TracePipeline{},
-				IsController: false}).
+			&appsv1.Deployment{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
 		Watches(
-			&source.Kind{Type: &corev1.Secret{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.TracePipeline{},
-				IsController: false}).
+			&corev1.Secret{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
 		Watches(
-			&source.Kind{Type: &corev1.Service{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.TracePipeline{},
-				IsController: false}).
+			&corev1.Service{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
 		Watches(
-			&source.Kind{Type: &networkingv1.NetworkPolicy{}},
-			&handler.EnqueueRequestForOwner{
-				OwnerType:    &telemetryv1alpha1.TracePipeline{},
-				IsController: false}).
+			&networkingv1.NetworkPolicy{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
 		Watches(
-			&source.Kind{Type: &corev1.Secret{}},
+			&corev1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
+			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
+		).
+		Watches(
+			&operatorv1alpha1.Telemetry{},
+			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
 		).Complete(r)
 }
 
-func (r *TracePipelineReconciler) mapSecret(object client.Object) []reconcile.Request {
+func (r *TracePipelineReconciler) mapSecret(ctx context.Context, object client.Object) []reconcile.Request {
 	var pipelines telemetryv1alpha1.TracePipelineList
 	var requests []reconcile.Request
-	err := r.List(context.Background(), &pipelines)
+	err := r.List(ctx, &pipelines)
 	if err != nil {
-		ctrl.Log.Error(err, "Secret UpdateEvent: fetching TracePipelineList failed!", err.Error())
+		logf.FromContext(ctx).Error(err, "Secret UpdateEvent: fetching TracePipelineList failed!", err.Error())
 		return requests
 	}
 
 	secret, ok := object.(*corev1.Secret)
 	if !ok {
-		ctrl.Log.V(1).Error(errIncorrectSecretObject, "Secret object of incompatible type")
+		logf.FromContext(ctx).V(1).Error(errIncorrectSecretObject, "Secret object of incompatible type")
 		return requests
 	}
-	ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
+	logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
 	for i := range pipelines.Items {
 		var pipeline = pipelines.Items[i]
 		if secretref.ReferencesSecret(secret.Name, secret.Namespace, &pipeline) {
 			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-			ctrl.Log.V(1).Info(fmt.Sprintf("Secret UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
+			logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Secret UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
 		}
 	}
 	return requests
+}
+
+func (r *TracePipelineReconciler) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
+	_, ok := object.(*operatorv1alpha1.Telemetry)
+	if !ok {
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		return nil
+	}
+
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+	return requests
+}
+
+func (r *TracePipelineReconciler) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
+	var pipelines telemetryv1alpha1.TracePipelineList
+	var requests []reconcile.Request
+	err := r.List(ctx, &pipelines)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list TracePipelines: %w", err)
+	}
+
+	for i := range pipelines.Items {
+		var pipeline = pipelines.Items[i]
+		requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
+	}
+
+	return requests, nil
 }

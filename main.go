@@ -42,7 +42,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -58,7 +60,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/agent"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
@@ -71,7 +72,7 @@ import (
 	//nolint:gosec // pprof package is required for performance analysis.
 	_ "net/http/pprof"
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
-	//+kubebuilder:scaffold:imports
+
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
@@ -132,10 +133,10 @@ var (
 )
 
 const (
-	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.86.0-897be16e"
+	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.87.0-35ea5d89"
 	overridesConfigMapName = "telemetry-override-config"
-	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.9-6130ed2c"
-	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20230911-5d49c958"
+	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.10-a5234020"
+	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20231011-c6f25b5b"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
@@ -302,16 +303,30 @@ func main() {
 
 	syncPeriod := 1 * time.Hour
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		SyncPeriod:              &syncPeriod,
 		Scheme:                  scheme,
-		MetricsBindAddress:      ":8080",
-		Port:                    9443,
+		Metrics:                 metricsserver.Options{BindAddress: ":8080"},
 		HealthProbeBindAddress:  ":8081",
 		LeaderElection:          true,
 		LeaderElectionNamespace: telemetryNamespace,
 		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
-		CertDir:                 certDir,
-		NewCache:                setupFilteredCache(),
+		WebhookServer: k8sWebhook.NewServer(k8sWebhook.Options{
+			Port:    9443,
+			CertDir: certDir,
+		}),
+		Cache: cache.Options{
+			SyncPeriod: &syncPeriod,
+			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
+			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
+			ByObject: map[client.Object]cache.ByObject{
+				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
+				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
+				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
+				&corev1.ConfigMap{}:           {Field: setNamespaceFieldSelector()},
+				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
+				&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
+				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
+			},
+		},
 	})
 
 	if err != nil {
@@ -413,23 +428,6 @@ func reconcileWebhook(certconfig webhookcert.Config, k8sClient client.Client) {
 	}
 }
 
-// setupFilteredCache creates a filtered cache for the given resources. The controller handles various resource that are namespace scoped, and additionally
-// some resources that are cluster scoped (secrets used in pipelines, clusterroles etc.). In order to restrict the rights of the controller to only fetch
-// resources from a given namespace, we create a filtered cache.
-func setupFilteredCache() cache.NewCacheFunc {
-	return cache.BuilderWithOptions(cache.Options{
-		SelectorsByObject: cache.SelectorsByObject{
-			&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
-			&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
-			&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
-			&corev1.ConfigMap{}:           {Field: setNamespaceFieldSelector()},
-			&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
-			&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
-			&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
-		},
-	})
-}
-
 func setNamespaceFieldSelector() fields.Selector {
 	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
 }
@@ -444,14 +442,15 @@ func validateFlags() error {
 
 func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.LogPipelineReconciler {
 	config := logpipeline.Config{
-		SectionsConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
-		FilesConfigMap:    types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
-		LuaConfigMap:      types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: telemetryNamespace},
-		ParsersConfigMap:  types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
-		EnvSecret:         types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: telemetryNamespace},
-		DaemonSet:         types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
-		OverrideConfigMap: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
-		PipelineDefaults:  createPipelineDefaults(),
+		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
+		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
+		LuaConfigMap:          types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: telemetryNamespace},
+		ParsersConfigMap:      types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
+		EnvSecret:             types.NamespacedName{Name: "telemetry-fluent-bit-env", Namespace: telemetryNamespace},
+		OutputTLSConfigSecret: types.NamespacedName{Name: "telemetry-fluent-bit-output-tls-config", Namespace: telemetryNamespace},
+		DaemonSet:             types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
+		OverrideConfigMap:     types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
+		PipelineDefaults:      createPipelineDefaults(),
 		DaemonSetConfig: fluentbit.DaemonSetConfig{
 			FluentBitImage:              fluentBitImageVersion,
 			FluentBitConfigPrepperImage: fluentBitConfigPrepperImageVersion,
@@ -497,6 +496,7 @@ func createLogPipelineValidator(client client.Client) *logpipelinewebhook.Valida
 		logpipelinevalidation.NewVariablesValidator(client),
 		logpipelinevalidation.NewMaxPipelinesValidator(maxLogPipelines),
 		logpipelinevalidation.NewFilesValidator(),
+		admission.NewDecoder(scheme),
 		dryrun.NewDryRunner(client, createDryRunConfig()),
 		&telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: parsePlugins(deniedOutputPlugins), DeniedFilterPlugins: parsePlugins(deniedFilterPlugins)})
 }
@@ -504,7 +504,8 @@ func createLogPipelineValidator(client client.Client) *logpipelinewebhook.Valida
 func createLogParserValidator(client client.Client) *logparserwebhook.ValidatingWebhookHandler {
 	return logparserwebhook.NewValidatingWebhookHandler(
 		client,
-		dryrun.NewDryRunner(client, createDryRunConfig()))
+		dryrun.NewDryRunner(client, createDryRunConfig()),
+		admission.NewDecoder(scheme))
 }
 
 func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.TracePipelineReconciler {
@@ -542,10 +543,12 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 
 func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.MetricPipelineReconciler {
 	config := metricpipeline.Config{
-		Agent: agent.Config{
-			Namespace: telemetryNamespace,
-			BaseName:  "telemetry-metric-agent",
-			DaemonSet: agent.DaemonSetConfig{
+		Agent: otelcollector.AgentConfig{
+			Config: otelcollector.Config{
+				Namespace: telemetryNamespace,
+				BaseName:  "telemetry-metric-agent",
+			},
+			DaemonSet: otelcollector.DaemonSetConfig{
 				Image:             metricGatewayImage,
 				PriorityClassName: metricGatewayPriorityClass,
 				CPULimit:          resource.MustParse("1"),

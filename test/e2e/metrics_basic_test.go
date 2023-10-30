@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,7 +43,7 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithPersistentHostSecret(true))
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithPersistentHostSecret(isOperational()))
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
@@ -79,7 +81,79 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
-		It("Should have 2 metric gateway replicas", Label(operationalTest), func() {
+		It("Should reject scaling below minimum", Label(operationalTest), func() {
+			var telemetry v1alpha1.Telemetry
+			err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
+			Expect(err).NotTo(HaveOccurred())
+
+			telemetry.Spec.Metric = &v1alpha1.MetricSpec{
+				Gateway: v1alpha1.MetricGatewaySpec{
+					Scaling: v1alpha1.Scaling{
+						Type: v1alpha1.StaticScalingStrategyType,
+						Static: &v1alpha1.StaticScaling{
+							Replicas: -1,
+						},
+					},
+				},
+			}
+			err = k8sClient.Update(ctx, &telemetry)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("Should scale up metric gateway replicas", Label(operationalTest), func() {
+			Eventually(func(g Gomega) int32 {
+				var telemetry v1alpha1.Telemetry
+				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
+				g.Expect(err).NotTo(HaveOccurred())
+
+				telemetry.Spec.Metric = &v1alpha1.MetricSpec{
+					Gateway: v1alpha1.MetricGatewaySpec{
+						Scaling: v1alpha1.Scaling{
+							Type: v1alpha1.StaticScalingStrategyType,
+							Static: &v1alpha1.StaticScaling{
+								Replicas: 4,
+							},
+						},
+					},
+				}
+				err = k8sClient.Update(ctx, &telemetry)
+				g.Expect(err).NotTo(HaveOccurred())
+				return telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(4)))
+		})
+
+		It("Should have 4 metric gateway replicas after scaling up", Label(operationalTest), func() {
+			Eventually(func(g Gomega) int32 {
+				var deployment appsv1.Deployment
+				err := k8sClient.Get(ctx, kitkyma.MetricGatewayName, &deployment)
+				g.Expect(err).NotTo(HaveOccurred())
+				return *deployment.Spec.Replicas
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(4)))
+		})
+
+		It("Should scale down metric gateway replicas", Label(operationalTest), func() {
+			Eventually(func(g Gomega) int32 {
+				var telemetry v1alpha1.Telemetry
+				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
+				g.Expect(err).NotTo(HaveOccurred())
+
+				telemetry.Spec.Metric = &v1alpha1.MetricSpec{
+					Gateway: v1alpha1.MetricGatewaySpec{
+						Scaling: v1alpha1.Scaling{
+							Type: v1alpha1.StaticScalingStrategyType,
+							Static: &v1alpha1.StaticScaling{
+								Replicas: 2,
+							},
+						},
+					},
+				}
+				err = k8sClient.Update(ctx, &telemetry)
+				g.Expect(err).NotTo(HaveOccurred())
+				return telemetry.Spec.Metric.Gateway.Scaling.Static.Replicas
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
+		})
+
+		It("Should have 2 metric gateway replicas after scaling down", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
 				err := k8sClient.Get(ctx, kitkyma.MetricGatewayName, &deployment)

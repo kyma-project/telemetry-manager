@@ -16,8 +16,10 @@ This release process covers the steps to release new major and minor versions fo
       - Ensure the `IMG` variable reflects the latest `telemetry-manager` version.
    - `config/manager/kustomization.yaml`:
       - Ensure the `newTag` field for the `telemetry-manager` image reflects the latest version.
-   - `module_config.yaml`:
-       - Update the `version` field to the value of the new module version.
+   - `module-config.yaml`:
+       - Update the `version` field to the value of the new module version following the `x.y.z` pattern, such as `1.0.0`.
+   - `module-config-dev.yaml`:
+       - Update the `version` field to the value of the new development module version following the `x.y.z-dev` pattern, such as `1.0.0-dev`.
    - `sec-scanners-config.yaml`:
       - Ensure that all images listed in the `protecode` field have the same versions as those used in the `main.go` file.
 
@@ -31,20 +33,23 @@ This release process covers the steps to release new major and minor versions fo
    git push upstream {RELEASE_BRANCH}
    ```
 
-7. In the `telemetry-manager/{RELEASE_BRANCH}` branch, create a release tag for the head commit.
+7. In the `telemetry-manager/{RELEASE_BRANCH}` branch, create release tags for the head commit.
    ```bash
    git tag -a {RELEASE_VERSION} -m "Release {RELEASE_VERSION}"
+   git tag -a {RELEASE_DEV_VERSION} -m "Release {RELEASE_DEV_VERSION}"
    ```
-   Replace {RELEASE_VERSION} with the new module release version, for example, `1.0.0`. The release tag points to the HEAD commit in `telemetry-manager/main` and `telemetry-manager/{RELEASE_BRANCH}` branches.
+   Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`, and replace {RELEASE_DEV_VERSION} with the new development module version, for example, `1.0.0-dev`. The release tags point to the HEAD commit in `telemetry-manager/main` and `telemetry-manager/{RELEASE_BRANCH}` branches.
 
-8. Push the tag to trigger a postsubmit job (`post-telemetry-manager-release-module`) that creates the GitHub release.
+8. Push the tags to the upstream repository.
    ```bash
    git push upstream {RELEASE_VERSION}
+   git push upstream {RELEASE_DEV_VERSION}
    ```
+   The {RELEASE_VERSION} tag triggers a postsubmit job (`post-telemetry-manager-release-module`) that creates the GitHub release.
 
 9. Verify the [Prow Status](https://status.build.kyma-project.io/) of the postsubmit job (`post-telemetry-manager-release-module`).
    - Once the postsubmit job succeeds, the new Github release is available under [releases](https://github.com/kyma-project/telemetry-manager/releases).
-   - If the postsubmit job fails, retrigger it by removing the tag from upstream and pushing it again:
+   - If the postsubmit job fails, retrigger it by removing the {RELEASE_VERSION} tag from upstream and pushing it again:
      ```bash
      git push --delete upstream {RELEASE_VERSION}
      git push upstream {RELEASE_VERSION}

@@ -114,6 +114,12 @@ type TLSConfig struct {
 	Disabled bool `json:"disabled,omitempty"`
 	// If `true`, the validation of certificates is skipped. Default is `false`.
 	SkipCertificateValidation bool `json:"skipCertificateValidation,omitempty"`
+	// Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format.
+	CA *ValueType `json:"ca,omitempty"`
+	// Defines a client certificate to use when using TLS. The certificate must be provided in PEM format.
+	Cert *ValueType `json:"cert,omitempty"`
+	// Defines the client key to use when using TLS. The key must be provided in PEM format.
+	Key *ValueType `json:"key,omitempty"`
 }
 
 // Output describes a Fluent Bit output configuration section.
@@ -122,7 +128,7 @@ type Output struct {
 	Custom string `json:"custom,omitempty"`
 	// Configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
 	HTTP *HTTPOutput `json:"http,omitempty"`
-	// Configures an output to the Kyma-internal Loki instance. [Fluent Bit grafana-loki output](https://grafana.com/docs/loki/v2.2.x/clients/fluentbit/). **Note:** This output is considered legacy and is only provided for backward compatibility with the [deprecated](https://github.com/kyma-project/website/blob/main/content/blog-posts/2023-01-17-release-notes-2.10/index.md#deprecation-of-monitoring) in-cluster Loki instance. It might not be compatible with the latest Loki versions. For integration with a custom Loki installation use the `custom` output with the name `loki` instead, see also [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).
+	// The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).
 	Loki *LokiOutput `json:"grafana-loki,omitempty"`
 }
 

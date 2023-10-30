@@ -79,38 +79,63 @@ var _ = Describe("Traces Noisy Span Filter", Label("tracing"), func() {
 		})
 
 		It("Should filter noisy victoria metrics spans", func() {
-			traceID, spanIDs, spanAttrs, resourceAttrs := kittraces.MakeAndSendVictoriaMetricsTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, spanAttrs, resourceAttrs)
+			traceID := kittraces.MakeAndSendVictoriaMetricsAgentTraces(proxyClient, urls.OTLPPush())
+			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
 		})
 
-		It("Should filter noisy /metrics endpoint spans", func() {
-			traceID, spanIDs, spanAttrs, resourceAttrs := kittraces.MakeAndSendMetricsEndpointTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, spanAttrs, resourceAttrs)
+		It("Should filter noisy kyma prometheus spans", func() {
+			traceID := kittraces.MakeAndSendPrometheusAgentTraces(proxyClient, urls.OTLPPush())
+			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
+		})
+
+		It("Should filter noisy metric agent scrape spans", func() {
+			traceID := kittraces.MakeAndSendMetricAgentScrapeTraces(proxyClient, urls.OTLPPush())
+			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
 		})
 
 		It("Should filter noisy /healthy endpoint spans", func() {
-			traceID, spanIDs, spanAttrs, resourceAttrs := kittraces.MakeAndSendHealthzEndpointTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, spanAttrs, resourceAttrs)
+			traceID := kittraces.MakeAndSendIstioHealthzEndpointTraces(proxyClient, urls.OTLPPush())
+			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
 		})
 
-		It("Should filter noisy telemetry trace service push spans", func() {
-			traceID, spanIDs, spanAttrs, resourceAttrs := kittraces.MakeAndSendTracePushServiceEndpointTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, spanAttrs, resourceAttrs)
+		It("Should filter noisy telemetry trace service spans", func() {
+			traceID := kittraces.MakeAndSendTraceServiceTraces(proxyClient, urls.OTLPPush())
+			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
 		})
 
 		It("Should filter noisy telemetry trace internal service spans", func() {
-			traceID, spanIDs, spanAttrs, resourceAttrs := kittraces.MakeAndSendTraceInternalServiceEndpointTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, spanAttrs, resourceAttrs)
+			traceID := kittraces.MakeAndSendTraceInternalServiceTraces(proxyClient, urls.OTLPPush())
+			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
 		})
 
-		It("Should filter noisy fluent-bit service spans", func() {
-			traceID, spanIDs, spanAttrs, resourceAttrs := kittraces.MakeAndSendFluentBitServiceTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, spanAttrs, resourceAttrs)
+		It("Should filter noisy telemetry metric service spans", func() {
+			traceID := kittraces.MakeAndSendMetricServiceTraces(proxyClient, urls.OTLPPush())
+			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
+		})
+
+		It("Should filter noisy fluent-bit spans", func() {
+			traceID := kittraces.MakeAndSendFluentBitTraces(proxyClient, urls.OTLPPush())
+			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
 		})
 
 		It("Should filter noisy metric gateway spans", func() {
-			traceID, spanIDs, spanAttrs, resourceAttrs := kittraces.MakeAndSendMetricGatewayEgressTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, spanAttrs, resourceAttrs)
+			traceID := kittraces.MakeAndSendMetricGatewayTraces(proxyClient, urls.OTLPPush())
+			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
+		})
+
+		It("Should filter noisy trace gateway spans", func() {
+			traceID := kittraces.MakeAndSendTraceGatewayTraces(proxyClient, urls.OTLPPush())
+			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
+		})
+
+		It("Should filter noisy metric gateway spans", func() {
+			traceID := kittraces.MakeAndSendMetricGatewayTraces(proxyClient, urls.OTLPPush())
+			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
+		})
+
+		It("Should filter noisy metric agent spans", func() {
+			traceID := kittraces.MakeAndSendMetricAgentTraces(proxyClient, urls.OTLPPush())
+			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
 		})
 	})
 })

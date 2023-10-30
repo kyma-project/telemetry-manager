@@ -13,9 +13,16 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Validating Webhook", Label("logging"), func() {
+var _ = Describe("Logs Validating Webhook", Label("logging"), Ordered, func() {
+	Context("Before deploying a logpipeline", func() {
+		It("Should have a healthy webhook", func() {
+			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+		})
+	})
+
 	Context("When a validating webhook exists", Ordered, func() {
 		BeforeAll(func() {
 			Eventually(func(g Gomega) {

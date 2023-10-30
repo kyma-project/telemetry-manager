@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.21.1-bullseye as builder
+FROM golang:1.21.3-bullseye as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -20,7 +20,7 @@ COPY webhook/ webhook/
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go mod tidy && go build -a -o manager main.go
 
 # Use the fluent-bit image because we need the fluent-bit binary
-FROM europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.9-6130ed2c
+FROM europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.10-35ea5d89
 
 WORKDIR /
 COPY --from=builder /workspace/manager .

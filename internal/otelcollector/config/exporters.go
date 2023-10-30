@@ -27,11 +27,3 @@ type RetryOnFailure struct {
 	MaxInterval     string `yaml:"max_interval"`
 	MaxElapsedTime  string `yaml:"max_elapsed_time"`
 }
-
-type LoggingExporter struct {
-	Verbosity string `yaml:"verbosity"`
-}
-
-func DefaultLoggingExporter() *LoggingExporter {
-	return &LoggingExporter{Verbosity: "basic"}
-}

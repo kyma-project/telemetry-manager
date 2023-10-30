@@ -17,7 +17,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	configmetricagent "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"strconv"
 )
 
 const istioCertVolumeName = "istio-certs"
@@ -68,6 +70,8 @@ func applyAgentResources(ctx context.Context, c client.Client, cfg *AgentConfig)
 	if err := kubernetes.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create otel collector network policy: %w", err)
 	}
+
+	return nil
 }
 
 func makeAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
@@ -100,7 +104,7 @@ func makeAgentDaemonSet(cfg *AgentConfig, configChecksum string) *appsv1.DaemonS
 	maps.Copy(annotations, makeIstioTLSPodAnnotations(configmetricagent.IstioCertPath))
 
 	resources := makeAgentResourceRequirements(cfg)
-	podSpec := core.MakePodSpec(cfg.BaseName, cfg.DaemonSet.Image,
+	podSpec := makePodSpec(cfg.BaseName, cfg.DaemonSet.Image,
 		withPriorityClass(cfg.DaemonSet.PriorityClassName),
 		withResources(resources),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
@@ -154,8 +158,8 @@ func makeIstioTLSPodAnnotations(istioCertPath string) map[string]string {
 proxyMetadata:
   OUTPUT_CERTS: %s
 `, istioCertPath),
-		"sidecar.istio.io/userVolumeMount":                 fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
-		"traffic.sidecar.istio.io/includeInboundPorts":     "",
-		"traffic.sidecar.istio.io/includeOutboundIPRanges": "",
+		"sidecar.istio.io/userVolumeMount":              fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
+		"traffic.sidecar.istio.io/includeInboundPorts":  "",
+		"traffic.sidecar.istio.io/includeOutboundPorts": strconv.Itoa(ports.OTLPGRPC),
 	}
 }

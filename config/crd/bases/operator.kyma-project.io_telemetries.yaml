@@ -44,6 +44,69 @@ spec:
             type: object
           spec:
             description: TelemetrySpec defines the desired state of Telemetry
+            properties:
+              metric:
+                description: MetricSpec defines the behavior of the metric gateway
+                properties:
+                  gateway:
+                    properties:
+                      scaling:
+                        description: Scaling defines which strategy is used for scaling
+                          the gateway, with detailed configuration options for each
+                          strategy type.
+                        properties:
+                          static:
+                            description: Static is a scaling strategy allowing you
+                              to define a custom amount of replicas to be used for
+                              the gateway. Present only if Type = StaticScalingStrategyType.
+                            properties:
+                              replicas:
+                                description: Replicas defines a static number of pods
+                                  to run the gateway. Minimum is 1.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                            type: object
+                          type:
+                            description: Type of scaling strategy. Default is none,
+                              using a fixed amount of replicas.
+                            enum:
+                            - Static
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              trace:
+                description: TraceSpec defines the behavior of the trace gateway
+                properties:
+                  gateway:
+                    properties:
+                      scaling:
+                        description: Scaling defines which strategy is used for scaling
+                          the gateway, with detailed configuration options for each
+                          strategy type.
+                        properties:
+                          static:
+                            description: Static is a scaling strategy allowing you
+                              to define a custom amount of replicas to be used for
+                              the gateway. Present only if Type = StaticScalingStrategyType.
+                            properties:
+                              replicas:
+                                description: Replicas defines a static number of pods
+                                  to run the gateway. Minimum is 1.
+                                format: int32
+                                minimum: 1
+                                type: integer
+                            type: object
+                          type:
+                            description: Type of scaling strategy. Default is none,
+                              using a fixed amount of replicas.
+                            enum:
+                            - Static
+                            type: string
+                        type: object
+                    type: object
+                type: object
             type: object
           status:
             description: TelemetryStatus defines the observed state of Telemetry

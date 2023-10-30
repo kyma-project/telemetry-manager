@@ -134,14 +134,9 @@ spec:
                       in unsupported mode.'
                     type: string
                   grafana-loki:
-                    description: Configures an output to the Kyma-internal Loki instance.
-                      [Fluent Bit grafana-loki output](https://grafana.com/docs/loki/v2.2.x/clients/fluentbit/).
-                      **Note:** This output is considered legacy and is only provided
-                      for backward compatibility with the [deprecated](https://github.com/kyma-project/website/blob/main/content/blog-posts/2023-01-17-release-notes-2.10/index.md#deprecation-of-monitoring)
-                      in-cluster Loki instance. It might not be compatible with the
-                      latest Loki versions. For integration with a custom Loki installation
-                      use the `custom` output with the name `loki` instead, see also
-                      [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).
+                    description: The grafana-loki output is not supported anymore.
+                      For integration with a custom Loki installation, use the `custom`
+                      output and follow [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).
                     properties:
                       labels:
                         additionalProperties:
@@ -264,10 +259,104 @@ spec:
                       tls:
                         description: Configures TLS for the HTTP target server.
                         properties:
+                          ca:
+                            description: Defines an optional CA certificate for server
+                              certificate verification when using TLS. The certificate
+                              must be provided in PEM format.
+                            properties:
+                              value:
+                                description: The value as plain text.
+                                type: string
+                              valueFrom:
+                                description: The value as a reference to a resource.
+                                properties:
+                                  secretKeyRef:
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
+                                    properties:
+                                      key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
+                                        type: string
+                                      name:
+                                        description: The name of the Secret containing
+                                          the referenced value
+                                        type: string
+                                      namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
+                          cert:
+                            description: Defines a client certificate to use when
+                              using TLS. The certificate must be provided in PEM format.
+                            properties:
+                              value:
+                                description: The value as plain text.
+                                type: string
+                              valueFrom:
+                                description: The value as a reference to a resource.
+                                properties:
+                                  secretKeyRef:
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
+                                    properties:
+                                      key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
+                                        type: string
+                                      name:
+                                        description: The name of the Secret containing
+                                          the referenced value
+                                        type: string
+                                      namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
                           disabled:
                             description: Indicates if TLS is disabled or enabled.
                               Default is `false`.
                             type: boolean
+                          key:
+                            description: Defines the client key to use when using
+                              TLS. The key must be provided in PEM format.
+                            properties:
+                              value:
+                                description: The value as plain text.
+                                type: string
+                              valueFrom:
+                                description: The value as a reference to a resource.
+                                properties:
+                                  secretKeyRef:
+                                    description: Refers to the value of a specific
+                                      key in a Secret. You must provide `name` and
+                                      `namespace` of the Secret, as well as the name
+                                      of the `key`.
+                                    properties:
+                                      key:
+                                        description: The name of the attribute of
+                                          the Secret holding the referenced value.
+                                        type: string
+                                      name:
+                                        description: The name of the Secret containing
+                                          the referenced value
+                                        type: string
+                                      namespace:
+                                        description: The name of the Namespace containing
+                                          the Secret with the referenced value.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
                           skipCertificateValidation:
                             description: If `true`, the validation of certificates
                               is skipped. Default is `false`.

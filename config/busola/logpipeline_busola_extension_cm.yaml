@@ -131,6 +131,45 @@ data:
                   - name: Skip certificate validation
                     source: spec.output.http.tls.skipCertificateValidation
                     placeholder: 'false'
+                  - name: Ca
+                    widget: Panel
+                    visibility: $exists(spec.output.http.tls.ca)
+                    source: spec.output.http.tls.ca
+                    children:
+                      - name: Value
+                        source: value
+                        visibility: $exists(value)
+                      - name: Value From Secret
+                        widget: ResourceRefs
+                        source: valueFrom.secretKeyRef
+                        kind: Secret
+                        visibility: $exists(valueFrom.secretKeyRef.name)
+                  - name: Cert
+                    widget: Panel
+                    visibility: $exists(spec.output.http.tls.cert)
+                    source: spec.output.http.tls.cert
+                    children:
+                      - name: Value
+                        source: value
+                        visibility: $exists(value)
+                      - name: Value From Secret
+                        widget: ResourceRefs
+                        source: valueFrom.secretKeyRef
+                        kind: Secret
+                        visibility: $exists(valueFrom.secretKeyRef.name)
+                  - name: Key
+                    widget: Panel
+                    visibility: $exists(spec.output.http.tls.key)
+                    source: spec.output.http.tls.key
+                    children:
+                      - name: Value
+                        source: value
+                        visibility: $exists(value)
+                      - name: Value From Secret
+                        widget: ResourceRefs
+                        source: valueFrom.secretKeyRef
+                        kind: Secret
+                        visibility: $exists(valueFrom.secretKeyRef.name)
               - name: Other Settings
                 widget: Panel
                 children:
@@ -160,21 +199,11 @@ data:
           inputInfo: Include container logs from selected namespaces
           children:
             - path: '[]'
-              widget: Resource
-              resource:
-                scope: cluster
-                kind: Namespace
-                version: v1
         - name: Exclude Namespaces
           widget: SimpleList
           path: application.namespaces.exclude
           children:
             - path: '[]'
-              widget: Resource
-              resource:
-                scope: cluster
-                kind: Namespace
-                version: v1
         - name: Include System Namespaces
           path: application.namespaces.system
         - name: Include Containers
@@ -271,6 +300,66 @@ data:
                   path: disabled
                 - name: Skip Certificate Validation
                   path: skipCertificateValidation
+                - name: CA
+                  path: ca
+                  widget: FormGroup
+                  simple: true
+                  children:
+                    - name: Value
+                      path: value
+                      widget: Text
+                      simple: true
+                    - name: Secret Reference
+                      path: valueFrom.secretKeyRef
+                      widget: ResourceRef
+                      simple: true
+                      resource:
+                        kind: secret
+                        version: v1
+                      children:
+                        - simple: true
+                          path: key
+                          enum: $keys($secret.data)
+                - name: Cert
+                  path: cert
+                  widget: FormGroup
+                  simple: true
+                  children:
+                    - name: Value
+                      path: value
+                      widget: Text
+                      simple: true
+                    - name: Secret Reference
+                      path: valueFrom.secretKeyRef
+                      widget: ResourceRef
+                      simple: true
+                      resource:
+                        kind: secret
+                        version: v1
+                      children:
+                        - simple: true
+                          path: key
+                          enum: $keys($secret.data)
+                - name: Key
+                  path: key
+                  widget: FormGroup
+                  simple: true
+                  children:
+                    - name: Value
+                      path: value
+                      widget: Text
+                      simple: true
+                    - name: Secret Reference
+                      path: valueFrom.secretKeyRef
+                      widget: ResourceRef
+                      simple: true
+                      resource:
+                        kind: secret
+                        version: v1
+                      children:
+                        - simple: true
+                          path: key
+                          enum: $keys($secret.data)
             - name: URI
               path: uri
               widget: Text

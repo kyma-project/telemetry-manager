@@ -20,15 +20,15 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
-func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayConfig, pipelineCount int) error {
-	if err := applyCommonResources(ctx, c, cfg, pipelineCount); err != nil {
+func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayConfig) error {
+	if err := applyCommonResources(ctx, c, cfg); err != nil {
 		return fmt.Errorf("failed to apply common otel collector resource: %w", err)
 	}
 
 	return nil
 }
 
-func applyCommonResources(ctx context.Context, c client.Client, cfg *GatewayConfig, pipelineCount int) error {
+func applyCommonResources(ctx context.Context, c client.Client, cfg *GatewayConfig) error {
 	var err error
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
@@ -59,7 +59,7 @@ func applyCommonResources(ctx context.Context, c client.Client, cfg *GatewayConf
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	deployment := makeGatewayDeployment(cfg, configChecksum, pipelineCount)
+	deployment := makeGatewayDeployment(cfg, configChecksum)
 	if err = kubernetes.CreateOrUpdateDeployment(ctx, c, deployment); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
@@ -111,13 +111,13 @@ func makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, pipelineCount int) *appsv1.Deployment {
+func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string) *appsv1.Deployment {
 	selectorLabels := defaultLabels(cfg.BaseName)
 	podLabels := maps.Clone(selectorLabels)
 	podLabels["sidecar.istio.io/inject"] = "false"
 
 	annotations := makeCommonPodAnnotations(configChecksum)
-	resources := makeGatewayResourceRequirements(cfg, pipelineCount)
+	resources := makeGatewayResourceRequirements(cfg)
 	affinity := makePodAffinity(selectorLabels)
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
 		withPriorityClass(cfg.Deployment.PriorityClassName),
@@ -133,7 +133,7 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, pipelineCo
 			Namespace: cfg.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: pointer.Int32(2),
+			Replicas: pointer.Int32(cfg.Scaling.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},
@@ -148,13 +148,13 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, pipelineCo
 	}
 }
 
-func makeGatewayResourceRequirements(cfg *GatewayConfig, pipelineCount int) corev1.ResourceRequirements {
+func makeGatewayResourceRequirements(cfg *GatewayConfig) corev1.ResourceRequirements {
 	memoryRequest := cfg.Deployment.BaseMemoryRequest.DeepCopy()
 	memoryLimit := cfg.Deployment.BaseMemoryLimit.DeepCopy()
 	cpuRequest := cfg.Deployment.BaseCPURequest.DeepCopy()
 	cpuLimit := cfg.Deployment.BaseCPULimit.DeepCopy()
 
-	for i := 0; i < pipelineCount; i++ {
+	for i := 0; i < cfg.Scaling.ResourceRequirementsMultiplier; i++ {
 		memoryRequest.Add(cfg.Deployment.DynamicMemoryRequest)
 		memoryLimit.Add(cfg.Deployment.DynamicMemoryLimit)
 		cpuRequest.Add(cfg.Deployment.DynamicCPURequest)

@@ -15,8 +15,15 @@ type GatewayConfig struct {
 	Config
 
 	Deployment           DeploymentConfig
+	Scaling              GatewayScalingConfig
 	OTLPServiceName      string
 	CanReceiveOpenCensus bool
+}
+
+func (cfg GatewayConfig) WithScaling(s GatewayScalingConfig) GatewayConfig {
+	copy := cfg
+	copy.Scaling = s
+	return copy
 }
 
 type DeploymentConfig struct {
@@ -30,6 +37,16 @@ type DeploymentConfig struct {
 	DynamicCPURequest    resource.Quantity
 	BaseMemoryRequest    resource.Quantity
 	DynamicMemoryRequest resource.Quantity
+}
+
+type GatewayScalingConfig struct {
+	// Replicas specifies the number of gateway replicas.
+	Replicas int32
+
+	// ResourceRequirementsMultiplier is a coefficient affecting the CPU and memory resource limits for each replica.
+	// This value is multiplied with a base resource requirement to calculate the actual CPU and memory limits.
+	// A value of 1 applies the base limits; values greater than 1 increase those limits proportionally.
+	ResourceRequirementsMultiplier int
 }
 
 type AgentConfig struct {

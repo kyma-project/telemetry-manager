@@ -87,5 +87,4 @@ var _ = Describe("Metrics Cumulative To Delta", Label("metrics"), func() {
 			verifiers.MetricsShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName), cumulativeSums)
 		})
 	})
-
 })

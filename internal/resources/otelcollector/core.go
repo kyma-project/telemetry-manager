@@ -2,7 +2,6 @@ package otelcollector
 
 import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,7 +71,7 @@ func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
 }
 
 func makeMetricsService(config *Config) *corev1.Service {
-	labels := core.MakeDefaultLabels(config.BaseName)
+	labels := defaultLabels(config.BaseName)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -100,7 +99,7 @@ func makeMetricsService(config *Config) *corev1.Service {
 }
 
 func makeOpenCensusService(config *Config) *corev1.Service {
-	labels := core.MakeDefaultLabels(config.BaseName)
+	labels := defaultLabels(config.BaseName)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      config.BaseName + "-internal",

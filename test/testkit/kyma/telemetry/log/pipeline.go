@@ -6,9 +6,13 @@ import (
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
 type Pipeline struct {
+	persistent bool
+
 	name             string
 	secretKeyRef     *telemetry.SecretKeyRef
 	excludeContainer []string
@@ -82,6 +86,28 @@ func (p *Pipeline) WithHTTPOutput() *Pipeline {
 	return p
 }
 
+func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
+	if !p.output.IsHTTPDefined() {
+		return p
+	}
+
+	p.output.HTTP.TLSConfig = telemetry.TLSConfig{
+		Disabled:                  false,
+		SkipCertificateValidation: false,
+		CA: &telemetry.ValueType{
+			Value: certs.CaCertPem.String(),
+		},
+		Cert: &telemetry.ValueType{
+			Value: certs.ClientCertPem.String(),
+		},
+		Key: &telemetry.ValueType{
+			Value: certs.ClientKeyPem.String(),
+		},
+	}
+
+	return p
+}
+
 func (p *Pipeline) WithCustomOutput(host string) *Pipeline {
 	const customOutputTemplate = `
 	name   http
@@ -102,11 +128,22 @@ func (p *Pipeline) WithFilter(filter string) *Pipeline {
 	return p
 }
 
+func (p *Pipeline) Persistent(persistent bool) *Pipeline {
+	p.persistent = persistent
+
+	return p
+}
+
 func (p *Pipeline) K8sObject() *telemetry.LogPipeline {
+	var labels k8s.Labels
+	if p.persistent {
+		labels = k8s.PersistentLabel
+	}
 
 	return &telemetry.LogPipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
-			Name: p.name,
+			Name:   p.name,
+			Labels: labels,
 		},
 		Spec: telemetry.LogPipelineSpec{
 			Input: telemetry.Input{

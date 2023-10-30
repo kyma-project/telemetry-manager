@@ -1,7 +1,6 @@
 package operator
 
 import (
-	"context"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,17 +17,15 @@ import (
 
 var _ = Describe("Deploying a Telemetry", Ordered, func() {
 	const (
-		timeout  = time.Second * 10
-		interval = time.Millisecond * 250
+		timeout            = time.Second * 10
+		interval           = time.Millisecond * 250
+		telemetryNamespace = "default"
 	)
 
-	const telemetryNamespace = "default"
-
-	Context("No dependent resources exist", Ordered, func() {
+	Context("When no dependent resources exist", Ordered, func() {
 		const telemetryName = "telemetry-1"
 
 		BeforeAll(func() {
-			ctx := context.Background()
 			telemetry := &operatorv1alpha1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      telemetryName,
@@ -42,7 +39,7 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
 		})
 
-		It("Telemetry status should be ready", func() {
+		It("Should have Telemetry with ready state", func() {
 			Eventually(func() (operatorv1alpha1.State, error) {
 				lookupKey := types.NamespacedName{
 					Name:      telemetryName,
@@ -59,11 +56,10 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 		})
 	})
 
-	Context("Running TracePipeline exist", Ordered, func() {
+	Context("When a running TracePipeline exists", Ordered, func() {
 		const telemetryName = "telemetry-2"
 
 		BeforeAll(func() {
-			ctx := context.Background()
 			telemetry := &operatorv1alpha1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      telemetryName,
@@ -85,7 +81,7 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
 		})
 
-		It("Telemetry status should be ready", func() {
+		It("Should have Telemetry with ready state", func() {
 			Eventually(func() (operatorv1alpha1.State, error) {
 				lookupKey := types.NamespacedName{
 					Name:      telemetryName,
@@ -102,11 +98,10 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 		})
 	})
 
-	Context("Pending TracePipeline exist", Ordered, func() {
+	Context("When a pending TracePipeline exists", Ordered, func() {
 		const telemetryName = "telemetry-3"
 
 		BeforeAll(func() {
-			ctx := context.Background()
 			telemetry := &operatorv1alpha1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      telemetryName,
@@ -128,7 +123,7 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
 		})
 
-		It("Telemetry status should be warning", func() {
+		It("Should have Telemetry with warning state", func() {
 			Eventually(func() (operatorv1alpha1.State, error) {
 				lookupKey := types.NamespacedName{
 					Name:      telemetryName,
@@ -142,6 +137,59 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 
 				return telemetry.Status.State, nil
 			}, timeout, interval).Should(Equal(operatorv1alpha1.StateWarning))
+		})
+	})
+
+	Context("When a LogPipeline with Loki output exists", Ordered, func() {
+		const (
+			telemetryName = "telemetry-4"
+			pipelineName  = "pipeline-with-loki-output"
+		)
+
+		BeforeAll(func() {
+			telemetry := &operatorv1alpha1.Telemetry{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      telemetryName,
+					Namespace: telemetryNamespace,
+				},
+			}
+			logPipelineWithLokiOutput := &telemetryv1alpha1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: pipelineName,
+				},
+				Spec: telemetryv1alpha1.LogPipelineSpec{
+					Output: telemetryv1alpha1.Output{
+						Loki: &telemetryv1alpha1.LokiOutput{
+							URL: telemetryv1alpha1.ValueType{
+								Value: "http://logging-loki:3100/loki/api/v1/push",
+							},
+						},
+					}},
+			}
+
+			DeferCleanup(func() {
+				Expect(k8sClient.Delete(ctx, logPipelineWithLokiOutput)).Should(Succeed())
+				Expect(k8sClient.Delete(ctx, telemetry)).Should(Succeed())
+			})
+			Expect(k8sClient.Create(ctx, logPipelineWithLokiOutput)).Should(Succeed())
+			logPipelineWithLokiOutput.Status.SetCondition(telemetryv1alpha1.LogPipelineCondition{
+				Reason: conditions.ReasonUnsupportedLokiOutput,
+				Type:   telemetryv1alpha1.LogPipelinePending,
+			})
+			Expect(k8sClient.Status().Update(ctx, logPipelineWithLokiOutput)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
+		})
+
+		It("Should have Telemetry with warning state", func() {
+			Eventually(func(g Gomega) {
+				lookupKey := types.NamespacedName{
+					Name:      telemetryName,
+					Namespace: telemetryNamespace,
+				}
+				var telemetry operatorv1alpha1.Telemetry
+				g.Expect(k8sClient.Get(ctx, lookupKey, &telemetry)).Should(Succeed())
+				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateWarning))
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 })

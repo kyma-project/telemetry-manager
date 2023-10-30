@@ -25,12 +25,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
+
+const defaultReplicaCount int32 = 2
 
 type Config struct {
 	Gateway                otelcollector.GatewayConfig
@@ -151,8 +154,39 @@ func getDeployableTracePipelines(ctx context.Context, allPipelines []telemetryv1
 }
 
 func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, allPipelines []telemetryv1alpha1.TracePipeline) error {
-	if err := otelcollector.ApplyGatewayResources(ctx, r.Client, &r.config.Gateway, len(allPipelines)); err != nil {
+	scaling := otelcollector.GatewayScalingConfig{
+		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
+		ResourceRequirementsMultiplier: len(allPipelines),
+	}
+	cfg := r.config.Gateway.WithScaling(scaling)
+
+	if err := otelcollector.ApplyGatewayResources(ctx, kubernetes.NewOwnerReferenceSetter(r.Client, pipeline), &cfg); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 	return nil
+}
+
+func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
+	var telemetries operatorv1alpha1.TelemetryList
+	if err := r.List(ctx, &telemetries); err != nil {
+		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
+		return defaultReplicaCount
+	}
+	for i := range telemetries.Items {
+		telemetrySpec := telemetries.Items[i].Spec
+		if telemetrySpec.Trace == nil {
+			continue
+		}
+
+		scaling := telemetrySpec.Trace.Gateway.Scaling
+		if scaling.Type != operatorv1alpha1.StaticScalingStrategyType {
+			continue
+		}
+
+		static := scaling.Static
+		if static != nil && static.Replicas > 0 {
+			return static.Replicas
+		}
+	}
+	return defaultReplicaCount
 }

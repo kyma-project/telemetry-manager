@@ -40,6 +40,7 @@ service:
             address: ${MY_POD_IP}:8888
         logs:
             level: info
+            encoding: json
     extensions:
         - health_check
 receivers:
@@ -47,7 +48,7 @@ receivers:
         collection_interval: 30s
         auth_type: serviceAccount
         endpoint: https://${env:MY_NODE_NAME}:10250
-        insecure_skip_verify: false
+        insecure_skip_verify: true
         metric_groups:
             - container
             - pod

@@ -2,6 +2,7 @@ package verifiers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -24,7 +25,7 @@ func isDeploymentReady(ctx context.Context, k8sClient client.Client, name types.
 	var deployment appsv1.Deployment
 	err := k8sClient.Get(ctx, name, &deployment)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to get deployment: %w", err)
 	}
 	listOptions := client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels),

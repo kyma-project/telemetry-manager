@@ -12,20 +12,21 @@ import (
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 )
 
-var _ = Describe("Logs Dedot", Label("logging"), func() {
+var _ = Describe("Logs Dedot", Label("logging"), Ordered, func() {
 	const (
 		mockNs          = "log-dedot-labels-mocks"
 		mockBackendName = "log-receiver-dedot-labels"
 		logProducerName = "log-producer"
+		pipelineName    = "pipeline-dedot-test"
 	)
 	var telemetryExportURL string
 
@@ -39,7 +40,7 @@ var _ = Describe("Logs Dedot", Label("logging"), func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("dedot.label", "logging-dedot-value")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitlog.NewPipeline("pipeline-dedot-test").
+		logPipeline := kitlog.NewPipeline(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
 			WithIncludeContainer([]string{logProducerName})
@@ -47,6 +48,13 @@ var _ = Describe("Logs Dedot", Label("logging"), func() {
 
 		return objs
 	}
+
+	Context("Before deploying a logpipeline", func() {
+		It("Should have a healthy webhook", func() {
+			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
+		})
+	})
+
 	Context("When a logpipeline that dedots labels exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
@@ -54,6 +62,10 @@ var _ = Describe("Logs Dedot", Label("logging"), func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have a running logpipeline", func() {
+			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a log backend running", func() {
@@ -65,13 +77,13 @@ var _ = Describe("Logs Dedot", Label("logging"), func() {
 		})
 
 		// label foo.bar: value should be represented as foo_bar:value
-		It("Should dedot the labels", func() {
+		It("Should have logs with dedotted labels in the backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainLogs(WithKubernetesLabels("dedot_label", "logging-dedot-value"))),
+				g.Expect(resp).To(HaveHTTPBody(
+					ContainLd(ContainLogRecord(WithKubernetesLabels(HaveKeyWithValue("dedot_label", "logging-dedot-value")))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
