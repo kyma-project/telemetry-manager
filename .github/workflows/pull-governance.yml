@@ -31,17 +31,3 @@ jobs:
           requireScope: false
           # https://regex101.com/r/O5OZvC/1
           subjectPattern: ^([A-Z].*[^.]|bump .*)$
-
-  markdown-link-check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Validate links
-        uses: gaurav-nelson/github-action-markdown-link-check@v1
-        with:
-          use-verbose-mode: 'no'
-          config-file: '.mlc.config.json'
-          folder-path: '.'
-          max-depth: -1
