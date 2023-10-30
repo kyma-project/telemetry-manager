@@ -279,7 +279,7 @@ CONTROLLER_TOOLS_VERSION ?= v0.11.3
 K3D_VERSION ?= v5.4.7
 GINKGO_VERSION ?= v2.13.0
 GORELEASER_VERSION ?= v1.17.1
-GOLANGCI-LINT_VERSION ?= v1.55.1
+GOLANGCI-LINT_VERSION ?= latest
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
