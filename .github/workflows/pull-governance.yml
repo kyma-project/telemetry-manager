@@ -1,4 +1,4 @@
-name: Governance
+name: Governance-Target
 run-name: ${{github.event.pull_request.title}}
 on:
   pull_request_target:
@@ -26,6 +26,16 @@ jobs:
           requireScope: false
           # https://regex101.com/r/O5OZvC/1
           subjectPattern: ^([A-Z].*[^.]|bump .*)$
+---
+name: Governance
+run-name: ${{github.event.pull_request.title}}
+on:
+  pull_request:
+    branches:
+      - "main"
+      - "release-*"
+    paths:
+    - "**.md"
   markdown-link-check:
     name: Check Markdown Links
     runs-on: ubuntu-latest
@@ -37,3 +47,4 @@ jobs:
           config-file: '.mlc.config.json'
           folder-path: '.'
           max-depth: -1
+
