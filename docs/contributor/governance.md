@@ -21,7 +21,7 @@ Additionally, a [Github Action](./../../.github/workflows/pull-code-checks.yml) 
 
 ### Linters in action
 
-The following linters are configured and integrated as a CI stage using a [ProwJob](https://github.com/kyma-project/test-infra/blob/main/prow/jobs/kyma/components/kyma-components-static-checks.yaml#L6).
+The following linters are configured and integrated as a CI stage using a [Github Action](./../../.github/workflows/pull-code-checks.yml).
 
 <details>
 <summary>List of linters</summary>
