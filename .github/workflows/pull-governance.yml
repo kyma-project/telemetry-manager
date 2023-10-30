@@ -1,12 +1,18 @@
 name: Governance
 run-name: ${{github.event.pull_request.title}}
 on:
+
   pull_request_target:
+    branches:
+      - "main"
+      - "release-*"
     types:
       - opened
       - reopened
       - edited
       - synchronize
+  workflow_dispatch:
+
 jobs:
   pr-title-check:
     name: Check PR Title
@@ -37,3 +43,16 @@ jobs:
           config-file: '.mlc.config.json'
           folder-path: '.'
           max-depth: -1
+  verify-manifests:
+    name: Verify Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      # uses an older go version by default, so configure go with newest version
+      - name: setup golang
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+      - name: verify manifests
+        run: make lint-manifests

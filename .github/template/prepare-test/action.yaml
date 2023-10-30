@@ -1,0 +1,60 @@
+name: prepare-test
+description: Prepares everything for integration test execution
+
+inputs:
+  release:
+    description: deploy operator in release mode
+    required: false
+  github-token:
+    description: the github token
+    required: true
+
+runs:
+  using: "composite"
+
+  steps:
+
+    # uses an older go version by default, so configure go with newest version
+    - name: setup golang
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        cache: true
+  
+    # wait for the build to succeed so that the manager image is available
+    - name: Wait for the 'pull-telemetry-manager-build' job to succeed
+      uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
+      with:
+        context: "pull-telemetry-manager-build"
+        commit_ref: "${{ github.event.pull_request.head.sha }}" # Note: 'github.event.pull_request.head.sha' is not same as 'github.sha' on pull requests.
+        timeout: 600000 # 10 minutes in milliseconds
+        # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
+        check_interval: 60000 # 1 minute in milliseconds
+      env:
+        GITHUB_TOKEN: "${{ inputs.github-token }}"
+        GITHUB_OWNER: "${{ github.repository_owner }}"
+        GITHUB_REPO: "telemetry-manager"
+
+    - name: provision K3D
+      shell: bash
+      run: make provision-k3d
+
+    - name: deploy module experimental
+      if: ${{ inputs.release }}
+      shell: bash
+      run: make deploy
+
+    - name: deploy module release
+      if: ${{ !inputs.release }}
+      shell: bash
+      run: make deploy-dev
+
+    - name: wait for operator readiness
+      shell: bash
+      run: kubectl -n kyma-system rollout status deployment telemetry-operator --timeout=90s
+
+    - name: cluster info
+      shell: bash
+      run: | 
+        kubectl cluster-info
+        kubectl -n kyma-system get po
