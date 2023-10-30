@@ -101,11 +101,6 @@ jobs:
       if: success() || failure()
       with:
         failure: failure()
-    - name: Send slack message on failure
-      uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117
-      if: failure()
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   e2e-logs:
 
@@ -126,11 +121,6 @@ jobs:
       if: success() || failure()
       with:
         failure: failure()
-    - name: Send slack message on failure
-      uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117
-      if: failure()
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   e2e-integration-istio:
 

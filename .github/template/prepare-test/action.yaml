@@ -53,7 +53,7 @@ runs:
       shell: bash
       run: kubectl -n kyma-system rollout status deployment telemetry-operator --timeout=90s
 
-    - name: cluster info
+    - name: Print cluster info
       shell: bash
       run: | 
         kubectl cluster-info
