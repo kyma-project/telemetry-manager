@@ -1,13 +1,15 @@
 package otelcollector
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"strconv"
+
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"strconv"
+
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 func defaultLabels(baseName string) map[string]string {

@@ -37,8 +37,7 @@ func applyCommonResources(ctx context.Context, c client.Client, cfg *GatewayConf
 		return fmt.Errorf("failed to create serviceaccount: %w", err)
 	}
 
-	var clusterRole *rbacv1.ClusterRole
-	clusterRole = makeGatewayClusterRole(name)
+	clusterRole := makeGatewayClusterRole(name)
 	if err = kubernetes.CreateOrUpdateClusterRole(ctx, c, clusterRole); err != nil {
 		return fmt.Errorf("failed to create clusterrole: %w", err)
 	}

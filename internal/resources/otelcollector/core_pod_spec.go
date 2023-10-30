@@ -1,10 +1,11 @@
 package otelcollector
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
+
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 const (
