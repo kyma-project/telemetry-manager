@@ -91,7 +91,7 @@ var _ = BeforeSuite(func() {
 			Port: 19443,
 			Host: "localhost",
 		}),
-		HealthProbeBindAddress: "localhost:8084",
+		HealthProbeBindAddress: "localhost:8088",
 		LeaderElection:         false,
 		LeaderElectionID:       "cdd7ef0a.kyma-project.io",
 	})

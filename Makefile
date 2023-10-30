@@ -45,17 +45,16 @@ help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Development
-lint-autofix: ## Autofix all possible linting errors.
-	golangci-lint run -E goimports --fix
+lint-autofix: golangci-lint ## Autofix all possible linting errors.
+	${GOLANGCI-LINT} run -E goimports --fix
 
 lint-manifests:
 	hack/lint-manifests.sh
 
-lint: lint-manifests
+lint: golangci-lint lint-manifests
 	go version
-	golangci-lint version
-	GO111MODULE=on golangci-lint run
-
+	${GOLANGCI-LINT} version
+	GO111MODULE=on ${GOLANGCI-LINT} run
 
 .PHONY: crd-docs-gen
 crd-docs-gen: tablegen ## Generates CRD spec into docs folder
@@ -98,36 +97,40 @@ test-matchers: ginkgo
 	$(GINKGO) run ./test/testkit/matchers/...
 
 .PHONY: provision-test-env
-provision-test-env:
-	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-test-env.sh
+provision-test-env: provision-k3d
+	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/build-image.sh
+
+.PHONY: provision-k3d
+provision-k3d: k3d
+	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-k3d.sh
 
 .PHONY: e2e-test
-e2e-test: k3d provision-test-env ## Provision k3d cluster and run end-to-end tests.
+e2e-test: provision-test-env ## Provision k3d cluster and run end-to-end tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 	make run-e2e-test
 
 .PHONY: e2e-test-logging
-e2e-test-logging: k3d provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
+e2e-test-logging: provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 	make run-e2e-test-logging
 
 .PHONY: e2e-test-tracing
-e2e-test-tracing: k3d provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end tracing tests.
+e2e-test-tracing: provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end tracing tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 	make run-e2e-test-tracing
 
 .PHONY: e2e-test-metrics
-e2e-test-metrics: k3d provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end metrics tests.
+e2e-test-metrics: provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end metrics tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 	make run-e2e-test-metrics
 
 .PHONY: e2e-test-logging-release
-e2e-test-logging-release: k3d provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end logging tests.
+e2e-test-logging-release: provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end logging tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
 	make run-e2e-test-logging
 
 .PHONY: e2e-test-tracing-release
-e2e-test-tracing-release: k3d provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end tracing tests.
+e2e-test-tracing-release: provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end tracing tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
 	make run-e2e-test-tracing
 
@@ -263,6 +266,7 @@ TABLE_GEN ?= $(LOCALBIN)/table-gen
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 GINKGO ?= $(LOCALBIN)/ginkgo
+GOLANGCI-LINT ?= $(LOCALBIN)/golangci-lint
 K3D ?= $(LOCALBIN)/k3d
 KYMA ?= $(LOCALBIN)/kyma-$(KYMA_STABILITY)
 
@@ -273,6 +277,7 @@ CONTROLLER_TOOLS_VERSION ?= v0.11.3
 K3D_VERSION ?= v5.4.7
 GINKGO_VERSION ?= v2.13.0
 GORELEASER_VERSION ?= v1.17.1
+GOLANGCI-LINT_VERSION ?= latest
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -299,6 +304,11 @@ $(ENVTEST): $(LOCALBIN)
 tablegen: $(TABLE_GEN) ## Download table-gen locally if necessary.
 $(TABLE_GEN): $(LOCALBIN)
 	test -s $(TABLE_GEN) || GOBIN=$(LOCALBIN) go install github.com/kyma-project/kyma/hack/table-gen@$(TABLE_GEN_VERSION)
+
+.PHONY: golangci-lint
+golangci-lint: $(GOLANGCI-LINT) ## Download golangci-lint locally if necessary.
+$(GOLANGCI-LINT): $(LOCALBIN)
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(LOCALBIN) $(GOLANGCI-LINT_VERSION)
 
 .PHONY: ginkgo
 ginkgo: $(GINKGO) ## Download ginkgo locally if necessary.

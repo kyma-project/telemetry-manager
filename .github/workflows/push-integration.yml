@@ -1,21 +1,25 @@
-name: Integration
+name: Branch Integration
 
 on:
   push:
-    branches: [ "main", "release-*" ]
-  
+    branches:
+      - "main"
+      - "release-*"
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
   workflow_dispatch:
 
 jobs:
   gardener-integration-test:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
     # uses an older go version by default, so configure go with newest version
-    - uses: actions/setup-go@v4
+    - name: Setup go
+      uses: actions/setup-go@v4
       with:
         go-version: '1.21'
         cache: true
@@ -35,23 +39,22 @@ jobs:
         GITHUB_REPO: "telemetry-manager"
 
     # save gardener kubeconfig to a temp file in order to pass it to the command
-    - name: save sa
+    - name: Save serviceaccount to file
       shell: bash
       run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
       env:
         GARDENER_SA: ${{ secrets.GARDENER_SA }}
 
     # provision cluster and run tests
-    - name: |
-        run integration tests
+    - name: Run test
       run: make gardener-integration-test
       env:
         GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
         GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
         GARDENER_SA_PATH: /tmp/gardener-sa.yaml
 
-    - uses: actions/upload-artifact@v3
-      if: success() || failure() # run this step even if previous step failed
-      with:
-        name: test-results
-        path: '**/artifacts/*-junit.xml'
+    - name: Send slack message on failure
+      uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117
+      if: failure()
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
