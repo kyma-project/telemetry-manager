@@ -20,7 +20,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Prepare Test
+    - name: Prepare test
       uses: "./.github/template/prepare-test"
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -28,7 +28,7 @@ jobs:
     - name: Run tests
       run: make run-e2e-test-metrics
 
-    - name: Finalize Test
+    - name: Finalize test
       uses: "./.github/template/finalize-test"
       if: success() || failure()
       with:

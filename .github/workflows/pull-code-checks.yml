@@ -17,7 +17,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Prepare Test
+    - name: Prepare test
       uses: "./.github/template/prepare-checks"
 
     - name: Run tests
@@ -29,7 +29,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Prepare Test
+      - name: Prepare test
         uses: "./.github/template/prepare-checks"
 
       - name: Run linting
@@ -45,7 +45,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Prepare Test
+      - name: Prepare test
         uses: "./.github/template/prepare-checks"
 
       - name: Verify manifests
