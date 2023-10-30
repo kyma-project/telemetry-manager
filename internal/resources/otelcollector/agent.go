@@ -100,7 +100,7 @@ func makeAgentDaemonSet(cfg *AgentConfig, configChecksum string) *appsv1.DaemonS
 	podLabels := maps.Clone(selectorLabels)
 	podLabels["sidecar.istio.io/inject"] = "true"
 
-	annotations := makeCommonPodAnnotations(configChecksum)
+	annotations := makeChecksumAnnotation(configChecksum)
 	maps.Copy(annotations, makeIstioTLSPodAnnotations(configmetricagent.IstioCertPath))
 
 	resources := makeAgentResourceRequirements(cfg)
@@ -123,6 +123,7 @@ func makeAgentDaemonSet(cfg *AgentConfig, configChecksum string) *appsv1.DaemonS
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cfg.BaseName,
 			Namespace: cfg.Namespace,
+			Labels:    selectorLabels,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{

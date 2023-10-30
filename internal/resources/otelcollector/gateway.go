@@ -115,7 +115,7 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string) *appsv1.De
 	podLabels := maps.Clone(selectorLabels)
 	podLabels["sidecar.istio.io/inject"] = "false"
 
-	annotations := makeCommonPodAnnotations(configChecksum)
+	annotations := makeChecksumAnnotation(configChecksum)
 	resources := makeGatewayResourceRequirements(cfg)
 	affinity := makePodAffinity(selectorLabels)
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
@@ -130,6 +130,7 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string) *appsv1.De
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cfg.BaseName,
 			Namespace: cfg.Namespace,
+			Labels:    selectorLabels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: pointer.Int32(cfg.Scaling.Replicas),

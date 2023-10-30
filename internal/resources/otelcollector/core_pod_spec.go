@@ -141,7 +141,7 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 	return pod
 }
 
-func makeCommonPodAnnotations(configHash string) map[string]string {
+func makeChecksumAnnotation(configHash string) map[string]string {
 	annotations := map[string]string{
 		"checksum/config": configHash,
 	}
