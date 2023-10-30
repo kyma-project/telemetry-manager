@@ -11,11 +11,13 @@ To achieve both aspects, call:
 make manifests
 ```
 
-Additionally, a [ProwJob](https://github.com/kyma-project/test-infra/blob/main/prow/jobs/telemetry-manager/telemetry-manager-generic.yaml#L6) verifies this operation.
+Additionally, a [Github Action](./../../.github/workflows/pull-code-checks.yml) verifies this operation.
 
 ## Sourcecode linting
 
 For the source code linting, the development team uses [golangci-lint](https://golangci-lint.run) with fine-grained configuration.
+
+Additionally, a [Github Action](./../../.github/workflows/pull-code-checks.yml) verifies this operation.
 
 ### Linters in action
 
