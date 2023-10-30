@@ -11,7 +11,7 @@ To achieve both aspects, call:
 make manifests
 ```
 
-Additionally, a [ProwJob](https://github.com/kyma-project/test-infra/blob/main/prow/jobs/telemetry-manager/telemetry-manager-generic.yaml#L6) verifies this operation.
+Additionally, a [ProwJob](https://github.com/kyma-project/test-infra/blob/main/prow/jobs/kyma-project/telemetry-manager/telemetry-manager-generic.yaml#L6) verifies this operation.
 
 ## Sourcecode linting
 
