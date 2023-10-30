@@ -12,28 +12,41 @@ on:
 
 jobs:
   unit-tests:
-
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
     - name: Prepare Test
       uses: "./.github/template/prepare-checks"
 
-    - name: run tests
+    - name: Run tests
       run: make test
 
   linting:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
-          cache: false
-      - name: golangci-lint
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare Test
+        uses: "./.github/template/prepare-checks"
+
+      - name: Run linting
         uses: golangci/golangci-lint-action@v3
         with:
           install-mode: binary
           version: latest
-          args: --timeout=5m --config=./.golangci.yaml 
+          args: --timeout=5m --config=./.golangci.yaml
+
+  verify-manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare Test
+        uses: "./.github/template/prepare-checks"
+
+      - name: Verify manifests
+        run: make lint-manifests

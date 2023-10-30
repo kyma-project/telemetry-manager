@@ -15,23 +15,17 @@ on:
 
 jobs:
   e2e-metrics:
-
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
     - name: Prepare Test
       uses: "./.github/template/prepare-test"
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: cluster info
-      shell: bash
-      run: |
-        kubectl cluster-info
-        kubectl -n kyma-system get po
-
-    - name: run tests
+    - name: Run tests
       run: make run-e2e-test-metrics
 
     - name: Finalize Test
@@ -41,10 +35,10 @@ jobs:
         failure: failure()
 
   e2e-traces-release:
-
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
     - name: Prepare Test
       uses: "./.github/template/prepare-test"
@@ -52,7 +46,7 @@ jobs:
         release: true
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: run tests
+    - name: Run tests
       run: make run-e2e-test-tracing
 
     - name: Finalize Test
@@ -62,17 +56,17 @@ jobs:
         failure: failure()
 
   e2e-traces:
-
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
     - name: Prepare Test
       uses: "./.github/template/prepare-test"
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: run tests
+    - name: Run tests
       run: make run-e2e-test-tracing
 
     - name: Finalize Test
@@ -82,10 +76,10 @@ jobs:
         failure: failure()
 
   e2e-logs-release:
-
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
     - name: Prepare Test
       uses: "./.github/template/prepare-test"
@@ -93,7 +87,7 @@ jobs:
         release: true
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: run tests
+    - name: Run tests
       run: make run-e2e-test-logging
 
     - name: Finalize Test
@@ -103,17 +97,17 @@ jobs:
         failure: failure()
 
   e2e-logs:
-
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
     - name: Prepare Test
       uses: "./.github/template/prepare-test"
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: run tests
+    - name: Run tests
       run: make run-e2e-test-logging
 
     - name: Finalize Test
@@ -123,17 +117,17 @@ jobs:
         failure: failure()
 
   e2e-integration-istio:
-
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
     - name: Prepare Test
       uses: "./.github/template/prepare-test"
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: run tests
+    - name: Run tests
       run: make run-integration-test-istio
 
     - name: Finalize Test

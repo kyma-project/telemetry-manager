@@ -1,19 +1,12 @@
-name: prepare-checks
+name: Prepare checks
 description: Prepares everything for static code check execution
 
 runs:
   using: "composite"
 
   steps:
-    - name: Cache Go dependencies
-      uses: actions/setup-go@v4
-      with:
-        go-version-file: './go.mod'
-        check-latest: true
-        cache-dependency-path: './go.sum'
-
     # uses an older go version by default, so configure go with newest version
-    - name: setup golang
+    - name: Setup golang
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'

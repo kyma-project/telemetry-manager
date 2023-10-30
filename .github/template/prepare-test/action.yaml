@@ -1,12 +1,12 @@
-name: prepare-test
+name: Prepare test
 description: Prepares everything for integration test execution
 
 inputs:
   release:
-    description: deploy operator in release mode
+    description: Deploy operator in release mode
     required: false
   github-token:
-    description: the github token
+    description: Github token to use for github access
     required: true
 
 runs:
@@ -15,13 +15,13 @@ runs:
   steps:
 
     # uses an older go version by default, so configure go with newest version
-    - name: setup golang
+    - name: Setup golang
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'
         cache: true
 
-    - name: provision K3D
+    - name: Provision K3D
       shell: bash
       run: make provision-k3d
 
@@ -39,17 +39,17 @@ runs:
         GITHUB_OWNER: "${{ github.repository_owner }}"
         GITHUB_REPO: "telemetry-manager"
 
-    - name: deploy module experimental
+    - name: Deploy module experimental
       if: ${{ inputs.release }}
       shell: bash
       run: make deploy
 
-    - name: deploy module release
+    - name: Deploy module release
       if: ${{ !inputs.release }}
       shell: bash
       run: make deploy-dev
 
-    - name: wait for operator readiness
+    - name: Wait for operator readiness
       shell: bash
       run: kubectl -n kyma-system rollout status deployment telemetry-operator --timeout=90s
 

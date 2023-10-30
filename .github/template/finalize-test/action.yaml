@@ -1,9 +1,9 @@
-name: finalize-test
-description: Finishes integration test execution
+name: Finalize tests
+description: Finalizes integration test execution with cleanup and collecting dumps fors the error scenario
 
 inputs:
   failure:
-    description: are we in failure mode?
+    description: Are we in failure mode?
     required: true
 
 runs:
