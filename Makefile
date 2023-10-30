@@ -54,7 +54,7 @@ lint-manifests:
 lint: golangci-lint lint-manifests
 	go version
 	${GOLANGCI-LINT} version
-	GO111MODULE=on ${GOLANGCI-LINT} run -c ./.golangci.yaml
+	GO111MODULE=on ${GOLANGCI-LINT} run
 
 .PHONY: crd-docs-gen
 crd-docs-gen: tablegen ## Generates CRD spec into docs folder
