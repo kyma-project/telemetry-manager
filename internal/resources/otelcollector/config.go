@@ -21,16 +21,16 @@ type GatewayConfig struct {
 }
 
 func (cfg *GatewayConfig) WithScaling(s GatewayScalingConfig) *GatewayConfig {
-	copy := *cfg
-	copy.Scaling = s
-	return &copy
+	cfgCopy := *cfg
+	cfgCopy.Scaling = s
+	return &cfgCopy
 }
 
 func (cfg *GatewayConfig) WithCollectorConfig(collectorCfgYAML string, collectorEnvVars map[string][]byte) *GatewayConfig {
-	copy := *cfg
-	copy.CollectorConfig = collectorCfgYAML
-	copy.CollectorEnvVars = collectorEnvVars
-	return &copy
+	cfgCopy := *cfg
+	cfgCopy.CollectorConfig = collectorCfgYAML
+	cfgCopy.CollectorEnvVars = collectorEnvVars
+	return &cfgCopy
 }
 
 type DeploymentConfig struct {

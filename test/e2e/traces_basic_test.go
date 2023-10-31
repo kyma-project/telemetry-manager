@@ -81,7 +81,6 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 
 		It("Should have a running trace gateway deployment", Label(operationalTest), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
-
 		})
 
 		It("Should have 2 trace gateway replicas", Label(operationalTest), func() {
@@ -178,14 +177,6 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 		})
 
-		It("Should be able to get trace gateway metrics endpoint", Label(operationalTest), func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.Metrics())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-		})
-
 		It("Should have a running pipeline", Label(operationalTest), func() {
 			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
@@ -193,6 +184,11 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 		It("Should verify end-to-end trace delivery", Label(operationalTest), func() {
 			traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, urls.OTLPPush())
 			verifiers.TracesShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, attrs)
+		})
+
+		It("Should be able to get trace gateway metrics endpoint", Label(operationalTest), func() {
+			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.TraceGatewayMetrics.Namespace, kitkyma.TraceGatewayMetrics.Name, "metrics", ports.Metrics)
+			verifiers.ShouldExposeCollectorMetrics(proxyClient, gatewayMetricsURL)
 		})
 
 		It("Should have a working network policy", Label(operationalTest), func() {
