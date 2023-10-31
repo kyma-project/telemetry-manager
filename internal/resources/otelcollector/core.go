@@ -96,36 +96,6 @@ func makeSecret(name types.NamespacedName, secretData map[string][]byte) *corev1
 	}
 }
 
-func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
-	labels := defaultLabels(cfg.BaseName)
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cfg.OTLPServiceName,
-			Namespace: cfg.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Name:       "grpc-collector",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       ports.OTLPGRPC,
-					TargetPort: intstr.FromInt32(ports.OTLPGRPC),
-				},
-				{
-					Name:       "http-collector",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       ports.OTLPHTTP,
-					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
-				},
-			},
-			Selector:        labels,
-			Type:            corev1.ServiceTypeClusterIP,
-			SessionAffinity: corev1.ServiceAffinityClientIP,
-		},
-	}
-}
-
 func makeMetricsService(name types.NamespacedName) *corev1.Service {
 	labels := defaultLabels(name.Name)
 
@@ -150,30 +120,6 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 			},
 			Selector: labels,
 			Type:     corev1.ServiceTypeClusterIP,
-		},
-	}
-}
-
-func makeOpenCensusService(name types.NamespacedName) *corev1.Service {
-	labels := defaultLabels(name.Name)
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name + "-internal",
-			Namespace: name.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Name:       "http-opencensus",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       ports.OpenCensus,
-					TargetPort: intstr.FromInt32(ports.OpenCensus),
-				},
-			},
-			Selector:        labels,
-			Type:            corev1.ServiceTypeClusterIP,
-			SessionAffinity: corev1.ServiceAffinityClientIP,
 		},
 	}
 }

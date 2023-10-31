@@ -74,7 +74,7 @@ func makeAgentDaemonSet(cfg *AgentConfig, configChecksum string) *appsv1.DaemonS
 	podLabels := maps.Clone(selectorLabels)
 	podLabels["sidecar.istio.io/inject"] = "true"
 
-	annotations := makeChecksumAnnotation(configChecksum)
+	annotations := map[string]string{"checksum/config": configChecksum}
 	maps.Copy(annotations, makeIstioTLSPodAnnotations(configmetricagent.IstioCertPath))
 
 	resources := makeAgentResourceRequirements(cfg)

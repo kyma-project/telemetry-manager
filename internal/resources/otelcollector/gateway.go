@@ -17,6 +17,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayConfig) error {
@@ -86,7 +88,7 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string) *appsv1.De
 	podLabels := maps.Clone(selectorLabels)
 	podLabels["sidecar.istio.io/inject"] = "false"
 
-	annotations := makeChecksumAnnotation(configChecksum)
+	annotations := map[string]string{"checksum/config": configChecksum}
 	resources := makeGatewayResourceRequirements(cfg)
 	affinity := makePodAffinity(selectorLabels)
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
@@ -169,6 +171,62 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 					},
 				},
 			},
+		},
+	}
+}
+
+func makeOpenCensusService(name types.NamespacedName) *corev1.Service {
+	labels := defaultLabels(name.Name)
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name + "-internal",
+			Namespace: name.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "http-opencensus",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       ports.OpenCensus,
+					TargetPort: intstr.FromInt32(ports.OpenCensus),
+				},
+			},
+			Selector:        labels,
+			Type:            corev1.ServiceTypeClusterIP,
+			SessionAffinity: corev1.ServiceAffinityClientIP,
+		},
+	}
+}
+
+func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
+	labels := defaultLabels(cfg.BaseName)
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cfg.OTLPServiceName,
+			Namespace: cfg.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "grpc-collector",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       ports.OTLPGRPC,
+					TargetPort: intstr.FromInt32(ports.OTLPGRPC),
+				},
+				{
+					Name:       "http-collector",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       ports.OTLPHTTP,
+					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
+				},
+			},
+			Selector:        labels,
+			Type:            corev1.ServiceTypeClusterIP,
+			SessionAffinity: corev1.ServiceAffinityClientIP,
 		},
 	}
 }
