@@ -10,12 +10,41 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 func defaultLabels(baseName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name": baseName,
 	}
+}
+
+func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
+	serviceAccount := corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
+		},
+	}
+	return &serviceAccount
+}
+
+func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBinding {
+	clusterRoleBinding := rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
+		},
+		Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     name.Name,
+		},
+	}
+	return &clusterRoleBinding
 }
 
 func makeConfigMap(name types.NamespacedName, collectorConfig string) *corev1.ConfigMap {
@@ -56,13 +85,13 @@ func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
 					Name:       "grpc-collector",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       ports.OTLPGRPC,
-					TargetPort: intstr.FromInt(ports.OTLPGRPC),
+					TargetPort: intstr.FromInt32(ports.OTLPGRPC),
 				},
 				{
 					Name:       "http-collector",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       ports.OTLPHTTP,
-					TargetPort: intstr.FromInt(ports.OTLPHTTP),
+					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
 				},
 			},
 			Selector:        labels,
@@ -91,7 +120,7 @@ func makeMetricsService(config *Config) *corev1.Service {
 					Name:       "http-metrics",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       ports.Metrics,
-					TargetPort: intstr.FromInt(ports.Metrics),
+					TargetPort: intstr.FromInt32(ports.Metrics),
 				},
 			},
 			Selector: labels,
@@ -114,7 +143,7 @@ func makeOpenCensusService(config *Config) *corev1.Service {
 					Name:       "http-opencensus",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       ports.OpenCensus,
-					TargetPort: intstr.FromInt(ports.OpenCensus),
+					TargetPort: intstr.FromInt32(ports.OpenCensus),
 				},
 			},
 			Selector:        labels,
@@ -124,13 +153,13 @@ func makeOpenCensusService(config *Config) *corev1.Service {
 	}
 }
 
-func makeNetworkPolicy(config *Config) *networkingv1.NetworkPolicy {
-	labels := defaultLabels(config.BaseName)
+func makeDenyPprofNetworkPolicy(name types.NamespacedName) *networkingv1.NetworkPolicy {
+	labels := defaultLabels(name.Name)
 
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.BaseName + "-pprof-deny-ingress",
-			Namespace: config.Namespace,
+			Name:      name.Name + "-pprof-deny-ingress",
+			Namespace: name.Namespace,
 			Labels:    labels,
 		},
 		Spec: networkingv1.NetworkPolicySpec{
@@ -171,10 +200,10 @@ func makeNetworkPolicyPorts(ports []intstr.IntOrString) []networkingv1.NetworkPo
 
 func collectorPorts() []intstr.IntOrString {
 	return []intstr.IntOrString{
-		intstr.FromInt(ports.OTLPHTTP),
-		intstr.FromInt(ports.OTLPGRPC),
-		intstr.FromInt(ports.OpenCensus),
-		intstr.FromInt(ports.Metrics),
-		intstr.FromInt(ports.HealthCheck),
+		intstr.FromInt32(ports.OTLPHTTP),
+		intstr.FromInt32(ports.OTLPGRPC),
+		intstr.FromInt32(ports.OpenCensus),
+		intstr.FromInt32(ports.Metrics),
+		intstr.FromInt32(ports.HealthCheck),
 	}
 }

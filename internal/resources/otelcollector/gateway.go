@@ -17,22 +17,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayConfig) error {
-	if err := applyCommonResources(ctx, c, cfg); err != nil {
-		return fmt.Errorf("failed to apply common otel collector resource: %w", err)
-	}
-
-	return nil
-}
-
-func applyCommonResources(ctx context.Context, c client.Client, cfg *GatewayConfig) error {
 	var err error
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
-	serviceAccount := commonresources.MakeServiceAccount(name)
+	serviceAccount := makeServiceAccount(name)
 	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, c, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create serviceaccount: %w", err)
 	}
@@ -42,7 +33,7 @@ func applyCommonResources(ctx context.Context, c client.Client, cfg *GatewayConf
 		return fmt.Errorf("failed to create clusterrole: %w", err)
 	}
 
-	clusterRoleBinding := commonresources.MakeClusterRoleBinding(name)
+	clusterRoleBinding := makeClusterRoleBinding(name)
 	if err = kubernetes.CreateOrUpdateClusterRoleBinding(ctx, c, clusterRoleBinding); err != nil {
 		return fmt.Errorf("failed to create clusterrolebinding: %w", err)
 	}
@@ -73,7 +64,7 @@ func applyCommonResources(ctx context.Context, c client.Client, cfg *GatewayConf
 		return fmt.Errorf("failed to create otel collector metrics service: %w", err)
 	}
 
-	networkPolicy := makeNetworkPolicy(&cfg.Config)
+	networkPolicy := makeDenyPprofNetworkPolicy(name)
 	if err = kubernetes.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create otel collector network policy: %w", err)
 	}
@@ -93,6 +84,7 @@ func makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{

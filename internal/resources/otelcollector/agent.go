@@ -19,7 +19,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	configmetricagent "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 const istioCertVolumeName = "istio-certs"
@@ -35,7 +34,7 @@ func ApplyAgentResources(ctx context.Context, c client.Client, cfg *AgentConfig)
 func applyAgentResources(ctx context.Context, c client.Client, cfg *AgentConfig) error {
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
-	serviceAccount := commonresources.MakeServiceAccount(name)
+	serviceAccount := makeServiceAccount(name)
 	if err := kubernetes.CreateOrUpdateServiceAccount(ctx, c, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create otel collector service account: %w", err)
 	}
@@ -45,7 +44,7 @@ func applyAgentResources(ctx context.Context, c client.Client, cfg *AgentConfig)
 		return fmt.Errorf("failed to create otel collector cluster role: %w", err)
 	}
 
-	clusterRoleBinding := commonresources.MakeClusterRoleBinding(name)
+	clusterRoleBinding := makeClusterRoleBinding(name)
 	if err := kubernetes.CreateOrUpdateClusterRoleBinding(ctx, c, clusterRoleBinding); err != nil {
 		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
 	}
@@ -66,7 +65,7 @@ func applyAgentResources(ctx context.Context, c client.Client, cfg *AgentConfig)
 		return fmt.Errorf("failed to create otel collector metrics service: %w", err)
 	}
 
-	networkPolicy := makeNetworkPolicy(&cfg.Config)
+	networkPolicy := makeDenyPprofNetworkPolicy(name)
 	if err := kubernetes.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create otel collector network policy: %w", err)
 	}
@@ -79,6 +78,7 @@ func makeAgentClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{

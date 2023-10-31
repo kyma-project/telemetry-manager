@@ -1,193 +1,296 @@
 package otelcollector
 
-//var (
-//	config = gateway.Config{
-//		BaseName:  "collector",
-//		Namespace: "telemetry-system",
-//		Service: gateway.ServiceConfig{
-//			OTLPServiceName: "collector-traces",
-//		},
-//		Deployment: gateway.DeploymentConfig{
-//			BaseCPULimit:         resource.MustParse(".25"),
-//			DynamicCPULimit:      resource.MustParse("0"),
-//			BaseMemoryLimit:      resource.MustParse("1Gi"),
-//			DynamicMemoryLimit:   resource.MustParse("1Gi"),
-//			BaseCPURequest:       resource.MustParse(".1"),
-//			DynamicCPURequest:    resource.MustParse("0"),
-//			BaseMemoryRequest:    resource.MustParse("100Mi"),
-//			DynamicMemoryRequest: resource.MustParse("0"),
-//		},
-//	}
-//)
-//
-//func TestMakeSecret(t *testing.T) {
-//	secretData := map[string][]byte{
-//		"BASIC_AUTH_HEADER": []byte("basicAuthHeader"),
-//		"OTLP_ENDPOINT":     []byte("otlpEndpoint"),
-//	}
-//	secret := gateway.MakeSecret(config, secretData)
-//
-//	require.NotNil(t, secret)
-//	require.Equal(t, secret.Name, config.BaseName)
-//	require.Equal(t, secret.Namespace, config.Namespace)
-//
-//	require.Equal(t, "otlpEndpoint", string(secret.Data["OTLP_ENDPOINT"]), "Secret must contain Otlp endpoint")
-//	require.Equal(t, "basicAuthHeader", string(secret.Data["BASIC_AUTH_HEADER"]), "Secret must contain basic auth header")
-//}
-//
-//func TestMakeClusterRole(t *testing.T) {
-//	name := types.NamespacedName{Name: "telemetry-metric-gateway", Namespace: "telemetry-system"}
-//	clusterRole := gateway.MakeClusterRole(name)
-//	expectedRules := []rbacv1.PolicyRule{
-//		{
-//			APIGroups: []string{""},
-//			Resources: []string{"namespaces", "pods"},
-//			Verbs:     []string{"get", "list", "watch"},
-//		},
-//		{
-//			APIGroups: []string{"apps"},
-//			Resources: []string{"replicasets"},
-//			Verbs:     []string{"get", "list", "watch"},
-//		},
-//	}
-//
-//	require.NotNil(t, clusterRole)
-//	require.Equal(t, clusterRole.Name, name.Name)
-//	require.Equal(t, clusterRole.Rules, expectedRules)
-//}
-//
-//func TestMakeDeployment(t *testing.T) {
-//	deployment := gateway.MakeDeployment(config, "123", 1, "MY_POD_IP", "MY_NODE_NAME")
-//
-//	require.NotNil(t, deployment)
-//	require.Equal(t, deployment.Name, config.BaseName)
-//	require.Equal(t, deployment.Namespace, config.Namespace)
-//	require.Equal(t, *deployment.Spec.Replicas, int32(2))
-//
-//	require.Equal(t, config.BaseName, deployment.Spec.Template.ObjectMeta.Labels["app.kubernetes.io/name"])
-//	require.Equal(t, "false", deployment.Spec.Template.ObjectMeta.Labels["sidecar.istio.io/inject"])
-//	require.Len(t, deployment.Spec.Selector.MatchLabels, 1)
-//	require.Equal(t, config.BaseName, deployment.Spec.Selector.MatchLabels["app.kubernetes.io/name"])
-//	require.Equal(t, "123", deployment.Spec.Template.ObjectMeta.Annotations["checksum/config"])
-//	require.NotEmpty(t, deployment.Spec.Template.Spec.Containers[0].EnvFrom)
-//
-//	resources := deployment.Spec.Template.Spec.Containers[0].Resources
-//	require.Equal(t, config.Deployment.BaseCPURequest, *resources.Requests.Cpu(), "cpu requests should be defined")
-//	require.Equal(t, config.Deployment.BaseMemoryRequest.Value(), resources.Requests.Memory().Value(), "memory requests should be defined")
-//	require.Equal(t, config.Deployment.BaseCPULimit, *resources.Limits.Cpu(), "cpu limit should be defined")
-//	require.True(t, resource.MustParse("2Gi").Equal(*resources.Limits.Memory()), "memory limit should be defined")
-//
-//	require.NotNil(t, deployment.Spec.Template.Spec.Containers[0].LivenessProbe, "liveness probe must be defined")
-//	require.NotNil(t, deployment.Spec.Template.Spec.Containers[0].ReadinessProbe, "readiness probe must be defined")
-//
-//	podSecurityContext := deployment.Spec.Template.Spec.SecurityContext
-//	require.NotNil(t, podSecurityContext, "pod security context must be defined")
-//	require.NotZero(t, podSecurityContext.RunAsUser, "must run as non-root")
-//	require.True(t, *podSecurityContext.RunAsNonRoot, "must run as non-root")
-//
-//	containerSecurityContext := deployment.Spec.Template.Spec.Containers[0].SecurityContext
-//	require.NotNil(t, containerSecurityContext, "container security context must be defined")
-//	require.NotZero(t, containerSecurityContext.RunAsUser, "must run as non-root")
-//	require.True(t, *containerSecurityContext.RunAsNonRoot, "must run as non-root")
-//	require.False(t, *containerSecurityContext.Privileged, "must not be privileged")
-//	require.False(t, *containerSecurityContext.AllowPrivilegeEscalation, "must not escalate to privileged")
-//	require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
-//
-//	envVars := deployment.Spec.Template.Spec.Containers[0].Env
-//	require.Len(t, envVars, 2)
-//	require.Equal(t, envVars[0].Name, "MY_POD_IP")
-//	require.Equal(t, envVars[1].Name, "MY_NODE_NAME")
-//	require.Equal(t, envVars[0].ValueFrom.FieldRef.FieldPath, "status.podIP")
-//	require.Equal(t, envVars[1].ValueFrom.FieldRef.FieldPath, "spec.nodeName")
-//}
-//
-//func TestMakeOTLPService(t *testing.T) {
-//	service := gateway.MakeOTLPService(config)
-//
-//	require.NotNil(t, service)
-//	require.Equal(t, service.Name, config.Service.OTLPServiceName)
-//	require.Equal(t, service.Namespace, config.Namespace)
-//
-//	expectedLabels := map[string]string{"app.kubernetes.io/name": config.BaseName}
-//	require.Equal(t, service.Spec.Selector, expectedLabels)
-//
-//	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
-//	require.NotEmpty(t, service.Spec.Ports)
-//	require.Len(t, service.Spec.Ports, 2)
-//	require.Equal(t, service.Spec.SessionAffinity, corev1.ServiceAffinityClientIP)
-//}
-//
-//func TestMakeMetricsService(t *testing.T) {
-//	service := gateway.MakeMetricsService(config)
-//
-//	require.NotNil(t, service)
-//	require.Equal(t, service.Name, config.BaseName+"-metrics")
-//	require.Equal(t, service.Namespace, config.Namespace)
-//
-//	expectedLabels := map[string]string{"app.kubernetes.io/name": config.BaseName}
-//	require.Equal(t, service.Spec.Selector, expectedLabels)
-//
-//	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
-//	require.Len(t, service.Spec.Ports, 1)
-//
-//	require.Contains(t, service.Annotations, "prometheus.io/scrape")
-//	require.Contains(t, service.Annotations, "prometheus.io/port")
-//}
-//
-//func TestMakeOpenCensusService(t *testing.T) {
-//	service := gateway.MakeOpenCensusService(config)
-//
-//	require.NotNil(t, service)
-//	require.Equal(t, service.Name, config.BaseName+"-internal")
-//	require.Equal(t, service.Namespace, config.Namespace)
-//
-//	expectedLabels := map[string]string{"app.kubernetes.io/name": config.BaseName}
-//	require.Equal(t, service.Spec.Selector, expectedLabels)
-//
-//	require.Equal(t, service.Spec.Type, corev1.ServiceTypeClusterIP)
-//	require.NotEmpty(t, service.Spec.Ports)
-//	require.Len(t, service.Spec.Ports, 1)
-//	require.Equal(t, service.Spec.SessionAffinity, corev1.ServiceAffinityClientIP)
-//}
-//
-//func TestMakeResourceRequirements(t *testing.T) {
-//	requirements := gateway.makeResourceRequirements(config, 1)
-//	require.Equal(t, config.Deployment.BaseCPURequest, *requirements.Requests.Cpu())
-//	require.Equal(t, config.Deployment.BaseMemoryRequest.Value(), requirements.Requests.Memory().Value())
-//	require.Equal(t, config.Deployment.BaseCPULimit.Value(), requirements.Limits.Cpu().Value())
-//	require.True(t, resource.MustParse("2Gi").Equal(*requirements.Limits.Memory()))
-//}
-//
-//func TestMultiPipelineMakeResourceRequirements(t *testing.T) {
-//	requirements := gateway.makeResourceRequirements(config, 3)
-//	require.Equal(t, config.Deployment.BaseCPURequest, *requirements.Requests.Cpu())
-//	require.Equal(t, config.Deployment.BaseMemoryRequest.Value(), requirements.Requests.Memory().Value())
-//	require.Equal(t, config.Deployment.BaseCPULimit.Value(), requirements.Limits.Cpu().Value())
-//	require.True(t, resource.MustParse("4Gi").Equal(*requirements.Limits.Memory()))
-//}
-//
-//func TestMakeNetworkPolicy(t *testing.T) {
-//	testPorts := []intstr.IntOrString{
-//		{
-//			Type:   0,
-//			IntVal: 5000,
-//			StrVal: "",
-//		},
-//	}
-//	networkPolicy := gateway.MakeNetworkPolicy(config, testPorts)
-//
-//	require.NotNil(t, networkPolicy)
-//	require.Equal(t, networkPolicy.Name, config.BaseName+"-pprof-deny-ingress")
-//	require.Equal(t, networkPolicy.Namespace, config.Namespace)
-//
-//	expectedLabels := map[string]string{"app.kubernetes.io/name": config.BaseName}
-//	require.Equal(t, networkPolicy.Spec.PodSelector.MatchLabels, expectedLabels)
-//
-//	require.Len(t, networkPolicy.Spec.PolicyTypes, 1)
-//	require.Equal(t, networkPolicy.Spec.PolicyTypes[0], networkingv1.PolicyTypeIngress)
-//	require.Len(t, networkPolicy.Spec.Ingress, 1)
-//	require.Len(t, networkPolicy.Spec.Ingress[0].From, 1)
-//	require.Equal(t, networkPolicy.Spec.Ingress[0].From[0].IPBlock.CIDR, "0.0.0.0/0")
-//	require.Len(t, networkPolicy.Spec.Ingress[0].Ports, 1)
-//	require.Equal(t, networkPolicy.Spec.Ingress[0].Ports[0].Port.IntVal, int32(5000))
-//}
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+)
+
+func TestApplyGatewayResources(t *testing.T) {
+	ctx := context.Background()
+	client := fake.NewClientBuilder().Build()
+	namespace := "my-namespace"
+	name := "my-application"
+	cfg := "dummy otel collector config"
+	envVars := map[string][]byte{
+		"BASIC_AUTH_HEADER": []byte("basicAuthHeader"),
+		"OTLP_ENDPOINT":     []byte("otlpEndpoint"),
+	}
+	otlpServiceName := "telemetry"
+	var replicas int32 = 3
+	baseCPURequest := resource.MustParse("150m")
+	baseCPULimit := resource.MustParse("300m")
+	baseMemoryRequest := resource.MustParse("150m")
+	baseMemoryLimit := resource.MustParse("300m")
+
+	gatewayConfig := &GatewayConfig{
+		Config: Config{
+			BaseName:         name,
+			Namespace:        namespace,
+			CollectorConfig:  cfg,
+			CollectorEnvVars: envVars,
+		},
+		OTLPServiceName:      otlpServiceName,
+		CanReceiveOpenCensus: true,
+		Scaling: GatewayScalingConfig{
+			Replicas: replicas,
+		},
+		Deployment: DeploymentConfig{
+			BaseCPURequest:    baseCPURequest,
+			BaseCPULimit:      baseCPULimit,
+			BaseMemoryRequest: baseMemoryRequest,
+			BaseMemoryLimit:   baseMemoryLimit,
+		},
+	}
+
+	err := ApplyGatewayResources(ctx, client, gatewayConfig)
+	require.NoError(t, err)
+
+	t.Run("should create collector config configmap", func(t *testing.T) {
+		var cms corev1.ConfigMapList
+		require.NoError(t, client.List(ctx, &cms))
+		require.Len(t, cms.Items, 1)
+
+		cm := cms.Items[0]
+		require.Equal(t, name, cm.Name)
+		require.Equal(t, namespace, cm.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, cm.Labels)
+		require.Equal(t, cfg, cm.Data["relay.conf"])
+	})
+
+	t.Run("should create env var secrets", func(t *testing.T) {
+		var secrets corev1.SecretList
+		require.NoError(t, client.List(ctx, &secrets))
+		require.Len(t, secrets.Items, 1)
+
+		secret := secrets.Items[0]
+		require.Equal(t, name, secret.Name)
+		require.Equal(t, namespace, secret.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, secret.Labels)
+		require.Equal(t, "otlpEndpoint", string(secret.Data["OTLP_ENDPOINT"]), "Secret must contain Otlp endpoint")
+		require.Equal(t, "basicAuthHeader", string(secret.Data["BASIC_AUTH_HEADER"]), "Secret must contain basic auth header")
+	})
+
+	t.Run("should create a deployment", func(t *testing.T) {
+		var deps appsv1.DeploymentList
+		require.NoError(t, client.List(ctx, &deps))
+		require.Len(t, deps.Items, 1)
+
+		dep := deps.Items[0]
+		require.Equal(t, name, dep.Name)
+		require.Equal(t, namespace, dep.Namespace)
+		require.Equal(t, replicas, *dep.Spec.Replicas)
+
+		//labels
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, dep.Labels, "must have expected daemonset labels")
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, dep.Spec.Selector.MatchLabels, "must have expected daemonset selector labels")
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name":  name,
+			"sidecar.istio.io/inject": "false",
+		}, dep.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
+
+		//annotations
+		podAnnotations := dep.Spec.Template.ObjectMeta.Annotations
+		require.NotEmpty(t, podAnnotations["checksum/config"])
+
+		//collector container
+		require.Len(t, dep.Spec.Template.Spec.Containers, 1)
+		container := dep.Spec.Template.Spec.Containers[0]
+
+		require.NotNil(t, container.LivenessProbe, "liveness probe must be defined")
+		require.NotNil(t, container.ReadinessProbe, "readiness probe must be defined")
+		resources := container.Resources
+		require.Equal(t, baseCPURequest, *resources.Requests.Cpu(), "cpu requests should be defined")
+		require.Equal(t, baseMemoryRequest, *resources.Requests.Memory(), "memory requests should be defined")
+		require.Equal(t, baseCPULimit, *resources.Limits.Cpu(), "cpu limit should be defined")
+		require.Equal(t, baseMemoryLimit, *resources.Limits.Memory(), "memory limit should be defined")
+
+		envVars := container.Env
+		require.Len(t, envVars, 2)
+		require.Equal(t, envVars[0].Name, "MY_POD_IP")
+		require.Equal(t, envVars[1].Name, "MY_NODE_NAME")
+		require.Equal(t, envVars[0].ValueFrom.FieldRef.FieldPath, "status.podIP")
+		require.Equal(t, envVars[1].ValueFrom.FieldRef.FieldPath, "spec.nodeName")
+
+		//security contexts
+		podSecurityContext := dep.Spec.Template.Spec.SecurityContext
+		require.NotNil(t, podSecurityContext, "pod security context must be defined")
+		require.NotZero(t, podSecurityContext.RunAsUser, "must run as non-root")
+		require.True(t, *podSecurityContext.RunAsNonRoot, "must run as non-root")
+
+		containerSecurityContext := container.SecurityContext
+		require.NotNil(t, containerSecurityContext, "container security context must be defined")
+		require.NotZero(t, containerSecurityContext.RunAsUser, "must run as non-root")
+		require.True(t, *containerSecurityContext.RunAsNonRoot, "must run as non-root")
+		require.False(t, *containerSecurityContext.Privileged, "must not be privileged")
+		require.False(t, *containerSecurityContext.AllowPrivilegeEscalation, "must not escalate to privileged")
+		require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
+	})
+
+	t.Run("should create clusterrole", func(t *testing.T) {
+		var crs rbacv1.ClusterRoleList
+		require.NoError(t, client.List(ctx, &crs))
+		require.Len(t, crs.Items, 1)
+
+		cr := crs.Items[0]
+		expectedRules := []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces", "pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+		}
+
+		require.NotNil(t, cr)
+		require.Equal(t, cr.Name, name)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, cr.Labels)
+		require.Equal(t, cr.Rules, expectedRules)
+	})
+
+	t.Run("should create clusterrolebinding", func(t *testing.T) {
+		var crbs rbacv1.ClusterRoleBindingList
+		require.NoError(t, client.List(ctx, &crbs))
+		require.Len(t, crbs.Items, 1)
+
+		crb := crbs.Items[0]
+		require.NotNil(t, crb)
+		require.Equal(t, name, crb.Name)
+		require.Equal(t, namespace, crb.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, crb.Labels)
+		require.Equal(t, name, crb.RoleRef.Name)
+	})
+
+	t.Run("should create serviceaccount", func(t *testing.T) {
+		var sas corev1.ServiceAccountList
+		require.NoError(t, client.List(ctx, &sas))
+		require.Len(t, sas.Items, 1)
+
+		sa := sas.Items[0]
+		require.NotNil(t, sa)
+		require.Equal(t, name, sa.Name)
+		require.Equal(t, namespace, sa.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, sa.Labels)
+	})
+
+	t.Run("should create networkpolicy", func(t *testing.T) {
+		var nps networkingv1.NetworkPolicyList
+		require.NoError(t, client.List(ctx, &nps))
+		require.Len(t, nps.Items, 1)
+
+		np := nps.Items[0]
+		require.NotNil(t, np)
+		require.Equal(t, name+"-pprof-deny-ingress", np.Name)
+		require.Equal(t, namespace, np.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, np.Labels)
+		require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress}, np.Spec.PolicyTypes)
+		require.Equal(t, np.Spec.Ingress[0].From[0].IPBlock.CIDR, "0.0.0.0/0")
+		require.Len(t, np.Spec.Ingress[0].Ports, 5)
+	})
+
+	t.Run("should create metrics service", func(t *testing.T) {
+		var svc corev1.Service
+		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name + "-metrics"}, &svc))
+
+		require.NotNil(t, svc)
+		require.Equal(t, name+"-metrics", svc.Name)
+		require.Equal(t, namespace, svc.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, svc.Labels)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, svc.Spec.Selector)
+		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
+		require.Len(t, svc.Spec.Ports, 1)
+		require.Equal(t, corev1.ServicePort{
+			Name:       "http-metrics",
+			Protocol:   corev1.ProtocolTCP,
+			Port:       8888,
+			TargetPort: intstr.FromInt32(8888),
+		}, svc.Spec.Ports[0])
+	})
+
+	t.Run("should create otlp service", func(t *testing.T) {
+		var svc corev1.Service
+		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: otlpServiceName}, &svc))
+
+		require.NotNil(t, svc)
+		require.Equal(t, otlpServiceName, svc.Name)
+		require.Equal(t, namespace, svc.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, svc.Labels)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, svc.Spec.Selector)
+		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
+		require.Equal(t, corev1.ServiceAffinityClientIP, svc.Spec.SessionAffinity)
+		require.Len(t, svc.Spec.Ports, 2)
+		require.Equal(t, corev1.ServicePort{
+			Name:       "grpc-collector",
+			Protocol:   corev1.ProtocolTCP,
+			Port:       4317,
+			TargetPort: intstr.FromInt32(4317),
+		}, svc.Spec.Ports[0])
+		require.Equal(t, corev1.ServicePort{
+			Name:       "http-collector",
+			Protocol:   corev1.ProtocolTCP,
+			Port:       4318,
+			TargetPort: intstr.FromInt32(4318),
+		}, svc.Spec.Ports[1])
+	})
+
+	t.Run("should create open census service", func(t *testing.T) {
+		var svc corev1.Service
+		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name + "-internal"}, &svc))
+
+		require.NotNil(t, svc)
+		require.Equal(t, name+"-internal", svc.Name)
+		require.Equal(t, namespace, svc.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, svc.Labels)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, svc.Spec.Selector)
+		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
+		require.Equal(t, corev1.ServiceAffinityClientIP, svc.Spec.SessionAffinity)
+		require.Len(t, svc.Spec.Ports, 1)
+		require.Equal(t, corev1.ServicePort{
+			Name:       "http-opencensus",
+			Protocol:   corev1.ProtocolTCP,
+			Port:       55678,
+			TargetPort: intstr.FromInt32(55678),
+		}, svc.Spec.Ports[0])
+	})
+}
