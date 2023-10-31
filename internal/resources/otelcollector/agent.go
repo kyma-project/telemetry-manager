@@ -24,29 +24,14 @@ import (
 const istioCertVolumeName = "istio-certs"
 
 func ApplyAgentResources(ctx context.Context, c client.Client, cfg *AgentConfig) error {
-	if err := applyAgentResources(ctx, c, cfg); err != nil {
-		return fmt.Errorf("failed to apply common otel collector resource: %w", err)
-	}
-
-	return nil
-}
-
-func applyAgentResources(ctx context.Context, c client.Client, cfg *AgentConfig) error {
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
-	serviceAccount := makeServiceAccount(name)
-	if err := kubernetes.CreateOrUpdateServiceAccount(ctx, c, serviceAccount); err != nil {
-		return fmt.Errorf("failed to create otel collector service account: %w", err)
+	if err := applyCommonResources(ctx, c, name); err != nil {
+		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
-	clusterRole := makeAgentClusterRole(name)
-	if err := kubernetes.CreateOrUpdateClusterRole(ctx, c, clusterRole); err != nil {
-		return fmt.Errorf("failed to create otel collector cluster role: %w", err)
-	}
-
-	clusterRoleBinding := makeClusterRoleBinding(name)
-	if err := kubernetes.CreateOrUpdateClusterRoleBinding(ctx, c, clusterRoleBinding); err != nil {
-		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
+	if err := kubernetes.CreateOrUpdateClusterRole(ctx, c, makeAgentClusterRole(name)); err != nil {
+		return fmt.Errorf("failed to create cluster role: %w", err)
 	}
 
 	configMap := makeConfigMap(name, cfg.CollectorConfig)
@@ -55,19 +40,8 @@ func applyAgentResources(ctx context.Context, c client.Client, cfg *AgentConfig)
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
-	daemonSet := makeAgentDaemonSet(cfg, configChecksum)
-	if err := kubernetes.CreateOrUpdateDaemonSet(ctx, c, daemonSet); err != nil {
-		return fmt.Errorf("failed to create deployment: %w", err)
-	}
-
-	metricsService := makeMetricsService(&cfg.Config)
-	if err := kubernetes.CreateOrUpdateService(ctx, c, metricsService); err != nil {
-		return fmt.Errorf("failed to create otel collector metrics service: %w", err)
-	}
-
-	networkPolicy := makeDenyPprofNetworkPolicy(name)
-	if err := kubernetes.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
-		return fmt.Errorf("failed to create otel collector network policy: %w", err)
+	if err := kubernetes.CreateOrUpdateDaemonSet(ctx, c, makeAgentDaemonSet(cfg, configChecksum)); err != nil {
+		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 
 	return nil

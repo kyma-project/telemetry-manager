@@ -9,9 +9,34 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"context"
+	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// applyCommonResources applies resources to gateway and agent deployment node
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName) error {
+	if err := kubernetes.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
+		return fmt.Errorf("failed to create service account: %w", err)
+	}
+
+	if err := kubernetes.CreateOrUpdateClusterRoleBinding(ctx, c, makeClusterRoleBinding(name)); err != nil {
+		return fmt.Errorf("failed to create cluster role binding: %w", err)
+	}
+
+	if err := kubernetes.CreateOrUpdateService(ctx, c, makeMetricsService(name)); err != nil {
+		return fmt.Errorf("failed to create metrics service: %w", err)
+	}
+
+	if err := kubernetes.CreateOrUpdateNetworkPolicy(ctx, c, makeDenyPprofNetworkPolicy(name)); err != nil {
+		return fmt.Errorf("failed to create deny pprof network policy: %w", err)
+	}
+
+	return nil
+}
 
 func defaultLabels(baseName string) map[string]string {
 	return map[string]string{
@@ -101,13 +126,13 @@ func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
 	}
 }
 
-func makeMetricsService(config *Config) *corev1.Service {
-	labels := defaultLabels(config.BaseName)
+func makeMetricsService(name types.NamespacedName) *corev1.Service {
+	labels := defaultLabels(name.Name)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.BaseName + "-metrics",
-			Namespace: config.Namespace,
+			Name:      name.Name + "-metrics",
+			Namespace: name.Namespace,
 			Labels:    labels,
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
@@ -129,12 +154,12 @@ func makeMetricsService(config *Config) *corev1.Service {
 	}
 }
 
-func makeOpenCensusService(config *Config) *corev1.Service {
-	labels := defaultLabels(config.BaseName)
+func makeOpenCensusService(name types.NamespacedName) *corev1.Service {
+	labels := defaultLabels(name.Name)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.BaseName + "-internal",
-			Namespace: config.Namespace,
+			Name:      name.Name + "-internal",
+			Namespace: name.Namespace,
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{

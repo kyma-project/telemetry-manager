@@ -20,58 +20,37 @@ import (
 )
 
 func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayConfig) error {
-	var err error
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
-	serviceAccount := makeServiceAccount(name)
-	if err = kubernetes.CreateOrUpdateServiceAccount(ctx, c, serviceAccount); err != nil {
-		return fmt.Errorf("failed to create serviceaccount: %w", err)
+	if err := applyCommonResources(ctx, c, name); err != nil {
+		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
-	clusterRole := makeGatewayClusterRole(name)
-	if err = kubernetes.CreateOrUpdateClusterRole(ctx, c, clusterRole); err != nil {
+	if err := kubernetes.CreateOrUpdateClusterRole(ctx, c, makeGatewayClusterRole(name)); err != nil {
 		return fmt.Errorf("failed to create clusterrole: %w", err)
 	}
 
-	clusterRoleBinding := makeClusterRoleBinding(name)
-	if err = kubernetes.CreateOrUpdateClusterRoleBinding(ctx, c, clusterRoleBinding); err != nil {
-		return fmt.Errorf("failed to create clusterrolebinding: %w", err)
-	}
-
 	secret := makeSecret(name, cfg.CollectorEnvVars)
-	if err = kubernetes.CreateOrUpdateSecret(ctx, c, secret); err != nil {
+	if err := kubernetes.CreateOrUpdateSecret(ctx, c, secret); err != nil {
 		return fmt.Errorf("failed to create env secret: %w", err)
 	}
 
 	configMap := makeConfigMap(name, cfg.CollectorConfig)
-	if err = kubernetes.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
+	if err := kubernetes.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	deployment := makeGatewayDeployment(cfg, configChecksum)
-	if err = kubernetes.CreateOrUpdateDeployment(ctx, c, deployment); err != nil {
+	if err := kubernetes.CreateOrUpdateDeployment(ctx, c, makeGatewayDeployment(cfg, configChecksum)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
 
-	otlpService := makeOTLPService(cfg)
-	if err = kubernetes.CreateOrUpdateService(ctx, c, otlpService); err != nil {
-		return fmt.Errorf("failed to create otel collector otlp service: %w", err)
-	}
-
-	metricsService := makeMetricsService(&cfg.Config)
-	if err = kubernetes.CreateOrUpdateService(ctx, c, metricsService); err != nil {
-		return fmt.Errorf("failed to create otel collector metrics service: %w", err)
-	}
-
-	networkPolicy := makeDenyPprofNetworkPolicy(name)
-	if err = kubernetes.CreateOrUpdateNetworkPolicy(ctx, c, networkPolicy); err != nil {
-		return fmt.Errorf("failed to create otel collector network policy: %w", err)
+	if err := kubernetes.CreateOrUpdateService(ctx, c, makeOTLPService(cfg)); err != nil {
+		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
 	if cfg.CanReceiveOpenCensus {
-		openCensusService := makeOpenCensusService(&cfg.Config)
-		if err = kubernetes.CreateOrUpdateService(ctx, c, openCensusService); err != nil {
+		if err := kubernetes.CreateOrUpdateService(ctx, c, makeOpenCensusService(name)); err != nil {
 			return fmt.Errorf("failed to create otel collector metrics service: %w", err)
 		}
 	}
