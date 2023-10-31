@@ -18,5 +18,8 @@ func ShouldExposeCollectorMetrics(proxyClient *apiserver.ProxyClient, metricsURL
 
 		//Take otelcol_process_uptime metric as an example
 		g.Expect(resp).To(gomega.HaveHTTPBody(prometheus.ContainPrometheusMetric("otelcol_process_uptime")))
+
+		err = resp.Body.Close()
+		g.Expect(err).NotTo(gomega.HaveOccurred())
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(gomega.Succeed())
 }
