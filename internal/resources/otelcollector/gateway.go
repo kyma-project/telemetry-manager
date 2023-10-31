@@ -24,12 +24,8 @@ import (
 func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayConfig) error {
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
-	if err := applyCommonResources(ctx, c, name); err != nil {
+	if err := applyCommonResources(ctx, c, name, makeGatewayClusterRole(name)); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
-	}
-
-	if err := kubernetes.CreateOrUpdateClusterRole(ctx, c, makeGatewayClusterRole(name)); err != nil {
-		return fmt.Errorf("failed to create clusterrole: %w", err)
 	}
 
 	secret := makeSecret(name, cfg.CollectorEnvVars)

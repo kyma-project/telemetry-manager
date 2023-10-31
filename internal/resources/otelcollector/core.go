@@ -18,9 +18,14 @@ import (
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName) error {
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, clusterRole *rbacv1.ClusterRole) error {
+	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
 	if err := kubernetes.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
+	}
+
+	if err := kubernetes.CreateOrUpdateClusterRole(ctx, c, clusterRole); err != nil {
+		return fmt.Errorf("failed to create cluster role: %w", err)
 	}
 
 	if err := kubernetes.CreateOrUpdateClusterRoleBinding(ctx, c, makeClusterRoleBinding(name)); err != nil {

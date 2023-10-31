@@ -26,12 +26,8 @@ const istioCertVolumeName = "istio-certs"
 func ApplyAgentResources(ctx context.Context, c client.Client, cfg *AgentConfig) error {
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
-	if err := applyCommonResources(ctx, c, name); err != nil {
+	if err := applyCommonResources(ctx, c, name, makeAgentClusterRole(name)); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
-	}
-
-	if err := kubernetes.CreateOrUpdateClusterRole(ctx, c, makeAgentClusterRole(name)); err != nil {
-		return fmt.Errorf("failed to create cluster role: %w", err)
 	}
 
 	configMap := makeConfigMap(name, cfg.CollectorConfig)
