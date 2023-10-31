@@ -163,7 +163,11 @@ upgrade-test: ginkgo k3d ## Provision k3d cluster and run upgrade tests.
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/upgrade-test.sh
 
 .PHONY: e2e-deploy-module
-e2e-deploy-module: kyma kustomize ## Provision a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
+e2e-deploy-module: kyma kustomize provision-k3d provision-test-env ## Provision a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
+	make run-e2e-deploy-module
+
+.PHONY: run-e2e-deploy-module
+run-e2e-deploy-module: kyma kustomize ## Deploy module with the lifecycle manager.
 	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} ./hack/deploy-module.sh
 
 .PHONY:
