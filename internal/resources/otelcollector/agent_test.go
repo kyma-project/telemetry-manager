@@ -17,7 +17,7 @@ func TestApplyAgentResources(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientBuilder().Build()
 	namespace := "my-namespace"
-	name := "my-application"
+	name := "my-agent"
 	cfg := "dummy otel collector config"
 
 	agentConfig := &AgentConfig{
@@ -193,6 +193,10 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
 		}, svc.Spec.Selector)
+		require.Equal(t, map[string]string{
+			"prometheus.io/port":   "8888",
+			"prometheus.io/scrape": "true",
+		}, svc.Annotations)
 		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
 		require.Len(t, svc.Spec.Ports, 1)
 		require.Equal(t, corev1.ServicePort{

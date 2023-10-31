@@ -19,7 +19,7 @@ func TestApplyGatewayResources(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientBuilder().Build()
 	namespace := "my-namespace"
-	name := "my-application"
+	name := "my-gateway"
 	cfg := "dummy otel collector config"
 	envVars := map[string][]byte{
 		"BASIC_AUTH_HEADER": []byte("basicAuthHeader"),
@@ -80,8 +80,9 @@ func TestApplyGatewayResources(t *testing.T) {
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
 		}, secret.Labels)
-		require.Equal(t, "otlpEndpoint", string(secret.Data["OTLP_ENDPOINT"]), "Secret must contain Otlp endpoint")
-		require.Equal(t, "basicAuthHeader", string(secret.Data["BASIC_AUTH_HEADER"]), "Secret must contain basic auth header")
+		for k, v := range envVars {
+			require.Equal(t, v, secret.Data[k])
+		}
 	})
 
 	t.Run("should create a deployment", func(t *testing.T) {
@@ -230,6 +231,10 @@ func TestApplyGatewayResources(t *testing.T) {
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
 		}, svc.Spec.Selector)
+		require.Equal(t, map[string]string{
+			"prometheus.io/port":   "8888",
+			"prometheus.io/scrape": "true",
+		}, svc.Annotations)
 		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
 		require.Len(t, svc.Spec.Ports, 1)
 		require.Equal(t, corev1.ServicePort{
