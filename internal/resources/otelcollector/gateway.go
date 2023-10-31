@@ -53,7 +53,7 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 
 	if cfg.CanReceiveOpenCensus {
 		if err := kubernetes.CreateOrUpdateService(ctx, c, makeOpenCensusService(name)); err != nil {
-			return fmt.Errorf("failed to create otel collector metrics service: %w", err)
+			return fmt.Errorf("failed to create open census service: %w", err)
 		}
 	}
 
