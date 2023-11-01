@@ -19,7 +19,6 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
@@ -36,8 +35,8 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 	)
 
 	var (
-		pipelineName string
-		urls         = urlprovider.New()
+		pipelineName       string
+		telemetryExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -47,7 +46,7 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces, backend.WithPersistentHostSecret(isOperational()))
 		objs = append(objs, mockBackend.K8sObjects()...)
-		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
+		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		pipeline := kittrace.NewPipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
@@ -55,17 +54,6 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 		pipelineName = pipeline.Name()
 		objs = append(objs, pipeline.K8sObject())
 
-		urls.SetOTLPPush(proxyClient.ProxyURLForService(
-			kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
-		)
-
-		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
-			WithPort("grpc-otlp", ports.OTLPGRPC).
-			WithPort("http-metrics", ports.Metrics)
-		urls.SetMetrics(proxyClient.ProxyURLForService(
-			kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
-
-		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", kitkyma.TraceGatewayBaseName)))
 		return objs
 	}
 
@@ -182,8 +170,9 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 		})
 
 		It("Should verify end-to-end trace delivery", Label(operationalTest), func() {
-			traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, attrs)
+			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP)
+			traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, gatewayPushURL)
+			verifiers.TracesShouldBeDelivered(proxyClient, telemetryExportURL, traceID, spanIDs, attrs)
 		})
 
 		It("Should be able to get trace gateway metrics endpoint", Label(operationalTest), func() {
