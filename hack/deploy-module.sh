@@ -1,18 +1,11 @@
 #!/usr/bin/env bash
 
-readonly CLUSTER_NAME="${CLUSTER_NAME:-kyma}"
-readonly REGISTRY_NAME="${REGISTRY_NAME:-${CLUSTER_NAME}-registry}"
+readonly REGISTRY_NAME="${REGISTRY_NAME:-kyma-registry}"
 readonly REGISTRY_PORT="${REGISTRY_PORT:-5001}"
 readonly MODULE_REGISTRY="${MODULE_REGISTRY:-localhost:${REGISTRY_PORT}}"
-
-function build_and_push_manager_image() {
-    export IMG=localhost:${REGISTRY_PORT}/telemetry-manager
-    make docker-build
-    make docker-push
-}
+readonly IMG="${IMG:-k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/telemetry-manager}"
 
 function create_module() {
-    export IMG=k3d-${REGISTRY_NAME}:${REGISTRY_PORT}/telemetry-manager
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
     ${KUSTOMIZE} build config/default > telemetry-manager.yaml
     git remote add origin https://github.com/kyma-project/telemetry-manager
@@ -26,7 +19,7 @@ function apply_local_template_label() {
 
 function verify_telemetry_status() {
 	local number=1
-	while [[ $number -le 100 ]] ; do
+	while [[ $number -le 20 ]] ; do
 		echo ">--> checking telemetry status #$number"
 		local STATUS=$(kubectl get telemetry -n kyma-system default -o jsonpath='{.status.state}')
 		echo "telemetry status: ${STATUS:='UNKNOWN'}"
@@ -41,7 +34,7 @@ function verify_telemetry_status() {
 
 function verify_kyma_status() {
 	local number=1
-	while [[ $number -le 100 ]] ; do
+	while [[ $number -le 20 ]] ; do
 		echo ">--> checking kyma status #$number"
 		local STATUS=$(kubectl get kyma -n kyma-system default-kyma -o jsonpath='{.status.state}')
 		echo "kyma status: ${STATUS:='UNKNOWN'}"
@@ -55,11 +48,6 @@ function verify_kyma_status() {
 }
 
 function main() {
-    # Provision a k3d cluster using Kyma cli
-    ${KYMA} provision k3d --registry-port ${REGISTRY_PORT} --name ${CLUSTER_NAME} --ci
-
-    # Build and push manager image to a local k3d registry
-    build_and_push_manager_image
 
     # Create the module and push its image to a local k3d registry
     create_module

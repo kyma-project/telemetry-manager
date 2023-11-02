@@ -1,18 +1,23 @@
-name: Governance
-run-name: ${{github.event.pull_request.title}}
+name: PR Governance
+
 on:
   pull_request_target:
+    branches:
+      - "main"
+      - "release-*"
     types:
       - opened
       - reopened
       - edited
       - synchronize
+  workflow_dispatch:
+
 jobs:
   pr-title-check:
-    name: Check PR Title
     runs-on: ubuntu-latest
     steps:
-      - uses: amannn/action-semantic-pull-request@c3cd5d1ea3580753008872425915e343e351ab54
+      - name: Validate title
+        uses: amannn/action-semantic-pull-request@47b15d52c5c30e94a17ec87eb8dd51ff5221fed9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -26,14 +31,3 @@ jobs:
           requireScope: false
           # https://regex101.com/r/O5OZvC/1
           subjectPattern: ^([A-Z].*[^.]|bump .*)$
-  markdown-link-check:
-    name: Check Markdown Links
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: gaurav-nelson/github-action-markdown-link-check@v1
-        with:
-          use-verbose-mode: 'no'
-          config-file: '.mlc.config.json'
-          folder-path: '.'
-          max-depth: -1

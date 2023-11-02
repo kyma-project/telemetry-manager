@@ -84,6 +84,10 @@ linters-settings:
     allow-unused: true
     require-explanation: true
     require-specific: true
+  revive:
+    rules:
+      - name: dot-imports
+        disabled: true
 
 issues:
   exclude:
