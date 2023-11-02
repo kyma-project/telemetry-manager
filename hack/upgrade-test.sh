@@ -6,8 +6,10 @@ set -o errexit  # exit immediately when a command fails.
 set -E          # needs to be set if we want the ERR trap
 set -o pipefail # prevents errors in a pipeline from being masked
 
-echo "switch git revision to last release"
+CURRENT_COMMIT=$(git rev-parse --abbrev-ref HEAD)
 LATEST_TAG=$(git tag --sort=-creatordate | sed -n 1p)
+
+echo "switch git revision to last release"
 git restore .
 git checkout $LATEST_TAG
 
@@ -22,7 +24,6 @@ echo "deploy manager image for version $LATEST_TAG"
 IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 
 echo "rollback to current git ref already to have make target and script changes available"
-CURRENT_COMMIT=$(git rev-parse --abbrev-ref HEAD)
 git restore .
 git checkout $CURRENT_COMMIT
 
