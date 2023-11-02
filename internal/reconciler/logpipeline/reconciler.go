@@ -291,7 +291,7 @@ func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1al
 		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
 			continue
 		}
-		if allPipelines[i].Spec.Output.Loki != nil {
+		if allPipelines[i].Spec.Output.IsLokiDefined() {
 			continue
 		}
 		deployablePipelines = append(deployablePipelines, allPipelines[i])

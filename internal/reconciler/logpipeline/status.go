@@ -59,7 +59,7 @@ func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName st
 
 	log := logf.FromContext(ctx)
 
-	if pipeline.Spec.Output.Loki != nil {
+	if pipeline.Spec.Output.IsLokiDefined() {
 		pending := telemetryv1alpha1.NewLogPipelineCondition(conditions.ReasonUnsupportedLokiOutput, telemetryv1alpha1.LogPipelinePending)
 
 		if pipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning) {
