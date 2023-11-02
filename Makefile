@@ -159,8 +159,14 @@ run-e2e-test-metrics: ginkgo test-matchers ## run end-to-end metrics tests using
 	mv junit.xml ${ARTIFACTS}
 
 .PHONY: upgrade-test
-upgrade-test: ginkgo k3d ## Provision k3d cluster and run upgrade tests.
-	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/upgrade-test.sh
+upgrade-test: provision-k3d ## Provision k3d cluster and run upgrade tests.
+	hack/upgrade-test.sh
+
+.PHONY: run-upgrade-test
+run-upgrade-test: ginkgo
+	$(GINKGO) run --tags e2e --junit-report=junit.xml --flake-attempts=5 --label-filter="operational && !metrics" -v ./test/e2e
+	mkdir -p ${ARTIFACTS}
+	mv junit.xml ${ARTIFACTS}
 
 .PHONY: e2e-deploy-module
 e2e-deploy-module: kyma kustomize provision-k3d provision-test-env ## Provision a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry

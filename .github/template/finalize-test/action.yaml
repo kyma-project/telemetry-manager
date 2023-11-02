@@ -11,7 +11,13 @@ runs:
 
   steps:
 
-    - name: Print operator logs
+    - name: Describe manager pod
+      shell: bash
+      if: ${{ inputs.failure }}
+      run: |
+        kubectl -n kyma-system describe pod -l "app.kubernetes.io/instance=telemetry, app.kubernetes.io/name=operator"
+
+    - name: Print manager logs
       shell: bash
       if: ${{ inputs.failure }}
       run: |
@@ -23,9 +29,8 @@ runs:
       run: |
         kubectl get namespaces
 
-    - name: List Pods
+    - name: List all resources
       shell: bash
       if: ${{ inputs.failure }}
       run: |
-        kubectl get po --all-namespaces
-  
+        kubectl get all --all-namespaces
