@@ -12,7 +12,11 @@ git restore .
 git checkout $LATEST_TAG
 
 echo "build manager image for version $LATEST_TAG"
-./hack/build-image.sh
+# replace with ./hack/build-image.sh after merge
+IMG=localhost:5001/telemetry-manager:latest
+export IMG
+make docker-build
+make docker-push
 
 echo "deploy manager image for version $LATEST_TAG"
 IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
