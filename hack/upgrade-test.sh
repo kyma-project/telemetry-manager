@@ -12,7 +12,7 @@ git restore .
 git checkout $LATEST_TAG
 
 echo "build manager image for version $LATEST_TAG"
-./build-image.sh
+./hack/build-image.sh
 
 echo "deploy manager image for version $LATEST_TAG"
 IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
@@ -26,10 +26,10 @@ echo "run upgrade test"
 make run-upgrade-test
 
 echo "wait for namespace termination"
-./wait-for-namespaces.sh
+./hack/wait-for-namespaces.sh
 
 echo "build manager image for version $CURRENT_COMMIT"
-./build-image.sh
+./hack/build-image.sh
 
 echo "deploy manager image for version $CURRENT_COMMIT"
 IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
