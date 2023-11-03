@@ -16,7 +16,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
-	gatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 )
 
 func TestUpdateStatus(t *testing.T) {
@@ -44,7 +44,9 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: Config{Gateway: gatewayresources.Config{BaseName: "metric-gateway"}},
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{BaseName: "metric-gateway"},
+			}},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
@@ -77,7 +79,9 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: Config{Gateway: gatewayresources.Config{BaseName: "metric-gateway"}},
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{BaseName: "metric-gateway"},
+			}},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
@@ -116,7 +120,9 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: Config{Gateway: gatewayresources.Config{BaseName: "metric-gateway"}},
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{BaseName: "metric-gateway"},
+			}},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
@@ -163,7 +169,9 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: Config{Gateway: gatewayresources.Config{BaseName: "metric-gateway"}},
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{BaseName: "metric-gateway"},
+			}},
 			prober: proberStub,
 		}
 
@@ -213,7 +221,9 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: Config{Gateway: gatewayresources.Config{BaseName: "metric-gateway"}},
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{BaseName: "metric-gateway"},
+			}},
 			prober: proberStub,
 		}
 
@@ -247,7 +257,9 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: Config{Gateway: gatewayresources.Config{BaseName: "metric-gateway"}},
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{BaseName: "metric-gateway"},
+			}},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, false)
@@ -280,7 +292,9 @@ func TestUpdateStatus(t *testing.T) {
 
 		sut := Reconciler{
 			Client: fakeClient,
-			config: Config{Gateway: gatewayresources.Config{BaseName: "metric-gateway"}},
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{BaseName: "metric-gateway"},
+			}},
 			prober: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, false)

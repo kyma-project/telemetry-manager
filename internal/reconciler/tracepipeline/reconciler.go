@@ -21,31 +21,24 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	otelcoreresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/core"
-	otelgatewayresources "github.com/kyma-project/telemetry-manager/internal/resources/otelcollector/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
 const defaultReplicaCount int32 = 2
 
 type Config struct {
-	Gateway                otelgatewayresources.Config
+	Gateway                otelcollector.GatewayConfig
 	OverridesConfigMapName types.NamespacedName
 	MaxPipelines           int
 }
@@ -163,91 +156,28 @@ func getDeployableTracePipelines(ctx context.Context, allPipelines []telemetryv1
 }
 
 func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, allPipelines []telemetryv1alpha1.TracePipeline) error {
-	namespacedBaseName := types.NamespacedName{
-		Name:      r.config.Gateway.BaseName,
-		Namespace: r.config.Gateway.Namespace,
+	scaling := otelcollector.GatewayScalingConfig{
+		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
+		ResourceRequirementsMultiplier: len(allPipelines),
 	}
 
-	ownerRefSetter := kubernetes.NewOwnerReferenceSetter(r.Client, pipeline)
-
-	serviceAccount := commonresources.MakeServiceAccount(namespacedBaseName)
-	if err := kubernetes.CreateOrUpdateServiceAccount(ctx, ownerRefSetter, serviceAccount); err != nil {
-		return fmt.Errorf("failed to create otel collector service account: %w", err)
-	}
-
-	clusterRole := otelgatewayresources.MakeClusterRole(namespacedBaseName)
-	if err := kubernetes.CreateOrUpdateClusterRole(ctx, ownerRefSetter, clusterRole); err != nil {
-		return fmt.Errorf("failed to create otel collector cluster role: %w", err)
-	}
-
-	clusterRoleBinding := commonresources.MakeClusterRoleBinding(namespacedBaseName)
-	if err := kubernetes.CreateOrUpdateClusterRoleBinding(ctx, ownerRefSetter, clusterRoleBinding); err != nil {
-		return fmt.Errorf("failed to create otel collector cluster role Binding: %w", err)
-	}
-
-	gatewayConfig, envVars, err := gateway.MakeConfig(ctx, r, allPipelines)
+	collectorConfig, collectorEnvVars, err := gateway.MakeConfig(ctx, r.Client, allPipelines)
 	if err != nil {
-		return fmt.Errorf("failed to make otel collector config: %v", err)
+		return fmt.Errorf("failed to create collector config: %w", err)
 	}
 
-	gatewayConfigYAML, err := yaml.Marshal(gatewayConfig)
+	collectorConfigYAML, err := yaml.Marshal(collectorConfig)
 	if err != nil {
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
-	secret := otelgatewayresources.MakeSecret(r.config.Gateway, envVars)
-	if err := kubernetes.CreateOrUpdateSecret(ctx, ownerRefSetter, secret); err != nil {
-		return fmt.Errorf("failed to create otel collector env secret: %w", err)
-	}
-
-	configMap := otelcoreresources.MakeConfigMap(namespacedBaseName, string(gatewayConfigYAML))
-	if err := kubernetes.CreateOrUpdateConfigMap(ctx, ownerRefSetter, configMap); err != nil {
-		return fmt.Errorf("failed to create otel collector configmap: %w", err)
-	}
-
-	configHash := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	scaling := otelgatewayresources.Scaling{
-		Replicas:                       r.getReplicaCountFromTelemetry(ctx),
-		ResourceRequirementsMultiplier: len(allPipelines),
-	}
-	deployment := otelgatewayresources.MakeDeployment(r.config.Gateway, configHash, scaling,
-		config.EnvVarCurrentPodIP, config.EnvVarCurrentNodeName)
-	if err := kubernetes.CreateOrUpdateDeployment(ctx, ownerRefSetter, deployment); err != nil {
-		return fmt.Errorf("failed to create otel collector deployment: %w", err)
-	}
-
-	otlpService := otelgatewayresources.MakeOTLPService(r.config.Gateway)
-	if err := kubernetes.CreateOrUpdateService(ctx, ownerRefSetter, otlpService); err != nil {
-		return fmt.Errorf("failed to create otel collector otlp service: %w", err)
-	}
-
-	openCensusService := otelgatewayresources.MakeOpenCensusService(r.config.Gateway)
-	if err := kubernetes.CreateOrUpdateService(ctx, ownerRefSetter, openCensusService); err != nil {
-		return fmt.Errorf("failed to create otel collector open census service: %w", err)
-	}
-
-	metricsService := otelgatewayresources.MakeMetricsService(r.config.Gateway)
-	if err := kubernetes.CreateOrUpdateService(ctx, ownerRefSetter, metricsService); err != nil {
-		return fmt.Errorf("failed to create otel collector metrics service: %w", err)
-	}
-
-	networkPolicyPorts := makeNetworkPolicyPorts()
-	networkPolicy := otelgatewayresources.MakeNetworkPolicy(r.config.Gateway, networkPolicyPorts)
-	if err := kubernetes.CreateOrUpdateNetworkPolicy(ctx, ownerRefSetter, networkPolicy); err != nil {
-		return fmt.Errorf("failed to create otel collector network policy: %w", err)
+	if err := otelcollector.ApplyGatewayResources(ctx,
+		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
+		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars)); err != nil {
+		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 
 	return nil
-}
-
-func makeNetworkPolicyPorts() []intstr.IntOrString {
-	return []intstr.IntOrString{
-		intstr.FromInt(ports.OTLPHTTP),
-		intstr.FromInt(ports.OTLPGRPC),
-		intstr.FromInt(ports.OpenCensus),
-		intstr.FromInt(ports.Metrics),
-		intstr.FromInt(ports.HealthCheck),
-	}
 }
 
 func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
