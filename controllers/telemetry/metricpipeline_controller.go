@@ -69,19 +69,11 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&appsv1.Deployment{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{})).
 		Watches(
-			&corev1.Secret{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{})).
-		Watches(
 			&corev1.Service{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{})).
 		Watches(
 			&networkingv1.NetworkPolicy{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{})).
-		Watches(
-			&corev1.Secret{},
-			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
-			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
-		).
 		Watches(
 			&apiextensionsv1.CustomResourceDefinition{},
 			handler.EnqueueRequestsFromMapFunc(r.mapCRDChanges),

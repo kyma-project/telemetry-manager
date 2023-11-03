@@ -25,7 +25,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -34,7 +33,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"github.com/kyma-project/telemetry-manager/internal/setup"
 )
 
 // LogPipelineReconciler reconciles a LogPipeline object
@@ -79,11 +77,6 @@ func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&rbacv1.ClusterRoleBinding{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{})).
-		Watches(
-			&corev1.Secret{},
-			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
-			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
-		).
 		Complete(r)
 }
 

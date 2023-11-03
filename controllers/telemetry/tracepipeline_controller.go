@@ -67,19 +67,11 @@ func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&appsv1.Deployment{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
 		Watches(
-			&corev1.Secret{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
-		Watches(
 			&corev1.Service{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
 		Watches(
 			&networkingv1.NetworkPolicy{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
-		Watches(
-			&corev1.Secret{},
-			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
-			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
-		).
 		Watches(
 			&operatorv1alpha1.Telemetry{},
 			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
