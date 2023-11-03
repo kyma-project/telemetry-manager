@@ -2,7 +2,6 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  creationTimestamp: null
   name: metric-receiver
 spec: {}
 ---
@@ -73,11 +72,11 @@ metadata:
   namespace: metric-receiver
 spec:
   ports:
-    - name: http-otlp
+    - name: grpc-otlp
       port: 4317
       protocol: TCP
       targetPort: 4317
-    - name: grpc-otlp
+    - name: http-otlp
       port: 4318
       protocol: TCP
       targetPort: 4318
@@ -92,7 +91,6 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
   labels:
     app: metric-producer
   name: metric-producer
@@ -162,4 +160,5 @@ spec:
   output:
     otlp:
       endpoint:
-        value: http://mock-metric-receiver.metric-receiver:4317
+        value: http://mock-metric-receiver.metric-receiver:4318
+        protocol: http
