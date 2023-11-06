@@ -60,7 +60,7 @@ func NewGauge(opts ...MetricOption) pmetric.Metric {
 	startTime := time.Now()
 
 	m := pmetric.NewMetric()
-	setGaugeDefaults(m)
+	setMetricDefaults(m)
 	for _, opt := range opts {
 		opt(m)
 	}
@@ -83,43 +83,7 @@ func NewGauge(opts ...MetricOption) pmetric.Metric {
 	return m
 }
 
-func NewCumulativeSum(opts ...MetricOption) pmetric.Metric {
-	startTime := time.Now()
-	totalPts := 2
-	totalAttributes := 7
-
-	m := pmetric.NewMetric()
-	setCumulativeSumDefaults(m)
-	for _, opt := range opts {
-		opt(m)
-	}
-
-	sum := m.SetEmptySum()
-	sum.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
-	pts := sum.DataPoints()
-	for i := 0; i < totalPts; i++ {
-		pt := pts.AppendEmpty()
-		pt.SetStartTimestamp(pcommon.NewTimestampFromTime(startTime))
-		pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
-		pt.SetDoubleValue(float64(i))
-
-		for i := 0; i < totalAttributes; i++ {
-			k := fmt.Sprintf("pt-label-key-%d", i)
-			v := fmt.Sprintf("pt-label-val-%d", i)
-			pt.Attributes().PutStr(k, v)
-		}
-	}
-
-	return m
-}
-
-func setCumulativeSumDefaults(m pmetric.Metric) {
-	m.SetName("dummy_cumulative_sum")
-	m.SetDescription("Dummy cumulative sum")
-	m.SetUnit("ms")
-}
-
-func setGaugeDefaults(m pmetric.Metric) {
+func setMetricDefaults(m pmetric.Metric) {
 	m.SetName("dummy_gauge")
 	m.SetDescription("Dummy gauge")
 	m.SetUnit("ms")

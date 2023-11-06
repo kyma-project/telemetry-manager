@@ -66,7 +66,6 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;application.&#x200b;runtime**  | object | Configures runtime scraping. |
 | **input.&#x200b;application.&#x200b;runtime.&#x200b;enabled**  | boolean | If enabled, workload-related Kubernetes metrics will be scraped. |
 | **output**  | object | Configures the metric gateway. |
-| **output.&#x200b;convertToDelta**  | boolean | Defines whether this MetricPipeline should convert monotonic, cumulative sum and histogram metrics to monotonic, delta metrics. |
 | **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Defines authentication options for the OTLP output |
 | **output.&#x200b;otlp.&#x200b;authentication.&#x200b;basic**  | object | Activates `Basic` authentication for the destination providing relevant Secrets. |

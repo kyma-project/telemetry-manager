@@ -7,41 +7,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers"
 )
 
-func extractMetrics(fileBytes []byte) ([]pmetric.Metrics, error) {
-	mds, err := unmarshalMetrics(fileBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	applyTemporalityWorkaround(mds)
-
-	return mds, nil
-}
-
 func unmarshalMetrics(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
 	return matchers.UnmarshalSignals[pmetric.Metrics](jsonlMetrics, func(buf []byte) (pmetric.Metrics, error) {
 		var unmarshaler pmetric.JSONUnmarshaler
 		return unmarshaler.UnmarshalMetrics(buf)
 	})
-}
-
-// applyTemporalityWorkaround flips temporality os a Sum metric. The reason for that is the inconsistency
-// between the metricdata package (https://github.com/open-telemetry/opentelemetry-go/blob/main/sdk/metric/metricdata/temporality.go)
-// and the pmetric package (https://github.com/open-telemetry/opentelemetry-collector/blob/main/pdata/pmetric/aggregation_temporality.go)
-func applyTemporalityWorkaround(mds []pmetric.Metrics) {
-	for _, md := range mds {
-		for _, metric := range getMetrics(md) {
-			if metric.Type() != pmetric.MetricTypeSum {
-				continue
-			}
-
-			if metric.Sum().AggregationTemporality() == pmetric.AggregationTemporalityCumulative {
-				metric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
-			} else {
-				metric.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
-			}
-		}
-	}
 }
 
 func getMetrics(md pmetric.Metrics) []pmetric.Metric {

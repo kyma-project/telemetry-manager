@@ -22,7 +22,6 @@ type Pipeline struct {
 	otlpEndpoint    string
 	runtime         bool
 	prometheus      bool
-	convertToDelta  bool
 	tls             *telemetry.OtlpTLS
 }
 
@@ -66,12 +65,6 @@ func (p *Pipeline) RuntimeInput(enableRuntime bool) *Pipeline {
 
 func (p *Pipeline) PrometheusInput(enablePrometheus bool) *Pipeline {
 	p.prometheus = enablePrometheus
-
-	return p
-}
-
-func (p *Pipeline) WithConvertToDelta(convertToDelta bool) *Pipeline {
-	p.convertToDelta = convertToDelta
 
 	return p
 }
@@ -130,8 +123,7 @@ func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
 				},
 			},
 			Output: telemetry.MetricPipelineOutput{
-				Otlp:           otlpOutput,
-				ConvertToDelta: p.convertToDelta,
+				Otlp: otlpOutput,
 			},
 		},
 	}
