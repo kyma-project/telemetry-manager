@@ -72,5 +72,8 @@ func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&rbacv1.ClusterRoleBinding{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{})).
+		Watches(
+			&corev1.Secret{},
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{})).
 		Complete(r)
 }
