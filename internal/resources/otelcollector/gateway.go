@@ -3,12 +3,11 @@ package otelcollector
 import (
 	"context"
 	"fmt"
-	"istio.io/api/security/v1beta1"
 	"maps"
 
+	"istio.io/api/security/v1beta1"
 	istioTypes "istio.io/api/type/v1beta1"
 	istiov1Beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"

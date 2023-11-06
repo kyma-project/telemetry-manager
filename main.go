@@ -20,23 +20,18 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"k8s.io/apimachinery/pkg/fields"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
-	IstioSecV1Beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
-
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -154,7 +149,7 @@ func init() {
 
 	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(IstioSecV1Beta1.AddToScheme(scheme))
+	//utilruntime.Must(IstioSecV1Beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -223,7 +218,7 @@ func main() {
 	flag.BoolVar(&enableMetrics, "enable-metrics", true, "Enable configurable metrics.")
 	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
-	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MY_POD_NAMESPACE", "default"), "Namespace of the manager")
+	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MY_POD_NAMESPACE", "kyma-system"), "Namespace of the manager")
 
 	flag.StringVar(&traceGatewayImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceGatewayPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
@@ -319,19 +314,22 @@ func main() {
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
-			SyncPeriod: &syncPeriod,
-			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
-			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
-			ByObject: map[client.Object]cache.ByObject{
-				&appsv1.Deployment{}:                  {Field: setNamespaceFieldSelector()},
-				&appsv1.ReplicaSet{}:                  {Field: setNamespaceFieldSelector()},
-				&appsv1.DaemonSet{}:                   {Field: setNamespaceFieldSelector()},
-				&corev1.ConfigMap{}:                   {Field: setNamespaceFieldSelector()},
-				&corev1.ServiceAccount{}:              {Field: setNamespaceFieldSelector()},
-				&corev1.Service{}:                     {Field: setNamespaceFieldSelector()},
-				&networkingv1.NetworkPolicy{}:         {Field: setNamespaceFieldSelector()},
-				&IstioSecV1Beta1.PeerAuthentication{}: {Field: setNamespaceFieldSelector()},
-			},
+			SyncPeriod:        &syncPeriod,
+			DefaultNamespaces: map[string]cache.Config{telemetryNamespace: {}},
+			//DefaultFieldSelector: fields.OneTermEqualSelector("metadata.namespace", telemetryNamespace),
+			//// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
+			//// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
+
+			//ByObject: map[client.Object]cache.ByObject{
+			//	&appsv1.Deployment{}:                  {Field: setNamespaceFieldSelector()},
+			//	&appsv1.ReplicaSet{}:                  {Field: setNamespaceFieldSelector()},
+			//	&appsv1.DaemonSet{}:                   {Field: setNamespaceFieldSelector()},
+			//	&corev1.ConfigMap{}:                   {Field: setNamespaceFieldSelector()},
+			//	&corev1.ServiceAccount{}:              {Field: setNamespaceFieldSelector()},
+			//	&corev1.Service{}:                     {Field: setNamespaceFieldSelector()},
+			//	&networkingv1.NetworkPolicy{}:         {Field: setNamespaceFieldSelector()},
+			//	&IstioSecV1Beta1.PeerAuthentication{}: {Field: setNamespaceFieldSelector()},
+			//},
 		},
 	})
 

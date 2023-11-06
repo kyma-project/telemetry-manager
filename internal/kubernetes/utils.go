@@ -2,9 +2,9 @@ package kubernetes
 
 import (
 	"context"
-	istioSecV1Beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	"strings"
 
+	istioSecV1Beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

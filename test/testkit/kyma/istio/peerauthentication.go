@@ -1,12 +1,13 @@
 package istio
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"istio.io/api/security/v1beta1"
 	istioTypes "istio.io/api/type/v1beta1"
 	securityV1Beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit"
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
 type PeerAuthentication struct {

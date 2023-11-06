@@ -2,6 +2,9 @@ package istio
 
 import (
 	"context"
+	IstioSecV1Beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"slices"
 	"strings"
 
@@ -28,4 +31,8 @@ func (isc *StatusChecker) IsIstioActive(ctx context.Context) bool {
 	return slices.ContainsFunc(crdList.Items, func(crd apiextensionsv1.CustomResourceDefinition) bool {
 		return strings.EqualFold(crd.GetName(), peerAuthenticationIstioCRD)
 	})
+}
+
+func (isc *StatusChecker) AddIstioToScheme(scheme *runtime.Scheme) {
+	utilruntime.Must(IstioSecV1Beta1.AddToScheme(scheme))
 }
