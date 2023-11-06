@@ -23,11 +23,7 @@ func NewExporter(e metric.Exporter) Exporter {
 	return Exporter{otlpExporter: e}
 }
 
-func (e Exporter) ExportGaugeMetrics(ctx context.Context, pmetrics pmetric.Metrics) error {
-	return e.otlpExporter.Export(ctx, toResourceMetrics(pmetrics))
-}
-
-func (e Exporter) ExportSumMetrics(ctx context.Context, pmetrics pmetric.Metrics) error {
+func (e Exporter) ExportMetrics(ctx context.Context, pmetrics pmetric.Metrics) error {
 	return e.otlpExporter.Export(ctx, toResourceMetrics(pmetrics))
 }
 
