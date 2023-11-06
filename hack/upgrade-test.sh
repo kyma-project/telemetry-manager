@@ -1,63 +1,43 @@
 #!/usr/bin/env bash
 
-TEST_INCEPTION_TAG="0.5.0" # The tag which predates the introduction of the upgrade test.
+# standard bash error handling
+set -o nounset  # treat unset variables as an error and exit immediately.
+set -o errexit  # exit immediately when a command fails.
+set -E          # needs to be set if we want the ERR trap
+set -o pipefail # prevents errors in a pipeline from being masked
+
 CURRENT_COMMIT=$(git rev-parse --abbrev-ref HEAD)
-TAG_LIST=$(git tag --sort=-creatordate)
-LATEST_TAG=${TAG_LIST[0]}
+LATEST_TAG=$(git tag --sort=-creatordate | sed -n 1p)
 
-get_test_namespaces() {
-  kubectl get namespaces --no-headers=true | awk '{print $1}' | grep -vE "(kube-system|kube-public|kube-node-lease|default|kyma-system)"
-}
+echo "switch git revision to last release"
+git restore .
+git checkout $LATEST_TAG
 
-wait_for_test_namespace_termination() {
-  while true; do
-    namespaces=$(get_test_namespaces)
+echo "build manager image for version $LATEST_TAG"
+# replace with ./hack/build-image.sh after merge
+IMG=localhost:5001/telemetry-manager:latest
+export IMG
+make docker-build
+make docker-push
 
-    if [ -z "$namespaces" ]; then
-      echo "All test namespaces have terminated."
-      break
-    else
-      echo "Waiting for test namespaces to terminate: $namespaces"
-      sleep 10
-    fi
-  done
-}
+echo "deploy manager image for version $LATEST_TAG"
+IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 
-test_at_revision()
-{
-    GIT_COMMIT="$1"
-    DOCKER_TAG="$2"
+echo "rollback to current git ref already to have make target and script changes available"
+git restore .
+git checkout $CURRENT_COMMIT
 
-    git restore .
-    git checkout $GIT_COMMIT
+echo "run upgrade test"
+make run-upgrade-test
 
-    IMG=localhost:5001/telemetry-manager:$DOCKER_TAG
-    export IMG
+echo "wait for namespace termination"
+./hack/wait-for-namespaces.sh
 
-    make docker-build
-    make docker-push
-    IMG=k3d-kyma-registry:5000/telemetry-manager:$DOCKER_TAG make deploy
+echo "build manager image for version $CURRENT_COMMIT"
+./hack/build-image.sh
 
-    ./bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational && !metrics" -v ./test/e2e
+echo "deploy manager image for version $CURRENT_COMMIT"
+IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 
-    wait_for_test_namespace_termination
-}
-
-bin/k3d registry create kyma-registry --port 5001
-bin/k3d cluster create kyma --registry-use kyma-registry:5001 --image rancher/k3s:v$K8S_VERSION-k3s1 --api-port 6550
-kubectl create ns kyma-system
-
-# Run test suite for the latest released version if it is after the v0.5.0.
-if [ "$LATEST_TAG" != "$TEST_INCEPTION_TAG" ];
-then
-    echo -e "Running the test suite on the latest released version\\n"
-    if ! test_at_revision $LATEST_TAG latest;
-    then
-        git restore .
-        git checkout $CURRENT_COMMIT
-        exit 1
-    fi
-fi
-
-echo -e "Running the test suite on the recent version\\n"
-test_at_revision $CURRENT_COMMIT recent
+echo "run upgrade test"
+make run-upgrade-test
