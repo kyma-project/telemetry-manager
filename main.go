@@ -26,6 +26,8 @@ import (
 	"sync"
 	"time"
 
+	IstioSecV1Beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -152,6 +154,7 @@ func init() {
 
 	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(IstioSecV1Beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -208,6 +211,9 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch
 // +kubebuilder:rbac:groups=networking.k8s.io,namespace=system,resources=networkpolicies,verbs=create;update;patch;delete
+
+// +kubebuilder:rbac:groups=security.istio.io,resources=peerauthentications,verbs=get;list;watch
+// +kubebuilder:rbac:groups=security.istio.io,namespace=system,resources=peerauthentications,verbs=create;update;patch;delete
 
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
@@ -317,13 +323,14 @@ func main() {
 			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
 			ByObject: map[client.Object]cache.ByObject{
-				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
-				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
-				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
-				&corev1.ConfigMap{}:           {Field: setNamespaceFieldSelector()},
-				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
-				&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
-				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
+				&appsv1.Deployment{}:                  {Field: setNamespaceFieldSelector()},
+				&appsv1.ReplicaSet{}:                  {Field: setNamespaceFieldSelector()},
+				&appsv1.DaemonSet{}:                   {Field: setNamespaceFieldSelector()},
+				&corev1.ConfigMap{}:                   {Field: setNamespaceFieldSelector()},
+				&corev1.ServiceAccount{}:              {Field: setNamespaceFieldSelector()},
+				&corev1.Service{}:                     {Field: setNamespaceFieldSelector()},
+				&networkingv1.NetworkPolicy{}:         {Field: setNamespaceFieldSelector()},
+				&IstioSecV1Beta1.PeerAuthentication{}: {Field: setNamespaceFieldSelector()},
 			},
 		},
 	})

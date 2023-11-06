@@ -3,7 +3,11 @@ package otelcollector
 import (
 	"context"
 	"fmt"
+	"istio.io/api/security/v1beta1"
 	"maps"
+
+	istioTypes "istio.io/api/type/v1beta1"
+	istiov1Beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,7 +43,7 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	if err := kubernetes.CreateOrUpdateDeployment(ctx, c, makeGatewayDeployment(cfg, configChecksum)); err != nil {
+	if err := kubernetes.CreateOrUpdateDeployment(ctx, c, makeGatewayDeployment(cfg, configChecksum, cfg.IstioEnabled)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
 
@@ -50,6 +54,12 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 	if cfg.CanReceiveOpenCensus {
 		if err := kubernetes.CreateOrUpdateService(ctx, c, makeOpenCensusService(name)); err != nil {
 			return fmt.Errorf("failed to create open census service: %w", err)
+		}
+	}
+
+	if cfg.IstioEnabled {
+		if err := kubernetes.CreateOrUpdatePeerAuthentication(ctx, c, makePeerAuthentication(cfg)); err != nil {
+			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
 	}
 
@@ -79,12 +89,15 @@ func makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string) *appsv1.Deployment {
+func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioEnabled bool) *appsv1.Deployment {
 	selectorLabels := defaultLabels(cfg.BaseName)
 	podLabels := maps.Clone(selectorLabels)
-	podLabels["sidecar.istio.io/inject"] = "false"
+	podLabels["sidecar.istio.io/inject"] = fmt.Sprintf("%t", istioEnabled)
 
 	annotations := map[string]string{"checksum/config": configChecksum}
+	if istioEnabled {
+		annotations["traffic.sidecar.istio.io/excludeOutBoundPorts"] = "8888"
+	}
 	resources := makeGatewayResourceRequirements(cfg)
 	affinity := makePodAffinity(selectorLabels)
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
@@ -223,6 +236,16 @@ func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
 			Selector:        labels,
 			Type:            corev1.ServiceTypeClusterIP,
 			SessionAffinity: corev1.ServiceAffinityClientIP,
+		},
+	}
+}
+
+func makePeerAuthentication(cfg *GatewayConfig) *istiov1Beta1.PeerAuthentication {
+	return &istiov1Beta1.PeerAuthentication{
+		ObjectMeta: metav1.ObjectMeta{Name: cfg.BaseName, Namespace: cfg.Namespace},
+		Spec: v1beta1.PeerAuthentication{
+			Selector: &istioTypes.WorkloadSelector{MatchLabels: defaultLabels(cfg.BaseName)},
+			Mtls:     &v1beta1.PeerAuthentication_MutualTLS{Mode: v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}
 }

@@ -3,6 +3,7 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/istio"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
@@ -39,7 +40,7 @@ type Reconciler struct {
 	config             Config
 	prober             DeploymentProber
 	overridesHandler   overrides.GlobalConfigHandler
-	istioStatusChecker istioStatusChecker
+	istioStatusChecker istio.StatusChecker
 }
 
 func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
@@ -48,7 +49,7 @@ func NewReconciler(client client.Client, config Config, prober DeploymentProber,
 		config:             config,
 		prober:             prober,
 		overridesHandler:   overridesHandler,
-		istioStatusChecker: istioStatusChecker{client: client},
+		istioStatusChecker: istio.StatusChecker{Client: client},
 	}
 }
 
@@ -169,9 +170,11 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
+	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
-		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars)); err != nil {
+		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars, isIstioActive)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 
@@ -179,7 +182,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 }
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
-	isIstioActive := r.istioStatusChecker.isIstioActive(ctx)
+	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	agentConfig := agent.MakeConfig(types.NamespacedName{
 		Namespace: r.config.Gateway.Namespace,
 		Name:      r.config.Gateway.OTLPServiceName,

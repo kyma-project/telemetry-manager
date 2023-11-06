@@ -1,4 +1,4 @@
-package metricpipeline
+package istio
 
 import (
 	"context"
@@ -46,9 +46,9 @@ func TestIsIstioActive(t *testing.T) {
 			}
 			fakeClient := fakeClientBuilder.Build()
 
-			isc := &istioStatusChecker{client: fakeClient}
+			isc := &StatusChecker{Client: fakeClient}
 
-			got := isc.isIstioActive(context.Background())
+			got := isc.IsIstioActive(context.Background())
 
 			assert.Equal(t, tt.want, got)
 		})

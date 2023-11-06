@@ -18,6 +18,7 @@ type GatewayConfig struct {
 	Scaling              GatewayScalingConfig
 	OTLPServiceName      string
 	CanReceiveOpenCensus bool
+	IstioEnabled         bool
 }
 
 func (cfg *GatewayConfig) WithScaling(s GatewayScalingConfig) *GatewayConfig {
@@ -26,10 +27,11 @@ func (cfg *GatewayConfig) WithScaling(s GatewayScalingConfig) *GatewayConfig {
 	return &cfgCopy
 }
 
-func (cfg *GatewayConfig) WithCollectorConfig(collectorCfgYAML string, collectorEnvVars map[string][]byte) *GatewayConfig {
+func (cfg *GatewayConfig) WithCollectorConfig(collectorCfgYAML string, collectorEnvVars map[string][]byte, isIstioActive bool) *GatewayConfig {
 	cfgCopy := *cfg
 	cfgCopy.CollectorConfig = collectorCfgYAML
 	cfgCopy.CollectorEnvVars = collectorEnvVars
+	cfgCopy.IstioEnabled = isIstioActive
 	return &cfgCopy
 }
 
