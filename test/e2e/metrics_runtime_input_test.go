@@ -7,9 +7,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
@@ -129,6 +132,29 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 					ConsistOfMds(ContainResourceAttrs(HaveKey(BeElementOf(kubeletMetricResourceAttributes)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should be able to get metric agent metrics endpoint", Label(operationalTest), func() {
+			agentMetricsURL := proxyClient.ProxyURLForService(kitkyma.MetricAgentMetrics.Namespace, kitkyma.MetricAgentMetrics.Name, "metrics", ports.Metrics)
+			verifiers.ShouldExposeCollectorMetrics(proxyClient, agentMetricsURL)
+		})
+
+		It("Should have a working network policy", Label(operationalTest), func() {
+			var networkPolicy networkingv1.NetworkPolicy
+			Expect(k8sClient.Get(ctx, kitkyma.MetricAgentNetworkPolicy, &networkPolicy)).To(Succeed())
+
+			Eventually(func(g Gomega) {
+				var podList corev1.PodList
+				g.Expect(k8sClient.List(ctx, &podList, client.InNamespace(kitkyma.SystemNamespaceName), client.MatchingLabels{"app.kubernetes.io/name": kitkyma.MetricAgentBaseName})).To(Succeed())
+				g.Expect(podList.Items).NotTo(BeEmpty())
+
+				metricAgentPodName := podList.Items[0].Name
+				pprofEndpoint := proxyClient.ProxyURLForPod(kitkyma.SystemNamespaceName, metricAgentPodName, "debug/pprof/", ports.Pprof)
+
+				resp, err := proxyClient.Get(pprofEndpoint)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
 })

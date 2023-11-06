@@ -1,9 +1,7 @@
-package core
+package otelcollector
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 
@@ -16,26 +14,20 @@ const (
 	collectorContainerName = "collector"
 )
 
-func MakeDefaultLabels(baseName string) map[string]string {
-	return map[string]string{
-		"app.kubernetes.io/name": baseName,
-	}
-}
+type podSpecOption = func(pod *corev1.PodSpec)
 
-type PodSpecOption = func(pod *corev1.PodSpec)
-
-func WithAffinity(affinity corev1.Affinity) PodSpecOption {
+func withAffinity(affinity corev1.Affinity) podSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.Affinity = &affinity
 	}
 }
 
 const (
-	FieldPathPodIP    = "status.podIP"
-	FieldPathNodeName = "spec.nodeName"
+	fieldPathPodIP    = "status.podIP"
+	fieldPathNodeName = "spec.nodeName"
 )
 
-func WithEnvVarFromSource(envVarName, fieldPath string) PodSpecOption {
+func withEnvVarFromSource(envVarName, fieldPath string) podSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.Containers[0].Env = append(pod.Containers[0].Env, corev1.EnvVar{
 			Name: envVarName,
@@ -49,13 +41,13 @@ func WithEnvVarFromSource(envVarName, fieldPath string) PodSpecOption {
 	}
 }
 
-func WithPriorityClass(priorityClassName string) PodSpecOption {
+func withPriorityClass(priorityClassName string) podSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.PriorityClassName = priorityClassName
 	}
 }
 
-func WithResources(resources corev1.ResourceRequirements) PodSpecOption {
+func withResources(resources corev1.ResourceRequirements) podSpecOption {
 	return func(pod *corev1.PodSpec) {
 		for i := range pod.Containers {
 			pod.Containers[i].Resources = resources
@@ -63,7 +55,7 @@ func WithResources(resources corev1.ResourceRequirements) PodSpecOption {
 	}
 }
 
-func WithVolumeMount(volumeMount corev1.VolumeMount) PodSpecOption {
+func withVolumeMount(volumeMount corev1.VolumeMount) podSpecOption {
 	return func(pod *corev1.PodSpec) {
 		for i := range pod.Containers {
 			pod.Containers[i].VolumeMounts = append(pod.Containers[i].VolumeMounts, volumeMount)
@@ -71,13 +63,13 @@ func WithVolumeMount(volumeMount corev1.VolumeMount) PodSpecOption {
 	}
 }
 
-func WithVolume(volume corev1.Volume) PodSpecOption {
+func withVolume(volume corev1.Volume) podSpecOption {
 	return func(pod *corev1.PodSpec) {
 		pod.Volumes = append(pod.Volumes, volume)
 	}
 }
 
-func MakePodSpec(baseName, image string, opts ...PodSpecOption) corev1.PodSpec {
+func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 	pod := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
@@ -147,25 +139,4 @@ func MakePodSpec(baseName, image string, opts ...PodSpecOption) corev1.PodSpec {
 		opt(&pod)
 	}
 	return pod
-}
-
-func MakeCommonPodAnnotations(configHash string) map[string]string {
-	annotations := map[string]string{
-		"checksum/config": configHash,
-	}
-
-	return annotations
-}
-
-func MakeConfigMap(name types.NamespacedName, collectorConfig string) *corev1.ConfigMap {
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    MakeDefaultLabels(name.Name),
-		},
-		Data: map[string]string{
-			configMapKey: collectorConfig,
-		},
-	}
 }
