@@ -3,6 +3,7 @@
 package istio
 
 import (
+	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	"net/http"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -59,6 +60,10 @@ var _ = Describe("Istio Metrics", Label("metrics"), func() {
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			PrometheusInput(true)
 		objs = append(objs, metricPipeline.K8sObject())
+
+		// set peerauthentication to strict explicitly
+		peerAuth := istio.NewPeerAuthentication(mockBackendName, mockNs)
+		objs = append(objs, peerAuth.K8sObject(kitk8s.WithLabel("app", mockBackendName)))
 
 		return objs
 	}
