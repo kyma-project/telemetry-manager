@@ -160,5 +160,4 @@ spec:
   output:
     otlp:
       endpoint:
-        value: http://mock-metric-receiver.metric-receiver:4318
-        protocol: http
+        value: http://mock-metric-receiver.metric-receiver:4317
