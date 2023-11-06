@@ -30,11 +30,3 @@ func sendGaugeMetrics(ctx context.Context, proxyClient *apiserver.ProxyClient, m
 	}
 	return sender.ExportGaugeMetrics(ctx, metrics)
 }
-
-func sendSumMetrics(ctx context.Context, proxyClient *apiserver.ProxyClient, metrics pmetric.Metrics, otlpPushURL string) error {
-	sender, err := NewHTTPExporter(otlpPushURL, proxyClient)
-	if err != nil {
-		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)
-	}
-	return sender.ExportSumMetrics(ctx, metrics)
-}
