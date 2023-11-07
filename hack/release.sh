@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# standard bash error handling
+set -o nounset  # treat unset variables as an error and exit immediately.
+set -o errexit  # exit immediately when a command fails.
+set -E          # needs to be set if we want the ERR trap
+set -o pipefail # prevents errors in a pipeline from being masked
+
 readonly MODULE_REGISTRY="europe-docker.pkg.dev/kyma-project/prod/unsigned"
 readonly GCP_ACCESS_TOKEN=$(gcloud auth application-default print-access-token)
 

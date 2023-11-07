@@ -28,7 +28,6 @@ function verify_telemetry_status() {
         	((number = number + 1))
 	done
 
-	kubectl get all --all-namespaces
 	exit 1
 }
 
@@ -43,7 +42,6 @@ function verify_kyma_status() {
         	((number = number + 1))
 	done
 
-	kubectl get all --all-namespaces
 	exit 1
 }
 

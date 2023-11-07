@@ -1,4 +1,5 @@
 {
+    "text": "${{ github.workflow }} workflow failed!",
     "attachments": [
         {
             "color": "#d90000",
@@ -7,7 +8,7 @@
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "${{ github.workflow }} workflow failed on ${{ env.DEFAULT_BRANCH }} branch in the ${{ github.event.repository.name }} repository!"
+                        "text": "${{ github.workflow }} workflow failed!"
                     }
                 },
                 {
@@ -23,7 +24,7 @@
                                 "text": "Build",
                                 "emoji": true
                             },
-                            "url": "${{ env.REPO_URL }}/actions/runs/${{ github.run_id }}"
+                            "url": "https://github.com/kyma-project/telemetry-manager/actions"
                         },
                         {
                             "type": "button",
@@ -32,7 +33,7 @@
                                 "text": "Commit",
                                 "emoji": true
                             },
-                            "url": "${{ env.REPO_URL }}/commit/${{ github.sha }}"
+                            "url": "https://github.com/kyma-project/telemetry-manager/commit/${{ github.sha }}"
                         }
                     ]
                 }
