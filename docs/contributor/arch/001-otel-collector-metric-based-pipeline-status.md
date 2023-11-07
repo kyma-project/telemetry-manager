@@ -80,7 +80,7 @@ Clear communication regarding its internal nature is crucial to avoid any misuse
 #### Prometheus Alerts:
 * PromQL expressions are defined as Prometheus alerts, with Prometheus responsible for evaluating them.
 * The operator uses the alerts API to periodically fetch information about active alerts.
-* This method avoids potentially long-running queries that can hinder reconciliation by offloading evaluation to Prometheus and simply polling the results.
+* This method avoids potentially long-running queries that can hinder reconciliation by offloading evaluation to Prometheus and simply polling the results using [alerts API](https://prometheus.io/docs/prometheus/latest/querying/api/#alerts).
 * Another advantages of this approach include clear separation of code and PromQL expressions.
 * Additionally, it provides better troubleshooting capabilities as Prometheus state can be observed using the dashboard.
 
