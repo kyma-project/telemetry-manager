@@ -9,7 +9,7 @@ function create_module() {
     cd config/manager && ${KUSTOMIZE} edit set image controller=${IMG} && cd ../..
     ${KUSTOMIZE} build config/default > telemetry-manager.yaml
     git remote add origin https://github.com/kyma-project/telemetry-manager
-    ${KYMA} alpha create module --module-config-file=module-config.yaml --registry ${MODULE_REGISTRY} --insecure -o moduletemplate.yaml --ci
+    ${KYMA} alpha create module --module-config-file=module-config.yaml --registry ${MODULE_REGISTRY} --insecure -o moduletemplate.yaml --module-archive-version-overwrite --ci
 }
 
 function apply_local_template_label() {
