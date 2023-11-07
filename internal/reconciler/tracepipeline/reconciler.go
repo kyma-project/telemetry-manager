@@ -59,10 +59,11 @@ type Reconciler struct {
 
 func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
 	return &Reconciler{
-		Client:           client,
-		config:           config,
-		prober:           prober,
-		overridesHandler: overridesHandler,
+		Client:             client,
+		config:             config,
+		prober:             prober,
+		overridesHandler:   overridesHandler,
+		istioStatusChecker: istio.StatusChecker{Client: client},
 	}
 }
 
