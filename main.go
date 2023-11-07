@@ -29,12 +29,9 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -314,17 +311,8 @@ func main() {
 		}),
 		Cache: cache.Options{
 			SyncPeriod: &syncPeriod,
-			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
-			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
-			ByObject: map[client.Object]cache.ByObject{
-				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
-				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
-				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
-				&corev1.ConfigMap{}:           {Field: setNamespaceFieldSelector()},
-				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
-				&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
-				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
-				&corev1.Secret{}:              {Field: setNamespaceFieldSelector()},
+			DefaultNamespaces: map[string]cache.Config{
+				telemetryNamespace: {},
 			},
 		},
 		Client: client.Options{
@@ -433,10 +421,6 @@ func reconcileWebhook(certconfig webhookcert.Config, k8sClient client.Client) {
 		}
 		ensureWebhookLog.Info("Ensured webhook cert")
 	}
-}
-
-func setNamespaceFieldSelector() fields.Selector {
-	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
 }
 
 func validateFlags() error {
