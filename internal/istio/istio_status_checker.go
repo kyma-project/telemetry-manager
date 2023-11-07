@@ -2,13 +2,13 @@ package istio
 
 import (
 	"context"
-	IstioSecV1Beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"slices"
 	"strings"
 
+	IstioSecV1Beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )

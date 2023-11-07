@@ -20,8 +20,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"net/http"
 	"os"
 	"strings"
@@ -31,6 +29,7 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -319,7 +318,6 @@ func main() {
 			SyncPeriod:        &syncPeriod,
 			DefaultNamespaces: map[string]cache.Config{telemetryNamespace: {}},
 
-
 			//DefaultFieldSelector: fields.OneTermEqualSelector("metadata.namespace", telemetryNamespace),
 			//// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			//// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
@@ -443,9 +441,9 @@ func reconcileWebhook(certconfig webhookcert.Config, k8sClient client.Client) {
 	}
 }
 
-func setNamespaceFieldSelector() fields.Selector {
-	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
-}
+//func setNamespaceFieldSelector() fields.Selector {
+//	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
+//}
 
 func validateFlags() error {
 
