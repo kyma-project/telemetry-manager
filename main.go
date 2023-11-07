@@ -20,6 +20,8 @@ import (
 	"context"
 	"errors"
 	"flag"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"net/http"
 	"os"
@@ -314,8 +316,16 @@ func main() {
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
-			SyncPeriod:        &syncPeriod,
+			SyncPeriod: &syncPeriod,
+			ByObject: map[client.Object]cache.ByObject{
+				&corev1.Secret{}: {
+					Namespaces: map[string]cache.Config{
+						metav1.NamespaceAll: {},
+					},
+				},
+			},
 			DefaultNamespaces: map[string]cache.Config{telemetryNamespace: {}},
+
 			//DefaultFieldSelector: fields.OneTermEqualSelector("metadata.namespace", telemetryNamespace),
 			//// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			//// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
