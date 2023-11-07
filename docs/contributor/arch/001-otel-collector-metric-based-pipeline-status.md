@@ -77,6 +77,8 @@ Clear communication regarding its internal nature is crucial to avoid any misuse
   This separation effectively isolates the query execution and result storage from the tracepipeline and metricpipeline controllers, ensuring a smoother and more efficient workflow.
   It's worth noting that while this approach enhances efficiency, it can introduce increased complexity to the overall setup.
 
+![Prometheus Integration with Additional Controller](../assets/prom-integration-extra-ctrl-flow.svg "Prometheus Integration with Additional Controller")
+
 #### Prometheus Alerts:
 * PromQL expressions are defined as Prometheus alerts, with Prometheus responsible for evaluating them.
 * The operator uses the alerts API to periodically fetch information about active alerts.
