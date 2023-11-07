@@ -48,6 +48,17 @@ While direct endpoint scraping is the simplest approach and doesn't require Prom
 When scraping an endpoint, you receive one value per timestamp, which may suffice for gauges. However, even for commonly used metrics like rates, you would require multiple values aggregated over time. 
 Additionally, Prometheus automatically handles adjustments for breaks in monotonicity, such as counter resets resulting from target restarts. Manual scraping lacks this crucial feature.
 
+#### Prometheus as a Sidecar
+
+Now that we understand the necessity of using Prometheus for even basic metric analysis, let's explore how we can deploy it. 
+One deployment approach involves deploying Prometheus as a sidecar alongside the operator. 
+This method remains lightweight, as it doesn't necessitate any changes in the operator's code and can be easily achieved only using kustomize. 
+However, this static setup does come with its drawbacks:
+
+* It relies on a static configuration with no room for parameterization, limiting flexibility.
+* Fine-tuning Prometheus dynamically based on the number of pipelines or other factors is not feasible.
+* Sidecar is deployed even when there are no pipelines, which may lead to unnecessary resource utilization.
+
 ## Consequences
 
 
