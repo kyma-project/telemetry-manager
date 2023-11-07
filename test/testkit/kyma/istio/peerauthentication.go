@@ -29,7 +29,7 @@ func (d *PeerAuthentication) K8sObject(labelOpts ...testkit.OptFunc) *securityV1
 		ObjectMeta: metav1.ObjectMeta{Name: d.name, Namespace: d.namespace},
 		Spec: v1beta1.PeerAuthentication{
 			Selector: &workLoadSelector,
-			Mtls:     &v1beta1.PeerAuthentication_MutualTLS{Mode: v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE},
+			Mtls:     &v1beta1.PeerAuthentication_MutualTLS{Mode: v1beta1.PeerAuthentication_MutualTLS_STRICT},
 		},
 	}
 }

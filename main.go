@@ -21,7 +21,6 @@ import (
 	"errors"
 	"flag"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"net/http"
 	"os"
@@ -303,7 +302,8 @@ func main() {
 		}
 	}()
 
-	syncPeriod := 1 * time.Hour
+	// REVERT
+	syncPeriod := 1 * time.Minute
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
 		Metrics:                 metricsserver.Options{BindAddress: ":8080"},
@@ -316,15 +316,9 @@ func main() {
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
-			SyncPeriod: &syncPeriod,
-			ByObject: map[client.Object]cache.ByObject{
-				&corev1.Secret{}: {
-					Namespaces: map[string]cache.Config{
-						metav1.NamespaceAll: {},
-					},
-				},
-			},
+			SyncPeriod:        &syncPeriod,
 			DefaultNamespaces: map[string]cache.Config{telemetryNamespace: {}},
+
 
 			//DefaultFieldSelector: fields.OneTermEqualSelector("metadata.namespace", telemetryNamespace),
 			//// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
@@ -340,6 +334,13 @@ func main() {
 			//	&networkingv1.NetworkPolicy{}:         {Field: setNamespaceFieldSelector()},
 			//	&IstioSecV1Beta1.PeerAuthentication{}: {Field: setNamespaceFieldSelector()},
 			//},
+		},
+		Client: client.Options{
+			Cache: &client.CacheOptions{
+				DisableFor: []client.Object{
+					&corev1.Secret{},
+				},
+			},
 		},
 	})
 

@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -175,6 +174,9 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	if isIstioActive {
+		r.istioStatusChecker.AddIstioToScheme(r.Scheme())
+	}
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars, isIstioActive)); err != nil {

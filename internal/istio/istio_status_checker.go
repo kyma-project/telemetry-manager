@@ -24,7 +24,6 @@ func (isc *StatusChecker) IsIstioActive(ctx context.Context) bool {
 	var crdList apiextensionsv1.CustomResourceDefinitionList
 	if err := isc.Client.List(ctx, &crdList); err != nil {
 		logf.FromContext(ctx).Error(err, "Unable to list CRDs to check Istio status")
-
 		return false
 	}
 
