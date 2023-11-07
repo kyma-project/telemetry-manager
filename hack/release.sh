@@ -12,13 +12,25 @@ readonly GCP_ACCESS_TOKEN=$(gcloud auth application-default print-access-token)
 function create_module() {
     echo "Creating the module"
     ${KUSTOMIZE} build config/default > telemetry-manager.yaml
-    ${KYMA} alpha create module --module-config-file=module-config.yaml --registry ${MODULE_REGISTRY} -c oauth2accesstoken:${GCP_ACCESS_TOKEN} -o moduletemplate.yaml --ci
+    ${KYMA} alpha create module \
+    --module-config-file=module-config.yaml \
+    --registry ${MODULE_REGISTRY} \
+    --credentials oauth2accesstoken:${GCP_ACCESS_TOKEN} \
+    --output moduletemplate.yaml \
+    --module-archive-version-overwrite \
+    --ci
 }
 
 function create_dev_module() {
     echo "Creating the development module"
     ${KUSTOMIZE} build config/development > telemetry-manager-dev.yaml
-    ${KYMA} alpha create module --module-config-file=module-config-dev.yaml --registry ${MODULE_REGISTRY} -c oauth2accesstoken:${GCP_ACCESS_TOKEN} -o moduletemplate-dev.yaml --ci
+    ${KYMA} alpha create module \
+    --module-config-file=module-config-dev.yaml \
+    --registry ${MODULE_REGISTRY} \
+    --credentials oauth2accesstoken:${GCP_ACCESS_TOKEN} \
+    --output moduletemplate-dev.yaml \
+    --module-archive-version-overwrite \
+    --ci
 }
 
 function create_github_release() {
