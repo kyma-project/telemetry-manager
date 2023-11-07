@@ -113,7 +113,6 @@ This configuration samples 1% of all requests. if you want to change the samplin
         name: dynatrace
     spec:
         output:
-            convertToDelta: true
             otlp:
                 endpoint:
                     value: https://{ENVIRONMENT_ID}.live.dynatrace.com/api/v2/otlp

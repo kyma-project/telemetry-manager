@@ -242,37 +242,6 @@ func TestMakeConfig(t *testing.T) {
 		})
 	})
 
-	t.Run("cumulative to delta", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test-delta").WithConvertToDeltaFlag(true).Build(),
-			testutils.NewMetricPipelineBuilder().WithName("test").Build(),
-		})
-		require.NoError(t, err)
-
-		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
-		require.Equal(t, []string{"memory_limiter",
-			"k8sattributes",
-			"resource/insert-cluster-name",
-			"transform/resolve-service-name",
-			"filter/drop-if-input-source-runtime",
-			"filter/drop-if-input-source-prometheus",
-			"filter/drop-if-input-source-istio",
-			"resource/drop-kyma-attributes",
-			"batch"}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
-
-		require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test-delta")
-		require.Equal(t, []string{"memory_limiter",
-			"k8sattributes",
-			"resource/insert-cluster-name",
-			"transform/resolve-service-name",
-			"filter/drop-if-input-source-runtime",
-			"filter/drop-if-input-source-prometheus",
-			"filter/drop-if-input-source-istio",
-			"cumulativetodelta",
-			"resource/drop-kyma-attributes",
-			"batch"}, collectorConfig.Service.Pipelines["metrics/test-delta"].Processors)
-	})
-
 	t.Run("marshaling", func(t *testing.T) {
 		config, _, err := MakeConfig(context.Background(), fakeClient, []v1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().WithName("test").Build(),

@@ -21,7 +21,6 @@ type MetricPipelineBuilder struct {
 	istioInputOn      bool
 	basicAuthUser     string
 	basicAuthPassword string
-	convertToDelta    bool
 
 	conditions []telemetryv1alpha1.MetricPipelineCondition
 }
@@ -61,11 +60,6 @@ func (b *MetricPipelineBuilder) WithIstioInputOn(on bool) *MetricPipelineBuilder
 func (b *MetricPipelineBuilder) WithBasicAuth(user, password string) *MetricPipelineBuilder {
 	b.basicAuthUser = user
 	b.basicAuthPassword = password
-	return b
-}
-
-func (b *MetricPipelineBuilder) WithConvertToDeltaFlag(on bool) *MetricPipelineBuilder {
-	b.convertToDelta = on
 	return b
 }
 
@@ -127,7 +121,6 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 						},
 					},
 				},
-				ConvertToDelta: b.convertToDelta,
 			},
 		},
 		Status: telemetryv1alpha1.MetricPipelineStatus{
