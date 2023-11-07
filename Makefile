@@ -261,7 +261,7 @@ undeploy-dev: ## Undeploy resources based on the development variant from the K8
 
 .PHONY: release
 release: kyma kustomize ## Create module with its image pushed to prod registry and create a github release entry
-	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} IMG=${IMG} ./hack/release.sh
+	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} IMG=${IMG} GORELEASER_VERSION=${GORELEASER_VERSION} ./hack/release.sh
 
 ##@ Build Dependencies
 
