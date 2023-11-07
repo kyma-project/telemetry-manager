@@ -24,7 +24,6 @@ type Processors struct {
 	DropIfInputSourceRuntime    *FilterProcessor               `yaml:"filter/drop-if-input-source-runtime,omitempty"`
 	DropIfInputSourcePrometheus *FilterProcessor               `yaml:"filter/drop-if-input-source-prometheus,omitempty"`
 	DropIfInputSourceIstio      *FilterProcessor               `yaml:"filter/drop-if-input-source-istio,omitempty"`
-	CumulativeToDelta           *CumulativeToDeltaProcessor    `yaml:"cumulativetodelta,omitempty"`
 	ResolveServiceName          *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
 	DropKymaAttributes          *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
@@ -36,8 +35,6 @@ type FilterProcessor struct {
 type FilterProcessorMetric struct {
 	DataPoint []string `yaml:"datapoint"`
 }
-
-type CumulativeToDeltaProcessor struct{}
 
 type TransformProcessor struct {
 	ErrorMode        string                                `yaml:"error_mode"`

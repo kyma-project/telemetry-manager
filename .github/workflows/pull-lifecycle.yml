@@ -1,0 +1,89 @@
+name: PR Lifecycle
+
+on:
+  pull_request:
+    branches:
+      - "main"
+      - "release-*"
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+  workflow_dispatch:
+
+jobs:
+  manager-upgrade:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    # uses an older go version by default, so configure go with newest version
+    - name: Setup golang
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        cache: true
+
+    - name: Provision K3D
+      shell: bash
+      run: make provision-k3d
+
+    - name: Deploy with latest tag
+      shell: bash
+      run: |
+        git fetch --tags  
+        LATEST_TAG=$(git tag --sort=-creatordate | sed -n 1p)
+        echo "Using tag ${LATEST_TAG}"
+        git checkout ${LATEST_TAG}
+        GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
+        GIT_COMMIT_DATE=$(git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_COMMIT_SHA})
+        echo "Deploying Manager using image europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA}"
+        IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
+
+    - name: Switch back to current revision
+      uses: actions/checkout@v4
+
+    - name: Wait for operator readiness
+      shell: bash
+      run: kubectl -n kyma-system rollout status deployment telemetry-operator --timeout=90s
+
+    - name: Run test on latest tag
+      shell: bash
+      run: make run-upgrade-test
+
+    - name: Wait for cleanup of test run
+      shell: bash
+      run: hack/wait-for-namespaces.sh
+
+    # wait for the build to succeed so that the manager image is available
+    - name: Wait for the 'pull-telemetry-manager-build' job to succeed
+      uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
+      with:
+        context: "pull-telemetry-manager-build"
+        commit_ref: "${{ github.event.pull_request.head.sha }}" # Note: 'github.event.pull_request.head.sha' is not same as 'github.sha' on pull requests.
+        timeout: 600000 # 10 minutes in milliseconds
+        # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
+        check_interval: 60000 # 1 minute in milliseconds
+      env:
+        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        GITHUB_OWNER: "${{ github.repository_owner }}"
+        GITHUB_REPO: "telemetry-manager"
+
+    - name: Deploy with current version
+      shell: bash
+      run: |
+        IMG=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.number }} make deploy-dev
+
+    - name: Wait for operator readiness
+      shell: bash
+      run: kubectl -n kyma-system rollout status deployment telemetry-operator --timeout=90s
+
+    - name: Run test on current version
+      shell: bash
+      run: make run-upgrade-test
+
+    - name: Finalize test
+      uses: "./.github/template/finalize-test"
+      if: success() || failure()
+      with:
+        failure: failure()

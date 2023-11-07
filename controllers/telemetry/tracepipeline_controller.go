@@ -34,7 +34,6 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/setup"
 )
 
@@ -76,40 +75,10 @@ func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&networkingv1.NetworkPolicy{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
 		Watches(
-			&corev1.Secret{},
-			handler.EnqueueRequestsFromMapFunc(r.mapSecret),
-			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
-		).
-		Watches(
 			&operatorv1alpha1.Telemetry{},
 			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
 		).Complete(r)
-}
-
-func (r *TracePipelineReconciler) mapSecret(ctx context.Context, object client.Object) []reconcile.Request {
-	var pipelines telemetryv1alpha1.TracePipelineList
-	var requests []reconcile.Request
-	err := r.List(ctx, &pipelines)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Secret UpdateEvent: fetching TracePipelineList failed!", err.Error())
-		return requests
-	}
-
-	secret, ok := object.(*corev1.Secret)
-	if !ok {
-		logf.FromContext(ctx).V(1).Error(errIncorrectSecretObject, "Secret object of incompatible type")
-		return requests
-	}
-	logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Secret UpdateEvent: handling Secret: %s", secret.Name))
-	for i := range pipelines.Items {
-		var pipeline = pipelines.Items[i]
-		if secretref.ReferencesSecret(secret.Name, secret.Namespace, &pipeline) {
-			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: pipeline.Name}})
-			logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Secret UpdateEvent: added reconcile request for pipeline: %s", pipeline.Name))
-		}
-	}
-	return requests
 }
 
 func (r *TracePipelineReconciler) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {

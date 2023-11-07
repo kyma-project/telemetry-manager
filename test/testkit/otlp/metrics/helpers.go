@@ -28,27 +28,5 @@ func sendGaugeMetrics(ctx context.Context, proxyClient *apiserver.ProxyClient, m
 	if err != nil {
 		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)
 	}
-	return sender.ExportGaugeMetrics(ctx, metrics)
-}
-
-func MakeAndSendSumMetrics(proxyClient *apiserver.ProxyClient, otlpPushURL string) []pmetric.Metric {
-	builder := NewBuilder()
-	var cumulativeSums []pmetric.Metric
-
-	for i := 0; i < 50; i++ {
-		sum := NewCumulativeSum()
-		cumulativeSums = append(cumulativeSums, sum)
-		builder.WithMetric(sum)
-	}
-	gomega.Expect(sendSumMetrics(context.Background(), proxyClient, builder.Build(), otlpPushURL)).To(gomega.Succeed())
-
-	return cumulativeSums
-}
-
-func sendSumMetrics(ctx context.Context, proxyClient *apiserver.ProxyClient, metrics pmetric.Metrics, otlpPushURL string) error {
-	sender, err := NewHTTPExporter(otlpPushURL, proxyClient)
-	if err != nil {
-		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)
-	}
-	return sender.ExportSumMetrics(ctx, metrics)
+	return sender.ExportMetrics(ctx, metrics)
 }

@@ -10,7 +10,7 @@ import (
 
 func WithMds(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(jsonlMetrics []byte) ([]pmetric.Metrics, error) {
-		mds, err := extractMetrics(jsonlMetrics)
+		mds, err := unmarshalMetrics(jsonlMetrics)
 		if err != nil {
 			return nil, fmt.Errorf("WithMds requires a valid OTLP JSON document: %v", err)
 		}

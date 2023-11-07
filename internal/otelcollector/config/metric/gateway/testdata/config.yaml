@@ -91,7 +91,6 @@ processors:
         metrics:
             datapoint:
                 - resource.attributes["kyma.source"] == "istio"
-    cumulativetodelta: {}
     transform/resolve-service-name:
         error_mode: ignore
         metric_statements:
