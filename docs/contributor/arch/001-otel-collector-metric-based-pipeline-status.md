@@ -59,6 +59,15 @@ However, this static setup does come with its drawbacks:
 * Fine-tuning Prometheus dynamically based on the number of pipelines or other factors is not feasible.
 * Sidecar is deployed even when there are no pipelines, which may lead to unnecessary resource utilization.
 
+#### Standalone Prometheus Deployment
+
+An alternative approach would involve embedding Prometheus within the code of the operator, similar to how we deploy Fluent Bit or Otel Collector. 
+This approach grants you complete control and maximum flexibility in managing Prometheus.
+It's equally important to communicate to the end user that this internal Prometheus is intended exclusively for internal purposes and should not be utilized for monitoring user workloads. 
+Clear communication regarding its internal nature is crucial to avoid any misuses or misunderstandings.
+
+**Despite its inherent complexity, our preference leans toward running Prometheus as a standalone deployment. This approach offers the highest level of flexibility and ensures future-proofing, making it the most robust choice for our needs.**
+
 ## Consequences
 
 
