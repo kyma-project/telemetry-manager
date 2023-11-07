@@ -20,6 +20,7 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
+	"time"
 
 	zapLog "go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +28,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -95,6 +97,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	syncPeriod := 1 * time.Second
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:  scheme.Scheme,
 		Metrics: metricsserver.Options{BindAddress: "localhost:8080"},
@@ -105,6 +108,9 @@ var _ = BeforeSuite(func() {
 		HealthProbeBindAddress: "localhost:8081",
 		LeaderElection:         false,
 		LeaderElectionID:       "cdd7ef0a.kyma-project.io",
+		Cache: cache.Options{
+			SyncPeriod: &syncPeriod,
+		},
 	})
 	Expect(err).ToNot(HaveOccurred())
 

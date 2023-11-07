@@ -300,7 +300,7 @@ func main() {
 		}
 	}()
 
-	syncPeriod := 1 * time.Hour
+	syncPeriod := 1 * time.Minute
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
 		Metrics:                 metricsserver.Options{BindAddress: ":8080"},
@@ -324,6 +324,14 @@ func main() {
 				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
 				&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
 				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
+				&corev1.Secret{}:              {Field: setNamespaceFieldSelector()},
+			},
+		},
+		Client: client.Options{
+			Cache: &client.CacheOptions{
+				DisableFor: []client.Object{
+					&corev1.Secret{},
+				},
 			},
 		},
 	})
