@@ -68,6 +68,22 @@ Clear communication regarding its internal nature is crucial to avoid any misuse
 
 **Despite its inherent complexity, our preference leans toward running Prometheus as a standalone deployment. This approach offers the highest level of flexibility and ensures future-proofing, making it the most robust choice for our needs.**
 
+### Integrating Prometheus Querying into Operator Reconciliation Loop
+
+#### Predefined PromQL Queries:
+* The operator manages a set of predefined PromQL queries and communicates with Prometheus using [expression queries API](https://prometheus.io/docs/prometheus/latest/querying/api/#expression-queries) to collect data points. 
+  It then evaluates the Pipeline Custom Resource (CR) statuses based on this data.
+* The potential issue of long-running queries, which could hinder reconciliation, is addressed by introducing a separate monitoring Custom Resource (CR) with its own reconciliation loop.
+  This separation effectively isolates the query execution and result storage from the tracepipeline and metricpipeline controllers, ensuring a smoother and more efficient workflow.
+  It's worth noting that while this approach enhances efficiency, it can introduce increased complexity to the overall setup.
+
+#### Prometheus Alerts:
+* PromQL expressions are defined as Prometheus alerts, with Prometheus responsible for evaluating them.
+* The operator uses the alerts API to periodically fetch information about active alerts.
+* This method avoids potentially long-running queries that can hinder reconciliation by offloading evaluation to Prometheus and simply polling the results.
+* Another advantages of this approach include clear separation of code and PromQL expressions.
+* Additionally, it provides better troubleshooting capabilities as Prometheus state can be observed using the dashboard.
+
 ## Consequences
 
 
