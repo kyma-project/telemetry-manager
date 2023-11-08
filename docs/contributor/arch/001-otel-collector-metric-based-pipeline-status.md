@@ -86,6 +86,8 @@ Clear communication regarding its internal nature is crucial to avoid any misuse
 * Another advantages of this approach include clear separation of code and PromQL expressions.
 * Additionally, it provides better troubleshooting capabilities as Prometheus state can be observed using the dashboard.
 
+![Prometheus Integration using Alerts](../assets/prom-integration-alerts-flow.svg "Prometheus Integration using Alerts")
+
 ## Consequences
 
 
