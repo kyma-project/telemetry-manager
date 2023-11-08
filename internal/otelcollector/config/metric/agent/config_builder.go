@@ -122,7 +122,7 @@ func makePipelinesConfig(inputs inputSources) config.Pipelines {
 
 	if inputs.prometheus {
 		pipelinesConfig["metrics/prometheus"] = config.Pipeline{
-			Receivers:  []string{"prometheus/self", "prometheus/app-pods", "prometheus/app-services"},
+			Receivers:  []string{"prometheus/app-pods", "prometheus/app-services"},
 			Processors: []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-prometheus", "batch"},
 			Exporters:  []string{"otlp"},
 		}

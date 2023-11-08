@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 const scrapeInterval = 30 * time.Second
@@ -23,7 +22,6 @@ func makeReceiversConfig(inputs inputSources, isIstioActive bool) Receivers {
 	var receiversConfig Receivers
 
 	if inputs.prometheus {
-		receiversConfig.PrometheusSelf = makePrometheusSelfConfig()
 		receiversConfig.PrometheusAppPods = makePrometheusConfigForPods(isIstioActive)
 		receiversConfig.PrometheusAppServices = makePrometheusConfigForServices(isIstioActive)
 	}
@@ -48,24 +46,6 @@ func makeKubeletStatsConfig() *KubeletStatsReceiver {
 		InsecureSkipVerify: true,
 		Endpoint:           fmt.Sprintf("https://${env:%s}:%d", config.EnvVarCurrentNodeName, portKubelet),
 		MetricGroups:       []MetricGroupType{MetricGroupTypeContainer, MetricGroupTypePod},
-	}
-}
-
-func makePrometheusSelfConfig() *PrometheusReceiver {
-	return &PrometheusReceiver{
-		Config: PrometheusConfig{
-			ScrapeConfigs: []ScrapeConfig{
-				{
-					JobName:        "opentelemetry-collector",
-					ScrapeInterval: scrapeInterval,
-					StaticDiscoveryConfigs: []StaticDiscoveryConfig{
-						{
-							Targets: []string{fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics)},
-						},
-					},
-				},
-			},
-		},
 	}
 }
 
