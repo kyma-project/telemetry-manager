@@ -894,4 +894,4 @@ The metric gateway with a configured CLS instance reaches max ~34K metric data p
 
 
 
-[Broken Link](../../../../artifacts/junit.xml)
+[Broken Link](./assets/testfile.txt)
