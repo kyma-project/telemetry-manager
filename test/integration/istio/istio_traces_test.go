@@ -1,4 +1,4 @@
-//go:build istio
+//go:build istio123
 
 package istio
 

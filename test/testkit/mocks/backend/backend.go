@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -34,6 +35,7 @@ type Backend struct {
 
 	persistentHostSecret bool
 	withTLS              bool
+	excludeApiAccessPort bool
 	TLSCerts             tls.Certs
 
 	ConfigMap        *ConfigMap
@@ -65,6 +67,12 @@ func WithTLS() Option {
 	}
 }
 
+func ExcludeAPIAccessPort() Option {
+	return func(b *Backend) {
+		b.excludeApiAccessPort = true
+	}
+}
+
 func WithPersistentHostSecret(persistentHostSecret bool) Option {
 	return func(b *Backend) {
 		b.persistentHostSecret = persistentHostSecret
@@ -84,7 +92,12 @@ func (b *Backend) buildResources() {
 	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), TelemetryDataFilename)
 
 	b.ConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.withTLS, b.TLSCerts)
-	b.Deployment = NewDeployment(b.name, b.namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.signalType)
+	if b.excludeApiAccessPort {
+		b.Deployment = NewDeployment(b.name, b.namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(HTTPWebPort)})
+	} else {
+		b.Deployment = NewDeployment(b.name, b.namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.signalType)
+	}
+
 	if b.signalType == SignalTypeLogs {
 		b.FluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.withTLS, b.TLSCerts)
 		b.Deployment.WithFluentdConfigName(b.FluentDConfigMap.Name())
