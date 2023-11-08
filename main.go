@@ -135,7 +135,7 @@ const (
 	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.88.0-bf0a181d"
 	overridesConfigMapName = "telemetry-override-config"
 	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.10-a5234020"
-	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20231011-c6f25b5b"
+	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20231108-b1ec4cab"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
