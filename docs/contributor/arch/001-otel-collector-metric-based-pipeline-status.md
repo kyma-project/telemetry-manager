@@ -1,4 +1,4 @@
-# 1. Trace/Metric Pipeline status based on Otel Collector metrics
+# 1. Trace/Metric Pipeline status based on OTel Collector metrics
 
 Date: 2023-06-11
 
