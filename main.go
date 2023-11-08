@@ -20,6 +20,10 @@ import (
 	"context"
 	"errors"
 	"flag"
+	IstioSecV1Beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"net/http"
 	"os"
 	"strings"
@@ -149,7 +153,7 @@ func init() {
 
 	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
-	//utilruntime.Must(IstioSecV1Beta1.AddToScheme(scheme))
+	utilruntime.Must(IstioSecV1Beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -314,23 +318,20 @@ func main() {
 			CertDir: certDir,
 		}),
 		Cache: cache.Options{
-			SyncPeriod:        &syncPeriod,
-			DefaultNamespaces: map[string]cache.Config{telemetryNamespace: {}},
+			SyncPeriod: &syncPeriod,
 
-			//DefaultFieldSelector: fields.OneTermEqualSelector("metadata.namespace", telemetryNamespace),
 			//// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			//// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
 
-			//ByObject: map[client.Object]cache.ByObject{
-			//	&appsv1.Deployment{}:                  {Field: setNamespaceFieldSelector()},
-			//	&appsv1.ReplicaSet{}:                  {Field: setNamespaceFieldSelector()},
-			//	&appsv1.DaemonSet{}:                   {Field: setNamespaceFieldSelector()},
-			//	&corev1.ConfigMap{}:                   {Field: setNamespaceFieldSelector()},
-			//	&corev1.ServiceAccount{}:              {Field: setNamespaceFieldSelector()},
-			//	&corev1.Service{}:                     {Field: setNamespaceFieldSelector()},
-			//	&networkingv1.NetworkPolicy{}:         {Field: setNamespaceFieldSelector()},
-			//	&IstioSecV1Beta1.PeerAuthentication{}: {Field: setNamespaceFieldSelector()},
-			//},
+			ByObject: map[client.Object]cache.ByObject{
+				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
+				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
+				&appsv1.DaemonSet{}:           {Field: setNamespaceFieldSelector()},
+				&corev1.ConfigMap{}:           {Field: setNamespaceFieldSelector()},
+				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
+				&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
+				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
+			},
 		},
 		Client: client.Options{
 			Cache: &client.CacheOptions{
@@ -440,9 +441,9 @@ func reconcileWebhook(certconfig webhookcert.Config, k8sClient client.Client) {
 	}
 }
 
-//func setNamespaceFieldSelector() fields.Selector {
-//	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
-//}
+func setNamespaceFieldSelector() fields.Selector {
+	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
+}
 
 func validateFlags() error {
 
