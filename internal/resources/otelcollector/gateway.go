@@ -6,8 +6,8 @@ import (
 	"maps"
 
 	"istio.io/api/security/v1beta1"
-	istioTypes "istio.io/api/type/v1beta1"
-	istiov1Beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+	istiotypes "istio.io/api/type/v1beta1"
+	istiov1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -239,11 +239,11 @@ func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
 	}
 }
 
-func makePeerAuthentication(cfg *GatewayConfig) *istiov1Beta1.PeerAuthentication {
-	return &istiov1Beta1.PeerAuthentication{
+func makePeerAuthentication(cfg *GatewayConfig) *istiov1beta1.PeerAuthentication {
+	return &istiov1beta1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{Name: cfg.BaseName, Namespace: cfg.Namespace},
 		Spec: v1beta1.PeerAuthentication{
-			Selector: &istioTypes.WorkloadSelector{MatchLabels: defaultLabels(cfg.BaseName)},
+			Selector: &istiotypes.WorkloadSelector{MatchLabels: defaultLabels(cfg.BaseName)},
 			Mtls:     &v1beta1.PeerAuthentication_MutualTLS{Mode: v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}
