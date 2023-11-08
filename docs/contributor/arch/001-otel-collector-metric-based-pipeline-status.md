@@ -1,6 +1,6 @@
 # 1. Trace/Metric Pipeline status based on OTel Collector metrics
 
-Date: 2023-06-11
+Date: 2023-08-11
 
 ## Status
 
