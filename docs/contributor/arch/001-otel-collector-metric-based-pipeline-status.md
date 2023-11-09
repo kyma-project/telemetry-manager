@@ -66,6 +66,7 @@ Clear communication regarding its internal nature is crucial to avoid any misuse
   Subsequently, it utilizes this data to evaluate the status of Pipeline CRs. 
 * However, it's crucial to note that if the querying process takes an extended duration, it may impact the reconciliation of TracePipeline and MetricPipeline.
 ![Prometheus Integration using Direct Queries](../assets/prom-integration-direct-queries-flow.svg "Prometheus Integration using Direct Queries")
+* Using [recording rules](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/) can improve query performance.
 
 #### Prometheus Queries with Additional Controller:
 * Similar to [Direct Prometheus Queries](#direct-prometheus-queries), but it addresses the potential challenge of long-running queries, which could hinder reconciliation introducing a separate PipelineMonitoring CR with its own reconciliation loop.
