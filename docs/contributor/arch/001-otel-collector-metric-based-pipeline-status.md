@@ -87,7 +87,7 @@ Clear communication regarding its internal nature is crucial to avoid any misuse
 Despite its inherent complexity, our preference leans toward running Prometheus as a standalone deployment. This approach offers the highest level of flexibility and ensures future-proofing, making it the most robust choice for our needs.
 The following things have to be considered:
 * To maintain security, we should make sure only Telemetry Manager can access Prometheus, and we can do this by deploying a NetworkPolicy.
-* For cost-effectiveness and faster queries, it's a good idea for Prometheus to use in-memory storage.
+* For cost-effectiveness, it's a good idea for Prometheus to use ephemeral storage.
 * We only need to keep data for a short period, mainly focusing on current information and possibly the last few hours of historical data.
 
 ### Integrating Prometheus Querying into Telemetry Manager Reconciliation Loop
