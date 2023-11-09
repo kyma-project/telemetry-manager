@@ -15,7 +15,6 @@ service:
                 - otlp
         metrics/prometheus:
             receivers:
-                - prometheus/self
                 - prometheus/app-pods
                 - prometheus/app-services
             processors:
@@ -52,14 +51,6 @@ receivers:
         metric_groups:
             - container
             - pod
-    prometheus/self:
-        config:
-            scrape_configs:
-                - job_name: opentelemetry-collector
-                  scrape_interval: 30s
-                  static_configs:
-                    - targets:
-                        - ${MY_POD_IP}:8888
     prometheus/app-pods:
         config:
             scrape_configs:

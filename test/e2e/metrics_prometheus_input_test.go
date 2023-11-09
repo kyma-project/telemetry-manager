@@ -153,5 +153,31 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
+
+		It("Should have metrics with service.name set to telemetry-metric-gateway", Label(operationalTest), func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					ContainMd(
+						ContainResourceAttrs(HaveKeyWithValue("service.name", kitkyma.MetricGatewayBaseName)),
+					),
+				))
+			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should have metrics with service.name set to telemetry-metric-agent", Label(operationalTest), func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					ContainMd(
+						ContainResourceAttrs(HaveKeyWithValue("service.name", kitkyma.MetricAgentBaseName)),
+					),
+				))
+			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
 	})
 })
