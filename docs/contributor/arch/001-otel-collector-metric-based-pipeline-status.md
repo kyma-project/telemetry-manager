@@ -48,8 +48,8 @@ This method remains lightweight, as it doesn't require any changes in the manage
 It also may ease security considerations since Prometheus and Telemetry Manager share the network namespace, so Prometheus can listen on localhost and no further NetworkPolicies, etc. are required.
 However, this setup does come with its drawbacks:
 
-* It relies on a static configuration with no room for parameterization, limiting flexibility.
-* Fine-tuning Prometheus dynamically based on the number of pipelines or other factors is not feasible.
+* It relies on a static configuration with no room for parameterization, limiting flexibility. It also does not allow any kind of reconfiguration (scrape targets, metric whitelisting, etc.).
+* Fine-tuning Prometheus dynamically based on the number of pipelines or other factors is not possible.
 * Sidecar is deployed even when there are no pipelines, which may lead to unnecessary resource utilization.
 
 #### Standalone Prometheus Deployment
