@@ -123,7 +123,8 @@ var _ = Describe("Traces Service Name", Label("tracing"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
 					ContainTd(
-						ContainResourceAttrs(HaveKeyWithValue("service.name", "unknown_service")),
+						// on a Gardener cluster, API server proxy traffic is routed through vpn-shoot, so service.name is set respectively
+						ContainResourceAttrs(HaveKeyWithValue("service.name", BeElementOf("unknown_service", "vpn-shoot"))),
 					),
 				))
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
