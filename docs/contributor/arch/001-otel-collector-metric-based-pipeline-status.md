@@ -32,7 +32,7 @@ In the event of any problematic situation, Telemetry Manager should promptly rep
 
 ### Metric Analysis
 
-In the context of metric analysis, let's consider the following scenarios:
+We want to reflect telemetry delivery issues in the status of TracePipelines and MetricPipelines. To do this, we want to analyze metrics, provided by OTel Collectors using Prometheus text-based exposition format. Let's look at the following scenarios:
 
 #### Direct Endpoint Scraping by Telemetry Manager (Without TSDB)
 
