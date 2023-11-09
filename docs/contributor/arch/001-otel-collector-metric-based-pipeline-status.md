@@ -64,14 +64,12 @@ Clear communication regarding its internal nature is crucial to avoid any misuse
 * The operator manages a set of predefined PromQL queries and communicates with Prometheus using [expression queries API](https://prometheus.io/docs/prometheus/latest/querying/api/#expression-queries) to collect data points.
   Subsequently, it utilizes this data to evaluate the status of Pipeline CRs. 
 * However, it's crucial to note that if the querying process takes an extended duration, it may impact the reconciliation of TracePipeline and MetricPipeline.
-
 ![Prometheus Integration using Direct Queries](../assets/prom-integration-direct-queries-flow.svg "Prometheus Integration using Direct Queries")
 
 #### Prometheus Queries with Additional Controller:
 * Similar to [Direct Prometheus Queries](#direct-prometheus-queries), but it addresses the potential challenge of long-running queries, which could hinder reconciliation introducing a separate PipelineMonitoring CR with its own reconciliation loop.
   This separation effectively isolates the query execution and result storage from the TracePipeline and MetricPipeline controllers.
   It's worth noting that while this approach enhances efficiency, it can introduce increased complexity to the overall setup.
-
 ![Prometheus Integration with Additional Controller](../assets/prom-integration-extra-ctrl-flow.svg "Prometheus Integration with Additional Controller")
 
 #### Prometheus Alerts:
@@ -79,7 +77,7 @@ Clear communication regarding its internal nature is crucial to avoid any misuse
 * The operator leverages the [alerts API](https://prometheus.io/docs/prometheus/latest/querying/api/#alerts) to periodically retrieve information regarding active alerts.
 * This method offers several advantages, including the avoidance of potentially long-running queries that can hinder reconciliation, as the evaluation is offloaded to Prometheus.
 * Additionally, it provides better troubleshooting capabilities as Prometheus state can be observed using the dashboard.
-
+* Prometheus can also push alerts, allowing the operator to serve a webhook that, when called, triggers a reconciliation (see [channel watch](https://github.com/kubernetes-sigs/controller-runtime/blob/818a2e12a70c7a6d263edd180695e4448d2de823/pkg/source/example_test.go#L42))
 ![Prometheus Integration using Alerts](../assets/prom-integration-alerts-flow.svg "Prometheus Integration using Alerts")
 
 ## Decision
