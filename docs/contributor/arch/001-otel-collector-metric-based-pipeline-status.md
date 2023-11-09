@@ -37,7 +37,7 @@ We want to reflect telemetry delivery issues in the status of TracePipelines and
 #### Direct Endpoint Scraping by Telemetry Manager (Without TSDB)
 
 While direct endpoint scraping is the simplest approach and doesn't require Prometheus integration, it comes with a lot of limitations.
-When scraping an endpoint, you receive one value per timestamp, which may suffice for gauges. However, even for commonly used metrics like rates, you would require multiple values aggregated over time.
+When scraping an endpoint, you receive one value per timestamp, which may suffice for gauges. However, even for commonly used query functions like rates, you would require multiple values aggregated over time.
 Additionally, Prometheus automatically handles adjustments for breaks in monotonicity, such as counter resets resulting from target restarts. Manual scraping lacks this crucial feature.
 
 #### Prometheus as a Sidecar
