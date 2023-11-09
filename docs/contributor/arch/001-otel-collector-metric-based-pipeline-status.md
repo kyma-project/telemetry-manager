@@ -102,3 +102,4 @@ Using [Prometheus Queries with Additional Controller](#prometheus-queries-with-a
 ## Consequences
 
 We can decide on how to implement [Integrating Prometheus Querying into Telemetry Manager Reconciliation Loop](#integrating-prometheus-querying-into-telemetry-manager-reconciliation-loop) by conducting a Proof of Concept (PoC). This involves running a load test with a significant number of OTel Collector replicas and various PromQL queries. The results from this testing will guide us in selecting the most suitable approach for our unique circumstances.
+Future progress is tracked in https://github.com/kyma-project/telemetry-manager/issues/425.
