@@ -44,8 +44,9 @@ Additionally, Prometheus automatically handles adjustments for breaks in monoton
 
 Now that we understand the necessity of using Prometheus for even basic metric analysis, let's explore how we can deploy it.
 One deployment approach involves deploying Prometheus as a sidecar alongside Telemetry Manager.
-This method remains lightweight, as it doesn't necessitate any changes in the manager's code and can be easily achieved only using kustomize.
-However, this static setup does come with its drawbacks:
+This method remains lightweight, as it doesn't require any changes in the manager's code and can be easily achieved only using kustomize.
+It also may ease security considerations since Prometheus and Telemetry Manager share the network namespace, so Prometheus can listen on localhost and no further NetworkPolicies, etc. are required.
+However, this setup does come with its drawbacks:
 
 * It relies on a static configuration with no room for parameterization, limiting flexibility.
 * Fine-tuning Prometheus dynamically based on the number of pipelines or other factors is not feasible.
