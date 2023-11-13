@@ -189,9 +189,8 @@ func makeOpenCensusService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromInt32(ports.OpenCensus),
 				},
 			},
-			Selector:        labels,
-			Type:            corev1.ServiceTypeClusterIP,
-			SessionAffinity: corev1.ServiceAffinityClientIP,
+			Selector: labels,
+			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }
@@ -220,9 +219,8 @@ func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
 					TargetPort: intstr.FromInt32(ports.OTLPHTTP),
 				},
 			},
-			Selector:        labels,
-			Type:            corev1.ServiceTypeClusterIP,
-			SessionAffinity: corev1.ServiceAffinityClientIP,
+			Selector: labels,
+			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }
