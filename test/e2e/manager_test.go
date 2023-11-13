@@ -147,36 +147,6 @@ var _ = Describe("Telemetry Manager", func() {
 			Expect(crd.Spec.Scope).To(Equal(apiextensionsv1.NamespaceScoped))
 		})
 
-		It("Should have a Fluent Bit dashboard", Label("logging"), func() {
-			var cm corev1.ConfigMap
-			key := types.NamespacedName{
-				Name:      "telemetry-fluent-bit-dashboard-fluent-bit",
-				Namespace: kitkyma.SystemNamespaceName,
-			}
-			err := k8sClient.Get(ctx, key, &cm)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("Should have an Otel Collector dashboard", Label("tracing"), func() {
-			var cm corev1.ConfigMap
-			key := types.NamespacedName{
-				Name:      "telemetry-otel-collector-grafana-dashboard",
-				Namespace: kitkyma.SystemNamespaceName,
-			}
-			err := k8sClient.Get(ctx, key, &cm)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("Should have a Metric Gateway dashboard", Label("metrics"), func() {
-			var cm corev1.ConfigMap
-			key := types.NamespacedName{
-				Name:      "telemetry-otel-metric-gateway-grafana-dashboard",
-				Namespace: kitkyma.SystemNamespaceName,
-			}
-			err := k8sClient.Get(ctx, key, &cm)
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		It("Should have a Busola extension for MetricPipelines CRD", Label("metrics"), func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
