@@ -69,7 +69,7 @@ Clear communication regarding its internal nature is crucial to avoid any misuse
 * Using [recording rules](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/) can improve query performance.
 
 #### Prometheus Queries with Additional Controller:
-* Similar to [Direct Prometheus Queries](#direct-prometheus-queries), but it addresses the potential challenge of long-running queries, which could hinder reconciliation introducing a separate PipelineMonitoring CR with its own reconciliation loop.
+* Similar to [Direct Prometheus Queries](#direct-prometheus-queries), but it addresses the potential challenge of long-running queries, which could hinder reconciliation by introducing a separate PipelineMonitoring CR with its own reconciliation loop.
   This separation effectively isolates the query execution and result storage from the TracePipeline and MetricPipeline controllers.
   It's worth noting that while this approach enhances efficiency, it can introduce increased complexity to the overall setup.
 ![Prometheus Integration with Additional Controller](../assets/prom-integration-extra-ctrl-flow.svg "Prometheus Integration with Additional Controller")
