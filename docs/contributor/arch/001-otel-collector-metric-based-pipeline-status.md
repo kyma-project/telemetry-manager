@@ -8,7 +8,7 @@ Proposed
 
 ## Context
 
-The telemetry pipelines deploy active components to a cluster, responsible for dispatching data to third-party services. 
+The telemetry pipelines deploy active components to a cluster, and these components are responsible for dispatching data to third-party services.
 Inevitably, interruptions can occur, potentially hindering the successful delivery of data. 
 To enhance short-term resilience, we implement retries and buffering mechanisms. 
 Nevertheless, there may be scenarios where data cannot be delivered, requiring user notification for prompt action.
