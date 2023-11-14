@@ -1,16 +1,16 @@
 # Integrate with SAP Cloud Logging
 
-The SAP Cloud Logging service is an instance-based and environment-agnostic observability service that builds upon OpenSearch to store, visualize, and analyze logs, metrics, and traces. This guide explains how to define LogPipelines and TracePipelines in order to ingest application and access logs as well as distributed trace data in the SAP Cloud Logging service.
+The SAP Cloud Logging service is an instance-based and environment-agnostic observability service that builds upon OpenSearch to store, visualize, and analyze logs, metrics, and traces. This guide explains how to define LogPipelines and TracePipelines to ingest application and access logs as well as distributed trace data in the SAP Cloud Logging service.
 
 ## Prerequisites
 
-- A SAP Cloud Logging service with OpenTelemetry enabled to ingest distributed traces
-- A secret named `cls` in `cls-integration` namespace, holding the credentials and endpoints for the instance
+- The SAP Cloud Logging service with OpenTelemetry enabled to ingest distributed traces
+- A Secret named `cls` in the `cls-integration` namespace, holding the credentials and endpoints for the instance
 
 ## Ship Logs to Cloud Logging Service
 
-The telemetry module supports convenient shipment of application and access logs using LogPipeline custom resources (see [Kyma Telemetry Application Logs Documentation](./../../02-logs)). The setup distinguishes application logs and access logs which can be configured independently.
-To enable shipping logs to Cloud Logging Service follow the below procedure:
+The Telemetry module supports the convenient shipment of applications and access logs using LogPipeline custom resources. For more details, see [Kyma Telemetry Application Logs Documentation](./../../02-logs.md). The setup distinguishes application logs and access logs which can be configured independently.
+To enable shipping logs to the SAP Cloud Logging service follow the below procedure:
 
 1. Deploy the LogPipeline for application logs:
     ```
