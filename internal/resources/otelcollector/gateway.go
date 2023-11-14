@@ -95,7 +95,7 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioEnabl
 
 	annotations := map[string]string{"checksum/config": configChecksum}
 	if istioEnabled {
-		annotations["traffic.sidecar.istio.io/excludeInBoundPorts"] = "8888, 55678"
+		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = "8888, 55678"
 		annotations["sidecar.istio.io/interceptionMode"] = "TPROXY"
 	}
 	resources := makeGatewayResourceRequirements(cfg)
