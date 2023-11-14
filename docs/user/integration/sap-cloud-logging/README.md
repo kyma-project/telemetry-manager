@@ -1,4 +1,4 @@
-# Integrate with SAP Cloud Logging service
+# Integrate with SAP Cloud Logging
 
 The SAP Cloud Logging service is an instance-based and environment-agnostic observability service that builds upon OpenSearch to store, visualize, and analyze logs, metrics, and traces. This guide explains how to define LogPipelines and TracePipelines in order to ingest application and access logs as well as distributed trace data in the SAP Cloud Logging service.
 
