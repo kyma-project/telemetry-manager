@@ -89,17 +89,17 @@ To enable shipping logs to the SAP Cloud Logging service follow the below proced
    Kyma sets Istio access logs to disabled by default. To enable Istio access logs selectively for your workload, follow the [access logs guide](https://kyma-project.io/docs/kyma/main/04-operation-guides/operations/obsv-03-enable-istio-access-logs/).
    As a result, access logs can be analyzed in the default dashboards shipped for the SAP BTP, Kyma runtime.
 
-   >**CAUTION:** The provided feature uses an Istio API in alpha state, which may or may not be continued in future releases.
+   >**CAUTION:** The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
 
-1. Wait for the LogPipeline Kubernetes objects to be in Running state:
+1. Wait for the LogPipeline Kubernetes objects to be in the `Running` state:
     ```
     kubectl get logpipelines
     ```
 
-## Ship Distributed Traces to BTP Cloud Logging Service
+## Ship Distributed Traces to SAP Cloud Logging
 
-The telemetry module supports to ingest [distributed traces](./../../03-traces/) from applications and the Istio service mesh to the OTLP endpoint of SAP Cloud Logging service.
-To enable shipping traces to the SAP Cloud Logging Service, follow the below procedure:
+The Telemetry module supports ingesting [distributed traces](./../../03-traces.md) from applications and the Istio service mesh to the OTLP endpoint of the SAP Cloud Logging service.
+To enable shipping traces to the SAP Cloud Logging service, follow the below procedure:
 
 1. Deploy the Istio Telemetry resource by executing the following command:
     ```
@@ -115,7 +115,7 @@ To enable shipping traces to the SAP Cloud Logging Service, follow the below pro
         randomSamplingPercentage: 1.0
     ```
     The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value up to 100 percent.
-    > **Note:**
+    > **NOTE:**
     > Be mindful of configuring the randomSamplingPercentage because
     >  - traces might consume a significant storage volume in Cloud Logging Service
     >  - the Kyma trace collector component does not scale automatically.
@@ -151,7 +151,7 @@ To enable shipping traces to the SAP Cloud Logging Service, follow the below pro
                   key: ingest-otlp-key   
     ```
 
-3. Wait for the TracePipeline to be in Running state:
+3. Wait for the TracePipeline to be in the `Running` state:
     ```
     kubectl get tracepipelines
     ```
