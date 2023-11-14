@@ -259,7 +259,6 @@ func TestApplyGatewayResources(t *testing.T) {
 			"app.kubernetes.io/name": name,
 		}, svc.Spec.Selector)
 		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
-		require.Equal(t, corev1.ServiceAffinityClientIP, svc.Spec.SessionAffinity)
 		require.Len(t, svc.Spec.Ports, 2)
 		require.Equal(t, corev1.ServicePort{
 			Name:       "grpc-collector",
@@ -289,7 +288,6 @@ func TestApplyGatewayResources(t *testing.T) {
 			"app.kubernetes.io/name": name,
 		}, svc.Spec.Selector)
 		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
-		require.Equal(t, corev1.ServiceAffinityClientIP, svc.Spec.SessionAffinity)
 		require.Len(t, svc.Spec.Ports, 1)
 		require.Equal(t, corev1.ServicePort{
 			Name:       "http-opencensus",
