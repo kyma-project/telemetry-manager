@@ -5,7 +5,7 @@ SAP Cloud Logging is an instance-based and environment-agnostic observability se
 ## Prerequisites
 
 - An instance of SAP Cloud Logging with OpenTelemetry enabled to ingest distributed traces
-- A Secret named `sap-cloud-logging` in the `cls-integration` namespace, holding the credentials and endpoints for the instance
+- A Secret named `sap-cloud-logging` in the `sap-cloud-logging-integration` namespace, holding the credentials and endpoints for the instance
 
 ## Ship Logs to SAP Cloud Logging
 
@@ -14,7 +14,7 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
 
 1. Deploy the LogPipeline for application logs:
     ```
-    kubectl apply -n cls-integration -f - <<EOF
+    kubectl apply -n sap-cloud-logging-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
     metadata:
@@ -32,27 +32,27 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
             valueFrom:
               secretKeyRef:
                 name: sap-cloud-logging
-                namespace: cls-integration
+                namespace: sap-cloud-logging-integration
                 key: ingest-mtls-endpoint
           tls:
             cert:
               valueFrom:
                 secretKeyRef:
                   name: sap-cloud-logging
-                  namespace: cls-integration
+                  namespace: sap-cloud-logging-integration
                   key: ingest-mtls-cert
             key:
               valueFrom:
                 secretKeyRef:
                   name: sap-cloud-logging
-                  namespace: cls-integration
+                  namespace: sap-cloud-logging-integration
                   key: ingest-mtls-key
           uri: /customindex/kyma
     EOF      
     ```
 1. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
     ```
-    kubectl apply -n cls-integration -f - <<EOF
+    kubectl apply -n sap-cloud-logging-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
     metadata:
@@ -70,20 +70,20 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
             valueFrom:
               secretKeyRef:
                 name: sap-cloud-logging
-                namespace: cls-integration
+                namespace: sap-cloud-logging-integration
                 key: ingest-mtls-endpoint
           tls:
             cert:
               valueFrom:
                 secretKeyRef:
                   name: sap-cloud-logging
-                  namespace: cls-integration
+                  namespace: sap-cloud-logging-integration
                   key: ingest-mtls-cert
             key:
               valueFrom:
                 secretKeyRef:
                   name: sap-cloud-logging
-                  namespace: cls-integration
+                  namespace: sap-cloud-logging-integration
                   key: ingest-mtls-key
           uri: /customindex/istio-envoy-kyma
     EOF      
@@ -125,7 +125,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
 
 2. Deploy the TracePipeline by executing the following command:
     ```
-    kubectl apply -n cls-integration -f - <<EOF
+    kubectl apply -n sap-cloud-logging-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: TracePipeline
     metadata:
@@ -137,20 +137,20 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
             valueFrom:
               secretKeyRef:
                 name: sap-cloud-logging
-                namespace: cls-integration
+                namespace: sap-cloud-logging-integration
                 key: ingest-otlp-endpoint
           tls:
             cert:
               valueFrom:
                 secretKeyRef:
                   name: sap-cloud-logging
-                  namespace: cls-integration
+                  namespace: sap-cloud-logging-integration
                   key: ingest-otlp-cert
             key:
               valueFrom:
                 secretKeyRef:
                   name: sap-cloud-logging
-                  namespace: cls-integration
+                  namespace: sap-cloud-logging-integration
                   key: ingest-otlp-key
     EOF
     ```
