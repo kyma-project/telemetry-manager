@@ -37,19 +37,16 @@ const metricsAndTracesConfigTemplate = `receivers:
 exporters:
   file:
     path: {{ FILEPATH }}
-  debug:
-    verbosity: detailed
 service:
   telemetry:
     logs:
-      level: "debug"
+      level: "info"
   pipelines:
     {{ SIGNAL_TYPE }}:
       receivers:
         - otlp
       exporters:
-        - file
-        - debug`
+        - file`
 
 const tlsConfigTemplate = `receivers:
   otlp:
@@ -63,19 +60,16 @@ const tlsConfigTemplate = `receivers:
 exporters:
   file:
     path: {{ FILEPATH }}
-  debug:
-    verbosity: detailed
 service:
   telemetry:
     logs:
-      level: "debug"
+      level: "info"
   pipelines:
     {{ SIGNAL_TYPE }}:
       receivers:
         - otlp
       exporters:
-        - file
-        - debug`
+        - file`
 
 const LogConfigTemplate = `receivers:
   fluentforward:
@@ -87,8 +81,6 @@ const LogConfigTemplate = `receivers:
 exporters:
   file:
     path: {{ FILEPATH }}
-  debug:
-    verbosity: detailed
 service:
   telemetry:
     logs:
@@ -99,8 +91,7 @@ service:
         - otlp
         - fluentforward
       exporters:
-        - file
-        - debug`
+        - file`
 
 func (cm *ConfigMap) Name() string {
 	return cm.name
