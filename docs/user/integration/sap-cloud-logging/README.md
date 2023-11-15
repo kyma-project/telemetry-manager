@@ -14,7 +14,7 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
 
 1. Deploy the LogPipeline for application logs:
     ```
-    cat <<EOF | kubectl apply -n cls-integration -f -
+    kubectl apply -n cls-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
     metadata:
@@ -48,10 +48,11 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
                   namespace: cls-integration
                   key: ingest-mtls-key
           uri: /customindex/kyma
+    EOF      
     ```
 1. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
     ```
-    cat <<EOF | kubectl apply -n cls-integration -f -
+    kubectl apply -n cls-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
     metadata:
@@ -85,6 +86,7 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
                   namespace: cls-integration
                   key: ingest-mtls-key
           uri: /customindex/istio-envoy-kyma
+    EOF      
     ```
    Kyma sets Istio access logs to disabled by default. To enable Istio access logs selectively for your workload, follow the [access logs guide](https://kyma-project.io/#/04-operation-guides/operations/obsv-03-enable-istio-access-logs).
    As a result, access logs can be analyzed in the default dashboards shipped for the SAP BTP, Kyma runtime.
@@ -103,7 +105,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
 
 1. Deploy the Istio Telemetry resource by executing the following command:
     ```
-    cat <<EOF | kubectl apply -n istio-system -f -
+    kubectl apply -n istio-system -f - <<EOF
     apiVersion: telemetry.istio.io/v1alpha1
     kind: Telemetry
     metadata:
@@ -113,6 +115,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
       - providers:
         - name: "kyma-traces"
         randomSamplingPercentage: 1.0
+    EOF
     ```
     The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value up to 100 percent.
     > **NOTE:**
@@ -122,7 +125,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
 
 2. Deploy the TracePipeline by executing the following command:
     ```
-    cat <<EOF | kubectl apply -n cls-integration -f -
+    kubectl apply -n cls-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: TracePipeline
     metadata:
@@ -148,7 +151,8 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
                 secretKeyRef:
                   name: cls
                   namespace: cls-integration
-                  key: ingest-otlp-key   
+                  key: ingest-otlp-key
+    EOF
     ```
 
 3. Wait for the TracePipeline to be in the `Running` state:
