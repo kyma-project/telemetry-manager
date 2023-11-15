@@ -5,7 +5,7 @@ SAP Cloud Logging is an instance-based and environment-agnostic observability se
 ## Prerequisites
 
 - An instance of SAP Cloud Logging with OpenTelemetry enabled to ingest distributed traces
-- A Secret named `cls` in the `cls-integration` namespace, holding the credentials and endpoints for the instance
+- A Secret named `sap-cloud-logging` in the `cls-integration` namespace, holding the credentials and endpoints for the instance
 
 ## Ship Logs to SAP Cloud Logging
 
@@ -18,7 +18,7 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
     metadata:
-      name: cls-application-logs
+      name: sap-cloud-logging-application-logs
     spec:
       input:
         application:
@@ -31,20 +31,20 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
           host:
             valueFrom:
               secretKeyRef:
-                name: cls
+                name: sap-cloud-logging
                 namespace: cls-integration
                 key: ingest-mtls-endpoint
           tls:
             cert:
               valueFrom:
                 secretKeyRef:
-                  name: cls
+                  name: sap-cloud-logging
                   namespace: cls-integration
                   key: ingest-mtls-cert
             key:
               valueFrom:
                 secretKeyRef:
-                  name: cls
+                  name: sap-cloud-logging
                   namespace: cls-integration
                   key: ingest-mtls-key
           uri: /customindex/kyma
@@ -56,7 +56,7 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
     metadata:
-      name: cls-access-logs
+      name: sap-cloud-logging-access-logs
     spec:
       input:
         application:
@@ -69,20 +69,20 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
           host:
             valueFrom:
               secretKeyRef:
-                name: cls
+                name: sap-cloud-logging
                 namespace: cls-integration
                 key: ingest-mtls-endpoint
           tls:
             cert:
               valueFrom:
                 secretKeyRef:
-                  name: cls
+                  name: sap-cloud-logging
                   namespace: cls-integration
                   key: ingest-mtls-cert
             key:
               valueFrom:
                 secretKeyRef:
-                  name: cls
+                  name: sap-cloud-logging
                   namespace: cls-integration
                   key: ingest-mtls-key
           uri: /customindex/istio-envoy-kyma
@@ -129,27 +129,27 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: TracePipeline
     metadata:
-      name: cls
+      name: sap-cloud-logging
     spec:
       output:
         otlp:
           endpoint:
             valueFrom:
               secretKeyRef:
-                name: cls
+                name: sap-cloud-logging
                 namespace: cls-integration
                 key: ingest-otlp-endpoint
           tls:
             cert:
               valueFrom:
                 secretKeyRef:
-                  name: cls
+                  name: sap-cloud-logging
                   namespace: cls-integration
                   key: ingest-otlp-cert
             key:
               valueFrom:
                 secretKeyRef:
-                  name: cls
+                  name: sap-cloud-logging
                   namespace: cls-integration
                   key: ingest-otlp-key
     EOF
