@@ -20,7 +20,7 @@ const (
 	TelemetryConsistentlyTimeout = time.Second * 20
 
 	// DefaultInterval is the default interval duration used when no specialized interval is applicable.
-	DefaultInterval = time.Millisecond * 250
+	DefaultInterval = time.Second
 
 	// TelemetryInterval is used for asynchronous checks when polling Telemetry data from a mock backend via the export URL.
 	TelemetryInterval = time.Second
