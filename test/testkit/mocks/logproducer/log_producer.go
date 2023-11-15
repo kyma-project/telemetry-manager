@@ -51,7 +51,7 @@ func (lp *LogProducer) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Deploymen
 						{Name: lp.name, Image: "alpine:3.17.2", Command: []string{"/bin/sh", "-c", `while true
 do
 	echo "foo bar"
-	sleep 250
+	sleep 500
 done`}},
 					},
 				},
