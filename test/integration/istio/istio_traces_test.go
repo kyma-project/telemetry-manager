@@ -26,29 +26,41 @@ import (
 
 var _ = Describe("Istio Traces", Label("tracing"), func() {
 	const (
-		mockNs          = "istio-tracing-mock"
-		mockBackendName = "istio-tracing-backend"
-		//creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
-		sampleAppNs = "istio-permissive-mtls"
+		mockNs          = "tracing-mock"
+		mockIstiofiedNS = "istiofied-tracing-mock"
+		mockBackendName = "tracing-backend"
+
+		mockIstiofiedBackendName = "istio-tracing-backend" //creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
+		sampleAppNs              = "istio-permissive-mtls"
 	)
 
 	var (
-		urls         = urlprovider.New()
-		pipelineName string
+		urls                  = urlprovider.New()
+		pipelineName          string
+		istiofiedPipelineName string
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(mockIstiofiedNS, kitk8s.WithIstioInjection()).K8sObject())
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		istioTracePipeline := kittrace.NewPipeline("pipeline-istio-traces").WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
-		pipelineName = istioTracePipeline.Name()
+		mockIstiofiedBackend := backend.New(mockIstiofiedBackendName, mockIstiofiedNS, backend.SignalTypeTraces)
+		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
+		urls.SetMockBackendExport(mockIstiofiedBackend.Name(), mockIstiofiedBackend.TelemetryExportURL(proxyClient))
+
+		istioTracePipeline := kittrace.NewPipeline("istiofied-app-traces").WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+		istiofiedPipelineName = istioTracePipeline.Name()
 		objs = append(objs, istioTracePipeline.K8sObject())
+
+		tracePipeline := kittrace.NewPipeline("app-traces").WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+		pipelineName = tracePipeline.Name()
+		objs = append(objs, tracePipeline.K8sObject())
 
 		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
 			WithPort("grpc-otlp", ports.OTLPGRPC).
@@ -68,9 +80,9 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
-			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			})
+			//DeferCleanup(func() {
+			//	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			//})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
@@ -101,6 +113,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 
 		It("Should have the trace pipeline running", func() {
 			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, istiofiedPipelineName)
 		})
 
 		It("Trace collector should answer requests", func() {
