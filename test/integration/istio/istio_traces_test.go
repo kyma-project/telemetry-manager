@@ -3,6 +3,7 @@
 package istio
 
 import (
+	"fmt"
 	"net/http"
 
 	"k8s.io/apimachinery/pkg/labels"
@@ -24,7 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Istio Traces", Label("tracing"), func() {
+var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 	const (
 		mockNs          = "tracing-mock"
 		mockIstiofiedNS = "istiofied-tracing-mock"
@@ -32,6 +33,10 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 
 		mockIstiofiedBackendName = "istio-tracing-backend" //creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
 		sampleAppNs              = "istio-permissive-mtls"
+		sampleApp                = "trace-emmiter"
+
+		istiofiedSampleAppNs = "app-namespace"
+		istiofiedSampleApp   = "istiofied-trace-emitter"
 	)
 
 	var (
@@ -54,7 +59,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockIstiofiedBackend.Name(), mockIstiofiedBackend.TelemetryExportURL(proxyClient))
 
-		istioTracePipeline := kittrace.NewPipeline("istiofied-app-traces").WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+		istioTracePipeline := kittrace.NewPipeline("istiofied-app-traces").WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRef())
 		istiofiedPipelineName = istioTracePipeline.Name()
 		objs = append(objs, istioTracePipeline.K8sObject())
 
@@ -69,7 +74,15 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")))
 
 		// Abusing metrics provider for istio traces
-		sampleApp := metricproducer.New(sampleAppNs, metricproducer.WithName("trace-emitter"))
+		istiofiedSampleApp := metricproducer.New(istiofiedSampleAppNs, metricproducer.WithName(istiofiedSampleApp))
+		//samplePod := sampleApp.Pod().K8sObject()
+		//objs = append(objs, kitk8s.NewDeployment(sampleAppDeploymentName, sampleAppNs).WithLabel("app", "sample-metrics").WithPodSpec(samplePod.Spec).K8sObject())
+		//objs = append(objs, kitk8s.NewService(sampleAppDeploymentName, sampleAppNs).K8sObject(kitk8s.WithLabel("app", "sample-metrics")))
+
+		objs = append(objs, istiofiedSampleApp.Pod().K8sObject())
+		urls.SetMetricPodURL(proxyClient.ProxyURLForPod(istiofiedSampleAppNs, istiofiedSampleApp.Name(), istiofiedSampleApp.MetricsEndpoint(), istiofiedSampleApp.MetricsPort()))
+
+		sampleApp := metricproducer.New(sampleAppNs, metricproducer.WithName(sampleApp))
 		objs = append(objs, sampleApp.Pod().K8sObject())
 		urls.SetMetricPodURL(proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
 
@@ -79,6 +92,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 	Context("App with istio-sidecar", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
+			//makeResources()
 
 			//DeferCleanup(func() {
 			//	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -131,6 +145,7 @@ var _ = Describe("Istio Traces", Label("tracing"), func() {
 				for i := 0; i < 100; i++ {
 					Eventually(func(g Gomega) {
 						resp, err := proxyClient.Get(urls.MetricPodURL())
+						fmt.Printf("RESP: %v, URL: %v", resp.Status, urls.MetricPodURL())
 						g.Expect(err).NotTo(HaveOccurred())
 						g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 					}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
