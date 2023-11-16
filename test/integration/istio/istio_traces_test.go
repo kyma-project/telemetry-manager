@@ -3,7 +3,6 @@
 package istio
 
 import (
-	"fmt"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -96,37 +95,30 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 		})
 
 		It("Should have a trace backend running", func() {
-			fmt.Printf("number 1\n")
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockIstiofiedBackendName, Namespace: mockIstiofiedNS})
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
-			fmt.Printf("number 2\n")
 			verifyAppIsRunning(istiofiedSampleAppNs, map[string]string{"app": "sample-metrics"})
-			fmt.Printf("number 2.1\n")
 			verifySideCarPresent(istiofiedSampleAppNs, map[string]string{"app": "sample-metrics"})
 
 		})
 
 		It("Should have sample app without istio sidecar", func() {
-			fmt.Printf("number 2.2")
 			verifyAppIsRunning(sampleAppNs, map[string]string{"app": "sample-metrics"})
 		})
 
 		It("Should have a running trace collector deployment", func() {
-			fmt.Printf("number 3\n")
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 		})
 
 		It("Should have the trace pipeline running", func() {
-			fmt.Printf("number 4, pipelineName: %v, istiofiedPipelineName: %v\n", pipelineName, istiofiedPipelineName)
 			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, istiofiedPipelineName)
 		})
 
 		It("Trace collector with should answer requests", func() {
-			fmt.Printf("number 5\n")
 			By("Calling metrics service", func() {
 				Eventually(func(g Gomega) {
 					resp, err := proxyClient.Get(urls.Metrics())
@@ -137,13 +129,11 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 		})
 
 		It("Should invoke istiofied and non-istiofied apps", func() {
-			fmt.Printf("number 6\n")
 			By("Sending http requests", func() {
 				for _, podURLs := range urls.MultiMetricPodURL() {
 					for i := 0; i < 100; i++ {
 						Eventually(func(g Gomega) {
 							resp, err := proxyClient.Get(podURLs)
-							fmt.Printf("RESP: %v, URL: %v", resp.Status, podURLs)
 							g.Expect(err).NotTo(HaveOccurred())
 							g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 						}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
@@ -159,12 +149,10 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 		It("Should have custom spans in the backend", func() {
 			verifyCustomIstiofiedAppSpans(urls.MockBackendExport(mockBackendName))
 			verifyCustomIstiofiedAppSpans(urls.MockBackendExport(mockIstiofiedBackendName))
-			fmt.Printf("number 7\n")
 		})
 		It("Should have custom spans in the backend from app-namespace", func() {
 			verifyCustomAppSpans(urls.MockBackendExport(mockBackendName))
 			verifyCustomAppSpans(urls.MockBackendExport(mockIstiofiedBackendName))
-			fmt.Printf("number 8\n")
 		})
 	})
 })
@@ -177,7 +165,6 @@ func verifySideCarPresent(namespace string, labelSelector map[string]string) {
 		}
 
 		hasIstioSidecar, err := verifiers.HasContainer(ctx, k8sClient, listOptions, "istio-proxy")
-		fmt.Printf("[ISTIO_PROXY]READY: %v, err: %v", hasIstioSidecar, err)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(hasIstioSidecar).To(BeTrue())
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
@@ -191,7 +178,6 @@ func verifyAppIsRunning(namespace string, labelSelector map[string]string) {
 		}
 
 		ready, err := verifiers.IsPodReady(ctx, k8sClient, listOptions)
-		fmt.Printf("READY: %v, err: %v\n", ready, err)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(ready).To(BeTrue())
 
@@ -200,12 +186,10 @@ func verifyAppIsRunning(namespace string, labelSelector map[string]string) {
 
 func verifyIstioTraces(backendURL string) {
 	Eventually(func(g Gomega) {
-		fmt.Printf("url: %v\n", backendURL)
 		resp, err := proxyClient.Get(backendURL)
-		fmt.Printf("response: %v, error: %v\n", resp, err)
-
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+
 		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
 			// Identify istio-proxy traces by component=proxy attribute
 			ContainSpan(WithSpanAttrs(HaveKeyWithValue("component", "proxy"))),
@@ -216,14 +200,10 @@ func verifyIstioTraces(backendURL string) {
 
 func verifyCustomIstiofiedAppSpans(backendURL string) {
 	Eventually(func(g Gomega) {
-		fmt.Printf("url: %v\n", backendURL)
 		resp, err := proxyClient.Get(backendURL)
-		fmt.Printf("response: %v, error: %v\n", resp, err)
-		fmt.Println("2")
 		g.Expect(err).NotTo(HaveOccurred())
-
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		fmt.Printf("response: %v\n", resp)
+
 		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
 			// Identify sample app by serviceName attribute
 			ContainResourceAttrs(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
@@ -235,14 +215,9 @@ func verifyCustomIstiofiedAppSpans(backendURL string) {
 
 func verifyCustomAppSpans(backendURL string) {
 	Eventually(func(g Gomega) {
-		fmt.Printf("url: %v\n", backendURL)
 		resp, err := proxyClient.Get(backendURL)
-		fmt.Printf("response: %v, error: %v\n", resp, err)
-		fmt.Println("2")
 		g.Expect(err).NotTo(HaveOccurred())
-
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		fmt.Printf("response: %v\n", resp)
 		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
 			// Identify sample app by serviceName attribute
 			ContainResourceAttrs(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
