@@ -22,7 +22,7 @@ import (
 )
 
 const defaultReplicaCount int32 = 2
-const disableTPROXY bool = true
+const disableTPROXY bool = false
 
 type Config struct {
 	Agent                  otelcollector.AgentConfig
