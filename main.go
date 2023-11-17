@@ -320,8 +320,8 @@ func main() {
 		Cache: cache.Options{
 			SyncPeriod: &syncPeriod,
 
-			//// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
-			//// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
+			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
+			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
 
 			ByObject: map[client.Object]cache.ByObject{
 				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
