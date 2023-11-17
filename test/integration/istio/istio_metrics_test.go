@@ -4,10 +4,8 @@ package istio
 
 import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
-	"net/http"
-	"time"
-
 	"k8s.io/apimachinery/pkg/types"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -173,7 +171,7 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", podName)),
 			ContainMetric(WithName(BeElementOf(metricproducer.AllMetricNames))),
 		))))
-	}, time.Second*60, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
 func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
