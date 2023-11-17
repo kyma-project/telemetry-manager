@@ -88,12 +88,12 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
           uri: /customindex/istio-envoy-kyma
     EOF      
     ```
-   Kyma sets Istio access logs to disabled by default. To enable Istio access logs selectively for your workload, follow the [access logs guide](https://kyma-project.io/#/04-operation-guides/operations/obsv-03-enable-istio-access-logs).
+   Kyma sets Istio access logs to disabled by default. To enable Istio access logs selectively for your workload, follow the [access logs guide](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-30-enable-istio-access-logs).
    As a result, access logs can be analyzed in the default dashboards shipped for the SAP BTP, Kyma runtime.
 
    >**CAUTION:** The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
 
-1. Wait for the LogPipeline Kubernetes objects to be in the `Running` state:
+2. Wait for the LogPipeline Kubernetes objects to be in the `Running` state:
     ```
     kubectl get logpipelines
     ```
