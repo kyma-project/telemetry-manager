@@ -42,6 +42,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -342,49 +343,23 @@ func main() {
 	}
 
 	if enableLogging {
-		setupLog.Info("Starting with logging controllers")
-
-		mgr.GetWebhookServer().Register("/validate-logpipeline", &k8sWebhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
-		mgr.GetWebhookServer().Register("/validate-logparser", &k8sWebhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
-
-		if err = createLogPipelineReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create controller", "controller", "LogPipeline")
-			os.Exit(1)
-		}
-
-		if err = createLogParserReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create controller", "controller", "LogParser")
-			os.Exit(1)
-		}
-
+		enableLoggingController(mgr)
 	}
 
 	if enableTracing {
-		setupLog.Info("Starting with tracing controller")
-		if err = createTracePipelineReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create controller", "controller", "TracePipeline")
-			os.Exit(1)
-		}
+		enableTracingController(mgr)
 	}
 
 	if enableMetrics {
-		setupLog.Info("Starting with metrics controller")
-		if err = createMetricPipelineReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create controller", "controller", "MetricPipeline")
-			os.Exit(1)
-		}
+		enableMetricsController(mgr)
 	}
 
 	webhookConfig := createWebhookConfig()
 
 	if enableTelemetryManagerModule {
-		setupLog.Info("Starting with telemetry manager controller")
-
-		if err = createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), webhookConfig).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
-			os.Exit(1)
-		}
+		enableTelemetryModuleController(mgr, webhookConfig)
 	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", mgr.GetWebhookServer().StartedChecker()); err != nil {
@@ -397,31 +372,77 @@ func main() {
 	}
 
 	if enableWebhook {
-		// Create own client since manager might not be started while using
-		clientOptions := client.Options{
-			Scheme: scheme,
-		}
-		k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
-		if err != nil {
-			setupLog.Error(err, "Failed to create client")
-			os.Exit(1)
-		}
-
-		if err = webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); err != nil {
-			setupLog.Error(err, "Failed to ensure webhook cert")
-			os.Exit(1)
-		}
-		setupLog.Info("Ensured webhook cert")
-
-		// Temporary solution for non-modularized telemetry operator
-		if !enableTelemetryManagerModule {
-			go reconcileWebhook(webhookConfig.CertConfig, k8sClient)
-		}
+		enableWebhookServer(mgr, webhookConfig)
 	}
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
+	}
+}
+
+func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig) {
+	setupLog.Info("Starting with telemetry manager controller")
+
+	if err := createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), webhookConfig).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
+		os.Exit(1)
+	}
+}
+
+func enableLoggingController(mgr manager.Manager) {
+	setupLog.Info("Starting with logging controllers")
+
+	mgr.GetWebhookServer().Register("/validate-logpipeline", &k8sWebhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
+	mgr.GetWebhookServer().Register("/validate-logparser", &k8sWebhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
+
+	if err := createLogPipelineReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create controller", "controller", "LogPipeline")
+		os.Exit(1)
+	}
+
+	if err := createLogParserReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create controller", "controller", "LogParser")
+		os.Exit(1)
+	}
+}
+
+func enableTracingController(mgr manager.Manager) {
+	setupLog.Info("Starting with tracing controller")
+	if err := createTracePipelineReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create controller", "controller", "TracePipeline")
+		os.Exit(1)
+	}
+}
+
+func enableMetricsController(mgr manager.Manager) {
+	setupLog.Info("Starting with metrics controller")
+	if err := createMetricPipelineReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create controller", "controller", "MetricPipeline")
+		os.Exit(1)
+	}
+}
+
+func enableWebhookServer(mgr manager.Manager, webhookConfig telemetry.WebhookConfig) {
+	// Create own client since manager might not be started while using
+	clientOptions := client.Options{
+		Scheme: scheme,
+	}
+	k8sClient, err := client.New(mgr.GetConfig(), clientOptions)
+	if err != nil {
+		setupLog.Error(err, "Failed to create client")
+		os.Exit(1)
+	}
+
+	if err = webhookcert.EnsureCertificate(context.Background(), k8sClient, webhookConfig.CertConfig); err != nil {
+		setupLog.Error(err, "Failed to ensure webhook cert")
+		os.Exit(1)
+	}
+	setupLog.Info("Ensured webhook cert")
+
+	// Temporary solution for non-modularized telemetry operator
+	if !enableTelemetryManagerModule {
+		go reconcileWebhook(webhookConfig.CertConfig, k8sClient)
 	}
 }
 
