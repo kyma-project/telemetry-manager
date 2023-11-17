@@ -25,7 +25,7 @@ import (
 var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 	const (
 		mockNs          = "tracing-mock"
-		mockIstiofiedNS = "istiofied-tracing-mock"
+		mockIstiofiedNs = "istiofied-tracing-mock"
 		mockBackendName = "tracing-backend"
 
 		mockIstiofiedBackendName = "istio-tracing-backend" //creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
@@ -47,14 +47,14 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 		var objs []client.Object
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
-		objs = append(objs, kitk8s.NewNamespace(mockIstiofiedNS, kitk8s.WithIstioInjection()).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(mockIstiofiedNs, kitk8s.WithIstioInjection()).K8sObject())
 		objs = append(objs, kitk8s.NewNamespace(sampleAppNs).K8sObject())
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		mockIstiofiedBackend := backend.New(mockIstiofiedBackendName, mockIstiofiedNS, backend.SignalTypeTraces, backend.ExcludeAPIAccessPort())
+		mockIstiofiedBackend := backend.New(mockIstiofiedBackendName, mockIstiofiedNs, backend.SignalTypeTraces)
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockIstiofiedBackend.Name(), mockIstiofiedBackend.TelemetryExportURL(proxyClient))
 
@@ -96,12 +96,12 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 
 		It("Should have a trace backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockIstiofiedBackendName, Namespace: mockIstiofiedNS})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockIstiofiedBackendName, Namespace: mockIstiofiedNs})
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
 			verifyAppIsRunning(istiofiedSampleAppNs, map[string]string{"app": "sample-metrics"})
-			verifySideCarPresent(istiofiedSampleAppNs, map[string]string{"app": "sample-metrics"})
+			verifySidecarPresent(istiofiedSampleAppNs, map[string]string{"app": "sample-metrics"})
 
 		})
 
@@ -143,8 +143,8 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 		})
 
 		It("Should have istio traces from istiofied app namespace", func() {
-			verifyIstioTraces(urls.MockBackendExport(mockBackendName))
-			verifyIstioTraces(urls.MockBackendExport(mockIstiofiedBackendName))
+			verifyIstioSpans(urls.MockBackendExport(mockBackendName))
+			verifyIstioSpans(urls.MockBackendExport(mockIstiofiedBackendName))
 		})
 		It("Should have custom spans in the backend from istiofied workload", func() {
 			verifyCustomIstiofiedAppSpans(urls.MockBackendExport(mockBackendName))
@@ -157,7 +157,7 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 	})
 })
 
-func verifySideCarPresent(namespace string, labelSelector map[string]string) {
+func verifySidecarPresent(namespace string, labelSelector map[string]string) {
 	Eventually(func(g Gomega) {
 		listOptions := client.ListOptions{
 			LabelSelector: labels.SelectorFromSet(labelSelector),
@@ -184,7 +184,7 @@ func verifyAppIsRunning(namespace string, labelSelector map[string]string) {
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
 }
 
-func verifyIstioTraces(backendURL string) {
+func verifyIstioSpans(backendURL string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())

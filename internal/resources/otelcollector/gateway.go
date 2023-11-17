@@ -56,7 +56,7 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 		}
 	}
 
-	if cfg.Istio.IstioEnabled {
+	if cfg.Istio.Enabled {
 		if err := kubernetes.CreateOrUpdatePeerAuthentication(ctx, c, makePeerAuthentication(cfg)); err != nil {
 			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
@@ -91,10 +91,10 @@ func makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioConfig IstioConfig) *appsv1.Deployment {
 	selectorLabels := defaultLabels(cfg.BaseName)
 	podLabels := maps.Clone(selectorLabels)
-	podLabels["sidecar.istio.io/inject"] = fmt.Sprintf("%t", istioConfig.IstioEnabled)
+	podLabels["sidecar.istio.io/inject"] = fmt.Sprintf("%t", istioConfig.Enabled)
 
 	annotations := map[string]string{"checksum/config": configChecksum}
-	if istioConfig.IstioEnabled {
+	if istioConfig.Enabled {
 		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = istioConfig.ExcludePorts
 	}
 	if istioConfig.EnableTProxy {
@@ -241,8 +241,10 @@ func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
 }
 
 func makePeerAuthentication(cfg *GatewayConfig) *istiov1beta1.PeerAuthentication {
+	selectorLabels := defaultLabels(cfg.BaseName)
+
 	return &istiov1beta1.PeerAuthentication{
-		ObjectMeta: metav1.ObjectMeta{Name: cfg.BaseName, Namespace: cfg.Namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: cfg.BaseName, Namespace: cfg.Namespace, Labels: selectorLabels},
 		Spec: v1beta1.PeerAuthentication{
 			Selector: &istiotypes.WorkloadSelector{MatchLabels: defaultLabels(cfg.BaseName)},
 			Mtls:     &v1beta1.PeerAuthentication_MutualTLS{Mode: v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE},

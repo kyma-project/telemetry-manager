@@ -1,4 +1,4 @@
-package istio
+package istiostatus
 
 import (
 	"context"
@@ -46,7 +46,7 @@ func TestIsIstioActive(t *testing.T) {
 			}
 			fakeClient := fakeClientBuilder.Build()
 
-			isc := &StatusChecker{Client: fakeClient}
+			isc := &Checker{Client: fakeClient}
 
 			got := isc.IsIstioActive(context.Background())
 

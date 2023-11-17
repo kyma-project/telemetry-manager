@@ -16,13 +16,13 @@ type GatewayConfig struct {
 
 	Deployment           DeploymentConfig
 	Scaling              GatewayScalingConfig
+	Istio                IstioConfig
 	OTLPServiceName      string
 	CanReceiveOpenCensus bool
-	Istio                IstioConfig
 }
 
 type IstioConfig struct {
-	IstioEnabled bool
+	Enabled      bool
 	ExcludePorts string
 	EnableTProxy bool
 }
@@ -43,7 +43,7 @@ func (cfg *GatewayConfig) WithCollectorConfig(collectorCfgYAML string, collector
 func (cfg *GatewayConfig) WithIstioConfig(exlcudePorts string, istioEnabled bool, enableTProxy bool) *GatewayConfig {
 	cfgCopy := *cfg
 	istioConfg := IstioConfig{
-		IstioEnabled: istioEnabled,
+		Enabled:      istioEnabled,
 		ExcludePorts: exlcudePorts,
 		EnableTProxy: enableTProxy,
 	}

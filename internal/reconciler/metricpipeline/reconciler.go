@@ -3,6 +3,8 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
@@ -12,7 +14,6 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/istio"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
@@ -22,6 +23,9 @@ import (
 )
 
 const defaultReplicaCount int32 = 2
+
+// Istio interception more tproxy is not required during metrics scraping.
+// It is useful when istio tracespans are being pushed
 const disableTPROXY bool = false
 
 type Config struct {
@@ -41,7 +45,7 @@ type Reconciler struct {
 	config             Config
 	prober             DeploymentProber
 	overridesHandler   overrides.GlobalConfigHandler
-	istioStatusChecker istio.StatusChecker
+	istioStatusChecker istiostatus.Checker
 }
 
 func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
@@ -50,7 +54,7 @@ func NewReconciler(client client.Client, config Config, prober DeploymentProber,
 		config:             config,
 		prober:             prober,
 		overridesHandler:   overridesHandler,
-		istioStatusChecker: istio.StatusChecker{Client: client},
+		istioStatusChecker: istiostatus.Checker{Client: client},
 	}
 }
 
@@ -176,7 +180,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig("8888", isIstioActive, disableTPROXY)); err != nil {
+			WithIstioConfig(fmt.Sprintf("%s", ports.Metrics), isIstioActive, disableTPROXY)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 

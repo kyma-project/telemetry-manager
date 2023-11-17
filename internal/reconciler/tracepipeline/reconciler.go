@@ -19,6 +19,8 @@ package tracepipeline
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
@@ -28,7 +30,6 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/istio"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -37,6 +38,10 @@ import (
 )
 
 const defaultReplicaCount int32 = 2
+
+// Istio interception mode is needed to preserve source and destination IP.
+// This is needed for the istio trace spans as without IP address attribute processing is not possible
+// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
 const enableTPROXY bool = true
 
 type Config struct {
@@ -55,7 +60,7 @@ type Reconciler struct {
 	config             Config
 	prober             DeploymentProber
 	overridesHandler   overrides.GlobalConfigHandler
-	istioStatusChecker istio.StatusChecker
+	istioStatusChecker istiostatus.Checker
 }
 
 func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
@@ -64,7 +69,7 @@ func NewReconciler(client client.Client, config Config, prober DeploymentProber,
 		config:             config,
 		prober:             prober,
 		overridesHandler:   overridesHandler,
-		istioStatusChecker: istio.StatusChecker{Client: client},
+		istioStatusChecker: istiostatus.Checker{Client: client},
 	}
 }
 
@@ -179,7 +184,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig("8888, 55678", isIstioActive, enableTPROXY)); err != nil {
+			WithIstioConfig(fmt.Sprintf("%s, %s", ports.Metrics, ports.OpenCensus), isIstioActive, enableTPROXY)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 

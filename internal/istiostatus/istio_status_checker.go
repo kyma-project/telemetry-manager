@@ -1,4 +1,4 @@
-package istio
+package istiostatus
 
 import (
 	"context"
@@ -10,14 +10,14 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type StatusChecker struct {
+type Checker struct {
 	Client client.Reader
 }
 
 const peerAuthenticationIstioCRD = "peerauthentications.security.istio.io"
 
 // IsIstioActive checks if Istio is active on the cluster based on the presence of Istio CRDs
-func (isc *StatusChecker) IsIstioActive(ctx context.Context) bool {
+func (isc *Checker) IsIstioActive(ctx context.Context) bool {
 	var crdList apiextensionsv1.CustomResourceDefinitionList
 	if err := isc.Client.List(ctx, &crdList); err != nil {
 		logf.FromContext(ctx).Error(err, "Unable to list CRDs to check Istio status")

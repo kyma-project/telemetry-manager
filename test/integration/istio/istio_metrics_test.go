@@ -45,7 +45,7 @@ var _ = Describe("Istio Metrics", Label("metrics"), Ordered, func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		mockIstiofiedBackend := backend.New(mockIstioBackendName, mockIstioBackendNs, backend.SignalTypeMetrics, backend.ExcludeAPIAccessPort())
+		mockIstiofiedBackend := backend.New(mockIstioBackendName, mockIstioBackendNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
 		telemetryIstiofiedExportURL = mockIstiofiedBackend.TelemetryExportURL(proxyClient)
 
@@ -146,7 +146,7 @@ var _ = Describe("Istio Metrics", Label("metrics"), Ordered, func() {
 		})
 	})
 	Context("non isitiofied App metrics delivered to istiofied backend", Ordered, func() {
-		It("Should scrape if prometheus.io/scheme=https", func() {
+		It("Should scrape if prometheus.io/scheme=http", func() {
 			podScrapedMetricsShouldBeDelivered(telemetryIstiofiedExportURL, httpAnnotatedMetricProducerName)
 		})
 	})
@@ -156,7 +156,7 @@ var _ = Describe("Istio Metrics", Label("metrics"), Ordered, func() {
 		})
 	})
 	Context("non isitiofied App metrics delivered to non istiofied backend", Ordered, func() {
-		It("Should scrape if prometheus.io/scheme=https", func() {
+		It("Should scrape if prometheus.io/scheme=http", func() {
 			podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
 		})
 	})
