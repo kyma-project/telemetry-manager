@@ -159,7 +159,6 @@ For the test environment, the following setup was used:
           targetPort: 8888
       selector:
         app.kubernetes.io/name: telemetry-metric-agent
-      sessionAffinity: None
       type: ClusterIP
     ```
     </details>
@@ -554,7 +553,6 @@ spec:
     targetPort: 8080
   selector:
     app: avalanche-metric-load-generator
-  sessionAffinity: None
   type: ClusterIP
 ```
 </details>

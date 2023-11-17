@@ -17,7 +17,6 @@ func TestReceivers(t *testing.T) {
 		}, false)
 
 		require.Nil(t, collectorConfig.Receivers.KubeletStats)
-		require.Nil(t, collectorConfig.Receivers.PrometheusSelf)
 		require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
 		require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
 	})
@@ -32,7 +31,6 @@ func TestReceivers(t *testing.T) {
 		require.Equal(t, true, collectorConfig.Receivers.KubeletStats.InsecureSkipVerify)
 		require.Equal(t, "https://${env:MY_NODE_NAME}:10250", collectorConfig.Receivers.KubeletStats.Endpoint)
 
-		require.Nil(t, collectorConfig.Receivers.PrometheusSelf)
 		require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
 		require.Nil(t, collectorConfig.Receivers.PrometheusIstio)
 	})
@@ -77,9 +75,6 @@ func TestReceivers(t *testing.T) {
 
 				require.Nil(t, receivers.KubeletStats)
 				require.Nil(t, receivers.PrometheusIstio)
-				require.NotNil(t, receivers.PrometheusSelf)
-				require.Len(t, receivers.PrometheusSelf.Config.ScrapeConfigs, 1)
-				require.Len(t, receivers.PrometheusSelf.Config.ScrapeConfigs[0].StaticDiscoveryConfigs, 1)
 
 				require.NotNil(t, receivers.PrometheusAppPods)
 				require.Len(t, receivers.PrometheusAppPods.Config.ScrapeConfigs, len(tt.expectedPodScrapeJobs))
@@ -102,7 +97,6 @@ func TestReceivers(t *testing.T) {
 		}, false)
 
 		require.Nil(t, collectorConfig.Receivers.KubeletStats)
-		require.Nil(t, collectorConfig.Receivers.PrometheusSelf)
 		require.Nil(t, collectorConfig.Receivers.PrometheusAppPods)
 		require.NotNil(t, collectorConfig.Receivers.PrometheusIstio)
 		require.Len(t, collectorConfig.Receivers.PrometheusIstio.Config.ScrapeConfigs, 1)

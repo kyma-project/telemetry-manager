@@ -16,7 +16,6 @@ type Config struct {
 
 type Receivers struct {
 	KubeletStats          *KubeletStatsReceiver `yaml:"kubeletstats,omitempty"`
-	PrometheusSelf        *PrometheusReceiver   `yaml:"prometheus/self,omitempty"`
 	PrometheusAppPods     *PrometheusReceiver   `yaml:"prometheus/app-pods,omitempty"`
 	PrometheusAppServices *PrometheusReceiver   `yaml:"prometheus/app-services,omitempty"`
 	PrometheusIstio       *PrometheusReceiver   `yaml:"prometheus/istio,omitempty"`
