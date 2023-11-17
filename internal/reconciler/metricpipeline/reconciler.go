@@ -174,7 +174,8 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
-		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars, isIstioActive)); err != nil {
+		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
+			WithIstioConfig("8888", isIstioActive, false)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 

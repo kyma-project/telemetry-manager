@@ -42,7 +42,7 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	if err := kubernetes.CreateOrUpdateDeployment(ctx, c, makeGatewayDeployment(cfg, configChecksum, cfg.IstioEnabled)); err != nil {
+	if err := kubernetes.CreateOrUpdateDeployment(ctx, c, makeGatewayDeployment(cfg, configChecksum, cfg.Istio)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
 
@@ -56,7 +56,7 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 		}
 	}
 
-	if cfg.IstioEnabled {
+	if cfg.Istio.IstioEnabled {
 		if err := kubernetes.CreateOrUpdatePeerAuthentication(ctx, c, makePeerAuthentication(cfg)); err != nil {
 			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
@@ -88,14 +88,16 @@ func makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioEnabled bool) *appsv1.Deployment {
+func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioConfig IstioConfig) *appsv1.Deployment {
 	selectorLabels := defaultLabels(cfg.BaseName)
 	podLabels := maps.Clone(selectorLabels)
-	podLabels["sidecar.istio.io/inject"] = fmt.Sprintf("%t", istioEnabled)
+	podLabels["sidecar.istio.io/inject"] = fmt.Sprintf("%t", istioConfig.IstioEnabled)
 
 	annotations := map[string]string{"checksum/config": configChecksum}
-	if istioEnabled {
-		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = "8888, 55678"
+	if istioConfig.IstioEnabled {
+		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = istioConfig.ExcludePorts
+	}
+	if istioConfig.EnableTProxy {
 		annotations["sidecar.istio.io/interceptionMode"] = "TPROXY"
 	}
 	resources := makeGatewayResourceRequirements(cfg)
