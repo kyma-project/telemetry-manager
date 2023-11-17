@@ -331,6 +331,7 @@ func main() {
 				&corev1.ServiceAccount{}:      {Field: setNamespaceFieldSelector()},
 				&corev1.Service{}:             {Field: setNamespaceFieldSelector()},
 				&networkingv1.NetworkPolicy{}: {Field: setNamespaceFieldSelector()},
+				&corev1.Secret{}:              {Field: setNamespaceFieldSelector()},
 			},
 		},
 		Client: client.Options{
