@@ -55,7 +55,7 @@ var _ = Describe("Istio Access Logs", Label("logging"), func() {
 		// Abusing metrics provider for istio access logs
 		sampleApp := metricproducer.New(sampleAppNs, metricproducer.WithName("access-log-emitter"))
 		objs = append(objs, sampleApp.Pod().K8sObject())
-		urls.SetMetricPodURL(proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
+		urls.SetMetricPodURL(sampleApp.Name(), proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
 
 		return objs
 	}
@@ -96,9 +96,11 @@ var _ = Describe("Istio Access Logs", Label("logging"), func() {
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MetricPodURL())
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				for _, podURL := range urls.MetricPodURL() {
+					resp, err := proxyClient.Get(podURL)
+					g.Expect(err).NotTo(HaveOccurred())
+					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				}
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 

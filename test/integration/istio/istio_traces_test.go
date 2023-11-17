@@ -75,11 +75,11 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 		// Abusing metrics provider for istio traces
 		istioSampleApp := metricproducer.New(istiofiedSampleAppNs, metricproducer.WithName(istiofiedSampleAppName))
 		objs = append(objs, istioSampleApp.Pod().K8sObject())
-		urls.SetMultipleMetricPodURL(istioSampleApp.Name(), proxyClient.ProxyURLForPod(istiofiedSampleAppNs, istioSampleApp.Name(), istioSampleApp.MetricsEndpoint(), istioSampleApp.MetricsPort()))
+		urls.SetMetricPodURL(istioSampleApp.Name(), proxyClient.ProxyURLForPod(istiofiedSampleAppNs, istioSampleApp.Name(), istioSampleApp.MetricsEndpoint(), istioSampleApp.MetricsPort()))
 
 		sampleApp := metricproducer.New(sampleAppNs, metricproducer.WithName(sampleAppName))
 		objs = append(objs, sampleApp.Pod().K8sObject())
-		urls.SetMultipleMetricPodURL(sampleApp.Name(), proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
+		urls.SetMetricPodURL(sampleApp.Name(), proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
 
 		return objs
 	}
@@ -88,9 +88,9 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
-			//DeferCleanup(func() {
-			//	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			//})
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
@@ -113,7 +113,7 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 		})
 
-		It("Should have the trace pipeline running", func() {
+		It("Should have the trace pipelines running", func() {
 			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, istiofiedPipelineName)
 		})
@@ -130,7 +130,7 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 
 		It("Should invoke istiofied and non-istiofied apps", func() {
 			By("Sending http requests", func() {
-				for _, podURLs := range urls.MultiMetricPodURL() {
+				for _, podURLs := range urls.MetricPodURL() {
 					for i := 0; i < 100; i++ {
 						Eventually(func(g Gomega) {
 							resp, err := proxyClient.Get(podURLs)
@@ -146,7 +146,7 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 			verifyIstioTraces(urls.MockBackendExport(mockBackendName))
 			verifyIstioTraces(urls.MockBackendExport(mockIstiofiedBackendName))
 		})
-		It("Should have custom spans in the backend", func() {
+		It("Should have custom spans in the backend from istiofied workload", func() {
 			verifyCustomIstiofiedAppSpans(urls.MockBackendExport(mockBackendName))
 			verifyCustomIstiofiedAppSpans(urls.MockBackendExport(mockIstiofiedBackendName))
 		})
