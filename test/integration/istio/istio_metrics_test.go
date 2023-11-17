@@ -3,7 +3,6 @@
 package istio
 
 import (
-	"fmt"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	"net/http"
 	"time"
@@ -25,7 +24,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-var _ = Describe("Istio Metrics", Label("metrics"), func() {
+var _ = Describe("Istio Metrics", Label("metrics"), Ordered, func() {
 	const (
 		mockNs                           = "non-istio-metric-mock"
 		mockBackendName                  = "metric-agent-receiver"
@@ -51,7 +50,6 @@ var _ = Describe("Istio Metrics", Label("metrics"), func() {
 		mockIstiofiedBackend := backend.New(mockIstioBackendName, mockIstioBackendNs, backend.SignalTypeMetrics, backend.ExcludeAPIAccessPort())
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
 		telemetryIstiofiedExportURL = mockIstiofiedBackend.TelemetryExportURL(proxyClient)
-		fmt.Printf("UR: %v", telemetryIstiofiedExportURL)
 
 		httpsAnnotatedMetricProducer := metricproducer.New(mockNs, metricproducer.WithName(httpsAnnotatedMetricProducerName))
 		httpAnnotatedMetricProducer := metricproducer.New(mockNs, metricproducer.WithName(httpAnnotatedMetricProducerName))
@@ -83,32 +81,31 @@ var _ = Describe("Istio Metrics", Label("metrics"), func() {
 		return objs
 	}
 
-	// We have 2 scenarious here:
-	// 1. app(with Istio Sidecar)->metrics-agent->metric-gateway->non-istiofied-workload
-	// 2. app(with Istio Sidecar)->metrics-agent->metric-gateway->istiofied-workload
-	Context("With Istiofied and non-istiofied backend", Ordered, func() {
-		BeforeAll(func() {
-			k8sObjects := makeResources()
+	BeforeAll(func() {
+		k8sObjects := makeResources()
 
-			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			})
-
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		DeferCleanup(func() {
+			Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
-		Context("App with istio-sidecar and non istiofied backend", Ordered, func() {
-			It("Should have a running metric gateway deployment", func() {
-				verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
-			})
 
-			It("Should have a metrics backend running", func() {
-				verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
-			})
+		Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+	})
 
-			It("Should have a running metric agent daemonset", func() {
-				verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
-			})
+	Context("Verify deployments/pods required for tests are ready", Ordered, func() {
+		It("Should have a running metric gateway deployment", func() {
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
+		})
 
+		It("Should have a metrics backend running", func() {
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockIstioBackendName, Namespace: mockIstioBackendNs})
+		})
+
+		It("Should have a running metric agent daemonset", func() {
+			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
+		})
+
+		Context("Verify metric scraping works with annotating pods and services", Ordered, func() {
 			// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
 			// targets discovered via annotated pods must have no service label
 			Context("Annotated pods", func() {
@@ -141,10 +138,28 @@ var _ = Describe("Istio Metrics", Label("metrics"), func() {
 				})
 			})
 		})
-		Context("App with istio-sidecar and istiofied backend", Ordered, func() {
-			It("Should scrape if prometheus.io/scheme=https", func() {
-				podScrapedMetricsShouldBeDelivered(telemetryIstiofiedExportURL, httpsAnnotatedMetricProducerName)
-			})
+	})
+	// We have the following scenarios here:
+	// 1. Istiofied app->non-istiofied-backend and istiofied-backend
+	// 2. app->non-istiofied-backend and istiofied-backend
+	Context("Istiofed app metrics are delivered to istiofied backend", Ordered, func() {
+		It("Should scrape if prometheus.io/scheme=https", func() {
+			podScrapedMetricsShouldBeDelivered(telemetryIstiofiedExportURL, httpsAnnotatedMetricProducerName)
+		})
+	})
+	Context("non isitiofied App metrics delivered to istiofied backend", Ordered, func() {
+		It("Should scrape if prometheus.io/scheme=https", func() {
+			podScrapedMetricsShouldBeDelivered(telemetryIstiofiedExportURL, httpAnnotatedMetricProducerName)
+		})
+	})
+	Context("isitiofied App metrics delivered to non istiofied backend", Ordered, func() {
+		It("Should scrape if prometheus.io/scheme=https", func() {
+			podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
+		})
+	})
+	Context("non isitiofied App metrics delivered to non istiofied backend", Ordered, func() {
+		It("Should scrape if prometheus.io/scheme=https", func() {
+			podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
 		})
 	})
 })
