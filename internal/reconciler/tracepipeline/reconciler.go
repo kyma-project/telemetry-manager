@@ -37,6 +37,7 @@ import (
 )
 
 const defaultReplicaCount int32 = 2
+const enableTPROXY bool = true
 
 type Config struct {
 	Gateway                otelcollector.GatewayConfig
@@ -178,7 +179,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig("8888, 56788", isIstioActive, true)); err != nil {
+			WithIstioConfig("8888, 56788", isIstioActive, enableTPROXY)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 
