@@ -3,23 +3,25 @@
 package istio
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
-	"k8s.io/apimachinery/pkg/types"
-	"net/http"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
-
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
+	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+	"k8s.io/apimachinery/pkg/types"
+	"net/http"
+
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Istio Metrics", Label("metrics"), Ordered, func() {
@@ -137,9 +139,10 @@ var _ = Describe("Istio Metrics", Label("metrics"), Ordered, func() {
 			})
 		})
 	})
-	// We have the following scenarios here:
-	// 1. Istiofied app->non-istiofied-backend and istiofied-backend
-	// 2. app->non-istiofied-backend and istiofied-backend
+	//We have the following scenarios here:
+	//1. Istiofied app->non-istiofied-backend and istiofied-backend
+	//2. app->non-istiofied-backend and istiofied-backend
+	// 3. app(push metrics) -> non-istiofied-backend and istiofied-backend
 	Context("Istiofed app metrics are delivered to istiofied backend", Ordered, func() {
 		It("Should scrape if prometheus.io/scheme=https", func() {
 			podScrapedMetricsShouldBeDelivered(telemetryIstiofiedExportURL, httpsAnnotatedMetricProducerName)
@@ -158,6 +161,15 @@ var _ = Describe("Istio Metrics", Label("metrics"), Ordered, func() {
 	Context("non isitiofied App metrics delivered to non istiofied backend", Ordered, func() {
 		It("Should scrape if prometheus.io/scheme=http", func() {
 			podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
+		})
+	})
+	Context("Should verify end-to-end metric delivery via push metrics", Ordered, func() {
+		It("should push metrics successfully", func() {
+			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP)
+			gauges := kitmetrics.MakeAndSendGaugeMetrics(proxyClient, gatewayPushURL)
+			pushMetricsShouldBeDelivered(telemetryExportURL, gauges)
+			pushMetricsShouldBeDelivered(telemetryIstiofiedExportURL, gauges)
+
 		})
 	})
 })
@@ -184,5 +196,14 @@ func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
 				WithName(BeElementOf(metricproducer.AllMetricNames)),
 				ContainDataPointAttrs(HaveKeyWithValue("service", serviceName)),
 			)))))
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
+func pushMetricsShouldBeDelivered(proxyUrl string, gauges []pmetric.Metric) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(proxyUrl)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(ContainMd(metric.WithMetrics(BeEquivalentTo(gauges)))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

@@ -39,11 +39,6 @@ import (
 
 const defaultReplicaCount int32 = 2
 
-// Istio interception mode is needed to preserve source and destination IP.
-// This is needed for the istio trace spans as without IP address attribute processing is not possible
-// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
-const enableTPROXY bool = true
-
 type Config struct {
 	Gateway                otelcollector.GatewayConfig
 	OverridesConfigMapName types.NamespacedName
@@ -184,7 +179,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig(fmt.Sprintf("%s, %s", ports.Metrics, ports.OpenCensus), isIstioActive, enableTPROXY)); err != nil {
+			WithIstioConfig(fmt.Sprintf("%s, %s", ports.Metrics, ports.OpenCensus), isIstioActive)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 

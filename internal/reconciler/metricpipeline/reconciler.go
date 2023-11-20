@@ -24,10 +24,6 @@ import (
 
 const defaultReplicaCount int32 = 2
 
-// Istio interception more tproxy is not required during metrics scraping.
-// It is useful when istio tracespans are being pushed
-const disableTPROXY bool = false
-
 type Config struct {
 	Agent                  otelcollector.AgentConfig
 	Gateway                otelcollector.GatewayConfig
@@ -180,7 +176,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig(fmt.Sprintf("%s", ports.Metrics), isIstioActive, disableTPROXY)); err != nil {
+			WithIstioConfig(fmt.Sprintf("%d", ports.Metrics), isIstioActive)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 

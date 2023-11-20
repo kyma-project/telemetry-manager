@@ -96,8 +96,9 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioConfi
 	annotations := map[string]string{"checksum/config": configChecksum}
 	if istioConfig.Enabled {
 		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = istioConfig.ExcludePorts
-	}
-	if istioConfig.EnableTProxy {
+		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
+		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
+		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
 		annotations["sidecar.istio.io/interceptionMode"] = "TPROXY"
 	}
 	resources := makeGatewayResourceRequirements(cfg)

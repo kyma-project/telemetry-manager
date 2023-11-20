@@ -24,7 +24,6 @@ type GatewayConfig struct {
 type IstioConfig struct {
 	Enabled      bool
 	ExcludePorts string
-	EnableTProxy bool
 }
 
 func (cfg *GatewayConfig) WithScaling(s GatewayScalingConfig) *GatewayConfig {
@@ -40,12 +39,11 @@ func (cfg *GatewayConfig) WithCollectorConfig(collectorCfgYAML string, collector
 	return &cfgCopy
 }
 
-func (cfg *GatewayConfig) WithIstioConfig(exlcudePorts string, istioEnabled bool, enableTProxy bool) *GatewayConfig {
+func (cfg *GatewayConfig) WithIstioConfig(exlcudePorts string, istioEnabled bool) *GatewayConfig {
 	cfgCopy := *cfg
 	istioConfg := IstioConfig{
 		Enabled:      istioEnabled,
 		ExcludePorts: exlcudePorts,
-		EnableTProxy: enableTProxy,
 	}
 	cfgCopy.Istio = istioConfg
 	return &cfgCopy
