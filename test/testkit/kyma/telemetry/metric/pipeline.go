@@ -113,13 +113,11 @@ func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
 		},
 		Spec: telemetry.MetricPipelineSpec{
 			Input: telemetry.MetricPipelineInput{
-				Application: telemetry.MetricPipelineApplicationInput{
-					Runtime: telemetry.MetricPipelineContainerRuntimeInput{
-						Enabled: p.runtime,
-					},
-					Prometheus: telemetry.MetricPipelinePrometheusInput{
-						Enabled: p.prometheus,
-					},
+				Runtime: telemetry.MetricPipelineContainerRuntimeInput{
+					Enabled: p.runtime,
+				},
+				Prometheus: telemetry.MetricPipelinePrometheusInput{
+					Enabled: p.prometheus,
 				},
 			},
 			Output: telemetry.MetricPipelineOutput{
