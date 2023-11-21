@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	istiosecv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -187,6 +188,21 @@ func CreateOrUpdateService(ctx context.Context, c client.Client, desired *corev1
 
 	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 
+	return c.Update(ctx, desired)
+}
+
+func CreateOrUpdatePeerAuthentication(ctx context.Context, c client.Client, desired *istiosecv1beta1.PeerAuthentication) error {
+	var existing istiosecv1beta1.PeerAuthentication
+	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+
+		return c.Create(ctx, desired)
+	}
+
+	mergeMetadata(&desired.ObjectMeta, existing.ObjectMeta)
 	return c.Update(ctx, desired)
 }
 

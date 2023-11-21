@@ -77,9 +77,6 @@ func validateHTTPOutput(httpOutput *HTTPOutput) error {
 	if httpOutput.URI != "" && !strings.HasPrefix(httpOutput.URI, "/") {
 		return fmt.Errorf("uri must start with /")
 	}
-	if !httpOutput.Host.IsDefined() && (httpOutput.User.IsDefined() || httpOutput.Password.IsDefined() || httpOutput.URI != "" || httpOutput.Port != "" || httpOutput.Compress != "" || httpOutput.TLSConfig.Disabled || httpOutput.TLSConfig.SkipCertificateValidation) {
-		return fmt.Errorf("http output must have a host configured")
-	}
 	if secretRefAndValueIsPresent(httpOutput.Host) {
 		return fmt.Errorf("http output host must have either a value or secret key reference")
 	}

@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"maps"
 
+	"istio.io/api/security/v1beta1"
+	istiotypes "istio.io/api/type/v1beta1"
+	istiov1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -39,7 +42,7 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	if err := kubernetes.CreateOrUpdateDeployment(ctx, c, makeGatewayDeployment(cfg, configChecksum)); err != nil {
+	if err := kubernetes.CreateOrUpdateDeployment(ctx, c, makeGatewayDeployment(cfg, configChecksum, cfg.Istio)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
 
@@ -50,6 +53,12 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 	if cfg.CanReceiveOpenCensus {
 		if err := kubernetes.CreateOrUpdateService(ctx, c, makeOpenCensusService(name)); err != nil {
 			return fmt.Errorf("failed to create open census service: %w", err)
+		}
+	}
+
+	if cfg.Istio.Enabled {
+		if err := kubernetes.CreateOrUpdatePeerAuthentication(ctx, c, makePeerAuthentication(cfg)); err != nil {
+			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
 	}
 
@@ -79,12 +88,19 @@ func makeGatewayClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string) *appsv1.Deployment {
+func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioConfig IstioConfig) *appsv1.Deployment {
 	selectorLabels := defaultLabels(cfg.BaseName)
 	podLabels := maps.Clone(selectorLabels)
-	podLabels["sidecar.istio.io/inject"] = "false"
+	podLabels["sidecar.istio.io/inject"] = fmt.Sprintf("%t", istioConfig.Enabled)
 
 	annotations := map[string]string{"checksum/config": configChecksum}
+	if istioConfig.Enabled {
+		annotations["traffic.sidecar.istio.io/excludeInboundPorts"] = istioConfig.ExcludePorts
+		// When a workload is outside the istio mesh and communicates with pod in service mesh, the envoy proxy does not
+		// preserve the source IP and destination IP. To preserve source/destination IP we need TPROXY interception mode.
+		// More info: https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#ProxyConfig-InboundInterceptionMode
+		annotations["sidecar.istio.io/interceptionMode"] = "TPROXY"
+	}
 	resources := makeGatewayResourceRequirements(cfg)
 	affinity := makePodAffinity(selectorLabels)
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
@@ -221,6 +237,18 @@ func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
 			},
 			Selector: labels,
 			Type:     corev1.ServiceTypeClusterIP,
+		},
+	}
+}
+
+func makePeerAuthentication(cfg *GatewayConfig) *istiov1beta1.PeerAuthentication {
+	selectorLabels := defaultLabels(cfg.BaseName)
+
+	return &istiov1beta1.PeerAuthentication{
+		ObjectMeta: metav1.ObjectMeta{Name: cfg.BaseName, Namespace: cfg.Namespace, Labels: selectorLabels},
+		Spec: v1beta1.PeerAuthentication{
+			Selector: &istiotypes.WorkloadSelector{MatchLabels: defaultLabels(cfg.BaseName)},
+			Mtls:     &v1beta1.PeerAuthentication_MutualTLS{Mode: v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}
 }

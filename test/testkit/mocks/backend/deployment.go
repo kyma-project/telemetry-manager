@@ -24,6 +24,7 @@ type Deployment struct {
 	dataPath          string
 	signalType        SignalType
 	fluentdConfigName string
+	annotations       map[string]string
 }
 
 func NewDeployment(name, namespace, configmapName, dataPath string, signalType SignalType) *Deployment {
@@ -41,8 +42,12 @@ func (d *Deployment) WithFluentdConfigName(fluentdConfigName string) *Deployment
 	return d
 }
 
-func (d *Deployment) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Deployment {
-	labels := k8s.ProcessLabelOptions(labelOpts...)
+func (d *Deployment) WithAnnotations(annotations map[string]string) *Deployment {
+	d.annotations = annotations
+	return d
+}
+func (d *Deployment) K8sObject(opts ...testkit.OptFunc) *appsv1.Deployment {
+	labels := k8s.ProcessLabelOptions(opts...)
 
 	containers := d.containers()
 	volumes := d.volumes()
@@ -58,8 +63,8 @@ func (d *Deployment) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Deployment 
 			Selector: &metav1.LabelSelector{MatchLabels: labels},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
-				},
+					Labels:      labels,
+					Annotations: d.annotations},
 				Spec: corev1.PodSpec{
 					Containers: containers,
 					SecurityContext: &corev1.PodSecurityContext{
