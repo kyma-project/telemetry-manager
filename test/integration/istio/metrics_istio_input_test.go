@@ -33,6 +33,28 @@ var _ = Describe("Metrics Istio Input", Label("new"), func() {
 			"istio_request_messages_total",
 			"istio_response_messages_total",
 		}
+		istioProxyMetricResourceAttributes = []string{
+			"connection_security_policy",
+			"destination_app",
+			"destination_canonical_revision",
+			"destination_canonical_service",
+			"destination_cluster",
+			"destination_principal",
+			"destination_service",
+			"destination_service_name",
+			"destination_service_namespace",
+			"destination_version",
+			"destination_workload",
+			"destination_workload_namespace",
+			"grpc_response_status",
+			"request_protocol",
+			"response_code",
+			"response_flags",
+			"source_canonical_revision",
+			"source_canonical_service",
+			"source_cluster",
+			"source_principal",
+		}
 		telemetryExportURL string
 	)
 
@@ -86,6 +108,17 @@ var _ = Describe("Metrics Istio Input", Label("new"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
 					ContainMd(ContainMetric(WithName(BeElementOf(istioProxyMetricNames)))),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should verify istio proxy metric resource attributes", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					ContainMd(ContainMetric(ContainDataPointAttrs(HaveKey(BeElementOf(istioProxyMetricResourceAttributes))))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
