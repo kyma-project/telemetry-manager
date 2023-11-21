@@ -76,7 +76,7 @@ type MetricPipelineInput struct {
 // MetricPipelinePrometheusInput defines the Prometheus scraping section.
 type MetricPipelinePrometheusInput struct {
 	// If enabled, Pods marked with `prometheus.io/scrape=true` annotation will be scraped. The default is `false`.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Describes whether Prometheus metrics from specific Namespaces are selected.
 	Namespaces MetricPipelinePrometheusInputNamespaces `json:"namespaces,omitempty"`
 }
@@ -88,13 +88,13 @@ type MetricPipelinePrometheusInputNamespaces struct {
 	// Exclude the Prometheus metrics from the specified Namespace names.
 	Exclude []string `json:"exclude,omitempty"`
 	// Set to `true` to include the Prometheus metrics from system Namespaces like kube-system, istio-system, and kyma-system. The default is `false`.
-	System bool `json:"system,omitempty"`
+	System *bool `json:"system,omitempty"`
 }
 
 // MetricPipelineContainerRuntimeInput defines the runtime scraping section.
 type MetricPipelineContainerRuntimeInput struct {
 	// If enabled, workload-related Kubernetes metrics will be scraped. The default is `false`.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Describes whether workload-related Kubernetes metrics from specific Namespaces are selected.
 	Namespaces MetricPipelineContainerRuntimeInputNamespaces `json:"namespaces,omitempty"`
 }
@@ -106,13 +106,13 @@ type MetricPipelineContainerRuntimeInputNamespaces struct {
 	// Exclude the workload-related Kubernetes metrics from the specified Namespace names.
 	Exclude []string `json:"exclude,omitempty"`
 	// Set to `true` to include the workload-related Kubernetes metrics from system Namespaces like kube-system, istio-system, and kyma-system. The default is `false`.
-	System bool `json:"system,omitempty"`
+	System *bool `json:"system,omitempty"`
 }
 
 // MetricPipelineIstioInput defines the Istio scraping section.
 type MetricPipelineIstioInput struct {
 	// If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected. The default is `false`.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Describes whether istio-proxy metrics from specific Namespaces are selected.
 	Namespaces MetricPipelineIstioInputNamespaces `json:"namespaces,omitempty"`
 }
@@ -125,14 +125,14 @@ type MetricPipelineIstioInputNamespaces struct {
 	Exclude []string `json:"exclude,omitempty"`
 	// Set to `true` to include the istio-proxy metrics from system Namespaces like kube-system, istio-system, and kyma-system. The default is `true`.
 	// +kubebuilder:default=true
-	System bool `json:"system,omitempty"`
+	System *bool `json:"system,omitempty"`
 }
 
 // MetricPipelineOtlpInput defines the collection of push-based metrics which are using the OpenTelemetry protocol.
 type MetricPipelineOtlpInput struct {
 	// If enabled, push-based OTLP metrics are collected. The default is `true`.
 	// +kubebuilder:default=true
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Describes whether push-based OTLP metrics from specific Namespaces are selected.
 	Namespaces MetricPipelineOtlpInputNamespaces `json:"namespaces,omitempty"`
 }
@@ -143,7 +143,7 @@ type MetricPipelineOtlpInputNamespaces struct {
 	// Exclude the push-based OTLP metrics from the specified Namespace names.
 	Exclude []string `json:"exclude,omitempty"`
 	// Set to `true` to include the push-based OTLP metrics from system Namespaces like kube-system, istio-system, and kyma-system. The default is `false`.
-	System bool `json:"system,omitempty"`
+	System *bool `json:"system,omitempty"`
 }
 
 // MetricPipelineOutput defines the output configuration section.

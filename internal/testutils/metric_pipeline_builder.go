@@ -94,13 +94,13 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 		Spec: telemetryv1alpha1.MetricPipelineSpec{
 			Input: telemetryv1alpha1.MetricPipelineInput{
 				Runtime: telemetryv1alpha1.MetricPipelineContainerRuntimeInput{
-					Enabled: b.runtimeInputOn,
+					Enabled: &b.runtimeInputOn,
 				},
 				Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-					Enabled: b.prometheusInputOn,
+					Enabled: &b.prometheusInputOn,
 				},
 				Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-					Enabled: b.istioInputOn,
+					Enabled: &b.istioInputOn,
 				},
 			},
 			Output: telemetryv1alpha1.MetricPipelineOutput{
