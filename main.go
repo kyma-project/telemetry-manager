@@ -274,7 +274,18 @@ func main() {
 	dynamicLoglevel.SetLevel(parsedLevel)
 	configureLogLevelOnFly = logger.NewLogReconfigurer(dynamicLoglevel)
 
-	ctrLogger, err := logger.New("json", logLevel, dynamicLoglevel)
+	ctrLogger, err := logger.New(logLevel, dynamicLoglevel)
+
+	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
+	if err != nil {
+		os.Exit(1)
+	}
+
+	defer func() {
+		if err = ctrLogger.WithContext().Sync(); err != nil {
+			setupLog.Error(err, "Failed to flush logger")
+		}
+	}()
 
 	go func() {
 		server := &http.Server{
@@ -287,16 +298,6 @@ func main() {
 			mutex.Lock()
 			setupLog.Error(err, "Cannot start pprof server")
 			mutex.Unlock()
-		}
-	}()
-
-	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
-	if err != nil {
-		os.Exit(1)
-	}
-	defer func() {
-		if err = ctrLogger.WithContext().Sync(); err != nil {
-			setupLog.Error(err, "Failed to flush logger")
 		}
 	}()
 
