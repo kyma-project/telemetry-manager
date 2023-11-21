@@ -3,28 +3,26 @@
 package istio
 
 import (
-	"net/http"
-
 	"k8s.io/apimachinery/pkg/types"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
-
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Istio Metrics", Label("metrics"), func() {
+var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 	const (
-		mockNs                           = "istio-metric-mock"
+		mockNs                           = "metric-prometheus-input"
 		mockBackendName                  = "metric-agent-receiver"
 		httpsAnnotatedMetricProducerName = "metric-producer-https"
 		httpAnnotatedMetricProducerName  = "metric-producer-http"
