@@ -19,11 +19,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Istio Input", Label("new"), func() {
+var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 	const (
 		mockNs          = "metric-istio-input"
 		mockBackendName = "metric-agent-receiver"
 	)
+
+	// https://istio.io/latest/docs/reference/config/metrics/
 	var (
 		istioProxyMetricNames = []string{
 			"istio_requests_total",
@@ -50,10 +52,14 @@ var _ = Describe("Metrics Istio Input", Label("new"), func() {
 			"request_protocol",
 			"response_code",
 			"response_flags",
+			"source_app",
 			"source_canonical_revision",
 			"source_canonical_service",
 			"source_cluster",
 			"source_principal",
+			"source_version",
+			"source_workload",
+			"source_workload_namespace",
 		}
 		telemetryExportURL string
 	)
