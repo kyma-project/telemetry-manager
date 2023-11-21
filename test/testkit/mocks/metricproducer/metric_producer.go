@@ -1,9 +1,10 @@
 package metricproducer
 
 import (
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 	"maps"
 	"strconv"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
