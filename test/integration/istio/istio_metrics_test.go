@@ -142,7 +142,7 @@ var _ = Describe("Istio Metrics", Label("metrics"), Ordered, func() {
 	//We have the following scenarios here:
 	//1. Istiofied app->non-istiofied-backend and istiofied-backend
 	//2. app->non-istiofied-backend and istiofied-backend
-	// 3. app(push metrics) -> non-istiofied-backend and istiofied-backend
+	//3. app(push metrics) -> non-istiofied-backend and istiofied-backend
 	Context("Istiofed app metrics are delivered to istiofied backend", Ordered, func() {
 		It("Should scrape if prometheus.io/scheme=https", func() {
 			podScrapedMetricsShouldBeDelivered(telemetryIstiofiedExportURL, httpsAnnotatedMetricProducerName)

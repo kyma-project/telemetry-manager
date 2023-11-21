@@ -38,9 +38,11 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 	)
 
 	var (
-		urls                  = urlprovider.New()
-		pipelineName          string
-		istiofiedPipelineName string
+		urls                                            = urlprovider.New()
+		pipelineName                                    string
+		istiofiedPipelineName                           string
+		telemetryExportURL, telemetryIstiofiedExportURL string
+		istiofiedAppURL, appURL                         string
 	)
 
 	makeResources := func() []client.Object {
@@ -52,11 +54,13 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
+		//urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
+		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		mockIstiofiedBackend := backend.New(mockIstiofiedBackendName, mockIstiofiedNs, backend.SignalTypeTraces)
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
-		urls.SetMockBackendExport(mockIstiofiedBackend.Name(), mockIstiofiedBackend.TelemetryExportURL(proxyClient))
+		//urls.SetMockBackendExport(mockIstiofiedBackend.Name(), mockIstiofiedBackend.TelemetryExportURL(proxyClient))
+		telemetryIstiofiedExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		istioTracePipeline := kittrace.NewPipeline("istiofied-app-traces").WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRef())
 		istiofiedPipelineName = istioTracePipeline.Name()
@@ -75,11 +79,13 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 		// Abusing metrics provider for istio traces
 		istioSampleApp := metricproducer.New(istiofiedSampleAppNs, metricproducer.WithName(istiofiedSampleAppName))
 		objs = append(objs, istioSampleApp.Pod().K8sObject())
-		urls.SetMetricPodURL(istioSampleApp.Name(), proxyClient.ProxyURLForPod(istiofiedSampleAppNs, istioSampleApp.Name(), istioSampleApp.MetricsEndpoint(), istioSampleApp.MetricsPort()))
+		istiofiedAppURL = istioSampleApp.PodURL(proxyClient)
+		//urls.SetMetricPodURL(istioSampleApp.Name(), proxyClient.ProxyURLForPod(istiofiedSampleAppNs, istioSampleApp.Name(), istioSampleApp.MetricsEndpoint(), istioSampleApp.MetricsPort()))
 
 		sampleApp := metricproducer.New(sampleAppNs, metricproducer.WithName(sampleAppName))
 		objs = append(objs, sampleApp.Pod().K8sObject())
-		urls.SetMetricPodURL(sampleApp.Name(), proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
+		appURL = sampleApp.PodURL(proxyClient)
+		//urls.SetMetricPodURL(sampleApp.Name(), proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
 
 		return objs
 	}
@@ -130,7 +136,7 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 
 		It("Should invoke istiofied and non-istiofied apps", func() {
 			By("Sending http requests", func() {
-				for _, podURLs := range urls.MetricPodURL() {
+				for _, podURLs := range []string{istiofiedAppURL, appURL} {
 					for i := 0; i < 100; i++ {
 						Eventually(func(g Gomega) {
 							resp, err := proxyClient.Get(podURLs)
@@ -143,16 +149,16 @@ var _ = Describe("Istio Traces", Label("tracing"), Ordered, func() {
 		})
 
 		It("Should have istio traces from istiofied app namespace", func() {
-			verifyIstioSpans(urls.MockBackendExport(mockBackendName))
-			verifyIstioSpans(urls.MockBackendExport(mockIstiofiedBackendName))
+			verifyIstioSpans(telemetryExportURL)
+			verifyIstioSpans(telemetryIstiofiedExportURL)
 		})
 		It("Should have custom spans in the backend from istiofied workload", func() {
-			verifyCustomIstiofiedAppSpans(urls.MockBackendExport(mockBackendName))
-			verifyCustomIstiofiedAppSpans(urls.MockBackendExport(mockIstiofiedBackendName))
+			verifyCustomIstiofiedAppSpans(telemetryExportURL)
+			verifyCustomIstiofiedAppSpans(telemetryIstiofiedExportURL)
 		})
 		It("Should have custom spans in the backend from app-namespace", func() {
-			verifyCustomAppSpans(urls.MockBackendExport(mockBackendName))
-			verifyCustomAppSpans(urls.MockBackendExport(mockIstiofiedBackendName))
+			verifyCustomAppSpans(telemetryExportURL)
+			verifyCustomAppSpans(telemetryIstiofiedExportURL)
 		})
 	})
 })

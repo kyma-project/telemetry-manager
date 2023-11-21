@@ -1,6 +1,7 @@
 package metricproducer
 
 import (
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 	"maps"
 	"strconv"
 
@@ -69,6 +70,10 @@ type MetricProducer struct {
 	name      string
 	namespace string
 	labels    map[string]string
+}
+
+func (mp *MetricProducer) PodURL(proxyClient *apiserver.ProxyClient) string {
+	return proxyClient.ProxyURLForPod(mp.namespace, mp.name, mp.MetricsEndpoint(), mp.MetricsPort())
 }
 
 func (mp *MetricProducer) Name() string {

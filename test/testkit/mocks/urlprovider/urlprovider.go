@@ -4,13 +4,12 @@ type URLProvider struct {
 	metrics        string
 	mockBackendURL map[string]string
 	otlpPush       string
-	metricPod      map[string]string
+	metricPod      string
 }
 
 func New() *URLProvider {
 	return &URLProvider{
 		mockBackendURL: map[string]string{},
-		metricPod:      map[string]string{},
 	}
 }
 
@@ -42,11 +41,11 @@ func (p *URLProvider) MockBackendExport(backendName string) string {
 	return p.mockBackendURL[backendName]
 }
 
-func (p *URLProvider) SetMetricPodURL(podName, url string) *URLProvider {
-	p.metricPod[podName] = url
+func (p *URLProvider) SetMetricPodURL(url string) *URLProvider {
+	p.metricPod = url
 	return p
 }
 
-func (p *URLProvider) MetricPodURL() map[string]string {
+func (p *URLProvider) MetricPodURL() string {
 	return p.metricPod
 }
