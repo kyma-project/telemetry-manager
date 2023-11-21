@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/go-logr/zapr"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/klog/v2"
@@ -15,18 +14,13 @@ type Logger struct {
 }
 
 // New returns a new logger with the given format and level.
-func New(level string, atomic zap.AtomicLevel) (*Logger, error) {
-	logLevel, err := MapLevel(level)
-	if err != nil {
-		return nil, err
-	}
-
+func New(level zapcore.Level, atomic zap.AtomicLevel) (*Logger, error) {
 	log, err := NewWithAtomicLevel(atomic)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = InitKlog(log, logLevel); err != nil {
+	if err = InitKlog(log, level); err != nil {
 		return nil, err
 	}
 
@@ -37,23 +31,23 @@ func New(level string, atomic zap.AtomicLevel) (*Logger, error) {
 	return &Logger{zapLogger: log.zapLogger}, nil
 }
 
-type LogLevel struct {
+type LogLevelReconfigurer struct {
 	Atomic  zap.AtomicLevel
 	Default string
 }
 
-func NewLogReconfigurer(atomic zap.AtomicLevel) *LogLevel {
-	var l LogLevel
+func NewLogReconfigurer(atomic zap.AtomicLevel) *LogLevelReconfigurer {
+	var l LogLevelReconfigurer
 	l.Atomic = atomic
 	l.Default = atomic.String()
 	return &l
 }
 
-func (l *LogLevel) SetDefaultLogLevel() error {
+func (l *LogLevelReconfigurer) SetDefaultLogLevel() error {
 	return l.ChangeLogLevel(l.Default)
 }
 
-func (l *LogLevel) ChangeLogLevel(logLevel string) error {
+func (l *LogLevelReconfigurer) ChangeLogLevel(logLevel string) error {
 	parsedLevel, err := zapcore.ParseLevel(logLevel)
 	if err != nil {
 		return err
@@ -92,13 +86,9 @@ func (l *Logger) WithContext() *zap.SugaredLogger {
 /*
 This function initialize klog which is used in k8s/go-client
 */
-func InitKlog(log *Logger, level Level) error {
+func InitKlog(log *Logger, level zapcore.Level) error {
 	zaprLogger := zapr.NewLogger(log.WithContext().Desugar())
-	lvl, err := level.ToZapLevel()
-	if err != nil {
-		return errors.Wrap(err, "while getting zap log level")
-	}
-	zaprLogger.V((int)(lvl))
+	zaprLogger.V((int)(level))
 	klog.SetLogger(zaprLogger)
 	return nil
 }

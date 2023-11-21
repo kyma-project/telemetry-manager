@@ -54,7 +54,7 @@ type Handler struct {
 	cmProber        ConfigMapProber
 }
 
-func New(loglevelChanger *logger.LogLevel, cmProber ConfigMapProber) *Handler {
+func New(loglevelChanger *logger.LogLevelReconfigurer, cmProber ConfigMapProber) *Handler {
 	var m Handler
 	m.logLevelChanger = loglevelChanger
 	m.cmProber = cmProber

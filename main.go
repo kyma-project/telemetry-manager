@@ -86,7 +86,7 @@ var (
 	scheme                 = runtime.NewScheme()
 	setupLog               = ctrl.Log.WithName("setup")
 	dynamicLoglevel        = zap.NewAtomicLevel()
-	configureLogLevelOnFly *logger.LogLevel
+	configureLogLevelOnFly *logger.LogLevelReconfigurer
 	telemetryNamespace     string
 
 	maxLogPipelines    int
@@ -274,7 +274,7 @@ func main() {
 	dynamicLoglevel.SetLevel(parsedLevel)
 	configureLogLevelOnFly = logger.NewLogReconfigurer(dynamicLoglevel)
 
-	ctrLogger, err := logger.New(logLevel, dynamicLoglevel)
+	ctrLogger, err := logger.New(parsedLevel, dynamicLoglevel)
 
 	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
 	if err != nil {
