@@ -46,32 +46,127 @@ spec:
                 description: Configures different inputs to send additional metrics
                   to the metric gateway.
                 properties:
-                  application:
-                    description: Configures application related scraping.
+                  istio:
+                    description: Configures istio-proxy metrics scraping.
                     properties:
-                      istio:
-                        description: Configures istio-proxy metrics scraping.
+                      enabled:
+                        description: If enabled, metrics for istio-proxy containers
+                          are scraped from Pods that have had the istio-proxy sidecar
+                          injected. The default is `false`.
+                        type: boolean
+                      namespaces:
+                        description: Describes whether istio-proxy metrics from specific
+                          Namespaces are selected.
                         properties:
-                          enabled:
-                            description: If enabled, metrics for istio-proxy containers
-                              are scraped from Pods that have had the istio-proxy
-                              sidecar injected.
+                          exclude:
+                            description: Exclude the istio-proxy metrics from the
+                              specified Namespace names.
+                            items:
+                              type: string
+                            type: array
+                          include:
+                            description: Include only the istio-proxy metrics from
+                              the specified Namespace names.
+                            items:
+                              type: string
+                            type: array
+                          system:
+                            default: true
+                            description: Set to `true` to include the istio-proxy
+                              metrics from system Namespaces like kube-system, istio-system,
+                              and kyma-system. The default is `true`.
                             type: boolean
                         type: object
-                      prometheus:
-                        description: Configures Prometheus scraping.
+                    type: object
+                  otlp:
+                    description: Configures the collection of push-based metrics which
+                      are using the OpenTelemetry protocol.
+                    properties:
+                      enabled:
+                        default: true
+                        description: If enabled, push-based OTLP metrics are collected.
+                          The default is `true`.
+                        type: boolean
+                      namespaces:
+                        description: Describes whether push-based OTLP metrics from
+                          specific Namespaces are selected.
                         properties:
-                          enabled:
-                            description: If enabled, Pods marked with `prometheus.io/scrape=true`
-                              annotation will be scraped.
+                          exclude:
+                            description: Exclude the push-based OTLP metrics from
+                              the specified Namespace names.
+                            items:
+                              type: string
+                            type: array
+                          include:
+                            description: Include only the push-based OTLP metrics
+                              from the specified Namespace names.
+                            items:
+                              type: string
+                            type: array
+                          system:
+                            description: Set to `true` to include the push-based OTLP
+                              metrics from system Namespaces like kube-system, istio-system,
+                              and kyma-system. The default is `false`.
                             type: boolean
                         type: object
-                      runtime:
-                        description: Configures runtime scraping.
+                    type: object
+                  prometheus:
+                    description: Configures Prometheus scraping.
+                    properties:
+                      enabled:
+                        description: If enabled, Pods marked with `prometheus.io/scrape=true`
+                          annotation will be scraped. The default is `false`.
+                        type: boolean
+                      namespaces:
+                        description: Describes whether Prometheus metrics from specific
+                          Namespaces are selected.
                         properties:
-                          enabled:
-                            description: If enabled, workload-related Kubernetes metrics
-                              will be scraped.
+                          exclude:
+                            description: Exclude the Prometheus metrics from the specified
+                              Namespace names.
+                            items:
+                              type: string
+                            type: array
+                          include:
+                            description: Include only the Prometheus metrics from
+                              the specified Namespace names.
+                            items:
+                              type: string
+                            type: array
+                          system:
+                            description: Set to `true` to include the Prometheus metrics
+                              from system Namespaces like kube-system, istio-system,
+                              and kyma-system. The default is `false`.
+                            type: boolean
+                        type: object
+                    type: object
+                  runtime:
+                    description: Configures runtime scraping.
+                    properties:
+                      enabled:
+                        description: If enabled, workload-related Kubernetes metrics
+                          will be scraped. The default is `false`.
+                        type: boolean
+                      namespaces:
+                        description: Describes whether workload-related Kubernetes
+                          metrics from specific Namespaces are selected.
+                        properties:
+                          exclude:
+                            description: Exclude the workload-related Kubernetes metrics
+                              from the specified Namespace names.
+                            items:
+                              type: string
+                            type: array
+                          include:
+                            description: Include only the workload-related Kubernetes
+                              metrics from the specified Namespace names.
+                            items:
+                              type: string
+                            type: array
+                          system:
+                            description: Set to `true` to include the workload-related
+                              Kubernetes metrics from system Namespaces like kube-system,
+                              istio-system, and kyma-system. The default is `false`.
                             type: boolean
                         type: object
                     type: object
