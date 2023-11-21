@@ -12,9 +12,11 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
@@ -39,7 +41,7 @@ type Reconciler struct {
 	config             Config
 	prober             DeploymentProber
 	overridesHandler   overrides.GlobalConfigHandler
-	istioStatusChecker istioStatusChecker
+	istioStatusChecker istiostatus.Checker
 }
 
 func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
@@ -48,7 +50,7 @@ func NewReconciler(client client.Client, config Config, prober DeploymentProber,
 		config:             config,
 		prober:             prober,
 		overridesHandler:   overridesHandler,
-		istioStatusChecker: istioStatusChecker{client: client},
+		istioStatusChecker: istiostatus.NewChecker(client),
 	}
 }
 
@@ -169,9 +171,12 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
+	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
-		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars)); err != nil {
+		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
+			WithIstioConfig(fmt.Sprintf("%d", ports.Metrics), isIstioActive)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 
@@ -179,7 +184,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 }
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
-	isIstioActive := r.istioStatusChecker.isIstioActive(ctx)
+	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	agentConfig := agent.MakeConfig(types.NamespacedName{
 		Namespace: r.config.Gateway.Namespace,
 		Name:      r.config.Gateway.OTLPServiceName,

@@ -9,6 +9,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 )
 
 const (
@@ -69,6 +71,10 @@ type MetricProducer struct {
 	name      string
 	namespace string
 	labels    map[string]string
+}
+
+func (mp *MetricProducer) PodURL(proxyClient *apiserver.ProxyClient) string {
+	return proxyClient.ProxyURLForPod(mp.namespace, mp.name, mp.MetricsEndpoint(), mp.MetricsPort())
 }
 
 func (mp *MetricProducer) Name() string {

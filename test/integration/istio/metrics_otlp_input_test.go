@@ -7,18 +7,22 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
+	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
@@ -78,7 +82,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		return objs
 	}
 
-	Context("Verify deployments/pods required for tests are ready", Ordered, func() {
+	Context("App with istio-sidecar", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -88,7 +92,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
-		
+
 		It("Should have a running metric gateway deployment", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
@@ -102,87 +106,20 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
-		Context("Verify metric scraping works with annotating pods and services", Ordered, func() {
-			// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
-			// targets discovered via annotated pods must have no service label
-			Context("Annotated pods", func() {
-				It("Should scrape if prometheus.io/scheme=https", func() {
-					podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
-				})
-
-				It("Should scrape if prometheus.io/scheme=http", func() {
-					podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
-				})
-
-				It("Should scrape if prometheus.io/scheme unset", func() {
-					podScrapedMetricsShouldBeDelivered(telemetryExportURL, unannotatedMetricProducerName)
-				})
-			})
-
-			// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
-			// targets discovered via annotated service must have the service label
-			Context("Annotated services", func() {
-				It("Should scrape if prometheus.io/scheme=https", func() {
-					serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
-				})
-
-				It("Should scrape if prometheus.io/scheme=http", func() {
-					serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
-				})
-
-				It("Should scrape if prometheus.io/scheme unset", func() {
-					serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, unannotatedMetricProducerName)
-				})
-			})
-		})
-	})
-	//We have the following scenarios here:
-	//1. Istiofied app->non-istiofied-backend and istiofied-backend
-	//2. app->non-istiofied-backend and istiofied-backend
-	//3. app(push metrics) -> non-istiofied-backend and istiofied-backend
-	Context("Istiofied app and istiofied backend", Ordered, func() {
-		It("Should scrape if prometheus.io/scheme=https", func() {
-			podScrapedMetricsShouldBeDelivered(telemetryIstiofiedExportURL, httpsAnnotatedMetricProducerName)
-		})
-	})
-	Context("Non istiofied app and istiofied backend", Ordered, func() {
-		It("Should scrape if prometheus.io/scheme=http", func() {
-			podScrapedMetricsShouldBeDelivered(telemetryIstiofiedExportURL, httpAnnotatedMetricProducerName)
-		})
-	})
-	Context("Istiofied app and non istiofied backend", Ordered, func() {
-		It("Should scrape if prometheus.io/scheme=https", func() {
-			podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
-		})
-	})
-	Context("Non istiofied app non istiofied backend", Ordered, func() {
-		It("Should scrape if prometheus.io/scheme=http", func() {
-			podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
+		It("Should push metrics successfully", func() {
+			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP)
+			gauges := kitmetrics.MakeAndSendGaugeMetrics(proxyClient, gatewayPushURL)
+			pushMetricsShouldBeDelivered(telemetryExportURL, gauges)
+			pushMetricsShouldBeDelivered(telemetryIstiofiedExportURL, gauges)
 		})
 	})
 })
 
-func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
+func pushMetricsShouldBeDelivered(proxyUrl string, gauges []pmetric.Metric) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(proxyURL)
+		resp, err := proxyClient.Get(proxyUrl)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
-			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", podName)),
-			ContainMetric(WithName(BeElementOf(metricproducer.AllMetricNames))),
-		))))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-}
-
-func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
-	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(proxyURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ContainMd(
-			ContainMetric(SatisfyAll(
-				WithName(BeElementOf(metricproducer.AllMetricNames)),
-				ContainDataPointAttrs(HaveKeyWithValue("service", serviceName)),
-			)))))
+		g.Expect(resp).To(HaveHTTPBody(ContainMd(metric.WithMetrics(BeEquivalentTo(gauges)))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

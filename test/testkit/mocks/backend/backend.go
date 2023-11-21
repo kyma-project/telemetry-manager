@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -84,7 +85,8 @@ func (b *Backend) buildResources() {
 	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), TelemetryDataFilename)
 
 	b.ConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.withTLS, b.TLSCerts)
-	b.Deployment = NewDeployment(b.name, b.namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.signalType)
+	b.Deployment = NewDeployment(b.name, b.namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(HTTPWebPort)})
+
 	if b.signalType == SignalTypeLogs {
 		b.FluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.withTLS, b.TLSCerts)
 		b.Deployment.WithFluentdConfigName(b.FluentDConfigMap.Name())
