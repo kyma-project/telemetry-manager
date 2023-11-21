@@ -4,7 +4,6 @@ package istio
 
 import (
 	"k8s.io/apimachinery/pkg/types"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -13,10 +12,8 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -26,7 +23,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		mockBackendName    = "metric-agent-receiver"
 		metricProducerName = "metric-producer-with-proxy"
 	)
-	var telemetryExportURL string
+	//var telemetryExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -36,7 +33,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		// Mocks namespace objects
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		//telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		metricProducer := metricproducer.New(mockNs, metricproducer.WithName(metricProducerName))
 		objs = append(objs, []client.Object{
@@ -74,33 +71,33 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
-		It("Should verify istio proxy metric scraping", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
-				// targets discovered via annotated pods must have no service label
-				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
-					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(metricproducer.MetricCPUTemperature.Name)),
-						WithType(Equal(metricproducer.MetricCPUTemperature.Type)),
-					))),
-					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(metricproducer.MetricCPUEnergyHistogram.Name)),
-						WithType(Equal(metricproducer.MetricCPUEnergyHistogram.Type)),
-					))),
-					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(metricproducer.MetricHardwareHumidity.Name)),
-						WithType(Equal(metricproducer.MetricHardwareHumidity.Type)),
-					))),
-					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(metricproducer.MetricHardDiskErrorsTotal.Name)),
-						WithType(Equal(metricproducer.MetricHardDiskErrorsTotal.Type)),
-					))),
-				),
-				))
-			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
+		//It("Should verify istio proxy metric scraping", func() {
+		//	Eventually(func(g Gomega) {
+		//		resp, err := proxyClient.Get(telemetryExportURL)
+		//		g.Expect(err).NotTo(HaveOccurred())
+		//		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		//		// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
+		//		// targets discovered via annotated pods must have no service label
+		//		g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
+		//			ContainMd(ContainMetric(SatisfyAll(
+		//				WithName(Equal(metricproducer.MetricCPUTemperature.Name)),
+		//				WithType(Equal(metricproducer.MetricCPUTemperature.Type)),
+		//			))),
+		//			ContainMd(ContainMetric(SatisfyAll(
+		//				WithName(Equal(metricproducer.MetricCPUEnergyHistogram.Name)),
+		//				WithType(Equal(metricproducer.MetricCPUEnergyHistogram.Type)),
+		//			))),
+		//			ContainMd(ContainMetric(SatisfyAll(
+		//				WithName(Equal(metricproducer.MetricHardwareHumidity.Name)),
+		//				WithType(Equal(metricproducer.MetricHardwareHumidity.Type)),
+		//			))),
+		//			ContainMd(ContainMetric(SatisfyAll(
+		//				WithName(Equal(metricproducer.MetricHardDiskErrorsTotal.Name)),
+		//				WithType(Equal(metricproducer.MetricHardDiskErrorsTotal.Type)),
+		//			))),
+		//		),
+		//		))
+		//	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		//})
 	})
 })

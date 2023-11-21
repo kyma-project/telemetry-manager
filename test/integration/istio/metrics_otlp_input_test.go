@@ -18,22 +18,18 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
+var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 	const (
-		mockNs                           = "metric-prometheus-input"
-		mockBackendName                  = "metric-agent-receiver"
-		httpsAnnotatedMetricProducerName = "metric-producer-https"
-		httpAnnotatedMetricProducerName  = "metric-producer-http"
-		unannotatedMetricProducerName    = "metric-producer"
-		mockIstioBackendNs               = "istio-metric-mock"
-		mockIstioBackendName             = "istiofied-metric-agent-receiver"
+		mockNs               = "metric-prometheus-input"
+		mockBackendName      = "metric-agent-receiver"
+		mockIstioBackendNs   = "istio-metric-mock"
+		mockIstioBackendName = "istiofied-metric-agent-receiver"
 	)
 	var telemetryExportURL, telemetryIstiofiedExportURL string
 
@@ -52,19 +48,6 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
 		telemetryIstiofiedExportURL = mockIstiofiedBackend.TelemetryExportURL(proxyClient)
 
-		httpsAnnotatedMetricProducer := metricproducer.New(mockNs, metricproducer.WithName(httpsAnnotatedMetricProducerName))
-		httpAnnotatedMetricProducer := metricproducer.New(mockNs, metricproducer.WithName(httpAnnotatedMetricProducerName))
-		unannotatedMetricProducer := metricproducer.New(mockNs, metricproducer.WithName(unannotatedMetricProducerName))
-		objs = append(objs, []client.Object{
-			httpsAnnotatedMetricProducer.Pod().WithSidecarInjection().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
-			httpsAnnotatedMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTPS).K8sObject(),
-			httpAnnotatedMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-			httpAnnotatedMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-			unannotatedMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-			unannotatedMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-		}...)
-
-		// Default namespace objects
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			PrometheusInput(true)
@@ -75,6 +58,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			PrometheusInput(true)
 
 		objs = append(objs, metricPipelineIstiofiedBackend.K8sObject())
+
 		// set peerauthentication to strict explicitly
 		peerAuth := istio.NewPeerAuthentication(mockBackendName, mockIstioBackendNs)
 		objs = append(objs, peerAuth.K8sObject(kitk8s.WithLabel("app", mockBackendName)))
@@ -82,7 +66,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		return objs
 	}
 
-	Context("App with istio-sidecar", Ordered, func() {
+	Context("Istiofied and non-istiofied in-cluster backends", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
