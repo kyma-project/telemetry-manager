@@ -142,16 +142,19 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 }
 
 func enableDropIfInputSourceRuntime(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	pipeline.SetDefaultForRuntimeInputEnabled()
 	appInput := pipeline.Spec.Input
 	return !*appInput.Runtime.Enabled
 }
 
 func enableDropIfInputSourcePrometheus(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	pipeline.SetDefaultForPrometheusInputEnabled()
 	appInput := pipeline.Spec.Input
 	return !*appInput.Prometheus.Enabled
 }
 
 func enableDropIfInputSourceIstio(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	pipeline.SetDefaultForIstioInputEnabled()
 	appInput := pipeline.Spec.Input
 	return !*appInput.Istio.Enabled
 }

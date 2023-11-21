@@ -184,29 +184,29 @@ func NewMetricPipelineCondition(reason string, condType MetricPipelineConditionT
 	}
 }
 
-func (tps *MetricPipelineStatus) GetCondition(condType MetricPipelineConditionType) *MetricPipelineCondition {
-	for cond := range tps.Conditions {
-		if tps.Conditions[cond].Type == condType {
-			return &tps.Conditions[cond]
+func (mps *MetricPipelineStatus) GetCondition(condType MetricPipelineConditionType) *MetricPipelineCondition {
+	for cond := range mps.Conditions {
+		if mps.Conditions[cond].Type == condType {
+			return &mps.Conditions[cond]
 		}
 	}
 	return nil
 }
 
-func (tps *MetricPipelineStatus) HasCondition(condition MetricPipelineConditionType) bool {
-	return tps.GetCondition(condition) != nil
+func (mps *MetricPipelineStatus) HasCondition(condition MetricPipelineConditionType) bool {
+	return mps.GetCondition(condition) != nil
 }
 
-func (tps *MetricPipelineStatus) SetCondition(cond MetricPipelineCondition) {
-	currentCond := tps.GetCondition(cond.Type)
+func (mps *MetricPipelineStatus) SetCondition(cond MetricPipelineCondition) {
+	currentCond := mps.GetCondition(cond.Type)
 	if currentCond != nil && currentCond.Reason == cond.Reason {
 		return
 	}
 	if currentCond != nil {
 		cond.LastTransitionTime = currentCond.LastTransitionTime
 	}
-	newConditions := filterMetricPipelineCondition(tps.Conditions, cond.Type)
-	tps.Conditions = append(newConditions, cond)
+	newConditions := filterMetricPipelineCondition(mps.Conditions, cond.Type)
+	mps.Conditions = append(newConditions, cond)
 }
 
 func filterMetricPipelineCondition(conditions []MetricPipelineCondition, condType MetricPipelineConditionType) []MetricPipelineCondition {
@@ -218,4 +218,29 @@ func filterMetricPipelineCondition(conditions []MetricPipelineCondition, condTyp
 		newConditions = append(newConditions, cond)
 	}
 	return newConditions
+}
+
+func (mp *MetricPipeline) SetDefaultForPrometheusInputEnabled() {
+	if mp.Spec.Input.Prometheus.Enabled == nil {
+		mp.Spec.Input.Prometheus.Enabled = new(bool)
+	}
+}
+
+func (mp *MetricPipeline) SetDefaultForRuntimeInputEnabled() {
+	if mp.Spec.Input.Runtime.Enabled == nil {
+		mp.Spec.Input.Runtime.Enabled = new(bool)
+	}
+}
+
+func (mp *MetricPipeline) SetDefaultForIstioInputEnabled() {
+	if mp.Spec.Input.Istio.Enabled == nil {
+		mp.Spec.Input.Istio.Enabled = new(bool)
+	}
+}
+
+func (mp *MetricPipeline) SetDefaultForOtlpInputEnabled() {
+	if mp.Spec.Input.Otlp.Enabled == nil {
+		enabled := true
+		mp.Spec.Input.Otlp.Enabled = &enabled
+	}
 }

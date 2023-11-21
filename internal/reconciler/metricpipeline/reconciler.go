@@ -152,6 +152,9 @@ func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv
 }
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	pipeline.SetDefaultForRuntimeInputEnabled()
+	pipeline.SetDefaultForPrometheusInputEnabled()
+	pipeline.SetDefaultForIstioInputEnabled()
 	return *pipeline.Spec.Input.Runtime.Enabled || *pipeline.Spec.Input.Prometheus.Enabled || *pipeline.Spec.Input.Istio.Enabled
 }
 
