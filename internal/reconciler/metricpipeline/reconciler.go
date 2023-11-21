@@ -50,7 +50,7 @@ func NewReconciler(client client.Client, config Config, prober DeploymentProber,
 		config:             config,
 		prober:             prober,
 		overridesHandler:   overridesHandler,
-		istioStatusChecker: istiostatus.Checker{Client: client},
+		istioStatusChecker: istiostatus.NewChecker(client),
 	}
 }
 

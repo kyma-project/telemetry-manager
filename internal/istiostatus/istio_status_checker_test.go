@@ -46,7 +46,7 @@ func TestIsIstioActive(t *testing.T) {
 			}
 			fakeClient := fakeClientBuilder.Build()
 
-			isc := &Checker{Client: fakeClient}
+			isc := &Checker{client: fakeClient}
 
 			got := isc.IsIstioActive(context.Background())
 
