@@ -121,7 +121,7 @@ type MetricPipelineIstioInput struct {
 type MetricPipelineIstioInputNamespaces struct {
 	// Include only the istio-proxy metrics from the specified Namespace names.
 	Include []string `json:"include,omitempty"`
-	// Exclude the Istio istio-proxy from the specified Namespace names.
+	// Exclude the istio-proxy metrics from the specified Namespace names.
 	Exclude []string `json:"exclude,omitempty"`
 	// Set to `true` to include the istio-proxy metrics from system Namespaces like kube-system, istio-system, and kyma-system. The default is `true`.
 	// +kubebuilder:default=true
