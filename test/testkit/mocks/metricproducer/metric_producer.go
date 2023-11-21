@@ -4,13 +4,13 @@ import (
 	"maps"
 	"strconv"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
-
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 )
 
 const (
