@@ -81,6 +81,18 @@ func makeFilterByNamespaceRuntimeInputConfig(namespaceSelector v1alpha1.MetricPi
 	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceRuntime))
 }
 
+func makeFilterByNamespacePrometheusInputConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourcePrometheus))
+}
+
+func makeFilterByNamespaceIstioInputConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceIstio))
+}
+
+func makeFilterByNamespaceOtlpInputConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+	return makeFilterByNamespaceConfig(namespaceSelector, OtlpInputSource())
+}
+
 func makeFilterByNamespaceConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector, inputSourceCondition string) *FilterProcessor {
 	var filterExpressions []string
 
@@ -102,11 +114,6 @@ func makeFilterByNamespaceConfig(namespaceSelector v1alpha1.MetricPipelineInputN
 		filterExpressions = append(filterExpressions, systemNamespacesExpr)
 	}
 
-	//	fmt.Sprintf("not (%s and %s)", inputSourceEquals(metric.InputSourceRuntime), namespaceEquals("foo")), //WORKS!!!
-	// fmt.Sprintf("%s and %s", inputSourceEquals(""), namespaceEquals("foo")), // didn't work - metrics were not dropped
-	// fmt.Sprintf("%s", namespaceEquals("foo")), //works
-	// fmt.Sprintf(OtlpInputSource()), // works
-	// fmt.Sprintf("%s and %s", OtlpInputSource(), joinWithOr(namespaceEquals("foo"), namespaceEquals("bar"))),
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			Metric: filterExpressions,
