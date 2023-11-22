@@ -42,7 +42,7 @@ func makeDropIfInputSourceRuntimeConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			DataPoint: []string{
-				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourceRuntime),
+				config.ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourceRuntime)),
 			},
 		},
 	}
@@ -52,7 +52,7 @@ func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			DataPoint: []string{
-				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourcePrometheus),
+				config.ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourcePrometheus)),
 			},
 		},
 	}
@@ -62,7 +62,17 @@ func makeDropIfInputSourceIstioConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			DataPoint: []string{
-				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourceIstio),
+				config.ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourceIstio)),
+			},
+		},
+	}
+}
+
+func makeDropIfInputSourceOtlpConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				otlpInputSource(),
 			},
 		},
 	}
@@ -133,7 +143,7 @@ func inputSourceEquals(inputSourceType metric.InputSourceType) string {
 
 func otlpInputSource() string {
 	// kyma.source attribute is only set by the metric agents for runtime, prometheus and istio metrics
-	// Thus, kyma.source attribute will be nil for push-based otlp metrics
+	// Thus, "kyma.source" attribute will be nil for push-based otlp metrics
 	return fmt.Sprintf("resource.attributes[\"%s\"] == nil", metric.InputSourceAttribute)
 }
 

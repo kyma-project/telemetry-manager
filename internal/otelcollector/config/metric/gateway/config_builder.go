@@ -96,6 +96,9 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 	if shouldDropIfInputSourceIstio(pipeline) {
 		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
 	}
+	if shouldDropIfInputSourceOtlp(pipeline) {
+		cfg.Processors.DropIfInputSourceOtlp = makeDropIfInputSourceOtlpConfig()
+	}
 
 	if shouldFilterByNamespaceRuntimeInput(pipeline) {
 		cfg.Processors.FilterByNamespaceRuntimeInput = makeFilterByNamespaceRuntimeInputConfig(pipeline.Spec.Input.Runtime.Namespaces)
@@ -140,6 +143,9 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 	if shouldDropIfInputSourceIstio(pipeline) {
 		processors = append(processors, "filter/drop-if-input-source-istio")
 	}
+	if shouldDropIfInputSourceOtlp(pipeline) {
+		processors = append(processors, "filter/drop-if-input-source-otlp")
+	}
 
 	if shouldFilterByNamespaceRuntimeInput(pipeline) {
 		processors = append(processors, "filter/filter-by-namespace-runtime-input")
@@ -165,20 +171,26 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 
 func shouldDropIfInputSourceRuntime(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	pipeline.SetDefaultForRuntimeInputEnabled()
-	appInput := pipeline.Spec.Input
-	return !*appInput.Runtime.Enabled
+	input := pipeline.Spec.Input
+	return !*input.Runtime.Enabled
 }
 
 func shouldDropIfInputSourcePrometheus(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	pipeline.SetDefaultForPrometheusInputEnabled()
-	appInput := pipeline.Spec.Input
-	return !*appInput.Prometheus.Enabled
+	input := pipeline.Spec.Input
+	return !*input.Prometheus.Enabled
 }
 
 func shouldDropIfInputSourceIstio(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	pipeline.SetDefaultForIstioInputEnabled()
-	appInput := pipeline.Spec.Input
-	return !*appInput.Istio.Enabled
+	input := pipeline.Spec.Input
+	return !*input.Istio.Enabled
+}
+
+func shouldDropIfInputSourceOtlp(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	pipeline.SetDefaultForOtlpInputEnabled()
+	input := pipeline.Spec.Input
+	return !*input.Otlp.Enabled
 }
 
 func shouldFilterByNamespaceRuntimeInput(pipeline *telemetryv1alpha1.MetricPipeline) bool {
