@@ -77,11 +77,11 @@ func makeResolveServiceNameConfig() *TransformProcessor {
 	}
 }
 
-func makeFilterByNamespaceRuntimeInputConfig(namespaceSelector v1alpha1.MetricPipelineContainerRuntimeInputNamespaces) *FilterProcessor {
+func makeFilterByNamespaceRuntimeInputConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
 	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceRuntime))
 }
 
-func makeFilterByNamespaceConfig(namespaceSelector v1alpha1.MetricPipelineContainerRuntimeInputNamespaces, inputSourceCondition string) *FilterProcessor {
+func makeFilterByNamespaceConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector, inputSourceCondition string) *FilterProcessor {
 	var filterExpressions []string
 
 	if len(namespaceSelector.Exclude) > 0 {
