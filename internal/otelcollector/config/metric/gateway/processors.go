@@ -3,12 +3,10 @@ package gateway
 import (
 	"fmt"
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/system"
-	"strings"
-
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/system"
 )
 
 func makeProcessorsConfig() Processors {
@@ -90,7 +88,7 @@ func makeFilterByNamespaceIstioInputConfig(namespaceSelector v1alpha1.MetricPipe
 }
 
 func makeFilterByNamespaceOtlpInputConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
-	return makeFilterByNamespaceConfig(namespaceSelector, OtlpInputSource())
+	return makeFilterByNamespaceConfig(namespaceSelector, otlpInputSource())
 }
 
 func makeFilterByNamespaceConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector, inputSourceCondition string) *FilterProcessor {
@@ -98,19 +96,19 @@ func makeFilterByNamespaceConfig(namespaceSelector v1alpha1.MetricPipelineInputN
 
 	if len(namespaceSelector.Exclude) > 0 {
 		namespacesConditions := createNamespacesConditions(namespaceSelector.Exclude)
-		excludeNamespacesExpr := joinWithAnd(inputSourceCondition, joinWithOr(namespacesConditions...))
+		excludeNamespacesExpr := config.JoinWithAnd(inputSourceCondition, config.JoinWithOr(namespacesConditions...))
 		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
 	}
 
 	if len(namespaceSelector.Include) > 0 {
 		namespacesConditions := createNamespacesConditions(namespaceSelector.Include)
-		includeNamespacesExpr := not(joinWithAnd(inputSourceCondition, joinWithOr(namespacesConditions...)))
+		includeNamespacesExpr := not(config.JoinWithAnd(inputSourceCondition, config.JoinWithOr(namespacesConditions...)))
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
 	}
 
 	if !*namespaceSelector.System {
 		namespacesConditions := createNamespacesConditions(system.Namespaces())
-		systemNamespacesExpr := joinWithAnd(inputSourceCondition, joinWithOr(namespacesConditions...))
+		systemNamespacesExpr := config.JoinWithAnd(inputSourceCondition, config.JoinWithOr(namespacesConditions...))
 		filterExpressions = append(filterExpressions, systemNamespacesExpr)
 	}
 
@@ -124,35 +122,21 @@ func makeFilterByNamespaceConfig(namespaceSelector v1alpha1.MetricPipelineInputN
 func createNamespacesConditions(namespaces []string) []string {
 	var namespacesConditions []string
 	for _, ns := range namespaces {
-		namespacesConditions = append(namespacesConditions, namespaceEquals(ns))
+		namespacesConditions = append(namespacesConditions, config.NamespaceEquals(ns))
 	}
 	return namespacesConditions
 }
 
 func inputSourceEquals(inputSourceType metric.InputSourceType) string {
-	return resourceAttributeEquals(metric.InputSourceAttribute, string(inputSourceType))
+	return config.ResourceAttributeEquals(metric.InputSourceAttribute, string(inputSourceType))
 }
 
-func OtlpInputSource() string {
-	return "resource.attributes[\"" + metric.InputSourceAttribute + "\"] == nil"
-}
-
-func namespaceEquals(name string) string {
-	return resourceAttributeEquals("k8s.namespace.name", name)
-}
-
-func resourceAttributeEquals(key, value string) string {
-	return "resource.attributes[\"" + key + "\"] == \"" + value + "\""
-}
-
-func joinWithOr(parts ...string) string {
-	return "(" + strings.Join(parts, " or ") + ")"
-}
-
-func joinWithAnd(parts ...string) string {
-	return strings.Join(parts, " and ")
+func otlpInputSource() string {
+	// kyma.source attribute is only set by the metric agents for runtime, prometheus and istio metrics
+	// Thus, kyma.source attribute will be nil for push-based otlp metrics
+	return fmt.Sprintf("resource.attributes[\"%s\"] == nil", metric.InputSourceAttribute)
 }
 
 func not(expression string) string {
-	return fmt.Sprintf("not (%s)", expression)
+	return fmt.Sprintf("not(%s)", expression)
 }
