@@ -57,8 +57,6 @@ func (l *LogLevelReconfigurer) ChangeLogLevel(logLevel string) error {
 	return nil
 }
 
-/// Helper code migrated from kyma/commong/logging/logger
-
 /*
 This function creates logger structure based on given format, atomicLevel and additional cores
 AtomicLevel structure allows to change level dynamically
