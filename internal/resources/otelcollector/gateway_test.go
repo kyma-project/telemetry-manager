@@ -310,8 +310,8 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("It should have permissive peer authentication created", func(t *testing.T) {
-		var peerAuth istiosecv1beta1.PeerAuthentication
-		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &peerAuth))
+		var peerAuth *istiosecv1beta1.PeerAuthentication
+		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, peerAuth))
 
 		require.NotNil(t, peerAuth)
 		require.Equal(t, name, peerAuth.Name)
