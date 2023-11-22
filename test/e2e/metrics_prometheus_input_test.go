@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
@@ -20,10 +21,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
+var _ = Describe("Metrics Prometheus Input", Label("new"), func() {
 	const (
-		mockNs          = "metric-prometheus-input"
-		mockBackendName = "metric-agent-receiver"
+		backendNs   = "metric-prometheus-input"
+		backendName = "metric-agent-receiver"
+		app1Ns      = "namespace1"
+		app2Ns      = "namespace2"
 	)
 
 	var (
@@ -33,22 +36,31 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject(),
+			kitk8s.NewNamespace(app1Ns).K8sObject(),
+			kitk8s.NewNamespace(app2Ns).K8sObject())
 
-		// Mocks namespace objects.
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
-		mockMetricProducer := metricproducer.New(mockNs)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		objs = append(objs, []client.Object{
-			mockMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-			mockMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-		}...)
+		mockBackend := backend.New(backendName, backendNs, backend.SignalTypeMetrics)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		objs = append(objs, mockBackend.K8sObjects()...)
 
-		// Default namespace objects.
+		app1 := metricproducer.New(app1Ns)
+		objs = append(objs, []client.Object{
+			app1.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+			app1.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+		}...)
+
+		app2 := metricproducer.New(app2Ns)
+		objs = append(objs, []client.Object{
+			app2.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+			app2.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+		}...)
+
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			PrometheusInput(true)
+			PrometheusInput(true, &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
+				Include: []string{app1Ns},
+			})
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 
@@ -71,7 +83,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backendName, Namespace: backendNs})
 
 		})
 
@@ -144,17 +156,17 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		})
 
 		It("Should verify no kubelet metrics", func() {
-			Eventually(func(g Gomega) {
+			Consistently(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
 					Not(ContainMd(ContainMetric(WithName(BeElementOf(kubeletMetricNames))))),
 				))
-			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should have metrics with service.name set to telemetry-metric-gateway", Label(operationalTest), func() {
+		It("Should contain metrics with service.name set to telemetry-metric-gateway", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -164,10 +176,10 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 						ContainResourceAttrs(HaveKeyWithValue("service.name", kitkyma.MetricGatewayBaseName)),
 					),
 				))
-			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should have metrics with service.name set to telemetry-metric-agent", Label(operationalTest), func() {
+		It("Should contain metrics with service.name set to telemetry-metric-agent", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -177,7 +189,33 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 						ContainResourceAttrs(HaveKeyWithValue("service.name", kitkyma.MetricAgentBaseName)),
 					),
 				))
-			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should contain metrics from app1Ns", Label(operationalTest), func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					ContainMd(
+						ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", app1Ns)),
+					),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should contain no metrics from app2Ns", Label(operationalTest), func() {
+			Consistently(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					Not(ContainMd(
+						ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", app2Ns)),
+					)),
+				))
+			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })

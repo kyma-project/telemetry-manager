@@ -9,7 +9,7 @@ OS_ARCH ?= $(shell uname -m)
 OS_TYPE ?= $(shell uname)
 PROJECT_DIR ?= $(shell pwd)
 ARTIFACTS ?= $(shell pwd)/artifacts
-
+GARDENER_GCP_MACHINE_TYPE ?= n1-standard-8
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -381,7 +381,7 @@ gardener-integration-test: ## Provision gardener cluster and run integration tes
 
 .PHONY: provision-gardener
 provision-gardener: kyma ## Provision gardener cluster with latest k8s version
-	${KYMA} provision gardener gcp -c ${GARDENER_SA_PATH} -n test-${GIT_COMMIT_SHA} -p ${GARDENER_PROJECT} -s ${GARDENER_SECRET_NAME} -k ${GARDENER_K8S_VERSION}\
+	${KYMA} provision gardener gcp -t ${GARDENER_GCP_MACHINE_TYPE} -c ${GARDENER_SA_PATH} -n test-${GIT_COMMIT_SHA} -p ${GARDENER_PROJECT} -s ${GARDENER_SECRET_NAME} -k ${GARDENER_K8S_VERSION}\
 		--hibernation-start="00 ${HIBERNATION_HOUR} * * ?"
 
 .PHONY: deprovision-gardener

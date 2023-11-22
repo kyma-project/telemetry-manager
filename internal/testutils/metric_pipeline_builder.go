@@ -93,7 +93,7 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 		},
 		Spec: telemetryv1alpha1.MetricPipelineSpec{
 			Input: telemetryv1alpha1.MetricPipelineInput{
-				Runtime: telemetryv1alpha1.MetricPipelineContainerRuntimeInput{
+				Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
 					Enabled: &b.runtimeInputOn,
 				},
 				Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
