@@ -87,16 +87,20 @@ func makeServiceConfig() config.Service {
 
 // addComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.MetricPipeline.
 func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
-	if enableDropIfInputSourceRuntime(pipeline) {
+	if shouldDropIfInputSourceRuntime(pipeline) {
 		cfg.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}
 
-	if enableDropIfInputSourcePrometheus(pipeline) {
+	if shouldDropIfInputSourcePrometheus(pipeline) {
 		cfg.Processors.DropIfInputSourcePrometheus = makeDropIfInputSourcePrometheusConfig()
 	}
 
-	if enableDropIfInputSourceIstio(pipeline) {
+	if shouldDropIfInputSourceIstio(pipeline) {
 		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
+	}
+
+	if shouldFilterByNamespaceRuntimeInput(pipeline) {
+		cfg.Processors.FilterByNamespaceRuntimeInput = makeFilterByNamespaceRuntimeInputConfig(pipeline.Spec.Input.Runtime.Namespaces)
 	}
 
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
@@ -120,16 +124,20 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 
 	processors := []string{"memory_limiter", "k8sattributes", "resource/insert-cluster-name", "transform/resolve-service-name"}
 
-	if enableDropIfInputSourceRuntime(pipeline) {
+	if shouldDropIfInputSourceRuntime(pipeline) {
 		processors = append(processors, "filter/drop-if-input-source-runtime")
 	}
 
-	if enableDropIfInputSourcePrometheus(pipeline) {
+	if shouldDropIfInputSourcePrometheus(pipeline) {
 		processors = append(processors, "filter/drop-if-input-source-prometheus")
 	}
 
-	if enableDropIfInputSourceIstio(pipeline) {
+	if shouldDropIfInputSourceIstio(pipeline) {
 		processors = append(processors, "filter/drop-if-input-source-istio")
+	}
+
+	if shouldFilterByNamespaceRuntimeInput(pipeline) {
+		processors = append(processors, "filter/filter-by-namespace-runtime-input")
 	}
 
 	processors = append(processors, "resource/drop-kyma-attributes", "batch")
@@ -141,20 +149,27 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 	}
 }
 
-func enableDropIfInputSourceRuntime(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+func shouldDropIfInputSourceRuntime(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	pipeline.SetDefaultForRuntimeInputEnabled()
 	appInput := pipeline.Spec.Input
 	return !*appInput.Runtime.Enabled
 }
 
-func enableDropIfInputSourcePrometheus(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+func shouldDropIfInputSourcePrometheus(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	pipeline.SetDefaultForPrometheusInputEnabled()
 	appInput := pipeline.Spec.Input
 	return !*appInput.Prometheus.Enabled
 }
 
-func enableDropIfInputSourceIstio(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+func shouldDropIfInputSourceIstio(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	pipeline.SetDefaultForIstioInputEnabled()
 	appInput := pipeline.Spec.Input
 	return !*appInput.Istio.Enabled
+}
+
+func shouldFilterByNamespaceRuntimeInput(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	pipeline.SetDefaultForRuntimeInputEnabled()
+	pipeline.SetDefaultForRuntimeInputSystemNamespaces()
+	runtimeInput := pipeline.Spec.Input.Runtime
+	return *runtimeInput.Enabled && (len(runtimeInput.Namespaces.Include) > 0 || len(runtimeInput.Namespaces.Exclude) > 0 || !*runtimeInput.Namespaces.System)
 }

@@ -5,11 +5,8 @@ import (
 	"strings"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/system"
 )
-
-func systemNamespaces() []string {
-	return []string{"kyma-system", "kube-system", "istio-system", "compass-system"}
-}
 
 func createNamespaceGrepFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
 	namespaces := pipeline.Spec.Input.Application.Namespaces
@@ -34,6 +31,6 @@ func createNamespaceGrepFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
 	}
 
 	return sectionBuilder.
-		AddConfigParam("Exclude", fmt.Sprintf("$kubernetes['namespace_name'] %s", strings.Join(systemNamespaces(), "|"))).
+		AddConfigParam("Exclude", fmt.Sprintf("$kubernetes['namespace_name'] %s", strings.Join(system.Namespaces(), "|"))).
 		Build()
 }

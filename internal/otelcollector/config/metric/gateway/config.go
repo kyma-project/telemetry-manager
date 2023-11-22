@@ -19,21 +19,23 @@ type Receivers struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	K8sAttributes               *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
-	InsertClusterName           *config.ResourceProcessor      `yaml:"resource/insert-cluster-name,omitempty"`
-	DropIfInputSourceRuntime    *FilterProcessor               `yaml:"filter/drop-if-input-source-runtime,omitempty"`
-	DropIfInputSourcePrometheus *FilterProcessor               `yaml:"filter/drop-if-input-source-prometheus,omitempty"`
-	DropIfInputSourceIstio      *FilterProcessor               `yaml:"filter/drop-if-input-source-istio,omitempty"`
-	ResolveServiceName          *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
-	DropKymaAttributes          *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
+	K8sAttributes                 *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
+	InsertClusterName             *config.ResourceProcessor      `yaml:"resource/insert-cluster-name,omitempty"`
+	DropIfInputSourceRuntime      *FilterProcessor               `yaml:"filter/drop-if-input-source-runtime,omitempty"`
+	DropIfInputSourcePrometheus   *FilterProcessor               `yaml:"filter/drop-if-input-source-prometheus,omitempty"`
+	DropIfInputSourceIstio        *FilterProcessor               `yaml:"filter/drop-if-input-source-istio,omitempty"`
+	FilterByNamespaceRuntimeInput *FilterProcessor               `yaml:"filter/filter-by-namespace-runtime-input,omitempty"`
+	ResolveServiceName            *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
+	DropKymaAttributes            *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 }
 
 type FilterProcessor struct {
-	Metrics FilterProcessorMetric `yaml:"metrics"`
+	Metrics FilterProcessorMetrics `yaml:"metrics"`
 }
 
-type FilterProcessorMetric struct {
-	DataPoint []string `yaml:"datapoint"`
+type FilterProcessorMetrics struct {
+	DataPoint []string `yaml:"datapoint,omitempty"`
+	Metric    []string `yaml:"metric,omitempty"`
 }
 
 type TransformProcessor struct {
