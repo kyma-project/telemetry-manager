@@ -71,19 +71,30 @@ spec:
                               type: string
                             type: array
                           system:
-                            default: true
                             description: Set to `true` to include the istio-proxy
                               metrics from system Namespaces like kube-system, istio-system,
                               and kyma-system. The default is `true`.
                             type: boolean
                         type: object
+                        x-kubernetes-validations:
+                        - message: Can only define one 'input.istio.namespaces' selector
+                            - either 'include', 'exclude', or 'system'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && (has(self.exclude) && size(self.exclude) != 0))'
+                        - message: Can only define one 'input.istio.namespaces' selector
+                            - either 'include', 'exclude', or 'system'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && has(self.system))'
+                        - message: Can only define one 'input.istio.namespaces' selector
+                            - either 'include', 'exclude', or 'system'
+                          rule: '!((has(self.exclude) && size(self.exclude) != 0)
+                            && has(self.system))'
                     type: object
                   otlp:
                     description: Configures the collection of push-based metrics which
                       are using the OpenTelemetry protocol.
                     properties:
                       enabled:
-                        default: true
                         description: If enabled, push-based OTLP metrics are collected.
                           The default is `true`.
                         type: boolean
@@ -109,6 +120,19 @@ spec:
                               and kyma-system. The default is `false`.
                             type: boolean
                         type: object
+                        x-kubernetes-validations:
+                        - message: Can only define one 'input.otlp.namespaces' selector
+                            - either 'include', 'exclude', or 'system'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && (has(self.exclude) && size(self.exclude) != 0))'
+                        - message: Can only define one 'input.otlp.namespaces' selector
+                            - either 'include', 'exclude', or 'system'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && has(self.system))'
+                        - message: Can only define one 'input.otlp.namespaces' selector
+                            - either 'include', 'exclude', or 'system'
+                          rule: '!((has(self.exclude) && size(self.exclude) != 0)
+                            && has(self.system))'
                     type: object
                   prometheus:
                     description: Configures Prometheus scraping.
@@ -139,6 +163,19 @@ spec:
                               and kyma-system. The default is `false`.
                             type: boolean
                         type: object
+                        x-kubernetes-validations:
+                        - message: Can only define one 'input.prometheus.namespaces'
+                            selector - either 'include', 'exclude', or 'system'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && (has(self.exclude) && size(self.exclude) != 0))'
+                        - message: Can only define one 'input.prometheus.namespaces'
+                            selector - either 'include', 'exclude', or 'system'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && has(self.system))'
+                        - message: Can only define one 'input.prometheus.namespaces'
+                            selector - either 'include', 'exclude', or 'system'
+                          rule: '!((has(self.exclude) && size(self.exclude) != 0)
+                            && has(self.system))'
                     type: object
                   runtime:
                     description: Configures runtime scraping.
@@ -169,6 +206,19 @@ spec:
                               istio-system, and kyma-system. The default is `false`.
                             type: boolean
                         type: object
+                        x-kubernetes-validations:
+                        - message: Can only define one 'input.runtime.namespaces'
+                            selector - either 'include', 'exclude', or 'system'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && (has(self.exclude) && size(self.exclude) != 0))'
+                        - message: Can only define one 'input.runtime.namespaces'
+                            selector - either 'include', 'exclude', or 'system'
+                          rule: '!((has(self.include) && size(self.include) != 0)
+                            && has(self.system))'
+                        - message: Can only define one 'input.runtime.namespaces'
+                            selector - either 'include', 'exclude', or 'system'
+                          rule: '!((has(self.exclude) && size(self.exclude) != 0)
+                            && has(self.system))'
                     type: object
                 type: object
               output:
