@@ -4,8 +4,6 @@ import (
 	"context"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"istio.io/api/security/v1beta1"
-	istiov1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"testing"
@@ -270,7 +268,7 @@ func TestApplyGatewayResources(t *testing.T) {
 		}, svc.Spec.Ports[1])
 	})
 
-	t.Run("should create open census service", func(t *testing.T) {
+	t.Run("should create service for accepting istio traces", func(t *testing.T) {
 		var svc corev1.Service
 		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name + "-internal"}, &svc))
 
@@ -284,7 +282,7 @@ func TestApplyGatewayResources(t *testing.T) {
 			"app.kubernetes.io/name": name,
 		}, svc.Spec.Selector)
 		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
-		require.Len(t, svc.Spec.Ports, 1)
+		require.Len(t, svc.Spec.Ports, 2)
 		require.Equal(t, corev1.ServicePort{
 			Name:       "http-opencensus",
 			Protocol:   corev1.ProtocolTCP,
@@ -312,7 +310,7 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("It should have permissive peer authentication created", func(t *testing.T) {
-		var peerAuth istiov1beta1.PeerAuthentication
+		var peerAuth istiosecv1beta1.PeerAuthentication
 		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &peerAuth))
 
 		require.NotNil(t, peerAuth)
