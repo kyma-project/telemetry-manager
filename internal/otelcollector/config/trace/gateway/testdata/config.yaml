@@ -9,6 +9,7 @@ service:
             receivers:
                 - opencensus
                 - otlp
+                - otlp/trace-receiver
             processors:
                 - memory_limiter
                 - k8sattributes
@@ -37,6 +38,12 @@ receivers:
                 endpoint: ${MY_POD_IP}:4318
             grpc:
                 endpoint: ${MY_POD_IP}:4317
+    otlp/trace-receiver:
+        protocols:
+            http:
+                endpoint: ${MY_POD_IP}:14318
+            grpc:
+                endpoint: ${MY_POD_IP}:14317
 processors:
     batch:
         send_batch_size: 512
