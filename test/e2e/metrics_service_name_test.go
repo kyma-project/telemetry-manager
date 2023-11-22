@@ -46,7 +46,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 
 		metricPipeline := kitmetric.NewPipeline("pipeline-service-name-test").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			RuntimeInput(true)
+			RuntimeInput(true, nil)
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 

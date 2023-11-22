@@ -21,9 +21,10 @@ type Pipeline struct {
 	name            string
 	otlpEndpointRef *telemetryv1alpha1.SecretKeyRef
 	otlpEndpoint    string
-	runtime         bool
-	prometheus      bool
-	istio           bool
+	otlp            telemetryv1alpha1.MetricPipelineOtlpInput
+	runtime         telemetryv1alpha1.MetricPipelineRuntimeInput
+	prometheus      telemetryv1alpha1.MetricPipelinePrometheusInput
+	istio           telemetryv1alpha1.MetricPipelineIstioInput
 	tls             *telemetryv1alpha1.OtlpTLS
 }
 
@@ -49,31 +50,51 @@ func (p *Pipeline) Name() string {
 	if p.persistent {
 		return p.name
 	}
-
 	return fmt.Sprintf("%s-%s", p.name, p.id)
 }
 
 func (p *Pipeline) Persistent(persistent bool) *Pipeline {
 	p.persistent = persistent
-
 	return p
 }
 
-func (p *Pipeline) RuntimeInput(enableRuntime bool) *Pipeline {
-	p.runtime = enableRuntime
-
+func (p *Pipeline) OtlpInput(enable bool, selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *Pipeline {
+	p.otlp = telemetryv1alpha1.MetricPipelineOtlpInput{
+		Enabled: pointer.Bool(enable),
+	}
+	if selector != nil {
+		p.otlp.Namespaces = *selector
+	}
 	return p
 }
 
-func (p *Pipeline) PrometheusInput(enablePrometheus bool) *Pipeline {
-	p.prometheus = enablePrometheus
-
+func (p *Pipeline) RuntimeInput(enable bool, selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *Pipeline {
+	p.runtime = telemetryv1alpha1.MetricPipelineRuntimeInput{
+		Enabled: pointer.Bool(enable),
+	}
+	if selector != nil {
+		p.runtime.Namespaces = *selector
+	}
 	return p
 }
 
-func (p *Pipeline) IstioInput(enableIstio bool) *Pipeline {
-	p.istio = enableIstio
+func (p *Pipeline) PrometheusInput(enable bool, selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *Pipeline {
+	p.prometheus = telemetryv1alpha1.MetricPipelinePrometheusInput{
+		Enabled: pointer.Bool(enable),
+	}
+	if selector != nil {
+		p.prometheus.Namespaces = *selector
+	}
+	return p
+}
 
+func (p *Pipeline) IstioInput(enable bool, selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *Pipeline {
+	p.istio = telemetryv1alpha1.MetricPipelineIstioInput{
+		Enabled: pointer.Bool(enable),
+	}
+	if selector != nil {
+		p.istio.Namespaces = *selector
+	}
 	return p
 }
 
@@ -121,15 +142,10 @@ func (p *Pipeline) K8sObject() *telemetryv1alpha1.MetricPipeline {
 		},
 		Spec: telemetryv1alpha1.MetricPipelineSpec{
 			Input: telemetryv1alpha1.MetricPipelineInput{
-				Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
-					Enabled: pointer.Bool(p.runtime),
-				},
-				Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-					Enabled: pointer.Bool(p.prometheus),
-				},
-				Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-					Enabled: pointer.Bool(p.istio),
-				},
+				Otlp:       p.otlp,
+				Runtime:    p.runtime,
+				Prometheus: p.prometheus,
+				Istio:      p.istio,
 			},
 			Output: telemetryv1alpha1.MetricPipelineOutput{
 				Otlp: otlpOutput,

@@ -78,7 +78,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-istio-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			IstioInput(true)
+			IstioInput(true, nil)
 		objs = append(objs, metricPipeline.K8sObject())
 
 		return objs

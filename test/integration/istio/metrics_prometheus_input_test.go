@@ -54,7 +54,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			PrometheusInput(true)
+			PrometheusInput(true, nil)
 		objs = append(objs, metricPipeline.K8sObject())
 
 		return objs

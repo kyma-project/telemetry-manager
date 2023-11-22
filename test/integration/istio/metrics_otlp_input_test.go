@@ -50,12 +50,12 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			PrometheusInput(true)
+			OtlpInput(true, nil)
 		objs = append(objs, metricPipeline.K8sObject())
 
 		metricPipelineIstiofiedBackend := kitmetric.NewPipeline("pipeline-with-istiofied-backend").
 			WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRef()).
-			PrometheusInput(true)
+			OtlpInput(true, nil)
 
 		objs = append(objs, metricPipelineIstiofiedBackend.K8sObject())
 
