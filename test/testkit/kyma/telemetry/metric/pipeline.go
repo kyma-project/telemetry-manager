@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
@@ -18,11 +18,12 @@ type Pipeline struct {
 
 	id              string
 	name            string
-	otlpEndpointRef *telemetry.SecretKeyRef
+	otlpEndpointRef *telemetryv1alpha1.SecretKeyRef
 	otlpEndpoint    string
 	runtime         bool
 	prometheus      bool
-	tls             *telemetry.OtlpTLS
+	istio           bool
+	tls             *telemetryv1alpha1.OtlpTLS
 }
 
 func NewPipeline(name string) *Pipeline {
@@ -38,7 +39,7 @@ func (p *Pipeline) WithOutputEndpoint(otlpEndpoint string) *Pipeline {
 	return p
 }
 
-func (p *Pipeline) WithOutputEndpointFromSecret(otlpEndpointRef *telemetry.SecretKeyRef) *Pipeline {
+func (p *Pipeline) WithOutputEndpointFromSecret(otlpEndpointRef *telemetryv1alpha1.SecretKeyRef) *Pipeline {
 	p.otlpEndpointRef = otlpEndpointRef
 	return p
 }
@@ -69,17 +70,23 @@ func (p *Pipeline) PrometheusInput(enablePrometheus bool) *Pipeline {
 	return p
 }
 
+func (p *Pipeline) IstioInput(enableIstio bool) *Pipeline {
+	p.istio = enableIstio
+
+	return p
+}
+
 func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
-	p.tls = &telemetry.OtlpTLS{
+	p.tls = &telemetryv1alpha1.OtlpTLS{
 		Insecure:           false,
 		InsecureSkipVerify: false,
-		CA: &telemetry.ValueType{
+		CA: &telemetryv1alpha1.ValueType{
 			Value: certs.CaCertPem.String(),
 		},
-		Cert: &telemetry.ValueType{
+		Cert: &telemetryv1alpha1.ValueType{
 			Value: certs.ClientCertPem.String(),
 		},
-		Key: &telemetry.ValueType{
+		Key: &telemetryv1alpha1.ValueType{
 			Value: certs.ClientKeyPem.String(),
 		},
 	}
@@ -87,42 +94,45 @@ func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
 	return p
 }
 
-func (p *Pipeline) K8sObject() *telemetry.MetricPipeline {
+func (p *Pipeline) K8sObject() *telemetryv1alpha1.MetricPipeline {
 	var labels k8s.Labels
 	if p.persistent {
 		labels = k8s.PersistentLabel
 	}
 	labels.Version(version)
 
-	otlpOutput := &telemetry.OtlpOutput{
-		Endpoint: telemetry.ValueType{},
+	otlpOutput := &telemetryv1alpha1.OtlpOutput{
+		Endpoint: telemetryv1alpha1.ValueType{},
 		TLS:      p.tls,
 	}
 	if p.otlpEndpointRef != nil {
-		otlpOutput.Endpoint.ValueFrom = &telemetry.ValueFromSource{
+		otlpOutput.Endpoint.ValueFrom = &telemetryv1alpha1.ValueFromSource{
 			SecretKeyRef: p.otlpEndpointRef,
 		}
 	} else {
 		otlpOutput.Endpoint.Value = p.otlpEndpoint
 	}
 
-	metricPipeline := telemetry.MetricPipeline{
+	metricPipeline := telemetryv1alpha1.MetricPipeline{
 		ObjectMeta: k8smeta.ObjectMeta{
 			Name:   p.Name(),
 			Labels: labels,
 		},
-		Spec: telemetry.MetricPipelineSpec{
-			Input: telemetry.MetricPipelineInput{
-				Application: telemetry.MetricPipelineApplicationInput{
-					Runtime: telemetry.MetricPipelineContainerRuntimeInput{
+		Spec: telemetryv1alpha1.MetricPipelineSpec{
+			Input: telemetryv1alpha1.MetricPipelineInput{
+				Application: telemetryv1alpha1.MetricPipelineApplicationInput{
+					Runtime: telemetryv1alpha1.MetricPipelineContainerRuntimeInput{
 						Enabled: p.runtime,
 					},
-					Prometheus: telemetry.MetricPipelinePrometheusInput{
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
 						Enabled: p.prometheus,
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: p.istio,
 					},
 				},
 			},
-			Output: telemetry.MetricPipelineOutput{
+			Output: telemetryv1alpha1.MetricPipelineOutput{
 				Otlp: otlpOutput,
 			},
 		},
