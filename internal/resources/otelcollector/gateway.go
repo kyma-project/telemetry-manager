@@ -50,8 +50,8 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
-	if cfg.CanReceiveOpenCensus {
-		if err := kubernetes.CreateOrUpdateService(ctx, c, makeOpenCensusService(name)); err != nil {
+	if cfg.CanReceiveIstioTraces {
+		if err := kubernetes.CreateOrUpdateService(ctx, c, makeIstioTraceReceiverService(name)); err != nil {
 			return fmt.Errorf("failed to create open census service: %w", err)
 		}
 	}
@@ -187,7 +187,7 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 	}
 }
 
-func makeOpenCensusService(name types.NamespacedName) *corev1.Service {
+func makeIstioTraceReceiverService(name types.NamespacedName) *corev1.Service {
 	labels := defaultLabels(name.Name)
 
 	return &corev1.Service{
@@ -203,6 +203,12 @@ func makeOpenCensusService(name types.NamespacedName) *corev1.Service {
 					Protocol:   corev1.ProtocolTCP,
 					Port:       ports.OpenCensus,
 					TargetPort: intstr.FromInt32(ports.OpenCensus),
+				},
+				{
+					Name:       "grpc-otlp-trace-recv",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       ports.OTLPGRPC,
+					TargetPort: intstr.FromInt32(ports.OTLPTraceRecvGRPC),
 				},
 			},
 			Selector: labels,

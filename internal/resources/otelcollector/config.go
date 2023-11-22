@@ -14,11 +14,11 @@ type Config struct {
 type GatewayConfig struct {
 	Config
 
-	Deployment           DeploymentConfig
-	Scaling              GatewayScalingConfig
-	Istio                IstioConfig
-	OTLPServiceName      string
-	CanReceiveOpenCensus bool
+	Deployment            DeploymentConfig
+	Scaling               GatewayScalingConfig
+	Istio                 IstioConfig
+	OTLPServiceName       string
+	CanReceiveIstioTraces bool
 }
 
 type IstioConfig struct {
@@ -39,11 +39,11 @@ func (cfg *GatewayConfig) WithCollectorConfig(collectorCfgYAML string, collector
 	return &cfgCopy
 }
 
-func (cfg *GatewayConfig) WithIstioConfig(exlcudePorts string, istioEnabled bool) *GatewayConfig {
+func (cfg *GatewayConfig) WithIstioConfig(excludePorts string, istioEnabled bool) *GatewayConfig {
 	cfgCopy := *cfg
 	istioConfg := IstioConfig{
 		Enabled:      istioEnabled,
-		ExcludePorts: exlcudePorts,
+		ExcludePorts: excludePorts,
 	}
 	cfgCopy.Istio = istioConfg
 	return &cfgCopy

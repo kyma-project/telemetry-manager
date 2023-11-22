@@ -48,6 +48,16 @@ func makeReceiversConfig() Receivers {
 		OpenCensus: config.Endpoint{
 			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OpenCensus),
 		},
+		OTLPTraceReceiver: config.OTLPReceiver{
+			Protocols: config.ReceiverProtocols{
+				HTTP: config.Endpoint{
+					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPTraceRecvHTTP),
+				},
+				GRPC: config.Endpoint{
+					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPTraceRecvGRPC),
+				},
+			},
+		},
 		OTLP: config.OTLPReceiver{
 			Protocols: config.ReceiverProtocols{
 				HTTP: config.Endpoint{
@@ -110,7 +120,7 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 	sort.Strings(exporterIDs)
 
 	return config.Pipeline{
-		Receivers: []string{"opencensus", "otlp"},
+		Receivers: []string{"opencensus", "otlp", "otlp/trace-receiver"},
 		Processors: []string{"memory_limiter",
 			"k8sattributes",
 			"filter/drop-noisy-spans",
