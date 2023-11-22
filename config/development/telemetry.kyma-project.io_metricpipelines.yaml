@@ -60,14 +60,14 @@ spec:
                           default.
                         properties:
                           exclude:
-                            description: Exclude the Prometheus metrics from the specified
-                              Namespace names.
+                            description: Exclude metrics from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include only the Prometheus metrics from
-                              the specified Namespace names.
+                            description: Include metrics from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
@@ -105,14 +105,14 @@ spec:
                           disabled by default.
                         properties:
                           exclude:
-                            description: Exclude the Prometheus metrics from the specified
-                              Namespace names.
+                            description: Exclude metrics from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include only the Prometheus metrics from
-                              the specified Namespace names.
+                            description: Include metrics from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
@@ -149,14 +149,14 @@ spec:
                           by default.
                         properties:
                           exclude:
-                            description: Exclude the Prometheus metrics from the specified
-                              Namespace names.
+                            description: Exclude metrics from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include only the Prometheus metrics from
-                              the specified Namespace names.
+                            description: Include metrics from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
@@ -193,14 +193,14 @@ spec:
                           are disabled by default.
                         properties:
                           exclude:
-                            description: Exclude the Prometheus metrics from the specified
-                              Namespace names.
+                            description: Exclude metrics from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
                           include:
-                            description: Include only the Prometheus metrics from
-                              the specified Namespace names.
+                            description: Include metrics from the specified Namespace
+                              names only.
                             items:
                               type: string
                             type: array
