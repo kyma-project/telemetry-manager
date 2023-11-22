@@ -78,5 +78,5 @@ func JoinWithOr(parts ...string) string {
 }
 
 func JoinWithAnd(parts ...string) string {
-	return strings.Join(parts, " and ")
+	return fmt.Sprintf("(%s)", strings.Join(parts, " and "))
 }
