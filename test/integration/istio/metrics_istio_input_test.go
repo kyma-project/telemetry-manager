@@ -71,8 +71,8 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject(),
-			kitk8s.NewNamespace(app1Ns).K8sObject(),
-			kitk8s.NewNamespace(app2Ns).K8sObject())
+			kitk8s.NewNamespace(app1Ns, kitk8s.WithIstioInjection()).K8sObject(),
+			kitk8s.NewNamespace(app2Ns, kitk8s.WithIstioInjection()).K8sObject())
 
 		mockBackend := backend.New(backendName, backendNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockBackend.K8sObjects()...)
