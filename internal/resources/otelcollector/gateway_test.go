@@ -209,7 +209,7 @@ func TestApplyGatewayResources(t *testing.T) {
 		}, np.Labels)
 		require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress}, np.Spec.PolicyTypes)
 		require.Equal(t, np.Spec.Ingress[0].From[0].IPBlock.CIDR, "0.0.0.0/0")
-		require.Len(t, np.Spec.Ingress[0].Ports, 5)
+		require.Len(t, np.Spec.Ingress[0].Ports, 6)
 	})
 
 	t.Run("should create metrics service", func(t *testing.T) {
@@ -293,7 +293,7 @@ func TestApplyGatewayResources(t *testing.T) {
 			Name:       "grpc-otlp-trace-recv",
 			Protocol:   corev1.ProtocolTCP,
 			Port:       ports.OTLPGRPC,
-			TargetPort: intstr.FromInt32(ports.OTLPTraceRecvGRPC),
+			TargetPort: intstr.FromInt32(ports.OTLPGRPCTraceReceiver),
 		}, svc.Spec.Ports[1])
 
 	})

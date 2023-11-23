@@ -50,11 +50,8 @@ func makeReceiversConfig() Receivers {
 		},
 		OTLPTraceReceiver: config.OTLPReceiver{
 			Protocols: config.ReceiverProtocols{
-				HTTP: config.Endpoint{
-					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPTraceRecvHTTP),
-				},
 				GRPC: config.Endpoint{
-					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPTraceRecvGRPC),
+					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPGRPCTraceReceiver),
 				},
 			},
 		},

@@ -40,8 +40,6 @@ receivers:
                 endpoint: ${MY_POD_IP}:4317
     otlp/trace-receiver:
         protocols:
-            http:
-                endpoint: ${MY_POD_IP}:14318
             grpc:
                 endpoint: ${MY_POD_IP}:14317
 processors:

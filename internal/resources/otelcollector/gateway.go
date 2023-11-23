@@ -208,7 +208,7 @@ func makeIstioTraceReceiverService(name types.NamespacedName) *corev1.Service {
 					Name:       "grpc-otlp-trace-recv",
 					Protocol:   corev1.ProtocolTCP,
 					Port:       ports.OTLPGRPC,
-					TargetPort: intstr.FromInt32(ports.OTLPTraceRecvGRPC),
+					TargetPort: intstr.FromInt32(ports.OTLPGRPCTraceReceiver),
 				},
 			},
 			Selector: labels,

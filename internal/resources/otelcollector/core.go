@@ -181,5 +181,6 @@ func collectorPorts() []intstr.IntOrString {
 		intstr.FromInt32(ports.OpenCensus),
 		intstr.FromInt32(ports.Metrics),
 		intstr.FromInt32(ports.HealthCheck),
+		intstr.FromInt32(ports.OTLPGRPCTraceReceiver),
 	}
 }
