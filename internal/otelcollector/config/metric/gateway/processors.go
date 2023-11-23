@@ -113,7 +113,7 @@ func makeFilterByNamespaceConfig(namespaceSelector v1alpha1.MetricPipelineInputN
 
 	if len(namespaceSelector.Include) > 0 {
 		namespacesConditions := createNamespacesConditions(namespaceSelector.Include)
-		includeNamespacesExpr := not(config.JoinWithAnd(inputSourceCondition, config.JoinWithOr(namespacesConditions...)))
+		includeNamespacesExpr := config.JoinWithAnd(inputSourceCondition, not(config.JoinWithOr(namespacesConditions...)))
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
 	}
 
