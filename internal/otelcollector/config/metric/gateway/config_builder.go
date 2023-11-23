@@ -87,16 +87,30 @@ func makeServiceConfig() config.Service {
 
 // addComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.MetricPipeline.
 func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
-	if enableDropIfInputSourceRuntime(pipeline) {
+	if shouldDropIfInputSourceRuntime(pipeline) {
 		cfg.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}
-
-	if enableDropIfInputSourcePrometheus(pipeline) {
+	if shouldDropIfInputSourcePrometheus(pipeline) {
 		cfg.Processors.DropIfInputSourcePrometheus = makeDropIfInputSourcePrometheusConfig()
 	}
-
-	if enableDropIfInputSourceIstio(pipeline) {
+	if shouldDropIfInputSourceIstio(pipeline) {
 		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
+	}
+	if shouldDropIfInputSourceOtlp(pipeline) {
+		cfg.Processors.DropIfInputSourceOtlp = makeDropIfInputSourceOtlpConfig()
+	}
+
+	if shouldFilterByNamespaceRuntimeInput(pipeline) {
+		cfg.Processors.FilterByNamespaceRuntimeInput = makeFilterByNamespaceRuntimeInputConfig(pipeline.Spec.Input.Runtime.Namespaces)
+	}
+	if shouldFilterByNamespacePrometheusInput(pipeline) {
+		cfg.Processors.FilterByNamespacePrometheusInput = makeFilterByNamespacePrometheusInputConfig(pipeline.Spec.Input.Prometheus.Namespaces)
+	}
+	if shouldFilterByNamespaceIstioInput(pipeline) {
+		cfg.Processors.FilterByNamespaceIstioInput = makeFilterByNamespaceIstioInputConfig(pipeline.Spec.Input.Istio.Namespaces)
+	}
+	if shouldFilterByNamespaceOtlpInput(pipeline) {
+		cfg.Processors.FilterByNamespaceOtlpInput = makeFilterByNamespaceOtlpInputConfig(pipeline.Spec.Input.Otlp.Namespaces)
 	}
 
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
@@ -120,16 +134,30 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 
 	processors := []string{"memory_limiter", "k8sattributes", "resource/insert-cluster-name", "transform/resolve-service-name"}
 
-	if enableDropIfInputSourceRuntime(pipeline) {
+	if shouldDropIfInputSourceRuntime(pipeline) {
 		processors = append(processors, "filter/drop-if-input-source-runtime")
 	}
-
-	if enableDropIfInputSourcePrometheus(pipeline) {
+	if shouldDropIfInputSourcePrometheus(pipeline) {
 		processors = append(processors, "filter/drop-if-input-source-prometheus")
 	}
-
-	if enableDropIfInputSourceIstio(pipeline) {
+	if shouldDropIfInputSourceIstio(pipeline) {
 		processors = append(processors, "filter/drop-if-input-source-istio")
+	}
+	if shouldDropIfInputSourceOtlp(pipeline) {
+		processors = append(processors, "filter/drop-if-input-source-otlp")
+	}
+
+	if shouldFilterByNamespaceRuntimeInput(pipeline) {
+		processors = append(processors, "filter/filter-by-namespace-runtime-input")
+	}
+	if shouldFilterByNamespacePrometheusInput(pipeline) {
+		processors = append(processors, "filter/filter-by-namespace-prometheus-input")
+	}
+	if shouldFilterByNamespaceIstioInput(pipeline) {
+		processors = append(processors, "filter/filter-by-namespace-istio-input")
+	}
+	if shouldFilterByNamespaceOtlpInput(pipeline) {
+		processors = append(processors, "filter/filter-by-namespace-otlp-input")
 	}
 
 	processors = append(processors, "resource/drop-kyma-attributes", "batch")
@@ -141,20 +169,54 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 	}
 }
 
-func enableDropIfInputSourceRuntime(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+func shouldDropIfInputSourceRuntime(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	pipeline.SetDefaultForRuntimeInputEnabled()
-	appInput := pipeline.Spec.Input
-	return !*appInput.Runtime.Enabled
+	input := pipeline.Spec.Input
+	return !*input.Runtime.Enabled
 }
 
-func enableDropIfInputSourcePrometheus(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+func shouldDropIfInputSourcePrometheus(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	pipeline.SetDefaultForPrometheusInputEnabled()
-	appInput := pipeline.Spec.Input
-	return !*appInput.Prometheus.Enabled
+	input := pipeline.Spec.Input
+	return !*input.Prometheus.Enabled
 }
 
-func enableDropIfInputSourceIstio(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+func shouldDropIfInputSourceIstio(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	pipeline.SetDefaultForIstioInputEnabled()
-	appInput := pipeline.Spec.Input
-	return !*appInput.Istio.Enabled
+	input := pipeline.Spec.Input
+	return !*input.Istio.Enabled
+}
+
+func shouldDropIfInputSourceOtlp(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	pipeline.SetDefaultForOtlpInputEnabled()
+	input := pipeline.Spec.Input
+	return !*input.Otlp.Enabled
+}
+
+func shouldFilterByNamespaceRuntimeInput(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	pipeline.SetDefaultForRuntimeInputEnabled()
+	pipeline.SetDefaultForRuntimeInputSystemNamespaces()
+	runtimeInput := pipeline.Spec.Input.Runtime
+	return *runtimeInput.Enabled && (len(runtimeInput.Namespaces.Include) > 0 || len(runtimeInput.Namespaces.Exclude) > 0 || !*runtimeInput.Namespaces.System)
+}
+
+func shouldFilterByNamespacePrometheusInput(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	pipeline.SetDefaultForPrometheusInputEnabled()
+	pipeline.SetDefaultForPrometheusInputSystemNamespaces()
+	prometheusInput := pipeline.Spec.Input.Prometheus
+	return *prometheusInput.Enabled && (len(prometheusInput.Namespaces.Include) > 0 || len(prometheusInput.Namespaces.Exclude) > 0 || !*prometheusInput.Namespaces.System)
+}
+
+func shouldFilterByNamespaceIstioInput(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	pipeline.SetDefaultForIstioInputEnabled()
+	pipeline.SetDefaultForIstioInputSystemNamespaces()
+	istioInput := pipeline.Spec.Input.Istio
+	return *istioInput.Enabled && (len(istioInput.Namespaces.Include) > 0 || len(istioInput.Namespaces.Exclude) > 0 || !*istioInput.Namespaces.System)
+}
+
+func shouldFilterByNamespaceOtlpInput(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	pipeline.SetDefaultForOtlpInputEnabled()
+	pipeline.SetDefaultForOtlpInputSystemNamespaces()
+	otlpInput := pipeline.Spec.Input.Otlp
+	return *otlpInput.Enabled && (len(otlpInput.Namespaces.Include) > 0 || len(otlpInput.Namespaces.Exclude) > 0 || !*otlpInput.Namespaces.System)
 }
