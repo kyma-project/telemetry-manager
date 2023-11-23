@@ -10,19 +10,23 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 	const (
-		mockNs          = "metric-istio-input"
-		mockBackendName = "metric-agent-receiver"
+		backendNs   = "metric-istio-input"
+		backendName = "metric-agent-receiver"
+		app1Ns      = "namespace1"
+		app2Ns      = "namespace2"
 	)
 
 	// https://istio.io/latest/docs/reference/config/metrics/
@@ -64,22 +68,26 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		telemetryExportURL string
 	)
 
-	// Given that the metric agent/gateway components are already in the service mesh,
-	// there is no need to deploy any additional workloads for this purpose.
 	makeResources := func() []client.Object {
 		var objs []client.Object
+		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject(),
+			kitk8s.NewNamespace(app1Ns).K8sObject(),
+			kitk8s.NewNamespace(app2Ns).K8sObject())
 
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
-
-		// Mocks namespace objects
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
+		mockBackend := backend.New(backendName, backendNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-istio-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			IstioInput(true, nil)
+			IstioInput(true, &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
+				Include: []string{app1Ns},
+			})
 		objs = append(objs, metricPipeline.K8sObject())
+
+		app1 := kitk8s.NewPod("app-1", app1Ns).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics))
+		app2 := kitk8s.NewPod("app-2", app2Ns).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics))
+		objs = append(objs, app1.K8sObject(), app2.K8sObject())
 
 		return objs
 	}
@@ -100,7 +108,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backendName, Namespace: backendNs})
 		})
 
 		It("Should have a running metric agent daemonset", func() {
@@ -127,6 +135,32 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 					ContainMd(ContainMetric(ContainDataPointAttrs(HaveKey(BeElementOf(istioProxyMetricResourceAttributes))))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should contain metrics from app1Ns", Label(operationalTest), func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					ContainMd(
+						ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", app1Ns)),
+					),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should contain no metrics from app2Ns", Label(operationalTest), func() {
+			Consistently(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					Not(ContainMd(
+						ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", app2Ns)),
+					)),
+				))
+			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })

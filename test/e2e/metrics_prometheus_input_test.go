@@ -21,7 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Prometheus Input", Label("new"), func() {
+var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 	const (
 		backendNs   = "metric-prometheus-input"
 		backendName = "metric-agent-receiver"

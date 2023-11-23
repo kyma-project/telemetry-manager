@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 )
 
@@ -50,7 +51,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 
-		objs = append(objs, servicenamebundle.K8sObjects(mockNs, servicenamebundle.SignalTypeMetrics)...)
+		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeMetrics)...)
 
 		return objs
 	}

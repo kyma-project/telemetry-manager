@@ -1,11 +1,18 @@
-package servicenamebundle
+package telemetrygen
 
 import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func makeTelemetryGenPodSpec(signalType SignalType) corev1.PodSpec {
+type SignalType string
+
+const (
+	SignalTypeTraces  = "traces"
+	SignalTypeMetrics = "metrics"
+)
+
+func PodSpec(signalType SignalType) corev1.PodSpec {
 	var gatewayPushURL string
 	if signalType == SignalTypeTraces {
 		gatewayPushURL = "telemetry-otlp-traces.kyma-system:4317"
