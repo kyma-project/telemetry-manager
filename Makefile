@@ -154,7 +154,7 @@ run-e2e-test-tracing: ginkgo test-matchers ## run end-to-end tracing tests using
 
 .PHONY: run-e2e-test-metrics
 run-e2e-test-metrics: ginkgo test-matchers ## run end-to-end metrics tests using an existing cluster
-	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="metrics" ./test/e2e
+	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="new" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 

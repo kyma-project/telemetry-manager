@@ -21,7 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Istio Input", Label("new"), func() {
+var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 	const (
 		backendNs   = "metric-istio-input"
 		backendName = "metric-agent-receiver"
