@@ -6,7 +6,7 @@ SAP Cloud Logging is an instance-based and environment-agnostic observability se
 
 - An instance of SAP Cloud Logging with OpenTelemetry enabled to ingest distributed traces
 - A Secret named `sap-cloud-logging` in the `sap-cloud-logging-integration` namespace, holding the credentials and endpoints for the instance
-- Kubernetes CLI (kubectl) (see [kubectl tutorial](https://developers.sap.com/tutorials/cp-kyma-download-cli.html))
+- Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html))
 - UNIX shell or Windows Subsystem for Linux (WSL) to execute commands
 
 ## Ship Logs to SAP Cloud Logging
