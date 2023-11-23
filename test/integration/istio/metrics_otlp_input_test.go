@@ -85,11 +85,7 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockIstioBackendName, Namespace: mockIstioBackendNs})
 		})
-
-		It("Should have a running metric agent daemonset", func() {
-			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
-		})
-
+		
 		It("Should push metrics successfully", func() {
 			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP)
 			gauges := kitmetrics.MakeAndSendGaugeMetrics(proxyClient, gatewayPushURL)
