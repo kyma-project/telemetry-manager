@@ -6,6 +6,8 @@ import (
 	"maps"
 	"sort"
 
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -100,17 +102,25 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 		cfg.Processors.DropIfInputSourceOtlp = makeDropIfInputSourceOtlpConfig()
 	}
 
+	if cfg.Processors.DynamicFilters == nil {
+		cfg.Processors.DynamicFilters = make(DynamicFilters)
+	}
+
 	if shouldFilterByNamespaceRuntimeInput(pipeline) {
-		cfg.Processors.FilterByNamespaceRuntimeInput = makeFilterByNamespaceRuntimeInputConfig(pipeline.Spec.Input.Runtime.Namespaces)
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceRuntime)
+		cfg.Processors.DynamicFilters[processorName] = makeFilterByNamespaceRuntimeInputConfig(pipeline.Spec.Input.Runtime.Namespaces)
 	}
 	if shouldFilterByNamespacePrometheusInput(pipeline) {
-		cfg.Processors.FilterByNamespacePrometheusInput = makeFilterByNamespacePrometheusInputConfig(pipeline.Spec.Input.Prometheus.Namespaces)
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourcePrometheus)
+		cfg.Processors.DynamicFilters[processorName] = makeFilterByNamespacePrometheusInputConfig(pipeline.Spec.Input.Prometheus.Namespaces)
 	}
 	if shouldFilterByNamespaceIstioInput(pipeline) {
-		cfg.Processors.FilterByNamespaceIstioInput = makeFilterByNamespaceIstioInputConfig(pipeline.Spec.Input.Istio.Namespaces)
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceIstio)
+		cfg.Processors.DynamicFilters[processorName] = makeFilterByNamespaceIstioInputConfig(pipeline.Spec.Input.Istio.Namespaces)
 	}
 	if shouldFilterByNamespaceOtlpInput(pipeline) {
-		cfg.Processors.FilterByNamespaceOtlpInput = makeFilterByNamespaceOtlpInputConfig(pipeline.Spec.Input.Otlp.Namespaces)
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceOtlp)
+		cfg.Processors.DynamicFilters[processorName] = makeFilterByNamespaceOtlpInputConfig(pipeline.Spec.Input.Otlp.Namespaces)
 	}
 
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
@@ -148,16 +158,20 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 	}
 
 	if shouldFilterByNamespaceRuntimeInput(pipeline) {
-		processors = append(processors, "filter/filter-by-namespace-runtime-input")
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceRuntime)
+		processors = append(processors, processorName)
 	}
 	if shouldFilterByNamespacePrometheusInput(pipeline) {
-		processors = append(processors, "filter/filter-by-namespace-prometheus-input")
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourcePrometheus)
+		processors = append(processors, processorName)
 	}
 	if shouldFilterByNamespaceIstioInput(pipeline) {
-		processors = append(processors, "filter/filter-by-namespace-istio-input")
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceIstio)
+		processors = append(processors, processorName)
 	}
 	if shouldFilterByNamespaceOtlpInput(pipeline) {
-		processors = append(processors, "filter/filter-by-namespace-otlp-input")
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceOtlp)
+		processors = append(processors, processorName)
 	}
 
 	processors = append(processors, "resource/drop-kyma-attributes", "batch")
@@ -219,4 +233,8 @@ func shouldFilterByNamespaceOtlpInput(pipeline *telemetryv1alpha1.MetricPipeline
 	pipeline.SetDefaultForOtlpInputSystemNamespaces()
 	otlpInput := pipeline.Spec.Input.Otlp
 	return *otlpInput.Enabled && (len(otlpInput.Namespaces.Include) > 0 || len(otlpInput.Namespaces.Exclude) > 0 || !*otlpInput.Namespaces.System)
+}
+
+func getNamespaceFilterProcessorName(pipelineName string, inputSourceType metric.InputSourceType) string {
+	return fmt.Sprintf("filter/%s-filter-by-namespace-%s-input", pipelineName, inputSourceType)
 }
