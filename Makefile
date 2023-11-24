@@ -191,7 +191,7 @@ integration-test-istio: ginkgo k3d | test-matchers provision-test-env ## Provisi
 .PHONY: run-integration-test-istio
 run-integration-test-istio: ginkgo test-matchers ## run integration tests with istio on an existing cluster
 	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
-	$(GINKGO) run --tags istio --flake-attempts=5 --junit-report=junit.xml ./test/integration/istio
+	$(GINKGO) run --tags istio --flake-attempts=5 --junit-report=junit.xml --label-filter="myTest" ./test/integration/istio
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
@@ -347,7 +347,7 @@ KYMA_STABILITY ?= unstable
 kyma: $(LOCALBIN) $(KYMA) ## Download Kyma cli locally if necessary.
 $(KYMA):
 	$(if $(KYMA_FILENAME),,$(call os_error, ${OS_TYPE}, ${OS_ARCH}))
-	test -f $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILENAME)
+	test -f $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-2.20.0/$(KYMA_FILENAME)
 	chmod 0100 $(KYMA)
 
 ##@ Gardener
