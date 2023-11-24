@@ -80,6 +80,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-istio-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
+			OtlpInput(false, nil).
 			IstioInput(true, &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
 				Include: []string{app1Ns},
 			})

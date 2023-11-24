@@ -50,8 +50,7 @@ var (
 		Name:   "hw_humidity",
 		Labels: []string{"sensor"},
 	}
-
-	AllMetricNames = []string{
+	MetricNames = []string{
 		MetricCPUTemperature.Name,
 		MetricHardDiskErrorsTotal.Name,
 		MetricCPUEnergyHistogram.Name,
