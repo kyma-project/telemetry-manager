@@ -278,7 +278,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 GINKGO ?= $(LOCALBIN)/ginkgo
 GOLANGCI-LINT ?= $(LOCALBIN)/golangci-lint
 K3D ?= $(LOCALBIN)/k3d
-KYMA ?= $(LOCALBIN)/kyma-$(KYMA_STABILITY)
+KYMA ?= $(LOCALBIN)/kyma
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.0.1
@@ -341,13 +341,12 @@ $(error Error: unsupported platform OS_TYPE:$1, OS_ARCH:$2; to mitigate this pro
 endef
 
 KYMA_FILENAME ?=  $(shell ./hack/get-kyma-filename.sh ${OS_TYPE} ${OS_ARCH})
-KYMA_STABILITY ?= 2.20.0
 
 .PHONY: kyma
 kyma: $(LOCALBIN) $(KYMA) ## Download Kyma cli locally if necessary.
 $(KYMA):
 	$(if $(KYMA_FILENAME),,$(call os_error, ${OS_TYPE}, ${OS_ARCH}))
-	test -f $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-$(KYMA_STABILITY)/$(KYMA_FILENAME)
+	test -f $@ || curl -s -Lo $(KYMA) https://storage.googleapis.com/kyma-cli-2.20.0/$(KYMA_FILENAME)
 	chmod 0100 $(KYMA)
 
 ##@ Gardener
