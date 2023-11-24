@@ -25,8 +25,8 @@ var _ = Describe("Metrics Namespace Selector", Label("new"), func() {
 		backend2Name = "backend-2"
 		backend3Name = "backend-3"
 
-		app1Ns = "namespace1"
-		app2Ns = "namespace2"
+		app1Ns = "app-1"
+		app2Ns = "app-2"
 	)
 	var (
 		telemetryExportURLs = make(map[string]string)

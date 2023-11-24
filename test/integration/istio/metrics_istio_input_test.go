@@ -23,9 +23,9 @@ import (
 var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 	const (
 		backendNs   = "istio-metric-istio-input"
-		backendName = "metric-agent-receiver"
-		app1Ns      = "namespace1"
-		app2Ns      = "namespace2"
+		backendName = "backend"
+		app1Ns      = "app-1"
+		app2Ns      = "app-2"
 	)
 
 	// https://istio.io/latest/docs/reference/config/metrics/
