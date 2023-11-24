@@ -72,6 +72,7 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				verifiers.ShouldNotExist(ctx, k8sClient, k8sObjects...)
 			})
 
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
