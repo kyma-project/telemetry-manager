@@ -102,6 +102,7 @@ var _ = Describe("Metrics Namespace Selector", Label("new"), func() {
 		It("Should have a metrics backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: backendNs})
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: backendNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend3Name, Namespace: backendNs})
 		})
 
 		It("Should have a running metric agent daemonset", func() {
