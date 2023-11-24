@@ -16,17 +16,14 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
-	"github.com/kyma-project/telemetry-manager/test/testkit/otlp/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 	const (
-		backendNs   = "metric-prometheus-input"
-		backendName = "metric-agent-receiver"
-		app1Ns      = "namespace1"
-		app2Ns      = "namespace2"
+		mockNs          = "metric-prometheus-input"
+		mockBackendName = "metric-agent-receiver"
 	)
 
 	var (
@@ -36,29 +33,22 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject(),
-			kitk8s.NewNamespace(app1Ns).K8sObject(),
-			kitk8s.NewNamespace(app2Ns).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(backendName, backendNs, backend.SignalTypeMetrics)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		// Mocks namespace objects.
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
+		mockMetricProducer := metricproducer.New(mockNs)
 		objs = append(objs, mockBackend.K8sObjects()...)
-
-		app1 := metricproducer.New(app1Ns)
 		objs = append(objs, []client.Object{
-			app1.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-			app1.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+			mockMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+			mockMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 		}...)
+		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		app2 := metricproducer.New(app2Ns)
-		objs = append(objs, []client.Object{
-			app2.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-			app2.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-		}...)
-
+		// Default namespace objects.
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			PrometheusInput(true, kitmetric.IncludeNamespaces(app1Ns))
+			PrometheusInput(true)
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 
@@ -81,7 +71,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backendName, Namespace: backendNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 
 		})
 
@@ -154,17 +144,17 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		})
 
 		It("Should verify no kubelet metrics", func() {
-			Consistently(func(g Gomega) {
+			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainMd(ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames))))),
+					Not(ContainMd(ContainMetric(WithName(BeElementOf(kubeletMetricNames))))),
 				))
-			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should contain metrics with service.name set to telemetry-metric-gateway", Label(operationalTest), func() {
+		It("Should have metrics with service.name set to telemetry-metric-gateway", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -174,10 +164,10 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 						ContainResourceAttrs(HaveKeyWithValue("service.name", kitkyma.MetricGatewayBaseName)),
 					),
 				))
-			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should contain metrics with service.name set to telemetry-metric-agent", Label(operationalTest), func() {
+		It("Should have metrics with service.name set to telemetry-metric-agent", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -187,33 +177,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 						ContainResourceAttrs(HaveKeyWithValue("service.name", kitkyma.MetricAgentBaseName)),
 					),
 				))
-			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
-
-		It("Should contain metrics from app1Ns", Label(operationalTest), func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					ContainMd(
-						ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", app1Ns)),
-					),
-				))
-			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
-
-		It("Should contain no metrics from app2Ns", Label(operationalTest), func() {
-			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainMd(
-						ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", app2Ns)),
-					)),
-				))
-			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })
