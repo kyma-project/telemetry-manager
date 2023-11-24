@@ -22,7 +22,7 @@ import (
 
 var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 	const (
-		mockNs                           = "metric-prometheus-input"
+		mockNs                           = "istio-metric-prometheus-input"
 		mockBackendName                  = "metric-agent-receiver"
 		httpsAnnotatedMetricProducerName = "metric-producer-https"
 		httpAnnotatedMetricProducerName  = "metric-producer-http"

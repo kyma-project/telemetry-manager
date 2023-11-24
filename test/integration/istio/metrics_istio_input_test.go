@@ -22,7 +22,7 @@ import (
 
 var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 	const (
-		backendNs   = "metric-istio-input"
+		backendNs   = "istio-metric-istio-input"
 		backendName = "metric-agent-receiver"
 		app1Ns      = "namespace1"
 		app2Ns      = "namespace2"
