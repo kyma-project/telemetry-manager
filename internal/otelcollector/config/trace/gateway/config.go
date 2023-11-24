@@ -13,9 +13,9 @@ type Config struct {
 }
 
 type Receivers struct {
-	OpenCensus        config.Endpoint     `yaml:"opencensus"`
-	OTLP              config.OTLPReceiver `yaml:"otlp"`
-	OTLPTraceReceiver config.OTLPReceiver `yaml:"otlp/trace-receiver"`
+	OpenCensus             config.Endpoint     `yaml:"opencensus"`
+	OTLP                   config.OTLPReceiver `yaml:"otlp"`
+	OTLPIstioTraceReceiver config.OTLPReceiver `yaml:"otlp/isito-trace-receiver"`
 }
 
 type Processors struct {

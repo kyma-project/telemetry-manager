@@ -48,7 +48,7 @@ func makeReceiversConfig() Receivers {
 		OpenCensus: config.Endpoint{
 			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OpenCensus),
 		},
-		OTLPTraceReceiver: config.OTLPReceiver{
+		OTLPIstioTraceReceiver: config.OTLPReceiver{
 			Protocols: config.ReceiverProtocols{
 				GRPC: config.Endpoint{
 					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPGRPCTraceReceiver),

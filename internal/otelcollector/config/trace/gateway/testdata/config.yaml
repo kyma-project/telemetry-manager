@@ -38,7 +38,7 @@ receivers:
                 endpoint: ${MY_POD_IP}:4318
             grpc:
                 endpoint: ${MY_POD_IP}:4317
-    otlp/trace-receiver:
+    otlp/isito-trace-receiver:
         protocols:
             grpc:
                 endpoint: ${MY_POD_IP}:14317
