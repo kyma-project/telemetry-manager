@@ -59,4 +59,5 @@ Switching from option 2 to option 3 relies on the container runtime for persiste
 conditions under which logs might be lost. Option 2 with its persistent buffer of 1 GB per pipeline deletes the
 oldest logs when the limit is reached. For option 3, the conditions under which logs might be lost are specific for the
 individual pod since log rotation happens when then log file per pod reach a certain size. Logs are deleted in the case
-of pod evictions or multiple restarts.
+of pod evictions or multiple restarts. Node deletion might also be a reason for log loss. However, since the persistent
+buffer of the existing setup utilizes the host file system, this risk is already existing.
