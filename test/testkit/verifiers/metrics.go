@@ -83,7 +83,7 @@ func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserver.ProxyClient, t
 }
 
 func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL, namespace string) {
-	gomega.Eventually(func(g gomega.Gomega) {
+	gomega.Consistently(func(g gomega.Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(gomega.HaveOccurred())
 		g.Expect(resp).To(gomega.HaveHTTPStatus(http.StatusOK))

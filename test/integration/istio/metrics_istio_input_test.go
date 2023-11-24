@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
@@ -80,10 +79,8 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-istio-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			OtlpInput(false, nil).
-			IstioInput(true, &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
-				Include: []string{app1Ns},
-			})
+			OtlpInput(false).
+			IstioInput(true, kitmetric.IncludeNamespaces(app1Ns))
 		objs = append(objs, metricPipeline.K8sObject())
 
 		app1 := kitk8s.NewPod("app-1", app1Ns).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics))
