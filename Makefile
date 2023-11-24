@@ -367,9 +367,7 @@ endif
 run-tests-with-git-image: ## Run e2e tests on existing cluster using image related to git commit sha
 	kubectl create namespace kyma-system
 	IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
-	make run-e2e-test-tracing
-	make run-e2e-test-metrics
-	make run-e2e-test-logging
+	make run-e2e-test
 	make run-integration-test-istio
 
 .PHONY: gardener-integration-test
