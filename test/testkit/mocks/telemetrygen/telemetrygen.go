@@ -1,10 +1,11 @@
 package telemetrygen
 
 import (
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
 type SignalType string

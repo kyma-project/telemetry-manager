@@ -79,6 +79,8 @@ func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserver.ProxyClient, t
 				metric.ContainResourceAttrs(gomega.HaveKeyWithValue("k8s.namespace.name", namespace)),
 			)),
 		))
+		err = resp.Body.Close()
+		g.Expect(err).NotTo(gomega.HaveOccurred())
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
 }
 
@@ -92,5 +94,7 @@ func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserver.ProxyClient
 				metric.ContainResourceAttrs(gomega.HaveKeyWithValue("k8s.namespace.name", namespace)),
 			)),
 		))
+		err = resp.Body.Close()
+		g.Expect(err).NotTo(gomega.HaveOccurred())
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
 }
