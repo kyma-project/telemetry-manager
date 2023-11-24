@@ -117,7 +117,7 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 	sort.Strings(exporterIDs)
 
 	return config.Pipeline{
-		Receivers: []string{"opencensus", "otlp", "otlp/trace-receiver"},
+		Receivers: []string{"opencensus", "otlp", "otlp/istio-trace-receiver"},
 		Processors: []string{"memory_limiter",
 			"k8sattributes",
 			"filter/drop-noisy-spans",

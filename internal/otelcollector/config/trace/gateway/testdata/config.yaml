@@ -9,7 +9,7 @@ service:
             receivers:
                 - opencensus
                 - otlp
-                - otlp/trace-receiver
+                - otlp/istio-trace-receiver
             processors:
                 - memory_limiter
                 - k8sattributes
