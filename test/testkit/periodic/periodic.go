@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	// EventuallyTimeout is used when asserting an event with Eventually.
-	EventuallyTimeout = time.Second * 60
+	// EventuallyTimeout is used when asserting an event with Eventually. Should be larger than periodic reconciliation interval.
+	EventuallyTimeout = time.Second * 120
 
 	// ConsistentlyTimeout is used when asserting the absence of an event with Consistently.
 	ConsistentlyTimeout = time.Second * 10
