@@ -1,11 +1,29 @@
 package telemetrygen
 
 import (
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 type SignalType string
+
+type Metric struct {
+	Type   pmetric.MetricType
+	Name   string
+	Labels []string
+}
+
+var (
+	MetricGen = Metric{
+		Type: pmetric.MetricTypeGauge,
+		Name: "gen",
+	}
+
+	MetricNames = []string{
+		MetricGen.Name,
+	}
+)
 
 const (
 	SignalTypeTraces  = "traces"
