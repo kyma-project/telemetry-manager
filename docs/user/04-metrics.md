@@ -292,9 +292,8 @@ metadata:
   name: backend
 spec:
   input:
-    application:
-      prometheus:
-        enabled: true
+    prometheus:
+      enabled: true
   output:
     otlp:
       endpoint:
@@ -323,12 +322,11 @@ To enable collection of runtime metrics for your Pods, define a MetricPipeline t
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
 metadata:
-name: backend
+  name: backend
 spec:
   input:
-    application:
-      runtime:
-        enabled: true
+    runtime:
+      enabled: true
   output:
     otlp:
       endpoint:
@@ -345,12 +343,11 @@ To enable collection of Istio metrics for your Pods, define a MetricPipeline tha
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
 metadata:
-name: backend
+  name: backend
 spec:
   input:
-    application:
-      istio:
-        enabled: true
+    istio:
+      enabled: true
   output:
     otlp:
       endpoint:
