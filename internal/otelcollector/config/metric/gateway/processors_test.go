@@ -72,7 +72,7 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("drop by input source filter", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().OtlpInput(false).Build()})
 		require.NoError(t, err)
 
 		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceRuntime)
@@ -82,5 +82,117 @@ func TestProcessors(t *testing.T) {
 		require.NotNil(t, collectorConfig.Processors.DropIfInputSourcePrometheus)
 		require.Len(t, collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.DataPoint, 1)
 		require.Equal(t, "resource.attributes[\"kyma.source\"] == \"prometheus\"", collectorConfig.Processors.DropIfInputSourcePrometheus.Metrics.DataPoint[0])
+
+		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceIstio)
+		require.Len(t, collectorConfig.Processors.DropIfInputSourceIstio.Metrics.DataPoint, 1)
+		require.Equal(t, "resource.attributes[\"kyma.source\"] == \"istio\"", collectorConfig.Processors.DropIfInputSourceIstio.Metrics.DataPoint[0])
+
+		require.NotNil(t, collectorConfig.Processors.DropIfInputSourceOtlp)
+		require.Len(t, collectorConfig.Processors.DropIfInputSourceOtlp.Metrics.Metric, 1)
+		require.Equal(t, "resource.attributes[\"kyma.source\"] == nil", collectorConfig.Processors.DropIfInputSourceOtlp.Metrics.Metric[0])
+	})
+
+	t.Run("namespace filter processor using include", func(t *testing.T) {
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test").
+				RuntimeInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
+				PrometheusInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
+				IstioInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
+				OtlpInput(true, testutils.IncludeNamespaces("ns-1", "ns-2")).
+				Build()},
+		)
+		require.NoError(t, err)
+
+		namespaceFilters := collectorConfig.Processors.NamespaceFilters
+		require.NotNil(t, namespaceFilters)
+
+		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-runtime-input")
+		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-runtime-input"].Metrics.Metric, 2)
+		expectedCondition := "resource.attributes[\"kyma.source\"] == \"runtime\" and not((resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\"))"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-runtime-input"].Metrics.Metric[0])
+		expectedCondition = "resource.attributes[\"kyma.source\"] == \"runtime\" and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\" or resource.attributes[\"k8s.namespace.name\"] == \"kube-system\" or resource.attributes[\"k8s.namespace.name\"] == \"istio-system\" or resource.attributes[\"k8s.namespace.name\"] == \"compass-system\")"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-runtime-input"].Metrics.Metric[1])
+
+		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-prometheus-input")
+		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric, 2)
+		expectedCondition = "resource.attributes[\"kyma.source\"] == \"prometheus\" and not((resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\"))"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric[0])
+		expectedCondition = "resource.attributes[\"kyma.source\"] == \"prometheus\" and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\" or resource.attributes[\"k8s.namespace.name\"] == \"kube-system\" or resource.attributes[\"k8s.namespace.name\"] == \"istio-system\" or resource.attributes[\"k8s.namespace.name\"] == \"compass-system\")"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric[1])
+
+		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-istio-input")
+		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-istio-input"].Metrics.Metric, 1)
+		expectedCondition = "resource.attributes[\"kyma.source\"] == \"istio\" and not((resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\"))"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-istio-input"].Metrics.Metric[0])
+
+		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-otlp-input")
+		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric, 2)
+		expectedCondition = "resource.attributes[\"kyma.source\"] == nil and not((resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\"))"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric[0])
+		expectedCondition = "resource.attributes[\"kyma.source\"] == nil and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\" or resource.attributes[\"k8s.namespace.name\"] == \"kube-system\" or resource.attributes[\"k8s.namespace.name\"] == \"istio-system\" or resource.attributes[\"k8s.namespace.name\"] == \"compass-system\")"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric[1])
+
+	})
+
+	t.Run("namespace filter processor using exclude", func(t *testing.T) {
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test").
+				RuntimeInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
+				PrometheusInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
+				IstioInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
+				OtlpInput(true, testutils.ExcludeNamespaces("ns-1", "ns-2")).
+				Build()},
+		)
+		require.NoError(t, err)
+
+		namespaceFilters := collectorConfig.Processors.NamespaceFilters
+		require.NotNil(t, namespaceFilters)
+
+		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-runtime-input")
+		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-runtime-input"].Metrics.Metric, 2)
+		expectedCondition := "resource.attributes[\"kyma.source\"] == \"runtime\" and (resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-runtime-input"].Metrics.Metric[0])
+		expectedCondition = "resource.attributes[\"kyma.source\"] == \"runtime\" and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\" or resource.attributes[\"k8s.namespace.name\"] == \"kube-system\" or resource.attributes[\"k8s.namespace.name\"] == \"istio-system\" or resource.attributes[\"k8s.namespace.name\"] == \"compass-system\")"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-runtime-input"].Metrics.Metric[1])
+
+		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-prometheus-input")
+		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric, 2)
+		expectedCondition = "resource.attributes[\"kyma.source\"] == \"prometheus\" and (resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric[0])
+		expectedCondition = "resource.attributes[\"kyma.source\"] == \"prometheus\" and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\" or resource.attributes[\"k8s.namespace.name\"] == \"kube-system\" or resource.attributes[\"k8s.namespace.name\"] == \"istio-system\" or resource.attributes[\"k8s.namespace.name\"] == \"compass-system\")"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-prometheus-input"].Metrics.Metric[1])
+
+		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-istio-input")
+		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-istio-input"].Metrics.Metric, 1)
+		expectedCondition = "resource.attributes[\"kyma.source\"] == \"istio\" and (resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-istio-input"].Metrics.Metric[0])
+
+		require.Contains(t, namespaceFilters, "filter/test-filter-by-namespace-otlp-input")
+		require.Len(t, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric, 2)
+		expectedCondition = "resource.attributes[\"kyma.source\"] == nil and (resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric[0])
+		expectedCondition = "resource.attributes[\"kyma.source\"] == nil and (resource.attributes[\"k8s.namespace.name\"] == \"kyma-system\" or resource.attributes[\"k8s.namespace.name\"] == \"kube-system\" or resource.attributes[\"k8s.namespace.name\"] == \"istio-system\" or resource.attributes[\"k8s.namespace.name\"] == \"compass-system\")"
+		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric[1])
+
+	})
+
+	t.Run("namespace filter processor using system", func(t *testing.T) {
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test").
+				RuntimeInput(true, testutils.IncludeSystemNamespaces()).
+				PrometheusInput(true, testutils.IncludeSystemNamespaces()).
+				IstioInput(true, testutils.IncludeSystemNamespaces()).
+				OtlpInput(true, testutils.IncludeSystemNamespaces()).
+				Build()},
+		)
+		require.NoError(t, err)
+
+		namespaceFilters := collectorConfig.Processors.NamespaceFilters
+		require.NotNil(t, namespaceFilters)
+
+		require.NotContains(t, namespaceFilters, "filter/test-filter-by-namespace-runtime-input")
+		require.NotContains(t, namespaceFilters, "filter/test-filter-by-namespace-prometheus-input")
+		require.NotContains(t, namespaceFilters, "filter/test-filter-by-namespace-istio-input")
+		require.NotContains(t, namespaceFilters, "filter/test-filter-by-namespace-otlp-input")
 	})
 }
