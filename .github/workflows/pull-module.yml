@@ -61,6 +61,14 @@ jobs:
         kubectl get kyma -A
         kubectl get kyma -A -oyaml
 
+    - name: Get manifest
+      shell: bash
+      if: failure()
+      run: |
+        kubectl get manifest -A
+        kubectl get manifest -A -oyaml
+        kubectl describe manifest -A
+        
     - name: Get module template
       shell: bash
       if: failure()
