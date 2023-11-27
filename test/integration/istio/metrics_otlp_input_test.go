@@ -26,9 +26,9 @@ import (
 
 var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 	const (
-		mockNs               = "metric-prometheus-input"
+		mockNs               = "istio-metric-otlp-input"
 		mockBackendName      = "metric-agent-receiver"
-		mockIstioBackendNs   = "istio-metric-mock"
+		mockIstioBackendNs   = "istio-metric-otlp-input-with-sidecar"
 		mockIstioBackendName = "istiofied-metric-agent-receiver"
 	)
 	var telemetryExportURL, telemetryIstiofiedExportURL string
