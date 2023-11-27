@@ -4,7 +4,7 @@ Changes proposed in this pull request (what was done and why):
 
 - 
 
-Changes refer to a particular Issues, PRsor Documents:
+Changes refer to a particular Issues, PRs or Documents:
 
 - 
 
