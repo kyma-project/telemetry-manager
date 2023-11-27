@@ -21,7 +21,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.21.0
 	go.uber.org/zap v1.26.0
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.20.0-beta.0.0.20231031143729-871b2914253f
+	istio.io/api v1.20.0
 	istio.io/client-go v1.20.0
 	k8s.io/api v0.28.4
 	k8s.io/apiextensions-apiserver v0.28.3
