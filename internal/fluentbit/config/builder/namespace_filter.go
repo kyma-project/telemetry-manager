@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/system"
+	ns "github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
 func createNamespaceGrepFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
@@ -31,6 +31,6 @@ func createNamespaceGrepFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
 	}
 
 	return sectionBuilder.
-		AddConfigParam("Exclude", fmt.Sprintf("$kubernetes['namespace_name'] %s", strings.Join(system.Namespaces(), "|"))).
+		AddConfigParam("Exclude", fmt.Sprintf("$kubernetes['namespace_name'] %s", strings.Join(ns.System(), "|"))).
 		Build()
 }

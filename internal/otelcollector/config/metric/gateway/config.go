@@ -28,11 +28,11 @@ type Processors struct {
 	ResolveServiceName          *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
 	DropKymaAttributes          *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 
-	// DynamicFilters contains filters which need different configuration per pipeline
-	DynamicFilters DynamicFilters `yaml:",inline,omitempty"`
+	// NamespaceFilters contains filter processors which need different configurations per pipeline
+	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`
 }
 
-type DynamicFilters map[string]*FilterProcessor
+type NamespaceFilters map[string]*FilterProcessor
 
 type FilterProcessor struct {
 	Metrics FilterProcessorMetrics `yaml:"metrics"`

@@ -3,6 +3,7 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+	"k8s.io/utils/pointer"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
@@ -74,6 +75,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := r.Get(ctx, req.NamespacedName, &metricPipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	setDefaults(&metricPipeline)
 
 	return ctrl.Result{}, r.doReconcile(ctx, &metricPipeline)
 }
@@ -152,9 +154,6 @@ func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv
 }
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	pipeline.SetDefaultForRuntimeInputEnabled()
-	pipeline.SetDefaultForPrometheusInputEnabled()
-	pipeline.SetDefaultForIstioInputEnabled()
 	return *pipeline.Spec.Input.Runtime.Enabled || *pipeline.Spec.Input.Prometheus.Enabled || *pipeline.Spec.Input.Istio.Enabled
 }
 
@@ -230,4 +229,33 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 		}
 	}
 	return defaultReplicaCount
+}
+
+func setDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
+	input := pipeline.Spec.Input
+	if input.Prometheus.Enabled == nil {
+		input.Prometheus.Enabled = pointer.Bool(false)
+	}
+	if input.Runtime.Enabled == nil {
+		input.Runtime.Enabled = pointer.Bool(false)
+	}
+	if input.Istio.Enabled == nil {
+		input.Istio.Enabled = pointer.Bool(false)
+	}
+	if input.Otlp.Enabled == nil {
+		input.Otlp.Enabled = pointer.Bool(true)
+	}
+
+	if input.Prometheus.Namespaces.System == nil {
+		input.Prometheus.Namespaces.System = pointer.Bool(false)
+	}
+	if input.Runtime.Namespaces.System == nil {
+		input.Runtime.Namespaces.System = pointer.Bool(false)
+	}
+	if input.Istio.Namespaces.System == nil {
+		input.Istio.Namespaces.System = pointer.Bool(true)
+	}
+	if input.Otlp.Namespaces.System == nil {
+		input.Otlp.Namespaces.System = pointer.Bool(false)
+	}
 }

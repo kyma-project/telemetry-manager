@@ -1,10 +1,12 @@
 package gateway
 
-import "github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+import (
+	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
+)
 
 var (
-	namespacesIsKymaSystem  = namespaceEquals("kyma-system")
-	namespacesIsIstioSystem = namespaceEquals("istio-system")
+	namespacesIsKymaSystem  = NamespaceEquals("kyma-system")
+	namespacesIsIstioSystem = NamespaceEquals("istio-system")
 	methodIsGet             = spanAttributeEquals("http.method", "GET")
 	methodIsPost            = spanAttributeEquals("http.method", "POST")
 	componentIsProxy        = spanAttributeEquals("component", "proxy")
@@ -14,26 +16,26 @@ var (
 	urlIsTelemetryTraceInternalService = urlMatches("http(s)?:\\\\/\\\\/telemetry-trace-collector-internal\\\\.kyma-system(\\\\..*)?:(55678).*")
 	urlIsTelemetryMetricService        = urlMatches("http(s)?:\\\\/\\\\/telemetry-otlp-metrics\\\\.kyma-system(\\\\..*)?:(4317|4318).*")
 
-	operationIsIngress = config.JoinWithOr(spanAttributeEquals("OperationName", "Ingress"), attributeMatches("name", "ingress.*"))
-	operationIsEgress  = config.JoinWithOr(spanAttributeEquals("OperationName", "Egress"), attributeMatches("name", "egress.*"))
+	operationIsIngress = JoinWithOr(spanAttributeEquals("OperationName", "Ingress"), attributeMatches("name", "ingress.*"))
+	operationIsEgress  = JoinWithOr(spanAttributeEquals("OperationName", "Egress"), attributeMatches("name", "egress.*"))
 
-	toFromKymaGrafana            = config.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("grafana"))
-	toFromKymaAuthProxy          = config.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("monitoring-auth-proxy-grafana"))
-	toFromTelemetryFluentBit     = config.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-fluent-bit"))
-	toFromTelemetryTraceGateway  = config.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-trace-collector"))
-	toFromTelemetryMetricGateway = config.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-metric-gateway"))
-	toFromTelemetryMetricAgent   = config.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-metric-agent"))
+	toFromKymaGrafana            = JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("grafana"))
+	toFromKymaAuthProxy          = JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("monitoring-auth-proxy-grafana"))
+	toFromTelemetryFluentBit     = JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-fluent-bit"))
+	toFromTelemetryTraceGateway  = JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-trace-collector"))
+	toFromTelemetryMetricGateway = JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-metric-gateway"))
+	toFromTelemetryMetricAgent   = JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-metric-agent"))
 
-	toIstioGatewayWithHealthz = config.JoinWithAnd(componentIsProxy, namespacesIsIstioSystem, methodIsGet, operationIsEgress, istioCanonicalNameEquals("istio-ingressgateway"), urlIsIstioHealthz)
+	toIstioGatewayWithHealthz = JoinWithAnd(componentIsProxy, namespacesIsIstioSystem, methodIsGet, operationIsEgress, istioCanonicalNameEquals("istio-ingressgateway"), urlIsIstioHealthz)
 
-	toTelemetryTraceService         = config.JoinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryTraceService)
-	toTelemetryTraceInternalService = config.JoinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryTraceInternalService)
-	toTelemetryMetricService        = config.JoinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryMetricService)
+	toTelemetryTraceService         = JoinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryTraceService)
+	toTelemetryTraceInternalService = JoinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryTraceInternalService)
+	toTelemetryMetricService        = JoinWithAnd(componentIsProxy, methodIsPost, operationIsEgress, urlIsTelemetryMetricService)
 
 	//TODO: should be system namespaces after solving https://github.com/kyma-project/telemetry-manager/issues/380
-	fromVMScrapeAgent        = config.JoinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, userAgentMatches("vm_promscrape"))
-	fromPrometheusWithinKyma = config.JoinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, namespacesIsKymaSystem, userAgentMatches("Prometheus\\\\/.*"))
-	fromTelemetryMetricAgent = config.JoinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, userAgentMatches("kyma-otelcol\\\\/.*"))
+	fromVMScrapeAgent        = JoinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, userAgentMatches("vm_promscrape"))
+	fromPrometheusWithinKyma = JoinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, namespacesIsKymaSystem, userAgentMatches("Prometheus\\\\/.*"))
+	fromTelemetryMetricAgent = JoinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, userAgentMatches("kyma-otelcol\\\\/.*"))
 )
 
 func makeDropNoisySpansConfig() FilterProcessor {
@@ -64,10 +66,6 @@ func spanAttributeEquals(key, value string) string {
 
 func istioCanonicalNameEquals(name string) string {
 	return spanAttributeEquals("istio.canonical_service", name)
-}
-
-func namespaceEquals(name string) string {
-	return config.ResourceAttributeEquals("k8s.namespace.name", name)
 }
 
 func urlMatches(pattern string) string {

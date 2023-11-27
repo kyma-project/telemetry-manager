@@ -1,10 +1,5 @@
 package config
 
-import (
-	"fmt"
-	"strings"
-)
-
 type BaseProcessors struct {
 	Batch         *BatchProcessor `yaml:"batch,omitempty"`
 	MemoryLimiter *MemoryLimiter  `yaml:"memory_limiter,omitempty"`
@@ -63,20 +58,4 @@ type AttributeAction struct {
 type TransformProcessorStatements struct {
 	Context    string   `yaml:"context"`
 	Statements []string `yaml:"statements"`
-}
-
-func NamespaceEquals(name string) string {
-	return ResourceAttributeEquals("k8s.namespace.name", name)
-}
-
-func ResourceAttributeEquals(key, value string) string {
-	return fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", key, value)
-}
-
-func JoinWithOr(parts ...string) string {
-	return fmt.Sprintf("(%s)", strings.Join(parts, " or "))
-}
-
-func JoinWithAnd(parts ...string) string {
-	return strings.Join(parts, " and ")
 }

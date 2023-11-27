@@ -18,7 +18,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 )
 
 //nolint:gochecknoinits // SchemeBuilder's registration is required.
@@ -191,52 +190,4 @@ func filterMetricPipelineCondition(conditions []MetricPipelineCondition, condTyp
 		newConditions = append(newConditions, cond)
 	}
 	return newConditions
-}
-
-func (mp *MetricPipeline) SetDefaultForPrometheusInputEnabled() {
-	if mp.Spec.Input.Prometheus.Enabled == nil {
-		mp.Spec.Input.Prometheus.Enabled = pointer.Bool(false)
-	}
-}
-
-func (mp *MetricPipeline) SetDefaultForRuntimeInputEnabled() {
-	if mp.Spec.Input.Runtime.Enabled == nil {
-		mp.Spec.Input.Runtime.Enabled = pointer.Bool(false)
-	}
-}
-
-func (mp *MetricPipeline) SetDefaultForIstioInputEnabled() {
-	if mp.Spec.Input.Istio.Enabled == nil {
-		mp.Spec.Input.Istio.Enabled = pointer.Bool(false)
-	}
-}
-
-func (mp *MetricPipeline) SetDefaultForOtlpInputEnabled() {
-	if mp.Spec.Input.Otlp.Enabled == nil {
-		mp.Spec.Input.Otlp.Enabled = pointer.Bool(true)
-	}
-}
-
-func (mp *MetricPipeline) SetDefaultForPrometheusInputSystemNamespaces() {
-	if mp.Spec.Input.Prometheus.Namespaces.System == nil {
-		mp.Spec.Input.Prometheus.Namespaces.System = pointer.Bool(false)
-	}
-}
-
-func (mp *MetricPipeline) SetDefaultForRuntimeInputSystemNamespaces() {
-	if mp.Spec.Input.Runtime.Namespaces.System == nil {
-		mp.Spec.Input.Runtime.Namespaces.System = pointer.Bool(false)
-	}
-}
-
-func (mp *MetricPipeline) SetDefaultForIstioInputSystemNamespaces() {
-	if mp.Spec.Input.Istio.Namespaces.System == nil {
-		mp.Spec.Input.Istio.Namespaces.System = pointer.Bool(true)
-	}
-}
-
-func (mp *MetricPipeline) SetDefaultForOtlpInputSystemNamespaces() {
-	if mp.Spec.Input.Otlp.Namespaces.System == nil {
-		mp.Spec.Input.Otlp.Namespaces.System = pointer.Bool(false)
-	}
 }
