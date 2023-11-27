@@ -3,10 +3,10 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
-	"k8s.io/utils/pointer"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
