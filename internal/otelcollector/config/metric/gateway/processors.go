@@ -2,13 +2,14 @@ package gateway
 
 import (
 	"fmt"
-	. "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 )
 
 func makeProcessorsConfig() Processors {
@@ -44,7 +45,7 @@ func makeDropIfInputSourceRuntimeConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			DataPoint: []string{
-				ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourceRuntime)),
+				ottlexpr.ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourceRuntime)),
 			},
 		},
 	}
@@ -54,7 +55,7 @@ func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			DataPoint: []string{
-				ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourcePrometheus)),
+				ottlexpr.ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourcePrometheus)),
 			},
 		},
 	}
@@ -64,7 +65,7 @@ func makeDropIfInputSourceIstioConfig() *FilterProcessor {
 	return &FilterProcessor{
 		Metrics: FilterProcessorMetrics{
 			DataPoint: []string{
-				ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourceIstio)),
+				ottlexpr.ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourceIstio)),
 			},
 		},
 	}
@@ -108,19 +109,19 @@ func makeFilterByNamespaceConfig(namespaceSelector v1alpha1.MetricPipelineInputN
 
 	if len(namespaceSelector.Exclude) > 0 {
 		namespacesConditions := createNamespacesConditions(namespaceSelector.Exclude)
-		excludeNamespacesExpr := JoinWithAnd(inputSourceCondition, JoinWithOr(namespacesConditions...))
+		excludeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, ottlexpr.JoinWithOr(namespacesConditions...))
 		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
 	}
 
 	if len(namespaceSelector.Include) > 0 {
 		namespacesConditions := createNamespacesConditions(namespaceSelector.Include)
-		includeNamespacesExpr := JoinWithAnd(inputSourceCondition, not(JoinWithOr(namespacesConditions...)))
+		includeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, not(ottlexpr.JoinWithOr(namespacesConditions...)))
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
 	}
 
 	if !*namespaceSelector.System {
 		namespacesConditions := createNamespacesConditions(namespaces.System())
-		systemNamespacesExpr := JoinWithAnd(inputSourceCondition, JoinWithOr(namespacesConditions...))
+		systemNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, ottlexpr.JoinWithOr(namespacesConditions...))
 		filterExpressions = append(filterExpressions, systemNamespacesExpr)
 	}
 
@@ -134,13 +135,13 @@ func makeFilterByNamespaceConfig(namespaceSelector v1alpha1.MetricPipelineInputN
 func createNamespacesConditions(namespaces []string) []string {
 	var namespacesConditions []string
 	for _, ns := range namespaces {
-		namespacesConditions = append(namespacesConditions, NamespaceEquals(ns))
+		namespacesConditions = append(namespacesConditions, ottlexpr.NamespaceEquals(ns))
 	}
 	return namespacesConditions
 }
 
 func inputSourceEquals(inputSourceType metric.InputSourceType) string {
-	return ResourceAttributeEquals(metric.InputSourceAttribute, string(inputSourceType))
+	return ottlexpr.ResourceAttributeEquals(metric.InputSourceAttribute, string(inputSourceType))
 }
 
 func otlpInputSource() string {
