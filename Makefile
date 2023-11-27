@@ -2,7 +2,7 @@
 IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20231117-fd906e1e
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.27.1
-ISTIO_VERSION ?= 1.1.2
+ISTIO_VERSION ?= 1.2.0
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
 # Operating system type
