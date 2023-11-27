@@ -356,7 +356,91 @@ spec:
 
 The agent will start pulling all [Istio metrics](https://istio.io/latest/docs/reference/config/metrics/) from Istio sidecars.
 
-### Step 7: Deploy the Pipeline
+### Step 7: Deactivate OTLP metrics
+To drop the push-based OTLP metrics which are received by the Metric Gateway, define a MetricPipeline that has the `otlp` section disabled as an input: 
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    istio:
+      enabled: true
+    otlp:
+      enabled: false
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
+The agent will start pulling all Istio metrics from Istio sidecars and the push-based OTLP metrics will be dropped. Note that the `otlp` input is enabled by default.
+### Step 8: Add Filters
+To filter metrics by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the Namespaces from which metrics are collected or the Namespaces from which metrics are dropped, or choose to collect metrics from all Namespaces including the system Namespaces `kube-system`, `istio-system` and `kyma-system`. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md). 
+
+The following example collects runtime metrics only from the `foo` and `bar` Namespaces:
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    runtime:
+      enabled: true
+      namespaces:
+        include:
+          - foo
+          - bar
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
+
+
+The following example collects runtime metrics from all Namespaces except `foo` and `bar` Namespaces:
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    runtime:
+      enabled: true
+      namespaces:
+        exclude:
+          - foo
+          - bar
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
+Note that the metrics from system Namespaces are dropped by default for the `prometheus`, `runtime` and `otlp` inputs. However, the metrics from system namespaces are collected by default for the `istio` input.
+
+The following example collects runtime metrics from all Namespaces including system Namespaces:
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    runtime:
+      enabled: true
+      namespaces:
+        system: true
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
+
+
+### Step 9: Deploy the Pipeline
 
 To activate the constructed MetricPipeline, follow these steps:
 
