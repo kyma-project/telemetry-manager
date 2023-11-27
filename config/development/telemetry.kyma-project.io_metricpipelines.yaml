@@ -92,8 +92,8 @@ spec:
                             && has(self.system))'
                     type: object
                   otlp:
-                    description: Configures the collection of push-based metrics which
-                      are using the OpenTelemetry protocol.
+                    description: Configures the collection of push-based metrics that
+                      use the OpenTelemetry protocol.
                     properties:
                       enabled:
                         description: If enabled, push-based OTLP metrics are collected.
@@ -141,7 +141,7 @@ spec:
                     properties:
                       enabled:
                         description: If enabled, Pods marked with `prometheus.io/scrape=true`
-                          annotation will be scraped. The default is `false`.
+                          annotation are scraped. The default is `false`.
                         type: boolean
                       namespaces:
                         description: Describes whether Prometheus metrics from specific
@@ -185,7 +185,7 @@ spec:
                     properties:
                       enabled:
                         description: If enabled, workload-related Kubernetes metrics
-                          will be scraped. The default is `false`.
+                          are scraped. The default is `false`.
                         type: boolean
                       namespaces:
                         description: Describes whether workload-related Kubernetes
