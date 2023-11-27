@@ -44,7 +44,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-runtime-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			RuntimeInput(true, nil)
+			RuntimeInput(true)
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 

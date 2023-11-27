@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
@@ -23,10 +22,10 @@ import (
 
 var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 	const (
-		backendNs   = "metric-istio-input"
-		backendName = "metric-agent-receiver"
-		app1Ns      = "namespace1"
-		app2Ns      = "namespace2"
+		backendNs   = "istio-metric-istio-input"
+		backendName = "backend"
+		app1Ns      = "app-1"
+		app2Ns      = "app-2"
 	)
 
 	// https://istio.io/latest/docs/reference/config/metrics/
@@ -80,10 +79,8 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-istio-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			OtlpInput(false, nil).
-			IstioInput(true, &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
-				Include: []string{app1Ns},
-			})
+			OtlpInput(false).
+			IstioInput(true, kitmetric.IncludeNamespaces(app1Ns))
 		objs = append(objs, metricPipeline.K8sObject())
 
 		app1 := kitk8s.NewPod("app-1", app1Ns).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics))
@@ -138,30 +135,12 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should contain metrics from app1Ns", Label(operationalTest), func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					ContainMd(
-						ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", app1Ns)),
-					),
-				))
-			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		It("Should deliver metrics from app1Ns", func() {
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, app1Ns, istioProxyMetricNames)
 		})
 
-		It("Should contain no metrics from app2Ns", Label(operationalTest), func() {
-			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					Not(ContainMd(
-						ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", app2Ns)),
-					)),
-				))
-			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		It("Should not deliver metrics from app2Ns", func() {
+			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURL, app2Ns)
 		})
 	})
 })

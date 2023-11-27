@@ -22,7 +22,7 @@ import (
 
 var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 	const (
-		mockNs                           = "metric-prometheus-input"
+		mockNs                           = "istio-metric-prometheus-input"
 		mockBackendName                  = "metric-agent-receiver"
 		httpsAnnotatedMetricProducerName = "metric-producer-https"
 		httpAnnotatedMetricProducerName  = "metric-producer-http"
@@ -54,7 +54,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			PrometheusInput(true, nil)
+			PrometheusInput(true)
 		objs = append(objs, metricPipeline.K8sObject())
 
 		return objs

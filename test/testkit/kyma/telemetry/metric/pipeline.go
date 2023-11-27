@@ -58,42 +58,68 @@ func (p *Pipeline) Persistent(persistent bool) *Pipeline {
 	return p
 }
 
-func (p *Pipeline) OtlpInput(enable bool, selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *Pipeline {
+type InputOptions func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector)
+
+func IncludeNamespaces(namespaces ...string) InputOptions {
+	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
+		selector.Include = namespaces
+	}
+}
+
+func ExcludeNamespaces(namespaces ...string) InputOptions {
+	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
+		selector.Exclude = namespaces
+	}
+}
+
+func IncludeSystemNamespaces() InputOptions {
+	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
+		selector.System = pointer.Bool(true)
+	}
+}
+
+func ExcludeSystemNamespaces() InputOptions {
+	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
+		selector.System = pointer.Bool(false)
+	}
+}
+
+func (p *Pipeline) OtlpInput(enable bool, opts ...InputOptions) *Pipeline {
 	p.otlp = telemetryv1alpha1.MetricPipelineOtlpInput{
 		Enabled: pointer.Bool(enable),
 	}
-	if selector != nil {
-		p.otlp.Namespaces = *selector
+	for _, opt := range opts {
+		opt(&p.otlp.Namespaces)
 	}
 	return p
 }
 
-func (p *Pipeline) RuntimeInput(enable bool, selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *Pipeline {
+func (p *Pipeline) RuntimeInput(enable bool, opts ...InputOptions) *Pipeline {
 	p.runtime = telemetryv1alpha1.MetricPipelineRuntimeInput{
 		Enabled: pointer.Bool(enable),
 	}
-	if selector != nil {
-		p.runtime.Namespaces = *selector
+	for _, opt := range opts {
+		opt(&p.runtime.Namespaces)
 	}
 	return p
 }
 
-func (p *Pipeline) PrometheusInput(enable bool, selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *Pipeline {
+func (p *Pipeline) PrometheusInput(enable bool, opts ...InputOptions) *Pipeline {
 	p.prometheus = telemetryv1alpha1.MetricPipelinePrometheusInput{
 		Enabled: pointer.Bool(enable),
 	}
-	if selector != nil {
-		p.prometheus.Namespaces = *selector
+	for _, opt := range opts {
+		opt(&p.prometheus.Namespaces)
 	}
 	return p
 }
 
-func (p *Pipeline) IstioInput(enable bool, selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *Pipeline {
+func (p *Pipeline) IstioInput(enable bool, opts ...InputOptions) *Pipeline {
 	p.istio = telemetryv1alpha1.MetricPipelineIstioInput{
 		Enabled: pointer.Bool(enable),
 	}
-	if selector != nil {
-		p.istio.Namespaces = *selector
+	for _, opt := range opts {
+		opt(&p.istio.Namespaces)
 	}
 	return p
 }
