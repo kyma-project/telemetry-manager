@@ -52,6 +52,7 @@ function verify_kyma_status() {
 }
 
 function main() {
+    ${KYMA} version
 
     # Create the module and push its image to a local k3d registry
     create_module
