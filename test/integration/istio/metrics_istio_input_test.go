@@ -34,6 +34,10 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 			"istio_response_bytes",
 			"istio_request_messages_total",
 			"istio_response_messages_total",
+			"istio_tcp_sent_bytes_total",
+			"istio_tcp_received_bytes_total",
+			"istio_tcp_connections_opened_total",
+			"istio_tcp_connections_closed_total",
 		}
 		istioProxyMetricResourceAttributes = []string{
 			"connection_security_policy",
