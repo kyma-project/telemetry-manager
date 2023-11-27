@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-The Fluent Bit configuration that we currently generate with the telemetry-manager from a LogPipeline uses a `tail` input plugin to read container logs, splits the log stream into multiple pipelines using a `rewrite_tag` filter, applies additional pipeline specific filters, and sends the log stream to the configured output. This setup decouples the input and outputs so that a blocked output does not affect any other outputs. Consequently, reading logs by the tail plugin is never paused. The `rewrite_tag` filter uses a persistent file-system buffer to prevent log loss. The persistent buffer is limited to 1 GB to ensure that Kubernetes nodes do not run out of disk space.
+The Fluent Bit configuration that the Telemetry Manager currently generates from a LogPipeline uses a `tail` input plugin to read container logs, splits the log stream into multiple pipelines using a `rewrite_tag` filter, applies additional pipeline specific filters, and sends the log stream to the configured output. This setup decouples the input and outputs so that a blocked output does not affect any other outputs. Consequently, reading logs by the tail plugin is never paused. The `rewrite_tag` filter uses a persistent file-system buffer to prevent log loss. The persistent buffer is limited to 1 GB to ensure that Kubernetes nodes do not run out of disk space.
 
 The persistent buffer can prevent log loss only for a short period of time. Depending on the amount of generated logs, this is usually in the range of minutes to a few hours and might be too short to restore an outage of a log backend or detect and solve a faulty configuration.
 
@@ -23,10 +23,11 @@ Fluent Bit can be configured in different ways to read container logs and ingest
 3. **Dedicated log streams**: Each pipeline has its own `tail` input plugin, a list of filters, and an output plugin. This setup isolates the log processing between different pipelines. In the case of a problem, the streams can be paused individually. This setup has medium complexity.
 4. **Dedicated Fluent Bit instances**: Each pipeline gets its own Fluent Bit DaemonSet. This setup isolates also the CPU and memory resources per pipeline with the cost of a larger overhead. This setup has medium complexity.
 
-Option 1 does not fulfill our requirement to apply individual filters per pipeline. Option 4 causes an unacceptable resource overhead for our typical setup of two pipelines (application logs and access logs). Option 2 and 3 allow log filter settings per pipeline. Currently, Telemetry Manager uses option 2.
+Currently, Telemetry Manager uses option 2. 
+Option 1 does not fulfill our requirement to apply individual filters per pipeline. Option 4 causes an unacceptable resource overhead for our typical setup of two pipelines (application logs and access logs). Option 2 and 3 allow log filter settings per pipeline.
 
 We consider option 3 to be the best Fluent Bit configuration for our requirements because of its lower complexity and lower risk for log loss. The throughput of option 3 has shown to be better than option 2 without changing Fluent Bit's CPU and memory limits.
 
 ## Consequences
 
-Switching from option 2 to option 3 relies on the container runtime for persistent log storage. This changes the conditions under which logs might be lost. Option 2 with its persistent buffer of 1 GB per pipeline deletes the oldest logs when the limit is reached. For option 3, the conditions under which logs might be lost are specific for the individual pod, because log rotation happens when then log file per pod reaches a certain size. Logs are deleted in the case of pod evictions or multiple restarts. Node deletion might also be a reason for log loss. However, since the persistent buffer of the existing setup uses the host file system, this risk is already existing.
+Switching from option 2 to option 3 relies on the container runtime for persistent log storage. This changes the conditions under which logs might be lost: Option 2, with its persistent buffer of 1 GB per pipeline, deletes the oldest logs when the limit is reached. For option 3, the conditions under which logs might be lost are specific for the individual pod, because log rotation happens when the log file per pod reaches a certain size. Logs are deleted in the case of pod evictions or multiple restarts. Node deletion might also be a reason for log loss. However, because the persistent buffer of the existing setup uses the host file system, this risk is already existing.
