@@ -4,5 +4,5 @@
 - [Application Logs](02-logs.md)
 - [Traces](03-traces.md)
 - [Metrics](04-metrics.md)
-- [Tutorials](05-tutorials.md)
+- [Integration Guides](integration/README.md)
 - [Resources](resources/README.md)
