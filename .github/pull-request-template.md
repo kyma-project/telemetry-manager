@@ -9,10 +9,10 @@ Changes refer to a particular Issues, PRs or Documents:
 - 
 
 ## Traceability
-- [ ] The PR is linked to a GitHub Issue.
+- [ ] The PR is linked to a GitHub issue.
 - [ ] New features have a milestone set.
 - [ ] New features have defined acceptance criteria in a corresponding GitHub Issue, and all criteria are satisfied with this PR.
-- [ ] The corresponding GitHub Issue has a respective `area` and `kind` label.
+- [ ] The corresponding GitHub issue has a respective `area` and `kind` label.
 - [ ] The follow-up issues (if any) are linked in the `Related Issues` section.
 - [ ] Adjusted the documentation if the change is user-facing.
 - [ ] The feature is unit-tested
