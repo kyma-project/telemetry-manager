@@ -6,7 +6,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -75,7 +74,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := r.Get(ctx, req.NamespacedName, &metricPipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	setDefaults(&metricPipeline)
+	telemetryv1alpha1.SetMetricPipelineDefaults(&metricPipeline)
 
 	return ctrl.Result{}, r.doReconcile(ctx, &metricPipeline)
 }
@@ -108,7 +107,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
 	}
 	for i := range allPipelinesList.Items {
-		setDefaults(&allPipelinesList.Items[i])
+		telemetryv1alpha1.SetMetricPipelineDefaults(&allPipelinesList.Items[i])
 	}
 	deployablePipelines, err := getDeployableMetricPipelines(ctx, allPipelinesList.Items, r, lock)
 	if err != nil {
@@ -232,33 +231,4 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 		}
 	}
 	return defaultReplicaCount
-}
-
-func setDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
-	input := pipeline.Spec.Input
-	if input.Prometheus.Enabled == nil {
-		pipeline.Spec.Input.Prometheus.Enabled = pointer.Bool(false)
-	}
-	if input.Runtime.Enabled == nil {
-		pipeline.Spec.Input.Runtime.Enabled = pointer.Bool(false)
-	}
-	if input.Istio.Enabled == nil {
-		pipeline.Spec.Input.Istio.Enabled = pointer.Bool(false)
-	}
-	if input.Otlp.Enabled == nil {
-		pipeline.Spec.Input.Otlp.Enabled = pointer.Bool(true)
-	}
-
-	if input.Prometheus.Namespaces.System == nil {
-		pipeline.Spec.Input.Prometheus.Namespaces.System = pointer.Bool(false)
-	}
-	if input.Runtime.Namespaces.System == nil {
-		pipeline.Spec.Input.Runtime.Namespaces.System = pointer.Bool(false)
-	}
-	if input.Istio.Namespaces.System == nil {
-		pipeline.Spec.Input.Istio.Namespaces.System = pointer.Bool(true)
-	}
-	if input.Otlp.Namespaces.System == nil {
-		pipeline.Spec.Input.Otlp.Namespaces.System = pointer.Bool(false)
-	}
 }
