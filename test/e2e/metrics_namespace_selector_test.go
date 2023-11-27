@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Namespace Selector", Label("new"), func() {
+var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 	const (
 		backendNs    = "metric-namespace-selector"
 		backend1Name = "backend-1"
