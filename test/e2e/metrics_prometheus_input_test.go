@@ -49,7 +49,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		// Default namespace objects.
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			PrometheusInput(true)
+			PrometheusInput(true, kitmetric.IncludeSystemNamespaces())
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 
