@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
-
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 )
 
