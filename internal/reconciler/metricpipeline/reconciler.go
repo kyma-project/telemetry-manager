@@ -234,28 +234,28 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 func setDefaults(pipeline *telemetryv1alpha1.MetricPipeline) {
 	input := pipeline.Spec.Input
 	if input.Prometheus.Enabled == nil {
-		input.Prometheus.Enabled = pointer.Bool(false)
+		pipeline.Spec.Input.Prometheus.Enabled = pointer.Bool(false)
 	}
 	if input.Runtime.Enabled == nil {
-		input.Runtime.Enabled = pointer.Bool(false)
+		pipeline.Spec.Input.Runtime.Enabled = pointer.Bool(false)
 	}
 	if input.Istio.Enabled == nil {
-		input.Istio.Enabled = pointer.Bool(false)
+		pipeline.Spec.Input.Istio.Enabled = pointer.Bool(false)
 	}
 	if input.Otlp.Enabled == nil {
-		input.Otlp.Enabled = pointer.Bool(true)
+		pipeline.Spec.Input.Otlp.Enabled = pointer.Bool(true)
 	}
 
 	if input.Prometheus.Namespaces.System == nil {
-		input.Prometheus.Namespaces.System = pointer.Bool(false)
+		pipeline.Spec.Input.Prometheus.Namespaces.System = pointer.Bool(false)
 	}
 	if input.Runtime.Namespaces.System == nil {
-		input.Runtime.Namespaces.System = pointer.Bool(false)
+		pipeline.Spec.Input.Runtime.Namespaces.System = pointer.Bool(false)
 	}
 	if input.Istio.Namespaces.System == nil {
-		input.Istio.Namespaces.System = pointer.Bool(true)
+		pipeline.Spec.Input.Istio.Namespaces.System = pointer.Bool(true)
 	}
 	if input.Otlp.Namespaces.System == nil {
-		input.Otlp.Namespaces.System = pointer.Bool(false)
+		pipeline.Spec.Input.Otlp.Namespaces.System = pointer.Bool(false)
 	}
 }
