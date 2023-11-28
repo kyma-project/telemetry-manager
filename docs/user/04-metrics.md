@@ -33,14 +33,7 @@ Optionally, the Telemetry module provides a DaemonSet of an [OTel Collector](htt
 
 ### Metric Gateway
 
-In a Kyma cluster, the metric gateway is the central component to which all components can send their individual metrics. The gateway collects, [enriches](README.md#automatic-telemetry-enrichment), and dispatches the data to the configured backend. The gateway is based on the [OTel Collector](https://opentelemetry.io/docs/collector/) and comes with a concept of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together (see [Configuration](https://opentelemetry.io/docs/collector/configuration/). Kyma's MetricPipeline provides a hardened setup of an OTel Collector and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
-
-- Supportability: All features are tested and supported.
-- Migratability: Smooth migration experiences when switching underlying technologies or architectures.
-- Native Kubernetes support: API provided by Kyma supports an easy integration with Secrets, for example, served by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator#readme). Telemetry Manager takes care of the full lifecycle.
-- Focus: The user doesn't need to understand underlying concepts.
-
-The downside is that only a limited set of features is available. If you want to avoid this downside, bring your own collector setup. The current feature set focuses on providing the full configurability of backends integrated by OTLP.
+In a Kyma cluster, the metric gateway is the central component to which all components can send their individual metrics. The gateway collects, enriches, and dispatches the data to the configured backend, see the more general [Gateway documentation](./gateways.md) for more information.
 
 ### Metric Agent
 
