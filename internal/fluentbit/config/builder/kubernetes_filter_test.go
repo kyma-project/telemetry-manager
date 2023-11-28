@@ -9,7 +9,18 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
-func TestCreateKubernetesMetadataFilterKeepAll(t *testing.T) {
+func TestCreateKubernetesFilterKeepAll(t *testing.T) {
+	expected := `[FILTER]
+    name                kubernetes
+    match               test-logpipeline.*
+    annotations         true
+    k8s-logging.exclude off
+    k8s-logging.parser  on
+    kube_tag_prefix     test-logpipeline.var.log.containers.
+    labels              true
+    merge_log           on
+
+`
 	logPipeline := &telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
@@ -18,35 +29,20 @@ func TestCreateKubernetesMetadataFilterKeepAll(t *testing.T) {
 					KeepAnnotations: true,
 					DropLabels:      false}}}}
 
-	actual := createKubernetesMetadataFilter(logPipeline)
-	require.Equal(t, "", actual)
+	actual := createKubernetesFilter(logPipeline)
+	require.Equal(t, expected, actual)
 }
 
-func TestCreateKubernetesMetadataFilterDropAll(t *testing.T) {
+func TestCreateKubernetesFilterDropAll(t *testing.T) {
 	expected := `[FILTER]
-    name         nest
-    match        test-logpipeline.*
-    add_prefix   __kyma__
-    nested_under kubernetes
-    operation    lift
-
-[FILTER]
-    name       record_modifier
-    match      test-logpipeline.*
-    remove_key __kyma__annotations
-
-[FILTER]
-    name       record_modifier
-    match      test-logpipeline.*
-    remove_key __kyma__labels
-
-[FILTER]
-    name          nest
-    match         test-logpipeline.*
-    nest_under    kubernetes
-    operation     nest
-    remove_prefix __kyma__
-    wildcard      __kyma__*
+    name                kubernetes
+    match               test-logpipeline.*
+    annotations         false
+    k8s-logging.exclude off
+    k8s-logging.parser  on
+    kube_tag_prefix     test-logpipeline.var.log.containers.
+    labels              false
+    merge_log           on
 
 `
 	logPipeline := &telemetryv1alpha1.LogPipeline{
@@ -57,6 +53,6 @@ func TestCreateKubernetesMetadataFilterDropAll(t *testing.T) {
 					KeepAnnotations: false,
 					DropLabels:      true}}}}
 
-	actual := createKubernetesMetadataFilter(logPipeline)
+	actual := createKubernetesFilter(logPipeline)
 	require.Equal(t, expected, actual)
 }

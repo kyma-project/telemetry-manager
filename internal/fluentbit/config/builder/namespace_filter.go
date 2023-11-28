@@ -34,3 +34,29 @@ func createNamespaceGrepFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
 		AddConfigParam("Exclude", fmt.Sprintf("$kubernetes['namespace_name'] %s", strings.Join(ns.System(), "|"))).
 		Build()
 }
+
+func createContainerGrepFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
+	containers := pipeline.Spec.Input.Application.Containers
+
+	if len(containers.Include) == 0 && len(containers.Exclude) == 0 {
+		return ""
+	}
+
+	var sectionBuilder = NewFilterSectionBuilder().
+		AddConfigParam("Name", "grep").
+		AddConfigParam("Match", fmt.Sprintf("%s.*", pipeline.Name))
+
+	if len(containers.Include) > 0 {
+		return sectionBuilder.
+			AddConfigParam("Regex", fmt.Sprintf("$kubernetes['container_name'] %s", strings.Join(containers.Include, "|"))).
+			Build()
+	}
+
+	if len(containers.Exclude) > 0 {
+		return sectionBuilder.
+			AddConfigParam("Exclude", fmt.Sprintf("$kubernetes['container_name'] %s", strings.Join(containers.Exclude, "|"))).
+			Build()
+	}
+
+	return sectionBuilder.Build()
+}

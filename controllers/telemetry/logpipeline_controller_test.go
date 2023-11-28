@@ -62,13 +62,17 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 		timeout               = time.Second * 10
 		interval              = time.Millisecond * 250
 	)
-	var expectedFluentBitConfig = `[FILTER]
-    name                  rewrite_tag
-    match                 kube.*
-    emitter_mem_buf_limit 10M
-    emitter_name          log-pipeline-stdout
-    emitter_storage.type  filesystem
-    rule                  $log "^.*$" log-pipeline.$TAG true
+	var expectedFluentBitConfig = `[INPUT]
+    name             tail
+    alias            log-pipeline
+    db               /data/flb_log-pipeline.db
+    exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log
+    multiline.parser docker, cri, go, python, java
+    path             /var/log/containers/*_*_*-*.log
+    read_from_head   true
+    skip_long_lines  on
+    storage.type     filesystem
+    tag              log-pipeline.*
 
 [FILTER]
     name   record_modifier
@@ -76,29 +80,19 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
     record cluster_identifier ${KUBERNETES_SERVICE_HOST}
 
 [FILTER]
+    name                kubernetes
+    match               log-pipeline.*
+    annotations         false
+    k8s-logging.exclude off
+    k8s-logging.parser  on
+    kube_tag_prefix     log-pipeline.var.log.containers.
+    labels              true
+    merge_log           on
+
+[FILTER]
     name  grep
     match log-pipeline.*
     regex $kubernetes['labels']['app'] my-deployment
-
-[FILTER]
-    name         nest
-    match        log-pipeline.*
-    add_prefix   __kyma__
-    nested_under kubernetes
-    operation    lift
-
-[FILTER]
-    name       record_modifier
-    match      log-pipeline.*
-    remove_key __kyma__annotations
-
-[FILTER]
-    name          nest
-    match         log-pipeline.*
-    nest_under    kubernetes
-    operation     nest
-    remove_prefix __kyma__
-    wildcard      __kyma__*
 
 [OUTPUT]
     name                     stdout

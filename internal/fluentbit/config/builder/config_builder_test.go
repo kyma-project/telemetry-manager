@@ -76,23 +76,42 @@ func TestCreateLuaDedotFilterWithDedotFalse(t *testing.T) {
 }
 
 func TestMergeSectionsConfig(t *testing.T) {
-	expected := `[FILTER]
-    name                  rewrite_tag
-    match                 kube.*
-    emitter_mem_buf_limit 10M
-    emitter_name          foo-http
-    emitter_storage.type  filesystem
-    rule                  $kubernetes['container_name'] "^(?!container1$|container2$).*" foo.$TAG true
-
-[FILTER]
-    name    grep
-    match   foo.*
-    exclude $kubernetes['namespace_name'] kyma-system|kube-system|istio-system|compass-system
+	expected := `[INPUT]
+    name             tail
+    alias            foo
+    db               /data/flb_foo.db
+    exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log
+    multiline.parser docker, cri, go, python, java
+    path             /var/log/containers/*_*_*-*.log
+    read_from_head   true
+    skip_long_lines  on
+    storage.type     filesystem
+    tag              foo.*
 
 [FILTER]
     name   record_modifier
     match  foo.*
     record cluster_identifier ${KUBERNETES_SERVICE_HOST}
+
+[FILTER]
+    name                kubernetes
+    match               foo.*
+    annotations         true
+    k8s-logging.exclude off
+    k8s-logging.parser  on
+    kube_tag_prefix     foo.var.log.containers.
+    labels              true
+    merge_log           on
+
+[FILTER]
+    name    grep
+    match   foo.*
+    exclude $kubernetes['container_name'] container1|container2
+
+[FILTER]
+    name    grep
+    match   foo.*
+    exclude $kubernetes['namespace_name'] kyma-system|kube-system|istio-system|compass-system
 
 [FILTER]
     name  grep
@@ -162,23 +181,37 @@ func TestMergeSectionsConfig(t *testing.T) {
 }
 
 func TestMergeSectionsConfigCustomOutput(t *testing.T) {
-	expected := `[FILTER]
-    name                  rewrite_tag
-    match                 kube.*
-    emitter_mem_buf_limit 10M
-    emitter_name          foo-stdout
-    emitter_storage.type  filesystem
-    rule                  $log "^.*$" foo.$TAG true
-
-[FILTER]
-    name    grep
-    match   foo.*
-    exclude $kubernetes['namespace_name'] kyma-system|kube-system|istio-system|compass-system
+	expected := `[INPUT]
+    name             tail
+    alias            foo
+    db               /data/flb_foo.db
+    exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log
+    multiline.parser docker, cri, go, python, java
+    path             /var/log/containers/*_*_*-*.log
+    read_from_head   true
+    skip_long_lines  on
+    storage.type     filesystem
+    tag              foo.*
 
 [FILTER]
     name   record_modifier
     match  foo.*
     record cluster_identifier ${KUBERNETES_SERVICE_HOST}
+
+[FILTER]
+    name                kubernetes
+    match               foo.*
+    annotations         true
+    k8s-logging.exclude off
+    k8s-logging.parser  on
+    kube_tag_prefix     foo.var.log.containers.
+    labels              true
+    merge_log           on
+
+[FILTER]
+    name    grep
+    match   foo.*
+    exclude $kubernetes['namespace_name'] kyma-system|kube-system|istio-system|compass-system
 
 [OUTPUT]
     name                     stdout
