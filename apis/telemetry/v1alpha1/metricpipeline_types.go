@@ -77,7 +77,7 @@ type MetricPipelineInput struct {
 type MetricPipelinePrometheusInput struct {
 	// If enabled, Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
 	Enabled *bool `json:"enabled,omitempty"`
-	// Describes whether Prometheus metrics from specific Namespaces are selected. System namespaces are disabled by default.
+	// Describes whether Prometheus metrics from specific Namespaces are selected. System Namespaces are disabled by default.
 	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
