@@ -85,7 +85,7 @@ type MetricPipelinePrometheusInput struct {
 type MetricPipelineRuntimeInput struct {
 	// If enabled, workload-related Kubernetes metrics are scraped. The default is `false`.
 	Enabled *bool `json:"enabled,omitempty"`
-	// Describes whether workload-related Kubernetes metrics from specific Namespaces are selected. System namespaces are disabled by default.
+	// Describes whether workload-related Kubernetes metrics from specific Namespaces are selected. System Namespaces are disabled by default.
 	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
