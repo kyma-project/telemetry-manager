@@ -357,7 +357,7 @@ spec:
 The agent will start pulling all [Istio metrics](https://istio.io/latest/docs/reference/config/metrics/) from Istio sidecars.
 
 ### Step 7: Deactivate OTLP metrics
-To drop the push-based OTLP metrics which are received by the Metric Gateway, define a MetricPipeline that has the `otlp` section disabled as an input: 
+To drop the push-based OTLP metrics that are received by the Metric gateway, define a MetricPipeline that has the `otlp` section disabled as an input: 
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
