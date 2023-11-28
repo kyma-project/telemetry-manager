@@ -93,7 +93,7 @@ type MetricPipelineRuntimeInput struct {
 type MetricPipelineIstioInput struct {
 	// If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected. The default is `false`.
 	Enabled *bool `json:"enabled,omitempty"`
-	// Describes whether istio-proxy metrics from specific Namespaces are selected. System namespaces are enabled by default.
+	// Describes whether istio-proxy metrics from specific Namespaces are selected. System Namespaces are enabled by default.
 	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
