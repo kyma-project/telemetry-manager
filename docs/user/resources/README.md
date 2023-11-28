@@ -1,6 +1,6 @@
 # Telemetry Resources
 
-The API of the Telemetry module is based on Kubernetes Custom Resource Definitions (CRD) which are extending the Kubernetes API with custom additions. In the following the specification of the Telemetry module API can be introspected:
+The API of the Telemetry module is based on Kubernetes Custom Resource Definitions (CRD), which are extend the Kubernetes API with custom additions. To inspect the specification of the Telemetry module API, see:
 
 - [Telemetry CRD](./01-telemetry.md)
 - [LogPipeline CRD](./02-logpipeline.md)

@@ -48,7 +48,7 @@ For more information, see [Telemetry Manager](01-manager.md).
 
 ### Gateways
 
-The Traces and Metric feature each share the common approach of providing a gateway based on the [OTel Collector](https://opentelemetry.io/docs/collector/). It acts as a central point in the cluster to push data in the OTLP format. From here, the data is enriched and filtered and then dispatched as defined in the individual Pipeline resources.
+The Traces and Metric feature each share the common approach of providing a gateway based on the [OTel Collector](https://opentelemetry.io/docs/collector/). It acts as a central point in the cluster to push data in the OTLP format. From here, the data is enriched and filtered and then dispatched as defined in the individual pipeline resources.
 
 For more information, see [Gateways](gateways.md).
 
