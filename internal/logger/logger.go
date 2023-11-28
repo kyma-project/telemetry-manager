@@ -14,12 +14,13 @@ type Logger struct {
 }
 
 // New returns a new logger with the given format and level.
-func New(level zapcore.Level, atomic zap.AtomicLevel) (*Logger, error) {
-	log, err := newWithAtomicLevel(atomic)
+func New(atomicLevel zap.AtomicLevel) (*Logger, error) {
+	log, err := newWithAtomicLevel(atomicLevel)
 	if err != nil {
 		return nil, err
 	}
 
+	level := atomicLevel.Level()
 	if err = initKlog(log, level); err != nil {
 		return nil, err
 	}

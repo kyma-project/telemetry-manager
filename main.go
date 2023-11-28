@@ -76,17 +76,17 @@ import (
 )
 
 var (
-	certDir                string
-	deniedFilterPlugins    string
-	deniedOutputPlugins    string
-	enableLogging          bool
-	enableTracing          bool
-	enableMetrics          bool
-	logLevel               string
-	scheme                 = runtime.NewScheme()
-	setupLog               = ctrl.Log.WithName("setup")
-	configureLogLevelOnFly *overrides.LogLevelReconfigurer
-	telemetryNamespace     string
+	certDir             string
+	deniedFilterPlugins string
+	deniedOutputPlugins string
+	enableLogging       bool
+	enableTracing       bool
+	enableMetrics       bool
+	logLevel            string
+	atomicLevel         zap.AtomicLevel
+	scheme              = runtime.NewScheme()
+	setupLog            = ctrl.Log.WithName("setup")
+	telemetryNamespace  string
 
 	maxLogPipelines    int
 	maxTracePipelines  int
@@ -270,11 +270,9 @@ func main() {
 	if err != nil {
 		os.Exit(1)
 	}
-	dynamicLoglevel := zap.NewAtomicLevel()
-	dynamicLoglevel.SetLevel(parsedLevel)
-	configureLogLevelOnFly = overrides.NewLogReconfigurer(dynamicLoglevel)
+	atomicLevel = zap.NewAtomicLevelAt(parsedLevel)
 
-	ctrLogger, err := logger.New(parsedLevel, dynamicLoglevel)
+	ctrLogger, err := logger.New(atomicLevel)
 
 	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
 	if err != nil {
@@ -470,7 +468,7 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 			MemoryRequest:               resource.MustParse(fluentBitMemoryRequest),
 		},
 	}
-	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
+	overridesHandler := overrides.New(&kubernetes.ConfigmapProber{Client: client}, atomicLevel)
 
 	return telemetrycontrollers.NewLogPipelineReconciler(
 		client,
@@ -483,7 +481,7 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
 		DaemonSet:        types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 	}
-	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
+	overridesHandler := overrides.New(&kubernetes.ConfigmapProber{Client: client}, atomicLevel)
 
 	return telemetrycontrollers.NewLogParserReconciler(
 		client,
@@ -541,7 +539,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		MaxPipelines:           maxTracePipelines,
 	}
-	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
+	overridesHandler := overrides.New(&kubernetes.ConfigmapProber{Client: client}, atomicLevel)
 
 	return telemetrycontrollers.NewTracePipelineReconciler(
 		client,
@@ -588,7 +586,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 		MaxPipelines:           maxMetricPipelines,
 	}
 
-	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
+	overridesHandler := overrides.New(&kubernetes.ConfigmapProber{Client: client}, atomicLevel)
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,

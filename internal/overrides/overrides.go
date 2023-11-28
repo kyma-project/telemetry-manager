@@ -11,11 +11,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type LogLevelChanger interface {
-	changeLogLevel(level string) error
-	setDefaultLogLevel() error
-}
-
 type GlobalConfigHandler interface {
 	SyncLogLevel(config GlobalConfig) error
 	UpdateOverrideConfig(ctx context.Context, overrideConfigMap types.NamespacedName) (Config, error)
@@ -55,13 +50,13 @@ type GlobalConfig struct {
 }
 
 type Handler struct {
-	logLevelChanger LogLevelChanger
+	logLevelChanger *LogLevelReconfigurer
 	cmProber        ConfigMapProber
 }
 
-func New(loglevelChanger *LogLevelReconfigurer, cmProber ConfigMapProber) *Handler {
+func New(cmProber ConfigMapProber, atomicLevel zap.AtomicLevel) *Handler {
 	var m Handler
-	m.logLevelChanger = loglevelChanger
+	m.logLevelChanger = NewLogReconfigurer(atomicLevel)
 	m.cmProber = cmProber
 	return &m
 }
@@ -97,10 +92,10 @@ func (m *Handler) SyncLogLevel(config GlobalConfig) error {
 	return m.logLevelChanger.changeLogLevel(config.LogLevel)
 }
 
-func NewLogReconfigurer(atomic zap.AtomicLevel) *LogLevelReconfigurer {
+func NewLogReconfigurer(atomicLevel zap.AtomicLevel) *LogLevelReconfigurer {
 	var l LogLevelReconfigurer
-	l.Atomic = atomic
-	l.Default = atomic.String()
+	l.Atomic = atomicLevel
+	l.Default = l.Atomic.String()
 	return &l
 }
 
