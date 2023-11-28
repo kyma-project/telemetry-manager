@@ -11,12 +11,12 @@ service:
             processors:
                 - memory_limiter
                 - k8sattributes
-                - resource/insert-cluster-name
-                - transform/resolve-service-name
                 - filter/drop-if-input-source-runtime
                 - filter/drop-if-input-source-prometheus
                 - filter/drop-if-input-source-istio
                 - filter/test-filter-by-namespace-otlp-input
+                - resource/insert-cluster-name
+                - transform/resolve-service-name
                 - resource/drop-kyma-attributes
                 - batch
             exporters:

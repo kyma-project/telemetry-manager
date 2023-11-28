@@ -142,7 +142,7 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs ...string) config.Pipeline {
 	sort.Strings(exporterIDs)
 
-	processors := []string{"memory_limiter", "k8sattributes", "resource/insert-cluster-name", "transform/resolve-service-name"}
+	processors := []string{"memory_limiter", "k8sattributes"}
 
 	input := pipeline.Spec.Input
 	if !*input.Runtime.Enabled {
@@ -175,7 +175,7 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 		processors = append(processors, processorName)
 	}
 
-	processors = append(processors, "resource/drop-kyma-attributes", "batch")
+	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "resource/drop-kyma-attributes", "batch")
 
 	return config.Pipeline{
 		Receivers:  []string{"otlp"},

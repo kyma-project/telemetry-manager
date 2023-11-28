@@ -115,12 +115,12 @@ func TestMakeConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 			require.Equal(t, []string{"memory_limiter",
 				"k8sattributes",
-				"resource/insert-cluster-name",
-				"transform/resolve-service-name",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/drop-if-input-source-otlp",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
 				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
@@ -139,12 +139,12 @@ func TestMakeConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 			require.Equal(t, []string{"memory_limiter",
 				"k8sattributes",
-				"resource/insert-cluster-name",
-				"transform/resolve-service-name",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-istio",
 				"filter/test-filter-by-namespace-prometheus-input",
 				"filter/test-filter-by-namespace-otlp-input",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
 				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
@@ -163,12 +163,12 @@ func TestMakeConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 			require.Equal(t, []string{"memory_limiter",
 				"k8sattributes",
-				"resource/insert-cluster-name",
-				"transform/resolve-service-name",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
 				"filter/test-filter-by-namespace-runtime-input",
 				"filter/test-filter-by-namespace-otlp-input",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
 				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
@@ -187,11 +187,11 @@ func TestMakeConfig(t *testing.T) {
 			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
 			require.Equal(t, []string{"memory_limiter",
 				"k8sattributes",
-				"resource/insert-cluster-name",
-				"transform/resolve-service-name",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
 				"filter/test-filter-by-namespace-otlp-input",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
 				"resource/drop-kyma-attributes",
 				"batch",
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
@@ -216,12 +216,12 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-1"].Receivers, "otlp")
 		require.Equal(t, []string{"memory_limiter",
 			"k8sattributes",
-			"resource/insert-cluster-name",
-			"transform/resolve-service-name",
 			"filter/drop-if-input-source-prometheus",
 			"filter/drop-if-input-source-istio",
 			"filter/test-1-filter-by-namespace-runtime-input",
 			"filter/test-1-filter-by-namespace-otlp-input",
+			"resource/insert-cluster-name",
+			"transform/resolve-service-name",
 			"resource/drop-kyma-attributes",
 			"batch",
 		}, collectorConfig.Service.Pipelines["metrics/test-1"].Processors)
@@ -231,12 +231,12 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-2"].Receivers, "otlp")
 		require.Equal(t, []string{"memory_limiter",
 			"k8sattributes",
-			"resource/insert-cluster-name",
-			"transform/resolve-service-name",
 			"filter/drop-if-input-source-runtime",
 			"filter/drop-if-input-source-istio",
 			"filter/test-2-filter-by-namespace-prometheus-input",
 			"filter/test-2-filter-by-namespace-otlp-input",
+			"resource/insert-cluster-name",
+			"transform/resolve-service-name",
 			"resource/drop-kyma-attributes",
 			"batch",
 		}, collectorConfig.Service.Pipelines["metrics/test-2"].Processors)
@@ -246,11 +246,11 @@ func TestMakeConfig(t *testing.T) {
 		require.Contains(t, collectorConfig.Service.Pipelines["metrics/test-3"].Receivers, "otlp")
 		require.Equal(t, []string{"memory_limiter",
 			"k8sattributes",
-			"resource/insert-cluster-name",
-			"transform/resolve-service-name",
 			"filter/drop-if-input-source-runtime",
 			"filter/drop-if-input-source-prometheus",
 			"filter/test-3-filter-by-namespace-otlp-input",
+			"resource/insert-cluster-name",
+			"transform/resolve-service-name",
 			"resource/drop-kyma-attributes",
 			"batch",
 		}, collectorConfig.Service.Pipelines["metrics/test-3"].Processors)
