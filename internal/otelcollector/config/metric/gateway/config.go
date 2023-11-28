@@ -28,7 +28,7 @@ type Processors struct {
 	ResolveServiceName          *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
 	DropKymaAttributes          *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 
-	// NamespaceFilters contains filter processors which need different configurations per pipeline
+	// NamespaceFilters contains filter processors, which need different configurations per pipeline
 	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`
 }
 
