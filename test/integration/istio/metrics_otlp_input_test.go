@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -21,7 +22,6 @@ import (
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
@@ -72,6 +72,7 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				verifiers.ShouldNotExist(ctx, k8sClient, k8sObjects...)
 			})
 
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
