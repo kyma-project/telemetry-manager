@@ -56,7 +56,7 @@ spec:
                         type: boolean
                       namespaces:
                         description: Describes whether istio-proxy metrics from specific
-                          Namespaces are selected. System namespaces are enabled by
+                          Namespaces are selected. System Namespaces are enabled by
                           default.
                         properties:
                           exclude:
@@ -101,7 +101,7 @@ spec:
                         type: boolean
                       namespaces:
                         description: Describes whether push-based OTLP metrics from
-                          specific Namespaces are selected. System namespaces are
+                          specific Namespaces are selected. System Namespaces are
                           disabled by default.
                         properties:
                           exclude:
@@ -145,7 +145,7 @@ spec:
                         type: boolean
                       namespaces:
                         description: Describes whether Prometheus metrics from specific
-                          Namespaces are selected. System namespaces are disabled
+                          Namespaces are selected. System Namespaces are disabled
                           by default.
                         properties:
                           exclude:
@@ -189,7 +189,7 @@ spec:
                         type: boolean
                       namespaces:
                         description: Describes whether workload-related Kubernetes
-                          metrics from specific Namespaces are selected. System namespaces
+                          metrics from specific Namespaces are selected. System Namespaces
                           are disabled by default.
                         properties:
                           exclude:
