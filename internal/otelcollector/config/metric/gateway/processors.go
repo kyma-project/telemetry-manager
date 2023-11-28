@@ -145,7 +145,7 @@ func inputSourceEquals(inputSourceType metric.InputSourceType) string {
 
 func otlpInputSource() string {
 	// The "kyma.source" attribute is only set by the metric agents for runtime, Prometheus, and Istio metrics
-	// Thus, "kyma.source" attribute will be nil for push-based otlp metrics
+	// Thus, "kyma.source" attribute will be nil for push-based OTLP metrics
 	return fmt.Sprintf("resource.attributes[\"%s\"] == nil", metric.InputSourceAttribute)
 }
 
