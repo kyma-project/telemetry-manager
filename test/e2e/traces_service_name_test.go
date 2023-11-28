@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
 )
 
@@ -49,7 +50,7 @@ var _ = Describe("Traces Service Name", Label("tracing"), func() {
 		pipelineName = tracePipeline.Name()
 		objs = append(objs, tracePipeline.K8sObject())
 
-		objs = append(objs, servicenamebundle.K8sObjects(mockNs, servicenamebundle.SignalTypeTraces)...)
+		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeTraces)...)
 		return objs
 	}
 

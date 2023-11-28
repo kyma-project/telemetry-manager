@@ -1,11 +1,42 @@
-package servicenamebundle
+package telemetrygen
 
 import (
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
-func makeTelemetryGenPodSpec(signalType SignalType) corev1.PodSpec {
+type SignalType string
+
+type Metric struct {
+	Type   pmetric.MetricType
+	Name   string
+	Labels []string
+}
+
+var (
+	MetricGen = Metric{
+		Type: pmetric.MetricTypeGauge,
+		Name: "gen",
+	}
+
+	MetricNames = []string{
+		MetricGen.Name,
+	}
+)
+
+const (
+	SignalTypeTraces  = "traces"
+	SignalTypeMetrics = "metrics"
+)
+
+func New(namespace string) *kitk8s.Pod {
+	return kitk8s.NewPod("telemetrygen", namespace).WithPodSpec(PodSpec(SignalTypeMetrics))
+}
+
+func PodSpec(signalType SignalType) corev1.PodSpec {
 	var gatewayPushURL string
 	if signalType == SignalTypeTraces {
 		gatewayPushURL = "telemetry-otlp-traces.kyma-system:4317"

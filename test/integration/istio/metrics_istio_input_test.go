@@ -15,14 +15,17 @@ import (
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 	const (
-		mockNs          = "metric-istio-input"
-		mockBackendName = "metric-agent-receiver"
+		backendNs   = "istio-metric-istio-input"
+		backendName = "backend"
+		app1Ns      = "app-1"
+		app2Ns      = "app-2"
 	)
 
 	// https://istio.io/latest/docs/reference/config/metrics/
@@ -68,22 +71,25 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		telemetryExportURL string
 	)
 
-	// Given that the metric agent/gateway components are already in the service mesh,
-	// there is no need to deploy any additional workloads for this purpose.
 	makeResources := func() []client.Object {
 		var objs []client.Object
+		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject(),
+			kitk8s.NewNamespace(app1Ns, kitk8s.WithIstioInjection()).K8sObject(),
+			kitk8s.NewNamespace(app2Ns, kitk8s.WithIstioInjection()).K8sObject())
 
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
-
-		// Mocks namespace objects
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
+		mockBackend := backend.New(backendName, backendNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-istio-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			IstioInput(true)
+			OtlpInput(false).
+			IstioInput(true, kitmetric.IncludeNamespaces(app1Ns))
 		objs = append(objs, metricPipeline.K8sObject())
+
+		app1 := kitk8s.NewPod("app-1", app1Ns).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics))
+		app2 := kitk8s.NewPod("app-2", app2Ns).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics))
+		objs = append(objs, app1.K8sObject(), app2.K8sObject())
 
 		return objs
 	}
@@ -104,7 +110,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backendName, Namespace: backendNs})
 		})
 
 		It("Should have a running metric agent daemonset", func() {
@@ -131,6 +137,14 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 					ContainMd(ContainMetric(ContainDataPointAttrs(HaveKey(BeElementOf(istioProxyMetricResourceAttributes))))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should deliver metrics from app1Ns", func() {
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, app1Ns, istioProxyMetricNames)
+		})
+
+		It("Should not deliver metrics from app2Ns", func() {
+			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURL, app2Ns)
 		})
 	})
 })

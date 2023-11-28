@@ -152,11 +152,10 @@ metadata:
   name: metricpipeline-sample
 spec:
   input:
-    application:
-      runtime:
-        enabled: true
-      prometheus:
-        enabled: true
+    runtime:
+      enabled: true
+    prometheus:
+      enabled: true
   output:
     otlp:
       endpoint:

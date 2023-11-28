@@ -10,6 +10,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
@@ -87,16 +88,39 @@ func makeServiceConfig() config.Service {
 
 // addComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.MetricPipeline.
 func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
-	if enableDropIfInputSourceRuntime(pipeline) {
+	input := pipeline.Spec.Input
+	if !*input.Runtime.Enabled {
 		cfg.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}
-
-	if enableDropIfInputSourcePrometheus(pipeline) {
+	if !*input.Prometheus.Enabled {
 		cfg.Processors.DropIfInputSourcePrometheus = makeDropIfInputSourcePrometheusConfig()
 	}
-
-	if enableDropIfInputSourceIstio(pipeline) {
+	if !*input.Istio.Enabled {
 		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
+	}
+	if !*input.Otlp.Enabled {
+		cfg.Processors.DropIfInputSourceOtlp = makeDropIfInputSourceOtlpConfig()
+	}
+
+	if cfg.Processors.NamespaceFilters == nil {
+		cfg.Processors.NamespaceFilters = make(NamespaceFilters)
+	}
+
+	if shouldFilterByNamespace(input.Runtime.Enabled, input.Runtime.Namespaces) {
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceRuntime)
+		cfg.Processors.NamespaceFilters[processorName] = makeFilterByNamespaceRuntimeInputConfig(pipeline.Spec.Input.Runtime.Namespaces)
+	}
+	if shouldFilterByNamespace(input.Prometheus.Enabled, input.Prometheus.Namespaces) {
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourcePrometheus)
+		cfg.Processors.NamespaceFilters[processorName] = makeFilterByNamespacePrometheusInputConfig(pipeline.Spec.Input.Prometheus.Namespaces)
+	}
+	if shouldFilterByNamespace(input.Istio.Enabled, input.Istio.Namespaces) {
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceIstio)
+		cfg.Processors.NamespaceFilters[processorName] = makeFilterByNamespaceIstioInputConfig(pipeline.Spec.Input.Istio.Namespaces)
+	}
+	if shouldFilterByNamespace(input.Otlp.Enabled, input.Otlp.Namespaces) {
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceOtlp)
+		cfg.Processors.NamespaceFilters[processorName] = makeFilterByNamespaceOtlpInputConfig(pipeline.Spec.Input.Otlp.Namespaces)
 	}
 
 	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
@@ -118,21 +142,40 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs ...string) config.Pipeline {
 	sort.Strings(exporterIDs)
 
-	processors := []string{"memory_limiter", "k8sattributes", "resource/insert-cluster-name", "transform/resolve-service-name"}
+	processors := []string{"memory_limiter", "k8sattributes"}
 
-	if enableDropIfInputSourceRuntime(pipeline) {
+	input := pipeline.Spec.Input
+	if !*input.Runtime.Enabled {
 		processors = append(processors, "filter/drop-if-input-source-runtime")
 	}
-
-	if enableDropIfInputSourcePrometheus(pipeline) {
+	if !*input.Prometheus.Enabled {
 		processors = append(processors, "filter/drop-if-input-source-prometheus")
 	}
-
-	if enableDropIfInputSourceIstio(pipeline) {
+	if !*input.Istio.Enabled {
 		processors = append(processors, "filter/drop-if-input-source-istio")
 	}
+	if !*input.Otlp.Enabled {
+		processors = append(processors, "filter/drop-if-input-source-otlp")
+	}
 
-	processors = append(processors, "resource/drop-kyma-attributes", "batch")
+	if shouldFilterByNamespace(input.Runtime.Enabled, input.Runtime.Namespaces) {
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceRuntime)
+		processors = append(processors, processorName)
+	}
+	if shouldFilterByNamespace(input.Prometheus.Enabled, input.Prometheus.Namespaces) {
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourcePrometheus)
+		processors = append(processors, processorName)
+	}
+	if shouldFilterByNamespace(input.Istio.Enabled, input.Istio.Namespaces) {
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceIstio)
+		processors = append(processors, processorName)
+	}
+	if shouldFilterByNamespace(input.Otlp.Enabled, input.Otlp.Namespaces) {
+		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceOtlp)
+		processors = append(processors, processorName)
+	}
+
+	processors = append(processors, "resource/insert-cluster-name", "transform/resolve-service-name", "resource/drop-kyma-attributes", "batch")
 
 	return config.Pipeline{
 		Receivers:  []string{"otlp"},
@@ -141,17 +184,10 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 	}
 }
 
-func enableDropIfInputSourceRuntime(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	appInput := pipeline.Spec.Input.Application
-	return !appInput.Runtime.Enabled
+func shouldFilterByNamespace(enabled *bool, namespaceSelector telemetryv1alpha1.MetricPipelineInputNamespaceSelector) bool {
+	return *enabled && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0 || !*namespaceSelector.System)
 }
 
-func enableDropIfInputSourcePrometheus(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	appInput := pipeline.Spec.Input.Application
-	return !appInput.Prometheus.Enabled
-}
-
-func enableDropIfInputSourceIstio(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	appInput := pipeline.Spec.Input.Application
-	return !appInput.Istio.Enabled
+func getNamespaceFilterProcessorName(pipelineName string, inputSourceType metric.InputSourceType) string {
+	return fmt.Sprintf("filter/%s-filter-by-namespace-%s-input", pipelineName, inputSourceType)
 }

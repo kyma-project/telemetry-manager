@@ -30,25 +30,25 @@ data:
             children:
               - name: Prometheus
                 widget: Panel
-                visibility: $exists(spec.input.application.prometheus)
+                visibility: $exists(spec.input.prometheus)
                 children:
                   - name: Enabled
-                    source: spec.input.application.prometheus.enabled
-                    visibility: $exists(spec.input.application.prometheus.enabled)
+                    source: spec.input.prometheus.enabled
+                    visibility: $exists(spec.input.prometheus.enabled)
               - name: Istio
                 widget: Panel
-                visibility: $exists(spec.input.application.istio)
+                visibility: $exists(spec.input.istio)
                 children:
                   - name: Enabled
-                    source: spec.input.application.istio.enabled
-                    visibility: $exists(spec.input.application.istio.enabled)
+                    source: spec.input.istio.enabled
+                    visibility: $exists(spec.input.istio.enabled)
               - name: Runtime
                 widget: Panel
-                visibility: $exists(spec.input.application.runtime)
+                visibility: $exists(spec.input.runtime)
                 children:
                   - name: Enabled
-                    source: spec.input.application.runtime.enabled
-                    visibility: $exists(spec.input.application.runtime.enabled)
+                    source: spec.input.runtime.enabled
+                    visibility: $exists(spec.input.runtime.enabled)
       - widget: Panel
         name: Output
         children:

@@ -10,4 +10,5 @@ const (
 	InputSourceRuntime    InputSourceType = "runtime"
 	InputSourcePrometheus InputSourceType = "prometheus"
 	InputSourceIstio      InputSourceType = "istio"
+	InputSourceOtlp       InputSourceType = "otlp"
 )

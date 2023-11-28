@@ -74,6 +74,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := r.Get(ctx, req.NamespacedName, &metricPipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	telemetryv1alpha1.SetMetricPipelineDefaults(&metricPipeline)
 
 	return ctrl.Result{}, r.doReconcile(ctx, &metricPipeline)
 }
@@ -104,6 +105,9 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	var allPipelinesList telemetryv1alpha1.MetricPipelineList
 	if err = r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
+	}
+	for i := range allPipelinesList.Items {
+		telemetryv1alpha1.SetMetricPipelineDefaults(&allPipelinesList.Items[i])
 	}
 	deployablePipelines, err := getDeployableMetricPipelines(ctx, allPipelinesList.Items, r, lock)
 	if err != nil {
@@ -152,7 +156,7 @@ func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv
 }
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Application.Runtime.Enabled || pipeline.Spec.Input.Application.Prometheus.Enabled || pipeline.Spec.Input.Application.Istio.Enabled
+	return *pipeline.Spec.Input.Runtime.Enabled || *pipeline.Spec.Input.Prometheus.Enabled || *pipeline.Spec.Input.Istio.Enabled
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
