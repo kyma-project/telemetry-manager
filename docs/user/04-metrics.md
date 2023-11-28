@@ -33,7 +33,7 @@ Optionally, the Telemetry module provides a DaemonSet of an [OTel Collector](htt
 
 ### Metric Gateway
 
-In a Kyma cluster, the metric gateway is the central component to which all components can send their individual metrics. The gateway collects, enriches, and dispatches the data to the configured backend, see the more general [Gateway documentation](./gateways.md) for more information.
+In a Kyma cluster, the metric gateway is the central component to which all components can send their individual metrics. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see the [Gateway documentation](./gateways.md).
 
 ### Metric Agent
 

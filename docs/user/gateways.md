@@ -38,4 +38,4 @@ The Telemetry module will detect automatically is Istio is available and will in
 
 ![Gateways-Istio](assets/gateways-istio.drawio.svg)
 
-Clients being in the Istio service mesh will transparently communicate to the Gateway using mTLS. Clients not leveraging Istio will still be able to communicate in plain text mode. The same pattern applies for the communication to the backends running in the cluster. External clusters will use the configuration as specified in the Pipelines output section.
+Clients in the Istio service mesh transparently communicate to the gateway with mTLS. Clients that don't use Istio can communicate with the gateway in plain text mode. The same pattern applies for the communication to the backends running in the cluster. External clusters use the configuration as specified in the pipelines output section.

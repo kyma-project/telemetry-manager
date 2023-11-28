@@ -34,7 +34,7 @@ The Telemetry module provides an in-cluster central deployment of an [OTel Colle
 
 ### Trace Gateway
 
-In a Kyma cluster, the trace gateway is the central component to which all components can send their individual spans. The gateway collects, enriches, and dispatches the data to the configured backend, see the more general [Gateway documentation](./gateways.md) for more information.
+In a Kyma cluster, the trace gateway is the central component to which all components can send their individual spans. The gateway collects, enriches, and dispatches the data to the configured backend. For more information, see the [Gateway documentation](./gateways.md).
 
 ### Telemetry Manager
 
