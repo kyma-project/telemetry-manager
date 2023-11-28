@@ -38,11 +38,11 @@ type Reconciler struct {
 	client.Client
 	config             Config
 	prober             DeploymentProber
-	overridesHandler   overrides.GlobalConfigHandler
+	overridesHandler   *overrides.Handler
 	istioStatusChecker istioStatusChecker
 }
 
-func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
+func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
 		Client:             client,
 		config:             config,
@@ -55,7 +55,7 @@ func NewReconciler(client client.Client, config Config, prober DeploymentProber,
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logf.FromContext(ctx).V(1).Info("Reconciliation triggered")
 
-	overrideConfig, err := r.overridesHandler.UpdateOverrideConfig(ctx, r.config.OverridesConfigMapName)
+	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx, r.config.OverridesConfigMapName)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

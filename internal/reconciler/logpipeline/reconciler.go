@@ -90,7 +90,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	log := logf.FromContext(ctx)
 	log.V(1).Info("Reconciliation triggered")
 
-	overrideConfig, err := r.overridesHandler.UpdateOverrideConfig(ctx, r.config.OverrideConfigMap)
+	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx, r.config.OverrideConfigMap)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

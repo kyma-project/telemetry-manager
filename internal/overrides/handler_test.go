@@ -1,4 +1,4 @@
-package kubernetes
+package overrides
 
 import (
 	"context"
@@ -23,16 +23,16 @@ tracing:
 		Data:       map[string]string{"override-config": conf},
 	}
 	fakeClient := fake.NewClientBuilder().WithObjects(configMap).Build()
-	sut := ConfigmapProber{fakeClient}
-	cm, err := sut.ReadConfigMapOrEmpty(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+	sut := fakeClient
+	cm, err := readConfigMapOrEmpty(context.Background(), sut, types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 	require.NoError(t, err)
 	require.Equal(t, conf, cm)
 }
 
 func TestConfigMapNotExist(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
-	sut := ConfigmapProber{fakeClient}
-	cm, err := sut.ReadConfigMapOrEmpty(context.Background(), types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
+	sut := fakeClient
+	cm, err := readConfigMapOrEmpty(context.Background(), sut, types.NamespacedName{Name: "foo", Namespace: "telemetry-system"})
 	require.NoError(t, err)
 	require.Equal(t, "", cm)
 }

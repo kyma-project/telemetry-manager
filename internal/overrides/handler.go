@@ -7,65 +7,46 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type GlobalConfigHandler interface {
-	SyncLogLevel(config GlobalConfig) error
-	UpdateOverrideConfig(ctx context.Context, overrideConfigMap types.NamespacedName) (Config, error)
-}
-
-//go:generate mockery --name ConfigMapProber --filename configmap_prober.go
-type ConfigMapProber interface {
-	ReadConfigMapOrEmpty(ctx context.Context, name types.NamespacedName) (string, error)
-}
-
+// TODO: Move into Handler
 type LogLevelReconfigurer struct {
 	Atomic  zap.AtomicLevel
 	Default string
 }
 
-type Config struct {
-	Tracing TracingConfig `yaml:"tracing,omitempty"`
-	Logging LoggingConfig `yaml:"logging,omitempty"`
-	Metrics MetricConfig  `yaml:"metrics,omitempty"`
-	Global  GlobalConfig  `yaml:"global,omitempty"`
-}
-
-type TracingConfig struct {
-	Paused bool `yaml:"paused,omitempty"`
-}
-
-type LoggingConfig struct {
-	Paused bool `yaml:"paused,omitempty"`
-}
-
-type MetricConfig struct {
-	Paused bool `yaml:"paused,omitempty"`
-}
-
-type GlobalConfig struct {
-	LogLevel string `yaml:"logLevel,omitempty"`
-}
-
 type Handler struct {
 	logLevelChanger *LogLevelReconfigurer
-	cmProber        ConfigMapProber
+	client          client.Reader
+	config          HandlerConfig
 }
 
-func New(cmProber ConfigMapProber, atomicLevel zap.AtomicLevel) *Handler {
+type HandlerConfig struct {
+	OverridesConfigMapName types.NamespacedName
+	OverridesConfigMapKey  string
+}
+
+// TODO: move to main and initialize HandlerConfig there
+const overrideConfigFileName = "override-config"
+
+func New(client client.Reader, atomicLevel zap.AtomicLevel, config HandlerConfig) *Handler {
 	var m Handler
 	m.logLevelChanger = NewLogReconfigurer(atomicLevel)
-	m.cmProber = cmProber
+	m.client = client
+	m.config = config
 	return &m
 }
 
-func (m *Handler) UpdateOverrideConfig(ctx context.Context, overrideConfigMap types.NamespacedName) (Config, error) {
+func (m *Handler) LoadOverrides(ctx context.Context) (Config, error) {
 	log := logf.FromContext(ctx)
 	var overrideConfig Config
 
-	config, err := m.cmProber.ReadConfigMapOrEmpty(ctx, overrideConfigMap)
+	config, err := m.readConfigMapOrEmpty(ctx)
 	if err != nil {
 		return overrideConfig, err
 	}
@@ -111,4 +92,21 @@ func (l *LogLevelReconfigurer) changeLogLevel(logLevel string) error {
 
 	l.Atomic.SetLevel(parsedLevel)
 	return nil
+}
+
+func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
+	log := logf.FromContext(ctx)
+	var cm corev1.ConfigMap
+	cmName := h.config.OverridesConfigMapName
+	if err := h.client.Get(ctx, cmName, &cm); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.V(1).Info(fmt.Sprintf("Could not get  %s/%s Configmap, looks like its not present", cmName.Namespace, cmName.Name))
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to get %s/%s Configmap: %v", cmName.Namespace, cmName.Name, err)
+	}
+	if data, ok := cm.Data[h.config.OverridesConfigMapKey]; ok {
+		return data, nil
+	}
+	return "", nil
 }

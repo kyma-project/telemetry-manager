@@ -468,7 +468,7 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 			MemoryRequest:               resource.MustParse(fluentBitMemoryRequest),
 		},
 	}
-	overridesHandler := overrides.New(&kubernetes.ConfigmapProber{Client: client}, atomicLevel)
+	overridesHandler := overrides.New(client, atomicLevel)
 
 	return telemetrycontrollers.NewLogPipelineReconciler(
 		client,
@@ -481,7 +481,7 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
 		DaemonSet:        types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 	}
-	overridesHandler := overrides.New(&kubernetes.ConfigmapProber{Client: client}, atomicLevel)
+	overridesHandler := overrides.New(client, atomicLevel)
 
 	return telemetrycontrollers.NewLogParserReconciler(
 		client,
@@ -539,7 +539,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		MaxPipelines:           maxTracePipelines,
 	}
-	overridesHandler := overrides.New(&kubernetes.ConfigmapProber{Client: client}, atomicLevel)
+	overridesHandler := overrides.New(client, atomicLevel)
 
 	return telemetrycontrollers.NewTracePipelineReconciler(
 		client,
@@ -586,7 +586,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 		MaxPipelines:           maxMetricPipelines,
 	}
 
-	overridesHandler := overrides.New(&kubernetes.ConfigmapProber{Client: client}, atomicLevel)
+	overridesHandler := overrides.New(client, atomicLevel)
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,
