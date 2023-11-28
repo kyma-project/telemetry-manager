@@ -48,9 +48,9 @@ For more information, see [Telemetry Manager](01-manager.md).
 
 ### Gateways
 
-The Traces and Metric feature each share the common approach of providing a gateway based on the [OTel Collector](https://opentelemetry.io/docs/collector/). It acts as a central point in the cluster to push data in the OTLP format. From here, the data gets enriched and filtered and then dispatched as defined in the indivisual Pipeline resources.
+The Traces and Metric feature each share the common approach of providing a gateway based on the [OTel Collector](https://opentelemetry.io/docs/collector/). It acts as a central point in the cluster to push data in the OTLP format. From here, the data is enriched and filtered and then dispatched as defined in the individual Pipeline resources.
 
-For more information on the general gateway concept, see [Gateways](gateways.md).
+For more information, see [Gateways](gateways.md).
 
 ### Log Agent
 
@@ -62,7 +62,7 @@ For more information, see [Logs](02-logs.md).
 
 The trace gateway is based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). It provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the trace signals. According to a TracePipeline configuration, the gateway processes and ships the trace data to a target system.
 
-For more information about the traces feature, see [Traces](03-traces.md). For the gateway concept in general, see [Gateways](gateways.md).
+For more information, see [Traces](03-traces.md) and [Gateways](gateways.md).
 
 ### Metric Gateway/Agent
 
@@ -70,11 +70,11 @@ For more information about the traces feature, see [Traces](03-traces.md). For t
 
 The metric gateway and agent are based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). The gateway provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the metric signals. The agent scrapes annotated Prometheus-based workloads. According to a MetricPipeline configuration, the gateway processes and ships the metric data to a target system.
 
-For more information about the metrics feature, see [Metrics](04-metrics.md). For the gateway concept in general, see [Gateways](gateways.md).
+For more information, see [Metrics](04-metrics.md) and [Gateways](gateways.md).
 
 ## API / Custom Resource Definitions
 
-The API of the Telemetry module is based on Kubernetes Custom Resource Definitions (CRD) which are extending the Kubernetes API with custom additions. In the following the specification of the Telemetry module API can be introspected:
+The API of the Telemetry module is based on Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions. To inspect the specification of the Telemetry module API, see:
 
 - [Telemetry CRD](resources/01-telemetry.md)
 - [LogPipeline CRD](resources/02-logpipeline.md)
