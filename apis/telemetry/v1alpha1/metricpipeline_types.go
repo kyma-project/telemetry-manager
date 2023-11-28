@@ -101,7 +101,7 @@ type MetricPipelineIstioInput struct {
 type MetricPipelineOtlpInput struct {
 	// If enabled, push-based OTLP metrics are collected. The default is `true`.
 	Enabled *bool `json:"enabled,omitempty"`
-	// Describes whether push-based OTLP metrics from specific Namespaces are selected. System namespaces are disabled by default.
+	// Describes whether push-based OTLP metrics from specific Namespaces are selected. System Namespaces are disabled by default.
 	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
