@@ -377,7 +377,7 @@ spec:
 ```
 The agent will start pulling all Istio metrics from Istio sidecars and the push-based OTLP metrics will be dropped. Note that the `otlp` input is enabled by default.
 ### Step 8: Add Filters
-To filter metrics by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the Namespaces from which metrics are collected or the Namespaces from which metrics are dropped, or choose to collect metrics from all Namespaces including the system Namespaces `kube-system`, `istio-system` and `kyma-system`. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md). 
+To filter metrics by Namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the Namespaces from which metrics are collected or the Namespaces from which metrics are dropped, or choose to collect metrics from all Namespaces including the system Namespaces `kube-system`, `istio-system` and `kyma-system`. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md). 
 
 The following example collects runtime metrics only from the `foo` and `bar` Namespaces:
 ```yaml
