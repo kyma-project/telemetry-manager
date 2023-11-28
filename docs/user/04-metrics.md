@@ -419,7 +419,7 @@ spec:
       endpoint:
         value: https://backend.example.com:4317
 ```
-Note that the metrics from system Namespaces are dropped by default for the `prometheus`, `runtime` and `otlp` inputs. However, the metrics from system namespaces are collected by default for the `istio` input.
+Note that the metrics from system Namespaces are dropped by default for the `prometheus`, `runtime`, and `otlp` inputs. However, the metrics from system Namespaces are collected by default for the `istio` input.
 
 The following example collects runtime metrics from all Namespaces including system Namespaces:
 ```yaml
