@@ -4,26 +4,31 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
-	"github.com/kyma-project/telemetry-manager/internal/logger"
 )
 
 type LogLevelChanger interface {
-	ChangeLogLevel(level string) error
-	SetDefaultLogLevel() error
+	changeLogLevel(level string) error
+	setDefaultLogLevel() error
 }
 
 type GlobalConfigHandler interface {
-	CheckGlobalConfig(config GlobalConfig) error
+	SyncLogLevel(config GlobalConfig) error
 	UpdateOverrideConfig(ctx context.Context, overrideConfigMap types.NamespacedName) (Config, error)
 }
 
 //go:generate mockery --name ConfigMapProber --filename configmap_prober.go
 type ConfigMapProber interface {
 	ReadConfigMapOrEmpty(ctx context.Context, name types.NamespacedName) (string, error)
+}
+
+type LogLevelReconfigurer struct {
+	Atomic  zap.AtomicLevel
+	Default string
 }
 
 type Config struct {
@@ -54,7 +59,7 @@ type Handler struct {
 	cmProber        ConfigMapProber
 }
 
-func New(loglevelChanger *logger.LogLevelReconfigurer, cmProber ConfigMapProber) *Handler {
+func New(loglevelChanger *LogLevelReconfigurer, cmProber ConfigMapProber) *Handler {
 	var m Handler
 	m.logLevelChanger = loglevelChanger
 	m.cmProber = cmProber
@@ -84,10 +89,31 @@ func (m *Handler) UpdateOverrideConfig(ctx context.Context, overrideConfigMap ty
 	return overrideConfig, nil
 }
 
-func (m *Handler) CheckGlobalConfig(config GlobalConfig) error {
+func (m *Handler) SyncLogLevel(config GlobalConfig) error {
 	if config.LogLevel == "" {
-		return m.logLevelChanger.SetDefaultLogLevel()
+		return m.logLevelChanger.setDefaultLogLevel()
 	}
 
-	return m.logLevelChanger.ChangeLogLevel(config.LogLevel)
+	return m.logLevelChanger.changeLogLevel(config.LogLevel)
+}
+
+func NewLogReconfigurer(atomic zap.AtomicLevel) *LogLevelReconfigurer {
+	var l LogLevelReconfigurer
+	l.Atomic = atomic
+	l.Default = atomic.String()
+	return &l
+}
+
+func (l *LogLevelReconfigurer) setDefaultLogLevel() error {
+	return l.changeLogLevel(l.Default)
+}
+
+func (l *LogLevelReconfigurer) changeLogLevel(logLevel string) error {
+	parsedLevel, err := zapcore.ParseLevel(logLevel)
+	if err != nil {
+		return err
+	}
+
+	l.Atomic.SetLevel(parsedLevel)
+	return nil
 }

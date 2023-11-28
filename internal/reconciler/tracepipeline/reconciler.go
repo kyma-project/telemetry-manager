@@ -72,7 +72,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	if err := r.overridesHandler.CheckGlobalConfig(overrideConfig.Global); err != nil {
+	if err := r.overridesHandler.SyncLogLevel(overrideConfig.Global); err != nil {
 		return ctrl.Result{}, err
 	}
 	if overrideConfig.Tracing.Paused {

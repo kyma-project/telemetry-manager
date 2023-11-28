@@ -15,12 +15,12 @@ type Logger struct {
 
 // New returns a new logger with the given format and level.
 func New(level zapcore.Level, atomic zap.AtomicLevel) (*Logger, error) {
-	log, err := NewWithAtomicLevel(atomic)
+	log, err := newWithAtomicLevel(atomic)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = InitKlog(log, level); err != nil {
+	if err = initKlog(log, level); err != nil {
 		return nil, err
 	}
 
@@ -31,42 +31,20 @@ func New(level zapcore.Level, atomic zap.AtomicLevel) (*Logger, error) {
 	return &Logger{zapLogger: log.zapLogger}, nil
 }
 
-type LogLevelReconfigurer struct {
-	Atomic  zap.AtomicLevel
-	Default string
-}
-
-func NewLogReconfigurer(atomic zap.AtomicLevel) *LogLevelReconfigurer {
-	var l LogLevelReconfigurer
-	l.Atomic = atomic
-	l.Default = atomic.String()
-	return &l
-}
-
-func (l *LogLevelReconfigurer) SetDefaultLogLevel() error {
-	return l.ChangeLogLevel(l.Default)
-}
-
-func (l *LogLevelReconfigurer) ChangeLogLevel(logLevel string) error {
-	parsedLevel, err := zapcore.ParseLevel(logLevel)
-	if err != nil {
-		return err
-	}
-
-	l.Atomic.SetLevel(parsedLevel)
-	return nil
+func (l *Logger) WithContext() *zap.SugaredLogger {
+	return l.zapLogger.With(zap.Namespace("context"))
 }
 
 /*
 This function creates logger structure based on given format, atomicLevel and additional cores
 AtomicLevel structure allows to change level dynamically
 */
-func NewWithAtomicLevel(atomicLevel zap.AtomicLevel, additionalCores ...zapcore.Core) (*Logger, error) {
+func newWithAtomicLevel(atomicLevel zap.AtomicLevel, additionalCores ...zapcore.Core) (*Logger, error) {
 	return new(atomicLevel, additionalCores...)
 }
 
 func new(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Core) (*Logger, error) {
-	encoder := GetZapEncoder()
+	encoder := getZapEncoder()
 
 	defaultCore := zapcore.NewCore(
 		encoder,
@@ -77,21 +55,17 @@ func new(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Core) (*L
 	return &Logger{zap.New(zapcore.NewTee(cores...), zap.AddCaller()).Sugar()}, nil
 }
 
-func (l *Logger) WithContext() *zap.SugaredLogger {
-	return l.zapLogger.With(zap.Namespace("context"))
-}
-
 /*
 This function initialize klog which is used in k8s/go-client
 */
-func InitKlog(log *Logger, level zapcore.Level) error {
+func initKlog(log *Logger, level zapcore.Level) error {
 	zaprLogger := zapr.NewLogger(log.WithContext().Desugar())
 	zaprLogger.V((int)(level))
 	klog.SetLogger(zaprLogger)
 	return nil
 }
 
-func GetZapEncoder() zapcore.Encoder {
+func getZapEncoder() zapcore.Encoder {
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
