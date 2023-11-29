@@ -1,4 +1,4 @@
-# Install custom Jaeger in Kyma
+# Integrate with Jaeger
 
 ## Overview
 

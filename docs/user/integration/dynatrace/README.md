@@ -1,4 +1,4 @@
-# Integrate Kyma with Dynatrace
+# Integrate with Dynatrace
 
 ## Overview
 

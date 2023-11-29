@@ -1,4 +1,4 @@
-# Installing a custom Loki stack in Kyma
+# Integrate with Loki
 
 ## Overview
 The following instructions outline how to use [`Loki`](https://github.com/grafana/loki/tree/main/production/helm/loki) as a logging backend with Kyma's [LogPipeline](https://kyma-project.io/#/telemetry-manager/user/02-logs) or with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/).
