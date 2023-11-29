@@ -5,4 +5,7 @@
 - [Traces](03-traces.md)
 - [Metrics](04-metrics.md)
 - [Integration Guides](integration/README.md)
+  - [SAP Cloud Logging](integrate-sap-cloud-logging.md)
+  - [Loki](integrate-loki.md)
+  - [Jaeger](integrate-jaeger.md)
 - [Resources](resources/README.md)
