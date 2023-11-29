@@ -3,9 +3,12 @@ package gateway
 import (
 	"fmt"
 
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 )
 
 func makeProcessorsConfig() Processors {
@@ -39,9 +42,9 @@ func makeMemoryLimiterConfig() *config.MemoryLimiter {
 
 func makeDropIfInputSourceRuntimeConfig() *FilterProcessor {
 	return &FilterProcessor{
-		Metrics: FilterProcessorMetric{
+		Metrics: FilterProcessorMetrics{
 			DataPoint: []string{
-				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourceRuntime),
+				ottlexpr.ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourceRuntime)),
 			},
 		},
 	}
@@ -49,9 +52,9 @@ func makeDropIfInputSourceRuntimeConfig() *FilterProcessor {
 
 func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
 	return &FilterProcessor{
-		Metrics: FilterProcessorMetric{
+		Metrics: FilterProcessorMetrics{
 			DataPoint: []string{
-				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourcePrometheus),
+				ottlexpr.ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourcePrometheus)),
 			},
 		},
 	}
@@ -59,9 +62,19 @@ func makeDropIfInputSourcePrometheusConfig() *FilterProcessor {
 
 func makeDropIfInputSourceIstioConfig() *FilterProcessor {
 	return &FilterProcessor{
-		Metrics: FilterProcessorMetric{
+		Metrics: FilterProcessorMetrics{
 			DataPoint: []string{
-				fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", metric.InputSourceAttribute, metric.InputSourceIstio),
+				ottlexpr.ResourceAttributeEquals(metric.InputSourceAttribute, string(metric.InputSourceIstio)),
+			},
+		},
+	}
+}
+
+func makeDropIfInputSourceOtlpConfig() *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				otlpInputSource(),
 			},
 		},
 	}
@@ -72,4 +85,70 @@ func makeResolveServiceNameConfig() *TransformProcessor {
 		ErrorMode:        "ignore",
 		MetricStatements: gatewayprocs.ResolveServiceNameStatements(),
 	}
+}
+
+func makeFilterByNamespaceRuntimeInputConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceRuntime))
+}
+
+func makeFilterByNamespacePrometheusInputConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourcePrometheus))
+}
+
+func makeFilterByNamespaceIstioInputConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceIstio))
+}
+
+func makeFilterByNamespaceOtlpInputConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+	return makeFilterByNamespaceConfig(namespaceSelector, otlpInputSource())
+}
+
+func makeFilterByNamespaceConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector, inputSourceCondition string) *FilterProcessor {
+	var filterExpressions []string
+
+	if len(namespaceSelector.Exclude) > 0 {
+		namespacesConditions := createNamespacesConditions(namespaceSelector.Exclude)
+		excludeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, ottlexpr.JoinWithOr(namespacesConditions...))
+		filterExpressions = append(filterExpressions, excludeNamespacesExpr)
+	}
+
+	if len(namespaceSelector.Include) > 0 {
+		namespacesConditions := createNamespacesConditions(namespaceSelector.Include)
+		includeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, not(ottlexpr.JoinWithOr(namespacesConditions...)))
+		filterExpressions = append(filterExpressions, includeNamespacesExpr)
+	}
+
+	if !*namespaceSelector.System {
+		namespacesConditions := createNamespacesConditions(namespaces.System())
+		systemNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, ottlexpr.JoinWithOr(namespacesConditions...))
+		filterExpressions = append(filterExpressions, systemNamespacesExpr)
+	}
+
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: filterExpressions,
+		},
+	}
+}
+
+func createNamespacesConditions(namespaces []string) []string {
+	var namespacesConditions []string
+	for _, ns := range namespaces {
+		namespacesConditions = append(namespacesConditions, ottlexpr.NamespaceEquals(ns))
+	}
+	return namespacesConditions
+}
+
+func inputSourceEquals(inputSourceType metric.InputSourceType) string {
+	return ottlexpr.ResourceAttributeEquals(metric.InputSourceAttribute, string(inputSourceType))
+}
+
+func otlpInputSource() string {
+	// The "kyma.source" attribute is only set by the metric agents for runtime, Prometheus, and Istio metrics
+	// Thus, "kyma.source" attribute will be nil for push-based OTLP metrics
+	return fmt.Sprintf("resource.attributes[\"%s\"] == nil", metric.InputSourceAttribute)
+}
+
+func not(expression string) string {
+	return fmt.Sprintf("not(%s)", expression)
 }

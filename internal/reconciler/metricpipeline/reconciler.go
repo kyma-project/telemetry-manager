@@ -12,9 +12,11 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
@@ -39,7 +41,7 @@ type Reconciler struct {
 	config             Config
 	prober             DeploymentProber
 	overridesHandler   *overrides.Handler
-	istioStatusChecker istioStatusChecker
+	istioStatusChecker istiostatus.Checker
 }
 
 func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler *overrides.Handler) *Reconciler {
@@ -48,7 +50,7 @@ func NewReconciler(client client.Client, config Config, prober DeploymentProber,
 		config:             config,
 		prober:             prober,
 		overridesHandler:   overridesHandler,
-		istioStatusChecker: istioStatusChecker{client: client},
+		istioStatusChecker: istiostatus.NewChecker(client),
 	}
 }
 
@@ -72,6 +74,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := r.Get(ctx, req.NamespacedName, &metricPipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	telemetryv1alpha1.SetMetricPipelineDefaults(&metricPipeline)
 
 	return ctrl.Result{}, r.doReconcile(ctx, &metricPipeline)
 }
@@ -102,6 +105,9 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	var allPipelinesList telemetryv1alpha1.MetricPipelineList
 	if err = r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
+	}
+	for i := range allPipelinesList.Items {
+		telemetryv1alpha1.SetMetricPipelineDefaults(&allPipelinesList.Items[i])
 	}
 	deployablePipelines, err := getDeployableMetricPipelines(ctx, allPipelinesList.Items, r, lock)
 	if err != nil {
@@ -150,7 +156,7 @@ func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv
 }
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Application.Runtime.Enabled || pipeline.Spec.Input.Application.Prometheus.Enabled || pipeline.Spec.Input.Application.Istio.Enabled
+	return *pipeline.Spec.Input.Runtime.Enabled || *pipeline.Spec.Input.Prometheus.Enabled || *pipeline.Spec.Input.Istio.Enabled
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
@@ -169,9 +175,12 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
+	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
-		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars)); err != nil {
+		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
+			WithIstioConfig(fmt.Sprintf("%d", ports.Metrics), isIstioActive)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 
@@ -179,7 +188,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 }
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
-	isIstioActive := r.istioStatusChecker.isIstioActive(ctx)
+	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	agentConfig := agent.MakeConfig(types.NamespacedName{
 		Namespace: r.config.Gateway.Namespace,
 		Name:      r.config.Gateway.OTLPServiceName,

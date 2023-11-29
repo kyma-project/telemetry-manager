@@ -6,6 +6,7 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
@@ -16,9 +17,10 @@ type MetricPipelineBuilder struct {
 
 	name              string
 	endpoint          string
-	runtimeInputOn    bool
-	prometheusInputOn bool
-	istioInputOn      bool
+	otlp              telemetryv1alpha1.MetricPipelineOtlpInput
+	runtime           telemetryv1alpha1.MetricPipelineRuntimeInput
+	prometheus        telemetryv1alpha1.MetricPipelinePrometheusInput
+	istio             telemetryv1alpha1.MetricPipelineIstioInput
 	basicAuthUser     string
 	basicAuthPassword string
 
@@ -42,18 +44,63 @@ func (b *MetricPipelineBuilder) WithEndpoint(endpoint string) *MetricPipelineBui
 	return b
 }
 
-func (b *MetricPipelineBuilder) WithRuntimeInputOn(on bool) *MetricPipelineBuilder {
-	b.runtimeInputOn = on
+type InputOptions func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector)
+
+func IncludeNamespaces(namespaces ...string) InputOptions {
+	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
+		selector.Include = namespaces
+	}
+}
+
+func ExcludeNamespaces(namespaces ...string) InputOptions {
+	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
+		selector.Exclude = namespaces
+	}
+}
+
+func IncludeSystemNamespaces() InputOptions {
+	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
+		selector.System = pointer.Bool(true)
+	}
+}
+
+func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+	b.otlp = telemetryv1alpha1.MetricPipelineOtlpInput{
+		Enabled: pointer.Bool(enable),
+	}
+	for _, opt := range opts {
+		opt(&b.otlp.Namespaces)
+	}
 	return b
 }
 
-func (b *MetricPipelineBuilder) WithPrometheusInputOn(on bool) *MetricPipelineBuilder {
-	b.prometheusInputOn = on
+func (b *MetricPipelineBuilder) RuntimeInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+	b.runtime = telemetryv1alpha1.MetricPipelineRuntimeInput{
+		Enabled: pointer.Bool(enable),
+	}
+	for _, opt := range opts {
+		opt(&b.runtime.Namespaces)
+	}
 	return b
 }
 
-func (b *MetricPipelineBuilder) WithIstioInputOn(on bool) *MetricPipelineBuilder {
-	b.istioInputOn = on
+func (b *MetricPipelineBuilder) PrometheusInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+	b.prometheus = telemetryv1alpha1.MetricPipelinePrometheusInput{
+		Enabled: pointer.Bool(enable),
+	}
+	for _, opt := range opts {
+		opt(&b.prometheus.Namespaces)
+	}
+	return b
+}
+
+func (b *MetricPipelineBuilder) IstioInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+	b.istio = telemetryv1alpha1.MetricPipelineIstioInput{
+		Enabled: pointer.Bool(enable),
+	}
+	for _, opt := range opts {
+		opt(&b.istio.Namespaces)
+	}
 	return b
 }
 
@@ -87,23 +134,17 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 	if name == "" {
 		name = fmt.Sprintf("test-%d", b.randSource.Int63())
 	}
-	return telemetryv1alpha1.MetricPipeline{
+
+	pipeline := telemetryv1alpha1.MetricPipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 		Spec: telemetryv1alpha1.MetricPipelineSpec{
 			Input: telemetryv1alpha1.MetricPipelineInput{
-				Application: telemetryv1alpha1.MetricPipelineApplicationInput{
-					Runtime: telemetryv1alpha1.MetricPipelineContainerRuntimeInput{
-						Enabled: b.runtimeInputOn,
-					},
-					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-						Enabled: b.prometheusInputOn,
-					},
-					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-						Enabled: b.istioInputOn,
-					},
-				},
+				Runtime:    b.runtime,
+				Prometheus: b.prometheus,
+				Istio:      b.istio,
+				Otlp:       b.otlp,
 			},
 			Output: telemetryv1alpha1.MetricPipelineOutput{
 				Otlp: &telemetryv1alpha1.OtlpOutput{
@@ -127,4 +168,7 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 			Conditions: b.conditions,
 		},
 	}
+
+	telemetryv1alpha1.SetMetricPipelineDefaults(&pipeline)
+	return pipeline
 }

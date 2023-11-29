@@ -19,6 +19,7 @@ linters:
     - ginkgolinter
     - gocheckcompilerdirectives
     - gochecknoinits
+    - gocyclo
     - gofmt
     - goimports
     - gosec
@@ -88,6 +89,12 @@ linters-settings:
     rules:
       - name: dot-imports
         disabled: true
+
+  gocyclo:
+    # Minimal code complexity to report.
+    # Default: 30
+    # The max complexity while enabling this linter is 15. Please check if this can be reduced. Increase the threshold only if it is absolutely necessary.
+    min-complexity: 15
 
 issues:
   exclude:

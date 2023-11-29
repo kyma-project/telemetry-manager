@@ -6,6 +6,8 @@ SAP Cloud Logging is an instance-based and environment-agnostic observability se
 
 - An instance of SAP Cloud Logging with OpenTelemetry enabled to ingest distributed traces
 - A Secret named `sap-cloud-logging` in the `sap-cloud-logging-integration` namespace, holding the credentials and endpoints for the instance
+- Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html))
+- UNIX shell or Windows Subsystem for Linux (WSL) to execute commands
 
 ## Ship Logs to SAP Cloud Logging
 
@@ -88,12 +90,12 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
           uri: /customindex/istio-envoy-kyma
     EOF      
     ```
-   Kyma sets Istio access logs to disabled by default. To enable Istio access logs selectively for your workload, follow the [access logs guide](https://kyma-project.io/#/04-operation-guides/operations/obsv-03-enable-istio-access-logs).
+   Kyma sets Istio access logs to disabled by default. To enable Istio access logs selectively for your workload, follow the [access logs guide](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-30-enable-istio-access-logs).
    As a result, access logs can be analyzed in the default dashboards shipped for the SAP BTP, Kyma runtime.
 
    >**CAUTION:** The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
 
-1. Wait for the LogPipeline Kubernetes objects to be in the `Running` state:
+2. Wait for the LogPipeline Kubernetes objects to be in the `Running` state:
     ```
     kubectl get logpipelines
     ```

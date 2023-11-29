@@ -1,15 +1,15 @@
 # Image URL to use all building/pushing image targets
-IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20231106-2bbe91ce
+IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20231117-fd906e1e
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.27.1
-ISTIO_VERSION ?= 1.1.1
+ISTIO_VERSION ?= 1.2.0
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
 # Operating system type
 OS_TYPE ?= $(shell uname)
 PROJECT_DIR ?= $(shell pwd)
 ARTIFACTS ?= $(shell pwd)/artifacts
-
+GARDENER_GCP_MACHINE_TYPE ?= n1-standard-8
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -367,8 +367,7 @@ endif
 run-tests-with-git-image: ## Run e2e tests on existing cluster using image related to git commit sha
 	kubectl create namespace kyma-system
 	IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
-	make run-e2e-test-tracing
-	make run-e2e-test-metrics
+	make run-e2e-test
 	make run-integration-test-istio
 
 .PHONY: gardener-integration-test
@@ -380,7 +379,7 @@ gardener-integration-test: ## Provision gardener cluster and run integration tes
 
 .PHONY: provision-gardener
 provision-gardener: kyma ## Provision gardener cluster with latest k8s version
-	${KYMA} provision gardener gcp -c ${GARDENER_SA_PATH} -n test-${GIT_COMMIT_SHA} -p ${GARDENER_PROJECT} -s ${GARDENER_SECRET_NAME} -k ${GARDENER_K8S_VERSION}\
+	${KYMA} provision gardener gcp -t ${GARDENER_GCP_MACHINE_TYPE} -c ${GARDENER_SA_PATH} -n test-${GIT_COMMIT_SHA} -p ${GARDENER_PROJECT} -s ${GARDENER_SECRET_NAME} -k ${GARDENER_K8S_VERSION}\
 		--hibernation-start="00 ${HIBERNATION_HOUR} * * ?"
 
 .PHONY: deprovision-gardener

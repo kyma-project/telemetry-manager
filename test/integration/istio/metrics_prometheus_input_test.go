@@ -5,26 +5,24 @@ package istio
 import (
 	"net/http"
 
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Istio Metrics", Label("metrics"), func() {
+var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 	const (
-		mockNs                           = "istio-metric-mock"
+		mockNs                           = "istio-metric-prometheus-input"
 		mockBackendName                  = "metric-agent-receiver"
 		httpsAnnotatedMetricProducerName = "metric-producer-https"
 		httpAnnotatedMetricProducerName  = "metric-producer-http"
@@ -54,7 +52,6 @@ var _ = Describe("Istio Metrics", Label("metrics"), func() {
 			unannotatedMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 		}...)
 
-		// Default namespace objects
 		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			PrometheusInput(true)
@@ -86,35 +83,37 @@ var _ = Describe("Istio Metrics", Label("metrics"), func() {
 			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
-		// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
-		// targets discovered via annotated pods must have no service label
-		Context("Annotated pods", func() {
-			It("Should scrape if prometheus.io/scheme=https", func() {
-				podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
+		Context("Verify metric scraping works with annotating pods and services", Ordered, func() {
+			// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
+			// targets discovered via annotated pods must have no service label
+			Context("Annotated pods", func() {
+				It("Should scrape if prometheus.io/scheme=https", func() {
+					podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
+				})
+
+				It("Should scrape if prometheus.io/scheme=http", func() {
+					podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
+				})
+
+				It("Should scrape if prometheus.io/scheme unset", func() {
+					podScrapedMetricsShouldBeDelivered(telemetryExportURL, unannotatedMetricProducerName)
+				})
 			})
 
-			It("Should scrape if prometheus.io/scheme=http", func() {
-				podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
-			})
+			// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
+			// targets discovered via annotated service must have the service label
+			Context("Annotated services", func() {
+				It("Should scrape if prometheus.io/scheme=https", func() {
+					serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
+				})
 
-			It("Should scrape if prometheus.io/scheme unset", func() {
-				podScrapedMetricsShouldBeDelivered(telemetryExportURL, unannotatedMetricProducerName)
-			})
-		})
+				It("Should scrape if prometheus.io/scheme=http", func() {
+					serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
+				})
 
-		// here we are discovering the same metric-producer workload twice: once via the annotated service and once via the annotated pod
-		// targets discovered via annotated service must have the service label
-		Context("Annotated services", func() {
-			It("Should scrape if prometheus.io/scheme=https", func() {
-				serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
-			})
-
-			It("Should scrape if prometheus.io/scheme=http", func() {
-				serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
-			})
-
-			It("Should scrape if prometheus.io/scheme unset", func() {
-				serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, unannotatedMetricProducerName)
+				It("Should scrape if prometheus.io/scheme unset", func() {
+					serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, unannotatedMetricProducerName)
+				})
 			})
 		})
 	})
@@ -127,7 +126,7 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
 			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", podName)),
-			ContainMetric(WithName(BeElementOf(metricproducer.AllMetricNames))),
+			ContainMetric(WithName(BeElementOf(metricproducer.MetricNames))),
 		))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
@@ -139,7 +138,7 @@ func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(ContainMd(
 			ContainMetric(SatisfyAll(
-				WithName(BeElementOf(metricproducer.AllMetricNames)),
+				WithName(BeElementOf(metricproducer.MetricNames)),
 				ContainDataPointAttrs(HaveKeyWithValue("service", serviceName)),
 			)))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())

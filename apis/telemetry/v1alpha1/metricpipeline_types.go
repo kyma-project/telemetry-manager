@@ -63,36 +63,59 @@ type MetricPipelineSpec struct {
 
 // MetricPipelineInput defines the input configuration section.
 type MetricPipelineInput struct {
-	// Configures application related scraping.
-	Application MetricPipelineApplicationInput `json:"application,omitempty"`
-}
-
-// MetricPipelineApplicationInput defines the application input configuration section.
-type MetricPipelineApplicationInput struct {
 	// Configures Prometheus scraping.
 	Prometheus MetricPipelinePrometheusInput `json:"prometheus,omitempty"`
 	// Configures runtime scraping.
-	Runtime MetricPipelineContainerRuntimeInput `json:"runtime,omitempty"`
+	Runtime MetricPipelineRuntimeInput `json:"runtime,omitempty"`
 	// Configures istio-proxy metrics scraping.
 	Istio MetricPipelineIstioInput `json:"istio,omitempty"`
+	// Configures the collection of push-based metrics that use the OpenTelemetry protocol.
+	Otlp MetricPipelineOtlpInput `json:"otlp,omitempty"`
 }
 
 // MetricPipelinePrometheusInput defines the Prometheus scraping section.
 type MetricPipelinePrometheusInput struct {
-	// If enabled, Pods marked with `prometheus.io/scrape=true` annotation will be scraped.
-	Enabled bool `json:"enabled,omitempty"`
+	// If enabled, Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Describes whether Prometheus metrics from specific Namespaces are selected. System Namespaces are disabled by default.
+	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
-// MetricPipelineContainerRuntimeInput defines the runtime scraping section.
-type MetricPipelineContainerRuntimeInput struct {
-	// If enabled, workload-related Kubernetes metrics will be scraped.
-	Enabled bool `json:"enabled,omitempty"`
+// MetricPipelineRuntimeInput defines the runtime scraping section.
+type MetricPipelineRuntimeInput struct {
+	// If enabled, workload-related Kubernetes metrics are scraped. The default is `false`.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Describes whether workload-related Kubernetes metrics from specific Namespaces are selected. System Namespaces are disabled by default.
+	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
 // MetricPipelineIstioInput defines the Istio scraping section.
 type MetricPipelineIstioInput struct {
-	// If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected.
-	Enabled bool `json:"enabled,omitempty"`
+	// If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected. The default is `false`.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Describes whether istio-proxy metrics from specific Namespaces are selected. System Namespaces are enabled by default.
+	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
+}
+
+// MetricPipelineOtlpInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
+type MetricPipelineOtlpInput struct {
+	// If enabled, push-based OTLP metrics are collected. The default is `true`.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Describes whether push-based OTLP metrics from specific Namespaces are selected. System Namespaces are disabled by default.
+	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
+}
+
+// MetricPipelineInputNamespaceSelector describes whether metrics from specific Namespaces are selected.
+// +kubebuilder:validation:XValidation:rule="!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))", message="Can only define one namespace selector - either 'include', 'exclude', or 'system'"
+// +kubebuilder:validation:XValidation:rule="!((has(self.include) && size(self.include) != 0) && has(self.system))", message="Can only define one namespace selector - either 'include', 'exclude', or 'system'"
+// +kubebuilder:validation:XValidation:rule="!((has(self.exclude) && size(self.exclude) != 0) && has(self.system))", message="Can only define one namespace selector - either 'include', 'exclude', or 'system'"
+type MetricPipelineInputNamespaceSelector struct {
+	// Include metrics from the specified Namespace names only.
+	Include []string `json:"include,omitempty"`
+	// Exclude metrics from the specified Namespace names only.
+	Exclude []string `json:"exclude,omitempty"`
+	// Set to `true` to include the metrics from system Namespaces like kube-system, istio-system, and kyma-system.
+	System *bool `json:"system,omitempty"`
 }
 
 // MetricPipelineOutput defines the output configuration section.
@@ -133,29 +156,29 @@ func NewMetricPipelineCondition(reason string, condType MetricPipelineConditionT
 	}
 }
 
-func (tps *MetricPipelineStatus) GetCondition(condType MetricPipelineConditionType) *MetricPipelineCondition {
-	for cond := range tps.Conditions {
-		if tps.Conditions[cond].Type == condType {
-			return &tps.Conditions[cond]
+func (mps *MetricPipelineStatus) GetCondition(condType MetricPipelineConditionType) *MetricPipelineCondition {
+	for cond := range mps.Conditions {
+		if mps.Conditions[cond].Type == condType {
+			return &mps.Conditions[cond]
 		}
 	}
 	return nil
 }
 
-func (tps *MetricPipelineStatus) HasCondition(condition MetricPipelineConditionType) bool {
-	return tps.GetCondition(condition) != nil
+func (mps *MetricPipelineStatus) HasCondition(condition MetricPipelineConditionType) bool {
+	return mps.GetCondition(condition) != nil
 }
 
-func (tps *MetricPipelineStatus) SetCondition(cond MetricPipelineCondition) {
-	currentCond := tps.GetCondition(cond.Type)
+func (mps *MetricPipelineStatus) SetCondition(cond MetricPipelineCondition) {
+	currentCond := mps.GetCondition(cond.Type)
 	if currentCond != nil && currentCond.Reason == cond.Reason {
 		return
 	}
 	if currentCond != nil {
 		cond.LastTransitionTime = currentCond.LastTransitionTime
 	}
-	newConditions := filterMetricPipelineCondition(tps.Conditions, cond.Type)
-	tps.Conditions = append(newConditions, cond)
+	newConditions := filterMetricPipelineCondition(mps.Conditions, cond.Type)
+	mps.Conditions = append(newConditions, cond)
 }
 
 func filterMetricPipelineCondition(conditions []MetricPipelineCondition, condType MetricPipelineConditionType) []MetricPipelineCondition {

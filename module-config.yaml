@@ -1,6 +1,6 @@
 name: kyma-project.io/module/telemetry
 channel: fast
-version: 1.3.0
+version: 1.4.0
 manifest: telemetry-manager.yaml
 security: sec-scanners-config.yaml
 defaultCR: ./config/samples/operator_v1alpha1_telemetry.yaml

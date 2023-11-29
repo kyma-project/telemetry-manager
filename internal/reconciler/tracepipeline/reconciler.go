@@ -28,8 +28,10 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
@@ -50,17 +52,19 @@ type DeploymentProber interface {
 
 type Reconciler struct {
 	client.Client
-	config           Config
-	prober           DeploymentProber
-	overridesHandler *overrides.Handler
+	config             Config
+	prober             DeploymentProber
+	overridesHandler   *overrides.Handler
+	istioStatusChecker istiostatus.Checker
 }
 
 func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
-		Client:           client,
-		config:           config,
-		prober:           prober,
-		overridesHandler: overridesHandler,
+		Client:             client,
+		config:             config,
+		prober:             prober,
+		overridesHandler:   overridesHandler,
+		istioStatusChecker: istiostatus.NewChecker(client),
 	}
 }
 
@@ -171,9 +175,11 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
+	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
-		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars)); err != nil {
+		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
+			WithIstioConfig(fmt.Sprintf("%d, %d", ports.Metrics, ports.OpenCensus), isIstioActive)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 

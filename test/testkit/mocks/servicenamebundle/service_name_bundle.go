@@ -6,13 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-)
-
-type SignalType string
-
-const (
-	SignalTypeTraces  = "traces"
-	SignalTypeMetrics = "metrics"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 )
 
 const (
@@ -33,8 +27,8 @@ const (
 
 // K8sObjects generates and returns a list of Kubernetes objects
 // that are set up for testing service name enrichment.
-func K8sObjects(namespace string, signalType SignalType) []client.Object {
-	podSpec := makeTelemetryGenPodSpec(signalType)
+func K8sObjects(namespace string, signalType telemetrygen.SignalType) []client.Object {
+	podSpec := telemetrygen.PodSpec(signalType)
 	return []client.Object{
 		kitk8s.NewPod(PodWithBothLabelsName, namespace).
 			WithLabel("app.kubernetes.io/name", KubeAppLabelValue).
