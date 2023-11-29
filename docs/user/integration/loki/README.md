@@ -1,15 +1,16 @@
 # Integrate with Loki
 
 ## Overview
-The following instructions outline how to use [`Loki`](https://github.com/grafana/loki/tree/main/production/helm/loki) as a logging backend with Kyma's [LogPipeline](https://kyma-project.io/#/telemetry-manager/user/02-logs) or with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/).
 
->**CAUTION:** This example uses the Grafana Loki version, which is distributed under AGPL-3.0 only and might not be free of charge for commercial usage.
+The following instructions outline how to use [Loki](https://github.com/grafana/loki/tree/main/production/helm/loki) as a logging backend with Kyma's [LogPipeline](../../02-logs.md) or with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/).
+
+>**CAUTION:** This guide uses the Grafana Loki version, which is distributed under AGPL-3.0 only and might not be free of charge for commercial usage.
 
 ## Table of Content
 
 - [Prerequisites](#prerequisites)
 - [Preparation](#preparation)
-- [Loki installation](#loki-installation)
+- [Loki Installation](#loki-installation)
 - [Log agent installation](#log-agent-installation)
 - [Grafana installation](#grafana-installation)
 - [Grafana Exposure](#grafana-exposure)
@@ -42,9 +43,9 @@ The following instructions outline how to use [`Loki`](https://github.com/grafan
     helm repo update
     ```
 
-## Loki installation
+## Loki Installation
 
-Depending on your scalability needs and storage requirements, you can install Loki in different [Deployment modes](https://grafana.com/docs/loki/latest/fundamentals/architecture/deployment-modes/). The following instructions install Loki in a lightweight in-cluster solution that does not fulfil production-grade qualities. Consider using a scalable setup based on an object storage backend instead (see [Simple scalable deployment of Grafana Loki with Helm](https://grafana.com/docs/loki/latest/installation/helm/install-scalable/)).
+Depending on your scalability needs and storage requirements, you can install Loki in different [Deployment modes](https://grafana.com/docs/loki/latest/fundamentals/architecture/deployment-modes/). The following instructions install Loki in a lightweight in-cluster solution that does not fulfil production-grade qualities. Consider using a scalable setup based on an object storage backend instead (see [Install the simple scalable Helm chart](https://grafana.com/docs/loki/latest/installation/helm/install-scalable/)).
 
 ### Install Loki
 
@@ -54,7 +55,7 @@ You install the Loki stack with a Helm upgrade command, which installs the chart
 helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} ${HELM_LOKI_RELEASE} grafana/loki -f https://raw.githubusercontent.com/kyma-project/examples/main/loki/loki-values.yaml
 ```
 
-In any case, you can either create your own `values.yaml` file, or use the [loki-values.yaml](./loki-values.yaml) provided in this `loki` folder, which contains customized settings deviating from the default settings: The provided `values.yaml` file activates the `singleBinary` mode and disables additional components that are usually used when running Loki as a central backend. 
+In any case, you can either create your own `values.yaml` file, or use the [loki-values.yaml](./loki-values.yaml) provided in this `loki` folder, which contains customized settings deviating from the default settings: The provided `values.yaml` file activates the `singleBinary` mode and disables additional components that are usually used when running Loki as a central backend.
 
 ### Verify Loki installation
 
@@ -63,6 +64,7 @@ Check that the `loki` Pod has been created in the Namespace and is in the `Runni
 ```bash
 kubectl -n ${K8S_NAMESPACE} get pod -l app.kubernetes.io/name=loki
 ```
+
 ## Log agent installation
 
 ### Install the log agent
@@ -155,6 +157,7 @@ Because Grafana provides a very good Loki integration, you might want to install
    ```
 
 1. To enable Loki as Grafana data source, run:
+
    ```bash
    cat <<EOF | kubectl apply -n ${K8S_NAMESPACE} -f -
    apiVersion: v1
@@ -183,39 +186,47 @@ Because Grafana provides a very good Loki integration, you might want to install
    kubectl get secret --namespace ${K8S_NAMESPACE} grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
    ```
 
-1.  To access the Grafana UI with kubectl port forwarding, run:
+1. To access the Grafana UI with kubectl port forwarding, run:
+
    ```bash
    kubectl -n ${K8S_NAMESPACE} port-forward svc/grafana 3000:80
    ```
-   
+
 1. In your browser, open Grafana under `http://localhost:3000` and log in with user admin and the password you retrieved before.
   
 ## Grafana Exposure
 
 ### Expose Grafana
+
 1. To expose Grafana using the Kyma API Gateway, create an APIRule:
+
    ```bash
    kubectl -n ${K8S_NAMESPACE} apply -f https://raw.githubusercontent.com/kyma-project/examples/main/loki/apirule.yaml
    ```
+
 1. Get the public URL of your Loki instance:
+
    ```bash
    kubectl -n ${K8S_NAMESPACE} get virtualservice -l apirule.gateway.kyma-project.io/v1beta1=grafana.${K8S_NAMESPACE} -ojsonpath='{.items[*].spec.hosts[*]}'
    ```
 
 ### Add a link for Grafana to the Kyma Dashboard
+
 1. Download the `dashboard-configmap.yaml` file and change `{GRAFANA_LINK}` to the public URL of your Grafana instance.
+
    ```bash
-      curl https://raw.githubusercontent.com/kyma-project/examples/main/loki/dashboard-configmap.yaml -o dashboard-configmap.yaml
+   curl https://raw.githubusercontent.com/kyma-project/examples/main/loki/dashboard-configmap.yaml -o dashboard-configmap.yaml
    ```
 
 1. Optionally, adjust the ConfigMap: You can change the label field to change the name of the tab. If you want to move it to another category, change the category tab.
 
 1. Apply the ConfigMap, and go to Kyma Dashboard. Under the Observability section, you should see a link to the newly exposed Grafana. If you already have a busola-config, merge it with the existing one:
+
    ```bash
    kubectl apply -f dashboard-configmap.yaml 
    ```
-   
-## Cleanup
+
+## Clean up
 
 1. To remove the installation from the cluster, run:
 

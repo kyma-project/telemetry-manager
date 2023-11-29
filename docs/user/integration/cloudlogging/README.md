@@ -15,7 +15,8 @@ The Telemetry module supports the convenient shipment of applications and access
 To enable log shipment to the SAP Cloud Logging service instance follow the below procedure:
 
 1. Deploy the LogPipeline for application logs:
-    ```
+
+    ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
@@ -52,8 +53,10 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
           uri: /customindex/kyma
     EOF      
     ```
-1. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
-    ```
+
+2. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
+
+    ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: LogPipeline
@@ -90,13 +93,15 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
           uri: /customindex/istio-envoy-kyma
     EOF      
     ```
-   Kyma sets Istio access logs to disabled by default. To enable Istio access logs selectively for your workload, follow the [access logs guide](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-30-enable-istio-access-logs).
+
+   Kyma sets Istio access logs to disabled by default. To enable Istio access logs selectively for your workload, follow [Enable Istio access logs](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-30-enable-istio-access-logs).
    As a result, access logs can be analyzed in the default dashboards shipped for the SAP BTP, Kyma runtime.
 
    >**CAUTION:** The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
 
-2. Wait for the LogPipeline Kubernetes objects to be in the `Running` state:
-    ```
+3. Wait for the LogPipeline Kubernetes objects to be in the `Running` state:
+
+    ```bash
     kubectl get logpipelines
     ```
 
@@ -106,7 +111,8 @@ The Telemetry module supports ingesting [distributed traces](./../../03-traces.m
 To enable shipping traces to the SAP Cloud Logging service instance, follow the below procedure:
 
 1. Deploy the Istio Telemetry resource by executing the following command:
-    ```
+
+    ```bash
     kubectl apply -n istio-system -f - <<EOF
     apiVersion: telemetry.istio.io/v1alpha1
     kind: Telemetry
@@ -119,6 +125,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
         randomSamplingPercentage: 1.0
     EOF
     ```
+
     The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value up to 100 percent.
     > **NOTE:**
     > Be mindful of configuring the **randomSamplingPercentage** because
@@ -126,7 +133,8 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
     >  - the Kyma trace collector component does not scale automatically.
 
 2. Deploy the TracePipeline by executing the following command:
-    ```
+
+    ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
     kind: TracePipeline
@@ -158,6 +166,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
     ```
 
 3. Wait for the TracePipeline to be in the `Running` state:
-    ```
-    kubectl get tracepipelines
-    ```
+
+   ```bash
+   kubectl get tracepipelines
+   ```
