@@ -1,11 +1,7 @@
 # Integration Guides
 
-If you're interested in learning more about the Telemetry module and how to integrate it, check out these guides:
+If you're interested in learning how to integrate the Telemetry module, we've got you covered.
 
-- Install the [OpenTelemetry Demo App](https://github.com/kyma-project/examples/tree/main/trace-demo) and see it in action to learn more about distributed tracing.
+Learn about OpenTelemetry in a near real-world environment and see it in action with the [OpenTelemetry Demo App](https://github.com/kyma-project/examples/tree/main/trace-demo).
 
-- Integrate with [SAP Cloud Logging](integrate-sap-cloud-logging.md)
-
-- Push application logs to a [custom Loki stack](integrate-loki.md).
-
-- Push traces based on OTLP to a [custom Jaeger stack](integrate-jaeger.md).
+If you'd like instructions how to integrate with several back-ends, check out the guides for [SAP Cloud Logging](./cloudlogging/README.md), a [custom Loki stack](./loki/README.md), and a [custom Jaeger stack](./loki/README.md).
