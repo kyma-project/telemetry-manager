@@ -67,3 +67,34 @@ func MetricsShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExpor
 		g.Expect(err).NotTo(gomega.HaveOccurred())
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
 }
+
+func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL, namespace string, metricNames []string) {
+	gomega.Eventually(func(g gomega.Gomega) {
+		resp, err := proxyClient.Get(telemetryExportURL)
+		g.Expect(err).NotTo(gomega.HaveOccurred())
+		g.Expect(resp).To(gomega.HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(gomega.HaveHTTPBody(
+			metric.ContainMd(gomega.SatisfyAll(
+				metric.ContainMetric(metric.WithName(gomega.BeElementOf(metricNames))),
+				metric.ContainResourceAttrs(gomega.HaveKeyWithValue("k8s.namespace.name", namespace)),
+			)),
+		))
+		err = resp.Body.Close()
+		g.Expect(err).NotTo(gomega.HaveOccurred())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
+}
+
+func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL, namespace string) {
+	gomega.Consistently(func(g gomega.Gomega) {
+		resp, err := proxyClient.Get(telemetryExportURL)
+		g.Expect(err).NotTo(gomega.HaveOccurred())
+		g.Expect(resp).To(gomega.HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(gomega.HaveHTTPBody(
+			gomega.Not(metric.ContainMd(
+				metric.ContainResourceAttrs(gomega.HaveKeyWithValue("k8s.namespace.name", namespace)),
+			)),
+		))
+		err = resp.Body.Close()
+		g.Expect(err).NotTo(gomega.HaveOccurred())
+	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(gomega.Succeed())
+}

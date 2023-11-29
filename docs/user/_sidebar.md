@@ -1,6 +1,7 @@
 - [Home](/)
 - [Kyma Telemetry Module](README.md)
 - [Telemetry Manager](01-manager.md)
+- [Gateways](gateways.md)
 - [Application Logs](02-logs.md)
 - [Traces](03-traces.md)
 - [Metrics](04-metrics.md)

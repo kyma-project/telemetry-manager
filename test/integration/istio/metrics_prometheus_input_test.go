@@ -22,7 +22,7 @@ import (
 
 var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 	const (
-		mockNs                           = "metric-prometheus-input"
+		mockNs                           = "istio-metric-prometheus-input"
 		mockBackendName                  = "metric-agent-receiver"
 		httpsAnnotatedMetricProducerName = "metric-producer-https"
 		httpAnnotatedMetricProducerName  = "metric-producer-http"
@@ -126,7 +126,7 @@ func podScrapedMetricsShouldBeDelivered(proxyURL, podName string) {
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(ContainMd(SatisfyAll(
 			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", podName)),
-			ContainMetric(WithName(BeElementOf(metricproducer.AllMetricNames))),
+			ContainMetric(WithName(BeElementOf(metricproducer.MetricNames))),
 		))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
@@ -138,7 +138,7 @@ func serviceScrapedMetricsShouldBeDelivered(proxyURL, serviceName string) {
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(ContainMd(
 			ContainMetric(SatisfyAll(
-				WithName(BeElementOf(metricproducer.AllMetricNames)),
+				WithName(BeElementOf(metricproducer.MetricNames)),
 				ContainDataPointAttrs(HaveKeyWithValue("service", serviceName)),
 			)))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())

@@ -61,7 +61,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 		t.Run("runtime input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().RuntimeInput(true).Build(),
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
@@ -77,7 +77,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 		t.Run("prometheus input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build(),
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
@@ -93,7 +93,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 		t.Run("istio input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithIstioInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().IstioInput(true).Build(),
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
@@ -110,7 +110,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 		t.Run("multiple input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).WithIstioInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).IstioInput(true).Build(),
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
@@ -150,8 +150,8 @@ func TestMakeAgentConfig(t *testing.T) {
 
 		t.Run("some pipelines have runtime input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(false).Build(),
-				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().RuntimeInput(false).Build(),
+				testutils.NewMetricPipelineBuilder().RuntimeInput(true).Build(),
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
@@ -167,8 +167,8 @@ func TestMakeAgentConfig(t *testing.T) {
 
 		t.Run("all pipelines have runtime input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
-				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().RuntimeInput(true).Build(),
+				testutils.NewMetricPipelineBuilder().RuntimeInput(true).Build(),
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
@@ -184,8 +184,8 @@ func TestMakeAgentConfig(t *testing.T) {
 
 		t.Run("some pipelines have prometheus input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(false).Build(),
-				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().PrometheusInput(false).Build(),
+				testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build(),
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
@@ -201,8 +201,8 @@ func TestMakeAgentConfig(t *testing.T) {
 
 		t.Run("all pipelines have prometheus input enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
-				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build(),
+				testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build(),
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
@@ -218,8 +218,8 @@ func TestMakeAgentConfig(t *testing.T) {
 
 		t.Run("multiple input types enabled", func(t *testing.T) {
 			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
-				testutils.NewMetricPipelineBuilder().WithPrometheusInputOn(true).Build(),
-				testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).Build(),
+				testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build(),
+				testutils.NewMetricPipelineBuilder().RuntimeInput(true).Build(),
 			}, false)
 
 			require.NotNil(t, collectorConfig.Processors.DeleteServiceName)
@@ -259,7 +259,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				pipelines := []v1alpha1.MetricPipeline{
-					testutils.NewMetricPipelineBuilder().WithRuntimeInputOn(true).WithPrometheusInputOn(true).WithIstioInputOn(true).Build(),
+					testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).IstioInput(true).Build(),
 				}
 				config := MakeConfig(gatewayServiceName, pipelines, tt.istioActive)
 				configYAML, err := yaml.Marshal(config)
