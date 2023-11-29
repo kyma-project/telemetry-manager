@@ -1,13 +1,13 @@
 # Gateways
 
-Both the traces and the metrics feature are based on a gateway, which is provisioned as soon as you define any Pipeline resource. All telemetry data of the related domain passes the gateway, so it acts as a central point and provides the following benefits:
+Both, the traces and the metrics feature, are based on a gateway, which is provisioned as soon as you define any Pipeline resource. All telemetry data of the related domain passes the gateway, so it acts as a central point and provides the following benefits:
 - [Data Enrichment](#data-enrichment) to achieve a certain data quality
 - Filtering to apply namespace filtering and remove noisy system data (individually per domain)
 - Dispatching to the configured backends (individually per domain)
 
-When the Istio module is available, the gateway supports mTLS for the communication from the workload to the gateway, as well as for communication to backends running in the cluster; see [Istio support](#istio-support).
+When the Istio module is available, the gateways support mTLS for the communication from the workload to the gateway, as well as for communication to backends running in the cluster; see [Istio support](#istio-support).
 
-The gateway is based on the [OTel Collector](https://opentelemetry.io/docs/collector/) and comes with a concept of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together (see [Configuration](https://opentelemetry.io/docs/collector/configuration/). Kyma's MetricPipeline provides a hardened setup of an OTel Collector and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
+The gateways are based on the [OTel Collector](https://opentelemetry.io/docs/collector/) and come with a concept of pipelines consisting of receivers, processors, and exporters, with which you can flexibly plug pipelines together (see [Configuration](https://opentelemetry.io/docs/collector/configuration/). Kyma's MetricPipeline provides a hardened setup of an OTel Collector and also abstracts the underlying pipeline concept. Such abstraction has the following benefits:
 
 - Supportability: All features are tested and supported.
 - Migratability: Smooth migration experiences when switching underlying technologies or architectures.
