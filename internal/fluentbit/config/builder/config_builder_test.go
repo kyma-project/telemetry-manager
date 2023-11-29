@@ -80,7 +80,7 @@ func TestMergeSectionsConfig(t *testing.T) {
     name             tail
     alias            foo
     db               /data/flb_foo.db
-    exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log
+    exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log,/var/log/containers/*_*_container1-*.log,/var/log/containers/*_*_container2-*.log
     multiline.parser docker, cri, go, python, java
     path             /var/log/containers/*_*_*-*.log
     read_from_head   true
@@ -102,16 +102,6 @@ func TestMergeSectionsConfig(t *testing.T) {
     kube_tag_prefix     foo.var.log.containers.
     labels              true
     merge_log           on
-
-[FILTER]
-    name    grep
-    match   foo.*
-    exclude $kubernetes['container_name'] container1|container2
-
-[FILTER]
-    name    grep
-    match   foo.*
-    exclude $kubernetes['namespace_name'] kyma-system|kube-system|istio-system|compass-system
 
 [FILTER]
     name  grep
@@ -144,6 +134,9 @@ func TestMergeSectionsConfig(t *testing.T) {
 				Application: telemetryv1alpha1.ApplicationInput{
 					Containers: telemetryv1alpha1.InputContainers{
 						Exclude: []string{"container1", "container2"},
+					},
+					Namespaces: telemetryv1alpha1.InputNamespaces{
+						System: true,
 					},
 					KeepAnnotations: true,
 					DropLabels:      false,
@@ -208,11 +201,6 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     labels              true
     merge_log           on
 
-[FILTER]
-    name    grep
-    match   foo.*
-    exclude $kubernetes['namespace_name'] kyma-system|kube-system|istio-system|compass-system
-
 [OUTPUT]
     name                     stdout
     match                    foo.*
@@ -227,6 +215,9 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 				Application: telemetryv1alpha1.ApplicationInput{
 					KeepAnnotations: true,
 					DropLabels:      false,
+					Namespaces: telemetryv1alpha1.InputNamespaces{
+						System: true,
+					},
 				},
 			},
 			Output: telemetryv1alpha1.Output{

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
 func createInputSection(pipeline *telemetryv1alpha1.LogPipeline, includePath, excludePath string) string {
@@ -23,23 +24,42 @@ func createInputSection(pipeline *telemetryv1alpha1.LogPipeline, includePath, ex
 	return inputBuilder.Build()
 }
 
-func createIncludePath(_ *telemetryv1alpha1.LogPipeline) string {
+func createIncludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
 	var toInclude []string
 
-	// TODO: add additional paths from pipeline spec
-
-	if len(toInclude) == 0 {
-		return makeLogPath("*", "*", "*")
+	if len(pipeline.Spec.Input.Application.Namespaces.Include) == 0 {
+		pipeline.Spec.Input.Application.Namespaces.Include = append(pipeline.Spec.Input.Application.Namespaces.Include, "*")
 	}
+
+	if len(pipeline.Spec.Input.Application.Containers.Include) == 0 {
+		pipeline.Spec.Input.Application.Containers.Include = append(pipeline.Spec.Input.Application.Containers.Include, "*")
+	}
+
+	for _, ns := range pipeline.Spec.Input.Application.Namespaces.Include {
+		for _, container := range pipeline.Spec.Input.Application.Containers.Include {
+			toInclude = append(toInclude, makeLogPath(ns, "*", container))
+		}
+	}
+
 	return strings.Join(toInclude, ",")
 }
 
-func createExcludePath(_ *telemetryv1alpha1.LogPipeline) string {
+func createExcludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
 	toExclude := []string{
 		makeLogPath("kyma-system", "telemetry-fluent-bit-*", "fluent-bit"),
 	}
 
-	// TODO: add additional paths from pipeline spec
+	if !pipeline.Spec.Input.Application.Namespaces.System {
+		pipeline.Spec.Input.Application.Namespaces.Exclude = append(pipeline.Spec.Input.Application.Namespaces.Exclude, namespaces.System()...)
+	}
+
+	for _, ns := range pipeline.Spec.Input.Application.Namespaces.Exclude {
+		toExclude = append(toExclude, makeLogPath(ns, "*", "*"))
+	}
+
+	for _, container := range pipeline.Spec.Input.Application.Containers.Exclude {
+		toExclude = append(toExclude, makeLogPath("*", "*", container))
+	}
 
 	return strings.Join(toExclude, ",")
 }
