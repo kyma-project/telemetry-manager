@@ -14,39 +14,32 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// TODO: Move into Handler
-type LogLevelReconfigurer struct {
-	Atomic  zap.AtomicLevel
-	Default string
-}
-
 type Handler struct {
-	logLevelChanger *LogLevelReconfigurer
-	client          client.Reader
-	config          HandlerConfig
+	client       client.Reader
+	config       HandlerConfig
+	AtomicLevel  zap.AtomicLevel
+	DefaultLevel string
 }
 
 type HandlerConfig struct {
-	OverridesConfigMapName types.NamespacedName
-	OverridesConfigMapKey  string
+	ConfigMapName types.NamespacedName
+	ConfigMapKey  string
 }
-
-// TODO: move to main and initialize HandlerConfig there
-const overrideConfigFileName = "override-config"
 
 func New(client client.Reader, atomicLevel zap.AtomicLevel, config HandlerConfig) *Handler {
-	var m Handler
-	m.logLevelChanger = NewLogReconfigurer(atomicLevel)
-	m.client = client
-	m.config = config
-	return &m
+	var h Handler
+	h.AtomicLevel = atomicLevel
+	h.DefaultLevel = h.AtomicLevel.String()
+	h.client = client
+	h.config = config
+	return &h
 }
 
-func (m *Handler) LoadOverrides(ctx context.Context) (Config, error) {
+func (h *Handler) LoadOverrides(ctx context.Context) (Config, error) {
 	log := logf.FromContext(ctx)
 	var overrideConfig Config
 
-	config, err := m.readConfigMapOrEmpty(ctx)
+	config, err := h.readConfigMapOrEmpty(ctx)
 	if err != nil {
 		return overrideConfig, err
 	}
@@ -65,39 +58,32 @@ func (m *Handler) LoadOverrides(ctx context.Context) (Config, error) {
 	return overrideConfig, nil
 }
 
-func (m *Handler) SyncLogLevel(config GlobalConfig) error {
+func (h *Handler) SyncLogLevel(config GlobalConfig) error {
 	if config.LogLevel == "" {
-		return m.logLevelChanger.setDefaultLogLevel()
+		return h.setDefaultLogLevel()
 	}
 
-	return m.logLevelChanger.changeLogLevel(config.LogLevel)
+	return h.changeLogLevel(config.LogLevel)
 }
 
-func NewLogReconfigurer(atomicLevel zap.AtomicLevel) *LogLevelReconfigurer {
-	var l LogLevelReconfigurer
-	l.Atomic = atomicLevel
-	l.Default = l.Atomic.String()
-	return &l
+func (h *Handler) setDefaultLogLevel() error {
+	return h.changeLogLevel(h.DefaultLevel)
 }
 
-func (l *LogLevelReconfigurer) setDefaultLogLevel() error {
-	return l.changeLogLevel(l.Default)
-}
-
-func (l *LogLevelReconfigurer) changeLogLevel(logLevel string) error {
+func (h *Handler) changeLogLevel(logLevel string) error {
 	parsedLevel, err := zapcore.ParseLevel(logLevel)
 	if err != nil {
 		return err
 	}
 
-	l.Atomic.SetLevel(parsedLevel)
+	h.AtomicLevel.SetLevel(parsedLevel)
 	return nil
 }
 
 func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
 	log := logf.FromContext(ctx)
 	var cm corev1.ConfigMap
-	cmName := h.config.OverridesConfigMapName
+	cmName := h.config.ConfigMapName
 	if err := h.client.Get(ctx, cmName, &cm); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.V(1).Info(fmt.Sprintf("Could not get  %s/%s Configmap, looks like its not present", cmName.Namespace, cmName.Name))
@@ -105,7 +91,7 @@ func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
 		}
 		return "", fmt.Errorf("failed to get %s/%s Configmap: %v", cmName.Namespace, cmName.Name, err)
 	}
-	if data, ok := cm.Data[h.config.OverridesConfigMapKey]; ok {
+	if data, ok := cm.Data[h.config.ConfigMapKey]; ok {
 		return data, nil
 	}
 	return "", nil

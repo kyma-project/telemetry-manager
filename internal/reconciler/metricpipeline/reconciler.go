@@ -55,7 +55,7 @@ func NewReconciler(client client.Client, config Config, prober DeploymentProber,
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logf.FromContext(ctx).V(1).Info("Reconciliation triggered")
 
-	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx, r.config.OverridesConfigMapName)
+	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
