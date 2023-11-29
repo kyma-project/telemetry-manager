@@ -15,15 +15,9 @@ type Logger struct {
 
 // New returns a new logger with the given format and level.
 func New(atomicLevel zap.AtomicLevel) (*Logger, error) {
-	log, err := newWithAtomicLevel(atomicLevel)
-	if err != nil {
-		return nil, err
-	}
-
+	log := newWithAtomicLevel(atomicLevel)
 	level := atomicLevel.Level()
-	if err = initKlog(log, level); err != nil {
-		return nil, err
-	}
+	initKlog(log, level)
 
 	// Redirects logs those are being written using standard logging mechanism to klog
 	// to avoid logs from controller-runtime being pushed to the standard logs.
@@ -40,11 +34,11 @@ func (l *Logger) WithContext() *zap.SugaredLogger {
 This function creates logger structure based on given format, atomicLevel and additional cores
 AtomicLevel structure allows to change level dynamically
 */
-func newWithAtomicLevel(atomicLevel zap.AtomicLevel, additionalCores ...zapcore.Core) (*Logger, error) {
+func newWithAtomicLevel(atomicLevel zap.AtomicLevel, additionalCores ...zapcore.Core) *Logger {
 	return new(atomicLevel, additionalCores...)
 }
 
-func new(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Core) (*Logger, error) {
+func new(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Core) *Logger {
 	encoder := getZapEncoder()
 
 	defaultCore := zapcore.NewCore(
@@ -53,17 +47,16 @@ func new(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Core) (*L
 		levelEnabler,
 	)
 	cores := append(additionalCores, defaultCore)
-	return &Logger{zap.New(zapcore.NewTee(cores...), zap.AddCaller()).Sugar()}, nil
+	return &Logger{zap.New(zapcore.NewTee(cores...), zap.AddCaller()).Sugar()}
 }
 
 /*
 This function initialize klog which is used in k8s/go-client
 */
-func initKlog(log *Logger, level zapcore.Level) error {
+func initKlog(log *Logger, level zapcore.Level) {
 	zaprLogger := zapr.NewLogger(log.WithContext().Desugar())
 	zaprLogger.V((int)(level))
 	klog.SetLogger(zaprLogger)
-	return nil
 }
 
 func getZapEncoder() zapcore.Encoder {
