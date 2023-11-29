@@ -41,10 +41,16 @@ Currently, logs are based on the Fluent Bit protocol. If you're curious about th
 
 ### Telemetry Manager
 
-Kyma's Telemetry module ships Telemetry Manager as its core component. Telemetry Manager is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that implements the Kubernetes controller pattern and manages the whole lifecycle of all other components covered in the Telemetry module. Telemetry Manager watches for the user-created Kubernetes resources: LogPipeline, TracePipeline, and, in the future, MetricPipeline. In these resources, you specify what data of a signal type to collect and where to ship it.
+Kyma's Telemetry module ships Telemetry Manager as its core component. Telemetry Manager is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that implements the Kubernetes controller pattern and manages the whole lifecycle of all other components covered in the Telemetry module. Telemetry Manager watches for the user-created Kubernetes resources: LogPipeline, TracePipeline, and MetricPipeline (Experimental). In these resources, you specify what data of a signal type to collect and where to ship it.
 If Telemetry Manager detects a configuration, it rolls out the relevant components on demand.
 
 For more information, see [Telemetry Manager](01-manager.md).
+
+### Gateways
+
+The Traces and Metric feature each share the common approach of providing a gateway based on the [OTel Collector](https://opentelemetry.io/docs/collector/). It acts as a central point in the cluster to push data in the OTLP format. From here, the data is enriched and filtered and then dispatched as defined in the individual pipeline resources.
+
+For more information, see [Gateways](gateways.md).
 
 ### Log Agent
 
@@ -56,7 +62,7 @@ For more information, see [Logs](02-logs.md).
 
 The trace gateway is based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). It provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the trace signals. According to a TracePipeline configuration, the gateway processes and ships the trace data to a target system.
 
-For details, see [Traces](03-traces.md).
+For more information, see [Traces](03-traces.md) and [Gateways](gateways.md).
 
 ### Metric Gateway/Agent
 
@@ -64,27 +70,13 @@ For details, see [Traces](03-traces.md).
 
 The metric gateway and agent are based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). The gateway provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the metric signals. The agent scrapes annotated Prometheus-based workloads. According to a MetricPipeline configuration, the gateway processes and ships the metric data to a target system.
 
-For more information, see [Metrics](04-metrics.md).
-
-### Automatic Telemetry Enrichment
-
-Kyma's Telemetry module automatically enriches your data by adding the following attributes (traces and metrics only):
-
-- `service.name`: The logical name of the service that emits the telemetry data. If not provided by the user, it is populated from Kubernetes metadata, based on the following hierarchy of labels and names:
-  1. `app.kubernetes.io/name` Pod label value.
-  2. `app` Pod label value.
-  3. Deployment/DaemonSet/StatefulSet/Job name.
-  4. Pod name.
-  5. If none of the above is available, the value is `unknown_service`.
-- `k8s.*` attributes: These attributes encapsulate various pieces of Kubernetes metadata associated with the Pod, including but not limited to:
-  1. Pod name.
-  2. Deployment/DaemonSet/StatefulSet/Job name.
-  3. Namespace.
-  4. Cluster name.
+For more information, see [Metrics](04-metrics.md) and [Gateways](gateways.md).
 
 ## API / Custom Resource Definitions
 
-- [Telemetry](resources/01-telemetry.md)
-- [LogPipeline](resources/02-logpipeline.md)
-- [TracePipeline](resources/04-tracepipeline.md)
-- [MetricPipeline](resources/05-metricpipeline.md)
+The API of the Telemetry module is based on Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions. To inspect the specification of the Telemetry module API, see:
+
+- [Telemetry CRD](resources/01-telemetry.md)
+- [LogPipeline CRD](resources/02-logpipeline.md)
+- [TracePipeline CRD](resources/04-tracepipeline.md)
+- [MetricPipeline CRD](resources/05-metricpipeline.md)
