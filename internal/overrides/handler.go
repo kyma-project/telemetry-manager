@@ -27,12 +27,12 @@ type HandlerConfig struct {
 }
 
 func New(client client.Reader, atomicLevel zap.AtomicLevel, config HandlerConfig) *Handler {
-	var h Handler
-	h.atomicLevel = atomicLevel
-	h.defaultLevel = h.atomicLevel.String()
-	h.client = client
-	h.config = config
-	return &h
+	return &Handler{
+		atomicLevel:  atomicLevel,
+		defaultLevel: atomicLevel.String(),
+		client:       client,
+		config:       config,
+	}
 }
 
 func (h *Handler) SyncOverrides(ctx context.Context) (*Config, error) {
@@ -70,6 +70,24 @@ func (h *Handler) loadOverrides(ctx context.Context) (*Config, error) {
 	return &overrideConfig, nil
 }
 
+func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
+	var cm corev1.ConfigMap
+	cmName := h.config.ConfigMapName
+	if err := h.client.Get(ctx, cmName, &cm); err != nil {
+		if apierrors.IsNotFound(err) {
+			logf.FromContext(ctx).V(1).Info("Could not find overrides configmap",
+				"name", cmName.Name,
+				"namespace", cmName.Namespace)
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to get overrides configmapp: %w", err)
+	}
+	if data, ok := cm.Data[h.config.ConfigMapKey]; ok {
+		return data, nil
+	}
+	return "", nil
+}
+
 func (h *Handler) syncLogLevel(ctx context.Context, config GlobalConfig) error {
 	var newLogLevel string
 	if config.LogLevel == "" {
@@ -98,22 +116,4 @@ func (h *Handler) changeLogLevel(ctx context.Context, logLevel string) error {
 
 	h.atomicLevel.SetLevel(newLevel)
 	return nil
-}
-
-func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
-	var cm corev1.ConfigMap
-	cmName := h.config.ConfigMapName
-	if err := h.client.Get(ctx, cmName, &cm); err != nil {
-		if apierrors.IsNotFound(err) {
-			logf.FromContext(ctx).V(1).Info("Could not find overrides configmap",
-				"name", cmName.Name,
-				"namespace", cmName.Namespace)
-			return "", nil
-		}
-		return "", fmt.Errorf("failed to get overrides configmapp: %w", err)
-	}
-	if data, ok := cm.Data[h.config.ConfigMapKey]; ok {
-		return data, nil
-	}
-	return "", nil
 }
