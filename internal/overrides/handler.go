@@ -35,30 +35,43 @@ func New(client client.Reader, atomicLevel zap.AtomicLevel, config HandlerConfig
 	return &h
 }
 
-func (h *Handler) LoadOverrides(ctx context.Context) (Config, error) {
+func (h *Handler) SyncOverrides(ctx context.Context) (*Config, error) {
+	overrideConfig, err := h.loadOverrides(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load overrides config: %w", err)
+	}
+
+	if err := h.syncLogLevel(overrideConfig.Global); err != nil {
+		return nil, fmt.Errorf("failed to sync log level: %w", err)
+	}
+
+	return overrideConfig, nil
+}
+
+func (h *Handler) loadOverrides(ctx context.Context) (*Config, error) {
 	log := logf.FromContext(ctx)
 	var overrideConfig Config
 
 	config, err := h.readConfigMapOrEmpty(ctx)
 	if err != nil {
-		return overrideConfig, err
+		return &overrideConfig, err
 	}
 
 	if len(config) == 0 {
-		return overrideConfig, nil
+		return &overrideConfig, nil
 	}
 
 	err = yaml.Unmarshal([]byte(config), &overrideConfig)
 	if err != nil {
-		return overrideConfig, err
+		return &overrideConfig, err
 	}
 
 	log.V(1).Info(fmt.Sprintf("Using override Config is: %+v", overrideConfig))
 
-	return overrideConfig, nil
+	return &overrideConfig, nil
 }
 
-func (h *Handler) SyncLogLevel(config GlobalConfig) error {
+func (h *Handler) syncLogLevel(config GlobalConfig) error {
 	if config.LogLevel == "" {
 		return h.setDefaultLogLevel()
 	}

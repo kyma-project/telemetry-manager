@@ -78,18 +78,17 @@ import (
 )
 
 var (
-	certDir                string
-	deniedFilterPlugins    string
-	deniedOutputPlugins    string
-	enableLogging          bool
-	enableTracing          bool
-	enableMetrics          bool
-	logLevel               string
-	atomicLevel            zap.AtomicLevel
-	overridesHandlerConfig overrides.HandlerConfig
-	scheme                 = runtime.NewScheme()
-	setupLog               = ctrl.Log.WithName("setup")
-	telemetryNamespace     string
+	certDir             string
+	deniedFilterPlugins string
+	deniedOutputPlugins string
+	enableLogging       bool
+	enableTracing       bool
+	enableMetrics       bool
+	logLevel            string
+	overridesHandler    *overrides.Handler
+	scheme              = runtime.NewScheme()
+	setupLog            = ctrl.Log.WithName("setup")
+	telemetryNamespace  string
 
 	maxLogPipelines    int
 	maxTracePipelines  int
@@ -273,15 +272,12 @@ func main() {
 		setupLog.Error(err, "Invalid flag provided")
 		os.Exit(1)
 	}
-
 	parsedLevel, err := zapcore.ParseLevel(logLevel)
 	if err != nil {
 		os.Exit(1)
 	}
-	atomicLevel = zap.NewAtomicLevelAt(parsedLevel)
+	atomicLevel := zap.NewAtomicLevelAt(parsedLevel)
 	ctrLogger, err := logger.New(atomicLevel)
-	overridesHandlerConfig.ConfigMapName = types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace}
-	overridesHandlerConfig.ConfigMapKey = overridesConfigMapKey
 
 	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
 	if err != nil {
@@ -344,6 +340,11 @@ func main() {
 				},
 			},
 		},
+	})
+
+	overridesHandler = overrides.New(mgr.GetClient(), atomicLevel, overrides.HandlerConfig{
+		ConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
+		ConfigMapKey:  overridesConfigMapKey,
 	})
 
 	if err != nil {
@@ -499,7 +500,6 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 			MemoryRequest:               resource.MustParse(fluentBitMemoryRequest),
 		},
 	}
-	overridesHandler := overrides.New(client, atomicLevel, overridesHandlerConfig)
 
 	return telemetrycontrollers.NewLogPipelineReconciler(
 		client,
@@ -512,7 +512,6 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
 		DaemonSet:        types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 	}
-	overridesHandler := overrides.New(client, atomicLevel, overridesHandlerConfig)
 
 	return telemetrycontrollers.NewLogParserReconciler(
 		client,
@@ -570,7 +569,6 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		MaxPipelines:           maxTracePipelines,
 	}
-	overridesHandler := overrides.New(client, atomicLevel, overridesHandlerConfig)
 
 	return telemetrycontrollers.NewTracePipelineReconciler(
 		client,
@@ -616,8 +614,6 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		MaxPipelines:           maxMetricPipelines,
 	}
-
-	overridesHandler := overrides.New(client, atomicLevel, overridesHandlerConfig)
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,
