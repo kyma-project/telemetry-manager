@@ -1,8 +1,6 @@
 # Integration Guides
 
-Kyma's Telemetry module makes it easy for you to integrate the telemetry services you need.
-
-We've got you covered with the following guides that support you step by step:
+Kyma's Telemetry module makes it easy for you to integrate the telemetry services you need. The following guides that support you step by step:
 
 Learn about OpenTelemetry in a near real-world environment and see it in action with the [OpenTelemetry Demo App](./opentelemetry-demo/README.md).
 
