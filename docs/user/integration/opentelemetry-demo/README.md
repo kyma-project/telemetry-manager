@@ -1,4 +1,4 @@
-# Install OpenTelemetry Demo Application in Kyma
+# Integrate OpenTelemetry Demo App
 
 ## Overview
 
