@@ -35,7 +35,7 @@ func New(client client.Reader, atomicLevel zap.AtomicLevel, config HandlerConfig
 	}
 }
 
-func (h *Handler) SyncOverrides(ctx context.Context) (*Config, error) {
+func (h *Handler) LoadOverrides(ctx context.Context) (*Config, error) {
 	overrideConfig, err := h.loadOverrides(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load overrides config: %w", err)
