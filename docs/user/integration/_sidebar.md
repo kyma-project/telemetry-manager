@@ -1,6 +1,0 @@
-- [Telemetry Module](../README.md)
-- Intgration Guides
-  - [OpenTelemetry Demo App](./opentelemetry-demo/README.md)
-  - [SAP Cloud Logging](./cloudlogging/README.md)
-  - [Loki](./loki/README.md)
-  - [Jaeger](./README.md)
