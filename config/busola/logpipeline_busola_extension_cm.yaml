@@ -190,7 +190,6 @@ data:
     - path: spec.input
       widget: FormGroup
       defaultExpanded: true
-      simple: true
       children:
         - name: Include Namespaces
           widget: SimpleList
@@ -246,51 +245,63 @@ data:
           children:
             - name: Host
               path: host
+              simple: true
               widget: FormGroup
               children:
                 - name: Value
                   path: value
+                  simple: true
                   widget: Text
                 - name: Secret Reference
                   path: valueFrom.secretKeyRef
+                  simple: true
                   widget: ResourceRef
                   resource:
                     kind: secret
                     version: v1
                   children:
                     - path: key
+                      simple: true
                       enum: $keys($secret.data)
             - name: User
               path: user
+              simple: true
               widget: FormGroup
               children:
                 - name: Value
                   path: value
+                  simple: true
                   widget: Text
                 - name: Secret Reference
                   path: valueFrom.secretKeyRef
+                  simple: true
                   widget: ResourceRef
                   resource:
                     kind: secret
                     version: v1
                   children:
                     - path: key
+                      simple: true
                       enum: $keys($secret.data)
             - name: Password
               path: password
+              simple: true
               widget: FormGroup
               children:
                 - name: Value
                   path: value
+                  simple: true
                   widget: Text
                 - name: Secret Reference
                   path: valueFrom.secretKeyRef
+                  simple: true
                   widget: ResourceRef
                   resource:
                     kind: secret
                     version: v1
                   children:
                     - path: key
+                      simple: true
                       enum: $keys($secret.data)
             - name: TLS
               widget: FormGroup
@@ -373,6 +384,7 @@ data:
               path: format
               widget: Text
             - name: Dedot
+              simple: true
               path: dedot
   general: |-
     resource:
