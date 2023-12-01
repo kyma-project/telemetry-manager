@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,30 +18,34 @@ func TestLoadOverrides(t *testing.T) {
 	tests := []struct {
 		name              string
 		configMapData     map[string]string
+		defaultLevel      zapcore.Level
 		expectedOverrides *Config
 		expectError       bool
-		expectedLogLevel  string
+		expectedLogLevel  zapcore.Level
 	}{
 		{
 			name:              "empty configmap",
 			configMapData:     map[string]string{},
+			defaultLevel:      zapcore.InfoLevel,
 			expectedOverrides: &Config{},
 			expectError:       false,
-			expectedLogLevel:  "info",
+			expectedLogLevel:  zapcore.InfoLevel,
 		},
 		{
 			name:              "no configmap",
 			configMapData:     nil,
+			defaultLevel:      zapcore.InfoLevel,
 			expectedOverrides: &Config{},
 			expectError:       false,
-			expectedLogLevel:  "info",
+			expectedLogLevel:  zapcore.InfoLevel,
 		},
 		{
 			name:              "invalid configmap",
 			configMapData:     map[string]string{"test-key": "invalid yaml"},
+			defaultLevel:      zapcore.InfoLevel,
 			expectedOverrides: nil,
 			expectError:       true,
-			expectedLogLevel:  "info",
+			expectedLogLevel:  zapcore.InfoLevel,
 		},
 		{
 			name: "valid configmap",
@@ -50,6 +55,7 @@ func TestLoadOverrides(t *testing.T) {
 tracing:
   paused: true`,
 			},
+			defaultLevel: zapcore.InfoLevel,
 			expectedOverrides: &Config{
 				Global: GlobalConfig{
 					LogLevel: "debug",
@@ -59,7 +65,7 @@ tracing:
 				},
 			},
 			expectError:      false,
-			expectedLogLevel: "debug",
+			expectedLogLevel: zapcore.DebugLevel,
 		},
 	}
 
@@ -79,7 +85,7 @@ tracing:
 				require.NoError(t, err)
 			}
 
-			atomicLevel := zap.NewAtomicLevelAt(zap.InfoLevel)
+			atomicLevel := zap.NewAtomicLevelAt(tt.defaultLevel)
 			handler := New(fakeClient, atomicLevel, HandlerConfig{
 				ConfigMapName: types.NamespacedName{
 					Name:      "test-configmap",
@@ -97,7 +103,45 @@ tracing:
 				assert.Equal(t, tt.expectedOverrides, overrides)
 			}
 
-			require.Equal(t, atomicLevel.String(), tt.expectedLogLevel)
+			require.Equal(t, atomicLevel.Level(), tt.expectedLogLevel)
 		})
 	}
+}
+
+func TestLoadOverridesResetsLogLevelIfNoConfigMapFound(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-configmap",
+			Namespace: "test-namespace",
+		},
+		Data: map[string]string{
+			"test-key": `global:
+  logLevel: debug
+tracing:
+  paused: true`,
+		},
+	}
+	err := fakeClient.Create(context.Background(), configMap)
+	require.NoError(t, err)
+
+	atomicLevel := zap.NewAtomicLevelAt(zapcore.InfoLevel)
+	handler := New(fakeClient, atomicLevel, HandlerConfig{
+		ConfigMapName: types.NamespacedName{
+			Name:      "test-configmap",
+			Namespace: "test-namespace",
+		},
+		ConfigMapKey: "test-key",
+	})
+
+	require.Equal(t, atomicLevel.Level(), zapcore.InfoLevel)
+
+	_, err = handler.LoadOverrides(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, atomicLevel.Level(), zapcore.DebugLevel, "Should set log level to debug after loading the overrides")
+
+	fakeClient.Delete(context.Background(), configMap)
+	_, err = handler.LoadOverrides(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, atomicLevel.Level(), zapcore.InfoLevel, "Should reset log level back to info after loading empty overrides")
 }

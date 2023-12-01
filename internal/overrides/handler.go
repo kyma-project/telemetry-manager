@@ -18,7 +18,7 @@ type Handler struct {
 	client       client.Reader
 	config       HandlerConfig
 	atomicLevel  zap.AtomicLevel
-	defaultLevel string
+	defaultLevel zapcore.Level
 }
 
 type HandlerConfig struct {
@@ -29,7 +29,7 @@ type HandlerConfig struct {
 func New(client client.Reader, atomicLevel zap.AtomicLevel, config HandlerConfig) *Handler {
 	return &Handler{
 		atomicLevel:  atomicLevel,
-		defaultLevel: atomicLevel.String(),
+		defaultLevel: atomicLevel.Level(),
 		client:       client,
 		config:       config,
 	}
@@ -89,30 +89,26 @@ func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
 }
 
 func (h *Handler) syncLogLevel(ctx context.Context, config GlobalConfig) error {
-	var newLogLevel string
+	var newLogLevel zapcore.Level
 	if config.LogLevel == "" {
 		newLogLevel = h.defaultLevel
 	} else {
-		newLogLevel = config.LogLevel
+		var err error
+		newLogLevel, err = zapcore.ParseLevel(config.LogLevel)
+		if err != nil {
+			return fmt.Errorf("failed to parse zap level: %w", err)
+		}
 	}
 
 	return h.changeLogLevel(ctx, newLogLevel)
 }
 
-func (h *Handler) changeLogLevel(ctx context.Context, logLevel string) error {
-	newLevel, err := zapcore.ParseLevel(logLevel)
-	if err != nil {
-		return fmt.Errorf("failed to parse zap level: %w", err)
-	}
-
+func (h *Handler) changeLogLevel(ctx context.Context, newLevel zapcore.Level) error {
 	oldLevel := h.atomicLevel.Level()
-	if newLevel == oldLevel {
-		return nil
-	}
 
 	logf.FromContext(ctx).V(1).Info("Changing log level",
 		"old", oldLevel,
-		"new", logLevel)
+		"new", newLevel)
 
 	h.atomicLevel.SetLevel(newLevel)
 	return nil
