@@ -2,9 +2,13 @@ package otelcollector
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"istio.io/api/security/v1beta1"
+	istiosecv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -15,44 +19,27 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestApplyGatewayResources(t *testing.T) {
-	ctx := context.Background()
-	client := fake.NewClientBuilder().Build()
-	namespace := "my-namespace"
-	name := "my-gateway"
-	cfg := "dummy otel collector config"
-	envVars := map[string][]byte{
+var (
+	namespace         = "my-namespace"
+	name              = "my-gateway"
+	cfg               = "dummy otel collector config"
+	baseCPURequest    = resource.MustParse("150m")
+	baseCPULimit      = resource.MustParse("300m")
+	baseMemoryRequest = resource.MustParse("150m")
+	baseMemoryLimit   = resource.MustParse("300m")
+	envVars           = map[string][]byte{
 		"BASIC_AUTH_HEADER": []byte("basicAuthHeader"),
 		"OTLP_ENDPOINT":     []byte("otlpEndpoint"),
 	}
-	otlpServiceName := "telemetry"
-	var replicas int32 = 3
-	baseCPURequest := resource.MustParse("150m")
-	baseCPULimit := resource.MustParse("300m")
-	baseMemoryRequest := resource.MustParse("150m")
-	baseMemoryLimit := resource.MustParse("300m")
+	otlpServiceName       = "telemetry"
+	replicas        int32 = 3
+)
 
-	gatewayConfig := &GatewayConfig{
-		Config: Config{
-			BaseName:         name,
-			Namespace:        namespace,
-			CollectorConfig:  cfg,
-			CollectorEnvVars: envVars,
-		},
-		OTLPServiceName:      otlpServiceName,
-		CanReceiveOpenCensus: true,
-		Scaling: GatewayScalingConfig{
-			Replicas: replicas,
-		},
-		Deployment: DeploymentConfig{
-			BaseCPURequest:    baseCPURequest,
-			BaseCPULimit:      baseCPULimit,
-			BaseMemoryRequest: baseMemoryRequest,
-			BaseMemoryLimit:   baseMemoryLimit,
-		},
-	}
+func TestApplyGatewayResources(t *testing.T) {
+	ctx := context.Background()
+	client := fake.NewClientBuilder().Build()
 
-	err := ApplyGatewayResources(ctx, client, gatewayConfig)
+	err := ApplyGatewayResources(ctx, client, createGatewayConfig(false))
 	require.NoError(t, err)
 
 	t.Run("should create collector config configmap", func(t *testing.T) {
@@ -296,4 +283,71 @@ func TestApplyGatewayResources(t *testing.T) {
 			TargetPort: intstr.FromInt32(55678),
 		}, svc.Spec.Ports[0])
 	})
+
+}
+func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	require.NoError(t, istiosecv1beta1.AddToScheme(scheme))
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	client := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	err := ApplyGatewayResources(ctx, client, createGatewayConfig(true))
+	require.NoError(t, err)
+
+	t.Run("It should have permissive peer authentication created", func(t *testing.T) {
+		var peerAuth istiosecv1beta1.PeerAuthentication
+		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &peerAuth))
+
+		require.Equal(t, name, peerAuth.Name)
+		require.Equal(t, v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE, peerAuth.Spec.Mtls.Mode)
+	})
+
+	t.Run("It should have istio enabled with ports excluded", func(t *testing.T) {
+		var deps appsv1.DeploymentList
+		require.NoError(t, client.List(ctx, &deps))
+		require.Len(t, deps.Items, 1)
+		dep := deps.Items[0]
+		require.Equal(t, name, dep.Name)
+		require.Equal(t, namespace, dep.Namespace)
+		require.Equal(t, replicas, *dep.Spec.Replicas)
+
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name":  name,
+			"sidecar.istio.io/inject": "true",
+		}, dep.Spec.Template.ObjectMeta.Labels, "must have expected pod labels")
+
+		//annotations
+		podAnnotations := dep.Spec.Template.ObjectMeta.Annotations
+		require.NotEmpty(t, podAnnotations["checksum/config"])
+		require.Equal(t, "TPROXY", podAnnotations["sidecar.istio.io/interceptionMode"])
+		require.Equal(t, "1111, 2222", podAnnotations["traffic.sidecar.istio.io/excludeInboundPorts"])
+
+	})
+}
+
+func createGatewayConfig(istioEnabled bool) *GatewayConfig {
+	return &GatewayConfig{
+		Config: Config{
+			BaseName:         name,
+			Namespace:        namespace,
+			CollectorConfig:  cfg,
+			CollectorEnvVars: envVars,
+		},
+		OTLPServiceName:      otlpServiceName,
+		CanReceiveOpenCensus: true,
+		Istio: IstioConfig{
+			Enabled:      istioEnabled,
+			ExcludePorts: "1111, 2222",
+		},
+		Scaling: GatewayScalingConfig{
+			Replicas: replicas,
+		},
+		Deployment: DeploymentConfig{
+			BaseCPURequest:    baseCPURequest,
+			BaseCPULimit:      baseCPULimit,
+			BaseMemoryRequest: baseMemoryRequest,
+			BaseMemoryLimit:   baseMemoryLimit,
+		},
+	}
 }
