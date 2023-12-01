@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-
 	"github.com/stretchr/testify/require"
 	"istio.io/api/security/v1beta1"
 	istiosecv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
