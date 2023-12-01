@@ -4,61 +4,100 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-const conf = `
-	global:
-	  logLevel: info
-	tracing:
-	  paused: true
-	`
-
-func setup(withConfigMap bool) (client.WithWatch, zap.AtomicLevel, HandlerConfig) {
-	const configMapKey = "override-config"
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "telemetry-system"},
-		Data:       map[string]string{configMapKey: conf},
+func TestLoadOverrides(t *testing.T) {
+	tests := []struct {
+		name              string
+		configMapData     map[string]string
+		expectedOverrides *Config
+		expectError       bool
+		expectedLogLevel  string
+	}{
+		{
+			name:              "empty configmap",
+			configMapData:     map[string]string{},
+			expectedOverrides: &Config{},
+			expectError:       false,
+			expectedLogLevel:  "info",
+		},
+		{
+			name:              "no configmap",
+			configMapData:     nil,
+			expectedOverrides: &Config{},
+			expectError:       false,
+			expectedLogLevel:  "info",
+		},
+		{
+			name:              "invalid configmap",
+			configMapData:     map[string]string{"test-key": "invalid yaml"},
+			expectedOverrides: nil,
+			expectError:       true,
+			expectedLogLevel:  "info",
+		},
+		{
+			name: "valid configmap",
+			configMapData: map[string]string{
+				"test-key": `global:
+  logLevel: debug
+tracing:
+  paused: true`,
+			},
+			expectedOverrides: &Config{
+				Global: GlobalConfig{
+					LogLevel: "debug",
+				},
+				Tracing: TracingConfig{
+					Paused: true,
+				},
+			},
+			expectError:      false,
+			expectedLogLevel: "debug",
+		},
 	}
-	var fakeClient client.WithWatch
-	if withConfigMap {
-		fakeClient = fake.NewClientBuilder().WithObjects(configMap).Build()
-	} else {
-		fakeClient = fake.NewClientBuilder().Build()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fakeClient := fake.NewClientBuilder().Build()
+			if tt.configMapData != nil {
+				configMap := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-configmap",
+						Namespace: "test-namespace",
+					},
+					Data: tt.configMapData,
+				}
+
+				err := fakeClient.Create(context.Background(), configMap)
+				require.NoError(t, err)
+			}
+
+			atomicLevel := zap.NewAtomicLevelAt(zap.InfoLevel)
+			handler := New(fakeClient, atomicLevel, HandlerConfig{
+				ConfigMapName: types.NamespacedName{
+					Name:      "test-configmap",
+					Namespace: "test-namespace",
+				},
+				ConfigMapKey: "test-key",
+			})
+
+			overrides, err := handler.LoadOverrides(context.Background())
+
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedOverrides, overrides)
+			}
+
+			require.Equal(t, atomicLevel.String(), tt.expectedLogLevel)
+		})
 	}
-	level, _ := zapcore.ParseLevel("debug")
-	atomicLevel := zap.NewAtomicLevelAt(level)
-	handlerConfig := HandlerConfig{
-		ConfigMapName: types.NamespacedName{Name: "foo", Namespace: "telemetry-system"},
-		ConfigMapKey:  configMapKey,
-	}
-
-	return fakeClient, atomicLevel, handlerConfig
-}
-
-func TestConfigMapProber(t *testing.T) {
-	fakeClient, atomicLevel, handlerConfig := setup(true)
-
-	handler := New(fakeClient, atomicLevel, handlerConfig)
-	cm, err := handler.readConfigMapOrEmpty(context.Background())
-
-	require.NoError(t, err)
-	require.Equal(t, conf, cm)
-}
-
-func TestConfigMapNotExist(t *testing.T) {
-	fakeClient, atomicLevel, handlerConfig := setup(false)
-
-	handler := New(fakeClient, atomicLevel, handlerConfig)
-	cm, err := handler.readConfigMapOrEmpty(context.Background())
-
-	require.NoError(t, err)
-	require.Equal(t, "", cm)
 }
