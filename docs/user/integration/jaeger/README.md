@@ -110,7 +110,7 @@ To see distributed traces visualized in Jaeger, follow the instructions for the 
 
 ### Integrate with Grafana
 
-Jaeger can be provided as a data source integrated into Grafana. For example, it can be part of a Grafana installation as described in the [Prometheus tutorial](./../prometheus/README.md).
+Jaeger can be provided as a data source integrated into Grafana. For example, it can be part of a Grafana installation as described in the [Prometheus tutorial](https://github.com/kyma-project/examples/tree/main/prometheus).
 
 1. To have a Jaeger data source as part of the Grafana installation, deploy a Grafana data source in the following way:
 
