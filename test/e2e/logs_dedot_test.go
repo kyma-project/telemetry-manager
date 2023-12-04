@@ -43,7 +43,7 @@ var _ = Describe("Logs Dedot", Label("logging"), Ordered, func() {
 		logPipeline := kitlog.NewPipeline(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
-			WithIncludeContainer([]string{logProducerName})
+			WithIncludeContainers([]string{logProducerName})
 		objs = append(objs, logPipeline.K8sObject())
 
 		return objs

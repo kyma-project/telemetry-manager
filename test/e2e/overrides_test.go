@@ -3,30 +3,26 @@
 package e2e
 
 import (
-	"net/http"
-
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 )
 
-var _ = Describe("Logs Exclude Container", Label("logging"), Ordered, func() {
+var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 	const (
-		mockNs          = "log-exclude-container-mocks"
-		mockBackendName = "log-receiver-exclude-container"
-		logProducerName = "log-producer-exclude-container"
-		pipelineName    = "pipeline-exclude-container-test"
+		mockBackendName = "overrides-receiver"
+		mockNs          = "overrides-log-http-output"
+		logProducerName = "log-producer-http-output" //#nosec G101 -- This is a false positive
+		pipelineName    = "http-output-pipeline"
 	)
 	var telemetryExportURL string
 
@@ -34,16 +30,18 @@ var _ = Describe("Logs Exclude Container", Label("logging"), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs)
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(isOperational()))
 		mockLogProducer := logproducer.New(logProducerName, mockNs)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-exclude-container")))
+		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-overrides-test")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		namespaces := []string{kitkyma.SystemNamespaceName}
 
 		logPipeline := kitlog.NewPipeline(pipelineName).
+			WithIncludeNamespaces(namespaces).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
-			WithExcludeContainers([]string{logProducerName})
+			Persistent(isOperational())
 		objs = append(objs, logPipeline.K8sObject())
 
 		return objs
@@ -55,7 +53,7 @@ var _ = Describe("Logs Exclude Container", Label("logging"), Ordered, func() {
 		})
 	})
 
-	Context("When a logpipeline that excludes containers exists", Ordered, func() {
+	Context("When a logpipeline with HTTP output exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
@@ -64,36 +62,20 @@ var _ = Describe("Logs Exclude Container", Label("logging"), Ordered, func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running logpipeline", func() {
+		It("Should have a running logpipeline", Label(operationalTest), func() {
 			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a log backend running", func() {
+		It("Should have a log backend running", Label(operationalTest), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
 		})
 
-		It("Should have a log producer running", func() {
+		It("Should have a log producer running", Label(operationalTest), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
 		})
 
-		It("Should have any logs in the backend", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(ContainLd(WithLogRecords(Not(BeEmpty())))))
-			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
-
-		It("Should have no log-producer logs in the backend", func() {
-			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(Not(ContainLd(ContainLogRecord(
-					WithContainerName(ContainSubstring(logProducerName))))),
-				))
-			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		It("Should have produced logs in the backend", Label(operationalTest), func() {
+			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
 		})
 	})
 })
