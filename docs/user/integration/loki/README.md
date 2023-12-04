@@ -17,7 +17,7 @@ The following instructions outline how to use [Loki](https://github.com/grafana/
 
 ## Prerequisites
 
-- Kyma as the target deployment environment
+- A Kubernetes cluster with Kyma version 2.10 or higher
 - The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [installed](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
 - Kubectl version 1.22.x or higher
 - Helm 3.x
@@ -52,7 +52,7 @@ Depending on your scalability needs and storage requirements, you can install Lo
 You install the Loki stack with a Helm upgrade command, which installs the chart if not present yet.
 
 ```bash
-helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} ${HELM_LOKI_RELEASE} grafana/loki -f https://raw.githubusercontent.com/kyma-project/examples/main/loki/loki-values.yaml
+helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} ${HELM_LOKI_RELEASE} grafana/loki -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/loki-values.yaml
 ```
 
 In any case, you can either create your own `values.yaml` file, or use the [loki-values.yaml](./loki-values.yaml) provided in this `loki` folder, which contains customized settings deviating from the default settings: The provided `values.yaml` file activates the `singleBinary` mode and disables additional components that are usually used when running Loki as a central backend.
@@ -80,7 +80,7 @@ To ingest the application logs from within your cluster to Loki, you can either 
 To install Promtail pointing it to the previously installed Loki instance, run:
 
 ```bash
-helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} promtail grafana/promtail -f https://raw.githubusercontent.com/kyma-project/examples/main/loki/promtail-values.yaml --set "config.clients[0].url=https://${HELM_LOKI_RELEASE}.${K8S_NAMESPACE}.svc.cluster.local:3100/loki/api/v1/push" 
+helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} promtail grafana/promtail -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/promtail-values.yaml --set "config.clients[0].url=https://${HELM_LOKI_RELEASE}.${K8S_NAMESPACE}.svc.cluster.local:3100/loki/api/v1/push"
 ```
   </details>
   <details>
@@ -153,7 +153,7 @@ Because Grafana provides a very good Loki integration, you might want to install
 1. To deploy Grafana, run:
 
    ```bash
-   helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} grafana grafana/grafana -f https://raw.githubusercontent.com/kyma-project/examples/main/loki/grafana-values.yaml
+   helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} grafana grafana/grafana -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/grafana-values.yaml
    ```
 
 1. To enable Loki as Grafana data source, run:
@@ -201,7 +201,7 @@ Because Grafana provides a very good Loki integration, you might want to install
 1. To expose Grafana using the Kyma API Gateway, create an APIRule:
 
    ```bash
-   kubectl -n ${K8S_NAMESPACE} apply -f https://raw.githubusercontent.com/kyma-project/examples/main/loki/apirule.yaml
+   kubectl -n ${K8S_NAMESPACE} apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/apirule.yaml
    ```
 
 1. Get the public URL of your Loki instance:
@@ -215,7 +215,7 @@ Because Grafana provides a very good Loki integration, you might want to install
 1. Download the `dashboard-configmap.yaml` file and change `{GRAFANA_LINK}` to the public URL of your Grafana instance.
 
    ```bash
-   curl https://raw.githubusercontent.com/kyma-project/examples/main/loki/dashboard-configmap.yaml -o dashboard-configmap.yaml
+   curl https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/dashboard-configmap.yaml -o dashboard-configmap.yaml
    ```
 
 1. Optionally, adjust the ConfigMap: You can change the label field to change the name of the tab. If you want to move it to another category, change the category tab.

@@ -179,7 +179,7 @@ To capture the spans reported by the browser, you must expose the trace endpoint
 
     ```bash
     helm upgrade --version 0.22.2 --install --create-namespace -n $K8S_NAMESPACE $HELM_OTEL_RELEASE open-telemetry/opentelemetry-demo \
-    -f https://raw.githubusercontent.com/kyma-project/examples/main/trace-demo/values.yaml \
+    -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/opentelemetry-demo/values.yaml \
     --set 'components.frontend.envOverrides[1].name=PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT' \
     --set "components.frontend.envOverrides[1].value=https://frontend.$CLUSTER_DOMAIN/v1/traces"
     ```

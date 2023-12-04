@@ -6,7 +6,7 @@ The following instructions outline how to use [Jaeger](https://github.com/jaeger
 
 ## Prerequisites
 
-- Kyma version 2.10 or higher as the target deployment environment
+- A Kubernetes cluster with Kyma version 2.10 or higher
 - The [Telemetry module](../../README.md) is [installed](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
 - kubectl version 1.22.x or higher
 - Helm 3.x
@@ -41,7 +41,7 @@ The following instructions outline how to use [Jaeger](https://github.com/jaeger
 Run the Helm upgrade command, which installs the chart if not present yet.
 
 ```bash
-helm upgrade --install --create-namespace -n $K8S_NAMESPACE $HELM_JAEGER_RELEASE jaegertracing/jaeger -f https://raw.githubusercontent.com/kyma-project/examples/main/jaeger/values.yaml
+helm upgrade --install --create-namespace -n $K8S_NAMESPACE $HELM_JAEGER_RELEASE jaegertracing/jaeger -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/jaeger/values.yaml
 ```
 
 You can either use the [`values.yaml`](./values.yaml) provided in this `jaeger` folder, which contains customized settings deviating from the default settings, or create your own `values.yaml` file.
@@ -56,7 +56,7 @@ kubectl -n $K8S_NAMESPACE rollout status deploy $HELM_JAEGER_RELEASE
 
 ### Activate a TracePipeline
 
-To configure the Kyma trace collector with the deployed Jaeger instance as the backend. To create a new [TracePipeline](https://kyma-project.io/#/telemetry-manager/user/03-traces), execute the following command:
+To configure the Kyma trace collector with the deployed Jaeger instance as the backend. To create a new [TracePipeline](../../03-traces.md), execute the following command:    
 
 ```bash
 cat <<EOF | kubectl -n $K8S_NAMESPACE apply -f -
