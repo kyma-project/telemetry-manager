@@ -110,6 +110,9 @@ func (r *Reconciler) updateAgentStatus(ctx context.Context, pipelineName string)
 				return nil
 			}
 
+			if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelinePending) && pipeline.Status.Conditions[0].Reason == conditions.ReasonMetricGatewayDeploymentNotReady {
+				return nil
+			}
 			running := telemetryv1alpha1.NewMetricPipelineCondition(conditions.ReasonMetricAgentDaemonSetReady, telemetryv1alpha1.MetricPipelineRunning)
 			return setCondition(ctx, r.Client, &pipeline, running)
 		}
