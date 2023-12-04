@@ -164,7 +164,7 @@ To verify metrics and traces arrival, we adapted the [OpenTelemetry Demo Applica
 1. Run the Helm upgrade command, which installs the chart if not present yet.
 
    ```bash
-   helm upgrade --version 0.22.2 --install --create-namespace -n $KYMA_NS otel open-telemetry/opentelemetry-demo -f ./sample-app/values.yaml
+   helm upgrade --version 0.22.2 --install --create-namespace -n $KYMA_NS otel open-telemetry/opentelemetry-demo -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/dynatrace/values.yaml
 
 2. To access your application, port-forward it to the frontend:
 
