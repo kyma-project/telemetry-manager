@@ -71,7 +71,7 @@ To [enable Istio](../../03-traces.md#step-2-enable-istio-tracing) to report span
 Run the Helm upgrade command, which installs the chart if not present yet.
 
 ```bash
-helm upgrade --version 0.24.0 --install --create-namespace -n $K8S_NAMESPACE $HELM_OTEL_RELEASE open-telemetry/opentelemetry-demo -f https://raw.githubusercontent.com/kyma-project/examples/main/trace-demo/values.yaml
+helm upgrade --version 0.26.1 --install --create-namespace -n $K8S_NAMESPACE $HELM_OTEL_RELEASE open-telemetry/opentelemetry-demo -f https://raw.githubusercontent.com/kyma-project/examples/main/trace-demo/values.yaml
 ```
 
 You can either use the [values.yaml](./values.yaml) provided in this `opentelemetry-demo` folder, which contains customized settings deviating from the default settings, or create your own `values.yaml` file. The customizations cover the following areas:
