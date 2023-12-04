@@ -36,19 +36,26 @@ type DeploymentProber interface {
 	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
 }
 
+//go:generate mockery --name DaemonSetProber --filename daemonset_prober.go
+type DaemonSetProber interface {
+	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
+}
+
 type Reconciler struct {
 	client.Client
 	config             Config
 	prober             DeploymentProber
+	agentProber        DaemonSetProber
 	overridesHandler   overrides.GlobalConfigHandler
 	istioStatusChecker istiostatus.Checker
 }
 
-func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
+func NewReconciler(client client.Client, config Config, prober DeploymentProber, agentProber DaemonSetProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
 	return &Reconciler{
 		Client:             client,
 		config:             config,
 		prober:             prober,
+		agentProber:        agentProber,
 		overridesHandler:   overridesHandler,
 		istioStatusChecker: istiostatus.NewChecker(client),
 	}

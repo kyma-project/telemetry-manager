@@ -50,6 +50,12 @@ func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPip
 		return conditions.ReasonReferencedSecretMissing
 	}
 
+	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
+		return m.isPendingWithReason(p, conditions.ReasonMetricAgentDaemonSetNotReady)
+	}); found {
+		return conditions.ReasonMetricAgentDaemonSetNotReady
+	}
+
 	return conditions.ReasonMetricGatewayDeploymentReady
 }
 
@@ -77,7 +83,7 @@ func (m *metricComponentsChecker) createMessageForReason(pipelines []v1alpha1.Me
 
 func (m *metricComponentsChecker) createConditionFromReason(reason, message string) *metav1.Condition {
 	conditionType := "MetricComponentsHealthy"
-	if reason == conditions.ReasonMetricGatewayDeploymentReady || reason == conditions.ReasonNoPipelineDeployed {
+	if reason == conditions.ReasonMetricGatewayDeploymentReady || reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonMetricAgentDaemonSetReady {
 		return &metav1.Condition{
 			Type:    conditionType,
 			Status:  metav1.ConditionTrue,
