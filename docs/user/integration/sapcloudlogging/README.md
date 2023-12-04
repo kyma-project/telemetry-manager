@@ -4,6 +4,8 @@ SAP Cloud Logging is an instance-based and environment-agnostic observability se
 
 ## Prerequisites
 
+- Kyma as the target deployment environment
+- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [installed](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
 - An instance of SAP Cloud Logging with OpenTelemetry enabled to ingest distributed traces
 - A Secret named `sap-cloud-logging` in the `sap-cloud-logging-integration` namespace, holding the credentials and endpoints for the instance
 - Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html))

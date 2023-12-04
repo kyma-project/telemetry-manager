@@ -6,7 +6,7 @@ The following instructions outline how to use [Jaeger](https://github.com/jaeger
 
 ## Prerequisites
 
-- A Kubernetes cluster with Kyma version 2.10 or higher
+- Kyma as the target deployment environment
 - The [Telemetry module](../../README.md) is [installed](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
 - kubectl version 1.22.x or higher
 - Helm 3.x
