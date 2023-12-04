@@ -136,7 +136,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 				pipelines.Append(pipeline.Name())
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
-				verifiers.MetricPipelineShouldNotBeRunningPending(ctx, k8sClient, pipeline.Name())
+				verifiers.MetricPipelineShouldNotBeRunning(ctx, k8sClient, pipeline.Name())
 				verifiers.MetricGatewayConfigShouldNotContainPipeline(ctx, k8sClient, pipeline.Name())
 			})
 		})
