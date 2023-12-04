@@ -2,6 +2,7 @@ package metricpipeline
 
 import (
 	"context"
+	"k8s.io/utils/pointer"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -35,19 +36,34 @@ func TestUpdateStatus(t *testing.T) {
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
-				}},
+				},
+				Input: telemetryv1alpha1.MetricPipelineInput{
+					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: pointer.Bool(false),
+					},
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: pointer.Bool(false),
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: pointer.Bool(false),
+					},
+				},
+			},
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		proberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
+		daemonSetProberStub := &mocks.DaemonSetProber{}
+		daemonSetProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 		sut := Reconciler{
 			Client: fakeClient,
 			config: Config{Gateway: otelcollector.GatewayConfig{
 				Config: otelcollector.Config{BaseName: "metric-gateway"},
 			}},
-			prober: proberStub,
+			prober:      proberStub,
+			agentProber: daemonSetProberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)
@@ -70,7 +86,19 @@ func TestUpdateStatus(t *testing.T) {
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
-				}},
+				},
+				Input: telemetryv1alpha1.MetricPipelineInput{
+					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: pointer.Bool(false),
+					},
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: pointer.Bool(false),
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: pointer.Bool(false),
+					},
+				},
+			},
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
@@ -105,7 +133,19 @@ func TestUpdateStatus(t *testing.T) {
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
-				}},
+				},
+				Input: telemetryv1alpha1.MetricPipelineInput{
+					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: pointer.Bool(false),
+					},
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: pointer.Bool(false),
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: pointer.Bool(false),
+					},
+				},
+			},
 			Status: telemetryv1alpha1.MetricPipelineStatus{
 				Conditions: []telemetryv1alpha1.MetricPipelineCondition{
 					{Reason: conditions.ReasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
@@ -154,7 +194,19 @@ func TestUpdateStatus(t *testing.T) {
 							},
 						},
 					},
-				}},
+				},
+				Input: telemetryv1alpha1.MetricPipelineInput{
+					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: pointer.Bool(false),
+					},
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: pointer.Bool(false),
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: pointer.Bool(false),
+					},
+				},
+			},
 			Status: telemetryv1alpha1.MetricPipelineStatus{
 				Conditions: []telemetryv1alpha1.MetricPipelineCondition{
 					{Reason: conditions.ReasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
@@ -204,7 +256,19 @@ func TestUpdateStatus(t *testing.T) {
 							},
 						},
 					},
-				}},
+				},
+				Input: telemetryv1alpha1.MetricPipelineInput{
+					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: pointer.Bool(false),
+					},
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: pointer.Bool(false),
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: pointer.Bool(false),
+					},
+				},
+			},
 		}
 		secret := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{},
@@ -248,7 +312,19 @@ func TestUpdateStatus(t *testing.T) {
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
-				}},
+				},
+				Input: telemetryv1alpha1.MetricPipelineInput{
+					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: pointer.Bool(false),
+					},
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: pointer.Bool(false),
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: pointer.Bool(false),
+					},
+				},
+			},
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
@@ -283,6 +359,17 @@ func TestUpdateStatus(t *testing.T) {
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
+				},
+				Input: telemetryv1alpha1.MetricPipelineInput{
+					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: pointer.Bool(false),
+					},
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: pointer.Bool(false),
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: pointer.Bool(false),
+					},
 				}},
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
@@ -307,5 +394,106 @@ func TestUpdateStatus(t *testing.T) {
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricGatewayDeploymentNotReady)
+	})
+
+	t.Run("should add pending condition if metric agent daemonset is not ready", func(t *testing.T) {
+		pipelineName := "pipeline"
+		pipeline := &telemetryv1alpha1.MetricPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: pipelineName,
+			},
+			Spec: telemetryv1alpha1.MetricPipelineSpec{
+				Output: telemetryv1alpha1.MetricPipelineOutput{
+					Otlp: &telemetryv1alpha1.OtlpOutput{
+						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
+					},
+				},
+				Input: telemetryv1alpha1.MetricPipelineInput{
+					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: pointer.Bool(true),
+					},
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: pointer.Bool(false),
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: pointer.Bool(false),
+					},
+				},
+			},
+		}
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
+
+		proberStub := &mocks.DeploymentProber{}
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		daemonSetProberStub := &mocks.DaemonSetProber{}
+		daemonSetProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		sut := Reconciler{
+			Client: fakeClient,
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{BaseName: "metric-gateway"},
+			}},
+			prober:      proberStub,
+			agentProber: daemonSetProberStub,
+		}
+		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+		require.Len(t, updatedPipeline.Status.Conditions, 1)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricAgentDaemonSetNotReady)
+	})
+
+	t.Run("should add running condition if metric agent daemonset is ready", func(t *testing.T) {
+		pipelineName := "pipeline"
+		pipeline := &telemetryv1alpha1.MetricPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: pipelineName,
+			},
+			Spec: telemetryv1alpha1.MetricPipelineSpec{
+				Output: telemetryv1alpha1.MetricPipelineOutput{
+					Otlp: &telemetryv1alpha1.OtlpOutput{
+						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
+					},
+				},
+				Input: telemetryv1alpha1.MetricPipelineInput{
+					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: pointer.Bool(true),
+					},
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: pointer.Bool(false),
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: pointer.Bool(false),
+					},
+				},
+			},
+		}
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
+
+		proberStub := &mocks.DeploymentProber{}
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		daemonSetProberStub := &mocks.DaemonSetProber{}
+		daemonSetProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		sut := Reconciler{
+			Client: fakeClient,
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{BaseName: "metric-gateway"},
+			}},
+			prober:      proberStub,
+			agentProber: daemonSetProberStub,
+		}
+		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+		require.Len(t, updatedPipeline.Status.Conditions, 1)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelineRunning)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricGatewayDeploymentReady)
 	})
 }

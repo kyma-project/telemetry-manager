@@ -18,6 +18,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 	if err := r.updateStatusConditions(ctx, pipelineName, lockAcquired); err != nil {
 		return err
 	}
+
 	return r.updateAgentStatus(ctx, pipelineName)
 }
 
