@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Kyma Telemetry module supports you in integrating with observability backends in a convenient way. The following example outlines how to integrate with [Dynatrace](https://www.dynatrace.com) as a backend. With Dynatrace, you can get all your monitoring and tracing data into one observability backend to achieve real Application Performance Management with monitoring data in context. Apart from [installing Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator) and leveraging all of the benefits of Dynatrace, you can also integrate custom metrics and traces with Dynatrace.
+Learn how to integrate with [Dynatrace](https://www.dynatrace.com) as a backend. With Dynatrace, you can get all your monitoring and tracing data into one observability backend to achieve real Application Performance Management with monitoring data in context. Apart from [installing Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator) and leveraging all of the benefits of Dynatrace, you can also integrate custom metrics and traces with Dynatrace.
 This tutorial covers only trace and metric ingestion. Log ingestion is not covered.
 
 ![overview](./assets/integration.drawio.svg)
@@ -10,14 +10,14 @@ This tutorial covers only trace and metric ingestion. Log ingestion is not cover
 ## Prerequisistes
 
 - Kyma as the target deployment environment
-- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [installed](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
+- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
 - Dynatrace environment with permissions to create new access tokens
 - Helm 3.x if you want to deploy the [OpenTelemetry sample application](../opentelemetry-demo/README.md)
 - Recommended: [Dynatrace Operator](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-k8s/quickstart) is deployed
 
 ## Installation
 
-### Preparation
+### Prepare the Namespace
 
 1. Export your Namespace you want to use for Dynatrace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
 
@@ -139,7 +139,7 @@ This configuration samples 1% of all requests. if you want to change the samplin
 
 To verify metrics and traces arrival, we adapted the [OpenTelemetry Demo Application](../opentelemetry-demo/README.md).
 
-### Preparation
+### Prepare the cluster
 
 1. Export your Namespace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
 

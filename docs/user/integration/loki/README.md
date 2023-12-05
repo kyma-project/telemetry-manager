@@ -2,7 +2,7 @@
 
 ## Overview
 
-The following instructions outline how to use [Loki](https://github.com/grafana/loki/tree/main/production/helm/loki) as a logging backend with Kyma's [LogPipeline](../../02-logs.md) or with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/).
+Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/helm/loki) as a logging backend with Kyma's [LogPipeline](../../02-logs.md) or with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/).
 
 >**CAUTION:** This guide uses the Grafana Loki version, which is distributed under AGPL-3.0 only and might not be free of charge for commercial usage.
 
@@ -18,7 +18,7 @@ The following instructions outline how to use [Loki](https://github.com/grafana/
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [installed](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
+- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
 - Kubectl version 1.22.x or higher
 - Helm 3.x
 

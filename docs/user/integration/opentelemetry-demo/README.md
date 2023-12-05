@@ -2,12 +2,12 @@
 
 ## Overview
 
-The following instructions install the OpenTelemetry [demo application](https://github.com/open-telemetry/opentelemetry-demo) on a Kyma cluster using a provided [Helm chart](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-demo). The demo application will be configured to push trace data via OTLP to the collector provided by Kyma, so that they will be collected together with the related Istio trace data.
+Learn how to install the OpenTelemetry [demo application](https://github.com/open-telemetry/opentelemetry-demo) on a Kyma cluster using a provided [Helm chart](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-demo). The demo application will be configured to push trace data using OTLP to the collector that's provided by Kyma, so that they are collected together with the related Istio trace data.
 
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](../../README.md) is [installed](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
+- The [Telemetry module](../../README.md) is [enabled](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
 - kubectl version 1.22.x or higher
 - Helm 3.x
 

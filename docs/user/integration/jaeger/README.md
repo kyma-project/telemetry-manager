@@ -2,12 +2,12 @@
 
 ## Overview
 
-The following instructions outline how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main/charts/jaeger) as a tracing backend with Kyma's [TracePipeline](../../03-traces.md).
+Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main/charts/jaeger) as a tracing backend with Kyma's [TracePipeline](../../03-traces.md).
 
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](../../README.md) is [installed](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
+- The [Telemetry module](../../README.md) is [enabled](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
 - kubectl version 1.22.x or higher
 - Helm 3.x
 
@@ -56,7 +56,7 @@ kubectl -n $K8S_NAMESPACE rollout status deploy $HELM_JAEGER_RELEASE
 
 ### Activate a TracePipeline
 
-To configure the Kyma trace collector with the deployed Jaeger instance as the backend. To create a new [TracePipeline](../../03-traces.md), execute the following command:    
+To configure the Kyma trace collector with the deployed Jaeger instance as the backend. To create a new [TracePipeline](../../03-traces.md), execute the following command:
 
 ```bash
 cat <<EOF | kubectl -n $K8S_NAMESPACE apply -f -

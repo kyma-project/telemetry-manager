@@ -1,11 +1,15 @@
 # Integrate with SAP Cloud Logging
 
-SAP Cloud Logging is an instance-based and environment-agnostic observability service that builds upon OpenSearch to store, visualize, and analyze logs, metrics, and traces. This guide explains how to define LogPipelines and TracePipelines to ingest application and access logs as well as distributed trace data in instances of SAP Cloud Logging.
+## Overview
+
+Learn how to define LogPipelines and TracePipelines to ingest application and access logs as well as distributed trace data in instances of SAP Cloud Logging.
+
+SAP Cloud Logging is an instance-based and environment-agnostic observability service that builds upon OpenSearch to store, visualize, and analyze logs, metrics, and traces.
 
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [installed](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
+- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
 - An instance of SAP Cloud Logging with OpenTelemetry enabled to ingest distributed traces
 - A Secret named `sap-cloud-logging` in the `sap-cloud-logging-integration` namespace, holding the credentials and endpoints for the instance
 - Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html))
@@ -128,11 +132,11 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
     EOF
     ```
 
-    The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value up to 100 percent.
-    > **NOTE:**
-    > Be mindful of configuring the **randomSamplingPercentage** because
-    >  - traces might consume a significant storage volume in Cloud Logging Service
-    >  - the Kyma trace collector component does not scale automatically.
+    The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
+
+    > **CAUTION:** Be cautious when you configure the **randomSamplingPercentage**:
+    > - Traces might consume a significant storage volume in Cloud Logging Service.
+    > - The Kyma trace collector component does not scale automatically.
 
 2. Deploy the TracePipeline by executing the following command:
 
