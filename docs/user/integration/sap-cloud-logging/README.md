@@ -2,7 +2,7 @@
 
 ## Overview
 
-Learn how to define LogPipelines and TracePipelines to ingest application and access logs as well as distributed trace data in instances of SAP Cloud Logging.
+Learn how to define LogPipelines and TracePipelines to ingest application and access logs as well as distributed trace data in instances of [SAP Cloud Logging](https://help.sap.com/docs/SAP_CLOUD_LOGGING?locale=en-US&version=Cloud).
 
 SAP Cloud Logging is an instance-based and environment-agnostic observability service that builds upon OpenSearch to store, visualize, and analyze logs, metrics, and traces.
 
