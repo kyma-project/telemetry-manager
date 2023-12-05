@@ -20,6 +20,7 @@ func createInputSection(pipeline *telemetryv1alpha1.LogPipeline, includePath, ex
 	inputBuilder.AddConfigParam("db", fmt.Sprintf("/data/flb_%s.db", pipeline.Name))
 	inputBuilder.AddConfigParam("storage.type", "filesystem")
 	inputBuilder.AddConfigParam("read_from_head", "true")
+	inputBuilder.AddConfigParam("mem_buf_limit", "5MB")
 
 	return inputBuilder.Build()
 }

@@ -81,6 +81,7 @@ func TestMergeSectionsConfig(t *testing.T) {
     alias            foo
     db               /data/flb_foo.db
     exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log,/var/log/containers/*_*_container1-*.log,/var/log/containers/*_*_container2-*.log
+    mem_buf_limit    5MB
     multiline.parser docker, cri, go, python, java
     path             /var/log/containers/*_*_*-*.log
     read_from_head   true
@@ -179,6 +180,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     alias            foo
     db               /data/flb_foo.db
     exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log
+    mem_buf_limit    5MB
     multiline.parser docker, cri, go, python, java
     path             /var/log/containers/*_*_*-*.log
     read_from_head   true

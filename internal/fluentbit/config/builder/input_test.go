@@ -18,6 +18,7 @@ func TestCreateInput(t *testing.T) {
     alias            test-logpipeline
     db               /data/flb_test-logpipeline.db
     exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log
+    mem_buf_limit    5MB
     multiline.parser docker, cri, go, python, java
     path             /var/log/containers/*.log
     read_from_head   true

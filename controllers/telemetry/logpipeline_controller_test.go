@@ -67,6 +67,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
     alias            log-pipeline
     db               /data/flb_log-pipeline.db
     exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log
+    mem_buf_limit    5MB
     multiline.parser docker, cri, go, python, java
     path             /var/log/containers/*_*_*-*.log
     read_from_head   true
