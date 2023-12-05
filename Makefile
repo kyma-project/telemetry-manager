@@ -1,5 +1,5 @@
 # Image URL to use all building/pushing image targets
-IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20231117-fd906e1e
+IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:v20231205-b118b822
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.27.1
 ISTIO_VERSION ?= 1.2.0
