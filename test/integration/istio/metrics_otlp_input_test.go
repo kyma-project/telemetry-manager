@@ -3,24 +3,17 @@
 package istio
 
 import (
-	"net/http"
-
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go.opentelemetry.io/collector/pdata/pmetric"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
-	"github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -30,6 +23,9 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		backendName          = "backend"
 		istiofiedBackendNs   = "istio-metric-otlp-input-with-sidecar"
 		istiofiedBackendName = "backend-istiofied"
+
+		pushMetricsDepName          = "push-metrics"
+		pushMetricsIstiofiedDepName = "push-metrics-istiofied"
 	)
 	var telemetryExportURL, telemetryIstiofiedExportURL string
 
@@ -63,6 +59,13 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		peerAuth := istio.NewPeerAuthentication(istiofiedBackendName, istiofiedBackendNs)
 		objs = append(objs, peerAuth.K8sObject(kitk8s.WithLabel("app", istiofiedBackendName)))
 
+		// Create 2 deployments (with and without side car) which would push the metrics to the metrics gateway.
+		podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)
+		objs = append(objs,
+			kitk8s.NewDeployment(pushMetricsDepName, backendNs).WithPodSpec(podSpec).K8sObject(),
+			kitk8s.NewDeployment(pushMetricsIstiofiedDepName, istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
+		)
+
 		return objs
 	}
 
@@ -88,19 +91,12 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		})
 
 		It("Should push metrics successfully", func() {
-			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP)
-			gauges := kitmetrics.MakeAndSendGaugeMetrics(proxyClient, gatewayPushURL)
-			pushMetricsShouldBeDelivered(telemetryExportURL, gauges)
-			pushMetricsShouldBeDelivered(telemetryIstiofiedExportURL, gauges)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, backendNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryIstiofiedExportURL, backendNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryIstiofiedExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+
 		})
 	})
 })
-
-func pushMetricsShouldBeDelivered(proxyUrl string, gauges []pmetric.Metric) {
-	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(proxyUrl)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ContainMd(metric.WithMetrics(BeEquivalentTo(gauges)))))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-}
