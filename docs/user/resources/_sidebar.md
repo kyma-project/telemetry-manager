@@ -1,4 +1,5 @@
-
+- [HOME](/)
+- [Kyma Telemetry Module](../README.md)
 - [Resources](resources/README.md)
   - [Telemetry](01-telemetry.md)
   - [LogPipeline](02-logpipeline.md)
