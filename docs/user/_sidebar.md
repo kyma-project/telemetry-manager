@@ -7,7 +7,7 @@
 - [Metrics](04-metrics.md)
 - [Integration Guides](integration/README.md)
   - [OpenTelemetry Demo App](./integration/opentelemetry-demo/README.md)
-  - [SAP Cloud Logging](./integration/sapcloudlogging/README.md)
+  - [SAP Cloud Logging](./integration/sap-cloud-logging/README.md)
   - [Loki](./integration/loki/README.md)
   - [Jaeger](./integration/jaeger/README.md)
 - [Resources](resources/README.md)
