@@ -78,18 +78,17 @@ import (
 )
 
 var (
-	certDir                string
-	deniedFilterPlugins    string
-	deniedOutputPlugins    string
-	enableLogging          bool
-	enableTracing          bool
-	enableMetrics          bool
-	logLevel               string
-	scheme                 = runtime.NewScheme()
-	setupLog               = ctrl.Log.WithName("setup")
-	dynamicLoglevel        = zap.NewAtomicLevel()
-	configureLogLevelOnFly *logger.LogLevel
-	telemetryNamespace     string
+	certDir             string
+	deniedFilterPlugins string
+	deniedOutputPlugins string
+	enableLogging       bool
+	enableTracing       bool
+	enableMetrics       bool
+	logLevel            string
+	overridesHandler    *overrides.Handler
+	scheme              = runtime.NewScheme()
+	setupLog            = ctrl.Log.WithName("setup")
+	telemetryNamespace  string
 
 	maxLogPipelines    int
 	maxTracePipelines  int
@@ -136,8 +135,9 @@ var (
 const (
 	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.89.0-25ff4383"
 	overridesConfigMapName = "telemetry-override-config"
+	overridesConfigMapKey  = "override-config"
 	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.10-a5234020"
-	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20231108-b1ec4cab"
+	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20231201-02a1befc"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
@@ -272,15 +272,23 @@ func main() {
 		setupLog.Error(err, "Invalid flag provided")
 		os.Exit(1)
 	}
-
 	parsedLevel, err := zapcore.ParseLevel(logLevel)
 	if err != nil {
 		os.Exit(1)
 	}
-	dynamicLoglevel.SetLevel(parsedLevel)
-	configureLogLevelOnFly = logger.NewLogReconfigurer(dynamicLoglevel)
+	atomicLevel := zap.NewAtomicLevelAt(parsedLevel)
+	ctrLogger, err := logger.New(atomicLevel)
 
-	ctrLogger, err := logger.New("json", logLevel, dynamicLoglevel)
+	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
+	if err != nil {
+		os.Exit(1)
+	}
+
+	defer func() {
+		if err = ctrLogger.WithContext().Sync(); err != nil {
+			setupLog.Error(err, "Failed to flush logger")
+		}
+	}()
 
 	go func() {
 		server := &http.Server{
@@ -293,16 +301,6 @@ func main() {
 			mutex.Lock()
 			setupLog.Error(err, "Cannot start pprof server")
 			mutex.Unlock()
-		}
-	}()
-
-	ctrl.SetLogger(zapr.NewLogger(ctrLogger.WithContext().Desugar()))
-	if err != nil {
-		os.Exit(1)
-	}
-	defer func() {
-		if err = ctrLogger.WithContext().Sync(); err != nil {
-			setupLog.Error(err, "Failed to flush logger")
 		}
 	}()
 
@@ -342,6 +340,11 @@ func main() {
 				},
 			},
 		},
+	})
+
+	overridesHandler = overrides.New(mgr.GetClient(), atomicLevel, overrides.HandlerConfig{
+		ConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
+		ConfigMapKey:  overridesConfigMapKey,
 	})
 
 	if err != nil {
@@ -497,7 +500,6 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 			MemoryRequest:               resource.MustParse(fluentBitMemoryRequest),
 		},
 	}
-	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
 	return telemetrycontrollers.NewLogPipelineReconciler(
 		client,
@@ -510,7 +512,6 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
 		DaemonSet:        types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 	}
-	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
 	return telemetrycontrollers.NewLogParserReconciler(
 		client,
@@ -568,7 +569,6 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		MaxPipelines:           maxTracePipelines,
 	}
-	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
 	return telemetrycontrollers.NewTracePipelineReconciler(
 		client,
@@ -614,8 +614,6 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		MaxPipelines:           maxMetricPipelines,
 	}
-
-	overridesHandler := overrides.New(configureLogLevelOnFly, &kubernetes.ConfigmapProber{Client: client})
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,

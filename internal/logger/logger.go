@@ -1,66 +1,70 @@
 package logger
 
 import (
-	"github.com/kyma-project/kyma/common/logging/logger"
+	"os"
+
+	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/klog/v2"
 )
 
 type Logger struct {
-	*logger.Logger
+	zapLogger *zap.SugaredLogger
 }
 
 // New returns a new logger with the given format and level.
-func New(format, level string, atomic zap.AtomicLevel) (*Logger, error) {
-	logFormat, err := logger.MapFormat(format)
-	if err != nil {
-		return nil, err
-	}
-
-	logLevel, err := logger.MapLevel(level)
-	if err != nil {
-		return nil, err
-	}
-
-	log, err := logger.NewWithAtomicLevel(logFormat, atomic)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = logger.InitKlog(log, logLevel); err != nil {
-		return nil, err
-	}
+func New(atomicLevel zap.AtomicLevel) (*Logger, error) {
+	log := newWithAtomicLevel(atomicLevel)
+	level := atomicLevel.Level()
+	initKlog(log, level)
 
 	// Redirects logs those are being written using standard logging mechanism to klog
 	// to avoid logs from controller-runtime being pushed to the standard logs.
 	klog.CopyStandardLogTo("ERROR")
 
-	return &Logger{Logger: log}, nil
+	return &Logger{zapLogger: log.zapLogger}, nil
 }
 
-type LogLevel struct {
-	Atomic  zap.AtomicLevel
-	Default string
+func (l *Logger) WithContext() *zap.SugaredLogger {
+	return l.zapLogger.With(zap.Namespace("context"))
 }
 
-func NewLogReconfigurer(atomic zap.AtomicLevel) *LogLevel {
-	var l LogLevel
-	l.Atomic = atomic
-	l.Default = atomic.String()
-	return &l
+/*
+This function creates logger structure based on given format, atomicLevel and additional cores
+AtomicLevel structure allows to change level dynamically
+*/
+func newWithAtomicLevel(atomicLevel zap.AtomicLevel, additionalCores ...zapcore.Core) *Logger {
+	return new(atomicLevel, additionalCores...)
 }
 
-func (l *LogLevel) SetDefaultLogLevel() error {
-	return l.ChangeLogLevel(l.Default)
+func new(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Core) *Logger {
+	encoder := getZapEncoder()
+
+	defaultCore := zapcore.NewCore(
+		encoder,
+		zapcore.Lock(os.Stderr),
+		levelEnabler,
+	)
+	cores := append(additionalCores, defaultCore)
+	return &Logger{zap.New(zapcore.NewTee(cores...), zap.AddCaller()).Sugar()}
 }
 
-func (l *LogLevel) ChangeLogLevel(logLevel string) error {
-	parsedLevel, err := zapcore.ParseLevel(logLevel)
-	if err != nil {
-		return err
-	}
+/*
+This function initialize klog which is used in k8s/go-client
+*/
+func initKlog(log *Logger, level zapcore.Level) {
+	zaprLogger := zapr.NewLogger(log.WithContext().Desugar())
+	zaprLogger.V((int)(level))
+	klog.SetLogger(zaprLogger)
+}
 
-	l.Atomic.SetLevel(parsedLevel)
-	return nil
+func getZapEncoder() zapcore.Encoder {
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	encoderConfig.TimeKey = "timestamp"
+	encoderConfig.MessageKey = "message"
+
+	return zapcore.NewJSONEncoder(encoderConfig)
 }
