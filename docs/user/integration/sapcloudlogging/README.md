@@ -6,6 +6,10 @@ Learn how to define LogPipelines and TracePipelines to ingest application and ac
 
 SAP Cloud Logging is an instance-based and environment-agnostic observability service that builds upon OpenSearch to store, visualize, and analyze logs, metrics, and traces.
 
+- Signal type: logs, metrics, and traces
+- Backend type: third-party remote
+- OTLP-native: yes
+
 ## Prerequisites
 
 - Kyma as the target deployment environment

@@ -4,6 +4,10 @@
 
 Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main/charts/jaeger) as a tracing backend with Kyma's [TracePipeline](../../03-traces.md).
 
+- Signal type: traces
+- Backend type: custom in-cluster
+- OTLP-native: yes
+
 ## Prerequisites
 
 - Kyma as the target deployment environment

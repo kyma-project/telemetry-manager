@@ -6,6 +6,10 @@ Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/hel
 
 >**CAUTION:** This guide uses the Grafana Loki version, which is distributed under AGPL-3.0 only and might not be free of charge for commercial usage.
 
+- Signal type: logs
+- Backend type: custom in-cluster
+- OTLP-native: no
+
 ## Table of Content
 
 - [Prerequisites](#prerequisites)

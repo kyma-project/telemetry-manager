@@ -3,9 +3,14 @@
 ## Overview
 
 Learn how to integrate with [Dynatrace](https://www.dynatrace.com) as a backend. With Dynatrace, you can get all your monitoring and tracing data into one observability backend to achieve real Application Performance Management with monitoring data in context. Apart from [installing Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator) and leveraging all of the benefits of Dynatrace, you can also integrate custom metrics and traces with Dynatrace.
-This tutorial covers only trace and metric ingestion. Log ingestion is not covered.
 
 ![overview](./assets/integration.drawio.svg)
+
+This guide covers only trace and metric ingestion. Log ingestion is not covered.
+
+- Signal type: traces, metrics
+- Backend type: third-party remote
+- OTLP-native: yes
 
 ## Prerequisistes
 
