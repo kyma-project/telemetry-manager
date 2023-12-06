@@ -83,7 +83,7 @@ func (m *metricComponentsChecker) createMessageForReason(pipelines []v1alpha1.Me
 
 func (m *metricComponentsChecker) createConditionFromReason(reason, message string) *metav1.Condition {
 	conditionType := "MetricComponentsHealthy"
-	if reason == conditions.ReasonMetricGatewayDeploymentReady || reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonMetricAgentDaemonSetReady {
+	if reason == conditions.ReasonMetricGatewayDeploymentReady || reason == conditions.ReasonNoPipelineDeployed {
 		return &metav1.Condition{
 			Type:    conditionType,
 			Status:  metav1.ConditionTrue,

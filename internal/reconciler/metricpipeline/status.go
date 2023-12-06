@@ -15,14 +15,6 @@ import (
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lockAcquired bool) error {
-	if err := r.updateStatusConditions(ctx, pipelineName, lockAcquired); err != nil {
-		return err
-	}
-
-	return r.updateAgentStatus(ctx, pipelineName)
-}
-
-func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName string, lockAcquired bool) error {
 	log := logf.FromContext(ctx)
 
 	var pipeline telemetryv1alpha1.MetricPipeline
@@ -61,6 +53,21 @@ func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName st
 		return setCondition(ctx, r.Client, &pipeline, pending)
 	}
 
+	if err := r.updateGatewayStatus(ctx, pipeline); err != nil {
+		return err
+	}
+
+	agentEnabled := isMetricAgentRequired(&pipeline)
+
+	if !agentEnabled {
+		return nil
+	}
+	return r.updateAgentStatus(ctx, pipeline)
+}
+
+func (r *Reconciler) updateGatewayStatus(ctx context.Context, pipeline telemetryv1alpha1.MetricPipeline) error {
+	log := logf.FromContext(ctx)
+
 	gatewayReady, err := r.prober.IsReady(ctx, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace})
 	if err != nil {
 		return err
@@ -85,23 +92,9 @@ func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName st
 	return setCondition(ctx, r.Client, &pipeline, pending)
 }
 
-func (r *Reconciler) updateAgentStatus(ctx context.Context, pipelineName string) error {
+func (r *Reconciler) updateAgentStatus(ctx context.Context, pipeline telemetryv1alpha1.MetricPipeline) error {
 	log := logf.FromContext(ctx)
 
-	var pipeline telemetryv1alpha1.MetricPipeline
-	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-
-		return fmt.Errorf("failed to get MetricPipeline: %v", err)
-	}
-
-	agentEnabled := isMetricAgentRequired(&pipeline)
-
-	if !agentEnabled {
-		return nil
-	}
 	agentReady, err := r.agentProber.IsReady(ctx, types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace})
 	if err != nil {
 		return err
