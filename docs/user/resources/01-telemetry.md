@@ -129,6 +129,7 @@ The state of the metric components is determined by the status condition of type
 |------------------|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | True             | NoPipelineDeployed              | No pipelines have been deployed                                                                                                              |
 | True             | MetricGatewayDeploymentReady    | Metric gateway Deployment is ready                                                                                                           |
+| True             | MetricAgentDaemonSetReady       | Metric agent DaemonSet is ready                                                                                                              |
 | False            | ReferencedSecretMissing         | One or more referenced Secrets are missing                                                                                                   |
 | False            | MetricGatewayDeploymentNotReady | Metric gateway Deployment is not ready                                                                                                       |
 | False            | MetricAgentDaemonSetNotReady    | Metric agent DaemonSet is not ready                                                                                                          |
