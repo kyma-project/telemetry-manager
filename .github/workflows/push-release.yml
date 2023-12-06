@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
 
       # wait for the build to succeed so that the manager image is available
-      - name: Wait for the 'push-telemetry-manager-build' job to succeed
+      - name: Wait for the 'post-telemetry-manager-build-release' job to succeed
         uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
         with:
           context: "post-telemetry-manager-build-release"
