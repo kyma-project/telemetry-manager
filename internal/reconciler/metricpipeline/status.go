@@ -99,7 +99,9 @@ func (r *Reconciler) updateAgentStatus(ctx context.Context, pipelineName string)
 
 	agentEnabled := isMetricAgentRequired(&pipeline)
 
-	if agentEnabled {
+	if !agentEnabled {
+	   return nil
+	}
 		agentReady, err := r.agentProber.IsReady(ctx, types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace})
 		if err != nil {
 			return err
