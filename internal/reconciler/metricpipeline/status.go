@@ -53,7 +53,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 		return setCondition(ctx, r.Client, &pipeline, pending)
 	}
 
-	if err := r.updateGatewayStatus(ctx, pipeline); err != nil {
+	if err := r.updateGatewayStatus(ctx, pipelineName); err != nil {
 		return err
 	}
 
@@ -62,11 +62,20 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 	if !agentEnabled {
 		return nil
 	}
-	return r.updateAgentStatus(ctx, pipeline)
+	return r.updateAgentStatus(ctx, pipelineName)
 }
 
-func (r *Reconciler) updateGatewayStatus(ctx context.Context, pipeline telemetryv1alpha1.MetricPipeline) error {
+func (r *Reconciler) updateGatewayStatus(ctx context.Context, pipelineName string) error {
 	log := logf.FromContext(ctx)
+
+	var pipeline telemetryv1alpha1.MetricPipeline
+	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+
+		return fmt.Errorf("failed to get MetricPipeline: %v", err)
+	}
 
 	gatewayReady, err := r.prober.IsReady(ctx, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace})
 	if err != nil {
@@ -92,8 +101,17 @@ func (r *Reconciler) updateGatewayStatus(ctx context.Context, pipeline telemetry
 	return setCondition(ctx, r.Client, &pipeline, pending)
 }
 
-func (r *Reconciler) updateAgentStatus(ctx context.Context, pipeline telemetryv1alpha1.MetricPipeline) error {
+func (r *Reconciler) updateAgentStatus(ctx context.Context, pipelineName string) error {
 	log := logf.FromContext(ctx)
+
+	var pipeline telemetryv1alpha1.MetricPipeline
+	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+
+		return fmt.Errorf("failed to get MetricPipeline: %v", err)
+	}
 
 	agentReady, err := r.agentProber.IsReady(ctx, types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace})
 	if err != nil {
