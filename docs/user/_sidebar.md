@@ -1,4 +1,4 @@
-- [Home](/)
+- [Back to Kyma Home](/)
 - [Kyma Telemetry Module](/telemetry-manager/docs/user/README.md)
 - [Telemetry Manager](/telemetry-manager/docs/user/01-manager.md)
 - [Gateways](/telemetry-manager/docs/user/gateways.md)
