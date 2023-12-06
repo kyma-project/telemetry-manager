@@ -40,11 +40,11 @@ type Reconciler struct {
 	client.Client
 	config             Config
 	prober             DeploymentProber
-	overridesHandler   overrides.GlobalConfigHandler
+	overridesHandler   *overrides.Handler
 	istioStatusChecker istiostatus.Checker
 }
 
-func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler overrides.GlobalConfigHandler) *Reconciler {
+func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
 		Client:             client,
 		config:             config,
@@ -57,14 +57,11 @@ func NewReconciler(client client.Client, config Config, prober DeploymentProber,
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logf.FromContext(ctx).V(1).Info("Reconciliation triggered")
 
-	overrideConfig, err := r.overridesHandler.UpdateOverrideConfig(ctx, r.config.OverridesConfigMapName)
+	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.overridesHandler.CheckGlobalConfig(overrideConfig.Global); err != nil {
-		return ctrl.Result{}, err
-	}
 	if overrideConfig.Metrics.Paused {
 		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
 		return ctrl.Result{}, nil
