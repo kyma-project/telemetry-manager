@@ -2,7 +2,7 @@
 
 ## Overview
 
-Learn how to define LogPipelines and TracePipelines to ingest application and access logs as well as distributed trace data in instances of [SAP Cloud Logging](https://help.sap.com/docs/SAP_CLOUD_LOGGING?locale=en-US&version=Cloud).
+Learn how to define LogPipelines and TracePipelines to ingest application and access logs as well as distributed trace data in instances of [SAP Cloud Logging](https://help.sap.com/docs/cloud-logging?locale=en-US&version=Cloud).
 
 SAP Cloud Logging is an instance-based and environment-agnostic observability service that builds upon OpenSearch to store, visualize, and analyze logs, metrics, and traces.
 
@@ -13,16 +13,17 @@ SAP Cloud Logging is an instance-based and environment-agnostic observability se
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
-- An instance of SAP Cloud Logging with OpenTelemetry enabled to ingest distributed traces. For details, see [Create an SAP Cloud Logging Instance through SAP BTP Service Operator](https://help.sap.com/docs/SAP_CLOUD_LOGGING/454331d80e3b42b1804d83a672cf098b/f6aa131faee64f78b9cbba6a5b579b8f.html?locale=en-US&version=Cloud) or, alternatively, [Ship via OpenTelemetry API Endpoint](https://help.sap.com/docs/SAP_CLOUD_LOGGING/454331d80e3b42b1804d83a672cf098b/fdc78af7c69246bc87315d90a061b321.html?locale=en-US&version=Cloud).
-- A Secret named `sap-cloud-logging` in the `sap-cloud-logging-integration` namespace, holding the credentials and endpoints for the instance
+- The [Telemetry module](../README.md) is [enabled](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
+- An instance of SAP Cloud Logging with OpenTelemetry enabled to ingest distributed traces.
+  >**TIP:** It's recommended to create it with the SAP BTP Service Operator (see [Create an SAP Cloud Logging Instance through SAP BTP Service Operator](https://help.sap.com/docs/cloud-logging/cloud-logging/create-sap-cloud-logging-instance-through-sap-btp-service-operator?locale=en-US&version=Cloud)), because it takes care of creation and rotation of the required Secret. However, you can choose any other method of creating the instance and the Secret, as long as you make sure that OTLP ingestion is enabled [see Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters?locale=en-US&version=Cloud) in the instance.
+- A Secret in the respective namespace in the Kyma cluster, holding the credentials and endpoints for the instance. In this example, the Secret is named `sap-cloud-logging` and the namespace  `sap-cloud-logging-integration`.
 - Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html))
 - UNIX shell or Windows Subsystem for Linux (WSL) to execute commands
 
 ## Ship Logs to SAP Cloud Logging
 
-The Telemetry module supports the convenient shipment of applications and access logs using LogPipeline custom resources. For more details, see [Kyma Telemetry Application Logs Documentation](./../../02-logs.md). The setup distinguishes application logs and access logs which can be configured independently.
-To enable log shipment to the SAP Cloud Logging service instance follow the below procedure:
+The Telemetry module supports the convenient shipment of applications and access logs using LogPipeline custom resources. For more details, see [Kyma Telemetry Application Logs Documentation](./../../02-logs.md). The setup distinguishes application logs and access logs, which can be configured independently.
+To enable log shipment to the SAP Cloud Logging service instance, follow the this procedure:
 
 1. Deploy the LogPipeline for application logs:
 
@@ -104,12 +105,12 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
     EOF      
     ```
 
-   Kyma sets Istio access logs to disabled by default. To enable Istio access logs selectively for your workload, follow [Enable Istio access logs](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-30-enable-istio-access-logs).
-   As a result, access logs can be analyzed in the default dashboards shipped for the SAP BTP, Kyma runtime.
+   By default, Kyma sets Istio access logs to disabled. To enable Istio access logs selectively for your workload, follow [Enable Istio access logs](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-30-enable-istio-access-logs).
+   As a result, access logs can be analyzed in the default dashboards shipped for SAP BTP, Kyma runtime.
 
    >**CAUTION:** The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
 
-3. Wait for the LogPipeline Kubernetes objects to be in the `Running` state:
+3. Wait for the LogPipeline to be in the `Running` state. To check the state, run:
 
     ```bash
     kubectl get logpipelines
@@ -118,9 +119,9 @@ To enable log shipment to the SAP Cloud Logging service instance follow the belo
 ## Ship Distributed Traces to SAP Cloud Logging
 
 The Telemetry module supports ingesting [distributed traces](./../../03-traces.md) from applications and the Istio service mesh to the OTLP endpoint of the SAP Cloud Logging service instance.
-To enable shipping traces to the SAP Cloud Logging service instance, follow the below procedure:
+To enable shipping traces to the SAP Cloud Logging service instance, follow the this procedure:
 
-1. Deploy the Istio Telemetry resource by executing the following command:
+1. Deploy the Istio Telemetry resource:
 
     ```bash
     kubectl apply -n istio-system -f - <<EOF
@@ -142,7 +143,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
     > - Traces might consume a significant storage volume in Cloud Logging Service.
     > - The Kyma trace collector component does not scale automatically.
 
-2. Deploy the TracePipeline by executing the following command:
+2. Deploy the TracePipeline:
 
     ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
@@ -175,7 +176,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
     EOF
     ```
 
-3. Wait for the TracePipeline to be in the `Running` state:
+3. Wait for the TracePipeline to be in the `Running` state. To check the state, run:
 
    ```bash
    kubectl get tracepipelines
