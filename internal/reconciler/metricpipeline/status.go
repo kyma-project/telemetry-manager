@@ -100,34 +100,32 @@ func (r *Reconciler) updateAgentStatus(ctx context.Context, pipelineName string)
 	agentEnabled := isMetricAgentRequired(&pipeline)
 
 	if !agentEnabled {
-	   return nil
+		return nil
 	}
-		agentReady, err := r.agentProber.IsReady(ctx, types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace})
-		if err != nil {
-			return err
-		}
+	agentReady, err := r.agentProber.IsReady(ctx, types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace})
+	if err != nil {
+		return err
+	}
 
-		if agentReady {
-			if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
-				return nil
-			}
-
-			if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelinePending) && pipeline.Status.Conditions[0].Reason == conditions.ReasonMetricGatewayDeploymentNotReady {
-				return nil
-			}
-			running := telemetryv1alpha1.NewMetricPipelineCondition(conditions.ReasonMetricAgentDaemonSetReady, telemetryv1alpha1.MetricPipelineRunning)
-			return setCondition(ctx, r.Client, &pipeline, running)
-		}
-
-		pendingAgent := telemetryv1alpha1.NewMetricPipelineCondition(conditions.ReasonMetricAgentDaemonSetNotReady, telemetryv1alpha1.MetricPipelinePending)
+	if agentReady {
 		if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
-			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pendingAgent.Type))
-			pipeline.Status.Conditions = []telemetryv1alpha1.MetricPipelineCondition{}
+			return nil
 		}
 
-		return setCondition(ctx, r.Client, &pipeline, pendingAgent)
+		if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelinePending) && pipeline.Status.Conditions[0].Reason == conditions.ReasonMetricGatewayDeploymentNotReady {
+			return nil
+		}
+		running := telemetryv1alpha1.NewMetricPipelineCondition(conditions.ReasonMetricAgentDaemonSetReady, telemetryv1alpha1.MetricPipelineRunning)
+		return setCondition(ctx, r.Client, &pipeline, running)
 	}
-	return nil
+
+	pendingAgent := telemetryv1alpha1.NewMetricPipelineCondition(conditions.ReasonMetricAgentDaemonSetNotReady, telemetryv1alpha1.MetricPipelinePending)
+	if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) {
+		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pendingAgent.Type))
+		pipeline.Status.Conditions = []telemetryv1alpha1.MetricPipelineCondition{}
+	}
+
+	return setCondition(ctx, r.Client, &pipeline, pendingAgent)
 }
 
 func setCondition(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.MetricPipeline, condition *telemetryv1alpha1.MetricPipelineCondition) error {

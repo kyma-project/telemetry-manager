@@ -45,17 +45,17 @@ func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPip
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
-		return m.isPendingWithReason(p, conditions.ReasonReferencedSecretMissing)
-	}); found {
-		return conditions.ReasonReferencedSecretMissing
-	}
-
-	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
 		return m.isPendingWithReason(p, conditions.ReasonMetricAgentDaemonSetNotReady)
 	}); found {
 		return conditions.ReasonMetricAgentDaemonSetNotReady
 	}
 
+	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
+		return m.isPendingWithReason(p, conditions.ReasonReferencedSecretMissing)
+	}); found {
+		return conditions.ReasonReferencedSecretMissing
+	}
+	
 	return conditions.ReasonMetricGatewayDeploymentReady
 }
 

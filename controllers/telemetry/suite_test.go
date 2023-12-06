@@ -153,7 +153,8 @@ var _ = BeforeSuite(func() {
 
 	metricPipelineReconciler := NewMetricPipelineReconciler(
 		client,
-		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &kubernetes.DeploymentProber{Client: client}, &kubernetes.DaemonSetProber{Client: client}, overridesHandler))
+		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &kubernetes.DeploymentProber{Client: client},
+			&kubernetes.DaemonSetProber{Client: client}, overridesHandler))
 	err = metricPipelineReconciler.SetupWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
