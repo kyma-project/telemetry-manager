@@ -6,6 +6,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestCreateInputSection(t *testing.T) {
+	expected := `[INPUT]
+    name tail
+    tag  foo
+
+`
+	sut := NewInputSectionBuilder()
+	sut.AddConfigParam("name", "tail")
+	sut.AddConfigParam("tag", "foo")
+	actual := sut.Build()
+
+	require.NotEmpty(t, actual)
+	require.Equal(t, expected, actual)
+}
+
 func TestCreateOutputSection(t *testing.T) {
 	expected := `[OUTPUT]
 

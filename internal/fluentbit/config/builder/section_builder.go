@@ -14,6 +14,11 @@ type SectionBuilder struct {
 	builder strings.Builder
 }
 
+func NewInputSectionBuilder() *SectionBuilder {
+	sb := SectionBuilder{}
+	return sb.createInputSection()
+}
+
 func NewFilterSectionBuilder() *SectionBuilder {
 	sb := SectionBuilder{}
 	return sb.createFilterSection()
@@ -22,6 +27,12 @@ func NewFilterSectionBuilder() *SectionBuilder {
 func NewOutputSectionBuilder() *SectionBuilder {
 	sb := SectionBuilder{}
 	return sb.createOutputSection()
+}
+
+func (sb *SectionBuilder) createInputSection() *SectionBuilder {
+	sb.builder.WriteString("[INPUT]")
+	sb.builder.WriteByte('\n')
+	return sb
 }
 
 func (sb *SectionBuilder) createFilterSection() *SectionBuilder {

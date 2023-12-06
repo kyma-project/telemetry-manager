@@ -340,20 +340,6 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
 
 [INPUT]
     Name tail
-    Alias tele-tail
-    Path /var/log/containers/*.log
-    Exclude_Path /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log
-    multiline.parser docker, cri, go, python, java
-    Tag tele.*
-    Mem_Buf_Limit 5MB
-    Skip_Long_Lines On
-    Refresh_Interval 10
-    DB /data/flb_kube.db
-    storage.type  filesystem
-    Read_from_Head True
-
-[INPUT]
-    Name tail
     Path /null.log
     Tag null.*
     Alias null-tail
@@ -362,14 +348,6 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
     Name null
     Match null.*
     Alias null-null
-
-[FILTER]
-    Name kubernetes
-    Match tele.*
-    Merge_Log On
-    K8S-Logging.Parser On
-    K8S-Logging.Exclude Off
-    Buffer_Size 1MB
 
 `
 
