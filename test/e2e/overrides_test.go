@@ -3,6 +3,8 @@
 package e2e
 
 import (
+	"net/http"
+
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -10,9 +12,10 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -21,7 +24,6 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 	const (
 		mockBackendName = "overrides-receiver"
 		mockNs          = "overrides-log-http-output"
-		logProducerName = "log-producer-http-output" //#nosec G101 -- This is a false positive
 		pipelineName    = "http-output-pipeline"
 	)
 	var telemetryExportURL string
@@ -31,9 +33,7 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(isOperational()))
-		mockLogProducer := logproducer.New(logProducerName, mockNs)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-overrides-test")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 		namespaces := []string{kitkyma.SystemNamespaceName}
 
@@ -56,9 +56,9 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 	Context("When a logpipeline with HTTP output exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
-			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			})
+			// DeferCleanup(func() {
+			// 	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			// })
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
@@ -70,12 +70,16 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
 		})
 
-		It("Should have a log producer running", Label(operationalTest), func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
-		})
-
-		It("Should have produced logs in the backend", Label(operationalTest), func() {
-			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
+		It("Should have telemetry-manager logs in the backend", Label(operationalTest), func() {
+			// verifiers.LogsShouldBeDelivered(proxyClient, "telemetry-operator", telemetryExportURL)
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					ContainLd(ContainLogRecord(WithPodName(ContainSubstring("telemetry-operator")))),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })
