@@ -66,6 +66,18 @@ var _ = Describe("WithPodName", func() {
 	})
 })
 
+var _ = Describe("WithLevel", func() {
+	It("should apply matcher", func() {
+		ld := plog.NewLogs()
+		rl := ld.ResourceLogs().AppendEmpty()
+		lrs := rl.ScopeLogs().AppendEmpty().LogRecords()
+		lr := lrs.AppendEmpty()
+		lr.Attributes().PutStr("level", "INFO")
+
+		Expect(mustMarshalLogs(ld)).Should(ContainLd(ContainLogRecord(WithLevel(Equal("INFO")))))
+	})
+})
+
 var _ = Describe("WithKubernetesAnnotations", func() {
 	It("should apply matcher", func() {
 		ld := plog.NewLogs()

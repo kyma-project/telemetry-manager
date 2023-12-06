@@ -74,6 +74,18 @@ func WithPodName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	}, matcher)
 }
 
+func WithLevel(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(lr plog.LogRecord) string {
+		const levelAttrKey = "level"
+		levelAttr, hasLevelAttr := lr.Attributes().Get(levelAttrKey)
+		if !hasLevelAttr || levelAttr.Type() != pcommon.ValueTypeStr {
+			return ""
+		}
+
+		return levelAttr.Str()
+	}, matcher)
+}
+
 func WithKubernetesAnnotations(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) map[string]any {
 		kubernetesAttrs := getKubernetesAttributes(lr)
