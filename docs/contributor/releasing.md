@@ -43,11 +43,11 @@ This release process covers the steps to release new major and minor versions fo
    git push upstream {RELEASE_VERSION}
    git push upstream {RELEASE_DEV_VERSION}
    ```
-   The {RELEASE_VERSION} tag triggers a post-submit prow job (`post-telemetry-manager-build-release`) and a Github action (`Github Release`). The `post-telemetry-manager-build-release` job builds the `telemetry-manager` image, tags it with the module version and pushes it to the production registry. The `Github Release` action creates the Github release.
+   The {RELEASE_VERSION} tag triggers a post-submit Prow Job (`post-telemetry-manager-build-release`) and a GitHub action (`Github Release`). The `post-telemetry-manager-build-release` job builds the `telemetry-manager` image, tags it with the module version, and pushes it to the production registry. The `GitHub Release` action creates the GitHub release.
 
-9. Verify the [status](https://status.build.kyma-project.io/) of the post-submit prow job (`post-telemetry-manager-build-release`) and the [status](https://github.com/kyma-project/telemetry-manager/actions) of the Github action (`Github Release`).
-   - Once the post-submit prow job and the Github action succeed, the new Github release is available under [releases](https://github.com/kyma-project/telemetry-manager/releases).
-   - If the post-submit prow job or the Github action fails, re-trigger them by removing the {RELEASE_VERSION} tag from upstream and pushing it again:
+9. Verify the [status](https://status.build.kyma-project.io/) of the post-submit Prow Job (`post-telemetry-manager-build-release`) and the [status](https://github.com/kyma-project/telemetry-manager/actions) of the GitHub action (`Github Release`).
+   - Once the post-submit Prow Job and the GitHub action succeed, the new GitHub release is available under [releases](https://github.com/kyma-project/telemetry-manager/releases).
+   - If the post-submit Prow Job or the GitHub action fails, re-trigger them by removing the {RELEASE_VERSION} tag from upstream and pushing it again:
      ```bash
      git push --delete upstream {RELEASE_VERSION}
      git push upstream {RELEASE_VERSION}
