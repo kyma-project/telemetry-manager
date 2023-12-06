@@ -4,11 +4,11 @@
 
 This release process covers the steps to release new major and minor versions for the Kyma Telemetry module.
 
-1. Verify that all issues in the [Github milestone](https://github.com/kyma-project/telemetry-manager/milestones) related to the version are closed.
+1. Verify that all issues in the [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) related to the version are closed.
 
 2. Close the milestone.
 
-3. Create a new [Github milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
+3. Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
 4. Bump the `telemetry-manager/main` branch with the new versions for the dependent images.
    Create a PR to `telemetry-manager/main` with the following changes:
@@ -43,9 +43,9 @@ This release process covers the steps to release new major and minor versions fo
    git push upstream {RELEASE_VERSION}
    git push upstream {RELEASE_DEV_VERSION}
    ```
-   The {RELEASE_VERSION} tag triggers a post-submit Prow Job (`post-telemetry-manager-build-release`) and a GitHub action (`Github Release`). The `post-telemetry-manager-build-release` job builds the `telemetry-manager` image, tags it with the module version, and pushes it to the production registry. The `GitHub Release` action creates the GitHub release.
+   The {RELEASE_VERSION} tag triggers a post-submit Prow Job (`post-telemetry-manager-build-release`) and a GitHub action (`GitHub Release`). The `post-telemetry-manager-build-release` job builds the `telemetry-manager` image, tags it with the module version, and pushes it to the production registry. The `GitHub Release` action creates the GitHub release.
 
-9. Verify the [status](https://status.build.kyma-project.io/) of the post-submit Prow Job (`post-telemetry-manager-build-release`) and the [status](https://github.com/kyma-project/telemetry-manager/actions) of the GitHub action (`Github Release`).
+9. Verify the [status](https://status.build.kyma-project.io/) of the post-submit Prow Job (`post-telemetry-manager-build-release`) and the [status](https://github.com/kyma-project/telemetry-manager/actions) of the GitHub action (`GitHub Release`).
    - Once the post-submit Prow Job and the GitHub action succeed, the new GitHub release is available under [releases](https://github.com/kyma-project/telemetry-manager/releases).
    - If the post-submit Prow Job or the GitHub action fails, re-trigger them by removing the {RELEASE_VERSION} tag from upstream and pushing it again:
      ```bash
@@ -59,7 +59,7 @@ Every PR's title must adhere to the [Conventional Commits](https://www.conventio
 
 ### Pull Request Title
 
-Due to the Squash merge Github Workflow, each PR results in a single commit after merging into the main development branch. The PR's title becomes the commit message and must adhere to the template:
+Due to the Squash merge GitHub Workflow, each PR results in a single commit after merging into the main development branch. The PR's title becomes the commit message and must adhere to the template:
 
 `type(scope?): subject`
 
