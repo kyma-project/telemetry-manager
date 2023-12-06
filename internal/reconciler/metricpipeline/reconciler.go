@@ -54,7 +54,7 @@ func NewReconciler(client client.Client, config Config, gatewayProber Deployment
 	return &Reconciler{
 		Client:             client,
 		config:             config,
-		prober:             prober,
+		prober:             gatewayProber,
 		agentProber:        agentProber,
 		overridesHandler:   overridesHandler,
 		istioStatusChecker: istiostatus.NewChecker(client),

@@ -421,17 +421,17 @@ func TestUpdateStatus(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		agentProberStub := &mocks.DaemonSetProber{}
-		daemonSetProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 		sut := Reconciler{
 			Client: fakeClient,
 			config: Config{Gateway: otelcollector.GatewayConfig{
 				Config: otelcollector.Config{BaseName: "metric-gateway"},
 			}},
-			prober:      proberStub,
-			agentProber: daemonSetProberStub,
+			prober:      gatewayProberStub,
+			agentProber: agentProberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)
@@ -471,18 +471,18 @@ func TestUpdateStatus(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		agentProberStub := &mocks.DaemonSetProber{}
-		daemonSetProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
 			Client: fakeClient,
 			config: Config{Gateway: otelcollector.GatewayConfig{
 				Config: otelcollector.Config{BaseName: "metric-gateway"},
 			}},
-			prober:      proberStub,
-			agentProber: daemonSetProberStub,
+			prober:      agentProberStub,
+			agentProber: agentProberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)
@@ -522,17 +522,17 @@ func TestUpdateStatus(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
 		agentProberStub := &mocks.DaemonSetProber{}
-		daemonSetProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 		sut := Reconciler{
 			Client: fakeClient,
 			config: Config{Gateway: otelcollector.GatewayConfig{
 				Config: otelcollector.Config{BaseName: "metric-gateway"},
 			}},
-			prober:      proberStub,
-			agentProber: daemonSetProberStub,
+			prober:      gatewayProberStub,
+			agentProber: agentProberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)

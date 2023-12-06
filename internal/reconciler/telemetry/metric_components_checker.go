@@ -55,7 +55,7 @@ func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPip
 	}); found {
 		return conditions.ReasonReferencedSecretMissing
 	}
-	
+
 	return conditions.ReasonMetricGatewayDeploymentReady
 }
 
