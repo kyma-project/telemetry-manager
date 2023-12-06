@@ -420,10 +420,10 @@ func TestUpdateStatus(t *testing.T) {
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
-		proberStub := &mocks.DeploymentProber{}
+		gatewayProberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
-		daemonSetProberStub := &mocks.DaemonSetProber{}
+		agentProberStub := &mocks.DaemonSetProber{}
 		daemonSetProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 		sut := Reconciler{
 			Client: fakeClient,
@@ -470,10 +470,10 @@ func TestUpdateStatus(t *testing.T) {
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
-		proberStub := &mocks.DeploymentProber{}
+		gatewayProberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
-		daemonSetProberStub := &mocks.DaemonSetProber{}
+		agentProberStub := &mocks.DaemonSetProber{}
 		daemonSetProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
@@ -521,10 +521,10 @@ func TestUpdateStatus(t *testing.T) {
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
-		proberStub := &mocks.DeploymentProber{}
+		gatewayProberStub := &mocks.DeploymentProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
-		daemonSetProberStub := &mocks.DaemonSetProber{}
+		agentProberStub := &mocks.DaemonSetProber{}
 		daemonSetProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 		sut := Reconciler{
 			Client: fakeClient,
