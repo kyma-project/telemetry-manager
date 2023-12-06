@@ -1,7 +1,0 @@
-- [HOME](/)
-- [Kyma Telemetry Module](../README.md)
-- [Resources](resources/README.md)
-  - [Telemetry](01-telemetry.md)
-  - [LogPipeline](02-logpipeline.md)
-  - [TracePipeline](04-tracepipeline.md)
-  - [MetricPipeline](05-metricpipeline.md)
