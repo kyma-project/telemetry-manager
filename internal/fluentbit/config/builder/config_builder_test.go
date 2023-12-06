@@ -97,11 +97,11 @@ func TestMergeSectionsConfig(t *testing.T) {
 [FILTER]
     name                kubernetes
     match               foo.*
-    annotations         true
+    annotations         on
     k8s-logging.exclude off
     k8s-logging.parser  on
     kube_tag_prefix     foo.var.log.containers.
-    labels              true
+    labels              on
     merge_log           on
 
 [FILTER]
@@ -196,11 +196,11 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 [FILTER]
     name                kubernetes
     match               foo.*
-    annotations         true
+    annotations         on
     k8s-logging.exclude off
     k8s-logging.parser  on
     kube_tag_prefix     foo.var.log.containers.
-    labels              true
+    labels              on
     merge_log           on
 
 [OUTPUT]

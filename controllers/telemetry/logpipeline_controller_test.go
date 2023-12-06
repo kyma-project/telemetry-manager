@@ -83,11 +83,11 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 [FILTER]
     name                kubernetes
     match               log-pipeline.*
-    annotations         false
+    annotations         off
     k8s-logging.exclude off
     k8s-logging.parser  on
     kube_tag_prefix     log-pipeline.var.log.containers.
-    labels              true
+    labels              on
     merge_log           on
 
 [FILTER]

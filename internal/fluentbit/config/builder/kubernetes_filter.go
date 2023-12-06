@@ -14,7 +14,14 @@ func createKubernetesFilter(pipeline *telemetryv1alpha1.LogPipeline) string {
 		AddConfigParam("k8s-logging.parser", "on").
 		AddConfigParam("k8s-logging.exclude", "off").
 		AddConfigParam("kube_tag_prefix", fmt.Sprintf("%s.var.log.containers.", pipeline.Name)).
-		AddConfigParam("annotations", fmt.Sprintf("%v", pipeline.Spec.Input.Application.KeepAnnotations)).
-		AddConfigParam("labels", fmt.Sprintf("%v", !pipeline.Spec.Input.Application.DropLabels)).
+		AddConfigParam("annotations", fmt.Sprintf("%v", fluentBitFlag(pipeline.Spec.Input.Application.KeepAnnotations))).
+		AddConfigParam("labels", fmt.Sprintf("%v", fluentBitFlag(!pipeline.Spec.Input.Application.DropLabels))).
 		Build()
+}
+
+func fluentBitFlag(b bool) string {
+	if b {
+		return "on"
+	}
+	return "off"
 }

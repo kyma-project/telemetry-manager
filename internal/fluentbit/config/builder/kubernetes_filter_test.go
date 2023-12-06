@@ -13,11 +13,11 @@ func TestCreateKubernetesFilterKeepAll(t *testing.T) {
 	expected := `[FILTER]
     name                kubernetes
     match               test-logpipeline.*
-    annotations         true
+    annotations         on
     k8s-logging.exclude off
     k8s-logging.parser  on
     kube_tag_prefix     test-logpipeline.var.log.containers.
-    labels              true
+    labels              on
     merge_log           on
 
 `
@@ -37,11 +37,11 @@ func TestCreateKubernetesFilterDropAll(t *testing.T) {
 	expected := `[FILTER]
     name                kubernetes
     match               test-logpipeline.*
-    annotations         false
+    annotations         off
     k8s-logging.exclude off
     k8s-logging.parser  on
     kube_tag_prefix     test-logpipeline.var.log.containers.
-    labels              false
+    labels              off
     merge_log           on
 
 `
