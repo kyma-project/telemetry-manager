@@ -56,9 +56,9 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 	Context("When a logpipeline with HTTP output exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
-			// DeferCleanup(func() {
-			// 	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			// })
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
@@ -70,16 +70,26 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
 		})
 
-		It("Should have telemetry-manager logs in the backend", Label(operationalTest), func() {
-			// verifiers.LogsShouldBeDelivered(proxyClient, "telemetry-operator", telemetryExportURL)
+		It("Should have INFO level logs in the backend", Label(operationalTest), func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					ContainLd(ContainLogRecord(WithPodName(ContainSubstring("telemetry-operator")))),
+					ContainLd(ContainLogRecord(SatisfyAll(
+						WithPodName(ContainSubstring("telemetry-operator")),
+						WithLevel(Equal("INFO")),
+					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should add overrides configmap", Label(operationalTest), func() {
+			// TODO
+		})
+
+		It("Should have DEBUG level logs in the backend", Label(operationalTest), func() {
+			// TODO
 		})
 	})
 })
