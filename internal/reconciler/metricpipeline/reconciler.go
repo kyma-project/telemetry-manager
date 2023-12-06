@@ -50,7 +50,7 @@ type Reconciler struct {
 	istioStatusChecker istiostatus.Checker
 }
 
-func NewReconciler(client client.Client, config Config, prober DeploymentProber, agentProber DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
+func NewReconciler(client client.Client, config Config, gatewayProber DeploymentProber, agentProber DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
 		Client:             client,
 		config:             config,
