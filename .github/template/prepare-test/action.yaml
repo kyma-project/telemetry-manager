@@ -39,12 +39,12 @@ runs:
         GITHUB_OWNER: "${{ github.repository_owner }}"
         GITHUB_REPO: "telemetry-manager"
 
-    - name: Deploy module experimental
+    - name: Deploy module release
       if: ${{ inputs.release }}
       shell: bash
       run: make deploy
 
-    - name: Deploy module release
+    - name: Deploy module experimental
       if: ${{ !inputs.release }}
       shell: bash
       run: make deploy-dev
