@@ -30,9 +30,9 @@ Kyma's Telemetry module brings a predefined setup of the Fluent Bit DaemonSet an
 
 ![Pipeline Concept](./assets/logs-pipelines.drawio.svg)
 
-1. A central `tail` input plugin reads the application logs.
+1. A dedicated `tail` input plugin reads the application logs, which are selected in the input section of the `LogPipeline`. Each `tail` input uses a dedicated `tag` with the name `<logpipeline>.*`.
 
-2. The application logs are enriched by the `kubernetes` filter. Then, for every LogPipeline definition, a `rewrite_tag` filter is generated, which uses a dedicated `tag` with the name `<logpipeline>.*`, followed by the custom configuration defined in the LogPipeline resource. You can add your own filters to the default filters.
+2. The application logs are enriched by the `kubernetes` filter. You can add your own filters to the default filters.
 
 3. Based on the default and custom filters, you get the desired output for each `LogPipeline`.
 
@@ -326,7 +326,7 @@ You activated a LogPipeline and logs start streaming to your backend. To verify 
 
 ## Log record processing
 
-After a log record has been read, it is preprocessed by centrally configured plugins, like the `kubernetes` filter. Thus, when a record is ready to be processed by the sections defined in the LogPipeline definition, it has several attributes available for processing and shipment.
+After a log record has been read, it is preprocessed by configured plugins, like the `kubernetes` filter. Thus, when a record is ready to be processed by the sections defined in the LogPipeline definition, it has several attributes available for processing and shipment.
 
 ![Flow](./assets/logs-flow.drawio.svg)
 
@@ -347,7 +347,7 @@ In the example, we assume there's a container `myContainer` of Pod `myPod`, runn
 
 ### Stage 2: Tail input
 
-The central pipeline tails the log message from a log file managed by the container runtime. The file name contains the Namespace, Pod, and container information that will be available later as part of the [tag](https://docs.fluentbit.io/manual/concepts/key-concepts#tag). The resulting log record available in an internal Fluent Bit representation looks similar to the following example:
+The `tail` input plugin reads the log message from a log file managed by the container runtime. The input plugin brings a dedicated filesystem buffer for the pipeline. The file name contains the Namespace, Pod, and container information that will be available later as part of the [tag](https://docs.fluentbit.io/manual/concepts/key-concepts#tag). The tag is prefixed with the pipeline name. The resulting log record available in an internal Fluent Bit representation looks similar to the following example:
 
 ```json
 {
@@ -424,10 +424,6 @@ The record **after** applying the JSON parser:
   "traceID": "123"
 }
 ```
-
-### Stage 5: Rewrite tag
-
-As per the LogPipeline definition, a dedicated [rewrite_tag](https://docs.fluentbit.io/manual/pipeline/filters/rewrite-tag) filter is introduced. The filter brings a dedicated filesystem buffer for the outputs defined in the related pipeline, and with that, ensures a shipment of the logs isolated from outputs of other pipelines. As a consequence, each pipeline runs on its own [tag](https://docs.fluentbit.io/manual/concepts/key-concepts#tag).
 
 ## Operations
 
