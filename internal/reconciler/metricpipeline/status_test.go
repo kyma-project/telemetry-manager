@@ -36,19 +36,7 @@ func TestUpdateStatus(t *testing.T) {
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
-				},
-				Input: telemetryv1alpha1.MetricPipelineInput{
-					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
-						Enabled: pointer.Bool(false),
-					},
-					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-						Enabled: pointer.Bool(false),
-					},
-					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-						Enabled: pointer.Bool(false),
-					},
-				},
-			},
+				}},
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
@@ -83,19 +71,7 @@ func TestUpdateStatus(t *testing.T) {
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
-				},
-				Input: telemetryv1alpha1.MetricPipelineInput{
-					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
-						Enabled: pointer.Bool(false),
-					},
-					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-						Enabled: pointer.Bool(false),
-					},
-					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-						Enabled: pointer.Bool(false),
-					},
-				},
-			},
+				}},
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
@@ -130,19 +106,7 @@ func TestUpdateStatus(t *testing.T) {
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
-				},
-				Input: telemetryv1alpha1.MetricPipelineInput{
-					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
-						Enabled: pointer.Bool(false),
-					},
-					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-						Enabled: pointer.Bool(false),
-					},
-					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-						Enabled: pointer.Bool(false),
-					},
-				},
-			},
+				}},
 			Status: telemetryv1alpha1.MetricPipelineStatus{
 				Conditions: []telemetryv1alpha1.MetricPipelineCondition{
 					{Reason: conditions.ReasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
@@ -191,19 +155,7 @@ func TestUpdateStatus(t *testing.T) {
 							},
 						},
 					},
-				},
-				Input: telemetryv1alpha1.MetricPipelineInput{
-					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
-						Enabled: pointer.Bool(false),
-					},
-					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-						Enabled: pointer.Bool(false),
-					},
-					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-						Enabled: pointer.Bool(false),
-					},
-				},
-			},
+				}},
 			Status: telemetryv1alpha1.MetricPipelineStatus{
 				Conditions: []telemetryv1alpha1.MetricPipelineCondition{
 					{Reason: conditions.ReasonMetricGatewayDeploymentNotReady, Type: telemetryv1alpha1.MetricPipelinePending},
@@ -253,19 +205,7 @@ func TestUpdateStatus(t *testing.T) {
 							},
 						},
 					},
-				},
-				Input: telemetryv1alpha1.MetricPipelineInput{
-					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
-						Enabled: pointer.Bool(false),
-					},
-					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-						Enabled: pointer.Bool(false),
-					},
-					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-						Enabled: pointer.Bool(false),
-					},
-				},
-			},
+				}},
 		}
 		secret := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{},
@@ -309,19 +249,7 @@ func TestUpdateStatus(t *testing.T) {
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
 					},
-				},
-				Input: telemetryv1alpha1.MetricPipelineInput{
-					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
-						Enabled: pointer.Bool(false),
-					},
-					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-						Enabled: pointer.Bool(false),
-					},
-					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-						Enabled: pointer.Bool(false),
-					},
-				},
-			},
+				}},
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
 
@@ -355,17 +283,6 @@ func TestUpdateStatus(t *testing.T) {
 				Output: telemetryv1alpha1.MetricPipelineOutput{
 					Otlp: &telemetryv1alpha1.OtlpOutput{
 						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
-					},
-				},
-				Input: telemetryv1alpha1.MetricPipelineInput{
-					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
-						Enabled: pointer.Bool(false),
-					},
-					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-						Enabled: pointer.Bool(false),
-					},
-					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-						Enabled: pointer.Bool(false),
 					},
 				}},
 		}
