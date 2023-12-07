@@ -56,9 +56,9 @@ To ship application logs to a new output, create a resource of the kind `LogPipe
 
 ```yaml
 kind: LogPipeline
-  apiVersion: telemetry.kyma-project.io/v1alpha1
-  metadata:
-    name: http-backend
+apiVersion: telemetry.kyma-project.io/v1alpha1
+metadata:
+  name: http-backend
 spec:
   output:
     http:
