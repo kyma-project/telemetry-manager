@@ -126,6 +126,21 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (bar,foo)",
 			},
 		},
+		{
+			name: "should be unhealthy if metric agent not running",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithStatusConditions(
+					testutils.MetricPendingCondition(conditions.ReasonMetricGatewayDeploymentNotReady), testutils.MetricRunningCondition()).Build(),
+				testutils.NewMetricPipelineBuilder().WithStatusConditions(testutils.MetricRunningCondition(), testutils.MetricPendingCondition(conditions.ReasonMetricAgentDaemonSetNotReady)).Build(),
+			},
+			telemetryInDeletion: false,
+			expectedCondition: &metav1.Condition{
+				Type:    "MetricComponentsHealthy",
+				Status:  "False",
+				Reason:  "ReasonMetricAgentDaemonSetNotReady",
+				Message: "Metric agent DaemonSet is not ready",
+			},
+		},
 	}
 
 	for _, test := range tests {

@@ -617,7 +617,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,
-		metricpipeline.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overridesHandler))
+		metricpipeline.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, &kubernetes.DaemonSetProber{Client: client}, overridesHandler))
 }
 
 func createDryRunConfig() dryrun.Config {

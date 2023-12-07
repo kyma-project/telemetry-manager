@@ -205,6 +205,30 @@ func TestUpdateStatus(t *testing.T) {
 				{Type: "TraceComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonResourceBlocksDeletion},
 			},
 		},
+		{
+			name: "metric agent is unhealthy",
+			config: &Config{
+				Traces:  TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
+				Metrics: MetricsConfig{Enabled: true},
+			},
+			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
+			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonMetricAgentDaemonSetNotReady},
+			tracesCheckerReturn:  &metav1.Condition{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady},
+			resources: []client.Object{
+				pointerFrom(testutils.NewTracePipelineBuilder().Build()),
+			},
+			expectedState: operatorv1alpha1.StateWarning,
+			expectedConditions: []metav1.Condition{
+				{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
+				{Type: "MetricComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonMetricAgentDaemonSetNotReady},
+				{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady},
+			},
+			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{Traces: &operatorv1alpha1.OTLPEndpoints{
+				GRPC: "http://traces.telemetry-system:4317",
+				HTTP: "http://traces.telemetry-system:4318",
+			}},
+		},
 	}
 
 	for _, tt := range tests {

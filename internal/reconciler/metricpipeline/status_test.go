@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -300,6 +301,157 @@ func TestUpdateStatus(t *testing.T) {
 		err := sut.updateStatus(context.Background(), pipeline.Name, false)
 		require.NoError(t, err)
 		err = sut.updateStatus(context.Background(), pipeline.Name, true)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+		require.Len(t, updatedPipeline.Status.Conditions, 1)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricGatewayDeploymentNotReady)
+	})
+
+	t.Run("should add pending condition if metric agent daemonset is not ready", func(t *testing.T) {
+		pipelineName := "pipeline"
+		pipeline := &telemetryv1alpha1.MetricPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: pipelineName,
+			},
+			Spec: telemetryv1alpha1.MetricPipelineSpec{
+				Output: telemetryv1alpha1.MetricPipelineOutput{
+					Otlp: &telemetryv1alpha1.OtlpOutput{
+						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
+					},
+				},
+				Input: telemetryv1alpha1.MetricPipelineInput{
+					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: pointer.Bool(true),
+					},
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: pointer.Bool(false),
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: pointer.Bool(false),
+					},
+				},
+			},
+		}
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		agentProberStub := &mocks.DaemonSetProber{}
+		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		sut := Reconciler{
+			Client: fakeClient,
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{BaseName: "metric-gateway"},
+			}},
+			prober:      gatewayProberStub,
+			agentProber: agentProberStub,
+		}
+		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+		require.Len(t, updatedPipeline.Status.Conditions, 1)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricAgentDaemonSetNotReady)
+	})
+
+	t.Run("should add running condition if metric agent daemonset is ready", func(t *testing.T) {
+		pipelineName := "pipeline"
+		pipeline := &telemetryv1alpha1.MetricPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: pipelineName,
+			},
+			Spec: telemetryv1alpha1.MetricPipelineSpec{
+				Output: telemetryv1alpha1.MetricPipelineOutput{
+					Otlp: &telemetryv1alpha1.OtlpOutput{
+						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
+					},
+				},
+				Input: telemetryv1alpha1.MetricPipelineInput{
+					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: pointer.Bool(true),
+					},
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: pointer.Bool(false),
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: pointer.Bool(false),
+					},
+				},
+			},
+		}
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		agentProberStub := &mocks.DaemonSetProber{}
+		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		sut := Reconciler{
+			Client: fakeClient,
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{BaseName: "metric-gateway"},
+			}},
+			prober:      agentProberStub,
+			agentProber: agentProberStub,
+		}
+		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+		require.Len(t, updatedPipeline.Status.Conditions, 1)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelineRunning)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricGatewayDeploymentReady)
+	})
+
+	t.Run("should add pending condition if metric gateway deployment is not ready but metric agent is ready", func(t *testing.T) {
+		pipelineName := "pipeline"
+		pipeline := &telemetryv1alpha1.MetricPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: pipelineName,
+			},
+			Spec: telemetryv1alpha1.MetricPipelineSpec{
+				Output: telemetryv1alpha1.MetricPipelineOutput{
+					Otlp: &telemetryv1alpha1.OtlpOutput{
+						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
+					},
+				},
+				Input: telemetryv1alpha1.MetricPipelineInput{
+					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: pointer.Bool(true),
+					},
+					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+						Enabled: pointer.Bool(false),
+					},
+					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
+						Enabled: pointer.Bool(false),
+					},
+				},
+			},
+		}
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+
+		agentProberStub := &mocks.DaemonSetProber{}
+		agentProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+		sut := Reconciler{
+			Client: fakeClient,
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{BaseName: "metric-gateway"},
+			}},
+			prober:      gatewayProberStub,
+			agentProber: agentProberStub,
+		}
+		err := sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)
 
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
