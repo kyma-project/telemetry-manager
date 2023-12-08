@@ -76,23 +76,33 @@ func TestCreateLuaDedotFilterWithDedotFalse(t *testing.T) {
 }
 
 func TestMergeSectionsConfig(t *testing.T) {
-	expected := `[FILTER]
-    name                  rewrite_tag
-    match                 kube.*
-    emitter_mem_buf_limit 10M
-    emitter_name          foo-http
-    emitter_storage.type  filesystem
-    rule                  $kubernetes['container_name'] "^(?!container1$|container2$).*" foo.$TAG true
-
-[FILTER]
-    name    grep
-    match   foo.*
-    exclude $kubernetes['namespace_name'] kyma-system|kube-system|istio-system|compass-system
+	expected := `[INPUT]
+    name             tail
+    alias            foo
+    db               /data/flb_foo.db
+    exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log,/var/log/containers/*_*_container1-*.log,/var/log/containers/*_*_container2-*.log
+    mem_buf_limit    5MB
+    multiline.parser docker, cri, go, python, java
+    path             /var/log/containers/*_*_*-*.log
+    read_from_head   true
+    skip_long_lines  on
+    storage.type     filesystem
+    tag              foo.*
 
 [FILTER]
     name   record_modifier
     match  foo.*
     record cluster_identifier ${KUBERNETES_SERVICE_HOST}
+
+[FILTER]
+    name                kubernetes
+    match               foo.*
+    annotations         on
+    k8s-logging.exclude off
+    k8s-logging.parser  on
+    kube_tag_prefix     foo.var.log.containers.
+    labels              on
+    merge_log           on
 
 [FILTER]
     name  grep
@@ -125,6 +135,9 @@ func TestMergeSectionsConfig(t *testing.T) {
 				Application: telemetryv1alpha1.ApplicationInput{
 					Containers: telemetryv1alpha1.InputContainers{
 						Exclude: []string{"container1", "container2"},
+					},
+					Namespaces: telemetryv1alpha1.InputNamespaces{
+						System: true,
 					},
 					KeepAnnotations: true,
 					DropLabels:      false,
@@ -162,23 +175,33 @@ func TestMergeSectionsConfig(t *testing.T) {
 }
 
 func TestMergeSectionsConfigCustomOutput(t *testing.T) {
-	expected := `[FILTER]
-    name                  rewrite_tag
-    match                 kube.*
-    emitter_mem_buf_limit 10M
-    emitter_name          foo-stdout
-    emitter_storage.type  filesystem
-    rule                  $log "^.*$" foo.$TAG true
-
-[FILTER]
-    name    grep
-    match   foo.*
-    exclude $kubernetes['namespace_name'] kyma-system|kube-system|istio-system|compass-system
+	expected := `[INPUT]
+    name             tail
+    alias            foo
+    db               /data/flb_foo.db
+    exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log
+    mem_buf_limit    5MB
+    multiline.parser docker, cri, go, python, java
+    path             /var/log/containers/*_*_*-*.log
+    read_from_head   true
+    skip_long_lines  on
+    storage.type     filesystem
+    tag              foo.*
 
 [FILTER]
     name   record_modifier
     match  foo.*
     record cluster_identifier ${KUBERNETES_SERVICE_HOST}
+
+[FILTER]
+    name                kubernetes
+    match               foo.*
+    annotations         on
+    k8s-logging.exclude off
+    k8s-logging.parser  on
+    kube_tag_prefix     foo.var.log.containers.
+    labels              on
+    merge_log           on
 
 [OUTPUT]
     name                     stdout
@@ -194,6 +217,9 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 				Application: telemetryv1alpha1.ApplicationInput{
 					KeepAnnotations: true,
 					DropLabels:      false,
+					Namespaces: telemetryv1alpha1.InputNamespaces{
+						System: true,
+					},
 				},
 			},
 			Output: telemetryv1alpha1.Output{

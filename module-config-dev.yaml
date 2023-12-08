@@ -1,8 +1,0 @@
-name: kyma-project.io/module/telemetry
-channel: experimental
-version: 1.4.0-dev
-manifest: telemetry-manager-dev.yaml
-security: sec-scanners-config.yaml
-defaultCR: ./config/samples/operator_v1alpha1_telemetry.yaml
-annotations:
-  operator.kyma-project.io/doc-url: https://kyma-project.io/#/telemetry-manager/user/README

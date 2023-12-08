@@ -28,7 +28,7 @@ func MetricPipelineShouldBeRunning(ctx context.Context, k8sClient client.Client,
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(gomega.BeTrue())
 }
 
-func MetricPipelineShouldNotBeRunningPending(ctx context.Context, k8sClient client.Client, pipelineName string) {
+func MetricPipelineShouldNotBeRunning(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	gomega.Consistently(func(g gomega.Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline
 		key := types.NamespacedName{Name: pipelineName}

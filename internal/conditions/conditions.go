@@ -13,6 +13,9 @@ const (
 	ReasonMetricGatewayDeploymentNotReady = "MetricGatewayDeploymentNotReady"
 	ReasonMetricGatewayDeploymentReady    = "MetricGatewayDeploymentReady"
 
+	ReasonMetricAgentDaemonSetNotReady = "ReasonMetricAgentDaemonSetNotReady"
+	ReasonMetricAgentDaemonSetReady    = "ReasonMetricAgentDaemonSetReady"
+
 	ReasonTraceGatewayDeploymentNotReady = "TraceGatewayDeploymentNotReady"
 	ReasonTraceGatewayDeploymentReady    = "TraceGatewayDeploymentReady"
 )
@@ -28,6 +31,9 @@ var message = map[string]string{
 
 	ReasonMetricGatewayDeploymentNotReady: "Metric gateway Deployment is not ready",
 	ReasonMetricGatewayDeploymentReady:    "Metric gateway Deployment is ready",
+
+	ReasonMetricAgentDaemonSetNotReady: "Metric agent DaemonSet is not ready",
+	ReasonMetricAgentDaemonSetReady:    "Metric agent DaemonSet is ready",
 
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",

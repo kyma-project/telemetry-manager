@@ -36,19 +36,26 @@ type DeploymentProber interface {
 	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
 }
 
+//go:generate mockery --name DaemonSetProber --filename daemonset_prober.go
+type DaemonSetProber interface {
+	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
+}
+
 type Reconciler struct {
 	client.Client
 	config             Config
 	prober             DeploymentProber
+	agentProber        DaemonSetProber
 	overridesHandler   *overrides.Handler
 	istioStatusChecker istiostatus.Checker
 }
 
-func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler *overrides.Handler) *Reconciler {
+func NewReconciler(client client.Client, config Config, gatewayProber DeploymentProber, agentProber DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
 		Client:             client,
 		config:             config,
-		prober:             prober,
+		prober:             gatewayProber,
+		agentProber:        agentProber,
 		overridesHandler:   overridesHandler,
 		istioStatusChecker: istiostatus.NewChecker(client),
 	}
@@ -153,7 +160,9 @@ func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv
 }
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	return *pipeline.Spec.Input.Runtime.Enabled || *pipeline.Spec.Input.Prometheus.Enabled || *pipeline.Spec.Input.Istio.Enabled
+	return (pipeline.Spec.Input.Runtime.Enabled != nil && *pipeline.Spec.Input.Runtime.Enabled) ||
+		(pipeline.Spec.Input.Prometheus.Enabled != nil && *pipeline.Spec.Input.Prometheus.Enabled) ||
+		(pipeline.Spec.Input.Istio.Enabled != nil && *pipeline.Spec.Input.Istio.Enabled)
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {

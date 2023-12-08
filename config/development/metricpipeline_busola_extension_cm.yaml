@@ -24,31 +24,86 @@ data:
       - widget: Panel
         name: Input
         children:
-          - name: Application
+          - name: Prometheus
             widget: Panel
-            visibility: $exists(spec.input.application)
+            visibility: $exists(spec.input.prometheus)
             children:
-              - name: Prometheus
-                widget: Panel
-                visibility: $exists(spec.input.prometheus)
-                children:
-                  - name: Enabled
-                    source: spec.input.prometheus.enabled
-                    visibility: $exists(spec.input.prometheus.enabled)
-              - name: Istio
-                widget: Panel
-                visibility: $exists(spec.input.istio)
-                children:
-                  - name: Enabled
-                    source: spec.input.istio.enabled
-                    visibility: $exists(spec.input.istio.enabled)
-              - name: Runtime
-                widget: Panel
-                visibility: $exists(spec.input.runtime)
-                children:
-                  - name: Enabled
-                    source: spec.input.runtime.enabled
-                    visibility: $exists(spec.input.runtime.enabled)
+              - name: Enabled
+                visibility: $exists(spec.input.prometheus.enabled)
+                source: spec.input.prometheus.enabled
+              - name: Include Namespaces
+                widget: JoinedArray
+                visibility: $exists(spec.input.prometheus.namespaces.include)
+                source: spec.input.prometheus.namespaces.include
+                separator: ', '
+              - name: Exclude Namespaces
+                widget: JoinedArray
+                visibility: $exists(spec.input.prometheus.namespaces.exclude)
+                source: spec.input.prometheus.namespaces.exclude
+                separator: ', '
+              - name: System Namespaces
+                visibility: $exists(spec.input.prometheus.namespaces.system)
+                source: spec.input.prometheus.namespaces.system
+          - name: Istio
+            widget: Panel
+            visibility: $exists(spec.input.istio)
+            children:
+              - name: Enabled
+                visibility: $exists(spec.input.istio.enabled)
+                source: spec.input.istio.enabled
+              - name: Include Namespaces
+                widget: JoinedArray
+                visibility: $exists(spec.input.istio.namespaces.include)
+                source: spec.input.istio.namespaces.include
+                separator: ', '
+              - name: Exclude Namespaces
+                widget: JoinedArray
+                visibility: $exists(spec.input.istio.namespaces.exclude)
+                source: spec.input.istio.namespaces.exclude
+                separator: ', '
+              - name: System Namespaces
+                visibility: $exists(spec.input.istio.namespaces.system)
+                source: spec.input.istio.namespaces.system
+          - name: Runtime
+            widget: Panel
+            visibility: $exists(spec.input.runtime)
+            children:
+              - name: Enabled
+                visibility: $exists(spec.input.runtime.enabled)
+                source: spec.input.runtime.enabled
+              - name: Include Namespaces
+                widget: JoinedArray
+                visibility: $exists(spec.input.runtime.namespaces.include)
+                source: spec.input.runtime.namespaces.include
+                separator: ', '
+              - name: Exclude Namespaces
+                widget: JoinedArray
+                visibility: $exists(spec.input.runtime.namespaces.exclude)
+                source: spec.input.runtime.namespaces.exclude
+                separator: ', '
+              - name: System Namespaces
+                visibility: $exists(spec.input.runtime.namespaces.system)
+                source: spec.input.runtime.namespaces.system
+          - name: OTLP
+            widget: Panel
+            visibility: $exists(spec.input.otlp)
+            children:
+              - name: Enabled
+                visibility: $exists(spec.input.otlp.enabled)
+                source: spec.input.otlp.enabled
+              - name: Include Namespaces
+                widget: JoinedArray
+                visibility: $exists(spec.input.otlp.namespaces.include)
+                source: spec.input.otlp.namespaces.include
+                separator: ', '
+              - name: Exclude Namespaces
+                widget: JoinedArray
+                visibility: $exists(spec.input.otlp.namespaces.exclude)
+                source: spec.input.otlp.namespaces.exclude
+                separator: ', '
+              - name: System Namespaces
+                visibility: $exists(spec.input.otlp.namespaces.system)
+                source: spec.input.otlp.namespaces.system
       - widget: Panel
         name: Output
         children:
@@ -181,33 +236,94 @@ data:
       defaultExpanded: true
       simple: true
       children:
-        - name: Application
-          path: application
+        - name: Prometheus
+          path: prometheus
           widget: FormGroup
-          defaultExpanded: true
           simple: true
           children:
-            - name: Prometheus
-              path: prometheus
-              widget: FormGroup
+            - name: Enabled
+              path: enabled
               simple: true
+            - name: Include System Namespaces
+              path: namespaces.system
+            - name: Include Namespaces
+              widget: SimpleList
+              path: namespaces.include
+              defaultExpanded: true
               children:
-                - name: Enabled
-                  path: enabled
-            - name: Istio
-              path: istio
-              widget: FormGroup
+                - path: '[]'
+            - name: Exclude Namespaces
+              widget: SimpleList
+              path: namespaces.exclude
+              defaultExpanded: true
+              children:
+                - path: '[]'
+        - name: Istio
+          path: istio
+          widget: FormGroup
+          simple: true
+          children:
+            - name: Enabled
+              path: enabled
               simple: true
+            - name: Include System Namespaces
+              path: namespaces.system
+            - name: Include Namespaces
+              widget: SimpleList
+              path: namespaces.include
+              defaultExpanded: true
               children:
-                - name: Enabled
-                  path: enabled
-            - name: Runtime
-              path: runtime
-              widget: FormGroup
+                - path: '[]'
+            - name: Exclude Namespaces
+              widget: SimpleList
+              path: namespaces.exclude
+              defaultExpanded: true
+              children:
+                - path: '[]'
+        - name: Runtime
+          path: runtime
+          widget: FormGroup
+          simple: true
+          children:
+            - name: Enabled
+              path: enabled
               simple: true
+            - name: Include System Namespaces
+              path: namespaces.system
+            - name: Include Namespaces
+              widget: SimpleList
+              path: namespaces.include
+              defaultExpanded: true
               children:
-                - name: Enabled
-                  path: enabled
+                - path: '[]'
+            - name: Exclude Namespaces
+              widget: SimpleList
+              path: namespaces.exclude
+              defaultExpanded: true
+              children:
+                - path: '[]'
+        - name: OTLP
+          path: otlp
+          widget: FormGroup
+          simple: true
+          children:
+            - name: Enabled
+              path: enabled
+              simple: true
+            - name: Include System Namespaces
+              path: namespaces.system
+            - name: Include Namespaces
+              widget: SimpleList
+              path: namespaces.include
+              defaultExpanded: true
+              children:
+                - path: '[]'
+            - name: Exclude Namespaces
+              widget: SimpleList
+              path: namespaces.exclude
+              defaultExpanded: true
+              children:
+                - path: '[]'
     - path: spec.output
       widget: FormGroup
       defaultExpanded: true
