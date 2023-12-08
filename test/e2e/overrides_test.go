@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitovrr "github.com/kyma-project/telemetry-manager/test/testkit/kyma/overrides"
@@ -99,11 +100,33 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should add the overrides configmap", Label(operationalTest), func() {
+		It("Should add the overrides configmap and modify the log pipeline", Label(operationalTest), func() {
+			// Add overrides configmap
 			var objs []client.Object
 			objs = append(objs, kitovrr.NewOverrides(kitovrr.DEBUG).K8sObject())
-
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, objs...)).Should(Succeed())
+			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, objs...)).Should(Succeed())
+
+			// Get logPipeline
+			lookupKey := types.NamespacedName{
+				Name:      pipelineName,
+				Namespace: mockNs,
+			}
+			var logPipeline telemetry.LogPipeline
+			err := k8sClient.Get(ctx, lookupKey, &logPipeline)
+			Expect(err).To(BeNil())
+
+			// Annotate logPipeline
+			if logPipeline.ObjectMeta.Annotations == nil {
+				logPipeline.ObjectMeta.Annotations = map[string]string{}
+			}
+			logPipeline.ObjectMeta.Annotations["test-annotation"] = "test-value"
+
+			// Update logPipeline
+			err = k8sClient.Update(ctx, &logPipeline)
+			Expect(err).To(BeNil())
 		})
 
 		It("Should have DEBUG level logs in the backend", Label(operationalTest), func() {
