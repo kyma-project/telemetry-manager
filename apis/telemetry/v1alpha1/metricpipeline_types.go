@@ -78,6 +78,7 @@ type MetricPipelinePrometheusInput struct {
 	// If enabled, Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether Prometheus metrics from specific Namespaces are selected. System Namespaces are disabled by default.
+	//+kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
 	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
@@ -86,6 +87,7 @@ type MetricPipelineRuntimeInput struct {
 	// If enabled, workload-related Kubernetes metrics are scraped. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether workload-related Kubernetes metrics from specific Namespaces are selected. System Namespaces are disabled by default.
+	//+kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
 	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
@@ -103,20 +105,17 @@ type MetricPipelineOtlpInput struct {
 	//+kubebuilder:default=True
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether push-based OTLP metrics from specific Namespaces are selected. System Namespaces are disabled by default.
+	//+kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
 	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
 // MetricPipelineInputNamespaceSelector describes whether metrics from specific Namespaces are selected.
-// +kubebuilder:validation:XValidation:rule="!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))", message="Can only define one namespace selector - either 'include', 'exclude', or 'system'"
-// +kubebuilder:validation:XValidation:rule="!((has(self.include) && size(self.include) != 0) && has(self.system))", message="Can only define one namespace selector - either 'include', 'exclude', or 'system'"
-// +kubebuilder:validation:XValidation:rule="!((has(self.exclude) && size(self.exclude) != 0) && has(self.system))", message="Can only define one namespace selector - either 'include', 'exclude', or 'system'"
+// +kubebuilder:validation:XValidation:rule="!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))", message="Can only define one namespace selector - either 'include' or 'exclude'"
 type MetricPipelineInputNamespaceSelector struct {
 	// Include metrics from the specified Namespace names only.
 	Include []string `json:"include,omitempty"`
 	// Exclude metrics from the specified Namespace names only.
 	Exclude []string `json:"exclude,omitempty"`
-	// Set to `true` to include the metrics from system Namespaces like kube-system, istio-system, and kyma-system.
-	System *bool `json:"system,omitempty"`
 }
 
 // MetricPipelineOutput defines the output configuration section.
