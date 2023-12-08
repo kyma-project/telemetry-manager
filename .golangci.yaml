@@ -82,6 +82,7 @@ linters-settings:
 
   stylecheck:
     dot-import-whitelist:
+      # Allows using dot imports for Ginkgo and Gomega (out-of-the-box and custom matchers)
       - github.com/onsi/ginkgo/v2
       - github.com/onsi/gomega
       - github.com/kyma-project/telemetry-manager/test/testkit/matchers/log
