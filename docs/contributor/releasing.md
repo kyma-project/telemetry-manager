@@ -33,8 +33,8 @@ This release process covers the steps to release new major and minor versions fo
 
 7. In the `telemetry-manager/{RELEASE_BRANCH}` branch, create release tags for the head commit.
    ```bash
-   git tag -a {RELEASE_VERSION} -m "Release {RELEASE_VERSION}"
-   git tag -a {RELEASE_DEV_VERSION} -m "Release {RELEASE_DEV_VERSION}"
+   git tag {RELEASE_VERSION}
+   git tag {RELEASE_DEV_VERSION}
    ```
    Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`, and replace {RELEASE_DEV_VERSION} with the new development module version, for example, `1.0.0-dev`. The release tags point to the HEAD commit in `telemetry-manager/main` and `telemetry-manager/{RELEASE_BRANCH}` branches.
 
