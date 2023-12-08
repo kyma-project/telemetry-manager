@@ -61,7 +61,6 @@ linters-settings:
       - default                                              # Imports that could not be matched to another section type.
       - prefix(github.com/kyma-project/telemetry-manager)    # Imports with the specified Prefix.
       - blank                                                # Blank imports
-      - dot                                                  # Dot imports
     custom-order: true
 
   goimports:

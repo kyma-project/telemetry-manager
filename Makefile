@@ -46,7 +46,7 @@ help: ## Display this help.
 
 ##@ Development
 lint-autofix: golangci-lint ## Autofix all possible linting errors.
-	${GOLANGCI-LINT} run -E goimports --fix
+	${GOLANGCI-LINT} run --fix
 
 lint-manifests:
 	hack/lint-manifests.sh
