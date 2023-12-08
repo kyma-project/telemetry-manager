@@ -10,6 +10,7 @@ import (
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	kitovrr "github.com/kyma-project/telemetry-manager/test/testkit/kyma/overrides"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -47,6 +48,14 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 		return objs
 	}
 
+	BeforeAll(func() {
+		k8sObjects := makeResources()
+		DeferCleanup(func() {
+			Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+		Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+	})
+
 	Context("Before deploying a logpipeline", func() {
 		It("Should have a healthy webhook", func() {
 			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
@@ -54,14 +63,6 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 	})
 
 	Context("When a logpipeline with HTTP output exists", Ordered, func() {
-		BeforeAll(func() {
-			k8sObjects := makeResources()
-			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-		})
-
 		It("Should have a running logpipeline", Label(operationalTest), func() {
 			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
@@ -84,12 +85,39 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should add overrides configmap", Label(operationalTest), func() {
-			// TODO
+		It("Should not have any DEBUG level logs in the backend", Label(operationalTest), func() {
+			Consistently(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					Not(ContainLd(ContainLogRecord(SatisfyAll(
+						WithPodName(ContainSubstring("telemetry-operator")),
+						WithLevel(Equal("DEBUG")),
+					)))),
+				))
+			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should add the overrides configmap", Label(operationalTest), func() {
+			var objs []client.Object
+			objs = append(objs, kitovrr.NewOverrides(kitovrr.DEBUG).K8sObject())
+
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, objs...)).Should(Succeed())
 		})
 
 		It("Should have DEBUG level logs in the backend", Label(operationalTest), func() {
-			// TODO
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					ContainLd(ContainLogRecord(SatisfyAll(
+						WithPodName(ContainSubstring("telemetry-operator")),
+						WithLevel(Equal("DEBUG")),
+					))),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })

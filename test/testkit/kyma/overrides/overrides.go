@@ -3,6 +3,7 @@ package overrides
 import (
 	"strings"
 
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -14,11 +15,9 @@ const (
 type Level string
 
 const (
-	DEBUG Level = "DEBUG"
-	INFO  Level = "INFO"
-	WARN  Level = "WARN"
-	ERROR Level = "ERROR"
-	FATAL Level = "FATAL"
+	DEBUG Level = "debug"
+	INFO  Level = "info"
+	ERROR Level = "error"
 )
 
 type Overrides struct {
@@ -54,7 +53,7 @@ func (o *Overrides) K8sObject() *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "telemetry-override-config",
-			Namespace: "telemetry-operator",
+			Namespace: kitkyma.SystemNamespaceName,
 		},
 		Data: data,
 	}
