@@ -160,9 +160,7 @@ func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv
 }
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	return (pipeline.Spec.Input.Runtime.Enabled != nil && *pipeline.Spec.Input.Runtime.Enabled) ||
-		(pipeline.Spec.Input.Prometheus.Enabled != nil && *pipeline.Spec.Input.Prometheus.Enabled) ||
-		(pipeline.Spec.Input.Istio.Enabled != nil && *pipeline.Spec.Input.Istio.Enabled)
+	return pipeline.Spec.Input.Runtime.Enabled || pipeline.Spec.Input.Prometheus.Enabled || pipeline.Spec.Input.Istio.Enabled
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {

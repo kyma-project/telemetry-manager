@@ -76,7 +76,7 @@ type MetricPipelineInput struct {
 // MetricPipelinePrometheusInput defines the Prometheus scraping section.
 type MetricPipelinePrometheusInput struct {
 	// If enabled, Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether Prometheus metrics from specific Namespaces are selected. System Namespaces are disabled by default.
 	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
@@ -84,7 +84,7 @@ type MetricPipelinePrometheusInput struct {
 // MetricPipelineRuntimeInput defines the runtime scraping section.
 type MetricPipelineRuntimeInput struct {
 	// If enabled, workload-related Kubernetes metrics are scraped. The default is `false`.
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether workload-related Kubernetes metrics from specific Namespaces are selected. System Namespaces are disabled by default.
 	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
@@ -92,7 +92,7 @@ type MetricPipelineRuntimeInput struct {
 // MetricPipelineIstioInput defines the Istio scraping section.
 type MetricPipelineIstioInput struct {
 	// If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected. The default is `false`.
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether istio-proxy metrics from specific Namespaces are selected. System Namespaces are enabled by default.
 	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
@@ -100,7 +100,8 @@ type MetricPipelineIstioInput struct {
 // MetricPipelineOtlpInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
 type MetricPipelineOtlpInput struct {
 	// If enabled, push-based OTLP metrics are collected. The default is `true`.
-	Enabled *bool `json:"enabled,omitempty"`
+	//+kubebuilder:default=True
+	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether push-based OTLP metrics from specific Namespaces are selected. System Namespaces are disabled by default.
 	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }

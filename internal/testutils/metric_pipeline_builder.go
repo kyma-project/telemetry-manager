@@ -66,7 +66,7 @@ func IncludeSystemNamespaces() InputOptions {
 
 func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	b.otlp = telemetryv1alpha1.MetricPipelineOtlpInput{
-		Enabled: pointer.Bool(enable),
+		Enabled: enable,
 	}
 	for _, opt := range opts {
 		opt(&b.otlp.Namespaces)
@@ -76,7 +76,7 @@ func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *Me
 
 func (b *MetricPipelineBuilder) RuntimeInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	b.runtime = telemetryv1alpha1.MetricPipelineRuntimeInput{
-		Enabled: pointer.Bool(enable),
+		Enabled: enable,
 	}
 	for _, opt := range opts {
 		opt(&b.runtime.Namespaces)
@@ -86,7 +86,7 @@ func (b *MetricPipelineBuilder) RuntimeInput(enable bool, opts ...InputOptions) 
 
 func (b *MetricPipelineBuilder) PrometheusInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	b.prometheus = telemetryv1alpha1.MetricPipelinePrometheusInput{
-		Enabled: pointer.Bool(enable),
+		Enabled: enable,
 	}
 	for _, opt := range opts {
 		opt(&b.prometheus.Namespaces)
@@ -96,7 +96,7 @@ func (b *MetricPipelineBuilder) PrometheusInput(enable bool, opts ...InputOption
 
 func (b *MetricPipelineBuilder) IstioInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	b.istio = telemetryv1alpha1.MetricPipelineIstioInput{
-		Enabled: pointer.Bool(enable),
+		Enabled: enable,
 	}
 	for _, opt := range opts {
 		opt(&b.istio.Namespaces)

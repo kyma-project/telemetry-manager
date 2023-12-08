@@ -89,16 +89,16 @@ func makeServiceConfig() config.Service {
 // addComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.MetricPipeline.
 func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
 	input := pipeline.Spec.Input
-	if !*input.Runtime.Enabled {
+	if !input.Runtime.Enabled {
 		cfg.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}
-	if !*input.Prometheus.Enabled {
+	if !input.Prometheus.Enabled {
 		cfg.Processors.DropIfInputSourcePrometheus = makeDropIfInputSourcePrometheusConfig()
 	}
-	if !*input.Istio.Enabled {
+	if !input.Istio.Enabled {
 		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
 	}
-	if !*input.Otlp.Enabled {
+	if !input.Otlp.Enabled {
 		cfg.Processors.DropIfInputSourceOtlp = makeDropIfInputSourceOtlpConfig()
 	}
 
@@ -145,16 +145,16 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 	processors := []string{"memory_limiter", "k8sattributes"}
 
 	input := pipeline.Spec.Input
-	if !*input.Runtime.Enabled {
+	if !input.Runtime.Enabled {
 		processors = append(processors, "filter/drop-if-input-source-runtime")
 	}
-	if !*input.Prometheus.Enabled {
+	if !input.Prometheus.Enabled {
 		processors = append(processors, "filter/drop-if-input-source-prometheus")
 	}
-	if !*input.Istio.Enabled {
+	if !input.Istio.Enabled {
 		processors = append(processors, "filter/drop-if-input-source-istio")
 	}
-	if !*input.Otlp.Enabled {
+	if !input.Otlp.Enabled {
 		processors = append(processors, "filter/drop-if-input-source-otlp")
 	}
 
@@ -184,8 +184,8 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 	}
 }
 
-func shouldFilterByNamespace(enabled *bool, namespaceSelector telemetryv1alpha1.MetricPipelineInputNamespaceSelector) bool {
-	return *enabled && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0 || !*namespaceSelector.System)
+func shouldFilterByNamespace(enabled bool, namespaceSelector telemetryv1alpha1.MetricPipelineInputNamespaceSelector) bool {
+	return enabled && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0 || !*namespaceSelector.System)
 }
 
 func getNamespaceFilterProcessorName(pipelineName string, inputSourceType metric.InputSourceType) string {
