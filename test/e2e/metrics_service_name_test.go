@@ -5,24 +5,22 @@ package e2e
 import (
 	"net/http"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe("Metrics Service Name", Label("metrics"), func() {

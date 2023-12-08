@@ -3,6 +3,8 @@
 package e2e
 
 import (
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -10,9 +12,6 @@ import (
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {

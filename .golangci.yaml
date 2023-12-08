@@ -113,10 +113,6 @@ issues:
       text: "shadow: declaration of \"err\" shadows declaration at line ([\\d]+)"
       linters:
         - govet
-    - linters: [ gci ]
-      path: test/e2e/(traces.*|metrics.*|logs.*)_test.go
-    - linters: [ gci ]
-      path: test/integration/(istio.*)_test.go
     - linters: [ dupl ]
       path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller.go
     - linters: [ dupl ]
