@@ -5,7 +5,7 @@ TAG_LIST=$(git tag --sort=-creatordate)
 LATEST_TAG=${TAG_LIST[0]}
 
 get_test_namespaces() {
-  kubectl get namespaces --no-headers=true | awk '{print $1}' | grep -vE "(kube-system|kube-public|kube-node-lease|default|kyma-system)"
+  kubectl get namespaces --no-headers=true | awk '{print $1}' | grep -vE "(kube-system|kube-public|kube-node-lease|default|kyma-system|traces-basic-test|log-http-output)"
 }
 
 while true; do
