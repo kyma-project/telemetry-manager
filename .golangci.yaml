@@ -118,13 +118,7 @@ issues:
     - linters: [ dupl ]
       path: internal/kubernetes/utils.go
     - linters: [ dupl ]
-      path: test/testkit/matchers/trace_matchers_test.go
-    - linters: [ dupl ]
-      path: test/testkit/matchers/prometheus_matcher_test.go
-    - linters: [ dupl ]
       path: test/testkit/verifiers/(deployment|daemonset|metrics|traces).go
-    - linters: [ dupl ]
-      path: internal/reconciler/tracepipeline/reconciler_test.go
     - linters: [ dupl ]
       path: test/testkit/matchers/(log|metric|trace)_matchers.go
       # Unify components checkers after getting rid of custom conditions in favor of metav1.Conditions
