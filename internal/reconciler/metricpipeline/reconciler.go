@@ -78,7 +78,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := r.Get(ctx, req.NamespacedName, &metricPipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	telemetryv1alpha1.SetMetricPipelineDefaults(&metricPipeline)
 
 	return ctrl.Result{}, r.doReconcile(ctx, &metricPipeline)
 }
@@ -110,9 +109,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
 	}
-	for i := range allPipelinesList.Items {
-		telemetryv1alpha1.SetMetricPipelineDefaults(&allPipelinesList.Items[i])
-	}
+
 	deployablePipelines, err := getDeployableMetricPipelines(ctx, allPipelinesList.Items, r, lock)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)

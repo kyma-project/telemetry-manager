@@ -175,24 +175,4 @@ func TestProcessors(t *testing.T) {
 		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric[1])
 
 	})
-
-	t.Run("namespace filter processor using system", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test").
-				RuntimeInput(true, testutils.IncludeSystemNamespaces()).
-				PrometheusInput(true, testutils.IncludeSystemNamespaces()).
-				IstioInput(true, testutils.IncludeSystemNamespaces()).
-				OtlpInput(true, testutils.IncludeSystemNamespaces()).
-				Build()},
-		)
-		require.NoError(t, err)
-
-		namespaceFilters := collectorConfig.Processors.NamespaceFilters
-		require.NotNil(t, namespaceFilters)
-
-		require.NotContains(t, namespaceFilters, "filter/test-filter-by-namespace-runtime-input")
-		require.NotContains(t, namespaceFilters, "filter/test-filter-by-namespace-prometheus-input")
-		require.NotContains(t, namespaceFilters, "filter/test-filter-by-namespace-istio-input")
-		require.NotContains(t, namespaceFilters, "filter/test-filter-by-namespace-otlp-input")
-	})
 }

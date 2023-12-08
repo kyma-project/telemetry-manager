@@ -66,9 +66,9 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 
 		pipelineSystemNs := kitmetric.NewPipeline("system").
 			WithOutputEndpointFromSecret(backend3.HostSecretRef()).
-			PrometheusInput(true, kitmetric.IncludeSystemNamespaces()).
-			RuntimeInput(true, kitmetric.IncludeSystemNamespaces()).
-			OtlpInput(true, kitmetric.IncludeSystemNamespaces())
+			PrometheusInput(true, kitmetric.IncludeNamespaces(kitkyma.SystemNamespaceName)).
+			RuntimeInput(true, kitmetric.IncludeNamespaces(kitkyma.SystemNamespaceName)).
+			OtlpInput(true, kitmetric.IncludeNamespaces(kitkyma.SystemNamespaceName))
 		objs = append(objs, pipelineSystemNs.K8sObject())
 
 		objs = append(objs,

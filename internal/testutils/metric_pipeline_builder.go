@@ -5,11 +5,9 @@ import (
 	"math/rand"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type MetricPipelineBuilder struct {
@@ -55,12 +53,6 @@ func IncludeNamespaces(namespaces ...string) InputOptions {
 func ExcludeNamespaces(namespaces ...string) InputOptions {
 	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
 		selector.Exclude = namespaces
-	}
-}
-
-func IncludeSystemNamespaces() InputOptions {
-	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
-		selector.System = pointer.Bool(true)
 	}
 }
 
@@ -169,6 +161,5 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 		},
 	}
 
-	telemetryv1alpha1.SetMetricPipelineDefaults(&pipeline)
 	return pipeline
 }
