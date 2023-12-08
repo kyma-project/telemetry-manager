@@ -19,7 +19,6 @@ function prepare_release_artefacts() {
 
 function create_github_release() {
     echo "Creating the Github release"
-    git remote add origin https://github.com/kyma-project/telemetry-manager
     git reset --hard
     curl -sL https://git.io/goreleaser | VERSION=${GORELEASER_VERSION} bash
 }
