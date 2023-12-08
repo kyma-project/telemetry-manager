@@ -80,3 +80,21 @@ The API of the Telemetry module is based on Kubernetes Custom Resource Definitio
 - [LogPipeline CRD](resources/02-logpipeline.md)
 - [TracePipeline CRD](resources/04-tracepipeline.md)
 - [MetricPipeline CRD](resources/05-metricpipeline.md)
+
+## Minimal Resource Requirements
+
+When using the module without further API usage, the telemetry manager is running with a footprint of:
+- Minimal   5M Mem / 0.01 CPU
+- Maximal 100M Mem / 0.10 CPU
+
+Activation of the first LogPipeline will cause the deployment of the log agent running an instance per node:
+- Per node minimal   50M Mem / 0.1 CPU
+- Per node Maximal 1000M Mem / 1.0 CPU
+
+Activation of the first TracePipeline will cause the deployment of the trace gateway running with 2 replicas:
+- 2 * minimal  250M Mem / 0.2 CPU
+- 2 * Maximal 2000M Mem / 1.2 CPU
+
+Activation of the first MetricPipeline will cause the deployment of the metric gateway running with 2 replicas and the metric agent runnin per node:
+- 2 * minimal   30M Mem / 0.01 CPU + Per node minimal   50M Mem / 0.01 CPU
+- 2 * Maximal 1000M Mem / 1.00 CPU + Per node Maximal 1200M Mem / 1.00 CPU
