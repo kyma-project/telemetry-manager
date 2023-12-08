@@ -65,7 +65,7 @@ To enable log shipment to the SAP Cloud Logging service instance, follow the thi
     EOF      
     ```
 
-2. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
+1. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
 
     ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
@@ -110,7 +110,7 @@ To enable log shipment to the SAP Cloud Logging service instance, follow the thi
 
    >**CAUTION:** The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
 
-3. Wait for the LogPipeline to be in the `Running` state. To check the state, run:
+1. Wait for the LogPipeline to be in the `Running` state. To check the state, run:
 
     ```bash
     kubectl get logpipelines
@@ -143,7 +143,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
     > - Traces might consume a significant storage volume in Cloud Logging Service.
     > - The Kyma trace collector component does not scale automatically.
 
-2. Deploy the TracePipeline:
+1. Deploy the TracePipeline:
 
     ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
@@ -176,8 +176,61 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
     EOF
     ```
 
-3. Wait for the TracePipeline to be in the `Running` state. To check the state, run:
+1. Wait for the TracePipeline to be in the `Running` state. To check the state, run:
 
    ```bash
    kubectl get tracepipelines
+   ```
+
+## Ship Metrics to SAP Cloud Logging (experimental)
+
+The Telemetry module supports ingesting [metrics](./../../04-metrics.md) from applications and the Istio service mesh to the OTLP endpoint of the SAP Cloud Logging service instance.
+To enable shipping traces to the SAP Cloud Logging service instance, follow the this procedure:
+
+1. Deploy the MetricPipeline:
+
+    ```bash
+    kubectl apply -n sap-cloud-logging-integration -f - <<EOF
+    apiVersion: telemetry.kyma-project.io/v1alpha1
+    kind: MetricPipeline
+    metadata:
+      name: sap-cloud-logging
+    spec:
+      input:
+        prometheus:
+          enabled: false
+        istio:
+          enabled: false
+        runtime:
+          enabled: false
+      output:
+        otlp:
+          endpoint:
+            valueFrom:
+              secretKeyRef:
+                name: sap-cloud-logging
+                namespace: sap-cloud-logging-integration
+                key: ingest-otlp-endpoint
+          tls:
+            cert:
+              valueFrom:
+                secretKeyRef:
+                  name: sap-cloud-logging
+                  namespace: sap-cloud-logging-integration
+                  key: ingest-otlp-cert
+            key:
+              valueFrom:
+                secretKeyRef:
+                  name: sap-cloud-logging
+                  namespace: sap-cloud-logging-integration
+                  key: ingest-otlp-key
+    EOF
+    ```
+
+    By default, the MetricPipeline will assure that a gateway is running in the cluster to push OTLP metrics. Additionally, the `input` allows you to enable different presets which enables additional metric collections. See the [metrics documentation](./../../04-metrics.md) for the available options.
+
+1. Wait for the MetricPipeline to be in the `Running` state. To check the state, run:
+
+   ```bash
+   kubectl get metricpipelines
    ```

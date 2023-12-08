@@ -8,6 +8,7 @@
 - [Integration Guides](/telemetry-manager/user/integration/README.md)
   - [OpenTelemetry Demo App](/telemetry-manager/user/integration/opentelemetry-demo/README.md)
   - [SAP Cloud Logging](/telemetry-manager/user/integration/sap-cloud-logging/README.md)
+  - [Dynatrace](/telemetry-manager/user/integration/dynatrace/README.md)
   - [Loki](/telemetry-manager/user/integration/loki/README.md)
   - [Jaeger](/telemetry-manager/user/integration/jaeger/README.md)
 - [Resources](/telemetry-manager/user/resources/README.md)
