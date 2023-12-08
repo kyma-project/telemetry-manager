@@ -16,6 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	corev1 "k8s.io/api/core/v1"
 
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	. "github.com/onsi/ginkgo/v2"
@@ -29,6 +30,7 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 		pipelineName    = "http-output-pipeline"
 	)
 	var telemetryExportURL string
+	var overrides *corev1.ConfigMap
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -52,6 +54,10 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 	BeforeAll(func() {
 		k8sObjects := makeResources()
 		DeferCleanup(func() {
+			if overrides != nil {
+				k8sObjects = append(k8sObjects, overrides)
+			}
+
 			Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 		Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -102,17 +108,12 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 
 		It("Should add the overrides configmap and modify the log pipeline", Label(operationalTest), func() {
 			// Add overrides configmap
-			var objs []client.Object
-			objs = append(objs, kitovrr.NewOverrides(kitovrr.DEBUG).K8sObject())
-			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, objs...)).Should(Succeed())
-			})
-			Expect(kitk8s.CreateObjects(ctx, k8sClient, objs...)).Should(Succeed())
+			overrides = kitovrr.NewOverrides(kitovrr.DEBUG).K8sObject()
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, overrides)).Should(Succeed())
 
 			// Get logPipeline
 			lookupKey := types.NamespacedName{
-				Name:      pipelineName,
-				Namespace: mockNs,
+				Name: pipelineName,
 			}
 			var logPipeline telemetry.LogPipeline
 			err := k8sClient.Get(ctx, lookupKey, &logPipeline)

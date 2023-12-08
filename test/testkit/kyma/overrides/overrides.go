@@ -20,6 +20,15 @@ const (
 	ERROR Level = "error"
 )
 
+const overridesTemplate = `global:
+  logLevel: {{ LEVEL }}
+tracing:
+  paused: true
+logging:
+  paused: true
+metrics:
+  paused: true`
+
 type Overrides struct {
 	level Level
 }
@@ -30,25 +39,10 @@ func NewOverrides(level Level) *Overrides {
 	}
 }
 
-const OverridesTemplate = `override-config: |
-global:
-  logLevel: {{ LEVEL }}
-tracing:
-  paused: true
-logging:
-  paused: true
-metrics:
-  paused: true`
-
 func (o *Overrides) K8sObject() *corev1.ConfigMap {
-	var configTemplate string
-	if o.level == LogLevel {
-		configTemplate = LogLevel
-	}
-
-	config := strings.Replace(configTemplate, "{{ LEVEL }}", string(o.level), 1)
+	config := strings.Replace(overridesTemplate, "{{ LEVEL }}", string(o.level), 1)
 	data := make(map[string]string)
-	data["config.yaml"] = config
+	data["override-config"] = config
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
