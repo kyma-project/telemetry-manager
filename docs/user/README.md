@@ -81,7 +81,7 @@ The API of the Telemetry module is based on Kubernetes Custom Resource Definitio
 - [TracePipeline CRD](resources/04-tracepipeline.md)
 - [MetricPipeline CRD](resources/05-metricpipeline.md)
 
-## Minimal Resource Requirements
+## Resource Usage
 
 When using the module without further API usage, the telemetry manager is running with a footprint of:
 - Minimal   5M Mem / 0.01 CPU
