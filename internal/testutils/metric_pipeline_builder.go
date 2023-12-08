@@ -7,6 +7,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,6 +30,23 @@ func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 	return &MetricPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
 		endpoint:   "https://localhost",
+		otlp: telemetryv1alpha1.MetricPipelineOtlpInput{
+			Enabled: true,
+			Namespaces: telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
+				Exclude: namespaces.System(),
+			},
+		},
+		runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+			Namespaces: telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
+				Exclude: namespaces.System(),
+			},
+		},
+		prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
+			Namespaces: telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
+				Exclude: namespaces.System(),
+			},
+		},
+		istio: telemetryv1alpha1.MetricPipelineIstioInput{},
 	}
 }
 
@@ -47,19 +65,19 @@ type InputOptions func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceS
 func IncludeNamespaces(namespaces ...string) InputOptions {
 	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
 		selector.Include = namespaces
+		selector.Exclude = nil
 	}
 }
 
 func ExcludeNamespaces(namespaces ...string) InputOptions {
 	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
+		selector.Include = nil
 		selector.Exclude = namespaces
 	}
 }
 
 func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
-	b.otlp = telemetryv1alpha1.MetricPipelineOtlpInput{
-		Enabled: enable,
-	}
+	b.otlp.Enabled = enable
 	for _, opt := range opts {
 		opt(&b.otlp.Namespaces)
 	}
@@ -67,9 +85,7 @@ func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *Me
 }
 
 func (b *MetricPipelineBuilder) RuntimeInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
-	b.runtime = telemetryv1alpha1.MetricPipelineRuntimeInput{
-		Enabled: enable,
-	}
+	b.runtime.Enabled = enable
 	for _, opt := range opts {
 		opt(&b.runtime.Namespaces)
 	}
@@ -77,9 +93,7 @@ func (b *MetricPipelineBuilder) RuntimeInput(enable bool, opts ...InputOptions) 
 }
 
 func (b *MetricPipelineBuilder) PrometheusInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
-	b.prometheus = telemetryv1alpha1.MetricPipelinePrometheusInput{
-		Enabled: enable,
-	}
+	b.prometheus.Enabled = enable
 	for _, opt := range opts {
 		opt(&b.prometheus.Namespaces)
 	}
@@ -87,9 +101,7 @@ func (b *MetricPipelineBuilder) PrometheusInput(enable bool, opts ...InputOption
 }
 
 func (b *MetricPipelineBuilder) IstioInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
-	b.istio = telemetryv1alpha1.MetricPipelineIstioInput{
-		Enabled: enable,
-	}
+	b.istio.Enabled = enable
 	for _, opt := range opts {
 		opt(&b.istio.Namespaces)
 	}
