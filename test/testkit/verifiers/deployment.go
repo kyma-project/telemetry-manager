@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -14,11 +14,11 @@ import (
 )
 
 func DeploymentShouldBeReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) {
-	gomega.Eventually(func(g gomega.Gomega) {
+	Eventually(func(g Gomega) {
 		ready, err := isDeploymentReady(ctx, k8sClient, name)
-		g.Expect(err).NotTo(gomega.HaveOccurred())
-		g.Expect(ready).To(gomega.BeTrue())
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(gomega.Succeed())
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(ready).To(BeTrue())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
 func isDeploymentReady(ctx context.Context, k8sClient client.Client, name types.NamespacedName) (bool, error) {
