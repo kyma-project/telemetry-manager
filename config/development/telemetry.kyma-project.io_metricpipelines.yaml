@@ -82,7 +82,7 @@ spec:
                     description: Configures the collection of push-based metrics that
                       use the OpenTelemetry protocol.
                     properties:
-                      enabled:
+                      disabled:
                         description: If disabled, push-based OTLP metrics are not
                           collected. The default is `false`.
                         type: boolean
