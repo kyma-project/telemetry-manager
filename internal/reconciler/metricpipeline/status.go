@@ -53,6 +53,13 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 		return setCondition(ctx, r.Client, &pipeline, pending)
 	}
 
+	return r.updateGatewayAndAgentStatus(ctx, pipeline)
+
+}
+
+func (r *Reconciler) updateGatewayAndAgentStatus(ctx context.Context, pipeline telemetryv1alpha1.MetricPipeline) error {
+	log := logf.FromContext(ctx)
+
 	gatewayStatus, err := r.determineGatewayStatus(ctx)
 
 	if err != nil {
