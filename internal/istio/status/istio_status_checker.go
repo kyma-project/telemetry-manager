@@ -1,4 +1,4 @@
-package istiostatus
+package status
 
 import (
 	"context"

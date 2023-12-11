@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,10 +33,6 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 
 	if err := kubernetes.CreateOrUpdateService(ctx, c, makeMetricsService(name)); err != nil {
 		return fmt.Errorf("failed to create metrics service: %w", err)
-	}
-
-	if err := kubernetes.CreateOrUpdateNetworkPolicy(ctx, c, makeDenyPprofNetworkPolicy(name)); err != nil {
-		return fmt.Errorf("failed to create deny pprof network policy: %w", err)
 	}
 
 	return nil
@@ -127,51 +122,6 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
-}
-
-func makeDenyPprofNetworkPolicy(name types.NamespacedName) *networkingv1.NetworkPolicy {
-	labels := defaultLabels(name.Name)
-
-	return &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name + "-pprof-deny-ingress",
-			Namespace: name.Namespace,
-			Labels:    labels,
-		},
-		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			PolicyTypes: []networkingv1.PolicyType{
-				networkingv1.PolicyTypeIngress,
-			},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{
-				{
-					From: []networkingv1.NetworkPolicyPeer{
-						{
-							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
-						},
-					},
-					Ports: makeNetworkPolicyPorts(collectorPorts()),
-				},
-			},
-		},
-	}
-}
-
-func makeNetworkPolicyPorts(ports []intstr.IntOrString) []networkingv1.NetworkPolicyPort {
-	var networkPolicyPorts []networkingv1.NetworkPolicyPort
-
-	tcpProtocol := corev1.ProtocolTCP
-
-	for idx := range ports {
-		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
-			Protocol: &tcpProtocol,
-			Port:     &ports[idx],
-		})
-	}
-
-	return networkPolicyPorts
 }
 
 func collectorPorts() []intstr.IntOrString {

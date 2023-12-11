@@ -19,6 +19,8 @@ package tracepipeline
 import (
 	"context"
 	"fmt"
+	istioPorts "github.com/kyma-project/telemetry-manager/internal/istio/ports"
+	"github.com/kyma-project/telemetry-manager/internal/istio/status"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
@@ -28,7 +30,6 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -55,7 +56,7 @@ type Reconciler struct {
 	config             Config
 	prober             DeploymentProber
 	overridesHandler   *overrides.Handler
-	istioStatusChecker istiostatus.Checker
+	istioStatusChecker status.Checker
 }
 
 func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler *overrides.Handler) *Reconciler {
@@ -64,7 +65,7 @@ func NewReconciler(client client.Client, config Config, prober DeploymentProber,
 		config:             config,
 		prober:             prober,
 		overridesHandler:   overridesHandler,
-		istioStatusChecker: istiostatus.NewChecker(client),
+		istioStatusChecker: status.NewChecker(client),
 	}
 }
 
@@ -173,10 +174,23 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+
+	allowedPorts := []int32{
+		ports.OTLPHTTP,
+		ports.OTLPGRPC,
+		ports.Metrics,
+		ports.HealthCheck,
+	}
+
+	if isIstioActive {
+		allowedPorts = append(allowedPorts, istioPorts.IstioEnvoy, ports.OpenCensus)
+	}
+
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig(fmt.Sprintf("%d, %d", ports.Metrics, ports.OpenCensus), isIstioActive)); err != nil {
+			WithIstioConfig(fmt.Sprintf("%d, %d", ports.Metrics, ports.OpenCensus), isIstioActive).
+			WithAllowedPorts(allowedPorts)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 

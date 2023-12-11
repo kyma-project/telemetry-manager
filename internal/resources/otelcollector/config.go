@@ -2,6 +2,7 @@ package otelcollector
 
 import (
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type Config struct {
@@ -18,6 +19,7 @@ type GatewayConfig struct {
 	Scaling              GatewayScalingConfig
 	Istio                IstioConfig
 	OTLPServiceName      string
+	allowedPorts         []intstr.IntOrString
 	CanReceiveOpenCensus bool
 }
 
@@ -47,6 +49,17 @@ func (cfg *GatewayConfig) WithIstioConfig(excludePorts string, istioEnabled bool
 	}
 	cfgCopy.Istio = istioConfg
 	return &cfgCopy
+}
+
+func (cfg *GatewayConfig) WithAllowedPorts(ports []int32) *GatewayConfig {
+	cfgCopy := *cfg
+	var allowedPorts []intstr.IntOrString
+	for _, p := range ports {
+		allowedPorts = append(allowedPorts, intstr.FromInt32(p))
+	}
+	cfgCopy.allowedPorts = allowedPorts
+	return &cfgCopy
+
 }
 
 type DeploymentConfig struct {

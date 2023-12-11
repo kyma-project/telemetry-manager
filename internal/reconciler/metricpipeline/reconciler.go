@@ -3,7 +3,6 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
-
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -12,7 +11,6 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
@@ -47,7 +45,7 @@ type Reconciler struct {
 	prober             DeploymentProber
 	agentProber        DaemonSetProber
 	overridesHandler   *overrides.Handler
-	istioStatusChecker istiostatus.Checker
+	istioStatusChecker istio.Checker
 }
 
 func NewReconciler(client client.Client, config Config, gatewayProber DeploymentProber, agentProber DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
@@ -57,7 +55,7 @@ func NewReconciler(client client.Client, config Config, gatewayProber Deployment
 		prober:             gatewayProber,
 		agentProber:        agentProber,
 		overridesHandler:   overridesHandler,
-		istioStatusChecker: istiostatus.NewChecker(client),
+		istioStatusChecker: istio.NewChecker(client),
 	}
 }
 
@@ -182,11 +180,22 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	}
 
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+	allowedPorts := []int32{
+		ports.OTLPHTTP,
+		ports.OTLPGRPC,
+		ports.Metrics,
+		ports.HealthCheck,
+	}
+
+	if isIstioActive {
+		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
+	}
 
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig(fmt.Sprintf("%d", ports.Metrics), isIstioActive)); err != nil {
+			WithIstioConfig(fmt.Sprintf("%d", ports.Metrics), isIstioActive).
+			WithAllowedPorts(allowedPorts)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 
