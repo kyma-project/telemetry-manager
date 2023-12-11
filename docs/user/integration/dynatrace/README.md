@@ -8,16 +8,25 @@
 | Backend type | third-party remote |
 | OTLP-native | yes, but dynatrace agent in parallel |
 
-[Dynatrace](https://www.dynatrace.com) is an advanced Application Performance Management solution available as SaaS offering. It provides support for monitoring both the Kubernetes cluster itself and the workloads running on the cluster. To leverage the full power, the proprietary agent technology of Dynatrace must be installed. Still, leveraging the Kyma telemetry module, custom spans and Istio spans can be added as well as custom metrics to gain even more visibility. Get a brief introduction on how to setup Dynatrace and learn how to integrate the Kyma telemetry module.
+[Dynatrace](https://www.dynatrace.com) is an advanced Application Performance Management solution available as SaaS offering. It supports monitoring both the Kubernetes cluster itself and the workloads running on the cluster. To use all of its features, the proprietary agent technology of Dynatrace must be installed.
+
+With the Kyma Telemetry module, you gain even more visibility by adding custom spans and Istio spans, as well as custom metrics. Get an introduction on how to set up Dynatrace and learn how to integrate the Kyma Telemetry module.
 
 [setup](./../assets/dynatrace.drawio.svg)
 
 ## Table of Content
 
-- [Prerequisites](#prerequisites)
-- [Prepare the Namespace](#prepare-the-namespace)
-- [Dynatrace Setup](#dynatrace-setup)
-- [Telemetry Module Setup](#telemetry-module-setup)
+- [Integrate with Dynatrace](#integrate-with-dynatrace)
+  - [Overview](#overview)
+  - [Table of Content](#table-of-content)
+  - [Prerequisistes](#prerequisistes)
+  - [Prepare the Namespace](#prepare-the-namespace)
+  - [Dynatrace Setup](#dynatrace-setup)
+  - [Telemetry Module Setup](#telemetry-module-setup)
+    - [Create access token](#create-access-token)
+    - [Create Secret](#create-secret)
+    - [Ingest Traces](#ingest-traces)
+    - [Ingest Metrics (experimental)](#ingest-metrics-experimental)
 
 ## Prerequisistes
 
@@ -42,16 +51,15 @@
 
 ## Dynatrace Setup
 
-There are different ways to deploy Dynatrace on Kubernetes. All deployment options are based on the [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator). By default, Dynatrace uses the Classic full-stack injection deployment option, but we highly recommend using the new Cloud-native full-stack injection for better stability. Check out the [deployment options on Kubernetes](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/deployment-options-k8s) for more information.
+There are different ways to deploy Dynatrace on Kubernetes. All [deployment options](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/deployment-options-k8s) are based on the [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator).
 
-1. Install Dynatrace
+1. Install Dynatrace with the namespace you prepared earlier.
+   >**NOTE:** By default, Dynatrace uses the classic full-stack injection. However, for better stability, we recommend using the [cloud-native fullstack injection](https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/installation/cloud-native-fullstack).
 
-    Follow the instructions on how to [install the cloud-native fullstack](https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/installation/cloud-native-fullstack) using the namespace created above. Assure that you configure the proper `apiUrl` of your environemnt in the dynakube resource 
+2. In the DynaKube resource, configure the correct `apiUrl` of your environemnt.
 
+3. In the DynaKube resource, exclude Kyma system namespaces by adding the following snippet:
 
-1. Adjust the dynakube resource to exclude Kyma system namespaces
-
-    Add the following snippet to your dynakube resource
     ```yaml
     namespaceSelector:
         matchExpressions:
@@ -62,41 +70,30 @@ There are different ways to deploy Dynatrace on Kubernetes. All deployment optio
         - istio-system
     ```
 
-1. Enable relevant kubernetes features in the environment
+4. In the environment, go to **Settings > Cloud and virtualization > Kubernetes** and enable the relevant Kubernetes features, especially `Monitor annotated Prometheus exporters` to collect Istio metrics.
 
-   Under `Settings` > `Cloud and virtualization` > `Kubernetes` enable relevant features, especially "Monitor annotated Prometheus exporters" will enable you to collect Istio metrics in an easy way
+5. In the Dynatrace Hub, enable the **Istio Service Mesh** extension and annotate your services as outlined in the description.
 
-1. Enable Istio relevant features in the environment
-   
-    In the Dynatrace Hub, enable the "Istio Service Mesh" extension and annotate your services as outlined in the description
+6. If you have a workload exposing metrics in the Prometheus format, you can collect custom metrics in Prometheus format by [annotating the workload](https://docs.dynatrace.com/docs/platform-modules/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics). If the workload has an Istio sidecar, you must either weaken the mTLS setting for the metrics port by defining an [Istio PeerAuthentication](https://istio.io/latest/docs/reference/config/security/peer_authentication/#PeerAuthentication) or exclude the port from interception by the Istio proxy by placing an `traffic.sidecar.istio.io/excludeInboundPorts` annotaion on your Pod that lists the metrics port.
 
-1. Collect custom metrics in prometheus format
-
-    If you have workload exposing metrics in the prometheus format, you can [annotate the workload](https://docs.dynatrace.com/docs/platform-modules/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics). If the workload is having an istio-sidecar, you either need to weaken the mTLS setting for the metrics port by defining an [Istio PeerAuthentication](https://istio.io/latest/docs/reference/config/security/peer_authentication/#PeerAuthentication) or you exclude the port from interception by the istio proxy, by placing an `traffic.sidecar.istio.io/excludeInboundPorts` annotaion on your pod listing the metrics port.
-
-1. Verify setup
-
-    Now you should see data arriving in your environment and advanced kubernetes monitoring is possible. Also, Istio metrics will be available.
+As a result, you see data arriving in your environment, advanced Kubernetes monitoring is possible, and Istio metrics are available.
 
 ## Telemetry Module Setup
 
-What is missing so far in the setup is the ingestion of custom and Istio span data. Custom metrics can be collected via the Dynatrace annotation approach. OTLP based metrics can be more easy collected by the telemetry module and pushed centrally the the environment.
+Next, you set up the ingestion of custom and Istio span data. To collect custom metrics, you use the Dynatrace annotation approach, because the Telemetry module can easily collect OTLP-based metrics and push them centrally the the environment.
 
 ### Create access token
 
-To push custom metrics and spans to Dynatrace, an API Token is required:
+To push custom metrics and spans to Dynatrace, set up an [API Token](https://docs.dynatrace.com/docs/manage/access-control/access-tokens).
 
-1. In the Dynatrace navigation, go to the **Manage** > **Access tokens** > **Generate new token**.
-1. Type the name you want to give to this token. If needed, set an expiration date.
-1. Select the following scopes:
-   - **Ingest metrics**
-   - **Ingest OpenTelemetry traces**
-1. Click **Generate token**.
-1. Copy and save the generated token.
+Follow the instructions in [Dynatrace: Generate an access token](https://docs.dynatrace.com/docs/manage/access-control/access-tokens#create-api-token) and select the following scopes:
+
+- **Ingest metrics**
+- **Ingest OpenTelemetry traces**
 
 ### Create Secret
 
-1. To create a new secret containing your access token execute the following command. Replace the `{API_TOKEN}` placeholder with the previously created token and run it:
+To create a new secret containing your access token, replace the `{API_TOKEN}` placeholder with the token you created and run the following command:
 
     ```bash
     kubectl -n $DYNATRACE_NS create secret generic dynatrace-token --from-literal="apiToken=Api-Token {API_TOKEN}"
