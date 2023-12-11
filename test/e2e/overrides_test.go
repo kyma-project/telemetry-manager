@@ -10,7 +10,6 @@ import (
 
 	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitovrr "github.com/kyma-project/telemetry-manager/test/testkit/kyma/overrides"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -39,10 +38,9 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(isOperational()))
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
-		namespaces := []string{kitkyma.SystemNamespaceName}
 
 		logPipeline := kitlog.NewPipeline(pipelineName).
-			WithIncludeNamespaces(namespaces).
+			WithSystemNamespaces(true).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
 			Persistent(isOperational())

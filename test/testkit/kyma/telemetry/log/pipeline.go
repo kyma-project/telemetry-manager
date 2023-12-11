@@ -17,6 +17,7 @@ type Pipeline struct {
 	secretKeyRef      *telemetry.SecretKeyRef
 	includeNamespaces []string
 	excludeNamespaces []string
+	systemNamespaces  bool
 	includeContainers []string
 	excludeContainers []string
 	keepAnnotations   bool
@@ -47,6 +48,11 @@ func (p *Pipeline) WithIncludeNamespaces(names []string) *Pipeline {
 
 func (p *Pipeline) WithExcludeNamespaces(names []string) *Pipeline {
 	p.excludeNamespaces = names
+	return p
+}
+
+func (p *Pipeline) WithSystemNamespaces(enable bool) *Pipeline {
+	p.systemNamespaces = enable
 	return p
 }
 
@@ -163,6 +169,7 @@ func (p *Pipeline) K8sObject() *telemetry.LogPipeline {
 					Namespaces: telemetry.InputNamespaces{
 						Include: p.includeNamespaces,
 						Exclude: p.excludeNamespaces,
+						System:  p.systemNamespaces,
 					},
 					Containers: telemetry.InputContainers{
 						Include: p.includeContainers,
