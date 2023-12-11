@@ -64,7 +64,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;istio.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
 | **input.&#x200b;istio.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include metrics from the specified Namespace names only. |
 | **input.&#x200b;otlp**  | object | Configures the collection of push-based metrics that use the OpenTelemetry protocol. |
-| **input.&#x200b;otlp.&#x200b;enabled**  | boolean | If enabled, push-based OTLP metrics are collected. The default is `true`. |
+| **input.&#x200b;otlp.&#x200b;enabled**  | boolean | If disabled, push-based OTLP metrics are not collected. The default is `false`. |
 | **input.&#x200b;otlp.&#x200b;namespaces**  | object | Describes whether push-based OTLP metrics from specific Namespaces are selected. System Namespaces are disabled by default. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include metrics from the specified Namespace names only. |

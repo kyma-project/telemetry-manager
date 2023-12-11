@@ -32,7 +32,6 @@ func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 		randSource: rand.NewSource(time.Now().UnixNano()),
 		endpoint:   "https://localhost",
 		otlp: telemetryv1alpha1.MetricPipelineOtlpInput{
-			Enabled: true,
 			Namespaces: telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
 				Exclude: namespaces.System(),
 			},
@@ -78,7 +77,7 @@ func ExcludeNamespaces(namespaces ...string) InputOptions {
 }
 
 func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
-	b.otlp.Enabled = enable
+	b.otlp.Disabled = !enable
 	for _, opt := range opts {
 		opt(&b.otlp.Namespaces)
 	}

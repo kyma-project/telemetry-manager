@@ -98,7 +98,7 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 	if !input.Istio.Enabled {
 		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
 	}
-	if !input.Otlp.Enabled {
+	if input.Otlp.Disabled {
 		cfg.Processors.DropIfInputSourceOtlp = makeDropIfInputSourceOtlpConfig()
 	}
 
@@ -118,7 +118,7 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceIstio)
 		cfg.Processors.NamespaceFilters[processorName] = makeFilterByNamespaceIstioInputConfig(pipeline.Spec.Input.Istio.Namespaces)
 	}
-	if shouldFilterByNamespace(input.Otlp.Enabled, input.Otlp.Namespaces) {
+	if shouldFilterByNamespace(!input.Otlp.Disabled, input.Otlp.Namespaces) {
 		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceOtlp)
 		cfg.Processors.NamespaceFilters[processorName] = makeFilterByNamespaceOtlpInputConfig(pipeline.Spec.Input.Otlp.Namespaces)
 	}
@@ -154,7 +154,7 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 	if !input.Istio.Enabled {
 		processors = append(processors, "filter/drop-if-input-source-istio")
 	}
-	if !input.Otlp.Enabled {
+	if input.Otlp.Disabled {
 		processors = append(processors, "filter/drop-if-input-source-otlp")
 	}
 
@@ -170,7 +170,7 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceIstio)
 		processors = append(processors, processorName)
 	}
-	if shouldFilterByNamespace(input.Otlp.Enabled, input.Otlp.Namespaces) {
+	if shouldFilterByNamespace(!input.Otlp.Disabled, input.Otlp.Namespaces) {
 		processorName := getNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceOtlp)
 		processors = append(processors, processorName)
 	}

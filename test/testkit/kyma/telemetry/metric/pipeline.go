@@ -73,7 +73,7 @@ func ExcludeNamespaces(namespaces ...string) InputOptions {
 
 func (p *Pipeline) OtlpInput(enable bool, opts ...InputOptions) *Pipeline {
 	p.otlp = telemetryv1alpha1.MetricPipelineOtlpInput{
-		Enabled: enable,
+		Disabled: !enable,
 	}
 	for _, opt := range opts {
 		opt(&p.otlp.Namespaces)
