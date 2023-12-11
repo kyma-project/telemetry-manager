@@ -72,6 +72,15 @@ The metric gateway and agent are based on an [OTel Collector](https://openteleme
 
 For more information, see [Metrics](04-metrics.md) and [Gateways](gateways.md).
 
+## Integration Guides
+
+The module enables a simple collection of telemetry data with the goal of shipping the data into backends. See how to integrate into dedicated backends by reading the following guides:
+  - [OpenTelemetry Demo App](/telemetry-manager/user/integration/opentelemetry-demo/README.md)
+  - [SAP Cloud Logging](/telemetry-manager/user/integration/sap-cloud-logging/README.md)
+  - [Dynatrace](/telemetry-manager/user/integration/dynatrace/README.md)
+  - [Loki](/telemetry-manager/user/integration/loki/README.md)
+  - [Jaeger](/telemetry-manager/user/integration/jaeger/README.md)
+
 ## API / Custom Resource Definitions
 
 The API of the Telemetry module is based on Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions. To inspect the specification of the Telemetry module API, see:
