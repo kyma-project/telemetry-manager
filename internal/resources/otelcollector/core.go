@@ -123,13 +123,3 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 		},
 	}
 }
-
-func collectorPorts() []intstr.IntOrString {
-	return []intstr.IntOrString{
-		intstr.FromInt32(ports.OTLPHTTP),
-		intstr.FromInt32(ports.OTLPGRPC),
-		intstr.FromInt32(ports.OpenCensus),
-		intstr.FromInt32(ports.Metrics),
-		intstr.FromInt32(ports.HealthCheck),
-	}
-}

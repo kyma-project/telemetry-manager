@@ -3,6 +3,8 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+	istioPorts "github.com/kyma-project/telemetry-manager/internal/istio/ports"
+	"github.com/kyma-project/telemetry-manager/internal/istio/status"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -45,7 +47,7 @@ type Reconciler struct {
 	prober             DeploymentProber
 	agentProber        DaemonSetProber
 	overridesHandler   *overrides.Handler
-	istioStatusChecker istio.Checker
+	istioStatusChecker status.Checker
 }
 
 func NewReconciler(client client.Client, config Config, gatewayProber DeploymentProber, agentProber DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
@@ -55,7 +57,7 @@ func NewReconciler(client client.Client, config Config, gatewayProber Deployment
 		prober:             gatewayProber,
 		agentProber:        agentProber,
 		overridesHandler:   overridesHandler,
-		istioStatusChecker: istio.NewChecker(client),
+		istioStatusChecker: status.NewChecker(client),
 	}
 }
 
@@ -188,7 +190,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	}
 
 	if isIstioActive {
-		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
+		allowedPorts = append(allowedPorts, istioPorts.IstioEnvoy)
 	}
 
 	if err := otelcollector.ApplyGatewayResources(ctx,

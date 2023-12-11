@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -157,25 +156,6 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
 		}, sa.Labels)
-	})
-
-	t.Run("should create networkpolicy", func(t *testing.T) {
-		var nps networkingv1.NetworkPolicyList
-		require.NoError(t, client.List(ctx, &nps))
-		require.Len(t, nps.Items, 1)
-
-		np := nps.Items[0]
-		require.NotNil(t, np)
-		require.Equal(t, name+"-pprof-deny-ingress", np.Name)
-		require.Equal(t, namespace, np.Namespace)
-		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
-		}, np.Labels)
-		require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress}, np.Spec.PolicyTypes)
-		require.Len(t, np.Spec.Ingress, 1)
-		require.Len(t, np.Spec.Ingress[0].From, 1)
-		require.Equal(t, np.Spec.Ingress[0].From[0].IPBlock.CIDR, "0.0.0.0/0")
-		require.Len(t, np.Spec.Ingress[0].Ports, 5)
 	})
 
 	t.Run("should create metrics service", func(t *testing.T) {
