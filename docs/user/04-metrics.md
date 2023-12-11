@@ -412,26 +412,7 @@ spec:
       endpoint:
         value: https://backend.example.com:4317
 ```
-Note that the metrics from system Namespaces are dropped by default for the `prometheus`, `runtime`, and `otlp` inputs. However, the metrics from system Namespaces are collected by default for the `istio` input.
-
-The following example collects runtime metrics from all Namespaces including system Namespaces:
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
-  input:
-    runtime:
-      enabled: true
-      namespaces:
-        system: true
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
-```
-
+Note that the metrics from system Namespaces are excluded by default for the `prometheus`, `runtime`, and `otlp` inputs. However, the metrics from system Namespaces are included by default for the `istio` input.
 
 ### Step 9: Deploy the Pipeline
 
