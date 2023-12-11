@@ -27,7 +27,7 @@ Currently, Telemetry Manager uses option 2.
 Option 1 does not fulfill our requirement to apply individual filters per pipeline. Option 4 causes an unacceptable resource overhead for our typical setup of two pipelines (application logs and access logs). Option 2 and 3 allow log filter settings per pipeline.
 
 We consider option 3 to be the best Fluent Bit configuration for our requirements because of its lower complexity. The throughput of option 3 has shown to be better than option 2 without changing Fluent Bit's CPU and memory limits.
-The persistent file-system buffer is still considered to be useful over pausing the `tail` input since the stored amount of logs per individual Pod is significantly lower with Kubernetes' build-in log storage. The directory-size-exporter also provides a better observability of log loss.
+The persistent file-system buffer is still considered to be useful over pausing the `tail` input because the stored amount of logs per individual Pod is significantly lower with Kubernetes' built-in log storage. The directory-size-exporter also provides a better observability of log loss.
 
 ## Consequences
 
