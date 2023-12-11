@@ -1,6 +1,7 @@
 # Integrate with Dynatrace
 
 ## Overview
+
 | Category| |
 | - | - |
 | Signal types | traces, metrics |
@@ -9,7 +10,14 @@
 
 [Dynatrace](https://www.dynatrace.com) is an advanced Application Performance Management solution available as SaaS offering. It provides support for monitoring both the Kubernetes cluster itself and the workloads running on the cluster. To leverage the full power, the proprietary agent technology of Dynatrace must be installed. Still, leveraging the Kyma telemetry module, custom spans and Istio spans can be added as well as custom metrics to gain even more visibility. Get a brief introduction on how to setup Dynatrace and learn how to integrate the Kyma telemetry module.
 
-[setup](./assets/integration.drawio.svg)
+[setup](./../assets/dynatrace.drawio.svg)
+
+## Table of Content
+
+- [Prerequisites](#prerequisites)
+- [Prepare the Namespace](#prepare-the-namespace)
+- [Dynatrace Setup](#dynatrace-setup)
+- [Telemetry Module Setup](#telemetry-module-setup)
 
 ## Prerequisistes
 

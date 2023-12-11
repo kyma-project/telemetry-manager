@@ -2,11 +2,22 @@
 
 ## Overview
 
+| Category| |
+| - | - |
+| Signal types | traces, metrics |
+| Backend type | custom in-cluster, third-party remote |
+| OTLP-native | yes |
+
 Learn how to install the OpenTelemetry [demo application](https://github.com/open-telemetry/opentelemetry-demo) on a Kyma cluster using a provided [Helm chart](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-demo). The demo application will be configured to push trace data using OTLP to the collector that's provided by Kyma, so that they are collected together with the related Istio trace data.
 
-- Signal type: traces
-- Backend type: custom in-cluster, third-party remote
-- OTLP-native: yes
+[setup](./../assets/otel-demo.drawio.svg)
+
+## Table of Content
+
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Advanced](#advanced)
+- [Clean Up](#clean-up)
 
 ## Prerequisites
 
@@ -15,6 +26,7 @@ Learn how to install the OpenTelemetry [demo application](https://github.com/ope
 - kubectl version 1.22.x or higher
 - Helm 3.x
 
+## Installation
 ### Preparation
 
 1. Export your Namespace as a variable. Replace the `{namespace}` placeholder in the following command and run it:

@@ -2,13 +2,25 @@
 
 ## Overview
 
+| Category| |
+| - | - |
+| Signal types | logs, traces, metrics |
+| Backend type | third-party remote |
+| OTLP-native | yes |
+
 Learn how to define LogPipelines and TracePipelines to ingest application and access logs as well as distributed trace data in instances of [SAP Cloud Logging](https://help.sap.com/docs/cloud-logging?locale=en-US&version=Cloud).
 
 SAP Cloud Logging is an instance-based and environment-agnostic observability service that builds upon OpenSearch to store, visualize, and analyze logs, metrics, and traces.
 
-- Signal type: logs, metrics, and traces
-- Backend type: third-party remote
-- OTLP-native: yes
+[setup](./../assets/sap-cloud-logging.drawio.svg)
+
+## Table of Content
+
+- [Prerequisites](#prerequisites)
+- [Ship Logs to SAP Cloud Logging](#ship-logs-to-sap-cloud-logging)
+- [Ship Distributed Traces to SAP Cloud Logging](#ship-distributed-traces-to-sap-cloud-logging)
+- [Ship Metrics to SAP Cloud Logging (experimental)](#ship-metrics-to-sap-cloud-logging-(experimental))
+- [Kyma Dashboard Integration](#kyma-dashboard-integration)
 
 ## Prerequisites
 
@@ -234,3 +246,34 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow the 
    ```bash
    kubectl get metricpipelines
    ```
+
+## Kyma Dashboard Integration
+
+For easier access, add a navigation node to the Observability section as well as deep links to the Pod, Deployment and Namespace views of the Kyma Dashboard.
+
+1. Read the Cloud Logging dashboard URL from the secret:
+
+    ```bash
+    export DASHBOARD_URL=$(kubectl -n sap-cloud-logging-integration get secret sap-cloud-logging --template='{{index .data "dashboards-endpoint" | base64decode}}')
+    ```
+
+1. Download the two configmaps containing the exemplaric configuration:
+
+    ```bash
+    curl -o configmap-navigation.yaml https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/configmap-navigation.yaml
+    curl -o configmap-deeplinks.yaml https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/configmap-deeplinks.yaml
+    ```
+
+1. Replace placeholders in the configmaps with the URL:
+
+    ```bash
+    sed -e "s/{PLACEHOLDER}/$DASHBOARD_URL/" configmap-navigation.yaml
+    sed -e "s/{PLACEHOLDER}/$DASHBOARD_URL/" configmap-deeplinks.yaml
+    ```
+
+1. Apply the configmaps:
+
+    ```bash
+    kubectl apply -f configmap-navigation.yaml
+    kubectl apply -f configmap-deeplinks.yaml
+    ```

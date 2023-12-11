@@ -2,13 +2,17 @@
 
 ## Overview
 
+| Category| |
+| - | - |
+| Signal types | logs |
+| Backend type | custom in-cluster |
+| OTLP-native | no |
+
 Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/helm/loki) as a logging backend with Kyma's [LogPipeline](../../02-logs.md) or with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/).
 
 >**CAUTION:** This guide uses the Grafana Loki version, which is distributed under AGPL-3.0 only and might not be free of charge for commercial usage.
 
-- Signal type: logs
-- Backend type: custom in-cluster
-- OTLP-native: no
+[setup](./../assets/loki.drawio.svg)
 
 ## Table of Content
 
