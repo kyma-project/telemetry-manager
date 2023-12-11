@@ -412,7 +412,8 @@ spec:
       endpoint:
         value: https://backend.example.com:4317
 ```
-Nite that metrics from system Namespaces are excluded by default when a namespace selector for the `prometheus`, `runtime`, or `otlp` input is unspecified. However, for the `istio` input, metrics from system Namespaces are included by default if the namespace selector is not defined.
+
+Note that metrics from system namespaces are excluded by default when a namespace selector for the `prometheus`, `runtime`, or `otlp` input is not defined. However, for the `istio` input, metrics from system namespaces are included by default if the namespace selector is not defined.
 
 ### Step 9: Deploy the Pipeline
 
