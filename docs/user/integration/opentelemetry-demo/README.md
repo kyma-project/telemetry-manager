@@ -10,7 +10,7 @@
 
 Learn how to install the OpenTelemetry [demo application](https://github.com/open-telemetry/opentelemetry-demo) on a Kyma cluster using a provided [Helm chart](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-demo). The demo application will be configured to push trace data using OTLP to the collector that's provided by Kyma, so that they are collected together with the related Istio trace data.
 
-[setup](./../assets/otel-demo.drawio.svg)
+![setup](./../assets/otel-demo.drawio.svg)
 
 ## Table of Content
 

@@ -10,7 +10,7 @@
 
 Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main/charts/jaeger) as a tracing backend with Kyma's [TracePipeline](../../03-traces.md).
 
-[setup](./../assets/jaeger.drawio.svg)
+![setup](./../assets/jaeger.drawio.svg)
 
 ## Table of Content
 

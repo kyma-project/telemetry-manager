@@ -12,7 +12,7 @@
 
 With the Kyma Telemetry module, you gain even more visibility by adding custom spans and Istio spans, as well as custom metrics. Get an introduction on how to set up Dynatrace and learn how to integrate the Kyma Telemetry module.
 
-[setup](./../assets/dynatrace.drawio.svg)
+![setup](./../assets/dynatrace.drawio.svg)
 
 ## Table of Content
 

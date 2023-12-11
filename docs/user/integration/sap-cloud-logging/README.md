@@ -12,7 +12,7 @@ Learn how to define LogPipelines and TracePipelines to ingest application and ac
 
 SAP Cloud Logging is an instance-based and environment-agnostic observability service that builds upon OpenSearch to store, visualize, and analyze logs, metrics, and traces.
 
-[setup](./../assets/sap-cloud-logging.drawio.svg)
+![setup](./../assets/sap-cloud-logging.drawio.svg)
 
 ## Table of Content
 

@@ -12,7 +12,7 @@ Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/hel
 
 >**CAUTION:** This guide uses the Grafana Loki version, which is distributed under AGPL-3.0 only and might not be free of charge for commercial usage.
 
-[setup](./../assets/loki.drawio.svg)
+![setup](./../assets/loki.drawio.svg)
 
 ## Table of Content
 
