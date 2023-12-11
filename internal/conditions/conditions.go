@@ -13,8 +13,8 @@ const (
 	ReasonMetricGatewayDeploymentNotReady = "MetricGatewayDeploymentNotReady"
 	ReasonMetricGatewayDeploymentReady    = "MetricGatewayDeploymentReady"
 
-	ReasonMetricAgentDaemonSetNotReady = "ReasonMetricAgentDaemonSetNotReady"
-	ReasonMetricAgentDaemonSetReady    = "ReasonMetricAgentDaemonSetReady"
+	ReasonMetricAgentDaemonSetNotReady = "MetricAgentDaemonSetNotReady"
+	ReasonMetricAgentDaemonSetReady    = "MetricAgentDaemonSetReady"
 
 	ReasonTraceGatewayDeploymentNotReady = "TraceGatewayDeploymentNotReady"
 	ReasonTraceGatewayDeploymentReady    = "TraceGatewayDeploymentReady"
