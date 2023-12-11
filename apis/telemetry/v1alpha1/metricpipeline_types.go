@@ -102,7 +102,7 @@ type MetricPipelineIstioInput struct {
 // MetricPipelineOtlpInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
 type MetricPipelineOtlpInput struct {
 	// If enabled, push-based OTLP metrics are collected. The default is `true`.
-	//+kubebuilder:default=True
+	//+kubebuilder:default=true
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether push-based OTLP metrics from specific Namespaces are selected. System Namespaces are disabled by default.
 	//+kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
