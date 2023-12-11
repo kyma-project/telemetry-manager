@@ -4,10 +4,11 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
-	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const version = "1.0.0"

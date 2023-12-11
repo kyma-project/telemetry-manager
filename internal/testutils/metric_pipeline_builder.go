@@ -5,10 +5,11 @@ import (
 	"math/rand"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/namespaces"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type MetricPipelineBuilder struct {
