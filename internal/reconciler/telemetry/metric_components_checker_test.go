@@ -137,7 +137,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
-				Reason:  "ReasonMetricAgentDaemonSetNotReady",
+				Reason:  "MetricAgentDaemonSetNotReady",
 				Message: "Metric agent DaemonSet is not ready",
 			},
 		},
