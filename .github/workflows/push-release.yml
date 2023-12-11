@@ -10,6 +10,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # wait for the build to succeed so that the manager image is available
       - name: Wait for the 'post-telemetry-manager-build-release' job to succeed
