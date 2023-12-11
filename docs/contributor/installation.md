@@ -30,21 +30,3 @@ make deploy-dev
 kubectl create ns kyma-system
 kubectl apply -f https://github.com/kyma-project/telemetry-manager/releases/latest/download/telemetry-manager.yaml
 ```
-
-## Install Telemetry Manager in your cluster from latest release using the Lifecycle manager
-
-1. Ensure that you have the [Kyma CLI](https://kyma-project.io/#/04-operation-guides/operations/01-install-kyma-CLI) installed.
-
-2. Install the Lifecycle manager:
-
-```shell
-kyma alpha deploy
-```
-
-3. Install the ModuleTemplate and activate the component:
-```shell
-kubectl apply -f https://github.com/kyma-project/telemetry-manager/releases/latest/download/moduletemplate.yaml
-kyma alpha enable module telemetry --channel fast
-```
-
-4. Verify that a `telemetry-operator` Pod starts up in the `kyma-system` Namespace.

@@ -3,7 +3,7 @@ package verifiers
 import (
 	"context"
 
-	"github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -12,13 +12,13 @@ import (
 )
 
 func WebhookShouldBeHealthy(ctx context.Context, k8sClient client.Client) {
-	gomega.Eventually(func(g gomega.Gomega) {
+	Eventually(func(g Gomega) {
 		var endpoints corev1.Endpoints
-		g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryOperatorWebhookServiceName, &endpoints)).To(gomega.Succeed())
-		g.Expect(endpoints.Subsets).NotTo(gomega.BeEmpty())
+		g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryOperatorWebhookServiceName, &endpoints)).To(Succeed())
+		g.Expect(endpoints.Subsets).NotTo(BeEmpty())
 		for _, subset := range endpoints.Subsets {
-			g.Expect(subset.Addresses).NotTo(gomega.BeEmpty())
-			g.Expect(subset.NotReadyAddresses).To(gomega.BeEmpty())
+			g.Expect(subset.Addresses).NotTo(BeEmpty())
+			g.Expect(subset.NotReadyAddresses).To(BeEmpty())
 		}
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(gomega.Succeed())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

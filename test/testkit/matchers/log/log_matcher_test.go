@@ -1,10 +1,9 @@
 package log
 
 import (
-	"go.opentelemetry.io/collector/pdata/plog"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.opentelemetry.io/collector/pdata/plog"
 )
 
 var _ = Describe("WithLds", func() {
