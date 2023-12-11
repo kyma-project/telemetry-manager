@@ -362,7 +362,7 @@ spec:
     istio:
       enabled: true
     otlp:
-      enabled: false
+      disabled: true
   output:
     otlp:
       endpoint:
@@ -412,7 +412,7 @@ spec:
       endpoint:
         value: https://backend.example.com:4317
 ```
-Note that the metrics from system Namespaces are excluded by default for the `prometheus`, `runtime`, and `otlp` inputs. However, the metrics from system Namespaces are included by default for the `istio` input.
+Nite that metrics from system Namespaces are excluded by default when a namespace selector for the `prometheus`, `runtime`, or `otlp` input is unspecified. However, for the `istio` input, metrics from system Namespaces are included by default if the namespace selector is not defined.
 
 ### Step 9: Deploy the Pipeline
 
