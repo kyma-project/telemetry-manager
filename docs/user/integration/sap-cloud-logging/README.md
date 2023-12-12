@@ -22,7 +22,7 @@ SAP Cloud Logging is an instance-based and environment-agnostic observability se
   - [Prerequisites](#prerequisites)
   - [Ship Logs to SAP Cloud Logging](#ship-logs-to-sap-cloud-logging)
   - [Ship Distributed Traces to SAP Cloud Logging](#ship-distributed-traces-to-sap-cloud-logging)
-  - [Ship Metrics to SAP Cloud Logging (experimental)](#ship-metrics-to-sap-cloud-logging-experimental)
+  - [Ship Metrics to SAP Cloud Logging](#ship-metrics-to-sap-cloud-logging)
   - [Kyma Dashboard Integration](#kyma-dashboard-integration)
 
 ## Prerequisites
@@ -197,7 +197,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
    kubectl get tracepipelines
    ```
 
-## Ship Metrics to SAP Cloud Logging (experimental)
+## Ship Metrics to SAP Cloud Logging
 
 The Telemetry module supports ingesting [metrics](./../../04-metrics.md) from applications and the Istio service mesh to the OTLP endpoint of the SAP Cloud Logging service instance.
 To enable shipping traces to the SAP Cloud Logging service instance, follow this procedure:

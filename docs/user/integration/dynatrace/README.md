@@ -26,7 +26,7 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
     - [Create access token](#create-access-token)
     - [Create Secret](#create-secret)
     - [Ingest Traces](#ingest-traces)
-    - [Ingest Metrics (experimental)](#ingest-metrics-experimental)
+    - [Ingest Metrics](#ingest-metrics)
 
 ## Prerequisistes
 
@@ -149,7 +149,7 @@ To create a new Secret containing your access token, replace the `{API_TOKEN}` p
 
 1. To find traces from your Kyma cluster in the Dynatrace UI, go to **Applications & Microservices** > **Distributed traces**.
 
-### Ingest Metrics (experimental)
+### Ingest Metrics
 
 
 
