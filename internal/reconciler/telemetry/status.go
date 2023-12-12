@@ -91,7 +91,6 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 	}
 
 	metricEndpoints, err := r.metricEndpoints(ctx, r.config, telemetryInDeletion)
-
 	if err != nil {
 		return fmt.Errorf("failed to get metric endpoints: %w", err)
 	}
