@@ -22,6 +22,9 @@ Status:
     traces:
       grpc: http://telemetry-otlp-traces.kyma-system:4317
       http: http://telemetry-otlp-traces.kyma-system:4318
+    metrics:
+      grpc: http://telemetry-otlp-metrics.kyma-system:4317
+      http: http://telemetry-otlp-metrics.kyma-system:4318
   conditions:
   - lastTransitionTime: "2023-09-01T15:28:28Z"
     message: Fluent Bit DaemonSet is ready
