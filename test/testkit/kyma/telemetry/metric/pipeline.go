@@ -20,10 +20,10 @@ type Pipeline struct {
 	name            string
 	otlpEndpointRef *telemetryv1alpha1.SecretKeyRef
 	otlpEndpoint    string
-	otlp            telemetryv1alpha1.MetricPipelineOtlpInput
-	runtime         telemetryv1alpha1.MetricPipelineRuntimeInput
-	prometheus      telemetryv1alpha1.MetricPipelinePrometheusInput
-	istio           telemetryv1alpha1.MetricPipelineIstioInput
+	runtime         *telemetryv1alpha1.MetricPipelineRuntimeInput
+	prometheus      *telemetryv1alpha1.MetricPipelinePrometheusInput
+	istio           *telemetryv1alpha1.MetricPipelineIstioInput
+	otlp            *telemetryv1alpha1.MetricPipelineOtlpInput
 	tls             *telemetryv1alpha1.OtlpTLS
 }
 
@@ -72,7 +72,7 @@ func ExcludeNamespaces(namespaces ...string) InputOptions {
 }
 
 func (p *Pipeline) OtlpInput(enable bool, opts ...InputOptions) *Pipeline {
-	p.otlp = telemetryv1alpha1.MetricPipelineOtlpInput{
+	p.otlp = &telemetryv1alpha1.MetricPipelineOtlpInput{
 		Disabled: !enable,
 	}
 
@@ -88,7 +88,7 @@ func (p *Pipeline) OtlpInput(enable bool, opts ...InputOptions) *Pipeline {
 }
 
 func (p *Pipeline) RuntimeInput(enable bool, opts ...InputOptions) *Pipeline {
-	p.runtime = telemetryv1alpha1.MetricPipelineRuntimeInput{
+	p.runtime = &telemetryv1alpha1.MetricPipelineRuntimeInput{
 		Enabled: enable,
 	}
 
@@ -104,7 +104,7 @@ func (p *Pipeline) RuntimeInput(enable bool, opts ...InputOptions) *Pipeline {
 }
 
 func (p *Pipeline) PrometheusInput(enable bool, opts ...InputOptions) *Pipeline {
-	p.prometheus = telemetryv1alpha1.MetricPipelinePrometheusInput{
+	p.prometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{
 		Enabled: enable,
 	}
 
@@ -120,7 +120,7 @@ func (p *Pipeline) PrometheusInput(enable bool, opts ...InputOptions) *Pipeline 
 }
 
 func (p *Pipeline) IstioInput(enable bool, opts ...InputOptions) *Pipeline {
-	p.istio = telemetryv1alpha1.MetricPipelineIstioInput{
+	p.istio = &telemetryv1alpha1.MetricPipelineIstioInput{
 		Enabled: enable,
 	}
 

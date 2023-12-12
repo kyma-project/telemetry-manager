@@ -157,7 +157,11 @@ func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv
 }
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	return pipeline.Spec.Input.Runtime.Enabled || pipeline.Spec.Input.Prometheus.Enabled || pipeline.Spec.Input.Istio.Enabled
+	input := pipeline.Spec.Input
+	isRuntimeInputEnabled := input.Runtime != nil && input.Runtime.Enabled
+	isPrometheusInputEnabled := input.Prometheus != nil && input.Prometheus.Enabled
+	isIstioInputEnabled := input.Istio != nil && input.Istio.Enabled
+	return isRuntimeInputEnabled || isPrometheusInputEnabled || isIstioInputEnabled
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {

@@ -17,10 +17,10 @@ type MetricPipelineBuilder struct {
 
 	name              string
 	endpoint          string
-	otlp              telemetryv1alpha1.MetricPipelineOtlpInput
-	runtime           telemetryv1alpha1.MetricPipelineRuntimeInput
-	prometheus        telemetryv1alpha1.MetricPipelinePrometheusInput
-	istio             telemetryv1alpha1.MetricPipelineIstioInput
+	runtime           *telemetryv1alpha1.MetricPipelineRuntimeInput
+	prometheus        *telemetryv1alpha1.MetricPipelinePrometheusInput
+	istio             *telemetryv1alpha1.MetricPipelineIstioInput
+	otlp              *telemetryv1alpha1.MetricPipelineOtlpInput
 	basicAuthUser     string
 	basicAuthPassword string
 
@@ -31,22 +31,18 @@ func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 	return &MetricPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
 		endpoint:   "https://localhost",
-		otlp: telemetryv1alpha1.MetricPipelineOtlpInput{
+		runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
 			Namespaces: &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
 				Exclude: namespaces.System(),
 			},
 		},
-		runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+		prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
 			Namespaces: &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
 				Exclude: namespaces.System(),
 			},
 		},
-		prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-			Namespaces: &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
-				Exclude: namespaces.System(),
-			},
-		},
-		istio: telemetryv1alpha1.MetricPipelineIstioInput{},
+		istio: &telemetryv1alpha1.MetricPipelineIstioInput{},
+		otlp:  &telemetryv1alpha1.MetricPipelineOtlpInput{},
 	}
 }
 
@@ -76,16 +72,12 @@ func ExcludeNamespaces(namespaces ...string) InputOptions {
 	}
 }
 
-func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
-	b.otlp.Disabled = !enable
-	for _, opt := range opts {
-		opt(b.otlp.Namespaces)
-	}
-	return b
-}
-
 func (b *MetricPipelineBuilder) RuntimeInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	b.runtime.Enabled = enable
+
+	if b.runtime.Namespaces == nil {
+		b.runtime.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+	}
 	for _, opt := range opts {
 		opt(b.runtime.Namespaces)
 	}
@@ -94,6 +86,10 @@ func (b *MetricPipelineBuilder) RuntimeInput(enable bool, opts ...InputOptions) 
 
 func (b *MetricPipelineBuilder) PrometheusInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	b.prometheus.Enabled = enable
+
+	if b.prometheus.Namespaces == nil {
+		b.prometheus.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+	}
 	for _, opt := range opts {
 		opt(b.prometheus.Namespaces)
 	}
@@ -102,8 +98,24 @@ func (b *MetricPipelineBuilder) PrometheusInput(enable bool, opts ...InputOption
 
 func (b *MetricPipelineBuilder) IstioInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	b.istio.Enabled = enable
+
+	if b.istio.Namespaces == nil {
+		b.istio.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+	}
 	for _, opt := range opts {
 		opt(b.istio.Namespaces)
+	}
+	return b
+}
+
+func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+	b.otlp.Disabled = !enable
+
+	if b.otlp.Namespaces == nil {
+		b.otlp.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+	}
+	for _, opt := range opts {
+		opt(b.otlp.Namespaces)
 	}
 	return b
 }

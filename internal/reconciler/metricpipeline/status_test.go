@@ -322,7 +322,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				},
 				Input: telemetryv1alpha1.MetricPipelineInput{
-					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+					Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
 						Enabled: true,
 					},
 				},
@@ -366,7 +366,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				},
 				Input: telemetryv1alpha1.MetricPipelineInput{
-					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+					Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
 						Enabled: true,
 					},
 				},
@@ -411,7 +411,7 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				},
 				Input: telemetryv1alpha1.MetricPipelineInput{
-					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
+					Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
 						Enabled: true,
 					},
 				},

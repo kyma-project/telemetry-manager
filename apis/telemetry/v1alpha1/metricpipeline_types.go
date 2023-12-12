@@ -64,13 +64,13 @@ type MetricPipelineSpec struct {
 // MetricPipelineInput defines the input configuration section.
 type MetricPipelineInput struct {
 	// Configures Prometheus scraping.
-	Prometheus MetricPipelinePrometheusInput `json:"prometheus,omitempty"`
+	Prometheus *MetricPipelinePrometheusInput `json:"prometheus,omitempty"`
 	// Configures runtime scraping.
-	Runtime MetricPipelineRuntimeInput `json:"runtime,omitempty"`
+	Runtime *MetricPipelineRuntimeInput `json:"runtime,omitempty"`
 	// Configures istio-proxy metrics scraping.
-	Istio MetricPipelineIstioInput `json:"istio,omitempty"`
+	Istio *MetricPipelineIstioInput `json:"istio,omitempty"`
 	// Configures the collection of push-based metrics that use the OpenTelemetry protocol.
-	Otlp MetricPipelineOtlpInput `json:"otlp,omitempty"`
+	Otlp *MetricPipelineOtlpInput `json:"otlp,omitempty"`
 }
 
 // MetricPipelinePrometheusInput defines the Prometheus scraping section.
