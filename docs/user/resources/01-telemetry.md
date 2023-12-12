@@ -86,6 +86,9 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 | **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt) |
 | **endpoints**  | object | endpoints for trace and metric gateway. |
+| **endpoints.&#x200b;metrics**  | object | metrics contains the endpoints for metric gateway supporting OTLP. |
+| **endpoints.&#x200b;metrics.&#x200b;grpc**  | string | GRPC endpoint for OTLP. |
+| **endpoints.&#x200b;metrics.&#x200b;http**  | string | HTTP endpoint for OTLP. |
 | **endpoints.&#x200b;traces**  | object | traces contains the endpoints for trace gateway supporting OTLP. |
 | **endpoints.&#x200b;traces.&#x200b;grpc**  | string | GRPC endpoint for OTLP. |
 | **endpoints.&#x200b;traces.&#x200b;http**  | string | HTTP endpoint for OTLP. |

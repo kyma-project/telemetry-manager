@@ -90,7 +90,7 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 		return fmt.Errorf("failed to get trace endpoints: %w", err)
 	}
 
-	metricEndpoins, err := r.metricEndpoints(ctx, r.config, telemetryInDeletion)
+	metricEndpoints, err := r.metricEndpoints(ctx, r.config, telemetryInDeletion)
 
 	if err != nil {
 		return fmt.Errorf("failed to get metric endpoints: %w", err)
@@ -98,7 +98,7 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 
 	telemetry.Status.GatewayEndpoints = operatorv1alpha1.GatewayEndpoints{
 		Traces:  traceEndpoints,
-		Metrics: metricEndpoins,
+		Metrics: metricEndpoints,
 	}
 
 	return nil
