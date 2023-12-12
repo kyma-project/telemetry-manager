@@ -3,6 +3,7 @@ package otelcollector
 import (
 	"context"
 	"fmt"
+	networkingv1 "k8s.io/api/networking/v1"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
@@ -17,7 +18,7 @@ import (
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, clusterRole *rbacv1.ClusterRole) error {
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, clusterRole *rbacv1.ClusterRole, allowedPorts []intstr.IntOrString) error {
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
 	if err := kubernetes.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
@@ -33,6 +34,10 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 
 	if err := kubernetes.CreateOrUpdateService(ctx, c, makeMetricsService(name)); err != nil {
 		return fmt.Errorf("failed to create metrics service: %w", err)
+	}
+
+	if err := kubernetes.CreateOrUpdateNetworkPolicy(ctx, c, makeDenyPprofNetworkPolicy(name, allowedPorts)); err != nil {
+		return fmt.Errorf("failed to create deny pprof network policy: %w", err)
 	}
 
 	return nil
@@ -122,4 +127,49 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
+}
+
+func makeDenyPprofNetworkPolicy(name types.NamespacedName, allowedPorts []intstr.IntOrString) *networkingv1.NetworkPolicy {
+	labels := defaultLabels(name.Name)
+
+	return &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name + "-pprof-deny-ingress",
+			Namespace: name.Namespace,
+			Labels:    labels,
+		},
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			PolicyTypes: []networkingv1.PolicyType{
+				networkingv1.PolicyTypeIngress,
+			},
+			Ingress: []networkingv1.NetworkPolicyIngressRule{
+				{
+					From: []networkingv1.NetworkPolicyPeer{
+						{
+							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
+						},
+					},
+					Ports: makeNetworkPolicyPorts(allowedPorts),
+				},
+			},
+		},
+	}
+}
+
+func makeNetworkPolicyPorts(ports []intstr.IntOrString) []networkingv1.NetworkPolicyPort {
+	var networkPolicyPorts []networkingv1.NetworkPolicyPort
+
+	tcpProtocol := corev1.ProtocolTCP
+
+	for idx := range ports {
+		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
+			Protocol: &tcpProtocol,
+			Port:     &ports[idx],
+		})
+	}
+
+	return networkPolicyPorts
 }

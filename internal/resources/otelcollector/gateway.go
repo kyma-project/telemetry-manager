@@ -10,7 +10,6 @@ import (
 	istiov1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +27,7 @@ import (
 func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayConfig) error {
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
-	if err := applyCommonResources(ctx, c, name, makeGatewayClusterRole(name)); err != nil {
+	if err := applyCommonResources(ctx, c, name, makeGatewayClusterRole(name), cfg.allowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -62,9 +61,10 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
 	}
-	if err := kubernetes.CreateOrUpdateNetworkPolicy(ctx, c, makeDenyPprofNetworkPolicy(name, cfg.allowedPorts)); err != nil {
-		return fmt.Errorf("failed to create deny pprof network policy: %w", err)
-	}
+
+	//if err := kubernetes.CreateOrUpdateNetworkPolicy(ctx, c, makeDenyPprofNetworkPolicy(name, cfg.allowedPorts)); err != nil {
+	//	return fmt.Errorf("failed to create deny pprof network policy: %w", err)
+	//}
 
 	return nil
 }
@@ -257,47 +257,47 @@ func makePeerAuthentication(cfg *GatewayConfig) *istiov1beta1.PeerAuthentication
 	}
 }
 
-func makeDenyPprofNetworkPolicy(name types.NamespacedName, allowedPorts []intstr.IntOrString) *networkingv1.NetworkPolicy {
-	labels := defaultLabels(name.Name)
-
-	return &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name + "-pprof-deny-ingress",
-			Namespace: name.Namespace,
-			Labels:    labels,
-		},
-		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			PolicyTypes: []networkingv1.PolicyType{
-				networkingv1.PolicyTypeIngress,
-			},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{
-				{
-					From: []networkingv1.NetworkPolicyPeer{
-						{
-							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
-						},
-					},
-					Ports: makeNetworkPolicyPorts(allowedPorts),
-				},
-			},
-		},
-	}
-}
-
-func makeNetworkPolicyPorts(ports []intstr.IntOrString) []networkingv1.NetworkPolicyPort {
-	var networkPolicyPorts []networkingv1.NetworkPolicyPort
-
-	tcpProtocol := corev1.ProtocolTCP
-
-	for idx := range ports {
-		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
-			Protocol: &tcpProtocol,
-			Port:     &ports[idx],
-		})
-	}
-
-	return networkPolicyPorts
-}
+//func makeDenyPprofNetworkPolicy(name types.NamespacedName, allowedPorts []intstr.IntOrString) *networkingv1.NetworkPolicy {
+//	labels := defaultLabels(name.Name)
+//
+//	return &networkingv1.NetworkPolicy{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      name.Name + "-pprof-deny-ingress",
+//			Namespace: name.Namespace,
+//			Labels:    labels,
+//		},
+//		Spec: networkingv1.NetworkPolicySpec{
+//			PodSelector: metav1.LabelSelector{
+//				MatchLabels: labels,
+//			},
+//			PolicyTypes: []networkingv1.PolicyType{
+//				networkingv1.PolicyTypeIngress,
+//			},
+//			Ingress: []networkingv1.NetworkPolicyIngressRule{
+//				{
+//					From: []networkingv1.NetworkPolicyPeer{
+//						{
+//							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
+//						},
+//					},
+//					Ports: makeNetworkPolicyPorts(allowedPorts),
+//				},
+//			},
+//		},
+//	}
+//}
+//
+//func makeNetworkPolicyPorts(ports []intstr.IntOrString) []networkingv1.NetworkPolicyPort {
+//	var networkPolicyPorts []networkingv1.NetworkPolicyPort
+//
+//	tcpProtocol := corev1.ProtocolTCP
+//
+//	for idx := range ports {
+//		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
+//			Protocol: &tcpProtocol,
+//			Port:     &ports[idx],
+//		})
+//	}
+//
+//	return networkPolicyPorts
+//}

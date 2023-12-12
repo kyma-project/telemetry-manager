@@ -2,6 +2,7 @@ package otelcollector
 
 import (
 	"context"
+	networkingv1 "k8s.io/api/networking/v1"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -20,6 +21,7 @@ func TestApplyAgentResources(t *testing.T) {
 	cfg := "dummy otel collector config"
 
 	agentConfig := &AgentConfig{
+		allowedPorts: []intstr.IntOrString{intstr.FromInt32(5555), intstr.FromInt32(6666)},
 		Config: Config{
 			BaseName:        name,
 			Namespace:       namespace,
@@ -156,6 +158,25 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
 		}, sa.Labels)
+	})
+
+	t.Run("should create networkpolicy", func(t *testing.T) {
+		var nps networkingv1.NetworkPolicyList
+		require.NoError(t, client.List(ctx, &nps))
+		require.Len(t, nps.Items, 1)
+
+		np := nps.Items[0]
+		require.NotNil(t, np)
+		require.Equal(t, name+"-pprof-deny-ingress", np.Name)
+		require.Equal(t, namespace, np.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, np.Labels)
+		require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress}, np.Spec.PolicyTypes)
+		require.Len(t, np.Spec.Ingress, 1)
+		require.Len(t, np.Spec.Ingress[0].From, 1)
+		require.Equal(t, np.Spec.Ingress[0].From[0].IPBlock.CIDR, "0.0.0.0/0")
+		require.Len(t, np.Spec.Ingress[0].Ports, 2)
 	})
 
 	t.Run("should create metrics service", func(t *testing.T) {

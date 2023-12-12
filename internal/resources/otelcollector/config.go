@@ -53,11 +53,8 @@ func (cfg *GatewayConfig) WithIstioConfig(excludePorts string, istioEnabled bool
 
 func (cfg *GatewayConfig) WithAllowedPorts(ports []int32) *GatewayConfig {
 	cfgCopy := *cfg
-	var allowedPorts []intstr.IntOrString
-	for _, p := range ports {
-		allowedPorts = append(allowedPorts, intstr.FromInt32(p))
-	}
-	cfgCopy.allowedPorts = allowedPorts
+
+	cfgCopy.allowedPorts = makePorts(ports)
 	return &cfgCopy
 
 }
@@ -87,6 +84,7 @@ type GatewayScalingConfig struct {
 
 type AgentConfig struct {
 	Config
+	allowedPorts []intstr.IntOrString
 
 	DaemonSet DaemonSetConfig
 }
@@ -104,4 +102,20 @@ type DaemonSetConfig struct {
 	CPURequest        resource.Quantity
 	MemoryLimit       resource.Quantity
 	MemoryRequest     resource.Quantity
+}
+
+func (cfg *AgentConfig) WithAllowedPorts(ports []int32) *AgentConfig {
+	cfgCopy := *cfg
+
+	cfgCopy.allowedPorts = makePorts(ports)
+	return &cfgCopy
+
+}
+
+func makePorts(ports []int32) []intstr.IntOrString {
+	var allowedPorts []intstr.IntOrString
+	for _, p := range ports {
+		allowedPorts = append(allowedPorts, intstr.FromInt32(p))
+	}
+	return allowedPorts
 }
