@@ -93,7 +93,7 @@ Follow the instructions in [Dynatrace: Generate an access token](https://docs.dy
 
 ### Create Secret
 
-To create a new secret containing your access token, replace the `{API_TOKEN}` placeholder with the token you created and run the following command:
+To create a new Secret containing your access token, replace the `{API_TOKEN}` placeholder with the token you created and run the following command:
 
     ```bash
     kubectl -n $DYNATRACE_NS create secret generic dynatrace-token --from-literal="apiToken=Api-Token {API_TOKEN}"
