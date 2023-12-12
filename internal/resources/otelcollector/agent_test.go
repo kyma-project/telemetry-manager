@@ -2,8 +2,9 @@ package otelcollector
 
 import (
 	"context"
-	networkingv1 "k8s.io/api/networking/v1"
 	"testing"
+
+	networkingv1 "k8s.io/api/networking/v1"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
