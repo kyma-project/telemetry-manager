@@ -62,9 +62,11 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 		objs = append(objs,
 			telemetrygen.New(app1Ns).K8sObject(),
 			telemetrygen.New(app2Ns).K8sObject(),
+			telemetrygen.New(kitkyma.SystemNamespaceName).K8sObject(),
 
 			metricproducer.New(app1Ns).Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 			metricproducer.New(app2Ns).Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+			metricproducer.New(kitkyma.SystemNamespaceName).Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 		)
 
 		return objs
@@ -95,7 +97,7 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 		})
 
 		// verify metrics from apps1Ns delivered to backend1
-		It("Should deliver runtime metrics from app1Ns to backend1", func() {
+		It("Should deliver Runtime metrics from app1Ns to backend1", func() {
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend1Name], app1Ns, kubeletstats.MetricNames)
 		})
 
@@ -112,11 +114,11 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 		})
 
 		// verify metrics from apps2Ns delivered to backend1
-		It("Should deliver runtime metrics from app2Ns to backend2", func() {
+		It("Should deliver Runtime metrics from app2Ns to backend2", func() {
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend2Name], app2Ns, kubeletstats.MetricNames)
 		})
 
-		It("Should deliver prometheus metrics from app2Ns to backend2", func() {
+		It("Should deliver Prometheus metrics from app2Ns to backend2", func() {
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend2Name], app2Ns, metricproducer.MetricNames)
 		})
 
