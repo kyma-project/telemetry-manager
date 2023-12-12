@@ -3,7 +3,6 @@ package otelcollector
 import (
 	"context"
 	"fmt"
-	networkingv1 "k8s.io/api/networking/v1"
 	"maps"
 
 	"istio.io/api/security/v1beta1"
@@ -11,9 +10,11 @@ import (
 	istiov1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
