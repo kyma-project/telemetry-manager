@@ -23,7 +23,7 @@ To support telemetry for your applications, Kyma's Telemetry module provides the
 - Tooling for collection, filtering, and shipment: Based on the [Open Telemetry Collector](https://opentelemetry.io/docs/collector/) and [Fluent Bit](https://fluentbit.io/), you can configure basic pipelines to filter and ship telemetry data.
 - Integration in a vendor-neutral way to a vendor-specific observability system (traces and metrics only): Based on the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/reference/specification/protocol/), you can integrate backend systems.
 - Guidance for the instrumentation (traces and metrics only): Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) in nearly every programming language.
-- [Enriching](#automatic-telemetry-enrichment) telemetry data by automatically adding common attributes (traces and metrics only). This is done in compliance with established semantic conventions, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis.
+- [Enriching](gateways.md#data-enrichment) telemetry data by automatically adding common attributes (traces and metrics only). This is done in compliance with established semantic conventions, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis.
 - Opt-out from features for advanced scenarios: At any time, you can opt out for each data type, and use custom tooling to collect and ship the telemetry data.
 - SAP BTP as first-class integration: Integration into BTP Observability services is prioritized.
 
@@ -71,6 +71,16 @@ For more information, see [Traces](03-traces.md) and [Gateways](gateways.md).
 The metric gateway and agent are based on an [OTel Collector](https://opentelemetry.io/docs/collector/) [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). The gateway provides an [OTLP-based](https://opentelemetry.io/docs/reference/specification/protocol/) endpoint to which applications can push the metric signals. The agent scrapes annotated Prometheus-based workloads. According to a MetricPipeline configuration, the gateway processes and ships the metric data to a target system.
 
 For more information, see [Metrics](04-metrics.md) and [Gateways](gateways.md).
+
+## Integration Guides
+
+With the Telemetry module you can collect telemetry data and ship the data to backends. For details, read the following guides:
+
+- [OpenTelemetry Demo App](/telemetry-manager/user/integration/opentelemetry-demo/README.md)
+- [SAP Cloud Logging](/telemetry-manager/user/integration/sap-cloud-logging/README.md)
+- [Dynatrace](/telemetry-manager/user/integration/dynatrace/README.md)
+- [Loki](/telemetry-manager/user/integration/loki/README.md)
+- [Jaeger](/telemetry-manager/user/integration/jaeger/README.md)
 
 ## API / Custom Resource Definitions
 
