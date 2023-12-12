@@ -19,8 +19,6 @@ package tracepipeline
 import (
 	"context"
 	"fmt"
-	istioPorts "github.com/kyma-project/telemetry-manager/internal/istio/ports"
-	"github.com/kyma-project/telemetry-manager/internal/istio/status"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
@@ -30,6 +28,8 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	istioPorts "github.com/kyma-project/telemetry-manager/internal/istio/ports"
+	"github.com/kyma-project/telemetry-manager/internal/istio/status"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
