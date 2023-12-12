@@ -75,6 +75,12 @@ func (p *Pipeline) OtlpInput(enable bool, opts ...InputOptions) *Pipeline {
 	p.otlp = telemetryv1alpha1.MetricPipelineOtlpInput{
 		Disabled: !enable,
 	}
+
+	if len(opts) == 0 {
+		return p
+	}
+
+	p.otlp.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
 	for _, opt := range opts {
 		opt(p.otlp.Namespaces)
 	}
@@ -85,6 +91,12 @@ func (p *Pipeline) RuntimeInput(enable bool, opts ...InputOptions) *Pipeline {
 	p.runtime = telemetryv1alpha1.MetricPipelineRuntimeInput{
 		Enabled: enable,
 	}
+
+	if len(opts) == 0 {
+		return p
+	}
+
+	p.runtime.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
 	for _, opt := range opts {
 		opt(p.runtime.Namespaces)
 	}
@@ -95,6 +107,12 @@ func (p *Pipeline) PrometheusInput(enable bool, opts ...InputOptions) *Pipeline 
 	p.prometheus = telemetryv1alpha1.MetricPipelinePrometheusInput{
 		Enabled: enable,
 	}
+
+	if len(opts) == 0 {
+		return p
+	}
+
+	p.prometheus.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
 	for _, opt := range opts {
 		opt(p.prometheus.Namespaces)
 	}
@@ -105,6 +123,12 @@ func (p *Pipeline) IstioInput(enable bool, opts ...InputOptions) *Pipeline {
 	p.istio = telemetryv1alpha1.MetricPipelineIstioInput{
 		Enabled: enable,
 	}
+
+	if len(opts) == 0 {
+		return p
+	}
+
+	p.istio.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
 	for _, opt := range opts {
 		opt(p.istio.Namespaces)
 	}
