@@ -86,23 +86,23 @@ func makeResolveServiceNameConfig() *TransformProcessor {
 	}
 }
 
-func makeFilterByNamespaceRuntimeInputConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+func makeFilterByNamespaceRuntimeInputConfig(namespaceSelector *v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
 	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceRuntime))
 }
 
-func makeFilterByNamespacePrometheusInputConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+func makeFilterByNamespacePrometheusInputConfig(namespaceSelector *v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
 	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourcePrometheus))
 }
 
-func makeFilterByNamespaceIstioInputConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+func makeFilterByNamespaceIstioInputConfig(namespaceSelector *v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
 	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceIstio))
 }
 
-func makeFilterByNamespaceOtlpInputConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+func makeFilterByNamespaceOtlpInputConfig(namespaceSelector *v1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
 	return makeFilterByNamespaceConfig(namespaceSelector, otlpInputSource())
 }
 
-func makeFilterByNamespaceConfig(namespaceSelector v1alpha1.MetricPipelineInputNamespaceSelector, inputSourceCondition string) *FilterProcessor {
+func makeFilterByNamespaceConfig(namespaceSelector *v1alpha1.MetricPipelineInputNamespaceSelector, inputSourceCondition string) *FilterProcessor {
 	var filterExpressions []string
 
 	if len(namespaceSelector.Exclude) > 0 {

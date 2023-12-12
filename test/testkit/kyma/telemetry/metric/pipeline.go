@@ -76,7 +76,7 @@ func (p *Pipeline) OtlpInput(enable bool, opts ...InputOptions) *Pipeline {
 		Disabled: !enable,
 	}
 	for _, opt := range opts {
-		opt(&p.otlp.Namespaces)
+		opt(p.otlp.Namespaces)
 	}
 	return p
 }
@@ -86,7 +86,7 @@ func (p *Pipeline) RuntimeInput(enable bool, opts ...InputOptions) *Pipeline {
 		Enabled: enable,
 	}
 	for _, opt := range opts {
-		opt(&p.runtime.Namespaces)
+		opt(p.runtime.Namespaces)
 	}
 	return p
 }
@@ -96,7 +96,7 @@ func (p *Pipeline) PrometheusInput(enable bool, opts ...InputOptions) *Pipeline 
 		Enabled: enable,
 	}
 	for _, opt := range opts {
-		opt(&p.prometheus.Namespaces)
+		opt(p.prometheus.Namespaces)
 	}
 	return p
 }
@@ -106,7 +106,7 @@ func (p *Pipeline) IstioInput(enable bool, opts ...InputOptions) *Pipeline {
 		Enabled: enable,
 	}
 	for _, opt := range opts {
-		opt(&p.istio.Namespaces)
+		opt(p.istio.Namespaces)
 	}
 	return p
 }

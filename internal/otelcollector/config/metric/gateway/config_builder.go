@@ -184,8 +184,8 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 	}
 }
 
-func shouldFilterByNamespace(enabled bool, namespaceSelector telemetryv1alpha1.MetricPipelineInputNamespaceSelector) bool {
-	return enabled && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
+func shouldFilterByNamespace(inputEnabled bool, namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) bool {
+	return inputEnabled && namespaceSelector != nil && (len(namespaceSelector.Include) > 0 || len(namespaceSelector.Exclude) > 0)
 }
 
 func getNamespaceFilterProcessorName(pipelineName string, inputSourceType metric.InputSourceType) string {

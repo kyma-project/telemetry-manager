@@ -146,8 +146,6 @@ spec:
                             'include' or 'exclude'
                           rule: '!((has(self.include) && size(self.include) != 0)
                             && (has(self.exclude) && size(self.exclude) != 0))'
-                    required:
-                    - namespaces
                     type: object
                   runtime:
                     description: Configures runtime scraping.

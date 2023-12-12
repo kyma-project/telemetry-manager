@@ -70,7 +70,7 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include metrics from the specified Namespace names only. |
 | **input.&#x200b;prometheus**  | object | Configures Prometheus scraping. |
 | **input.&#x200b;prometheus.&#x200b;enabled**  | boolean | If enabled, Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`. |
-| **input.&#x200b;prometheus.&#x200b;namespaces** (required) | object | Describes whether Prometheus metrics from specific Namespaces are selected. System Namespaces are disabled by default. |
+| **input.&#x200b;prometheus.&#x200b;namespaces**  | object | Describes whether Prometheus metrics from specific Namespaces are selected. System Namespaces are disabled by default. |
 | **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
 | **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include metrics from the specified Namespace names only. |
 | **input.&#x200b;runtime**  | object | Configures runtime scraping. |

@@ -32,17 +32,17 @@ func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 		randSource: rand.NewSource(time.Now().UnixNano()),
 		endpoint:   "https://localhost",
 		otlp: telemetryv1alpha1.MetricPipelineOtlpInput{
-			Namespaces: telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
+			Namespaces: &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
 				Exclude: namespaces.System(),
 			},
 		},
 		runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
-			Namespaces: telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
+			Namespaces: &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
 				Exclude: namespaces.System(),
 			},
 		},
 		prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-			Namespaces: telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
+			Namespaces: &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
 				Exclude: namespaces.System(),
 			},
 		},
@@ -79,7 +79,7 @@ func ExcludeNamespaces(namespaces ...string) InputOptions {
 func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	b.otlp.Disabled = !enable
 	for _, opt := range opts {
-		opt(&b.otlp.Namespaces)
+		opt(b.otlp.Namespaces)
 	}
 	return b
 }
@@ -87,7 +87,7 @@ func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *Me
 func (b *MetricPipelineBuilder) RuntimeInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	b.runtime.Enabled = enable
 	for _, opt := range opts {
-		opt(&b.runtime.Namespaces)
+		opt(b.runtime.Namespaces)
 	}
 	return b
 }
@@ -95,7 +95,7 @@ func (b *MetricPipelineBuilder) RuntimeInput(enable bool, opts ...InputOptions) 
 func (b *MetricPipelineBuilder) PrometheusInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	b.prometheus.Enabled = enable
 	for _, opt := range opts {
-		opt(&b.prometheus.Namespaces)
+		opt(b.prometheus.Namespaces)
 	}
 	return b
 }
@@ -103,7 +103,7 @@ func (b *MetricPipelineBuilder) PrometheusInput(enable bool, opts ...InputOption
 func (b *MetricPipelineBuilder) IstioInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	b.istio.Enabled = enable
 	for _, opt := range opts {
-		opt(&b.istio.Namespaces)
+		opt(b.istio.Namespaces)
 	}
 	return b
 }
