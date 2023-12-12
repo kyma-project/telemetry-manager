@@ -103,8 +103,7 @@ type MetricPipelineIstioInput struct {
 type MetricPipelineOtlpInput struct {
 	// If disabled, push-based OTLP metrics are not collected. The default is `false`.
 	Disabled bool `json:"disabled,omitempty"`
-	// Describes whether push-based OTLP metrics from specific Namespaces are selected. System Namespaces are disabled by default.
-	//+kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
+	// Describes whether push-based OTLP metrics from specific Namespaces are selected. System Namespaces are enabled by default.
 	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 

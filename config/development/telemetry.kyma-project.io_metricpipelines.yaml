@@ -87,15 +87,9 @@ spec:
                           collected. The default is `false`.
                         type: boolean
                       namespaces:
-                        default:
-                          exclude:
-                          - kyma-system
-                          - kube-system
-                          - istio-system
-                          - compass-system
                         description: Describes whether push-based OTLP metrics from
                           specific Namespaces are selected. System Namespaces are
-                          disabled by default.
+                          enabled by default.
                         properties:
                           exclude:
                             description: Exclude metrics from the specified Namespace
