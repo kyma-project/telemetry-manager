@@ -103,10 +103,6 @@ var _ = Describe("Traces", Label("tracing"), Ordered, func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockIstiofiedBackendName, Namespace: mockIstiofiedNs})
 		})
 
-		It("Should have a network policy deployed", func() {
-
-		})
-
 		It("Should have sample app running with Istio sidecar", func() {
 			verifyAppIsRunning(istiofiedSampleAppNs, map[string]string{"app": "sample-metrics"})
 			verifySidecarPresent(istiofiedSampleAppNs, map[string]string{"app": "sample-metrics"})
