@@ -54,12 +54,10 @@ var _ = Describe("Traces", Label("tracing"), Ordered, func() {
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		//urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		mockIstiofiedBackend := backend.New(mockIstiofiedBackendName, mockIstiofiedNs, backend.SignalTypeTraces)
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
-		//urls.SetMockBackendExport(mockIstiofiedBackend.Name(), mockIstiofiedBackend.TelemetryExportURL(proxyClient))
 		telemetryIstiofiedExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		istioTracePipeline := kittrace.NewPipeline("istiofied-app-traces").WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRef())
@@ -80,12 +78,12 @@ var _ = Describe("Traces", Label("tracing"), Ordered, func() {
 		istioSampleApp := metricproducer.New(istiofiedSampleAppNs, metricproducer.WithName(istiofiedSampleAppName))
 		objs = append(objs, istioSampleApp.Pod().K8sObject())
 		istiofiedAppURL = istioSampleApp.PodURL(proxyClient)
-		//urls.SetMetricPodURL(istioSampleApp.Name(), proxyClient.ProxyURLForPod(istiofiedSampleAppNs, istioSampleApp.Name(), istioSampleApp.MetricsEndpoint(), istioSampleApp.MetricsPort()))
 
 		sampleApp := metricproducer.New(sampleAppNs, metricproducer.WithName(sampleAppName))
 		objs = append(objs, sampleApp.Pod().K8sObject())
 		appURL = sampleApp.PodURL(proxyClient)
-		//urls.SetMetricPodURL(sampleApp.Name(), proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
+
+		objs = append(objs, kitk8s.NewNetworkPolicy("ingress-deny-all", kitkyma.SystemNamespaceName).K8sObject())
 
 		return objs
 	}
@@ -103,6 +101,10 @@ var _ = Describe("Traces", Label("tracing"), Ordered, func() {
 		It("Should have a trace backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockIstiofiedBackendName, Namespace: mockIstiofiedNs})
+		})
+
+		It("Should have a network policy deployed", func() {
+
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
