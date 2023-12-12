@@ -61,9 +61,8 @@ func (r *Reconciler) updateGatewayAndAgentStatus(ctx context.Context, pipeline t
 	log := logf.FromContext(ctx)
 
 	gatewayStatus, err := r.determineGatewayStatus(ctx)
-
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get metric gateway status: %v", err)
 	}
 
 	agentEnabled := isMetricAgentRequired(&pipeline)
@@ -72,7 +71,7 @@ func (r *Reconciler) updateGatewayAndAgentStatus(ctx context.Context, pipeline t
 		agentStatus, err := r.determineAgentStatus(ctx)
 
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get metric agent status: %v", err)
 		}
 
 		if pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning) && agentStatus.Type == telemetryv1alpha1.MetricPipelinePending {
@@ -92,7 +91,7 @@ func (r *Reconciler) updateGatewayAndAgentStatus(ctx context.Context, pipeline t
 func (r *Reconciler) determineGatewayStatus(ctx context.Context) (*telemetryv1alpha1.MetricPipelineCondition, error) {
 	gatewayReady, err := r.prober.IsReady(ctx, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get metric gateway deployment status: %v", err)
 	}
 
 	if gatewayReady {
@@ -105,11 +104,11 @@ func (r *Reconciler) determineGatewayStatus(ctx context.Context) (*telemetryv1al
 func (r *Reconciler) determineAgentStatus(ctx context.Context) (*telemetryv1alpha1.MetricPipelineCondition, error) {
 	agentReady, err := r.agentProber.IsReady(ctx, types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get metric agent daemonset status: %v", err)
 	}
 
 	if agentReady {
-		return telemetryv1alpha1.NewMetricPipelineCondition(conditions.ReasonMetricAgentDaemonSetReady, telemetryv1alpha1.MetricPipelineRunning), nil
+		return telemetryv1alpha1.NewMetricPipelineCondition(conditions.ReasonMetricGatewayDeploymentReady, telemetryv1alpha1.MetricPipelineRunning), nil
 	}
 
 	return telemetryv1alpha1.NewMetricPipelineCondition(conditions.ReasonMetricAgentDaemonSetNotReady, telemetryv1alpha1.MetricPipelinePending), nil

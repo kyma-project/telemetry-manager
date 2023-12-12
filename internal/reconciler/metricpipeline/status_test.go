@@ -408,7 +408,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelineRunning)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricAgentDaemonSetReady)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricGatewayDeploymentReady)
 	})
 
 	t.Run("should add pending condition if metric gateway deployment is not ready but metric agent is ready", func(t *testing.T) {
