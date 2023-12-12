@@ -1,6 +1,7 @@
 # Gateways
 
 Both, the traces and the metrics feature, are based on a gateway, which is provisioned as soon as you define any Pipeline resource. All telemetry data of the related domain passes the gateway, so it acts as a central point and provides the following benefits:
+
 - [Data Enrichment](#data-enrichment) to achieve a certain data quality
 - Filtering to apply namespace filtering and remove noisy system data (individually per domain)
 - Dispatching to the configured backends (individually per domain)
@@ -32,7 +33,7 @@ The gateways automatically enrich your data by adding the following attributes:
   3. Namespace.
   4. Cluster name.
 
-## Istio support
+## Istio Support
 
 The Telemetry module automatically detects whether Istio is available and injects Istio sidecars to its components. Additionally, the ingestion endpoints of gateways are configured to allow traffic in the permissive mode, so they accept mTLS-based communication as well as plain text.
 
