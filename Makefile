@@ -67,8 +67,6 @@ crd-docs-gen: tablegen ## Generates CRD spec into docs folder
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=operator-manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-# Move the auto-generated Metricpipeline CRD to the development directory since it is still not ready for release.
-# 	mv ./config/crd/bases/telemetry.kyma-project.io_metricpipelines.yaml ./config/development/telemetry.kyma-project.io_metricpipelines.yaml
 	$(MAKE) crd-docs-gen
 
 .PHONY: generate
