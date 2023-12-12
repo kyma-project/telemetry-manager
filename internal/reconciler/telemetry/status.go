@@ -90,8 +90,15 @@ func (r *Reconciler) updateGatewayEndpoints(ctx context.Context, telemetry *oper
 		return fmt.Errorf("failed to get trace endpoints: %w", err)
 	}
 
+	metricEndpoins, err := r.metricEndpoints(ctx, r.config, telemetryInDeletion)
+
+	if err != nil {
+		return fmt.Errorf("failed to get metric endpoints: %w", err)
+	}
+
 	telemetry.Status.GatewayEndpoints = operatorv1alpha1.GatewayEndpoints{
-		Traces: traceEndpoints,
+		Traces:  traceEndpoints,
+		Metrics: metricEndpoins,
 	}
 
 	return nil
@@ -107,6 +114,18 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, telemetr
 	}
 
 	return makeOTLPEndpoints(config.Traces.OTLPServiceName, config.Traces.Namespace), nil
+}
+
+func (r *Reconciler) metricEndpoints(ctx context.Context, config Config, telemetryInDeletion bool) (*operatorv1alpha1.OTLPEndpoints, error) {
+	cond, err := r.healthCheckers.metrics.Check(ctx, telemetryInDeletion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check trace components: %w", err)
+	}
+	if cond.Status != metav1.ConditionTrue || cond.Reason != conditions.ReasonMetricGatewayDeploymentReady {
+		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
+	}
+
+	return makeOTLPEndpoints(config.Metrics.OTLPServiceName, config.Metrics.Namespace), nil
 }
 
 func makeOTLPEndpoints(serviceName, namespace string) *operatorv1alpha1.OTLPEndpoints {
