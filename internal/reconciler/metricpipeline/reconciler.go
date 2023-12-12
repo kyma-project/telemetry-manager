@@ -3,7 +3,7 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
-
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -12,8 +12,6 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	istioPorts "github.com/kyma-project/telemetry-manager/internal/istio/ports"
-	"github.com/kyma-project/telemetry-manager/internal/istio/status"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
@@ -48,7 +46,7 @@ type Reconciler struct {
 	prober             DeploymentProber
 	agentProber        DaemonSetProber
 	overridesHandler   *overrides.Handler
-	istioStatusChecker status.Checker
+	istioStatusChecker istiostatus.Checker
 }
 
 func NewReconciler(client client.Client, config Config, gatewayProber DeploymentProber, agentProber DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
@@ -58,7 +56,7 @@ func NewReconciler(client client.Client, config Config, gatewayProber Deployment
 		prober:             gatewayProber,
 		agentProber:        agentProber,
 		overridesHandler:   overridesHandler,
-		istioStatusChecker: status.NewChecker(client),
+		istioStatusChecker: istiostatus.NewChecker(client),
 	}
 }
 
@@ -255,7 +253,7 @@ func getAllowedPorts(istioActive bool) []int32 {
 	}
 
 	if istioActive {
-		allowedPorts = append(allowedPorts, istioPorts.IstioEnvoy)
+		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
 	return allowedPorts

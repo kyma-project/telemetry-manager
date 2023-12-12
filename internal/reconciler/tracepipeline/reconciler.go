@@ -19,7 +19,7 @@ package tracepipeline
 import (
 	"context"
 	"fmt"
-
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,8 +28,6 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	istioPorts "github.com/kyma-project/telemetry-manager/internal/istio/ports"
-	"github.com/kyma-project/telemetry-manager/internal/istio/status"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -56,7 +54,7 @@ type Reconciler struct {
 	config             Config
 	prober             DeploymentProber
 	overridesHandler   *overrides.Handler
-	istioStatusChecker status.Checker
+	istioStatusChecker istiostatus.Checker
 }
 
 func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler *overrides.Handler) *Reconciler {
@@ -65,7 +63,7 @@ func NewReconciler(client client.Client, config Config, prober DeploymentProber,
 		config:             config,
 		prober:             prober,
 		overridesHandler:   overridesHandler,
-		istioStatusChecker: status.NewChecker(client),
+		istioStatusChecker: istiostatus.NewChecker(client),
 	}
 }
 
@@ -183,7 +181,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	if isIstioActive {
-		allowedPorts = append(allowedPorts, istioPorts.IstioEnvoy, ports.OpenCensus)
+		allowedPorts = append(allowedPorts, ports.IstioEnvoy, ports.OpenCensus)
 	}
 
 	if err := otelcollector.ApplyGatewayResources(ctx,
