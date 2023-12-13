@@ -21,7 +21,7 @@ func TestApplyAgentResources(t *testing.T) {
 	cfg := "dummy otel collector config"
 
 	agentConfig := &AgentConfig{
-		allowedPorts: []intstr.IntOrString{intstr.FromInt32(5555), intstr.FromInt32(6666)},
+		allowedPorts: []int32{5555, 6666},
 		Config: Config{
 			BaseName:        name,
 			Namespace:       namespace,

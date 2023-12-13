@@ -335,7 +335,7 @@ func createGatewayConfig(istioEnabled bool) *GatewayConfig {
 		},
 		OTLPServiceName:      otlpServiceName,
 		CanReceiveOpenCensus: true,
-		allowedPorts:         []intstr.IntOrString{intstr.FromInt32(5555), intstr.FromInt32(6666)},
+		allowedPorts:         []int32{5555, 6666},
 		Istio: IstioConfig{
 			Enabled:      istioEnabled,
 			ExcludePorts: "1111, 2222",
