@@ -67,7 +67,7 @@ func (r *Reconciler) updateGatewayAndAgentStatus(ctx context.Context, pipeline t
 
 	agentEnabled := isMetricAgentRequired(&pipeline)
 
-	if gatewayStatus.Type == telemetryv1alpha1.MetricPipelineRunning && agentEnabled {
+	if gatewayStatus.Reason == conditions.ReasonMetricGatewayDeploymentReady && agentEnabled {
 		agentStatus, err := r.determineAgentStatus(ctx)
 
 		if err != nil {
