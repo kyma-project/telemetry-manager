@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
@@ -83,6 +84,23 @@ func WithLevel(matcher types.GomegaMatcher) types.GomegaMatcher {
 		}
 
 		return levelAttr.Str()
+	}, matcher)
+}
+
+func WithTimestamp(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(lr plog.LogRecord) time.Time {
+		const timestampAttrKey = "timestamp"
+		timestampAttr, hasTimestampAttr := lr.Attributes().Get(timestampAttrKey)
+		if !hasTimestampAttr || timestampAttr.Type() != pcommon.ValueTypeStr {
+			return time.Time{}
+		}
+
+		timestamp, err := time.Parse(time.RFC3339, timestampAttr.Str())
+		if err != nil {
+			return time.Time{}
+		}
+
+		return timestamp
 	}, matcher)
 }
 

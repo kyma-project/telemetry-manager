@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"net/http"
+	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,6 +31,7 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 	)
 	var telemetryExportURL string
 	var overrides *corev1.ConfigMap
+	var now time.Time
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -50,6 +52,7 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 	}
 
 	BeforeAll(func() {
+		now = time.Now().UTC()
 		k8sObjects := makeResources()
 		DeferCleanup(func() {
 			if overrides != nil {
@@ -85,6 +88,7 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 					ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-operator")),
 						WithLevel(Equal("INFO")),
+						WithTimestamp(BeTemporally(">", now)),
 					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -99,6 +103,7 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 					Not(ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-operator")),
 						WithLevel(Equal("DEBUG")),
+						WithTimestamp(BeTemporally(">", now)),
 					)))),
 				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -137,6 +142,7 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 					ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-operator")),
 						WithLevel(Equal("DEBUG")),
+						WithTimestamp(BeTemporally(">", now)),
 					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
