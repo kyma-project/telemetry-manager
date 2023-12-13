@@ -70,7 +70,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 		})
 
-		It("Ensures the metrics agent daemonset is ready", func() {
+		It("Ensures the metric agent daemonset is ready", func() {
 			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
