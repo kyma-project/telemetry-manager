@@ -25,8 +25,8 @@ import (
 var _ = Describe("Overrides", Label("logging"), Ordered, func() {
 	const (
 		mockBackendName = "overrides-receiver"
-		mockNs          = "overrides-log-http-output"
-		pipelineName    = "http-output-pipeline"
+		mockNs          = "overrides-http-output"
+		pipelineName    = "overrides-pipeline"
 	)
 	var telemetryExportURL string
 	var overrides *corev1.ConfigMap
