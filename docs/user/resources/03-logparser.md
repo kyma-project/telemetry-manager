@@ -6,7 +6,7 @@ The `logparser.telemetry.kyma-project.io` CustomResourceDefinition (CRD) is a de
 kubectl get crd logparser.telemetry.kyma-project.io -o yaml
 ```
 
-## Sample custom resource
+## Sample Custom Resource
 
 The following LogParser object defines a parser which can parse a log line like: `{"data":"100 0.5 true This is example"}`.
 
@@ -23,7 +23,7 @@ spec:
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
 
-## Custom resource parameters
+## Custom Resource Parameters
 
 For details, see the [LogParser specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1alpha1/logparser_types.go).
 

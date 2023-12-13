@@ -50,7 +50,7 @@ Telemetry Manager watches all LogPipeline resources and related Secrets. Wheneve
 
 In the following steps, you can see how to construct and deploy a typical LogPipeline. Learn more about the available [parameters and attributes](resources/02-logpipeline.md).
 
-### Step 1: Create a LogPipeline and output
+### Step 1: Create a LogPipeline and Output
 
 To ship application logs to a new output, create a resource of the kind `LogPipeline`:
 
@@ -96,12 +96,12 @@ An output is a data destination configured by a [Fluent Bit output](https://docs
         tls.verify         on
   ```
 
-### Step 2: Add filters
+### Step 2: Add Filters
 
-If you need selection mechanisms for application logs on the Namespace or container level, you can use an input spec to restrict or specify from which resources logs are included.
-If you don't define any input, it's collected from all Namespaces, except the system Namespaces `kube-system`, `istio-system`, `kyma-system`, which are excluded by default. For example, you can define the Namespaces to include in the input collection, exclude Namespaces from the input collection, or choose that only system Namespaces are included. Learn more about the available [parameters and attributes](resources/02-logpipeline.md).
+If you need selection mechanisms for application logs on the namespace or container level, you can use an input spec to restrict or specify from which resources logs are included.
+If you don't define any input, it's collected from all namespaces, except the system namespaces `kube-system`, `istio-system`, `kyma-system`, which are excluded by default. For example, you can define the namespaces to include in the input collection, exclude namespaces from the input collection, or choose that only system namespaces are included. Learn more about the available [parameters and attributes](resources/02-logpipeline.md).
 
-The following example collects input from all Namespaces excluding `kyma-system` and only from the `istio-proxy` containers:
+The following example collects input from all namespaces excluding `kyma-system` and only from the `istio-proxy` containers:
 
 ```yaml
 kind: LogPipeline
@@ -122,7 +122,7 @@ spec:
 ```
 
 It might happen that Fluent Bit prints an error per processed log line, which is then collected and re-processed.
-To avoid problems with such recursive logs, it is recommended that you exclude the logs of the Fluent Bit container. The following example collects input from all Namespaces including system Namespaces, but excludes the Fluent Bit container:
+To avoid problems with such recursive logs, it is recommended that you exclude the logs of the Fluent Bit container. The following example collects input from all namespaces including system namespaces, but excludes the Fluent Bit container:
 
 ```yaml
 spec:
@@ -165,10 +165,10 @@ spec:
 Telemetry Manager supports different types of [Fluent Bit filter](https://docs.fluentbit.io/manual/concepts/data-pipeline/filter). The example uses the filters [grep](https://docs.fluentbit.io/manual/pipeline/filters/grep) and [record_modifier](https://docs.fluentbit.io/manual/pipeline/filters/record-modifier).
 
 - The first filter keeps all log records that have the **kubernetes.labels.app** attribute set with the value `my-deployment`; all other logs are discarded. The **kubernetes** attribute is available for every log record. For more details, see [Kubernetes filter (metadata)](#stage-3-kubernetes-filter-metadata).
-- The second filter drops all log records fulfilling the given rule. In the example, typical Namespaces are dropped based on the **kubernetes** attribute.
+- The second filter drops all log records fulfilling the given rule. In the example, typical namespaces are dropped based on the **kubernetes** attribute.
 - A log record is modified by adding a new attribute. In the example, a constant attribute is added to every log record to record the actual cluster Node name at the record for later filtering in the backend system. As a value, a placeholder is used referring to a Kubernetes-specific environment variable.
 
-### Step 3: Add authentication details from Secrets
+### Step 3: Add Authentication Details From Secrets
 
 Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, the LogPipeline supports the reference of Secrets. At the moment, mutual TLS (mTLS) and Basic Authentication are supported.
 
@@ -253,7 +253,7 @@ spec:
 
 <!-- tabs:end -->
 
-The related Secret must fulfill the referenced name and Namespace, and contain the mapped key as in the following example:
+The related Secret must fulfill the referenced name and namespace, and contain the mapped key as in the following example:
 
 ```yaml
 kind: Secret
@@ -268,7 +268,7 @@ stringData:
   TLS_KEY: ...
 ```
 
-To leverage data provided by the Kubernetes Secrets in a `custom` output definition, use placeholder expressions for the data provided by the Secret, then specify the actual mapping to the Secret keys in the **variables** section, like in the following example:
+To use data provided by the Kubernetes Secrets in a `custom` output definition, use placeholder expressions for the data provided by the Secret, then specify the actual mapping to the Secret keys in the **variables** section, like in the following example:
 
 ```yaml
 kind: LogPipeline
@@ -324,7 +324,7 @@ You activated a LogPipeline and logs start streaming to your backend. To verify 
   backend           Ready     44s
   ```
 
-## Log record processing
+## Log Record Processing
 
 After a log record has been read, it is preprocessed by configured plugins, like the `kubernetes` filter. Thus, when a record is ready to be processed by the sections defined in the LogPipeline definition, it has several attributes available for processing and shipment.
 
@@ -332,9 +332,9 @@ After a log record has been read, it is preprocessed by configured plugins, like
 
 Learn more about the flow of the log record through the general pipeline and the available log attributes in the following sections.
 
-### Stage 1: Container log message
+### Stage 1: Container Log Message
 
-In the example, we assume there's a container `myContainer` of Pod `myPod`, running in Namespace `myNamespace`, logging to `stdout` with the following log message in the JSON format:
+In the example, we assume there's a container `myContainer` of Pod `myPod`, running in namespace `myNamespace`, logging to `stdout` with the following log message in the JSON format:
 
 ```json
 {
@@ -345,9 +345,9 @@ In the example, we assume there's a container `myContainer` of Pod `myPod`, runn
 }
 ```
 
-### Stage 2: Tail input
+### Stage 2: Tail Input
 
-The `tail` input plugin reads the log message from a log file managed by the container runtime. The input plugin brings a dedicated filesystem buffer for the pipeline. The file name contains the Namespace, Pod, and container information that will be available later as part of the [tag](https://docs.fluentbit.io/manual/concepts/key-concepts#tag). The tag is prefixed with the pipeline name. The resulting log record available in an internal Fluent Bit representation looks similar to the following example:
+The `tail` input plugin reads the log message from a log file managed by the container runtime. The input plugin brings a dedicated filesystem buffer for the pipeline. The file name contains the namespace, Pod, and container information that will be available later as part of the [tag](https://docs.fluentbit.io/manual/concepts/key-concepts#tag). The tag is prefixed with the pipeline name. The resulting log record available in an internal Fluent Bit representation looks similar to the following example:
 
 ```json
 {
@@ -367,7 +367,7 @@ The attributes in the example have the following meaning:
 | _p | Indicates if the log message is partial (`P`) or final (`F`). Optional, dependent on container runtime. Because a CRI multiline parser is applied for the tailing phase, all multilines on the container runtime level are aggregated already and no partial entries must be left. |
 | log | The raw and unparsed log message. |
 
-### Stage 3: Kubernetes filter (metadata)
+### Stage 3: Kubernetes Filter (Metadata)
 
 In the next stage, the [Kubernetes filter](https://docs.fluentbit.io/manual/pipeline/filters/kubernetes) is applied. The container information from the log file name (available in the tag) is interpreted and used for a Kubernetes API Server request to resolve more metadata of the container. All the resolved metadata enrich the existing record as a new attribute `kubernetes`:
 
@@ -393,7 +393,7 @@ In the next stage, the [Kubernetes filter](https://docs.fluentbit.io/manual/pipe
 }
 ```
 
-### Stage 4: Kubernetes filter (JSON parser)
+### Stage 4: Kubernetes Filter (JSON Parser)
 
 After the enrichment of the log record with the Kubernetes-relevant metadata, the [Kubernetes filter](https://docs.fluentbit.io/manual/pipeline/filters/kubernetes) also tries to parse the record as a JSON document. If that is successful, all the parsed root attributes of the parsed document are added as new individual root attributes of the log.
 
@@ -445,7 +445,7 @@ Currently, there are the following limitations for LogPipelines that are served 
 
 The `unsupportedMode` attribute of a LogPipeline indicates that you are using a `custom` filter and/or `custom` output. The Kyma team does not provide support for a custom configuration.
 
-### Fluent Bit plugins
+### Fluent Bit Plugins
 
 You cannot enable the following plugins, because they potentially harm the stability:
 
@@ -453,13 +453,11 @@ You cannot enable the following plugins, because they potentially harm the stabi
 - Kubernetes Filter
 - Rewrite_Tag Filter
 
-### Reserved log attributes
+### Reserved Log Attributes
 
 The log attribute named `kubernetes` is a special attribute that's enriched by the `kubernetes` filter. When you use that attribute as part of your structured log payload, the metadata enriched by the filter are overwritten by the payload data. Filters that rely on the original metadata might no longer work as expected.
 
-Furthermore, the `__kyma__` prefix is used internally by Telemetry Manager. When you use the prefix attribute in your log data, the data might be overwritten.
-
-### Buffer limits
+### Buffer Limits
 
 Fluent Bit buffers up to 1 GB of logs if a configured output cannot receive logs. The oldest logs are dropped when the limit is reached or after 300 retries.
 
@@ -467,6 +465,6 @@ Fluent Bit buffers up to 1 GB of logs if a configured output cannot receive logs
 
 Each Fluent Bit Pod can process up to 10 MB/s of logs for a single LogPipeline. With multiple pipelines, the throughput per pipeline is reduced. The used logging backend or performance characteristics of the output plugin might limit the throughput earlier.
 
-### Max amount of pipelines
+### Max Amount of Pipelines
 
 The maximum amount of LogPipelines is 5.

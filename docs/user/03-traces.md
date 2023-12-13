@@ -49,7 +49,7 @@ Furthermore, the manager takes care of the full lifecycle of the OTel Collector 
 
 In the following steps, you can see how to construct and deploy a typical TracePipeline. Learn more about the available [parameters and attributes](resources/04-tracepipeline.md).
 
-### Step 1a. Create a TracePipeline with an OTLP GRPC output
+### Step 1a. Create a TracePipeline With an OTLP GRPC Output
 
 To ship traces to a new OTLP output, create a resource of the kind `TracePipeline`:
 
@@ -67,7 +67,7 @@ spec:
 
 This configures the underlying OTel Collector with a pipeline for traces. The receiver of the pipeline will be of the OTLP type and be accessible using the `telemetry-otlp-traces` service. As an exporter, an `otlp` or an `otlphttp` exporter is used, dependent on the configured protocol.
 
-### Step 1b. Create a TracePipeline with an OTLP HTTP output
+### Step 1b. Create a TracePipeline With an OTLP HTTP Output
 
 To use the HTTP protocol instead of the default GRPC, use the `protocol` attribute and ensure that the correct port is configured as part of the endpoint. Typically, port `4317` is used for GRPC and port `4318` for HTTP.
 
@@ -84,7 +84,7 @@ spec:
         value: https://backend.example.com:4318
 ```
 
-### Step 2. Enable Istio tracing
+### Step 2. Enable Istio Tracing
 
 >**CAUTION:** The provided Istio feature uses an API in alpha state, which may change in future releases.
 
@@ -104,7 +104,7 @@ spec:
   randomSamplingPercentage: 5.00
 ```
 
-### Step 3a: Add authentication details from plain text
+### Step 3a: Add Authentication Details From Plain Text
 
 To integrate with external systems, you must configure authentication details. At the moment, mutual TLS (mTLS), Basic Authentication and custom headers are supported.
 
@@ -153,7 +153,7 @@ spec:
             value: myPwd
 ```
 
-#### **Token-based with custom headers**
+#### **Token-Based With Custom Headers**
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -172,7 +172,7 @@ spec:
 
 <!-- tabs:end -->
 
-### Step 3b: Add authentication details from Secrets
+### Step 3b: Add Authentication Details From Secrets
 
 Integrations into external systems usually require authentication details dealing with sensitive data. To handle that data properly in Secrets, TracePipeline supports the reference of Secrets.
 
@@ -239,7 +239,7 @@ spec:
                 key: password
 ```
 
-#### **Token-based with custom headers**
+#### **Token-Based With Custom Headers**
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -262,7 +262,7 @@ spec:
 
 <!-- tabs:end -->
 
-The related Secret must have the referenced name and needs to be located in the referenced Namespace, and contain the mapped key as in the following example:
+The related Secret must have the referenced name and needs to be located in the referenced namespace, and contain the mapped key as in the following example:
 
 ```yaml
 kind: Secret
@@ -303,7 +303,7 @@ You activated a TracePipeline and traces start streaming to your backend. To ver
   backend           Ready     44s
   ```
 
-## Kyma Components with tracing capabilities
+## Kyma Modules With Tracing Capabilities
 
 Kyma bundles several modules which are potentially involved in user flows. Applications involved in a distributed trace must propagate the trace context to keep the trace complete. Optionally, they can enrich the trace with custom spans, which requires reporting them to the backend.
 
@@ -313,7 +313,7 @@ The Istio module is crucial in distributed tracing because it provides the [ingr
 
 >**CAUTION:** The provided Istio feature uses an API in alpha state, which may change in future releases.
 
- The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#Tracing), place a resource to the `istio-system` Namespace. The following snippets help setting up the Istio tracing feature:
+ The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#Tracing), place a resource to the `istio-system` namespace. The following snippets help setting up the Istio tracing feature:
 
 <!-- tabs:start -->
 
@@ -357,7 +357,7 @@ spec:
 
 #### **Namespaces or Workloads**
 
-If you need specific settings for individual Namespaces or workloads, place additional Telemetry resources. If you don't want to report spans at all for a specific workload, activate the `disableSpanReporting` flag with the selector expression.
+If you need specific settings for individual namespaces or workloads, place additional Telemetry resources. If you don't want to report spans at all for a specific workload, activate the `disableSpanReporting` flag with the selector expression.
 
 ```yaml
 apiVersion: telemetry.istio.io/v1alpha1
@@ -375,7 +375,7 @@ spec:
     randomSamplingPercentage: 100.00
 ```
 
-#### **Trace Context without Spans**
+#### **Trace Context Without Spans**
   
 To enable the propagation of the [w3c-tracecontext](https://www.w3.org/TR/trace-context/) only, without reporting any spans (so the actual tracing feature is disabled), you must enable the `kyma-traces` provider with a sampling rate of 0. With this configuration, you get the relevant trace context into the [access logs](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-30-enable-istio-access-logs) without any active trace reporting.
 
@@ -430,24 +430,24 @@ This leads to the following limitations:
 
 The maximum throughput is 4200 span/sec ~= 15.000.000 spans/hour. If more data must be ingested, it can result in a refusal of more data.
 
-### Unavailability of output
+### Unavailability of Output
 
 For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 
-### No guaranteed delivery
+### No Guaranteed Delivery
 
 The used buffers are volatile. If the OTel collector instance crashes, trace data can be lost.
 
-### Multiple TracePipeline support
+### Multiple TracePipeline Support
 
 Up to 3 TracePipelines at a time are supported at the moment.
 
-### System span filtering
+### System Span Filtering
 
 System-related spans reported by Istio are filtered out without the opt-out option. Here are a few examples of such spans:
 
-- `/healthz` endpoint of a component deployed in the `kyma-system` Namespace
-- `/metrics` endpoint of a component deployed in the `kyma-system` Namespace
+- `/healthz` endpoint of a component deployed in the `kyma-system` namespace
+- `/metrics` endpoint of a component deployed in the `kyma-system` namespace
 - All outgoing spans reported by Grafana
 
 ## Troubleshooting
@@ -473,7 +473,7 @@ System-related spans reported by Istio are filtered out without the opt-out opti
    Cause: By [default](#istio), only 1% of the requests are sent to the trace backend for trace recording.
 
    Remedy:
-   
+
    To see more traces in the trace backend, increase the percentage of requests by changing the default settings.
    If you just want to see traces for one particular request, you can manually force sampling.
 

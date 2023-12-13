@@ -6,7 +6,7 @@ The `logpipeline.telemetry.kyma-project.io` CustomResourceDefinition (CRD) is a 
 kubectl get crd logpipeline.telemetry.kyma-project.io -o yaml
 ```
 
-## Sample custom resource
+## Sample Custom Resource
 
 The following LogPipeline object defines a pipeline integrating with the HTTP/JSON-based output. It uses basic authentication and excludes application logs emitted by `istio-proxy` containers.
 
@@ -57,7 +57,7 @@ status:
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
 
-## Custom resource parameters
+## Custom Resource Parameters
 
 For details, see the [LogPipeline specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1alpha1/logpipeline_types.go).
 

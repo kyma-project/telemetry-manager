@@ -6,7 +6,7 @@ The `tracepipeline.telemetry.kyma-project.io` CustomResourceDefinition (CRD) is 
 kubectl get crd tracepipeline.telemetry.kyma-project.io -o yaml
 ```
 
-## Sample custom resource
+## Sample Custom Resource
 
 The following TracePipeline object defines a pipeline that integrates into the local Jaeger instance:
 
@@ -32,7 +32,7 @@ status:
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
 
-## Custom resource parameters
+## Custom Resource Parameters
 
 For details, see the [TracePipeline specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1alpha1/tracepipeline_types.go).
 
