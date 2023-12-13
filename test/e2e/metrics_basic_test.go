@@ -52,6 +52,8 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 
+		objs = append(objs, kitk8s.NewNetworkPolicy("ingress-deny-all", kitkyma.SystemNamespaceName).K8sObject())
+
 		return objs
 	}
 

@@ -7,4 +7,5 @@ const (
 	Metrics     = 8888
 	HealthCheck = 13133
 	Pprof       = 1777
+	IstioEnvoy  = 15090
 )
