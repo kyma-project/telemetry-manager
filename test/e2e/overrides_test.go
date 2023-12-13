@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -13,17 +16,13 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitovrr "github.com/kyma-project/telemetry-manager/test/testkit/kyma/overrides"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
-	corev1 "k8s.io/api/core/v1"
-
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
+var _ = Describe("Overrides", Label("logging"), Ordered, func() {
 	const (
 		mockBackendName = "overrides-receiver"
 		mockNs          = "overrides-log-http-output"
@@ -120,7 +119,7 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 			}
 			var logPipeline telemetry.LogPipeline
 			err := k8sClient.Get(ctx, lookupKey, &logPipeline)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			// Annotate logPipeline
 			if logPipeline.ObjectMeta.Annotations == nil {
@@ -130,7 +129,7 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 
 			// Update logPipeline
 			err = k8sClient.Update(ctx, &logPipeline)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("Should have DEBUG level logs in the backend", Label(operationalTest), func() {

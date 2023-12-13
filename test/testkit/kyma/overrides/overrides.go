@@ -3,9 +3,10 @@ package overrides
 import (
 	"strings"
 
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 )
 
 const (
