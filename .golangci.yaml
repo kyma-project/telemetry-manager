@@ -42,6 +42,9 @@ linters:
 linters-settings:
   dupl:
     threshold: 100 # Tokens count to trigger error.
+  importas:
+    no-unaliased: true
+    no-extra-aliases: true
 
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.
