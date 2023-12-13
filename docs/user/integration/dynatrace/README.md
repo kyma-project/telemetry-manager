@@ -80,7 +80,7 @@ As a result, you see data arriving in your environment, advanced Kubernetes moni
 
 ## Telemetry Module Setup
 
-Next, you set up the ingestion of custom span and Istio span data and optionally custom metrics based on OTLP.
+Next, you set up the ingestion of custom span and Istio span data, and, optionally, custom metrics based on OTLP.
 
 ### Create Access Token
 
@@ -101,7 +101,7 @@ kubectl -n $DYNATRACE_NS create secret generic dynatrace-token --from-literal="a
 
 ### Ingest Traces
 
-To start ingesting custom pans and Istio spans, you need to enable the Istio tracing feature and then deploy a TracePipeline to enable the shipment to Dynatrace using the secrets defined above.
+To start ingesting custom spans and Istio spans, you must enable the Istio tracing feature and then deploy a TracePipeline.
 
 1. Deploy the Istio Telemetry resource:
 
@@ -153,7 +153,7 @@ To start ingesting custom pans and Istio spans, you need to enable the Istio tra
 
 ### Ingest Metrics (Experimental)
 
-To collect custom metrics, you usually use the Dynatrace annotation approach, as the Dynatrace OTLP integration is [limited](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/ingest/migration-guide-otlp-exporter#migrate-collector-configuration). As long as your workload is conform to the limitations (not exporting histograms, using delta aggregation temporality), you can leverage the metric functionality to push OTLP metrics centralized to Dynatrace. Hereby, the prometheus feature of the MetricPipeline will not work as it will hit the limitations by design.
+To collect custom metrics, you usually use the [Dynatrace annotation approach](https://docs.dynatrace.com/docs/platform-modules/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics), because the Dynatrace OTLP integration is [limited](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/ingest/migration-guide-otlp-exporter#migrate-collector-configuration). As long as your workload is conform to the limitations (not exporting histograms, using delta aggregation temporality), you can use the metric functionality to push OTLP metrics to Dynatrace. In this case, the Prometheus feature of the MetricPipeline cannot be used because it hits the limitations by design.
 
 1. Deploy the MetricPipeline and replace the `{ENVIRONMENT_ID}` placeholder with the environment Id of Dynatrace SaaS:
 
@@ -179,6 +179,6 @@ To collect custom metrics, you usually use the Dynatrace annotation approach, as
     EOF
     ```
 
-1. Start pushing metrics to the metric gateway using delta aggregation temporality
+1. Start pushing metrics to the metric gateway using [delta aggregation temporality.](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/overview/metrics#temporality)
 
 1. To find metrics from your Kyma cluster in the Dynatrace UI, go to **Observe & Explore** > **Metrics**.
