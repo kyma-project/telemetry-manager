@@ -1,4 +1,4 @@
-# Integrate with Jaeger
+# Integrate With Jaeger
 
 ## Overview
 
@@ -60,7 +60,7 @@ helm upgrade --install --create-namespace -n $K8S_NAMESPACE $HELM_JAEGER_RELEASE
 
 You can either use the [`values.yaml`](./values.yaml) provided in this `jaeger` folder, which contains customized settings deviating from the default settings, or create your own `values.yaml` file.
 
-### Verify the installation
+### Verify the Installation
 
 Check if the `jaeger` Pod was successfully created in the Namespace and is in the `Running` state:
 
@@ -116,13 +116,13 @@ EOF
 
 2. Open the Jaeger UI in your browser under `http://localhost:16686`.
 
-### Deploy a workload and activate Kyma's TracePipeline feature
+### Deploy a Workload and Activate Kyma’s TracePipeline Feature
 
 To see distributed traces visualized in Jaeger, follow the instructions for the [OpenTelemetry Demo App](../opentelemetry-demo/README.md).
 
 ## Advanced Topics
 
-### Integrate with Grafana
+### Integrate With Grafana
 
 Jaeger can be provided as a data source integrated into Grafana. For example, it can be part of a Grafana installation as described in the [Prometheus tutorial](https://github.com/kyma-project/examples/tree/main/prometheus).
 
@@ -189,7 +189,7 @@ By itself, Jaeger does not provide authentication mechanisms. To secure Jaeger, 
     kubectl -n $K8S_NAMESPACE get vs -l apirule.gateway.kyma-project.io/v1beta1=jaeger.$K8S_NAMESPACE -ojsonpath='{.items[*].spec.hosts[*]}'
     ```
 
-## Clean up
+## Clean Up
 
 When you're done, remove the example and all its resources from the cluster.
 

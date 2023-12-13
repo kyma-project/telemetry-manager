@@ -27,6 +27,7 @@ Learn how to install the OpenTelemetry [demo application](https://github.com/ope
 - Helm 3.x
 
 ## Installation
+
 ### Preparation
 
 1. Export your Namespace as a variable. Replace the `{namespace}` placeholder in the following command and run it:
@@ -82,7 +83,7 @@ To [enable Istio](../../03-traces.md#step-2-enable-istio-tracing) to report span
    EOF
    ```
 
-### Install the application
+### Install the Application
 
 Run the Helm upgrade command, which installs the chart if not present yet.
 
@@ -97,7 +98,7 @@ You can either use the [values.yaml](./values.yaml) provided in this `openteleme
 - Extend memory limits of the demo apps to avoid crashes caused by memory exhaustion
 - Adjust initContainers and services of demo apps to work proper with Istio
 
-### Verify the application
+### Verify the Application
 
 To verify that the application is running properly, set up port forwarding and call the respective local hosts.
 
@@ -143,7 +144,7 @@ To verify that the application is running properly, set up port forwarding and c
 
 ## Advanced
 
-### Browser Instrumentation and missing root spans
+### Browser Instrumentation and Missing Root Spans
 
 The frontend application of the demo uses [browser instrumentation](https://opentelemetry.io/docs/demo/services/frontend/#browser-instrumentation). Because of that, the root span of a trace is created externally to the cluster and is not captured with the described setup. In Jaeger, you can see a warning at the first span indicating that there is a parent span that is not being captured.
 
@@ -204,7 +205,7 @@ To capture the spans reported by the browser, you must expose the trace endpoint
 
 3. To check whether requests to the traces endpoint are successful, use the developer tools of the browser. Now, every trace should have a proper root span recorded.
 
-## Clean up
+## Clean Up
 
 When you're done, you can remove the example and all its resources from the cluster by calling Helm:
 

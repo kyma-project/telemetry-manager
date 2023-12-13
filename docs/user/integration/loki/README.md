@@ -1,4 +1,4 @@
-# Integrate with Loki
+# Integrate With Loki
 
 ## Overview
 
@@ -65,7 +65,7 @@ helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} ${HELM_LOKI_RELEAS
 
 In any case, you can either create your own `values.yaml` file, or use the [loki-values.yaml](./loki-values.yaml) provided in this `loki` folder, which contains customized settings deviating from the default settings: The provided `values.yaml` file activates the `singleBinary` mode and disables additional components that are usually used when running Loki as a central backend.
 
-### Verify Loki installation
+### Verify Loki Installation
 
 Check that the `loki` Pod has been created in the Namespace and is in the `Running` state:
 
@@ -73,9 +73,9 @@ Check that the `loki` Pod has been created in the Namespace and is in the `Runni
 kubectl -n ${K8S_NAMESPACE} get pod -l app.kubernetes.io/name=loki
 ```
 
-## Log agent installation
+## Log Agent Installation
 
-### Install the log agent
+### Install the Log Agent
 
 To ingest the application logs from within your cluster to Loki, you can either choose an installation based on [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/), which is the log collector recommended by Loki and provides a ready-to-use setup. Alternatively, you can use Kyma's LogPipeline feature based on Fluent Bit.
 
@@ -128,7 +128,7 @@ When the status of the applied LogPipeline resource turns into `Running`, the un
   </details>
 </div>
 
-### Verify the setup by accessing logs using the Loki API
+### Verify the Setup by Accessing Logs Using the Loki API
 
 1. To access the Loki API, use kubectl port forwarding. Run:
 
@@ -152,7 +152,7 @@ When the status of the applied LogPipeline resource turns into `Running`, the un
      'time={NANOSECONDS}'
    ```
 
-## Grafana installation
+## Grafana Installation
 
 Because Grafana provides a very good Loki integration, you might want to install it as well.
 
@@ -218,7 +218,7 @@ Because Grafana provides a very good Loki integration, you might want to install
    kubectl -n ${K8S_NAMESPACE} get virtualservice -l apirule.gateway.kyma-project.io/v1beta1=grafana.${K8S_NAMESPACE} -ojsonpath='{.items[*].spec.hosts[*]}'
    ```
 
-### Add a link for Grafana to the Kyma Dashboard
+### Add a Link for Grafana to the Kyma Dashboard
 
 1. Download the `dashboard-configmap.yaml` file and change `{GRAFANA_LINK}` to the public URL of your Grafana instance.
 
@@ -228,13 +228,13 @@ Because Grafana provides a very good Loki integration, you might want to install
 
 1. Optionally, adjust the ConfigMap: You can change the label field to change the name of the tab. If you want to move it to another category, change the category tab.
 
-1. Apply the ConfigMap, and go to Kyma Dashboard. Under the Observability section, you should see a link to the newly exposed Grafana. If you already have a busola-config, merge it with the existing one:
+1. Apply the ConfigMap, and go to Kyma dashboard. Under the Observability section, you should see a link to the newly exposed Grafana. If you already have a busola-config, merge it with the existing one:
 
    ```bash
    kubectl apply -f dashboard-configmap.yaml 
    ```
 
-## Clean up
+## Clean Up
 
 1. To remove the installation from the cluster, run:
 
