@@ -41,7 +41,7 @@ var _ = Describe("Logs Exclude Container", Label("logging"), Ordered, func() {
 		logPipeline := kitlog.NewPipeline(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
-			WithExcludeContainer([]string{logProducerName})
+			WithExcludeContainers([]string{logProducerName})
 		objs = append(objs, logPipeline.K8sObject())
 
 		return objs
