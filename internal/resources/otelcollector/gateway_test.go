@@ -202,7 +202,7 @@ func TestApplyGatewayResources(t *testing.T) {
 		}, np.Labels)
 		require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress}, np.Spec.PolicyTypes)
 		require.Equal(t, np.Spec.Ingress[0].From[0].IPBlock.CIDR, "0.0.0.0/0")
-		require.Len(t, np.Spec.Ingress[0].Ports, 5)
+		require.Len(t, np.Spec.Ingress[0].Ports, 2)
 	})
 
 	t.Run("should create metrics service", func(t *testing.T) {
@@ -322,7 +322,6 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 		require.NotEmpty(t, podAnnotations["checksum/config"])
 		require.Equal(t, "TPROXY", podAnnotations["sidecar.istio.io/interceptionMode"])
 		require.Equal(t, "1111, 2222", podAnnotations["traffic.sidecar.istio.io/excludeInboundPorts"])
-
 	})
 }
 
@@ -336,6 +335,7 @@ func createGatewayConfig(istioEnabled bool) *GatewayConfig {
 		},
 		OTLPServiceName:      otlpServiceName,
 		CanReceiveOpenCensus: true,
+		allowedPorts:         []int32{5555, 6666},
 		Istio: IstioConfig{
 			Enabled:      istioEnabled,
 			ExcludePorts: "1111, 2222",

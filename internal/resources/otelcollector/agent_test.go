@@ -21,6 +21,7 @@ func TestApplyAgentResources(t *testing.T) {
 	cfg := "dummy otel collector config"
 
 	agentConfig := &AgentConfig{
+		allowedPorts: []int32{5555, 6666},
 		Config: Config{
 			BaseName:        name,
 			Namespace:       namespace,
@@ -175,7 +176,7 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Len(t, np.Spec.Ingress, 1)
 		require.Len(t, np.Spec.Ingress[0].From, 1)
 		require.Equal(t, np.Spec.Ingress[0].From[0].IPBlock.CIDR, "0.0.0.0/0")
-		require.Len(t, np.Spec.Ingress[0].Ports, 5)
+		require.Len(t, np.Spec.Ingress[0].Ports, 2)
 	})
 
 	t.Run("should create metrics service", func(t *testing.T) {
