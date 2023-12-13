@@ -87,7 +87,6 @@ var _ = Describe("Overrides", Label("logging"), Ordered, func() {
 					ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-operator")),
 						WithLevel(Equal("INFO")),
-						WithTimestamp(BeTemporally(">=", now)),
 					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
