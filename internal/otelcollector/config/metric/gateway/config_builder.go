@@ -88,7 +88,28 @@ func makeServiceConfig() config.Service {
 
 // addComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.MetricPipeline.
 func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
+	declareDropFilters(pipeline, cfg)
+	declareNamespaceFilters(pipeline, cfg)
+
+	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to make otlp exporter config: %w", err)
+	}
+
+	maps.Copy(envVars, otlpExporterEnvVars)
+
+	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
+	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
+
+	pipelineID := fmt.Sprintf("metrics/%s", pipeline.Name)
+	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(pipeline, otlpExporterID)
+
+	return nil
+}
+
+func declareDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
 	input := pipeline.Spec.Input
+
 	if !isRuntimeInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceRuntime = makeDropIfInputSourceRuntimeConfig()
 	}
@@ -101,11 +122,14 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 	if input.Otlp != nil && input.Otlp.Disabled {
 		cfg.Processors.DropIfInputSourceOtlp = makeDropIfInputSourceOtlpConfig()
 	}
+}
 
+func declareNamespaceFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
 	if cfg.Processors.NamespaceFilters == nil {
 		cfg.Processors.NamespaceFilters = make(NamespaceFilters)
 	}
 
+	input := pipeline.Spec.Input
 	if isRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
 		processorName := makeNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceRuntime)
 		cfg.Processors.NamespaceFilters[processorName] = makeFilterByNamespaceRuntimeInputConfig(pipeline.Spec.Input.Runtime.Namespaces)
@@ -122,21 +146,6 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 		processorName := makeNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceOtlp)
 		cfg.Processors.NamespaceFilters[processorName] = makeFilterByNamespaceOtlpInputConfig(pipeline.Spec.Input.Otlp.Namespaces)
 	}
-
-	otlpExporterConfig, otlpExporterEnvVars, err := otlpExporterBuilder.MakeConfig(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to make otlp exporter config: %w", err)
-	}
-
-	maps.Copy(envVars, otlpExporterEnvVars)
-
-	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
-	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
-
-	pipelineID := fmt.Sprintf("metrics/%s", pipeline.Name)
-	cfg.Service.Pipelines[pipelineID] = makePipelineConfig(pipeline, otlpExporterID)
-
-	return nil
 }
 
 func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs ...string) config.Pipeline {
