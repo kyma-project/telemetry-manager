@@ -80,7 +80,7 @@ As a result, you see data arriving in your environment, advanced Kubernetes moni
 
 ## Telemetry Module Setup
 
-Next, you set up the ingestion of custom and Istio span data. To collect custom metrics, you use the Dynatrace annotation approach, because the Telemetry module can easily collect OTLP-based metrics and push them centrally the the environment.
+Next, you set up the ingestion of custom span and Istio span data and optionally custom metrics based on OTLP.
 
 ### Create Access Token
 
@@ -100,6 +100,8 @@ kubectl -n $DYNATRACE_NS create secret generic dynatrace-token --from-literal="a
 ```
 
 ### Ingest Traces
+
+To start ingesting custom pans and Istio spans, you need to enable the Istio tracing feature and then deploy a TracePipeline to enable the shipment to Dynatrace using the secrets defined above.
 
 1. Deploy the Istio Telemetry resource:
 
@@ -151,7 +153,9 @@ kubectl -n $DYNATRACE_NS create secret generic dynatrace-token --from-literal="a
 
 ### Ingest Metrics (Experimental)
 
-1. Deploy the TracePipeline and replace the `{ENVIRONMENT_ID}` placeholder with the environment Id of Dynatrace SaaS:
+To collect custom metrics, you usually use the Dynatrace annotation approach, as the Dynatrace OTLP integration is [limited](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/ingest/migration-guide-otlp-exporter#migrate-collector-configuration). As long as your workload is conform to the limitations (not exporting histograms, using delta aggregation temporality), you can leverage the metric functionality to push OTLP metrics centralized to Dynatrace. Hereby, the prometheus feature of the MetricPipeline will not work as it will hit the limitations by design.
+
+1. Deploy the MetricPipeline and replace the `{ENVIRONMENT_ID}` placeholder with the environment Id of Dynatrace SaaS:
 
     ```bash
     cat <<EOF | kubectl apply -f -
@@ -174,5 +178,7 @@ kubectl -n $DYNATRACE_NS create secret generic dynatrace-token --from-literal="a
                 protocol: http
     EOF
     ```
+
+1. Start pushing metrics to the metric gateway using delta aggregation temporality
 
 1. To find metrics from your Kyma cluster in the Dynatrace UI, go to **Observe & Explore** > **Metrics**.
