@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Runtime Input", Label("new"), func() {
+var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 	const (
 		mockNs          = "metric-runtime-input-mocks"
 		mockBackendName = "metric-agent-receiver"
