@@ -98,7 +98,7 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 	if !isIstioInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
 	}
-	if !isOtlpInputEnabled(input) {
+	if input.Otlp != nil && input.Otlp.Disabled {
 		cfg.Processors.DropIfInputSourceOtlp = makeDropIfInputSourceOtlpConfig()
 	}
 
@@ -118,7 +118,7 @@ func addComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *ot
 		processorName := makeNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceIstio)
 		cfg.Processors.NamespaceFilters[processorName] = makeFilterByNamespaceIstioInputConfig(pipeline.Spec.Input.Istio.Namespaces)
 	}
-	if isOtlpInputEnabled(input) && shouldFilterByNamespace(input.Otlp.Namespaces) {
+	if input.Otlp != nil && !input.Otlp.Disabled && shouldFilterByNamespace(input.Otlp.Namespaces) {
 		processorName := makeNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceOtlp)
 		cfg.Processors.NamespaceFilters[processorName] = makeFilterByNamespaceOtlpInputConfig(pipeline.Spec.Input.Otlp.Namespaces)
 	}
@@ -154,7 +154,7 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 	if !isIstioInputEnabled(input) {
 		processors = append(processors, "filter/drop-if-input-source-istio")
 	}
-	if !isOtlpInputEnabled(input) {
+	if input.Otlp != nil && input.Otlp.Disabled {
 		processors = append(processors, "filter/drop-if-input-source-otlp")
 	}
 
@@ -170,7 +170,7 @@ func makePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline, exporterIDs 
 		processorName := makeNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceIstio)
 		processors = append(processors, processorName)
 	}
-	if isOtlpInputEnabled(input) && shouldFilterByNamespace(input.Otlp.Namespaces) {
+	if input.Otlp != nil && !input.Otlp.Disabled && shouldFilterByNamespace(input.Otlp.Namespaces) {
 		processorName := makeNamespaceFilterProcessorName(pipeline.Name, metric.InputSourceOtlp)
 		processors = append(processors, processorName)
 	}
@@ -202,8 +202,4 @@ func isRuntimeInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 
 func isIstioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Istio != nil && input.Istio.Enabled
-}
-
-func isOtlpInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
-	return input.Otlp != nil && !input.Otlp.Disabled
 }
