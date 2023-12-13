@@ -25,6 +25,7 @@ This release process covers the steps to release new major and minor versions fo
 
 6. In the `telemetry-manager` repository, create a release branch.
    The name of this branch must follow the `release-x.y` pattern, such as `release-1.0`.
+
    ```bash
    git fetch upstream
    git checkout --no-track -b {RELEASE_BRANCH} upstream/main
@@ -32,22 +33,27 @@ This release process covers the steps to release new major and minor versions fo
    ```
 
 7. In the `telemetry-manager/{RELEASE_BRANCH}` branch, create release tags for the head commit.
+
    ```bash
    git tag {RELEASE_VERSION}
    git tag {RELEASE_DEV_VERSION}
    ```
+
    Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`, and replace {RELEASE_DEV_VERSION} with the new development module version, for example, `1.0.0-dev`. The release tags point to the HEAD commit in `telemetry-manager/main` and `telemetry-manager/{RELEASE_BRANCH}` branches.
 
 8. Push the tags to the upstream repository.
+
    ```bash
    git push upstream {RELEASE_VERSION}
    git push upstream {RELEASE_DEV_VERSION}
    ```
+
    The {RELEASE_VERSION} tag triggers a post-submit Prow Job (`post-telemetry-manager-build-release`) and a GitHub action (`GitHub Release`). The `post-telemetry-manager-build-release` job builds the `telemetry-manager` image, tags it with the module version, and pushes it to the production registry. The `GitHub Release` action creates the GitHub release.
 
 9. Verify the [status](https://status.build.kyma-project.io/) of the post-submit Prow Job (`post-telemetry-manager-build-release`) and the [status](https://github.com/kyma-project/telemetry-manager/actions) of the GitHub action (`GitHub Release`).
    - Once the post-submit Prow Job and the GitHub action succeed, the new GitHub release is available under [releases](https://github.com/kyma-project/telemetry-manager/releases).
    - If the post-submit Prow Job or the GitHub action fails, re-trigger them by removing the {RELEASE_VERSION} tag from upstream and pushing it again:
+
      ```bash
      git push --delete upstream {RELEASE_VERSION}
      git push upstream {RELEASE_VERSION}
@@ -65,24 +71,24 @@ Due to the Squash merge GitHub Workflow, each PR results in a single commit afte
 
 #### Type
 
-* **feat**. A new feature or functionality change.
-* **fix**. A bug or regression fix.
-* **docs**. Changes regarding the documentation.
-* **test**. The test suite alternations.
-* **deps**. The changes in the external dependencies.
-* **chore**. Anything not covered by the above categories (e.g., refactoring or artefacts building alternations).
+- **feat**. A new feature or functionality change.
+- **fix**. A bug or regression fix.
+- **docs**. Changes regarding the documentation.
+- **test**. The test suite alternations.
+- **deps**. The changes in the external dependencies.
+- **chore**. Anything not covered by the above categories (e.g., refactoring or artefacts building alternations).
 
 Beware that PRs of type `chore` do not appear in the Changelog for the release. Therefore, exclude maintenance changes that are not interesting to consumers of the project by marking them with chore type:
 
-* Dotfile changes (.gitignore, .github, and so forth).
-* Changes to development-only dependencies.
-* Minor code style changes.
-* Formatting changes in documentation.
+- Dotfile changes (.gitignore, .github, and so forth).
+- Changes to development-only dependencies.
+- Minor code style changes.
+- Formatting changes in documentation.
 
 #### Subject
 
 The subject must describe the change and follow the recommendations:
 
-* Describe a change using the [imperative mood](https://en.wikipedia.org/wiki/Imperative_mood).  It must start with a present-tense verb, for example (but not limited to) Add, Document, Fix, Deprecate.
-* Start with an uppercase, and not finish with a full stop.
-* Kyma [capitalization](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/02-style-and-terminology.md#capitalization) and [terminology](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/02-style-and-terminology.md#terminology) guides.
+- Describe a change using the [imperative mood](https://en.wikipedia.org/wiki/Imperative_mood).  It must start with a present-tense verb, for example (but not limited to) Add, Document, Fix, Deprecate.
+- Start with an uppercase, and not finish with a full stop.
+- Kyma [capitalization](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/02-style-and-terminology.md#capitalization) and [terminology](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/02-style-and-terminology.md#terminology) guides.

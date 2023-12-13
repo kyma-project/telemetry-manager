@@ -8,7 +8,7 @@ The `metricpipeline.telemetry.kyma-project.io` CustomResourceDefinition (CRD) is
 kubectl get crd metricpipeline.telemetry.kyma-project.io -o yaml
 ```
 
-## Sample custom resource
+## Sample Custom Resource
 
 The following MetricPipeline object defines a pipeline that integrates into an OTLP backend:
 
@@ -42,7 +42,7 @@ status:
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
 
-## Custom resource parameters
+## Custom Resource Parameters
 
 For details, see the [MetricPipeline specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1alpha1/metricpipeline_types.go).
 
