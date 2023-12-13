@@ -22,7 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
+var _ = Describe("Overrides", Label("logging"), Ordered, func() {
 	const (
 		mockBackendName = "overrides-receiver"
 		mockNs          = "overrides-log-http-output"
@@ -87,6 +87,7 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 					ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-operator")),
 						WithLevel(Equal("INFO")),
+						WithTimestamp(BeTemporally(">=", now)),
 					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -101,7 +102,7 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 					Not(ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-operator")),
 						WithLevel(Equal("DEBUG")),
-						WithTimestamp(BeTemporally(">", now)),
+						WithTimestamp(BeTemporally(">=", now)),
 					)))),
 				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -140,7 +141,7 @@ var _ = Describe("Overrides", Label("logging", "custom"), Ordered, func() {
 					ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-operator")),
 						WithLevel(Equal("DEBUG")),
-						WithTimestamp(BeTemporally(">", now)),
+						WithTimestamp(BeTemporally(">=", now)),
 					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
