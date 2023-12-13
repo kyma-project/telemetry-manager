@@ -9,7 +9,6 @@ import (
 	"k8s.io/utils/pointer"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
 )
 
 type MetricPipelineBuilder struct {
@@ -24,7 +23,7 @@ type MetricPipelineBuilder struct {
 	basicAuthUser     string
 	basicAuthPassword string
 
-	conditions []telemetryv1alpha1.MetricPipelineCondition
+	//conditions []telemetryv1alpha1.MetricPipelineCondition
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
@@ -110,24 +109,24 @@ func (b *MetricPipelineBuilder) WithBasicAuth(user, password string) *MetricPipe
 	return b
 }
 
-func MetricPendingCondition(reason string) telemetryv1alpha1.MetricPipelineCondition {
-	return telemetryv1alpha1.MetricPipelineCondition{
-		Reason: reason,
-		Type:   telemetryv1alpha1.MetricPipelinePending,
-	}
-}
+//func MetricPendingCondition(reason string) telemetryv1alpha1.MetricPipelineCondition {
+//	return telemetryv1alpha1.MetricPipelineCondition{
+//		Reason: reason,
+//		Type:   telemetryv1alpha1.MetricPipelinePending,
+//	}
+//}
+//
+//func MetricRunningCondition() telemetryv1alpha1.MetricPipelineCondition {
+//	return telemetryv1alpha1.MetricPipelineCondition{
+//		Reason: conditions.ReasonMetricGatewayDeploymentReady,
+//		Type:   telemetryv1alpha1.MetricPipelineRunning,
+//	}
+//}
 
-func MetricRunningCondition() telemetryv1alpha1.MetricPipelineCondition {
-	return telemetryv1alpha1.MetricPipelineCondition{
-		Reason: conditions.ReasonMetricGatewayDeploymentReady,
-		Type:   telemetryv1alpha1.MetricPipelineRunning,
-	}
-}
-
-func (b *MetricPipelineBuilder) WithStatusConditions(conditions ...telemetryv1alpha1.MetricPipelineCondition) *MetricPipelineBuilder {
-	b.conditions = conditions
-	return b
-}
+//func (b *MetricPipelineBuilder) WithStatusConditions(conditions ...telemetryv1alpha1.MetricPipelineCondition) *MetricPipelineBuilder {
+//	b.conditions = conditions
+//	return b
+//}
 
 func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 	name := b.name
@@ -164,9 +163,9 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 				},
 			},
 		},
-		Status: telemetryv1alpha1.MetricPipelineStatus{
-			Conditions: b.conditions,
-		},
+		//Status: telemetryv1alpha1.MetricPipelineStatus{
+		//	Conditions: b.conditions,
+		//},
 	}
 
 	telemetryv1alpha1.SetMetricPipelineDefaults(&pipeline)

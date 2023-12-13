@@ -1,6 +1,12 @@
 package conditions
 
 const (
+	TypeMetricGatewayReady                  = "MetricGatewayReady"
+	TypeMetricAgentReady                    = "MetricAgentReady"
+	TypeMetricGatewayConfigurationGenerated = "TypeMetricGatewayConfigurationGenerated"
+)
+
+const (
 	ReasonNoPipelineDeployed      = "NoPipelineDeployed"
 	ReasonReferencedSecretMissing = "ReferencedSecretMissing"
 	ReasonWaitingForLock          = "WaitingForLock"
@@ -12,6 +18,7 @@ const (
 
 	ReasonMetricGatewayDeploymentNotReady = "MetricGatewayDeploymentNotReady"
 	ReasonMetricGatewayDeploymentReady    = "MetricGatewayDeploymentReady"
+	ReasonMetricGatewayConfigGenerated    = "MetricGatewayConfigGenerated"
 
 	ReasonMetricAgentDaemonSetNotReady = "ReasonMetricAgentDaemonSetNotReady"
 	ReasonMetricAgentDaemonSetReady    = "ReasonMetricAgentDaemonSetReady"

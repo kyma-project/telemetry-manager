@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/extslices"
+	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 type metricComponentsChecker struct {
@@ -39,33 +40,24 @@ func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPip
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
-		return m.isPendingWithReason(p, conditions.ReasonMetricGatewayDeploymentNotReady)
+		return meta.IsStatusConditionFalse(p.Status.Conditions, conditions.TypeMetricAgentReady)
 	}); found {
 		return conditions.ReasonMetricGatewayDeploymentNotReady
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
-		return m.isPendingWithReason(p, conditions.ReasonMetricAgentDaemonSetNotReady)
+		return meta.IsStatusConditionFalse(p.Status.Conditions, conditions.TypeMetricGatewayReady)
 	}); found {
 		return conditions.ReasonMetricAgentDaemonSetNotReady
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
-		return m.isPendingWithReason(p, conditions.ReasonReferencedSecretMissing)
+		return meta.IsStatusConditionFalse(p.Status.Conditions, conditions.TypeMetricGatewayConfigurationGenerated)
 	}); found {
 		return conditions.ReasonReferencedSecretMissing
 	}
 
 	return conditions.ReasonMetricGatewayDeploymentReady
-}
-
-func (m *metricComponentsChecker) isPendingWithReason(p v1alpha1.MetricPipeline, reason string) bool {
-	if len(p.Status.Conditions) == 0 {
-		return false
-	}
-
-	lastCondition := p.Status.Conditions[len(p.Status.Conditions)-1]
-	return lastCondition.Type == v1alpha1.MetricPipelinePending && lastCondition.Reason == reason
 }
 
 func (m *metricComponentsChecker) createMessageForReason(pipelines []v1alpha1.MetricPipeline, reason string) string {
