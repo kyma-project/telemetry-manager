@@ -18,7 +18,7 @@ import (
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, clusterRole *rbacv1.ClusterRole, allowedPorts []intstr.IntOrString) error {
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, clusterRole *rbacv1.ClusterRole, allowedPorts []int32) error {
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
 	if err := kubernetes.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
@@ -36,7 +36,7 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		return fmt.Errorf("failed to create metrics service: %w", err)
 	}
 
-	if err := kubernetes.CreateOrUpdateNetworkPolicy(ctx, c, makeDenyPprofNetworkPolicy(name, allowedPorts)); err != nil {
+	if err := kubernetes.CreateOrUpdateNetworkPolicy(ctx, c, makeNetworkPolicy(name, allowedPorts)); err != nil {
 		return fmt.Errorf("failed to create deny pprof network policy: %w", err)
 	}
 
@@ -129,7 +129,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 	}
 }
 
-func makeDenyPprofNetworkPolicy(name types.NamespacedName, allowedPorts []intstr.IntOrString) *networkingv1.NetworkPolicy {
+func makeNetworkPolicy(name types.NamespacedName, allowedPorts []int32) *networkingv1.NetworkPolicy {
 	labels := defaultLabels(name.Name)
 
 	return &networkingv1.NetworkPolicy{
@@ -159,15 +159,16 @@ func makeDenyPprofNetworkPolicy(name types.NamespacedName, allowedPorts []intstr
 	}
 }
 
-func makeNetworkPolicyPorts(ports []intstr.IntOrString) []networkingv1.NetworkPolicyPort {
+func makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
 	var networkPolicyPorts []networkingv1.NetworkPolicyPort
 
 	tcpProtocol := corev1.ProtocolTCP
 
 	for idx := range ports {
+		port := intstr.FromInt32(ports[idx])
 		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
 			Protocol: &tcpProtocol,
-			Port:     &ports[idx],
+			Port:     &port,
 		})
 	}
 

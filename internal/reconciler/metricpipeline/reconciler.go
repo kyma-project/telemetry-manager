@@ -183,7 +183,8 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 
-	allowedPorts := getAllowedPorts(isIstioActive)
+	isGateway := true
+	allowedPorts := getAllowedPorts(isIstioActive, isGateway)
 
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
@@ -208,7 +209,9 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
-	allowedPorts := getAllowedPorts(isIstioActive)
+	isGateway := false
+
+	allowedPorts := getAllowedPorts(isIstioActive, isGateway)
 
 	if err := otelcollector.ApplyAgentResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
@@ -245,12 +248,14 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	return defaultReplicaCount
 }
 
-func getAllowedPorts(istioActive bool) []int32 {
+func getAllowedPorts(istioActive, isGateway bool) []int32 {
 	allowedPorts := []int32{
-		ports.OTLPHTTP,
-		ports.OTLPGRPC,
 		ports.Metrics,
 		ports.HealthCheck,
+	}
+
+	if isGateway {
+		allowedPorts = append(allowedPorts, ports.OTLPHTTP, ports.OTLPGRPC)
 	}
 
 	if istioActive {

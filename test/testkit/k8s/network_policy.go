@@ -5,13 +5,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type NetworkPolicy struct {
+type DenyAllNetworkPolicy struct {
 	name      string
 	namespace string
 }
 
-func NewNetworkPolicy(name, namespace string) *NetworkPolicy {
-	networkPolicy := &NetworkPolicy{
+func NewNetworkPolicy(name, namespace string) *DenyAllNetworkPolicy {
+	networkPolicy := &DenyAllNetworkPolicy{
 		name:      name,
 		namespace: namespace,
 	}
@@ -19,7 +19,7 @@ func NewNetworkPolicy(name, namespace string) *NetworkPolicy {
 	return networkPolicy
 }
 
-func (n *NetworkPolicy) K8sObject() *networkingv1.NetworkPolicy {
+func (n *DenyAllNetworkPolicy) K8sObject() *networkingv1.NetworkPolicy {
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      n.name,
