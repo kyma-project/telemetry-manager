@@ -374,7 +374,7 @@ The agent starts pulling all Istio metrics from Istio sidecars, and the push-bas
 
 ### Step 8: Add Filters
 
-To filter metrics by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the namespaces from which metrics are collected or the namespaces from which metrics are dropped, or choose to collect metrics from all namespaces including the system namespaces `kube-system`, `istio-system` and `kyma-system`. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
+To filter metrics by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the namespaces from which metrics are collected or the namespaces from which metrics are dropped. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
 
 The following example collects runtime metrics only from the `foo` and `bar` namespaces:
 
