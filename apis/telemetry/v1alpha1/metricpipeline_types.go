@@ -64,12 +64,16 @@ type MetricPipelineSpec struct {
 // MetricPipelineInput defines the input configuration section.
 type MetricPipelineInput struct {
 	// Configures Prometheus scraping.
+	//+optional
 	Prometheus *MetricPipelinePrometheusInput `json:"prometheus,omitempty"`
 	// Configures runtime scraping.
+	//+optional
 	Runtime *MetricPipelineRuntimeInput `json:"runtime,omitempty"`
 	// Configures istio-proxy metrics scraping.
+	//+optional
 	Istio *MetricPipelineIstioInput `json:"istio,omitempty"`
 	// Configures the collection of push-based metrics that use the OpenTelemetry protocol.
+	//+optional
 	Otlp *MetricPipelineOtlpInput `json:"otlp,omitempty"`
 }
 
@@ -78,6 +82,7 @@ type MetricPipelinePrometheusInput struct {
 	// If enabled, Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether Prometheus metrics from specific Namespaces are selected. System Namespaces are disabled by default.
+	//+optional
 	//+kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
@@ -87,6 +92,7 @@ type MetricPipelineRuntimeInput struct {
 	// If enabled, workload-related Kubernetes metrics are scraped. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether workload-related Kubernetes metrics from specific Namespaces are selected. System Namespaces are disabled by default.
+	//+optional
 	//+kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
@@ -96,6 +102,7 @@ type MetricPipelineIstioInput struct {
 	// If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected. The default is `false`.
 	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether istio-proxy metrics from specific Namespaces are selected. System Namespaces are enabled by default.
+	//+optional
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
