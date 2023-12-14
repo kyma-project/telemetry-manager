@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/go-logr/zapr v1.3.0
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	github.com/onsi/ginkgo/v2 v2.13.2
 	github.com/onsi/gomega v1.30.0
 	github.com/prometheus/client_golang v1.17.0
@@ -20,7 +20,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.21.0
 	go.uber.org/zap v1.26.0
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.20.0
+	istio.io/api v1.20.1
 	istio.io/client-go v1.20.0
 	k8s.io/api v0.28.4
 	k8s.io/apiextensions-apiserver v0.28.3

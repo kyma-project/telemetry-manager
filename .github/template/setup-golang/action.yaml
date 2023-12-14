@@ -1,5 +1,5 @@
-name: Prepare checks
-description: Prepares everything for static code check execution
+name: Setup Golang
+description: Configures Golang with caching
 
 runs:
   using: "composite"

@@ -13,7 +13,7 @@ Fundamentally, ["Observability"](https://opentelemetry.io/docs/concepts/observab
 
 Kyma's Telemetry module focuses exactly on the aspects of instrumentation, collection, and shipment that happen in the runtime and explicitly defocuses on backends.
 
-> **TIP:** An enterprise-grade setup demands a central solution outside the cluster, so we recommend in-cluster solutions only for testing purposes. If you want to install lightweight in-cluster backends for demo or development purposes, check the [Telemetry tutorials](05-tutorials.md).
+> **TIP:** An enterprise-grade setup demands a central solution outside the cluster, so we recommend in-cluster solutions only for testing purposes. If you want to install lightweight in-cluster backends for demo or development purposes, check the [Telemetry integration guides](#integration-guides).
 
 ## Features
 
@@ -75,11 +75,11 @@ For more information, see [Metrics](04-metrics.md) and [Gateways](gateways.md).
 
 With the Telemetry module you can collect telemetry data and ship the data to backends. For details, read the following guides:
 
-- [OpenTelemetry Demo App](/telemetry-manager/user/integration/opentelemetry-demo/README.md)
-- [SAP Cloud Logging](/telemetry-manager/user/integration/sap-cloud-logging/README.md)
-- [Dynatrace](/telemetry-manager/user/integration/dynatrace/README.md)
-- [Loki](/telemetry-manager/user/integration/loki/README.md)
-- [Jaeger](/telemetry-manager/user/integration/jaeger/README.md)
+- [OpenTelemetry Demo App](integration/opentelemetry-demo/README.md)
+- [SAP Cloud Logging](integration/sap-cloud-logging/README.md)
+- [Dynatrace](integration/dynatrace/README.md)
+- [Loki](integration/loki/README.md)
+- [Jaeger](integration/jaeger/README.md)
 
 ## API / Custom Resource Definitions
 
