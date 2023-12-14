@@ -81,9 +81,6 @@ var (
 	certDir             string
 	deniedFilterPlugins string
 	deniedOutputPlugins string
-	enableLogging       bool
-	enableTracing       bool
-	enableMetrics       bool
 	logLevel            string
 	overridesHandler    *overrides.Handler
 	scheme              = runtime.NewScheme()
@@ -127,9 +124,8 @@ var (
 	metricGatewayMemoryRequest        string
 	metricGatewayDynamicMemoryRequest string
 
-	enableTelemetryManagerModule bool
-	enableWebhook                bool
-	mutex                        sync.Mutex
+	enableWebhook bool
+	mutex         sync.Mutex
 )
 
 const (
@@ -218,9 +214,6 @@ func getEnvOrDefault(envVar string, defaultValue string) string {
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 func main() {
-	flag.BoolVar(&enableLogging, "enable-logging", true, "Enable configurable logging.")
-	flag.BoolVar(&enableTracing, "enable-tracing", true, "Enable configurable tracing.")
-	flag.BoolVar(&enableMetrics, "enable-metrics", true, "Enable configurable metrics.")
 	flag.StringVar(&logLevel, "log-level", getEnvOrDefault("APP_LOG_LEVEL", "debug"), "Log level (debug, info, warn, error, fatal)")
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MY_POD_NAMESPACE", "default"), "Namespace of the manager")
@@ -264,8 +257,6 @@ func main() {
 	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
 
 	flag.BoolVar(&enableWebhook, "validating-webhook-enabled", false, "Create validating webhook for LogPipelines and LogParsers.")
-
-	flag.BoolVar(&enableTelemetryManagerModule, "enable-telemetry-manager-module", true, "Enable telemetry manager.")
 
 	flag.Parse()
 	if err := validateFlags(); err != nil {
@@ -352,23 +343,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if enableLogging {
-		enableLoggingController(mgr)
-	}
-
-	if enableTracing {
-		enableTracingController(mgr)
-	}
-
-	if enableMetrics {
-		enableMetricsController(mgr)
-	}
+	enableLoggingController(mgr)
+	enableTracingController(mgr)
+	enableMetricsController(mgr)
 
 	webhookConfig := createWebhookConfig()
 
-	if enableTelemetryManagerModule {
-		enableTelemetryModuleController(mgr, webhookConfig)
-	}
+	enableTelemetryModuleController(mgr, webhookConfig)
 
 	//+kubebuilder:scaffold:builder
 
@@ -449,11 +430,6 @@ func enableWebhookServer(mgr manager.Manager, webhookConfig telemetry.WebhookCon
 		os.Exit(1)
 	}
 	setupLog.Info("Ensured webhook cert")
-
-	// Temporary solution for non-modularized telemetry operator
-	if !enableTelemetryManagerModule {
-		go reconcileWebhook(webhookConfig.CertConfig, k8sClient)
-	}
 }
 
 func reconcileWebhook(certconfig webhookcert.Config, k8sClient client.Client) {
@@ -647,7 +623,6 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, web
 			Namespace:       telemetryNamespace,
 		},
 		Metrics: telemetry.MetricsConfig{
-			Enabled:         enableMetrics,
 			OTLPServiceName: metricOTLPServiceName,
 			Namespace:       telemetryNamespace,
 		},
