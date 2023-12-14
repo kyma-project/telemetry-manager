@@ -1,6 +1,8 @@
 package log
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/plog"
@@ -62,6 +64,65 @@ var _ = Describe("WithPodName", func() {
 		lr.Attributes().PutEmptyMap("kubernetes").PutStr("pod_name", "nginx")
 
 		Expect(mustMarshalLogs(ld)).Should(ContainLd(ContainLogRecord(WithPodName(Equal("nginx")))))
+	})
+})
+
+var _ = Describe("WithLevel", func() {
+	It("should apply matcher", func() {
+		ld := plog.NewLogs()
+		rl := ld.ResourceLogs().AppendEmpty()
+		lrs := rl.ScopeLogs().AppendEmpty().LogRecords()
+		lr := lrs.AppendEmpty()
+		lr.Attributes().PutStr("level", "INFO")
+
+		Expect(mustMarshalLogs(ld)).Should(ContainLd(ContainLogRecord(WithLevel(Equal("INFO")))))
+	})
+})
+
+var _ = Describe("WithTimestamp", func() {
+	It("should apply matcher", func() {
+		ld := plog.NewLogs()
+		rl := ld.ResourceLogs().AppendEmpty()
+		lrs := rl.ScopeLogs().AppendEmpty().LogRecords()
+		lr := lrs.AppendEmpty()
+		lr.Attributes().PutStr("timestamp", "2023-12-06T09:36:38Z")
+
+		expectedTimestamp, err := time.Parse(time.RFC3339, "2023-12-06T09:36:38Z")
+		if err != nil {
+			panic(err)
+		}
+
+		Expect(mustMarshalLogs(ld)).Should(ContainLd(ContainLogRecord(WithTimestamp(Equal(expectedTimestamp)))))
+	})
+
+	It("should apply matcher on timestamp after", func() {
+		ld := plog.NewLogs()
+		rl := ld.ResourceLogs().AppendEmpty()
+		lrs := rl.ScopeLogs().AppendEmpty().LogRecords()
+		lr := lrs.AppendEmpty()
+		lr.Attributes().PutStr("timestamp", "2023-12-06T09:36:38Z")
+
+		timestampAfter, err := time.Parse(time.RFC3339, "2023-12-07T09:36:38Z")
+		if err != nil {
+			panic(err)
+		}
+
+		Expect(mustMarshalLogs(ld)).Should(ContainLd(ContainLogRecord(WithTimestamp(BeTemporally("<", timestampAfter)))))
+	})
+
+	It("should apply matcher on timestamp before", func() {
+		ld := plog.NewLogs()
+		rl := ld.ResourceLogs().AppendEmpty()
+		lrs := rl.ScopeLogs().AppendEmpty().LogRecords()
+		lr := lrs.AppendEmpty()
+		lr.Attributes().PutStr("timestamp", "2023-12-06T09:36:38Z")
+
+		timestampBefore, err := time.Parse(time.RFC3339, "2023-12-05T09:36:38Z")
+		if err != nil {
+			panic(err)
+		}
+
+		Expect(mustMarshalLogs(ld)).Should(ContainLd(ContainLogRecord(WithTimestamp(BeTemporally(">", timestampBefore)))))
 	})
 })
 

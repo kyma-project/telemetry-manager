@@ -2,29 +2,30 @@
 
 Some quality aspects are covered by automated verification, so you must locally execute tooling before a commitment. These aspects are outlined in this document.
 
-## CRD generation
+## CRD Generation
 
 The API of Telemetry Manager is realized by Kubernetes CRDs defined in the [apis](../../apis) folder as Golang source code. To install the CRDs later using Kustomize together with Telemetry Manager deployment, you must generate proper Kubernetes [manifest files](../../config/crd/bases). Also, you must update the [user documentation](../user/resources/).
 
 To achieve both aspects, call:
+
 ```shell
 make manifests
 ```
 
 Additionally, a [Github Action](./../../.github/workflows/pull-code-checks.yml) verifies this operation.
 
-## Sourcecode linting
+## Sourcecode Linting
 
 For the source code linting, the development team uses [golangci-lint](https://golangci-lint.run) with fine-grained configuration.
 
 Additionally, a [Github Action](./../../.github/workflows/pull-code-checks.yml) verifies this operation.
 
-### Linters in action
+### Linters in Action
 
 The following linters are configured and integrated as a CI stage using a [Github Action](./../../.github/workflows/pull-code-checks.yml).
 
 <details>
-<summary>List of linters</summary>
+<summary>List of Linters</summary>
 <br>
 
 | Linter | Description | [Suppress](#nolint) |
@@ -57,9 +58,9 @@ The following linters are configured and integrated as a CI stage using a [Githu
 | [`unparam`](https://github.com/mvdan/unparam) [⛭](https://golangci-lint.run/usage/linters/#unparam)                                                               | reports unused function parameters                               | inline //nolint |
 | [`unused`](https://github.com/dominikh/go-tools/tree/master/unused)                                                                                               | checks for unused constants, variables, functions and types      | inline //nolint |
 
-</details> 
+</details>
 
-### Irrelevant linters
+### Irrelevant Linters
 
 The following linters are irrelevant for development of the Telemetry module:
 
@@ -89,7 +90,6 @@ The following linters are irrelevant for development of the Telemetry module:
 
 </details>
 
-
 ### Nolint
 
 If linting warnings add noise to the development or are routinely ignored (for example, because some linters produce false-positive warnings), consider disabling the linter.
@@ -97,7 +97,8 @@ You can either suppress one or more lines of code inline, or exclude whole files
 
 > **TIP:** The benefit of declaring linter exclusion rules on a file basis in the config file and not as package-level inline nolint instructions is that it is easier to visualize and analyse the linting suppressions.
 
-#### Suppress linting warnings inline with //nolint
+#### Suppress Linting Warnings Inline With //nolint
+
 To suppress a linting warning for a particular line of code, use nolint instruction `//no-lint:{LINTER} // {COMMENT}.` For the _LINTER_ and _COMMENT_ placeholders, you must enter the linter to be suppressed and a reason for the suppression.
 
 
@@ -109,7 +110,8 @@ package config
 // The rest of the file will not be linted by errcheck.
 ```
 
-#### Suppress linting warnings for whole files
+#### Suppress Linting Warnings for Whole Files
+
 To prevent some files from being linted, use the section `.issues.exclude-rules` in the `.golangci.yaml` configuration file. 
 
 The code duplication linting scenario is problematic for being disabled an a per line basis. The following example suppresses the `dupl` linter for the set of three files in the _apis/telemetry/v1alpha1_ module:
@@ -121,10 +123,11 @@ issues:
       path: apis/telemetry/v1alpha1/(logparsers|metricpipeline|tracepipeline)_types_test.go
 ```
 
+### Dev Environment Configuration
 
-### Dev environment configuration
 Read [golangci-lint integrations](https://golangci-lint.run/usage/integrations/) for information on configuring file-watchers for your IDE or code editor.
 
 ### Autofix
+
 Some of the linting errors can be automatically fixed with the command:
 `make lint_autofix`

@@ -1,4 +1,4 @@
-# Integrate with Dynatrace
+# Integrate With Dynatrace
 
 ## Overview
 
@@ -16,14 +16,14 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
 
 ## Table of Content
 
-- [Integrate with Dynatrace](#integrate-with-dynatrace)
+- [Integrate With Dynatrace](#integrate-with-dynatrace)
   - [Overview](#overview)
   - [Table of Content](#table-of-content)
   - [Prerequisistes](#prerequisistes)
   - [Prepare the Namespace](#prepare-the-namespace)
   - [Dynatrace Setup](#dynatrace-setup)
   - [Telemetry Module Setup](#telemetry-module-setup)
-    - [Create access token](#create-access-token)
+    - [Create Access Token](#create-access-token)
     - [Create Secret](#create-secret)
     - [Ingest Traces](#ingest-traces)
     - [Ingest Metrics](#ingest-metrics)
@@ -37,13 +37,13 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
 
 ## Prepare the Namespace
 
-1. Export your Namespace you want to use for Dynatrace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
+1. Export your namespace you want to use for Dynatrace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
 
     ```bash
     export DYNATRACE_NS="dynatrace"
     ```
 
-1. If you haven't created a Namespace yet, do it now:
+1. If you haven't created a namespace yet, do it now:
 
     ```bash
     kubectl create namespace $DYNATRACE_NS
@@ -80,9 +80,9 @@ As a result, you see data arriving in your environment, advanced Kubernetes moni
 
 ## Telemetry Module Setup
 
-Next, you set up the ingestion of custom and Istio span data. To collect custom metrics, you use the Dynatrace annotation approach, because the Telemetry module can easily collect OTLP-based metrics and push them centrally the the environment.
+Next, you set up the ingestion of custom span and Istio span data, and, optionally, custom metrics based on OTLP.
 
-### Create access token
+### Create Access Token
 
 To push custom metrics and spans to Dynatrace, set up an [API Token](https://docs.dynatrace.com/docs/manage/access-control/access-tokens).
 
@@ -95,11 +95,13 @@ Follow the instructions in [Dynatrace: Generate an access token](https://docs.dy
 
 To create a new Secret containing your access token, replace the `{API_TOKEN}` placeholder with the token you created and run the following command:
 
-    ```bash
-    kubectl -n $DYNATRACE_NS create secret generic dynatrace-token --from-literal="apiToken=Api-Token {API_TOKEN}"
-    ```
+```bash
+kubectl -n $DYNATRACE_NS create secret generic dynatrace-token --from-literal="apiToken=Api-Token {API_TOKEN}"
+```
 
 ### Ingest Traces
+
+To start ingesting custom spans and Istio spans, you must enable the Istio tracing feature and then deploy a TracePipeline.
 
 1. Deploy the Istio Telemetry resource:
 
@@ -151,9 +153,9 @@ To create a new Secret containing your access token, replace the `{API_TOKEN}` p
 
 ### Ingest Metrics
 
+To collect custom metrics, you usually use the [Dynatrace annotation approach](https://docs.dynatrace.com/docs/platform-modules/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics), because the Dynatrace OTLP integration is [limited](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/ingest/migration-guide-otlp-exporter#migrate-collector-configuration). As long as your workload is conform to the limitations (not exporting histograms, using delta aggregation temporality), you can use the metric functionality to push OTLP metrics to Dynatrace. In this case, the Prometheus feature of the MetricPipeline cannot be used because it hits the limitations by design.
 
-
-1. Deploy the TracePipeline and replace the `{ENVIRONMENT_ID}` placeholder with the environment Id of Dynatrace SaaS:
+1. Deploy the MetricPipeline and replace the `{ENVIRONMENT_ID}` placeholder with the environment Id of Dynatrace SaaS:
 
     ```bash
     cat <<EOF | kubectl apply -f -
@@ -176,4 +178,7 @@ To create a new Secret containing your access token, replace the `{API_TOKEN}` p
                 protocol: http
     EOF
     ```
+
+1. Start pushing metrics to the metric gateway using [delta aggregation temporality.](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/overview/metrics#temporality)
+
 1. To find metrics from your Kyma cluster in the Dynatrace UI, go to **Observe & Explore** > **Metrics**.

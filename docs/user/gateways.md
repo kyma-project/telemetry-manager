@@ -33,7 +33,7 @@ The gateways automatically enrich your data by adding the following attributes:
   3. Namespace.
   4. Cluster name.
 
-## Istio support
+## Istio Support
 
 The Telemetry module automatically detects whether Istio is available and injects Istio sidecars to its components. Additionally, the ingestion endpoints of gateways are configured to allow traffic in the permissive mode, so they accept mTLS-based communication as well as plain text.
 

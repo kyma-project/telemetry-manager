@@ -26,6 +26,7 @@ The roles and responsibilities during the STLC:
 ## Testing Levels
 ​
 ### Functional Tests
+
 ![Test Pyramid](assets/test-pyramid.png)
 Unit and Env tests follow the [Go convention](https://go.dev/doc/tutorial/add-a-test) and reside next to the code they are testing. The unit tests and integration tests are part of one test suite.
 ​
@@ -40,17 +41,17 @@ Unit and Env tests follow the [Go convention](https://go.dev/doc/tutorial/add-a-
 
 ![E2E Test Suites](assets/e2e-test-suites.png)
 
-#### Testing of new functionality
+#### Testing of New Functionality
 ​
 Testing a new functionality encompasses two activities: capturing the acceptance criteria for each new functionality and providing the requirements traceability. `Requirement` and `Test Suite` are linked by the Behavioural-Driven Testing DSL of the [Ginkgo](https://onsi.github.io/ginkgo/) testing framework. `User Story` and `Acceptance Criteria` are linked semi-automatically because acceptance criteria are a mandatory part of each user story with new functionality (using the PR-template checklist).
 ​
-#### Testing of existing functionality
+#### Testing of Existing Functionality
 ​
 The regression test suite validates the correctness of the product's previously released functionalities using the "retest all" technique. It encompasses the end-to-end and operational test suites.
 ​
 The current functional coverage is auditable by listing the existing Acceptance Criteria using the `make e2e-coverage`.
 ​
-### Non-functional Tests
+### Non-Functional Tests
 ​
 | Type | Automation | Frequency | Results |
 | --- | --- | --- | --- |
@@ -62,20 +63,19 @@ The current functional coverage is auditable by listing the existing Acceptance 
 ​
 Most of the source code quality prerequisites are checked automatically in the following ways:
 ​
-* The code-style requirements are collected and stored as a [configuration](governance.md#linters-in-action) for the fine-grained static analysis linters.
-* The cognitive and cyclomatic complexity quality gateways are agreed upon and imposed using static analysis linters.
-* Static code checks are implemented using [golangci-lint](https://golangci-lint.run).
-* The Continuous Integration pipeline for each PR controls the violations of static code rules.
-* In the case of a problem, the PR is prevented from moving forward, and all involved parties are notified.
-* This static code validation covers the whole codebase, including the test suites.
+- The code-style requirements are collected and stored as a [configuration](governance.md#linters-in-action) for the fine-grained static analysis linters.
+- The cognitive and cyclomatic complexity quality gateways are agreed upon and imposed using static analysis linters.
+- Static code checks are implemented using [golangci-lint](https://golangci-lint.run).
+- The Continuous Integration pipeline for each PR controls the violations of static code rules.
+- In the case of a problem, the PR is prevented from moving forward, and all involved parties are notified.
+- This static code validation covers the whole codebase, including the test suites.
 ​
 ## Test Deliverables
 ​
-All testing-related deliverables, except for the `Release Testing` report and `Performance Tests` results, are integrated as stages of the Continuous Integration pipeline. 
+All testing-related deliverables, except for the `Release Testing` report and `Performance Tests` results, are integrated as stages of the Continuous Integration pipeline.
 ​
 Access the automated test reports with the following links:
 ​
-* [Unit and Integration test suite](https://status.build.kyma-project.io/?repo=kyma-project%2Ftelemetry-manager&job=pull-telemetry-manager-unit-test) (the current code coverage is a part of this report, too)
-* [E2E test suite](https://status.build.kyma-project.io/?repo=kyma-project%2Ftelemetry-manager&job=pull-telemetry-manager-e2e-test)
-* [Source code linting reports](https://status.build.kyma-project.io/?repo=kyma-project%2Ftelemetry-manager&job=pull-telemetry-manager-lint)
-​
+- [Unit and Integration test suite](https://status.build.kyma-project.io/?repo=kyma-project%2Ftelemetry-manager&job=pull-telemetry-manager-unit-test) (the current code coverage is a part of this report, too)
+- [E2E test suite](https://status.build.kyma-project.io/?repo=kyma-project%2Ftelemetry-manager&job=pull-telemetry-manager-e2e-test)
+- [Source code linting reports](https://status.build.kyma-project.io/?repo=kyma-project%2Ftelemetry-manager&job=pull-telemetry-manager-lint)
