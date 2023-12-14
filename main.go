@@ -432,16 +432,6 @@ func enableWebhookServer(mgr manager.Manager, webhookConfig telemetry.WebhookCon
 	setupLog.Info("Ensured webhook cert")
 }
 
-func reconcileWebhook(certconfig webhookcert.Config, k8sClient client.Client) {
-	ensureWebhookLog := ctrl.Log.WithName("ensureWebhook")
-	for range time.Tick(1 * time.Hour) {
-		if ensureErr := webhookcert.EnsureCertificate(context.Background(), k8sClient, certconfig); ensureErr != nil {
-			ensureWebhookLog.Error(ensureErr, "Failed to ensure webhook cert")
-		}
-		ensureWebhookLog.Info("Ensured webhook cert")
-	}
-}
-
 func setNamespaceFieldSelector() fields.Selector {
 	return fields.SelectorFromSet(fields.Set{"metadata.namespace": telemetryNamespace})
 }
