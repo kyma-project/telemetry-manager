@@ -1,4 +1,4 @@
-name: PR Governance
+name: PR Github Checks
 
 on:
   pull_request_target:
@@ -29,5 +29,4 @@ jobs:
             fix
             test
           requireScope: false
-          # https://regex101.com/r/O5OZvC/1
           subjectPattern: ^([A-Z].*[^.]|bump .*)$
