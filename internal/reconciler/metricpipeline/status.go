@@ -112,7 +112,7 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, metav1.Condition{
-		Type:    conditions.TypeMetricGatewayConfigurationGenerated,
+		Type:    conditions.TypeConfigurationGenerated,
 		Status:  status,
 		Reason:  reason,
 		Message: conditions.CommonMessageFor(reason),

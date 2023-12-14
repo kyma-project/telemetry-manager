@@ -52,7 +52,7 @@ func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPip
 	}
 
 	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
-		return meta.IsStatusConditionFalse(p.Status.Conditions, conditions.TypeMetricGatewayConfigurationGenerated)
+		return meta.IsStatusConditionFalse(p.Status.Conditions, conditions.TypeConfigurationGenerated)
 	}); found {
 		return conditions.ReasonReferencedSecretMissing
 	}

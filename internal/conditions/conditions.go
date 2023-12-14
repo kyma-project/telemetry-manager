@@ -1,9 +1,9 @@
 package conditions
 
 const (
-	TypeMetricGatewayReady                  = "MetricGatewayReady"
-	TypeMetricAgentReady                    = "MetricAgentReady"
-	TypeMetricGatewayConfigurationGenerated = "TypeMetricGatewayConfigurationGenerated"
+	TypeMetricGatewayReady     = "MetricGatewayReady"
+	TypeMetricAgentReady       = "MetricAgentReady"
+	TypeConfigurationGenerated = "ConfigurationGenerated"
 )
 
 const (
