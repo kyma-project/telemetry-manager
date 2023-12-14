@@ -9,7 +9,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 )
 
 type MetricPipelineBuilder struct {
@@ -31,18 +30,6 @@ func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 	return &MetricPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
 		endpoint:   "https://localhost",
-		runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
-			Namespaces: &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
-				Exclude: namespaces.System(),
-			},
-		},
-		prometheus: &telemetryv1alpha1.MetricPipelinePrometheusInput{
-			Namespaces: &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{
-				Exclude: namespaces.System(),
-			},
-		},
-		istio: &telemetryv1alpha1.MetricPipelineIstioInput{},
-		otlp:  &telemetryv1alpha1.MetricPipelineOtlpInput{},
 	}
 }
 
@@ -73,7 +60,14 @@ func ExcludeNamespaces(namespaces ...string) InputOptions {
 }
 
 func (b *MetricPipelineBuilder) RuntimeInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+	if b.runtime == nil {
+		b.runtime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
+	}
 	b.runtime.Enabled = enable
+
+	if len(opts) == 0 {
+		return b
+	}
 
 	if b.runtime.Namespaces == nil {
 		b.runtime.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
@@ -85,7 +79,14 @@ func (b *MetricPipelineBuilder) RuntimeInput(enable bool, opts ...InputOptions) 
 }
 
 func (b *MetricPipelineBuilder) PrometheusInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+	if b.prometheus == nil {
+		b.prometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{}
+	}
 	b.prometheus.Enabled = enable
+
+	if len(opts) == 0 {
+		return b
+	}
 
 	if b.prometheus.Namespaces == nil {
 		b.prometheus.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
@@ -97,7 +98,14 @@ func (b *MetricPipelineBuilder) PrometheusInput(enable bool, opts ...InputOption
 }
 
 func (b *MetricPipelineBuilder) IstioInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+	if b.istio == nil {
+		b.istio = &telemetryv1alpha1.MetricPipelineIstioInput{}
+	}
 	b.istio.Enabled = enable
+
+	if len(opts) == 0 {
+		return b
+	}
 
 	if b.istio.Namespaces == nil {
 		b.istio.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
@@ -109,7 +117,14 @@ func (b *MetricPipelineBuilder) IstioInput(enable bool, opts ...InputOptions) *M
 }
 
 func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
+	if b.otlp == nil {
+		b.otlp = &telemetryv1alpha1.MetricPipelineOtlpInput{}
+	}
 	b.otlp.Disabled = !enable
+
+	if len(opts) == 0 {
+		return b
+	}
 
 	if b.otlp.Namespaces == nil {
 		b.otlp.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
