@@ -34,5 +34,5 @@ jobs:
           config-file: '.mlc.config.json'
           folder-path: '.'
           max-depth: -1
-          check-modified-files-only: 'no'
+          check-modified-files-only: 'yes'
           base-branch: ${{ github.base_ref }}
