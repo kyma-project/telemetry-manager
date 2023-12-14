@@ -3,8 +3,6 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"slices"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -39,22 +37,14 @@ func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPip
 		return conditions.ReasonResourceBlocksDeletion
 	}
 
-	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
-		return meta.IsStatusConditionFalse(p.Status.Conditions, conditions.TypeMetricAgentReady)
-	}); found {
-		return conditions.ReasonMetricGatewayDeploymentNotReady
-	}
-
-	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
-		return meta.IsStatusConditionFalse(p.Status.Conditions, conditions.TypeMetricGatewayReady)
-	}); found {
-		return conditions.ReasonMetricAgentDaemonSetNotReady
-	}
-
-	if found := slices.ContainsFunc(pipelines, func(p v1alpha1.MetricPipeline) bool {
-		return meta.IsStatusConditionFalse(p.Status.Conditions, conditions.TypeConfigurationGenerated)
-	}); found {
-		return conditions.ReasonReferencedSecretMissing
+	condTypes := []string{conditions.TypeMetricAgentReady, conditions.TypeMetricGatewayReady, conditions.TypeConfigurationGenerated}
+	for _, pipeline := range pipelines {
+		for _, condType := range condTypes {
+			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+			if cond != nil && cond.Status == metav1.ConditionFalse {
+				return cond.Reason
+			}
+		}
 	}
 
 	return conditions.ReasonMetricGatewayDeploymentReady
