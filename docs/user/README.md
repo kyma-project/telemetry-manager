@@ -96,5 +96,5 @@ Activation of the first TracePipeline causes the deployment of the trace gateway
 - 2 * Maximal 2000M Mem / 1.2 CPU
 
 Activation of the first MetricPipeline causes the deployment of the metric gateway running with 2 replicas and the metric agent running per Node:
-- 2 * minimal   30M Mem / 0.01 CPU + Per node minimal   50M Mem / 0.01 CPU
-- 2 * Maximal 1000M Mem / 1.00 CPU + Per node Maximal 1200M Mem / 1.00 CPU
+- 2 * minimal   30M Mem / 0.01 CPU + per node minimal   50M Mem / 0.01 CPU
+- 2 * Maximal 1000M Mem / 1.00 CPU + per node maximal 1200M Mem / 1.00 CPU
