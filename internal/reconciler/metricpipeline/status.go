@@ -47,16 +47,22 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 }
 
 func (r *Reconciler) setAgentReadyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
-	ready, err := r.agentProber.IsReady(ctx, types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace})
-	if err != nil {
-		return fmt.Errorf("failed to probe agent: %w", err)
-	}
+	status := metav1.ConditionTrue
+	reason := conditions.ReasonMetricAgentNotRequired
 
-	status := metav1.ConditionFalse
-	reason := conditions.ReasonMetricAgentDaemonSetNotReady
-	if ready {
-		status = metav1.ConditionTrue
-		reason = conditions.ReasonMetricAgentDaemonSetReady
+	if isMetricAgentRequired(pipeline) {
+		agentName := types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace}
+		ready, err := r.agentProber.IsReady(ctx, agentName)
+		if err != nil {
+			return fmt.Errorf("failed to probe agent %v: %w", agentName, err)
+		}
+
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonMetricAgentDaemonSetNotReady
+		if ready {
+			status = metav1.ConditionTrue
+			reason = conditions.ReasonMetricAgentDaemonSetReady
+		}
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, metav1.Condition{
@@ -69,9 +75,10 @@ func (r *Reconciler) setAgentReadyCondition(ctx context.Context, pipeline *telem
 }
 
 func (r *Reconciler) setGatewayReadyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
-	ready, err := r.gatewayProber.IsReady(ctx, types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace})
+	gatewayName := types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace}
+	ready, err := r.gatewayProber.IsReady(ctx, gatewayName)
 	if err != nil {
-		return fmt.Errorf("failed to probe gateway: %w", err)
+		return fmt.Errorf("failed to probe gateway %v: %w", gatewayName, err)
 	}
 
 	status := metav1.ConditionFalse
