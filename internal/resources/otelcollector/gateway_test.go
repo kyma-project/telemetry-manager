@@ -220,6 +220,7 @@ func TestApplyGatewayResources(t *testing.T) {
 		}, svc.Spec.Selector)
 		require.Equal(t, map[string]string{
 			"prometheus.io/port":   "8888",
+			"prometheus.io/scheme": "http",
 			"prometheus.io/scrape": "true",
 		}, svc.Annotations)
 		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
