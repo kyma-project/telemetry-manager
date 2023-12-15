@@ -169,11 +169,6 @@ func (mps *MetricPipelineStatus) HasCondition(condition MetricPipelineConditionT
 	return mps.GetCondition(condition) != nil
 }
 
-func (mps *MetricPipelineStatus) HasConditionWithReason(reason string, condition MetricPipelineConditionType) bool {
-	con := mps.GetCondition(condition)
-	return con != nil && con.Reason == reason
-}
-
 func (mps *MetricPipelineStatus) SetCondition(cond MetricPipelineCondition) {
 	currentCond := mps.GetCondition(cond.Type)
 	if currentCond != nil && currentCond.Reason == cond.Reason {
