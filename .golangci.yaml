@@ -51,6 +51,8 @@ linters-settings:
         alias: admissionv1
       - pkg: sigs.k8s.io/controller-runtime/pkg/log
         alias: logf
+      - pkg: sigs.k8s.io/controller-runtime/pkg/log/zap
+        alias: logzap
       - pkg: github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1
         alias: telemetryv1alpha1
       - pkg: istio.io/client-go/pkg/apis/security/v1beta1
@@ -77,6 +79,42 @@ linters-settings:
         alias: operatorv1alpha1
       - pkg: github.com/kyma-project/telemetry-manager/controllers/operator
         alias: operatorcontrollers
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/k8s
+        alias: kitk8s
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log
+        alias: kitlog
+      - pkg: k8s.io/api/admissionregistration/v1
+        alias: admissionregistrationv1
+      - pkg: k8s.io/api/scheduling/v1
+        alias: schedulingv1
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma
+        alias: kitkyma
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric
+        alias: kitmetric
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics
+        alias: kitmetrics
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace
+        alias: kittrace
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces
+        alias: kittraces
+      - pkg: k8s.io/apimachinery/pkg/api/errors
+        alias: apierrors
+      - pkg: k8s.io/api/rbac/v1
+        alias: rbacv1
+      - pkg: github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent
+        alias: configmetricagent
+      - pkg: istio.io/api/type/v1beta1
+        alias: istiotypesv1beta1
+      - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline
+        alias: logpipelinereconciler
+      - pkg: github.com/kyma-project/telemetry-manager/internal/resources/fluentbit
+        alias: logpipelineresources
+      - pkg: crypto/rand
+        alias: crand
+      - pkg: github.com/kyma-project/telemetry-manager/controllers/telemetry
+        alias: telemetrycontrollers
+      - pkg: github.com/kyma-project/telemetry-manager/webhook/logparser
+        alias: logparserwebhook
 
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.

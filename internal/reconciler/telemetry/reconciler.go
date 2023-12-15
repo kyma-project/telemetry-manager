@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -128,7 +128,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 }
 
 func (r *Reconciler) deleteWebhook(ctx context.Context) error {
-	webhook := &admissionv1.ValidatingWebhookConfiguration{
+	webhook := &admissionregistrationv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: r.config.Webhook.CertConfig.WebhookName.Name,
 		},
@@ -162,7 +162,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 		return fmt.Errorf("failed to update secret: %w", err)
 	}
 
-	var webhook admissionv1.ValidatingWebhookConfiguration
+	var webhook admissionregistrationv1.ValidatingWebhookConfiguration
 	if err := r.Get(ctx, r.config.Webhook.CertConfig.WebhookName, &webhook); err != nil {
 		return fmt.Errorf("failed to get webhook: %w", err)
 	}

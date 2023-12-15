@@ -5,7 +5,7 @@ package e2e
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -24,7 +24,7 @@ var _ = Describe("Logs Validating Webhook", Label("logging"), Ordered, func() {
 	Context("When a validating webhook exists", Ordered, func() {
 		BeforeAll(func() {
 			Eventually(func(g Gomega) {
-				var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
+				var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 				g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 				g.Expect(validatingWebhookConfiguration.Webhooks).Should(HaveLen(2))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())

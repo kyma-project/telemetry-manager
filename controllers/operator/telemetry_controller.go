@@ -19,7 +19,7 @@ package operator
 import (
 	"context"
 
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -60,7 +60,7 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&corev1.Secret{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &operatorv1alpha1.Telemetry{})).
 		Watches(
-			&admissionv1.ValidatingWebhookConfiguration{},
+			&admissionregistrationv1.ValidatingWebhookConfiguration{},
 			handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
 			builder.WithPredicates(setup.DeleteOrUpdate())).
 		Watches(
@@ -83,7 +83,7 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *TelemetryReconciler) mapWebhook(ctx context.Context, object client.Object) []reconcile.Request {
-	webhook, ok := object.(*admissionv1.ValidatingWebhookConfiguration)
+	webhook, ok := object.(*admissionregistrationv1.ValidatingWebhookConfiguration)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to ValidatingWebhookConfiguration")
 		return nil

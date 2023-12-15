@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -162,7 +162,7 @@ func (p *Pipeline) K8sObject() *telemetryv1alpha1.MetricPipeline {
 	}
 
 	metricPipeline := telemetryv1alpha1.MetricPipeline{
-		ObjectMeta: k8smeta.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:   p.Name(),
 			Labels: labels,
 		},

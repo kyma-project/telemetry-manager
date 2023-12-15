@@ -3,7 +3,7 @@ package k8s
 import (
 	"github.com/google/uuid"
 	k8score "k8s.io/api/core/v1"
-	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/test/testkit"
@@ -35,7 +35,7 @@ func (s *Secret) K8sObject() *k8score.Secret {
 	}
 
 	return &k8score.Secret{
-		ObjectMeta: k8smeta.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      s.name,
 			Namespace: s.namespace,
 			Labels:    labels,

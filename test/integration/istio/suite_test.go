@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -92,7 +92,7 @@ var _ = AfterSuite(func() {
 	Expect(kitk8s.DeleteObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
 	if !isOperational() {
 		Eventually(func(g Gomega) {
-			var validatingWebhookConfiguration admissionv1.ValidatingWebhookConfiguration
+			var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 			g.Expect(k8sClient.Get(ctx, client.ObjectKey{Name: webhookName}, &validatingWebhookConfiguration)).Should(Succeed())
 			var secret corev1.Secret
 			g.Expect(k8sClient.Get(ctx, webhookCertSecret, &secret)).Should(Succeed())
