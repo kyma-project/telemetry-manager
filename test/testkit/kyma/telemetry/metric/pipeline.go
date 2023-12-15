@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/uuid"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -21,10 +20,10 @@ type Pipeline struct {
 	name            string
 	otlpEndpointRef *telemetryv1alpha1.SecretKeyRef
 	otlpEndpoint    string
-	otlp            telemetryv1alpha1.MetricPipelineOtlpInput
-	runtime         telemetryv1alpha1.MetricPipelineRuntimeInput
-	prometheus      telemetryv1alpha1.MetricPipelinePrometheusInput
-	istio           telemetryv1alpha1.MetricPipelineIstioInput
+	runtime         *telemetryv1alpha1.MetricPipelineRuntimeInput
+	prometheus      *telemetryv1alpha1.MetricPipelinePrometheusInput
+	istio           *telemetryv1alpha1.MetricPipelineIstioInput
+	otlp            *telemetryv1alpha1.MetricPipelineOtlpInput
 	tls             *telemetryv1alpha1.OtlpTLS
 }
 
@@ -72,54 +71,66 @@ func ExcludeNamespaces(namespaces ...string) InputOptions {
 	}
 }
 
-func IncludeSystemNamespaces() InputOptions {
-	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
-		selector.System = pointer.Bool(true)
-	}
-}
-
-func ExcludeSystemNamespaces() InputOptions {
-	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
-		selector.System = pointer.Bool(false)
-	}
-}
-
 func (p *Pipeline) OtlpInput(enable bool, opts ...InputOptions) *Pipeline {
-	p.otlp = telemetryv1alpha1.MetricPipelineOtlpInput{
-		Enabled: pointer.Bool(enable),
+	p.otlp = &telemetryv1alpha1.MetricPipelineOtlpInput{
+		Disabled: !enable,
 	}
+
+	if len(opts) == 0 {
+		return p
+	}
+
+	p.otlp.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
 	for _, opt := range opts {
-		opt(&p.otlp.Namespaces)
+		opt(p.otlp.Namespaces)
 	}
 	return p
 }
 
 func (p *Pipeline) RuntimeInput(enable bool, opts ...InputOptions) *Pipeline {
-	p.runtime = telemetryv1alpha1.MetricPipelineRuntimeInput{
-		Enabled: pointer.Bool(enable),
+	p.runtime = &telemetryv1alpha1.MetricPipelineRuntimeInput{
+		Enabled: enable,
 	}
+
+	if len(opts) == 0 {
+		return p
+	}
+
+	p.runtime.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
 	for _, opt := range opts {
-		opt(&p.runtime.Namespaces)
+		opt(p.runtime.Namespaces)
 	}
 	return p
 }
 
 func (p *Pipeline) PrometheusInput(enable bool, opts ...InputOptions) *Pipeline {
-	p.prometheus = telemetryv1alpha1.MetricPipelinePrometheusInput{
-		Enabled: pointer.Bool(enable),
+	p.prometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{
+		Enabled: enable,
 	}
+
+	if len(opts) == 0 {
+		return p
+	}
+
+	p.prometheus.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
 	for _, opt := range opts {
-		opt(&p.prometheus.Namespaces)
+		opt(p.prometheus.Namespaces)
 	}
 	return p
 }
 
 func (p *Pipeline) IstioInput(enable bool, opts ...InputOptions) *Pipeline {
-	p.istio = telemetryv1alpha1.MetricPipelineIstioInput{
-		Enabled: pointer.Bool(enable),
+	p.istio = &telemetryv1alpha1.MetricPipelineIstioInput{
+		Enabled: enable,
 	}
+
+	if len(opts) == 0 {
+		return p
+	}
+
+	p.istio.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
 	for _, opt := range opts {
-		opt(&p.istio.Namespaces)
+		opt(p.istio.Namespaces)
 	}
 	return p
 }
