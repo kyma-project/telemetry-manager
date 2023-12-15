@@ -17,7 +17,9 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -25,9 +27,10 @@ const (
 )
 
 type Config struct {
-	Traces  TracesConfig
-	Metrics MetricsConfig
-	Webhook WebhookConfig
+	Traces                 TracesConfig
+	Metrics                MetricsConfig
+	Webhook                WebhookConfig
+	OverridesConfigMapName types.NamespacedName
 }
 
 type TracesConfig struct {
@@ -53,11 +56,12 @@ type Reconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	*rest.Config
-	config         Config
-	healthCheckers healthCheckers
+	config           Config
+	healthCheckers   healthCheckers
+	overridesHandler *overrides.Handler
 }
 
-func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config) *Reconciler {
+func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
 		Client: client,
 		Scheme: scheme,
@@ -67,10 +71,23 @@ func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config) 
 			traces:  &traceComponentsChecker{client: client},
 			metrics: &metricComponentsChecker{client: client},
 		},
+		overridesHandler: overridesHandler,
 	}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log.FromContext(ctx).V(1).Info("Reconciliation triggered")
+
+	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if overrideConfig.Telemetry.Paused {
+		log.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
+		return ctrl.Result{}, nil
+	}
+
 	var telemetry operatorv1alpha1.Telemetry
 	if err := r.Client.Get(ctx, req.NamespacedName, &telemetry); err != nil {
 		log.FromContext(ctx).Info(req.NamespacedName.String() + " got deleted!")
