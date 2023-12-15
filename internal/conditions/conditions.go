@@ -1,8 +1,8 @@
 package conditions
 
 const (
-	TypeMetricGatewayReady     = "MetricGatewayReady"
-	TypeMetricAgentReady       = "MetricAgentReady"
+	TypeMetricGatewayHealthy   = "GatewayHealthy"
+	TypeMetricAgentHealthy     = "AgentHealthy"
 	TypeConfigurationGenerated = "ConfigurationGenerated"
 )
 
@@ -16,12 +16,12 @@ const (
 	ReasonFluentBitDSNotReady = "FluentBitDaemonSetNotReady"
 	ReasonFluentBitDSReady    = "FluentBitDaemonSetReady"
 
-	ReasonMetricGatewayDeploymentNotReady = "MetricGatewayDeploymentNotReady"
-	ReasonMetricGatewayDeploymentReady    = "MetricGatewayDeploymentReady"
-	ReasonMetricGatewayConfigGenerated    = "MetricGatewayConfigGenerated"
-	ReasonMetricAgentDaemonSetNotReady    = "MetricAgentDaemonSetNotReady"
-	ReasonMetricAgentDaemonSetReady       = "MetricAgentDaemonSetReady"
-	ReasonMetricAgentNotRequired          = "ReasonMetricAgentNotRequired"
+	ReasonMetricGatewayDeploymentNotReady = "DeploymentNotReady"
+	ReasonMetricGatewayDeploymentReady    = "DeploymentReady"
+	ReasonMetricGatewayConfigGenerated    = "ConfigGenerated"
+	ReasonMetricAgentDaemonSetNotReady    = "DaemonSetNotReady"
+	ReasonMetricAgentDaemonSetReady       = "DaemonSetReady"
+	ReasonMetricAgentNotRequired          = "AgentNotRequired"
 
 	ReasonTraceGatewayDeploymentNotReady = "TraceGatewayDeploymentNotReady"
 	ReasonTraceGatewayDeploymentReady    = "TraceGatewayDeploymentReady"

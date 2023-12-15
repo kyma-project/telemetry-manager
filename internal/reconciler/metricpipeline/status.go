@@ -66,7 +66,7 @@ func (r *Reconciler) setAgentReadyCondition(ctx context.Context, pipeline *telem
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, metav1.Condition{
-		Type:    conditions.TypeMetricAgentReady,
+		Type:    conditions.TypeMetricAgentHealthy,
 		Status:  status,
 		Reason:  reason,
 		Message: conditions.CommonMessageFor(reason),
@@ -89,7 +89,7 @@ func (r *Reconciler) setGatewayReadyCondition(ctx context.Context, pipeline *tel
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, metav1.Condition{
-		Type:    conditions.TypeMetricGatewayReady,
+		Type:    conditions.TypeMetricGatewayHealthy,
 		Status:  status,
 		Reason:  reason,
 		Message: conditions.CommonMessageFor(reason),

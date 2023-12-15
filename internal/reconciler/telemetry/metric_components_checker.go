@@ -12,6 +12,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 )
 
+var metricPipelineReasonPrefixMap = map[string]string{
+	conditions.TypeMetricGatewayHealthy:   "MetricGateway",
+	conditions.TypeMetricAgentHealthy:     "MetricAgent",
+	conditions.TypeConfigurationGenerated: "MetricPipelineConfiguration",
+}
+
 type metricComponentsChecker struct {
 	client client.Client
 }
@@ -37,17 +43,17 @@ func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPip
 		return conditions.ReasonResourceBlocksDeletion
 	}
 
-	condTypes := []string{conditions.TypeMetricAgentReady, conditions.TypeMetricGatewayReady, conditions.TypeConfigurationGenerated}
+	condTypes := []string{conditions.TypeMetricAgentHealthy, conditions.TypeMetricGatewayHealthy, conditions.TypeConfigurationGenerated}
 	for _, pipeline := range pipelines {
 		for _, condType := range condTypes {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if cond != nil && cond.Status == metav1.ConditionFalse {
-				return cond.Reason
+				return metricPipelineReasonPrefixMap[cond.Type] + cond.Reason
 			}
 		}
 	}
 
-	return conditions.ReasonMetricGatewayDeploymentReady
+	return metricPipelineReasonPrefixMap[conditions.TypeMetricGatewayHealthy] + conditions.ReasonMetricGatewayDeploymentReady
 }
 
 func (m *metricComponentsChecker) createMessageForReason(pipelines []v1alpha1.MetricPipeline, reason string) string {

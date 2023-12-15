@@ -17,7 +17,7 @@ data:
         name: Type
         isSelected: true
         widget: Text
-      - source: status.conditions[-1].type
+      - source: status.conditions[?(@.type=="MetricGatewayReady"].reason
         name: Status
         widget: Badge
     body:
