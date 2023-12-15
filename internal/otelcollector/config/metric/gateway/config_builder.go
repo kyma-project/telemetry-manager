@@ -213,7 +213,6 @@ func isIstioInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Istio != nil && input.Istio.Enabled
 }
 
-// isOtlpInputEnabled
 func isOtlpInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {
 	return input.Otlp == nil || !input.Otlp.Disabled
 }
