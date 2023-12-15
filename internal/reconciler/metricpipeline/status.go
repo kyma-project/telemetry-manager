@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lockAcquired bool) error {
@@ -35,9 +36,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 		return fmt.Errorf("failed to set gateway ready condition: %w", err)
 	}
 
-	if err := r.setGatewayConfigGeneratedCondition(ctx, &pipeline, lockAcquired); err != nil {
-		return fmt.Errorf("failed to set gateway config generated condition: %w", err)
-	}
+	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, lockAcquired)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update MetricPipeline status: %w", err)
@@ -97,7 +96,7 @@ func (r *Reconciler) setGatewayReadyCondition(ctx context.Context, pipeline *tel
 	return nil
 }
 
-func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, lockAcquired bool) error {
+func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, lockAcquired bool) {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonMetricGatewayConfigGenerated
 	if !lockAcquired {
@@ -117,5 +116,4 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 		Reason:  reason,
 		Message: conditions.CommonMessageFor(reason),
 	})
-	return nil
 }
