@@ -49,8 +49,8 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricGatewayReady)
-		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricGatewayReady)
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricGatewayHealthy)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricGatewayHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
 		require.Equal(t, conditions.ReasonMetricGatewayDeploymentNotReady, cond.Reason)
 
@@ -81,8 +81,8 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricGatewayReady)
-		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricGatewayReady)
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricGatewayHealthy)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricGatewayHealthy)
 		require.Equal(t, metav1.ConditionTrue, cond.Status)
 		require.Equal(t, conditions.ReasonMetricGatewayDeploymentReady, cond.Reason)
 
@@ -116,8 +116,8 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricAgentReady)
-		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricAgentReady)
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricAgentHealthy)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
 		require.Equal(t, conditions.ReasonMetricAgentDaemonSetNotReady, cond.Reason)
 
@@ -151,8 +151,8 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricAgentReady)
-		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricAgentReady)
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricAgentHealthy)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricAgentHealthy)
 		require.Equal(t, metav1.ConditionTrue, cond.Status)
 		require.Equal(t, conditions.ReasonMetricAgentDaemonSetReady, cond.Reason)
 
