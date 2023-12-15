@@ -36,7 +36,9 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
+	zapLog "go.uber.org/zap"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -117,8 +119,12 @@ var _ = BeforeSuite(func() {
 	}
 	client := mgr.GetClient()
 
+	atomicLogLevel := zapLog.NewAtomicLevel()
+	var handlerConfig overrides.HandlerConfig
+	overridesHandler := overrides.New(client, atomicLogLevel, handlerConfig)
+
 	telemetryReconciler := NewTelemetryReconciler(client,
-		telemetry.NewReconciler(client, mgr.GetScheme(), config),
+		telemetry.NewReconciler(client, mgr.GetScheme(), config, overridesHandler),
 		config)
 	err = telemetryReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
