@@ -41,9 +41,6 @@ data:
                 visibility: $exists(spec.input.prometheus.namespaces.exclude)
                 source: spec.input.prometheus.namespaces.exclude
                 separator: ', '
-              - name: System Namespaces
-                visibility: $exists(spec.input.prometheus.namespaces.system)
-                source: spec.input.prometheus.namespaces.system
           - name: Istio
             widget: Panel
             visibility: $exists(spec.input.istio)
@@ -61,9 +58,6 @@ data:
                 visibility: $exists(spec.input.istio.namespaces.exclude)
                 source: spec.input.istio.namespaces.exclude
                 separator: ', '
-              - name: System Namespaces
-                visibility: $exists(spec.input.istio.namespaces.system)
-                source: spec.input.istio.namespaces.system
           - name: Runtime
             widget: Panel
             visibility: $exists(spec.input.runtime)
@@ -81,16 +75,13 @@ data:
                 visibility: $exists(spec.input.runtime.namespaces.exclude)
                 source: spec.input.runtime.namespaces.exclude
                 separator: ', '
-              - name: System Namespaces
-                visibility: $exists(spec.input.runtime.namespaces.system)
-                source: spec.input.runtime.namespaces.system
           - name: OTLP
             widget: Panel
             visibility: $exists(spec.input.otlp)
             children:
-              - name: Enabled
-                visibility: $exists(spec.input.otlp.enabled)
-                source: spec.input.otlp.enabled
+              - name: Disabled
+                visibility: $exists(spec.input.otlp.disabled)
+                source: spec.input.otlp.disabled
               - name: Include Namespaces
                 widget: JoinedArray
                 visibility: $exists(spec.input.otlp.namespaces.include)
@@ -101,9 +92,6 @@ data:
                 visibility: $exists(spec.input.otlp.namespaces.exclude)
                 source: spec.input.otlp.namespaces.exclude
                 separator: ', '
-              - name: System Namespaces
-                visibility: $exists(spec.input.otlp.namespaces.system)
-                source: spec.input.otlp.namespaces.system
       - widget: Panel
         name: Output
         children:
@@ -244,8 +232,6 @@ data:
             - name: Enabled
               path: enabled
               simple: true
-            - name: Include System Namespaces
-              path: namespaces.system
             - name: Include Namespaces
               widget: SimpleList
               path: namespaces.include
@@ -266,8 +252,6 @@ data:
             - name: Enabled
               path: enabled
               simple: true
-            - name: Include System Namespaces
-              path: namespaces.system
             - name: Include Namespaces
               widget: SimpleList
               path: namespaces.include
@@ -288,8 +272,6 @@ data:
             - name: Enabled
               path: enabled
               simple: true
-            - name: Include System Namespaces
-              path: namespaces.system
             - name: Include Namespaces
               widget: SimpleList
               path: namespaces.include
@@ -307,11 +289,9 @@ data:
           widget: FormGroup
           simple: true
           children:
-            - name: Enabled
-              path: enabled
+            - name: Disabled
+              path: disabled
               simple: true
-            - name: Include System Namespaces
-              path: namespaces.system
             - name: Include Namespaces
               widget: SimpleList
               path: namespaces.include

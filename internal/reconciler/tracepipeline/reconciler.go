@@ -173,10 +173,23 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
+
+	allowedPorts := []int32{
+		ports.OTLPHTTP,
+		ports.OTLPGRPC,
+		ports.Metrics,
+		ports.HealthCheck,
+	}
+
+	if isIstioActive {
+		allowedPorts = append(allowedPorts, ports.IstioEnvoy, ports.OpenCensus)
+	}
+
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig(fmt.Sprintf("%d, %d", ports.Metrics, ports.OpenCensus), isIstioActive)); err != nil {
+			WithIstioConfig(fmt.Sprintf("%d, %d", ports.Metrics, ports.OpenCensus), isIstioActive).
+			WithAllowedPorts(allowedPorts)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 
