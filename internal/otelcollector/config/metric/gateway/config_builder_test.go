@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
@@ -141,8 +142,6 @@ func TestMakeConfig(t *testing.T) {
 				"k8sattributes",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-istio",
-				"filter/test-filter-by-namespace-prometheus-input",
-				"filter/test-filter-by-namespace-otlp-input",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
 				"resource/drop-kyma-attributes",
@@ -165,8 +164,6 @@ func TestMakeConfig(t *testing.T) {
 				"k8sattributes",
 				"filter/drop-if-input-source-prometheus",
 				"filter/drop-if-input-source-istio",
-				"filter/test-filter-by-namespace-runtime-input",
-				"filter/test-filter-by-namespace-otlp-input",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
 				"resource/drop-kyma-attributes",
@@ -189,7 +186,6 @@ func TestMakeConfig(t *testing.T) {
 				"k8sattributes",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
-				"filter/test-filter-by-namespace-otlp-input",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
 				"resource/drop-kyma-attributes",
@@ -197,12 +193,57 @@ func TestMakeConfig(t *testing.T) {
 			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
 		})
 
+		t.Run("with otlp input implicitly enabled", func(t *testing.T) {
+			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").Build()},
+			)
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Equal(t, []string{"memory_limiter",
+				"k8sattributes",
+				"filter/drop-if-input-source-runtime",
+				"filter/drop-if-input-source-prometheus",
+				"filter/drop-if-input-source-istio",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
+				"resource/drop-kyma-attributes",
+				"batch",
+			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
+		})
+
+		t.Run("with otlp input explicitly enabled", func(t *testing.T) {
+			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").OtlpInput(true).Build()},
+			)
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Equal(t, []string{"memory_limiter",
+				"k8sattributes",
+				"filter/drop-if-input-source-runtime",
+				"filter/drop-if-input-source-prometheus",
+				"filter/drop-if-input-source-istio",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
+				"resource/drop-kyma-attributes",
+				"batch",
+			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
+		})
 	})
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []v1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test-1").RuntimeInput(true).Build(),
-			testutils.NewMetricPipelineBuilder().WithName("test-2").PrometheusInput(true).Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test-1").RuntimeInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test-2").PrometheusInput(true, testutils.ExcludeNamespaces(namespaces.System()...)).Build(),
 			testutils.NewMetricPipelineBuilder().WithName("test-3").IstioInput(true).Build()},
 		)
 		require.NoError(t, err)
@@ -219,7 +260,6 @@ func TestMakeConfig(t *testing.T) {
 			"filter/drop-if-input-source-prometheus",
 			"filter/drop-if-input-source-istio",
 			"filter/test-1-filter-by-namespace-runtime-input",
-			"filter/test-1-filter-by-namespace-otlp-input",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
 			"resource/drop-kyma-attributes",
@@ -234,7 +274,6 @@ func TestMakeConfig(t *testing.T) {
 			"filter/drop-if-input-source-runtime",
 			"filter/drop-if-input-source-istio",
 			"filter/test-2-filter-by-namespace-prometheus-input",
-			"filter/test-2-filter-by-namespace-otlp-input",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
 			"resource/drop-kyma-attributes",
@@ -248,7 +287,6 @@ func TestMakeConfig(t *testing.T) {
 			"k8sattributes",
 			"filter/drop-if-input-source-runtime",
 			"filter/drop-if-input-source-prometheus",
-			"filter/test-3-filter-by-namespace-otlp-input",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
 			"resource/drop-kyma-attributes",

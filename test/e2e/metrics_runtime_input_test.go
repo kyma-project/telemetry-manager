@@ -51,7 +51,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 		return objs
 	}
 
-	Context("When a metricpipeline with runtime input exists", Ordered, func() {
+	Context("When a metricpipeline with Runtime input exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -62,50 +62,24 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running metric gateway deployment", func() {
+		It("Ensures the metric gateway deployment is ready", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
-		It("Should have a metrics backend running", func() {
+		It("Ensures the metrics backend is ready", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 		})
 
-		It("Should have a running metric agent daemonset", func() {
+		It("Ensures the metric agent daemonset is ready", func() {
 			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
-		It("Should have a running pipeline", func() {
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
-		})
-
-		It("Should verify kubelet metric names", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					ContainMd(ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames)))),
-				))
-			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
-
-		It("Should verify kubelet metric resource attributes", func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					ConsistOfMds(ContainResourceAttrs(HaveKey(BeElementOf(kubeletstats.MetricResourceAttributes)))),
-				))
-			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
-
-		It("Should be able to get metric agent metrics endpoint", Label(operationalTest), func() {
+		It("Ensures accessibility of metric agent metrics endpoint", Label(operationalTest), func() {
 			agentMetricsURL := proxyClient.ProxyURLForService(kitkyma.MetricAgentMetrics.Namespace, kitkyma.MetricAgentMetrics.Name, "metrics", ports.Metrics)
 			verifiers.ShouldExposeCollectorMetrics(proxyClient, agentMetricsURL)
 		})
 
-		It("Should have a working network policy", Label(operationalTest), func() {
+		It("Ensures the metric agent netpolicy exists", Label(operationalTest), func() {
 			var networkPolicy networkingv1.NetworkPolicy
 			Expect(k8sClient.Get(ctx, kitkyma.MetricAgentNetworkPolicy, &networkPolicy)).To(Succeed())
 
@@ -121,6 +95,36 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusServiceUnavailable))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		})
+
+		It("Ensures the metricpipeline is running", func() {
+			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+		})
+
+		It("Ensures kubeletstats metrics are sent to backend", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					ContainMd(ContainMetric(WithName(BeElementOf(kubeletstats.MetricNames)))),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Checks for correct attributes in kubeletstats metrics", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					ConsistOfMds(ContainResourceAttrs(HaveKey(BeElementOf(kubeletstats.MetricResourceAttributes)))),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Ensures kubeletstats metrics from system namespaces are not sent to backend", func() {
+			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURL, kitkyma.SystemNamespaceName)
 		})
 	})
 })

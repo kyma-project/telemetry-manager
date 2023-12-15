@@ -18,6 +18,7 @@ type GatewayConfig struct {
 	Scaling              GatewayScalingConfig
 	Istio                IstioConfig
 	OTLPServiceName      string
+	allowedPorts         []int32
 	CanReceiveOpenCensus bool
 }
 
@@ -49,6 +50,14 @@ func (cfg *GatewayConfig) WithIstioConfig(excludePorts string, istioEnabled bool
 	return &cfgCopy
 }
 
+func (cfg *GatewayConfig) WithAllowedPorts(ports []int32) *GatewayConfig {
+	cfgCopy := *cfg
+
+	cfgCopy.allowedPorts = ports
+	return &cfgCopy
+
+}
+
 type DeploymentConfig struct {
 	Image                string
 	PriorityClassName    string
@@ -74,6 +83,7 @@ type GatewayScalingConfig struct {
 
 type AgentConfig struct {
 	Config
+	allowedPorts []int32
 
 	DaemonSet DaemonSetConfig
 }
@@ -91,4 +101,12 @@ type DaemonSetConfig struct {
 	CPURequest        resource.Quantity
 	MemoryLimit       resource.Quantity
 	MemoryRequest     resource.Quantity
+}
+
+func (cfg *AgentConfig) WithAllowedPorts(ports []int32) *AgentConfig {
+	cfgCopy := *cfg
+
+	cfgCopy.allowedPorts = ports
+	return &cfgCopy
+
 }

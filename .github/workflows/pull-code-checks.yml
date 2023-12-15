@@ -17,8 +17,8 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Prepare test
-      uses: "./.github/template/prepare-checks"
+    - name: Setup Golang
+      uses: "./.github/template/setup-golang"
 
     - name: Run tests
       run: make test
@@ -29,8 +29,8 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Prepare test
-        uses: "./.github/template/prepare-checks"
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
 
       - name: Run linting
         uses: golangci/golangci-lint-action@v3
@@ -38,32 +38,3 @@ jobs:
           install-mode: binary
           version: latest
           args: --timeout=5m --config=./.golangci.yaml
-
-  verify-manifests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Prepare test
-        uses: "./.github/template/prepare-checks"
-
-      - name: Verify manifests
-        run: make lint-manifests
-
-  markdown-link-check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Validate links
-        uses: gaurav-nelson/github-action-markdown-link-check@v1
-        with:
-          use-quiet-mode: 'yes'  
-          use-verbose-mode: 'yes'
-          config-file: '.mlc.config.json'
-          folder-path: '.'
-          max-depth: -1
-          check-modified-files-only: 'yes'
-          base-branch: ${{ github.base_ref }}

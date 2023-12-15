@@ -66,58 +66,64 @@ type MetricPipelineSpec struct {
 // MetricPipelineInput defines the input configuration section.
 type MetricPipelineInput struct {
 	// Configures Prometheus scraping.
-	Prometheus MetricPipelinePrometheusInput `json:"prometheus,omitempty"`
+	//+optional
+	Prometheus *MetricPipelinePrometheusInput `json:"prometheus,omitempty"`
 	// Configures runtime scraping.
-	Runtime MetricPipelineRuntimeInput `json:"runtime,omitempty"`
+	//+optional
+	Runtime *MetricPipelineRuntimeInput `json:"runtime,omitempty"`
 	// Configures istio-proxy metrics scraping.
-	Istio MetricPipelineIstioInput `json:"istio,omitempty"`
+	//+optional
+	Istio *MetricPipelineIstioInput `json:"istio,omitempty"`
 	// Configures the collection of push-based metrics that use the OpenTelemetry protocol.
-	Otlp MetricPipelineOtlpInput `json:"otlp,omitempty"`
+	//+optional
+	Otlp *MetricPipelineOtlpInput `json:"otlp,omitempty"`
 }
 
 // MetricPipelinePrometheusInput defines the Prometheus scraping section.
 type MetricPipelinePrometheusInput struct {
 	// If enabled, Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`.
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether Prometheus metrics from specific Namespaces are selected. System Namespaces are disabled by default.
-	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
+	//+optional
+	//+kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
+	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
 // MetricPipelineRuntimeInput defines the runtime scraping section.
 type MetricPipelineRuntimeInput struct {
 	// If enabled, workload-related Kubernetes metrics are scraped. The default is `false`.
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether workload-related Kubernetes metrics from specific Namespaces are selected. System Namespaces are disabled by default.
-	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
+	//+optional
+	//+kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
+	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
 // MetricPipelineIstioInput defines the Istio scraping section.
 type MetricPipelineIstioInput struct {
 	// If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected. The default is `false`.
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 	// Describes whether istio-proxy metrics from specific Namespaces are selected. System Namespaces are enabled by default.
-	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
+	//+optional
+	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
 // MetricPipelineOtlpInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
 type MetricPipelineOtlpInput struct {
-	// If enabled, push-based OTLP metrics are collected. The default is `true`.
-	Enabled *bool `json:"enabled,omitempty"`
-	// Describes whether push-based OTLP metrics from specific Namespaces are selected. System Namespaces are disabled by default.
-	Namespaces MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
+	// If disabled, push-based OTLP metrics are not collected. The default is `false`.
+	Disabled bool `json:"disabled,omitempty"`
+	// Describes whether push-based OTLP metrics from specific Namespaces are selected. System Namespaces are enabled by default.
+	//+optional
+	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 }
 
 // MetricPipelineInputNamespaceSelector describes whether metrics from specific Namespaces are selected.
-// +kubebuilder:validation:XValidation:rule="!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))", message="Can only define one namespace selector - either 'include', 'exclude', or 'system'"
-// +kubebuilder:validation:XValidation:rule="!((has(self.include) && size(self.include) != 0) && has(self.system))", message="Can only define one namespace selector - either 'include', 'exclude', or 'system'"
-// +kubebuilder:validation:XValidation:rule="!((has(self.exclude) && size(self.exclude) != 0) && has(self.system))", message="Can only define one namespace selector - either 'include', 'exclude', or 'system'"
+// +kubebuilder:validation:XValidation:rule="!((has(self.include) && size(self.include) != 0) && (has(self.exclude) && size(self.exclude) != 0))", message="Can only define one namespace selector - either 'include' or 'exclude'"
 type MetricPipelineInputNamespaceSelector struct {
 	// Include metrics from the specified Namespace names only.
 	Include []string `json:"include,omitempty"`
 	// Exclude metrics from the specified Namespace names only.
 	Exclude []string `json:"exclude,omitempty"`
-	// Set to `true` to include the metrics from system Namespaces like kube-system, istio-system, and kyma-system.
-	System *bool `json:"system,omitempty"`
 }
 
 // MetricPipelineOutput defines the output configuration section.

@@ -77,38 +77,25 @@ spec:
                             items:
                               type: string
                             type: array
-                          system:
-                            description: Set to `true` to include the metrics from
-                              system Namespaces like kube-system, istio-system, and
-                              kyma-system.
-                            type: boolean
                         type: object
                         x-kubernetes-validations:
                         - message: Can only define one namespace selector - either
-                            'include', 'exclude', or 'system'
+                            'include' or 'exclude'
                           rule: '!((has(self.include) && size(self.include) != 0)
                             && (has(self.exclude) && size(self.exclude) != 0))'
-                        - message: Can only define one namespace selector - either
-                            'include', 'exclude', or 'system'
-                          rule: '!((has(self.include) && size(self.include) != 0)
-                            && has(self.system))'
-                        - message: Can only define one namespace selector - either
-                            'include', 'exclude', or 'system'
-                          rule: '!((has(self.exclude) && size(self.exclude) != 0)
-                            && has(self.system))'
                     type: object
                   otlp:
                     description: Configures the collection of push-based metrics that
                       use the OpenTelemetry protocol.
                     properties:
-                      enabled:
-                        description: If enabled, push-based OTLP metrics are collected.
-                          The default is `true`.
+                      disabled:
+                        description: If disabled, push-based OTLP metrics are not
+                          collected. The default is `false`.
                         type: boolean
                       namespaces:
                         description: Describes whether push-based OTLP metrics from
                           specific Namespaces are selected. System Namespaces are
-                          disabled by default.
+                          enabled by default.
                         properties:
                           exclude:
                             description: Exclude metrics from the specified Namespace
@@ -122,25 +109,12 @@ spec:
                             items:
                               type: string
                             type: array
-                          system:
-                            description: Set to `true` to include the metrics from
-                              system Namespaces like kube-system, istio-system, and
-                              kyma-system.
-                            type: boolean
                         type: object
                         x-kubernetes-validations:
                         - message: Can only define one namespace selector - either
-                            'include', 'exclude', or 'system'
+                            'include' or 'exclude'
                           rule: '!((has(self.include) && size(self.include) != 0)
                             && (has(self.exclude) && size(self.exclude) != 0))'
-                        - message: Can only define one namespace selector - either
-                            'include', 'exclude', or 'system'
-                          rule: '!((has(self.include) && size(self.include) != 0)
-                            && has(self.system))'
-                        - message: Can only define one namespace selector - either
-                            'include', 'exclude', or 'system'
-                          rule: '!((has(self.exclude) && size(self.exclude) != 0)
-                            && has(self.system))'
                     type: object
                   prometheus:
                     description: Configures Prometheus scraping.
@@ -150,6 +124,12 @@ spec:
                           annotation are scraped. The default is `false`.
                         type: boolean
                       namespaces:
+                        default:
+                          exclude:
+                          - kyma-system
+                          - kube-system
+                          - istio-system
+                          - compass-system
                         description: Describes whether Prometheus metrics from specific
                           Namespaces are selected. System Namespaces are disabled
                           by default.
@@ -166,25 +146,12 @@ spec:
                             items:
                               type: string
                             type: array
-                          system:
-                            description: Set to `true` to include the metrics from
-                              system Namespaces like kube-system, istio-system, and
-                              kyma-system.
-                            type: boolean
                         type: object
                         x-kubernetes-validations:
                         - message: Can only define one namespace selector - either
-                            'include', 'exclude', or 'system'
+                            'include' or 'exclude'
                           rule: '!((has(self.include) && size(self.include) != 0)
                             && (has(self.exclude) && size(self.exclude) != 0))'
-                        - message: Can only define one namespace selector - either
-                            'include', 'exclude', or 'system'
-                          rule: '!((has(self.include) && size(self.include) != 0)
-                            && has(self.system))'
-                        - message: Can only define one namespace selector - either
-                            'include', 'exclude', or 'system'
-                          rule: '!((has(self.exclude) && size(self.exclude) != 0)
-                            && has(self.system))'
                     type: object
                   runtime:
                     description: Configures runtime scraping.
@@ -194,6 +161,12 @@ spec:
                           are scraped. The default is `false`.
                         type: boolean
                       namespaces:
+                        default:
+                          exclude:
+                          - kyma-system
+                          - kube-system
+                          - istio-system
+                          - compass-system
                         description: Describes whether workload-related Kubernetes
                           metrics from specific Namespaces are selected. System Namespaces
                           are disabled by default.
@@ -210,25 +183,12 @@ spec:
                             items:
                               type: string
                             type: array
-                          system:
-                            description: Set to `true` to include the metrics from
-                              system Namespaces like kube-system, istio-system, and
-                              kyma-system.
-                            type: boolean
                         type: object
                         x-kubernetes-validations:
                         - message: Can only define one namespace selector - either
-                            'include', 'exclude', or 'system'
+                            'include' or 'exclude'
                           rule: '!((has(self.include) && size(self.include) != 0)
                             && (has(self.exclude) && size(self.exclude) != 0))'
-                        - message: Can only define one namespace selector - either
-                            'include', 'exclude', or 'system'
-                          rule: '!((has(self.include) && size(self.include) != 0)
-                            && has(self.system))'
-                        - message: Can only define one namespace selector - either
-                            'include', 'exclude', or 'system'
-                          rule: '!((has(self.exclude) && size(self.exclude) != 0)
-                            && has(self.system))'
                     type: object
                 type: object
               output:

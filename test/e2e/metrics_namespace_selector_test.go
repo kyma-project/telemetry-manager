@@ -23,7 +23,6 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 		backendNs    = "metric-namespace-selector"
 		backend1Name = "backend-1"
 		backend2Name = "backend-2"
-		backend3Name = "backend-3"
 
 		app1Ns = "app-1"
 		app2Ns = "app-2"
@@ -60,17 +59,6 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 			OtlpInput(true, kitmetric.ExcludeNamespaces(app1Ns))
 		objs = append(objs, pipelineExcludeApp1Ns.K8sObject())
 
-		backend3 := backend.New(backend3Name, backendNs, backend.SignalTypeMetrics)
-		telemetryExportURLs[backend3Name] = backend3.TelemetryExportURL(proxyClient)
-		objs = append(objs, backend3.K8sObjects()...)
-
-		pipelineSystemNs := kitmetric.NewPipeline("system").
-			WithOutputEndpointFromSecret(backend3.HostSecretRef()).
-			PrometheusInput(true, kitmetric.IncludeSystemNamespaces()).
-			RuntimeInput(true, kitmetric.IncludeSystemNamespaces()).
-			OtlpInput(true, kitmetric.IncludeSystemNamespaces())
-		objs = append(objs, pipelineSystemNs.K8sObject())
-
 		objs = append(objs,
 			telemetrygen.New(app1Ns).K8sObject(),
 			telemetrygen.New(app2Ns).K8sObject(),
@@ -102,7 +90,6 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 		It("Should have a metrics backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend1Name, Namespace: backendNs})
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend2Name, Namespace: backendNs})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend3Name, Namespace: backendNs})
 		})
 
 		It("Should have a running metric agent daemonset", func() {
@@ -110,7 +97,7 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 		})
 
 		// verify metrics from apps1Ns delivered to backend1
-		It("Should deliver runtime metrics from app1Ns to backend1", func() {
+		It("Should deliver Runtime metrics from app1Ns to backend1", func() {
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend1Name], app1Ns, kubeletstats.MetricNames)
 		})
 
@@ -127,11 +114,11 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 		})
 
 		// verify metrics from apps2Ns delivered to backend1
-		It("Should deliver runtime metrics from app2Ns to backend2", func() {
+		It("Should deliver Runtime metrics from app2Ns to backend2", func() {
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend2Name], app2Ns, kubeletstats.MetricNames)
 		})
 
-		It("Should deliver prometheus metrics from app2Ns to backend2", func() {
+		It("Should deliver Prometheus metrics from app2Ns to backend2", func() {
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend2Name], app2Ns, metricproducer.MetricNames)
 		})
 
@@ -141,19 +128,6 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 
 		It("Should not deliver metrics from app1Ns to backend2", func() {
 			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURLs[backend2Name], app1Ns)
-		})
-
-		//verify system metrics are delivered to backend3
-		It("Should deliver runtime metrics from system namespaces to backend3", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend3Name], kitkyma.SystemNamespaceName, kubeletstats.MetricNames)
-		})
-
-		It("Should deliver prometheus metrics from system namespaces to backend3", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend3Name], kitkyma.SystemNamespaceName, metricproducer.MetricNames)
-		})
-
-		It("Should deliver OTLP metrics from system namespaces to backend3", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend3Name], kitkyma.SystemNamespaceName, telemetrygen.MetricNames)
 		})
 	})
 })
