@@ -47,6 +47,36 @@ linters-settings:
     alias:
       - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
         alias: metav1
+      - pkg: k8s.io/api/admission/v1
+        alias: admissionv1
+      - pkg: sigs.k8s.io/controller-runtime/pkg/log
+        alias: logf
+      - pkg: github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1
+        alias: telemetryv1alpha1
+      - pkg: istio.io/client-go/pkg/apis/security/v1beta1
+        alias: istiosecv1beta1
+      - pkg: k8s.io/api/apps/v1
+        alias: appsv1
+      - pkg: k8s.io/api/core/v1
+        alias: corev1
+      - pkg: k8s.io/api/networking/v1
+        alias: networkingv1
+      - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
+        alias: apiextensionsv1
+      - pkg: k8s.io/apimachinery/pkg/util/runtime
+        alias: utilruntime
+      - pkg: k8s.io/client-go/kubernetes/scheme
+        alias: clientgoscheme
+      - pkg: sigs.k8s.io/controller-runtime
+        alias: ctrl
+      - pkg: sigs.k8s.io/controller-runtime/pkg/metrics/server
+        alias: metricsserver
+      - pkg: sigs.k8s.io/controller-runtime/pkg/webhook
+        alias: k8sWebhook
+      - pkg: github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1
+        alias: operatorv1alpha1
+      - pkg: github.com/kyma-project/telemetry-manager/controllers/operator
+        alias: operatorcontrollers
 
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.
