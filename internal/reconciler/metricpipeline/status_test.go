@@ -17,6 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
 
@@ -158,59 +159,65 @@ func TestUpdateStatus(t *testing.T) {
 
 		mock.AssertExpectationsForObjects(t, agentProberMock)
 	})
-	//
-	//t.Run("should add running condition if referenced secret exists and metric gateway deployment is ready", func(t *testing.T) {
-	//	pipelineName := "pipeline"
-	//	pipeline := &telemetryv1alpha1.MetricPipeline{
-	//		ObjectMeta: metav1.ObjectMeta{
-	//			Name: pipelineName,
-	//		},
-	//		Spec: telemetryv1alpha1.MetricPipelineSpec{
-	//			Output: telemetryv1alpha1.MetricPipelineOutput{
-	//				Otlp: &telemetryv1alpha1.OtlpOutput{
-	//					Endpoint: telemetryv1alpha1.ValueType{
-	//						ValueFrom: &telemetryv1alpha1.ValueFromSource{
-	//							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-	//								Name:      "some-secret",
-	//								Namespace: "some-namespace",
-	//								Key:       "host",
-	//							},
-	//						},
-	//					},
-	//				},
-	//			}},
-	//	}
-	//	secret := &corev1.Secret{
-	//		TypeMeta: metav1.TypeMeta{},
-	//		ObjectMeta: metav1.ObjectMeta{
-	//			Name:      "some-secret",
-	//			Namespace: "some-namespace",
-	//		},
-	//		Data: map[string][]byte{"host": nil},
-	//	}
-	//	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).WithStatusSubresource(pipeline).Build()
-	//
-	//	proberStub := &mocks.DeploymentProber{}
-	//	proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
-	//
-	//	sut := Reconciler{
-	//		Client: fakeClient,
-	//		config: Config{Gateway: otelcollector.GatewayConfig{
-	//			Config: otelcollector.Config{BaseName: "metric-gateway"},
-	//		}},
-	//		gatewayProber: proberStub,
-	//	}
-	//
-	//	err := sut.updateStatus(context.Background(), pipeline.Name, true)
-	//	require.NoError(t, err)
-	//
-	//	var updatedPipeline telemetryv1alpha1.MetricPipeline
-	//	_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
-	//	require.Len(t, updatedPipeline.Status.Conditions, 1)
-	//	require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelineRunning)
-	//	require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMetricGatewayDeploymentReady)
-	//})
-	//
+
+	t.Run("referenced secret exists", func(t *testing.T) {
+		secret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "some-secret",
+				Namespace: "some-namespace",
+			},
+			Data: map[string][]byte{"user": {}, "password": {}},
+		}
+		pipeline := testutils.NewMetricPipelineBuilder().WithBasicAuthFromSecret(secret.Name, secret.Namespace, "user", "password").Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		sut := Reconciler{
+			Client:        fakeClient,
+			config:        Config{Gateway: otelcollector.GatewayConfig{}},
+			gatewayProber: gatewayProberStub,
+		}
+
+		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
+		require.Equal(t, metav1.ConditionTrue, cond.Status)
+		require.Equal(t, conditions.ReasonMetricConfigurationGenerated, cond.Reason)
+	})
+
+	t.Run("referenced secret missing", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().WithBasicAuthFromSecret("some-secret", "some-namespace", "user", "password").Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		sut := Reconciler{
+			Client:        fakeClient,
+			config:        Config{Gateway: otelcollector.GatewayConfig{}},
+			gatewayProber: gatewayProberStub,
+		}
+
+		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
+		require.Equal(t, metav1.ConditionFalse, cond.Status)
+		require.Equal(t, conditions.ReasonReferencedSecretMissing, cond.Reason)
+	})
+
 	//t.Run("should add pending condition if waiting for lock", func(t *testing.T) {
 	//	pipelineName := "pipeline"
 	//	pipeline := &telemetryv1alpha1.MetricPipeline{
@@ -245,7 +252,7 @@ func TestUpdateStatus(t *testing.T) {
 	//	require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.MetricPipelinePending)
 	//	require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonWaitingForLock)
 	//})
-	//
+
 	//t.Run("should add pending condition if acquired lock but metric gateway is not ready", func(t *testing.T) {
 	//	pipelineName := "pipeline"
 	//	pipeline := &telemetryv1alpha1.MetricPipeline{

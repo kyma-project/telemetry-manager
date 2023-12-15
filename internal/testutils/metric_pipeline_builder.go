@@ -13,16 +13,18 @@ import (
 type MetricPipelineBuilder struct {
 	randSource rand.Source
 
-	name              string
-	endpoint          string
-	runtime           *telemetryv1alpha1.MetricPipelineRuntimeInput
-	prometheus        *telemetryv1alpha1.MetricPipelinePrometheusInput
-	istio             *telemetryv1alpha1.MetricPipelineIstioInput
-	otlp              *telemetryv1alpha1.MetricPipelineOtlpInput
-	basicAuthUser     string
-	basicAuthPassword string
-
-	//conditions []telemetryv1alpha1.MetricPipelineCondition
+	name                       string
+	endpoint                   string
+	runtime                    *telemetryv1alpha1.MetricPipelineRuntimeInput
+	prometheus                 *telemetryv1alpha1.MetricPipelinePrometheusInput
+	istio                      *telemetryv1alpha1.MetricPipelineIstioInput
+	otlp                       *telemetryv1alpha1.MetricPipelineOtlpInput
+	basicAuthUser              string
+	basicAuthPassword          string
+	basicAuthSecretName        string
+	basicAuthSecretNamespace   string
+	basicAuthSecretUserKey     string
+	basicAuthSecretPasswordKey string
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
@@ -140,6 +142,14 @@ func (b *MetricPipelineBuilder) WithBasicAuth(user, password string) *MetricPipe
 	return b
 }
 
+func (b *MetricPipelineBuilder) WithBasicAuthFromSecret(secretName, secretNamespace, userKey, passwordKey string) *MetricPipelineBuilder {
+	b.basicAuthSecretName = secretName
+	b.basicAuthSecretNamespace = secretNamespace
+	b.basicAuthSecretUserKey = userKey
+	b.basicAuthSecretPasswordKey = passwordKey
+	return b
+}
+
 func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 	name := b.name
 	if name == "" {
@@ -166,9 +176,23 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 						Basic: &telemetryv1alpha1.BasicAuthOptions{
 							User: telemetryv1alpha1.ValueType{
 								Value: b.basicAuthUser,
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      b.basicAuthSecretName,
+										Namespace: b.basicAuthSecretNamespace,
+										Key:       b.basicAuthSecretUserKey,
+									},
+								},
 							},
 							Password: telemetryv1alpha1.ValueType{
 								Value: b.basicAuthPassword,
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      b.basicAuthSecretName,
+										Namespace: b.basicAuthSecretNamespace,
+										Key:       b.basicAuthSecretPasswordKey,
+									},
+								},
 							},
 						},
 					},

@@ -99,7 +99,7 @@ func (r *Reconciler) setGatewayReadyCondition(ctx context.Context, pipeline *tel
 
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, lockAcquired bool) error {
 	status := metav1.ConditionTrue
-	reason := conditions.ReasonMetricGatewayConfigGenerated
+	reason := conditions.ReasonMetricConfigurationGenerated
 	if !lockAcquired {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonWaitingForLock
