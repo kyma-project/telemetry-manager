@@ -8,7 +8,7 @@ The `metricpipeline.telemetry.kyma-project.io` CustomResourceDefinition (CRD) is
 kubectl get crd metricpipeline.telemetry.kyma-project.io -o yaml
 ```
 
-## Sample custom resource
+## Sample Custom Resource
 
 The following MetricPipeline object defines a pipeline that integrates into an OTLP backend:
 
@@ -42,7 +42,7 @@ status:
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
 
-## Custom resource parameters
+## Custom Resource Parameters
 
 For details, see the [MetricPipeline specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/telemetry/v1alpha1/metricpipeline_types.go).
 
@@ -63,25 +63,21 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;istio.&#x200b;namespaces**  | object | Describes whether istio-proxy metrics from specific Namespaces are selected. System Namespaces are enabled by default. |
 | **input.&#x200b;istio.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
 | **input.&#x200b;istio.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include metrics from the specified Namespace names only. |
-| **input.&#x200b;istio.&#x200b;namespaces.&#x200b;system**  | boolean | Set to `true` to include the metrics from system Namespaces like kube-system, istio-system, and kyma-system. |
 | **input.&#x200b;otlp**  | object | Configures the collection of push-based metrics that use the OpenTelemetry protocol. |
-| **input.&#x200b;otlp.&#x200b;enabled**  | boolean | If enabled, push-based OTLP metrics are collected. The default is `true`. |
-| **input.&#x200b;otlp.&#x200b;namespaces**  | object | Describes whether push-based OTLP metrics from specific Namespaces are selected. System Namespaces are disabled by default. |
+| **input.&#x200b;otlp.&#x200b;disabled**  | boolean | If disabled, push-based OTLP metrics are not collected. The default is `false`. |
+| **input.&#x200b;otlp.&#x200b;namespaces**  | object | Describes whether push-based OTLP metrics from specific Namespaces are selected. System Namespaces are enabled by default. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include metrics from the specified Namespace names only. |
-| **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;system**  | boolean | Set to `true` to include the metrics from system Namespaces like kube-system, istio-system, and kyma-system. |
 | **input.&#x200b;prometheus**  | object | Configures Prometheus scraping. |
 | **input.&#x200b;prometheus.&#x200b;enabled**  | boolean | If enabled, Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`. |
 | **input.&#x200b;prometheus.&#x200b;namespaces**  | object | Describes whether Prometheus metrics from specific Namespaces are selected. System Namespaces are disabled by default. |
 | **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
 | **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include metrics from the specified Namespace names only. |
-| **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;system**  | boolean | Set to `true` to include the metrics from system Namespaces like kube-system, istio-system, and kyma-system. |
 | **input.&#x200b;runtime**  | object | Configures runtime scraping. |
 | **input.&#x200b;runtime.&#x200b;enabled**  | boolean | If enabled, workload-related Kubernetes metrics are scraped. The default is `false`. |
 | **input.&#x200b;runtime.&#x200b;namespaces**  | object | Describes whether workload-related Kubernetes metrics from specific Namespaces are selected. System Namespaces are disabled by default. |
 | **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
 | **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include metrics from the specified Namespace names only. |
-| **input.&#x200b;runtime.&#x200b;namespaces.&#x200b;system**  | boolean | Set to `true` to include the metrics from system Namespaces like kube-system, istio-system, and kyma-system. |
 | **output**  | object | Configures the metric gateway. |
 | **output.&#x200b;otlp** (required) | object | Defines an output using the OpenTelemetry protocol. |
 | **output.&#x200b;otlp.&#x200b;authentication**  | object | Defines authentication options for the OTLP output |

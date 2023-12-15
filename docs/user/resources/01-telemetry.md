@@ -6,7 +6,7 @@ The `telemetry.operator.kyma-project.io` CustomResourceDefinition (CRD) is a det
 kubectl get crd telemetry.operator.kyma-project.io -o yaml
 ```
 
-## Sample custom resource
+## Sample Custom Resource
 
 The following Telemetry object defines a module`:
 

@@ -21,6 +21,7 @@ func TestApplyAgentResources(t *testing.T) {
 	cfg := "dummy otel collector config"
 
 	agentConfig := &AgentConfig{
+		allowedPorts: []int32{5555, 6666},
 		Config: Config{
 			BaseName:        name,
 			Namespace:       namespace,
@@ -74,6 +75,8 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, "[{\"name\": \"istio-certs\", \"mountPath\": \"/etc/istio-output-certs\"}]", podAnnotations["sidecar.istio.io/userVolumeMount"])
 		require.Equal(t, "", podAnnotations["traffic.sidecar.istio.io/includeInboundPorts"])
 		require.Equal(t, "4317", podAnnotations["traffic.sidecar.istio.io/includeOutboundPorts"])
+		require.Equal(t, "8888", podAnnotations["traffic.sidecar.istio.io/excludeInboundPorts"])
+		require.Equal(t, "15090", podAnnotations["traffic.sidecar.istio.io/excludeOutboundPorts"])
 
 		//collector container
 		require.Len(t, ds.Spec.Template.Spec.Containers, 1)
@@ -175,7 +178,7 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Len(t, np.Spec.Ingress, 1)
 		require.Len(t, np.Spec.Ingress[0].From, 1)
 		require.Equal(t, np.Spec.Ingress[0].From[0].IPBlock.CIDR, "0.0.0.0/0")
-		require.Len(t, np.Spec.Ingress[0].Ports, 5)
+		require.Len(t, np.Spec.Ingress[0].Ports, 2)
 	})
 
 	t.Run("should create metrics service", func(t *testing.T) {
@@ -195,6 +198,7 @@ func TestApplyAgentResources(t *testing.T) {
 		}, svc.Spec.Selector)
 		require.Equal(t, map[string]string{
 			"prometheus.io/port":   "8888",
+			"prometheus.io/scheme": "http",
 			"prometheus.io/scrape": "true",
 		}, svc.Annotations)
 		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)

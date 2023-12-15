@@ -1,7 +1,6 @@
-
 # Kyma Telemetry Module
 
-## What is Telemetry?
+## What Is Telemetry?
 
 Fundamentally, ["Observability"](https://opentelemetry.io/docs/concepts/observability-primer/) is a measure of how well the application's external outputs can reflect the internal states of single components. The insights that an application and the surrounding infrastructure expose are displayed in the form of metrics, traces, and logs - collectively, that's called "telemetry" or ["signals"](https://opentelemetry.io/docs/concepts/signals/). These can be exposed by employing modern instrumentation.
 
@@ -14,7 +13,7 @@ Fundamentally, ["Observability"](https://opentelemetry.io/docs/concepts/observab
 
 Kyma's Telemetry module focuses exactly on the aspects of instrumentation, collection, and shipment that happen in the runtime and explicitly defocuses on backends.
 
-> **TIP:** An enterprise-grade setup demands a central solution outside the cluster, so we recommend in-cluster solutions only for testing purposes. If you want to install lightweight in-cluster backends for demo or development purposes, check the [Telemetry tutorials](05-tutorials.md).
+> **TIP:** An enterprise-grade setup demands a central solution outside the cluster, so we recommend in-cluster solutions only for testing purposes. If you want to install lightweight in-cluster backends for demo or development purposes, check the [Telemetry integration guides](#integration-guides).
 
 ## Features
 
@@ -23,7 +22,7 @@ To support telemetry for your applications, Kyma's Telemetry module provides the
 - Tooling for collection, filtering, and shipment: Based on the [Open Telemetry Collector](https://opentelemetry.io/docs/collector/) and [Fluent Bit](https://fluentbit.io/), you can configure basic pipelines to filter and ship telemetry data.
 - Integration in a vendor-neutral way to a vendor-specific observability system (traces and metrics only): Based on the [OpenTelemetry protocol (OTLP)](https://opentelemetry.io/docs/reference/specification/protocol/), you can integrate backend systems.
 - Guidance for the instrumentation (traces and metrics only): Based on [Open Telemetry](https://opentelemetry.io/), you get community samples on how to instrument your code using the [Open Telemetry SDKs](https://opentelemetry.io/docs/instrumentation/) in nearly every programming language.
-- [Enriching](#automatic-telemetry-enrichment) telemetry data by automatically adding common attributes (traces and metrics only). This is done in compliance with established semantic conventions, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis.
+- [Enriching](gateways.md#data-enrichment) telemetry data by automatically adding common attributes (traces and metrics only). This is done in compliance with established semantic conventions, ensuring that the enriched data adheres to industry best practices and is more meaningful for analysis.
 - Opt-out from features for advanced scenarios: At any time, you can opt out for each data type, and use custom tooling to collect and ship the telemetry data.
 - SAP BTP as first-class integration: Integration into BTP Observability services is prioritized.
 
@@ -41,7 +40,7 @@ Currently, logs are based on the Fluent Bit protocol. If you're curious about th
 
 ### Telemetry Manager
 
-Kyma's Telemetry module ships Telemetry Manager as its core component. Telemetry Manager is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that implements the Kubernetes controller pattern and manages the whole lifecycle of all other components covered in the Telemetry module. Telemetry Manager watches for the user-created Kubernetes resources: LogPipeline, TracePipeline, and MetricPipeline (Experimental). In these resources, you specify what data of a signal type to collect and where to ship it.
+Kyma's Telemetry module ships Telemetry Manager as its core component. Telemetry Manager is a Kubernetes [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) that implements the Kubernetes controller pattern and manages the whole lifecycle of all other components covered in the Telemetry module. Telemetry Manager watches for the user-created Kubernetes resources: LogPipeline, TracePipeline, and MetricPipeline. In these resources, you specify what data of a signal type to collect and where to ship it.
 If Telemetry Manager detects a configuration, it rolls out the relevant components on demand.
 
 For more information, see [Telemetry Manager](01-manager.md).
@@ -72,6 +71,16 @@ The metric gateway and agent are based on an [OTel Collector](https://openteleme
 
 For more information, see [Metrics](04-metrics.md) and [Gateways](gateways.md).
 
+## Integration Guides
+
+With the Telemetry module you can collect telemetry data and ship the data to backends. For details, read the following guides:
+
+- [OpenTelemetry Demo App](integration/opentelemetry-demo/README.md)
+- [SAP Cloud Logging](integration/sap-cloud-logging/README.md)
+- [Dynatrace](integration/dynatrace/README.md)
+- [Loki](integration/loki/README.md)
+- [Jaeger](integration/jaeger/README.md)
+
 ## API / Custom Resource Definitions
 
 The API of the Telemetry module is based on Kubernetes Custom Resource Definitions (CRD), which extend the Kubernetes API with custom additions. To inspect the specification of the Telemetry module API, see:
@@ -80,3 +89,21 @@ The API of the Telemetry module is based on Kubernetes Custom Resource Definitio
 - [LogPipeline CRD](resources/02-logpipeline.md)
 - [TracePipeline CRD](resources/04-tracepipeline.md)
 - [MetricPipeline CRD](resources/05-metricpipeline.md)
+
+## Resource Usage
+
+When using the module without further API usage, the Telemetry Manager is running with a footprint of:
+- Minimal   5M Mem / 0.01 CPU
+- Maximal 100M Mem / 0.10 CPU
+
+Activation of the first LogPipeline causes the deployment of the log agent running an instance per Node:
+- Per node minimal   50M Mem / 0.1 CPU
+- Per node Maximal 1000M Mem / 1.0 CPU
+
+Activation of the first TracePipeline causes the deployment of the trace gateway running with two replicas:
+- 2 * minimal  250M Mem / 0.2 CPU
+- 2 * Maximal 2000M Mem / 1.2 CPU
+
+Activation of the first MetricPipeline causes the deployment of the metric gateway running with 2 replicas and the metric agent running per Node:
+- 2 * minimal   30M Mem / 0.01 CPU + per node minimal   50M Mem / 0.01 CPU
+- 2 * Maximal 1000M Mem / 1.00 CPU + per node maximal 1200M Mem / 1.00 CPU

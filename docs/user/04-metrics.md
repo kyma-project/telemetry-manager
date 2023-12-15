@@ -1,7 +1,5 @@
 # Metrics
 
-> **NOTE:** The feature is not available yet. To understand the current progress, watch this [epic](https://github.com/kyma-project/kyma/issues/13079).
-
 Observability is all about exposing the internals of the components belonging to an distributed application and making that data analysable at a central place.
 While application logs and traces are usually providing request-oriented data, metrics are aggregated statistics exposed by a component to reflect the internal state. Typical statistics like the amount of processed requests, or the amount of registered users, can be very useful to introspect the current state and also the health of a component. Also, you can define proactive and reactive alerts if metrics are about to reach thresholds, or if they already passed thresholds.
 
@@ -95,7 +93,7 @@ spec:
 
 <!-- tabs:end -->
 
-### Step 2a: Add authentication details from plain text
+### Step 2a: Add Authentication Details From Plain Text
 
 To integrate with external systems, you must configure authentication details. At the moment, mutual TLS (mTLS), Basic Authentication and custom headers are supported.
 
@@ -144,7 +142,7 @@ spec:
             value: myPwd
 ```
 
-#### **Token-based with custom headers**
+#### **Add Authentication Details From Plain Text**
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -162,7 +160,7 @@ spec:
 ```
 
 <!-- tabs:end -->
-### Step 2b: Add authentication details from Secrets
+### Step 2b: Add Authentication Details From Secrets
 
 Integrations into external systems usually need authentication details dealing with sensitive data. To handle that data properly in Secrets, MetricsPipeline supports the reference of Secrets.
 
@@ -229,7 +227,7 @@ spec:
                 key: password
 ```
 
-#### **Token-based with custom headers**
+#### **Token-Based With Custom Headers**
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -252,7 +250,7 @@ spec:
 
 <!-- tabs:end -->
 
-The related Secret must have the referenced name, must be located in the referenced Namespace, and must contain the mapped key as in the following example:
+The related Secret must have the referenced name, must be located in the referenced namespace, and must contain the mapped key as in the following example:
 
 ```yaml
 kind: Secret
@@ -272,7 +270,7 @@ stringData:
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
 If you use a Secret owned by the [SAP BTP Service Operator](https://github.com/SAP/sap-btp-service-operator), you can configure an automated rotation using a `credentialsRotationPolicy` with a specific `rotationFrequency` and don’t have to intervene manually.
 
-### Step 4: Activate Prometheus-based metrics
+### Step 4: Activate Prometheus-Based Metrics
 
 > **NOTE:** For the following approach, you must have instrumented your application using a library like the [Prometheus client library](https://prometheus.io/docs/instrumenting/clientlibs/), with a port in your workload exposed serving as a Prometheus metrics endpoint.
 
@@ -307,7 +305,7 @@ Put the following annotations either to a Service that resolves your metrics por
 
 > **NOTE:** The agent can scrape endpoints even if the workload is a part of the Istio service mesh and accepts mTLS communication. However, there's a constraint: For scraping through HTTPS, Istio must configure the workload using 'STRICT' mTLS mode. Without 'STRICT' mTLS mode, you can set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation. For related troubleshooting, see [Log entry: Failed to scrape Prometheus endpoint](#log-entry-failed-to-scrape-prometheus-endpoint).
 
-### Step 5: Activate runtime metrics
+### Step 5: Activate Runtime Metrics
 
 To enable collection of runtime metrics for your Pods, define a MetricPipeline that has the `runtime` section enabled as input:
 
@@ -328,7 +326,7 @@ spec:
 
 The agent configures the [kubletstatsreceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/kubeletstatsreceiver) for the metric groups `pod` and `container`. With that, [system metrics](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/documentation.md) related to containers and pods get collected.
 
-### Step 6: Activate Istio metrics
+### Step 6: Activate Istio Metrics
 
 To enable collection of Istio metrics for your Pods, define a MetricPipeline that has the `istio` section enabled as input:
 
@@ -349,8 +347,9 @@ spec:
 
 The agent will start pulling all [Istio metrics](https://istio.io/latest/docs/reference/config/metrics/) from Istio sidecars.
 
-### Step 7: Deactivate OTLP metrics
-To drop the push-based OTLP metrics that are received by the Metric gateway, define a MetricPipeline that has the `otlp` section disabled as an input: 
+### Step 7: Deactivate OTLP Metrics
+
+To drop the push-based OTLP metrics that are received by the Metric gateway, define a MetricPipeline that has the `otlp` section disabled as an input:
 
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -362,17 +361,21 @@ spec:
     istio:
       enabled: true
     otlp:
-      enabled: false
+      disabled: true
   output:
     otlp:
       endpoint:
         value: https://backend.example.com:4317
 ```
-The agent starts pulling all Istio metrics from Istio sidecars, and the push-based OTLP metrics are dropped. Note that the `otlp` input is enabled by default.
-### Step 8: Add Filters
-To filter metrics by Namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the Namespaces from which metrics are collected or the Namespaces from which metrics are dropped, or choose to collect metrics from all Namespaces including the system Namespaces `kube-system`, `istio-system` and `kyma-system`. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md). 
 
-The following example collects runtime metrics only from the `foo` and `bar` Namespaces:
+The agent starts pulling all Istio metrics from Istio sidecars, and the push-based OTLP metrics are dropped. Note that the `otlp` input is enabled by default.
+
+### Step 8: Add Filters
+
+To filter metrics by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the namespaces from which metrics are collected or the namespaces from which metrics are dropped. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
+
+The following example collects runtime metrics only from the `foo` and `bar` namespaces:
+
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
@@ -392,8 +395,8 @@ spec:
         value: https://backend.example.com:4317
 ```
 
+The following example collects runtime metrics from all namespaces except `foo` and `bar` namespaces:
 
-The following example collects runtime metrics from all Namespaces except `foo` and `bar` Namespaces:
 ```yaml
 apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: MetricPipeline
@@ -412,25 +415,8 @@ spec:
       endpoint:
         value: https://backend.example.com:4317
 ```
-Note that the metrics from system Namespaces are dropped by default for the `prometheus`, `runtime`, and `otlp` inputs. However, the metrics from system Namespaces are collected by default for the `istio` input.
 
-The following example collects runtime metrics from all Namespaces including system Namespaces:
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
-  input:
-    runtime:
-      enabled: true
-      namespaces:
-        system: true
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
-```
+Note that metrics from system namespaces are excluded by default when a namespace selector for the `prometheus` or `runtime` input is not defined. However, for the `istio` and `otlp` input, metrics from system namespaces are included by default if the namespace selector is not defined.
 
 
 ### Step 9: Deploy the Pipeline
@@ -481,27 +467,26 @@ The default metric gateway setup has a maximum throughput of 34K metric data poi
 
 The metric agent setup has a maximum throughput of 14K metric data points/sec per instance. If more data must be ingested, it is refused. If a metric data endpoint emits more than 50.000 metric data points per scrape loop, the metric agent refuses all the data.
 
+### Load Balancing With Istio
 
-### Load Balancing with Istio
-
-To assure availability, the metric gateway runs with multiple instances. If you want to increase the maximum throughput, use manual scaling and enter a higher number of instances. 
+To assure availability, the metric gateway runs with multiple instances. If you want to increase the maximum throughput, use manual scaling and enter a higher number of instances.
 By design, the connections to the gateway are long-living connections (because OTLP is based on gRPC and HTTP/2). For optimal scaling of the gateway, the clients or applications must balance the connections across the available instances, which is automatically achieved if you use an Istio sidecar. If your application has no Istio sidecar, the data is always sent to one instance of the gateway.
 
-### Unavailability of output
+### Unavailability of Output
 
 For up to 5 minutes, a retry for data is attempted when the destination is unavailable. After that, data is dropped.
 
-### No guaranteed delivery
+### No Guaranteed Delivery
 
 The used buffers are volatile. If the gateway or agent instances crash, metric data can be lost.
 
-### Multiple MetricPipeline support
+### Multiple MetricPipeline Support
 
 Up to three MetricPipeline resources at a time are supported.
 
 ## Troubleshooting
 
-### No metrics arrive at the destination
+### No Metrics Arrive at the Destination
 
 Symptom: No metrics arrive at the destination.
 
@@ -512,7 +497,7 @@ Remedy:
 1. To check the `telemetry-metric-gateway` Pods for error logs, call `kubectl logs -n kyma-system {POD_NAME}`.
 2. Fix the errors.
 
-### Only Istio metrics arrive at the destination
+### Only Istio Metrics Arrive at the Destination
 
 Symptom: Custom metrics don't arrive at the destination, but Istio metrics do.
 
@@ -524,7 +509,7 @@ Remedy:
 2. Investigate whether it is compatible with the OTel collector version.
 3. If required, upgrade to a supported SDK version.
 
-### Log entry: Failed to scrape Prometheus endpoint
+### Log Entry: Failed to Scrape Prometheus Endpoint
 
 Symptom: Custom metrics don't arrive at the destination and the OTel Collector produces log entries "Failed to scrape Prometheus endpoint":
 
@@ -542,7 +527,7 @@ Remedy: You can either set up 'STRICT' mTLS mode or HTTP scraping:
 
 Configure the workload using 'STRICT' mTLS mode (for example, by applying a corresponding PeerAuthentication).
 
-#### **HTTP scraping**
+#### **HTTP Scraping**
 
 Set up scraping through HTTP by applying the `prometheus.io/scheme=http` annotation.
 

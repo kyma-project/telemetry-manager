@@ -43,10 +43,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, telemetry *operatorv1alph
 }
 
 func (r *Reconciler) enabledHealthCheckers() []ComponentHealthChecker {
-	if r.config.Metrics.Enabled {
-		return []ComponentHealthChecker{r.healthCheckers.logs, r.healthCheckers.metrics, r.healthCheckers.traces}
-	}
-	return []ComponentHealthChecker{r.healthCheckers.logs, r.healthCheckers.traces}
+	return []ComponentHealthChecker{r.healthCheckers.logs, r.healthCheckers.metrics, r.healthCheckers.traces}
 }
 
 func (r *Reconciler) updateComponentCondition(ctx context.Context, checker ComponentHealthChecker, telemetry *operatorv1alpha1.Telemetry, telemetryInDeletion bool) error {

@@ -78,7 +78,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err := r.Get(ctx, req.NamespacedName, &metricPipeline); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	telemetryv1alpha1.SetMetricPipelineDefaults(&metricPipeline)
 
 	return ctrl.Result{}, r.doReconcile(ctx, &metricPipeline)
 }
@@ -110,9 +109,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
 	}
-	for i := range allPipelinesList.Items {
-		telemetryv1alpha1.SetMetricPipelineDefaults(&allPipelinesList.Items[i])
-	}
+
 	deployablePipelines, err := getDeployableMetricPipelines(ctx, allPipelinesList.Items, r, lock)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
@@ -160,9 +157,11 @@ func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv
 }
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
-	return (pipeline.Spec.Input.Runtime.Enabled != nil && *pipeline.Spec.Input.Runtime.Enabled) ||
-		(pipeline.Spec.Input.Prometheus.Enabled != nil && *pipeline.Spec.Input.Prometheus.Enabled) ||
-		(pipeline.Spec.Input.Istio.Enabled != nil && *pipeline.Spec.Input.Istio.Enabled)
+	input := pipeline.Spec.Input
+	isRuntimeInputEnabled := input.Runtime != nil && input.Runtime.Enabled
+	isPrometheusInputEnabled := input.Prometheus != nil && input.Prometheus.Enabled
+	isIstioInputEnabled := input.Istio != nil && input.Istio.Enabled
+	return isRuntimeInputEnabled || isPrometheusInputEnabled || isIstioInputEnabled
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
@@ -183,10 +182,16 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 
+	allowedPorts := getGatewayPorts()
+	if isIstioActive {
+		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
+	}
+
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig(fmt.Sprintf("%d", ports.Metrics), isIstioActive)); err != nil {
+			WithIstioConfig(fmt.Sprintf("%d", ports.Metrics), isIstioActive).
+			WithAllowedPorts(allowedPorts)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}
 
@@ -205,9 +210,16 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 		return fmt.Errorf("failed to marshal collector config: %w", err)
 	}
 
+	allowedPorts := getAgentPorts()
+	if isIstioActive {
+		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
+
+	}
+
 	if err := otelcollector.ApplyAgentResources(ctx,
 		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
-		r.config.Agent.WithCollectorConfig(string(agentConfigYAML))); err != nil {
+		r.config.Agent.WithCollectorConfig(string(agentConfigYAML)).
+			WithAllowedPorts(allowedPorts)); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)
 	}
 
@@ -237,4 +249,20 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 		}
 	}
 	return defaultReplicaCount
+}
+
+func getAgentPorts() []int32 {
+	return []int32{
+		ports.Metrics,
+		ports.HealthCheck,
+	}
+}
+
+func getGatewayPorts() []int32 {
+	return []int32{
+		ports.Metrics,
+		ports.HealthCheck,
+		ports.OTLPHTTP,
+		ports.OTLPGRPC,
+	}
 }

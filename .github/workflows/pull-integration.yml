@@ -14,6 +14,27 @@ on:
   workflow_dispatch:
 
 jobs:
+  e2e-metrics-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare test
+        uses: "./.github/template/prepare-test"
+        with:
+          release: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run tests
+        run: make run-e2e-test-metrics
+
+      - name: Finalize test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
+
   e2e-metrics:
     runs-on: ubuntu-latest
     steps:
