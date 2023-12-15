@@ -13,12 +13,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/extslices"
 )
 
-var metricPipelineReasonPrefixMap = map[string]string{
-	conditions.TypeMetricGatewayHealthy:   "MetricGateway",
-	conditions.TypeMetricAgentHealthy:     "MetricAgent",
-	conditions.TypeConfigurationGenerated: "MetricPipelineConfiguration",
-}
-
 type metricComponentsChecker struct {
 	client client.Client
 }
@@ -31,8 +25,17 @@ func (m *metricComponentsChecker) Check(ctx context.Context, telemetryInDeletion
 	}
 
 	reason := m.determineReason(metricPipelines.Items, telemetryInDeletion)
+	status := m.determineConditionStatus(reason)
 	message := m.createMessageForReason(metricPipelines.Items, reason)
-	return m.createConditionFromReason(reason, message), nil
+	reasonWithPrefix := m.addReasonPrefix(reason)
+
+	const conditionType = "MetricComponentsHealthy"
+	return &metav1.Condition{
+		Type:    conditionType,
+		Status:  status,
+		Reason:  reasonWithPrefix,
+		Message: message,
+	}, nil
 }
 
 func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPipeline, telemetryInDeletion bool) string {
@@ -44,17 +47,31 @@ func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPip
 		return conditions.ReasonResourceBlocksDeletion
 	}
 
+	if reason := m.firstUnhealthyPipelineReason(pipelines); reason != "" {
+		return reason
+	}
+
+	return conditions.ReasonMetricComponentsReady
+}
+
+func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []v1alpha1.MetricPipeline) string {
 	condTypes := []string{conditions.TypeMetricAgentHealthy, conditions.TypeMetricGatewayHealthy, conditions.TypeConfigurationGenerated}
 	for _, pipeline := range pipelines {
 		for _, condType := range condTypes {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if cond != nil && cond.Status == metav1.ConditionFalse {
-				return metricPipelineReasonPrefixMap[cond.Type] + cond.Reason
+				return cond.Reason
 			}
 		}
 	}
+	return ""
+}
 
-	return metricPipelineReasonPrefixMap[conditions.TypeMetricGatewayHealthy] + conditions.ReasonMetricGatewayDeploymentReady
+func (m *metricComponentsChecker) determineConditionStatus(reason string) metav1.ConditionStatus {
+	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonMetricComponentsReady {
+		return metav1.ConditionTrue
+	}
+	return metav1.ConditionFalse
 }
 
 func (m *metricComponentsChecker) createMessageForReason(pipelines []v1alpha1.MetricPipeline, reason string) string {
@@ -70,20 +87,14 @@ func (m *metricComponentsChecker) createMessageForReason(pipelines []v1alpha1.Me
 	})
 }
 
-func (m *metricComponentsChecker) createConditionFromReason(reason, message string) *metav1.Condition {
-	conditionType := "MetricComponentsHealthy"
-	if reason == conditions.ReasonMetricGatewayDeploymentReady || reason == conditions.ReasonNoPipelineDeployed {
-		return &metav1.Condition{
-			Type:    conditionType,
-			Status:  metav1.ConditionTrue,
-			Reason:  reason,
-			Message: message,
-		}
+func (m *metricComponentsChecker) addReasonPrefix(reason string) string {
+	switch reason {
+	case conditions.ReasonMetricGatewayDeploymentReady:
+	case conditions.ReasonMetricGatewayDeploymentNotReady:
+		return "MetricGateway" + reason
+	case conditions.ReasonMetricAgentDaemonSetReady:
+	case conditions.ReasonMetricAgentDaemonSetNotReady:
+		return "MetricAgent" + reason
 	}
-	return &metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionFalse,
-		Reason:  reason,
-		Message: message,
-	}
+	return reason
 }
