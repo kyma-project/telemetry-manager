@@ -115,6 +115,32 @@ linters-settings:
         alias: telemetrycontrollers
       - pkg: github.com/kyma-project/telemetry-manager/webhook/logparser
         alias: logparserwebhook
+      - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline
+        alias: logpipelinewebhook
+      - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation
+        alias: logpipelinevalidation
+      - pkg: net/url
+        alias: neturl
+      - pkg: go.opentelemetry.io/otel/sdk/trace
+        alias: tracesdk
+      - pkg: go.opentelemetry.io/otel/trace
+        alias: oteltrace
+      - pkg: net/url
+        alias: neturl
+      - pkg: k8s.io/apimachinery/pkg/api/equality
+        alias: apiequality
+      - pkg: k8s.io/apimachinery/pkg/labels
+        alias: k8slabels
+      - pkg: github.com/kyma-project/telemetry-manager/internal/kubernetes
+        alias: utils
+      - pkg: github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder
+        alias: configbuilder
+      - pkg: github.com/kyma-project/telemetry-manager/internal/resources/common
+        alias: commonresources
+      - pkg: k8s.io/api/batch/v1
+        alias: batchv1
+      - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation/mocks
+        alias: logpipelinevalidationmocks
 
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.
