@@ -70,14 +70,11 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&v1alpha1.TracePipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapTracePipeline),
-			builder.WithPredicates(setup.CreateOrUpdateOrDelete()))
-
-	if r.config.Metrics.Enabled {
-		b.Watches(
+			builder.WithPredicates(setup.CreateOrUpdateOrDelete())).
+		Watches(
 			&v1alpha1.MetricPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapMetricPipeline),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete()))
-	}
 
 	return b.Complete(r)
 }
