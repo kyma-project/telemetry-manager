@@ -9,7 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
+	kitlogpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -31,12 +31,12 @@ var _ = Describe("Logs Validating Webhook", Label("logging"), Ordered, func() {
 		})
 
 		It("Should reject a logpipeline with unknown custom filter", func() {
-			logPipeline := kitlog.NewPipeline("unknown-custom-filter-pipeline").WithStdout().WithFilter("Name unknown")
+			logPipeline := kitlogpipeline.NewPipeline("unknown-custom-filter-pipeline").WithStdout().WithFilter("Name unknown")
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipeline.K8sObject())).ShouldNot(Succeed())
 		})
 
 		It("Should reject a logpipeline with denied custom filter", func() {
-			logPipeline := kitlog.NewPipeline("denied-custom-filter-pipeline").WithStdout().WithFilter("Name kubernetes")
+			logPipeline := kitlogpipeline.NewPipeline("denied-custom-filter-pipeline").WithStdout().WithFilter("Name kubernetes")
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipeline.K8sObject())).ShouldNot(Succeed())
 		})
 

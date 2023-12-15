@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -45,7 +45,7 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		metricPipeline := kitmetric.NewPipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
+		metricPipeline := kitmetricpipeline.NewPipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			Persistent(isOperational())
 		pipelineName = metricPipeline.Name()

@@ -12,7 +12,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
-	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -44,12 +44,12 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
 		telemetryIstiofiedExportURL = mockIstiofiedBackend.TelemetryExportURL(proxyClient)
 
-		metricPipeline := kitmetric.NewPipeline("pipeline-with-otlp-input-enabled").
+		metricPipeline := kitmetricpipeline.NewPipeline("pipeline-with-otlp-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			OtlpInput(true)
 		objs = append(objs, metricPipeline.K8sObject())
 
-		metricPipelineIstiofiedBackend := kitmetric.NewPipeline("pipeline-with-otlp-input-enabled-with-istiofied-backend").
+		metricPipelineIstiofiedBackend := kitmetricpipeline.NewPipeline("pipeline-with-otlp-input-enabled-with-istiofied-backend").
 			WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRef()).
 			OtlpInput(true)
 
