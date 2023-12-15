@@ -26,7 +26,7 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
     - [Create Access Token](#create-access-token)
     - [Create Secret](#create-secret)
     - [Ingest Traces](#ingest-traces)
-    - [Ingest Metrics (Experimental)](#ingest-metrics-experimental)
+    - [Ingest Metrics](#ingest-metrics)
 
 ## Prerequisistes
 
@@ -151,7 +151,7 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
 
 1. To find traces from your Kyma cluster in the Dynatrace UI, go to **Applications & Microservices** > **Distributed traces**.
 
-### Ingest Metrics (Experimental)
+### Ingest Metrics
 
 To collect custom metrics, you usually use the [Dynatrace annotation approach](https://docs.dynatrace.com/docs/platform-modules/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics), because the Dynatrace OTLP integration is [limited](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/ingest/migration-guide-otlp-exporter#migrate-collector-configuration). As long as your workload is conform to the limitations (not exporting histograms, using delta aggregation temporality), you can use the metric functionality to push OTLP metrics to Dynatrace. In this case, the Prometheus feature of the MetricPipeline cannot be used because it hits the limitations by design.
 

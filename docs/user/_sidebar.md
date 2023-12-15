@@ -1,3 +1,4 @@
+<!-- markdown-link-check-disable -->
 - [Back to Kyma Home](/)
 - [Kyma Telemetry Module](/telemetry-manager/user/README.md)
 - [Telemetry Manager](/telemetry-manager/user/01-manager.md)
@@ -16,3 +17,4 @@
   - [LogPipeline](/telemetry-manager/user/resources/02-logpipeline.md)
   - [TracePipeline](/telemetry-manager/user/resources/04-tracepipeline.md)
   - [MetricPipeline](/telemetry-manager/user/resources/05-metricpipeline.md)
+<!-- markdown-link-check-enable -->
