@@ -140,25 +140,6 @@ func (b *MetricPipelineBuilder) WithBasicAuth(user, password string) *MetricPipe
 	return b
 }
 
-//func MetricPendingCondition(reason string) telemetryv1alpha1.MetricPipelineCondition {
-//	return telemetryv1alpha1.MetricPipelineCondition{
-//		Reason: reason,
-//		Type:   telemetryv1alpha1.MetricPipelinePending,
-//	}
-//}
-//
-//func MetricRunningCondition() telemetryv1alpha1.MetricPipelineCondition {
-//	return telemetryv1alpha1.MetricPipelineCondition{
-//		Reason: conditions.ReasonMetricGatewayDeploymentReady,
-//		Type:   telemetryv1alpha1.MetricPipelineRunning,
-//	}
-//}
-
-//func (b *MetricPipelineBuilder) WithStatusConditions(conditions ...telemetryv1alpha1.MetricPipelineCondition) *MetricPipelineBuilder {
-//	b.conditions = conditions
-//	return b
-//}
-
 func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 	name := b.name
 	if name == "" {
@@ -194,9 +175,6 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 				},
 			},
 		},
-		//Status: telemetryv1alpha1.MetricPipelineStatus{
-		//	Conditions: b.conditions,
-		//},
 	}
 
 	return pipeline
