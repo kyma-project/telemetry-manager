@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -323,14 +322,8 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				},
 				Input: telemetryv1alpha1.MetricPipelineInput{
-					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
-						Enabled: pointer.Bool(true),
-					},
-					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-						Enabled: pointer.Bool(false),
-					},
-					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-						Enabled: pointer.Bool(false),
+					Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: true,
 					},
 				},
 			},
@@ -373,14 +366,8 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				},
 				Input: telemetryv1alpha1.MetricPipelineInput{
-					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
-						Enabled: pointer.Bool(true),
-					},
-					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-						Enabled: pointer.Bool(false),
-					},
-					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-						Enabled: pointer.Bool(false),
+					Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: true,
 					},
 				},
 			},
@@ -424,14 +411,8 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				},
 				Input: telemetryv1alpha1.MetricPipelineInput{
-					Runtime: telemetryv1alpha1.MetricPipelineRuntimeInput{
-						Enabled: pointer.Bool(true),
-					},
-					Prometheus: telemetryv1alpha1.MetricPipelinePrometheusInput{
-						Enabled: pointer.Bool(false),
-					},
-					Istio: telemetryv1alpha1.MetricPipelineIstioInput{
-						Enabled: pointer.Bool(false),
+					Runtime: &telemetryv1alpha1.MetricPipelineRuntimeInput{
+						Enabled: true,
 					},
 				},
 			},

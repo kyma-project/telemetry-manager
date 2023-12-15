@@ -363,7 +363,7 @@ spec:
     istio:
       enabled: true
     otlp:
-      enabled: false
+      disabled: true
   output:
     otlp:
       endpoint:
@@ -374,7 +374,7 @@ The agent starts pulling all Istio metrics from Istio sidecars, and the push-bas
 
 ### Step 8: Add Filters
 
-To filter metrics by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the namespaces from which metrics are collected or the namespaces from which metrics are dropped, or choose to collect metrics from all namespaces including the system namespaces `kube-system`, `istio-system` and `kyma-system`. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
+To filter metrics by namespaces, define a MetricPipeline that has the `namespaces` section defined in one of the inputs. For example, you can specify the namespaces from which metrics are collected or the namespaces from which metrics are dropped. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
 
 The following example collects runtime metrics only from the `foo` and `bar` namespaces:
 
@@ -418,26 +418,8 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-Note that the metrics from system namespaces are dropped by default for the `prometheus`, `runtime`, and `otlp` inputs. However, the metrics from system namespaces are collected by default for the `istio` input.
+Note that metrics from system namespaces are excluded by default when a namespace selector for the `prometheus` or `runtime` input is not defined. However, for the `istio` and `otlp` input, metrics from system namespaces are included by default if the namespace selector is not defined.
 
-The following example collects runtime metrics from all namespaces including system namespaces:
-
-```yaml
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: MetricPipeline
-metadata:
-  name: backend
-spec:
-  input:
-    runtime:
-      enabled: true
-      namespaces:
-        system: true
-  output:
-    otlp:
-      endpoint:
-        value: https://backend.example.com:4317
-```
 
 ### Step 9: Deploy the Pipeline
 

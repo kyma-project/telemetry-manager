@@ -156,6 +156,8 @@ spec:
       enabled: true
     prometheus:
       enabled: true
+    istio:
+      enabled: true
   output:
     otlp:
       endpoint:
