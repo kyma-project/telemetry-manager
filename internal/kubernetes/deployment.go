@@ -9,7 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8slabels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -28,7 +28,7 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 	var allReplicaSets appsv1.ReplicaSetList
 
 	listOps := &client.ListOptions{
-		LabelSelector: k8slabels.SelectorFromSet(d.Spec.Selector.MatchLabels),
+		LabelSelector: labels.SelectorFromSet(d.Spec.Selector.MatchLabels),
 		Namespace:     d.Namespace,
 	}
 	if err := dp.List(ctx, &allReplicaSets, listOps); err != nil {

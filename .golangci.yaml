@@ -98,22 +98,8 @@ linters-settings:
         alias: istiotypesv1beta1
       - pkg: istio.io/client-go/pkg/apis/security/v1beta1
         alias: istiosecv1beta1
-      - pkg: k8s.io/api/admission/v1
-        alias: admissionv1
-      - pkg: k8s.io/api/admissionregistration/v1
-        alias: admissionregistrationv1
-      - pkg: k8s.io/api/apps/v1
-        alias: appsv1
-      - pkg: k8s.io/api/batch/v1
-        alias: batchv1
-      - pkg: k8s.io/api/core/v1
-        alias: corev1
-      - pkg: k8s.io/api/networking/v1
-        alias: networkingv1
-      - pkg: k8s.io/api/rbac/v1
-        alias: rbacv1
-      - pkg: k8s.io/api/scheduling/v1
-        alias: schedulingv1
+      - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
+        alias: $1$2
       - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
         alias: apiextensionsv1
       - pkg: k8s.io/apimachinery/pkg/api/equality
@@ -122,8 +108,6 @@ linters-settings:
         alias: apierrors
       - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
         alias: metav1
-      - pkg: k8s.io/apimachinery/pkg/labels
-        alias: k8slabels
       - pkg: k8s.io/apimachinery/pkg/util/runtime
         alias: utilruntime
       - pkg: k8s.io/client-go/kubernetes/scheme

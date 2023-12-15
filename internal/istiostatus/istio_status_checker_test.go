@@ -7,12 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestIsIstioActive(t *testing.T) {
-	scheme := scheme.Scheme
+	scheme := clientgoscheme.Scheme
 	_ = apiextensionsv1.AddToScheme(scheme)
 
 	tests := []struct {

@@ -9,7 +9,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -72,7 +72,7 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 
-	scheme := scheme.Scheme
+	scheme := clientgoscheme.Scheme
 	Expect(telemetryv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(operatorv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(istiosecv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
