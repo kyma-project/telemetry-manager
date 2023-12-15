@@ -52,16 +52,16 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	operatorcontrollers "github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
-	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
@@ -479,7 +479,7 @@ func validateFlags() error {
 }
 
 func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.LogPipelineReconciler {
-	config := logpipeline.Config{
+	config := logpipelinereconciler.Config{
 		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
 		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
 		LuaConfigMap:          types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: telemetryNamespace},
@@ -489,7 +489,7 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 		DaemonSet:             types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 		OverrideConfigMap:     types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		PipelineDefaults:      createPipelineDefaults(),
-		DaemonSetConfig: fluentbit.DaemonSetConfig{
+		DaemonSetConfig: logpipelineresources.DaemonSetConfig{
 			FluentBitImage:              fluentBitImageVersion,
 			FluentBitConfigPrepperImage: fluentBitConfigPrepperImageVersion,
 			ExporterImage:               fluentBitExporterVersion,
@@ -503,7 +503,7 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 
 	return telemetrycontrollers.NewLogPipelineReconciler(
 		client,
-		logpipeline.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client}, overridesHandler),
+		logpipelinereconciler.NewReconciler(client, config, &utils.DaemonSetProber{Client: client}, overridesHandler),
 		config)
 }
 
@@ -518,8 +518,8 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 		logparser.NewReconciler(
 			client,
 			config,
-			&kubernetes.DaemonSetProber{Client: client},
-			&kubernetes.DaemonSetAnnotator{Client: client},
+			&utils.DaemonSetProber{Client: client},
+			&utils.DaemonSetAnnotator{Client: client},
 			overridesHandler,
 		),
 		config,
@@ -572,7 +572,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 
 	return telemetrycontrollers.NewTracePipelineReconciler(
 		client,
-		tracepipeline.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overridesHandler),
+		tracepipeline.NewReconciler(client, config, &utils.DeploymentProber{Client: client}, overridesHandler),
 	)
 }
 
@@ -617,7 +617,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,
-		metricpipeline.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, &kubernetes.DaemonSetProber{Client: client}, overridesHandler))
+		metricpipeline.NewReconciler(client, config, &utils.DeploymentProber{Client: client}, &utils.DaemonSetProber{Client: client}, overridesHandler))
 }
 
 func createDryRunConfig() dryrun.Config {
@@ -627,8 +627,8 @@ func createDryRunConfig() dryrun.Config {
 	}
 }
 
-func createPipelineDefaults() builder.PipelineDefaults {
-	return builder.PipelineDefaults{
+func createPipelineDefaults() configbuilder.PipelineDefaults {
+	return configbuilder.PipelineDefaults{
 		InputTag:          "tele",
 		MemoryBufferLimit: fluentBitMemoryBufferLimit,
 		StorageType:       "filesystem",
