@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/setup"
 )
@@ -64,17 +64,17 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
 			builder.WithPredicates(setup.DeleteOrUpdate())).
 		Watches(
-			&v1alpha1.LogPipeline{},
+			&telemetryv1alpha1.LogPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapLogPipeline),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete())).
 		Watches(
-			&v1alpha1.TracePipeline{},
+			&telemetryv1alpha1.TracePipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapTracePipeline),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete()))
 
 	if r.config.Metrics.Enabled {
 		b.Watches(
-			&v1alpha1.MetricPipeline{},
+			&telemetryv1alpha1.MetricPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapMetricPipeline),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete()))
 	}
@@ -96,7 +96,7 @@ func (r *TelemetryReconciler) mapWebhook(ctx context.Context, object client.Obje
 }
 
 func (r *TelemetryReconciler) mapLogPipeline(ctx context.Context, object client.Object) []reconcile.Request {
-	logPipeline, ok := object.(*v1alpha1.LogPipeline)
+	logPipeline, ok := object.(*telemetryv1alpha1.LogPipeline)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to LogPipeline")
 		return nil
@@ -109,7 +109,7 @@ func (r *TelemetryReconciler) mapLogPipeline(ctx context.Context, object client.
 }
 
 func (r *TelemetryReconciler) mapTracePipeline(ctx context.Context, object client.Object) []reconcile.Request {
-	tracePipeline, ok := object.(*v1alpha1.TracePipeline)
+	tracePipeline, ok := object.(*telemetryv1alpha1.TracePipeline)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to TracePipeline")
 		return nil
@@ -122,7 +122,7 @@ func (r *TelemetryReconciler) mapTracePipeline(ctx context.Context, object clien
 }
 
 func (r *TelemetryReconciler) mapMetricPipeline(ctx context.Context, object client.Object) []reconcile.Request {
-	tracePipeline, ok := object.(*v1alpha1.MetricPipeline)
+	tracePipeline, ok := object.(*telemetryv1alpha1.MetricPipeline)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to MetricPipeline")
 		return nil

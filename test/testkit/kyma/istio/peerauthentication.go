@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
 type PeerAuthentication struct {
@@ -23,7 +23,7 @@ func NewPeerAuthentication(name, namespace string) *PeerAuthentication {
 }
 
 func (d *PeerAuthentication) K8sObject(labelOpts ...testkit.OptFunc) *istiosecv1beta1.PeerAuthentication {
-	labels := k8s.ProcessLabelOptions(labelOpts...)
+	labels := kitk8s.ProcessLabelOptions(labelOpts...)
 	workLoadSelector := istiotypesv1beta1.WorkloadSelector{MatchLabels: labels}
 	return &istiosecv1beta1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{Name: d.name, Namespace: d.namespace},

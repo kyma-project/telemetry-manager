@@ -14,7 +14,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
+	configmetricagent "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -195,7 +195,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 
 func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
-	agentConfig := agent.MakeConfig(types.NamespacedName{
+	agentConfig := configmetricagent.MakeConfig(types.NamespacedName{
 		Namespace: r.config.Gateway.Namespace,
 		Name:      r.config.Gateway.OTLPServiceName,
 	}, allPipelines, isIstioActive)

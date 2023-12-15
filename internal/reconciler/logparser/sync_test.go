@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -26,7 +26,7 @@ var (
 
 func TestSyncParsersConfigMapErrorClientErrorReturnsError(t *testing.T) {
 	mockClient := &mocks.Client{}
-	badReqErr := errors.NewBadRequest("")
+	badReqErr := apierrors.NewBadRequest("")
 	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 	mockClient.On("List", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 	sut := syncer{mockClient, testConfig}

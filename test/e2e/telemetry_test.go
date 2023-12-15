@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
@@ -120,17 +120,17 @@ var _ = Describe("Telemetry Module", Label("logging", "tracing", "metrics"), Ord
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 
 			Eventually(func(g Gomega) {
-				var telemetry v1alpha1.Telemetry
+				var telemetry operatorv1alpha1.Telemetry
 				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
-				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateReady))
+				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateReady))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should have Telemetry resource", func() {
 			Eventually(func(g Gomega) {
-				var telemetry v1alpha1.Telemetry
+				var telemetry operatorv1alpha1.Telemetry
 				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
-				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateReady))
+				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateReady))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
@@ -144,11 +144,11 @@ var _ = Describe("Telemetry Module", Label("logging", "tracing", "metrics"), Ord
 			})
 
 			Eventually(func(g Gomega) {
-				var telemetry v1alpha1.Telemetry
+				var telemetry operatorv1alpha1.Telemetry
 				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).Should(Succeed())
 				g.Expect(telemetry.Finalizers).Should(HaveLen(1))
 				g.Expect(telemetry.Finalizers[0]).Should(Equal("telemetry.kyma-project.io/finalizer"))
-				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateWarning))
+				g.Expect(telemetry.Status.State).Should(Equal(operatorv1alpha1.StateWarning))
 				isMetricsEnabled, err := isMetricsEnabled()
 				g.Expect(err).ShouldNot(HaveOccurred())
 				expectedConditions := map[string]metav1.Condition{
@@ -187,7 +187,7 @@ var _ = Describe("Telemetry Module", Label("logging", "tracing", "metrics"), Ord
 			})
 
 			Eventually(func(g Gomega) {
-				var telemetry v1alpha1.Telemetry
+				var telemetry operatorv1alpha1.Telemetry
 				g.Expect(k8sClient.Get(ctx, telemetryKey, &telemetry)).ShouldNot(Succeed())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})

@@ -6,12 +6,12 @@ import (
 	"path/filepath"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
@@ -63,7 +63,7 @@ func (f *fileWriterImpl) writeConfig(ctx context.Context, basePath string) error
 	includeSection := true
 	err = f.client.Get(ctx, f.config.FluentBitConfigMapName, &cm)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			newCm := logpipelineresources.MakeConfigMap(f.config.FluentBitConfigMapName, includeSection)
 			cm = *newCm
 		} else {
@@ -103,7 +103,7 @@ func (f *fileWriterImpl) writeSections(pipeline *telemetryv1alpha1.LogPipeline, 
 		return err
 	}
 
-	sectionsConfig, err := builder.BuildFluentBitConfig(pipeline, f.config.PipelineDefaults)
+	sectionsConfig, err := configbuilder.BuildFluentBitConfig(pipeline, f.config.PipelineDefaults)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (f *fileWriterImpl) writeParsers(ctx context.Context, basePath string) erro
 		return err
 	}
 
-	parsersConfig := builder.BuildFluentBitParsersConfig(&logParsers)
+	parsersConfig := configbuilder.BuildFluentBitParsersConfig(&logParsers)
 	return writeFile(filepath.Join(dynamicParsersDir, "parsers.conf"), parsersConfig)
 }
 
@@ -138,7 +138,7 @@ func (f *fileWriterImpl) writeParsersWithParser(ctx context.Context, basePath st
 	}
 
 	appendOrReplace(&logParsers, parser)
-	parsersConfig := builder.BuildFluentBitParsersConfig(&logParsers)
+	parsersConfig := configbuilder.BuildFluentBitParsersConfig(&logParsers)
 
 	return writeFile(filepath.Join(dynamicParsersDir, "parsers.conf"), parsersConfig)
 }

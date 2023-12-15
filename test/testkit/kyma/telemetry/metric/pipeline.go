@@ -8,7 +8,7 @@ import (
 	"k8s.io/utils/pointer"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
@@ -143,9 +143,9 @@ func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
 }
 
 func (p *Pipeline) K8sObject() *telemetryv1alpha1.MetricPipeline {
-	var labels k8s.Labels
+	var labels kitk8s.Labels
 	if p.persistent {
-		labels = k8s.PersistentLabel
+		labels = kitk8s.PersistentLabel
 	}
 	labels.Version(version)
 
