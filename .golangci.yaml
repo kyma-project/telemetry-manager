@@ -47,7 +47,7 @@ linters-settings:
     no-extra-aliases: true
     alias:
       - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
-        alias: apiapimetav1
+        alias: apimetav1
 
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.
