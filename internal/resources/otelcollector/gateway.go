@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
@@ -32,32 +32,32 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 	}
 
 	secret := makeSecret(name, cfg.CollectorEnvVars)
-	if err := kubernetes.CreateOrUpdateSecret(ctx, c, secret); err != nil {
+	if err := utils.CreateOrUpdateSecret(ctx, c, secret); err != nil {
 		return fmt.Errorf("failed to create env secret: %w", err)
 	}
 
 	configMap := makeConfigMap(name, cfg.CollectorConfig)
-	if err := kubernetes.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
+	if err := utils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	if err := kubernetes.CreateOrUpdateDeployment(ctx, c, makeGatewayDeployment(cfg, configChecksum, cfg.Istio)); err != nil {
+	if err := utils.CreateOrUpdateDeployment(ctx, c, makeGatewayDeployment(cfg, configChecksum, cfg.Istio)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
 
-	if err := kubernetes.CreateOrUpdateService(ctx, c, makeOTLPService(cfg)); err != nil {
+	if err := utils.CreateOrUpdateService(ctx, c, makeOTLPService(cfg)); err != nil {
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
 	if cfg.CanReceiveOpenCensus {
-		if err := kubernetes.CreateOrUpdateService(ctx, c, makeOpenCensusService(name)); err != nil {
+		if err := utils.CreateOrUpdateService(ctx, c, makeOpenCensusService(name)); err != nil {
 			return fmt.Errorf("failed to create open census service: %w", err)
 		}
 	}
 
 	if cfg.Istio.Enabled {
-		if err := kubernetes.CreateOrUpdatePeerAuthentication(ctx, c, makePeerAuthentication(cfg)); err != nil {
+		if err := utils.CreateOrUpdatePeerAuthentication(ctx, c, makePeerAuthentication(cfg)); err != nil {
 			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
 	}

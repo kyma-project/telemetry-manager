@@ -13,7 +13,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -97,7 +97,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		}
 	}()
 
-	lock := kubernetes.NewResourceCountLock(r.Client, types.NamespacedName{
+	lock := utils.NewResourceCountLock(r.Client, types.NamespacedName{
 		Name:      "telemetry-metricpipeline-lock",
 		Namespace: r.config.Gateway.Namespace,
 	}, r.config.MaxPipelines)
@@ -136,7 +136,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 // getDeployableMetricPipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, client client.Client, lock *kubernetes.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
+func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, client client.Client, lock *utils.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
 	var deployablePipelines []telemetryv1alpha1.MetricPipeline
 	for i := range allPipelines {
 		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
@@ -184,7 +184,7 @@ func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telem
 	isIstioActive := r.istioStatusChecker.IsIstioActive(ctx)
 
 	if err := otelcollector.ApplyGatewayResources(ctx,
-		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
+		utils.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
 			WithIstioConfig(fmt.Sprintf("%d", ports.Metrics), isIstioActive)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
@@ -206,7 +206,7 @@ func (r *Reconciler) reconcileMetricAgents(ctx context.Context, pipeline *teleme
 	}
 
 	if err := otelcollector.ApplyAgentResources(ctx,
-		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
+		utils.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Agent.WithCollectorConfig(string(agentConfigYAML))); err != nil {
 		return fmt.Errorf("failed to apply agent resources: %w", err)
 	}

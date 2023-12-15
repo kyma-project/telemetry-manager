@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 )
 
 type Config struct {
@@ -37,7 +37,7 @@ func EnsureCertificate(ctx context.Context, client client.Client, config Config)
 	}
 
 	validatingWebhookConfig := makeValidatingWebhookConfig(caCertPEM, config)
-	return kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, client, &validatingWebhookConfig)
+	return utils.CreateOrUpdateValidatingWebhookConfiguration(ctx, client, &validatingWebhookConfig)
 }
 
 func dnsNames(webhookService types.NamespacedName) (host string, alternativeDNSNames []string) {

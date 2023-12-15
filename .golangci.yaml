@@ -46,6 +46,8 @@ linters-settings:
     no-unaliased: true
     no-extra-aliases: true
     alias:
+      - pkg: (\w+)/(v[\w\d]+)
+        alias:
       - pkg: crypto/rand
         alias: crand
       - pkg: github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1
@@ -222,3 +224,6 @@ issues:
       path: test/testkit/verifiers/(deployment|daemonset|metrics|traces).go
     - linters: [dupl]
       path: main.go
+    - linters:
+        - importas
+      text: has alias "" which is not part of config # Ignore false positives that emerged due to https://github.com/julz/importas/issues/15.

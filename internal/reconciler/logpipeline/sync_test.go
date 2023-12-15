@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -157,7 +157,7 @@ alias foo`,
 
 	t.Run("should fail if client fails", func(t *testing.T) {
 		badReqClient := &mocks.Client{}
-		badReqErr := errors.NewBadRequest("")
+		badReqErr := apierrors.NewBadRequest("")
 		badReqClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 		badReqClient.On("List", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 		sut := syncer{badReqClient, testConfig}
@@ -280,7 +280,7 @@ alias foo`,
 
 	t.Run("should fail if client fails", func(t *testing.T) {
 		badReqClient := &mocks.Client{}
-		badReqErr := errors.NewBadRequest("")
+		badReqErr := apierrors.NewBadRequest("")
 		badReqClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 		badReqClient.On("List", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 		sut := syncer{badReqClient, testConfig}

@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
 
@@ -158,7 +158,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	if err := controllerutil.SetOwnerReference(telemetry, &secret, r.Scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference for secret: %w", err)
 	}
-	if err := kubernetes.CreateOrUpdateSecret(ctx, r.Client, &secret); err != nil {
+	if err := utils.CreateOrUpdateSecret(ctx, r.Client, &secret); err != nil {
 		return fmt.Errorf("failed to update secret: %w", err)
 	}
 
@@ -166,7 +166,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	if err := r.Get(ctx, r.config.Webhook.CertConfig.WebhookName, &webhook); err != nil {
 		return fmt.Errorf("failed to get webhook: %w", err)
 	}
-	if err := kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, r.Client, &webhook); err != nil {
+	if err := utils.CreateOrUpdateValidatingWebhookConfiguration(ctx, r.Client, &webhook); err != nil {
 		return fmt.Errorf("failed to update webhook: %w", err)
 	}
 

@@ -11,7 +11,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
@@ -62,7 +62,7 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 	if !isLogPipelineDeployable(deployablePipelines, pipeline) {
 		delete(cm.Data, cmKey)
 	} else {
-		newConfig, err := builder.BuildFluentBitConfig(pipeline, s.config.PipelineDefaults)
+		newConfig, err := configbuilder.BuildFluentBitConfig(pipeline, s.config.PipelineDefaults)
 		if err != nil {
 			return fmt.Errorf("unable to build section: %w", err)
 		}
