@@ -16,7 +16,7 @@ import (
 var metricPipelineReasonPrefixMap = map[string]string{
 	conditions.TypeMetricGatewayHealthy:   "MetricGateway",
 	conditions.TypeMetricAgentHealthy:     "MetricAgent",
-	conditions.TypeConfigurationGenerated: "MetricPipelineConfiguration",
+	conditions.TypeConfigurationGenerated: "MetricPipeline",
 }
 
 type metricComponentsChecker struct {
