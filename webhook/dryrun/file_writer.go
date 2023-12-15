@@ -5,14 +5,14 @@ import (
 	"os"
 	"path/filepath"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	resources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
 //go:generate mockery --name fileWriter --filename file_writer.go
@@ -58,13 +58,13 @@ func (f *fileWriterImpl) preparePipelineDryRun(ctx context.Context, workDir stri
 }
 
 func (f *fileWriterImpl) writeConfig(ctx context.Context, basePath string) error {
-	var cm v1.ConfigMap
+	var cm corev1.ConfigMap
 	var err error
 	includeSection := true
 	err = f.client.Get(ctx, f.config.FluentBitConfigMapName, &cm)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			newCm := resources.MakeConfigMap(f.config.FluentBitConfigMapName, includeSection)
+			newCm := logpipelineresources.MakeConfigMap(f.config.FluentBitConfigMapName, includeSection)
 			cm = *newCm
 		} else {
 			return err
