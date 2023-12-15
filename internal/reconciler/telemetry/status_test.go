@@ -110,7 +110,7 @@ func TestUpdateStatus(t *testing.T) {
 			}},
 		},
 		{
-			name: "metrics are unhealthy but not enabled",
+			name: "metrics are unhealthy",
 			config: &Config{
 				Traces: TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
 			},
@@ -118,9 +118,10 @@ func TestUpdateStatus(t *testing.T) {
 			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
 			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonMetricGatewayDeploymentNotReady},
 			tracesCheckerReturn:  &metav1.Condition{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady},
-			expectedState:        operatorv1alpha1.StateReady,
+			expectedState:        operatorv1alpha1.StateWarning,
 			expectedConditions: []metav1.Condition{
 				{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
+				{Type: "MetricComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonMetricGatewayDeploymentNotReady},
 				{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady},
 			},
 			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{Traces: &operatorv1alpha1.OTLPEndpoints{
