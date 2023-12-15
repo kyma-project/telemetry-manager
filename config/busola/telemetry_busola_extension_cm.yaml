@@ -29,6 +29,10 @@ data:
           name: OTLP GRPC Trace Endpoint
         - source: status.endpoints.traces.http
           name: OTLP HTTP Trace Endpoint
+        - source: status.endpoints.metrics.grpc
+          name: OTLP GRPC Metric Endpoint
+        - source: status.endpoints.metrics.http
+          name: OTLP HTTP Metric Endpoint
       - source: status.conditions
         widget: Table
         name: Reconciliation Conditions
