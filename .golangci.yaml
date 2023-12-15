@@ -43,11 +43,10 @@ linters-settings:
   dupl:
     threshold: 100 # Tokens count to trigger error.
   importas:
-    no-unaliased: true
     no-extra-aliases: true
     alias:
       - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
-        alias: apimetav1
+        alias: metav1
 
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.
