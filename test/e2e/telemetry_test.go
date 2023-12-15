@@ -3,14 +3,11 @@
 package e2e
 
 import (
-	"slices"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -149,8 +146,6 @@ var _ = Describe("Telemetry Module", Label("logging", "tracing", "metrics"), Ord
 				g.Expect(telemetry.Finalizers).Should(HaveLen(1))
 				g.Expect(telemetry.Finalizers[0]).Should(Equal("telemetry.kyma-project.io/finalizer"))
 				g.Expect(telemetry.Status.State).Should(Equal(v1alpha1.StateWarning))
-				isMetricsEnabled, err := isMetricsEnabled()
-				g.Expect(err).ShouldNot(HaveOccurred())
 				expectedConditions := map[string]metav1.Condition{
 					"LogComponentsHealthy": {
 						Status:  "False",
@@ -168,8 +163,7 @@ var _ = Describe("Telemetry Module", Label("logging", "tracing", "metrics"), Ord
 						Message: "No pipelines have been deployed",
 					},
 				}
-				expectedConditionsLength := expectedConditionsLength(isMetricsEnabled)
-				g.Expect(telemetry.Status.Conditions).Should(HaveLen(expectedConditionsLength))
+				g.Expect(telemetry.Status.Conditions).Should(HaveLen(3))
 				for _, actualCond := range telemetry.Status.Conditions {
 					expectedCond := expectedConditions[actualCond.Type]
 					g.Expect(expectedCond.Status).Should(Equal(actualCond.Status))
@@ -227,29 +221,4 @@ func makeTestPipelineK8sObjects() []client.Object {
 	return []client.Object{
 		logPipeline.K8sObject(),
 	}
-}
-
-func isMetricsEnabled() (bool, error) {
-	crdList := &metav1.PartialObjectMetadataList{}
-	crdList.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "apiextensions.k8s.io",
-		Kind:    "CustomResourceDefinition",
-		Version: "v1",
-	})
-	if err := k8sClient.List(ctx, crdList); err != nil {
-		return false, err
-	}
-	isMetricsEnabled := slices.ContainsFunc(crdList.Items, func(crd metav1.PartialObjectMetadata) bool {
-		return crd.GetName() == "metricpipelines.telemetry.kyma-project.io"
-	})
-	return isMetricsEnabled, nil
-}
-
-func expectedConditionsLength(isMetricsEnabled bool) int {
-	// If metrics is enabled, Telemetry Status conditions will have the following 3 Types: "LogComponentsHealthy", "MetricComponentsHealthy" and "TraceComponentsHealthy"
-	// Otherwise, it will only have 2 Types: "LogComponentsHealthy" and "TraceComponentsHealthy"
-	if isMetricsEnabled {
-		return 3
-	}
-	return 2
 }

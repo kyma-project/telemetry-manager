@@ -40,8 +40,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "all components are healthy",
 			config: &Config{
-				Traces:  TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Enabled: true},
+				Traces: TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
@@ -61,8 +60,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "non trace components are unhealthy",
 			config: &Config{
-				Traces:  TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Enabled: true},
+				Traces: TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady},
@@ -80,10 +78,7 @@ func TestUpdateStatus(t *testing.T) {
 			}},
 		},
 		{
-			name: "trace components are unhealthy",
-			config: &Config{
-				Metrics: MetricsConfig{Enabled: true},
-			},
+			name:                 "trace components are unhealthy",
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
 			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady},
@@ -96,26 +91,6 @@ func TestUpdateStatus(t *testing.T) {
 			},
 		},
 		{
-			name: "metrics are unhealthy but not enabled",
-			config: &Config{
-				Traces:  TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Enabled: false},
-			},
-			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
-			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
-			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady},
-			tracesCheckerReturn:  &metav1.Condition{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady},
-			expectedState:        operatorv1alpha1.StateReady,
-			expectedConditions: []metav1.Condition{
-				{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
-				{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady},
-			},
-			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{Traces: &operatorv1alpha1.OTLPEndpoints{
-				GRPC: "http://traces.telemetry-system:4317",
-				HTTP: "http://traces.telemetry-system:4318",
-			}},
-		},
-		{
 			name:                 "logs component check error",
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerError:     fmt.Errorf("logs check error"),
@@ -124,10 +99,7 @@ func TestUpdateStatus(t *testing.T) {
 			expectError:          true,
 		},
 		{
-			name: "metrics component check error",
-			config: &Config{
-				Metrics: MetricsConfig{Enabled: true},
-			},
+			name:                "metrics component check error",
 			telemetry:           &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:   &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
 			metricsCheckerError: fmt.Errorf("metrics check error"),
@@ -138,10 +110,7 @@ func TestUpdateStatus(t *testing.T) {
 			expectError: true,
 		},
 		{
-			name: "traces component check error",
-			config: &Config{
-				Metrics: MetricsConfig{Enabled: true},
-			},
+			name:                 "traces component check error",
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
 			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady},
@@ -155,8 +124,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "deleting with no dependent resources",
 			config: &Config{
-				Traces:  TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Enabled: true},
+				Traces: TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
 			},
 			telemetry: &operatorv1alpha1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
@@ -182,8 +150,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "deleting with dependent resources",
 			config: &Config{
-				Traces:  TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Enabled: true},
+				Traces: TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
 			},
 			telemetry: &operatorv1alpha1.Telemetry{
 				ObjectMeta: metav1.ObjectMeta{
@@ -208,8 +175,7 @@ func TestUpdateStatus(t *testing.T) {
 		{
 			name: "metric agent is unhealthy",
 			config: &Config{
-				Traces:  TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
-				Metrics: MetricsConfig{Enabled: true},
+				Traces: TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},

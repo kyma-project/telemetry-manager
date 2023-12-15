@@ -29,10 +29,9 @@ jobs:
       - name: Validate links
         uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
-          use-quiet-mode: 'yes'  
+          use-quiet-mode: 'yes'
           use-verbose-mode: 'yes'
           config-file: '.mlc.config.json'
           folder-path: '.'
           max-depth: -1
-          check-modified-files-only: 'yes'
           base-branch: ${{ github.base_ref }}

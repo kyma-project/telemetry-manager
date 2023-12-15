@@ -150,3 +150,19 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt) |
 
 <!-- TABLE-END -->
+
+### Metric Pipeline State
+
+The state of the metric components is determined by the status condition of type `MetricComponentsHealthy`:
+
+| Condition status | Condition reason | Message                                                                                                                                      |
+|------------------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------| 
+| True             | DeploymentReady | Metric gateway Deployment is ready                                                                                                           |
+| True             | DaemonSetReady | Metric agent DaemonSet is ready                                                                                                              |
+| True             | ConfigurationGenerated | Metric pipeline configuration successfully generated                                                                                         |
+| False            | DeploymentNotReady | Metric gateway Deployment is not ready                                                                                                       |
+| False            | DaemonSetNotReady | Metric agent DaemonSet is not ready                                                                                                          |
+| False            | WaitingForLock | The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (resource-1, resource-2,...) |
+| False            | ReferencedSecretMissing | One or more referenced Secrets are missing                                                                                                   |
+
+

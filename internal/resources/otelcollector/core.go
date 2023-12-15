@@ -112,6 +112,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   strconv.Itoa(ports.Metrics),
+				"prometheus.io/scheme": "http",
 			},
 		},
 		Spec: corev1.ServiceSpec{
