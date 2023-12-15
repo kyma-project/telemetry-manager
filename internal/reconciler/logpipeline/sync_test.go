@@ -16,7 +16,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/kubernetes/mocks"
-	resources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
 var (
@@ -27,7 +27,7 @@ var (
 		EnvSecret:             types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
 		OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
 		OverrideConfigMap:     types.NamespacedName{Name: "override-config", Namespace: "default"},
-		DaemonSetConfig: resources.DaemonSetConfig{
+		DaemonSetConfig: logpipelineresources.DaemonSetConfig{
 			FluentBitImage:              "my-fluent-bit-image",
 			FluentBitConfigPrepperImage: "my-fluent-bit-config-image",
 			ExporterImage:               "my-exporter-image",

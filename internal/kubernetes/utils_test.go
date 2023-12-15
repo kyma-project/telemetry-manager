@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -144,14 +144,14 @@ func TestMergePodAnnotations(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			existing := v1.Deployment{
+			existing := appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "some-deployment",
 					Annotations: tt.existing,
 				},
 			}
 
-			desired := v1.Deployment{
+			desired := appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "some-deployment",
 					Annotations: tt.desired,
