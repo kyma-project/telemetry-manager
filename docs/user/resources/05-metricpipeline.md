@@ -1,7 +1,5 @@
 # MetricPipeline
 
-> **Note:** The `metricpipeline.telemetry.kyma-project.io` CustomResourceDefinition is not available yet. To understand the current progress, watch this [epic](https://github.com/kyma-project/kyma/issues/13079).
-
 The `metricpipeline.telemetry.kyma-project.io` CustomResourceDefinition (CRD) is a detailed description of the kind of data and the format used to filter and ship metric data in Kyma. To get the current CRD and show the output in the YAML format, run this command:
 
 ```bash
