@@ -19,7 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
@@ -44,7 +44,7 @@ var (
 			CPURequest:                  resource.MustParse(".1"),
 			MemoryRequest:               resource.MustParse("100Mi"),
 		},
-		PipelineDefaults: configbuilder.PipelineDefaults{
+		PipelineDefaults: builder.PipelineDefaults{
 			InputTag:          "kube",
 			MemoryBufferLimit: "10M",
 			StorageType:       "filesystem",

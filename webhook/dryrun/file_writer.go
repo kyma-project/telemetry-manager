@@ -11,7 +11,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
@@ -103,7 +103,7 @@ func (f *fileWriterImpl) writeSections(pipeline *telemetryv1alpha1.LogPipeline, 
 		return err
 	}
 
-	sectionsConfig, err := configbuilder.BuildFluentBitConfig(pipeline, f.config.PipelineDefaults)
+	sectionsConfig, err := builder.BuildFluentBitConfig(pipeline, f.config.PipelineDefaults)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (f *fileWriterImpl) writeParsers(ctx context.Context, basePath string) erro
 		return err
 	}
 
-	parsersConfig := configbuilder.BuildFluentBitParsersConfig(&logParsers)
+	parsersConfig := builder.BuildFluentBitParsersConfig(&logParsers)
 	return writeFile(filepath.Join(dynamicParsersDir, "parsers.conf"), parsersConfig)
 }
 
@@ -138,7 +138,7 @@ func (f *fileWriterImpl) writeParsersWithParser(ctx context.Context, basePath st
 	}
 
 	appendOrReplace(&logParsers, parser)
-	parsersConfig := configbuilder.BuildFluentBitParsersConfig(&logParsers)
+	parsersConfig := builder.BuildFluentBitParsersConfig(&logParsers)
 
 	return writeFile(filepath.Join(dynamicParsersDir, "parsers.conf"), parsersConfig)
 }

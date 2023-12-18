@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 )
 
 func mustLoadManifest[T runtime.Object](scheme *runtime.Scheme, filepath string) T {
@@ -46,7 +46,7 @@ func TestPreparePipelineDryRun(t *testing.T) {
 		client: client,
 		config: Config{
 			FluentBitConfigMapName: types.NamespacedName{Name: fluentBitCm.Name},
-			PipelineDefaults: configbuilder.PipelineDefaults{
+			PipelineDefaults: builder.PipelineDefaults{
 				FsBufferLimit:     "1G",
 				MemoryBufferLimit: "10M",
 				StorageType:       "filesystem",

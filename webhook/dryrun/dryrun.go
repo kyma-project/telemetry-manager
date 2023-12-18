@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 )
 
 func dryRunArgs() []string {
@@ -28,7 +28,7 @@ const (
 
 type Config struct {
 	FluentBitConfigMapName types.NamespacedName
-	PipelineDefaults       configbuilder.PipelineDefaults
+	PipelineDefaults       builder.PipelineDefaults
 }
 
 type DryRunner struct {

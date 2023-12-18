@@ -8,7 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 )
 
@@ -31,7 +31,7 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to list parsers: %w", err)
 	}
-	fluentBitParsersConfig := configbuilder.BuildFluentBitParsersConfig(&logParsers)
+	fluentBitParsersConfig := builder.BuildFluentBitParsersConfig(&logParsers)
 	if fluentBitParsersConfig == "" {
 		data := make(map[string]string)
 		data[parsersConfigMapKey] = ""

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"maps"
 
-	istiosecv1beta1 "istio.io/api/security/v1beta1"
+	istiosecurityv1beta "istio.io/api/security/v1beta1"
 	istiotypev1beta1 "istio.io/api/type/v1beta1"
-	istiogosecv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+	istiosecurityclientv1beta "istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -241,14 +241,14 @@ func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
 	}
 }
 
-func makePeerAuthentication(cfg *GatewayConfig) *istiogosecv1beta1.PeerAuthentication {
+func makePeerAuthentication(cfg *GatewayConfig) *istiosecurityclientv1beta.PeerAuthentication {
 	selectorLabels := defaultLabels(cfg.BaseName)
 
-	return &istiogosecv1beta1.PeerAuthentication{
+	return &istiosecurityclientv1beta.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{Name: cfg.BaseName, Namespace: cfg.Namespace, Labels: selectorLabels},
-		Spec: istiosecv1beta1.PeerAuthentication{
+		Spec: istiosecurityv1beta.PeerAuthentication{
 			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: defaultLabels(cfg.BaseName)},
-			Mtls:     &istiosecv1beta1.PeerAuthentication_MutualTLS{Mode: istiosecv1beta1.PeerAuthentication_MutualTLS_PERMISSIVE},
+			Mtls:     &istiosecurityv1beta.PeerAuthentication_MutualTLS{Mode: istiosecurityv1beta.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}
 }

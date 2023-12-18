@@ -46,7 +46,7 @@ linters-settings:
     no-unaliased: true
     no-extra-aliases: true
     alias:
-      - pkg: crypto/rand # remove? (conflict with math/rand)
+      - pkg: crypto/rand
         alias: crand
       - pkg: github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1
         alias: operatorv1alpha1
@@ -56,8 +56,6 @@ linters-settings:
         alias: operatorcontrollers
       - pkg: github.com/kyma-project/telemetry-manager/controllers/telemetry
         alias: telemetrycontrollers
-      - pkg: github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder # try to remvoe
-        alias: configbuilder
       - pkg: github.com/kyma-project/telemetry-manager/internal/kubernetes # rename package to: k8sutils
         alias: utils
       - pkg: github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent
@@ -92,16 +90,14 @@ linters-settings:
         alias: logpipelinevalidation
       - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation/mocks
         alias: logpipelinevalidationmocks
-      - pkg: go.opentelemetry.io/otel/sdk/trace # remove if possible
+      - pkg: go.opentelemetry.io/otel/sdk/trace
         alias: tracesdk
-      - pkg: go.opentelemetry.io/otel/trace # remove if possible
-        alias: oteltrace
       - pkg: istio.io/api/security/v1beta1
-        alias: istiosecv1beta1
+        alias: istiosecurityv1beta
       - pkg: istio.io/api/type/v1beta1
         alias: istiotypev1beta1
-      - pkg: istio.io/client-go/pkg/apis/security/v1beta1 # GitHub Search: See how others do it (+ istio official recommendations)
-        alias: istiogosecv1beta1
+      - pkg: istio.io/client-go/pkg/apis/security/v1beta1
+        alias: istiosecurityclientv1beta
       - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
         alias: $1$2
       - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
@@ -116,7 +112,7 @@ linters-settings:
         alias: utilruntime
       - pkg: k8s.io/client-go/kubernetes/scheme
         alias: clientgoscheme
-      - pkg: net/url # remove? (conflict with url variable)
+      - pkg: net/url
         alias: neturl
       - pkg: sigs.k8s.io/controller-runtime
         alias: ctrl

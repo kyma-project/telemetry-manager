@@ -30,7 +30,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -47,7 +47,7 @@ type Config struct {
 	EnvSecret             types.NamespacedName
 	OutputTLSConfigSecret types.NamespacedName
 	OverrideConfigMap     types.NamespacedName
-	PipelineDefaults      configbuilder.PipelineDefaults
+	PipelineDefaults      builder.PipelineDefaults
 	Overrides             overrides.Config
 	DaemonSetConfig       logpipelineresources.DaemonSetConfig
 }
