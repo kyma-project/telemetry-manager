@@ -31,14 +31,8 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 		return nil
 	}
 
-	if err := r.setAgentHealthyCondition(ctx, &pipeline); err != nil {
-		return fmt.Errorf("failed to set agent ready condition: %w", err)
-	}
-
-	if err := r.setGatewayHealthyCondition(ctx, &pipeline); err != nil {
-		return fmt.Errorf("failed to set gateway ready condition: %w", err)
-	}
-
+	r.setAgentHealthyCondition(ctx, &pipeline)
+	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, lockAcquired)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
@@ -48,45 +42,45 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 	return nil
 }
 
-func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonMetricAgentNotRequired
 
 	if isMetricAgentRequired(pipeline) {
 		agentName := types.NamespacedName{Name: r.config.Agent.BaseName, Namespace: r.config.Agent.Namespace}
-		ready, err := r.agentProber.IsReady(ctx, agentName)
+		healthy, err := r.agentProber.IsReady(ctx, agentName)
 		if err != nil {
-			return fmt.Errorf("failed to probe agent %v: %w", agentName, err)
+			logf.FromContext(ctx).V(1).Error(err, "Failed to probe metric agent - set condition as not healthy")
+			healthy = false
 		}
 
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonMetricAgentDaemonSetNotReady
-		if ready {
+		if healthy {
 			status = metav1.ConditionTrue
 			reason = conditions.ReasonMetricAgentDaemonSetReady
 		}
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeMetricAgentHealthy, reason, status, pipeline.Generation))
-	return nil
 }
 
-func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
 	gatewayName := types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace}
-	ready, err := r.gatewayProber.IsReady(ctx, gatewayName)
+	healthy, err := r.gatewayProber.IsReady(ctx, gatewayName)
 	if err != nil {
-		return fmt.Errorf("failed to probe gateway %v: %w", gatewayName, err)
+		logf.FromContext(ctx).V(1).Error(err, "Failed to probe metric gateway - set condition as not healthy")
+		healthy = false
 	}
 
 	status := metav1.ConditionFalse
 	reason := conditions.ReasonMetricGatewayDeploymentNotReady
-	if ready {
+	if healthy {
 		status = metav1.ConditionTrue
 		reason = conditions.ReasonMetricGatewayDeploymentReady
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeMetricGatewayHealthy, reason, status, pipeline.Generation))
-	return nil
 }
 
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, lockAcquired bool) {
