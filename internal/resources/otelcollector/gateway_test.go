@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"istio.io/api/security/v1beta1"
-	istiosecv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+	istiosecv1beta1 "istio.io/api/security/v1beta1"
+	istiogosecv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -288,7 +288,7 @@ func TestApplyGatewayResources(t *testing.T) {
 func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	ctx := context.Background()
 	scheme := runtime.NewScheme()
-	require.NoError(t, istiosecv1beta1.AddToScheme(scheme))
+	require.NoError(t, istiogosecv1beta1.AddToScheme(scheme))
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
@@ -296,11 +296,11 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("It should have permissive peer authentication created", func(t *testing.T) {
-		var peerAuth istiosecv1beta1.PeerAuthentication
+		var peerAuth istiogosecv1beta1.PeerAuthentication
 		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &peerAuth))
 
 		require.Equal(t, name, peerAuth.Name)
-		require.Equal(t, v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE, peerAuth.Spec.Mtls.Mode)
+		require.Equal(t, istiosecv1beta1.PeerAuthentication_MutualTLS_PERMISSIVE, peerAuth.Spec.Mtls.Mode)
 	})
 
 	t.Run("It should have istio enabled with ports excluded", func(t *testing.T) {
