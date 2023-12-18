@@ -12,12 +12,14 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lockAcquired bool) error {
 	var pipeline telemetryv1alpha1.MetricPipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
+			logf.FromContext(ctx).V(1).Info("Skipping status update for MetricPipeline - not found")
 			return nil
 		}
 
@@ -25,6 +27,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 	}
 
 	if pipeline.DeletionTimestamp != nil {
+		logf.FromContext(ctx).V(1).Info("Skipping status update for MetricPipeline - marked for deletion")
 		return nil
 	}
 
