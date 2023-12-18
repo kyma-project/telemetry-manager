@@ -50,14 +50,14 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	operatorcontrollers "github.com/kyma-project/telemetry-manager/controllers/operator"
+	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
-	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
@@ -445,7 +445,7 @@ func validateFlags() error {
 }
 
 func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.LogPipelineReconciler {
-	config := logpipelinereconciler.Config{
+	config := logpipeline.Config{
 		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
 		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
 		LuaConfigMap:          types.NamespacedName{Name: "telemetry-fluent-bit-luascripts", Namespace: telemetryNamespace},
@@ -469,7 +469,7 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 
 	return telemetrycontrollers.NewLogPipelineReconciler(
 		client,
-		logpipelinereconciler.NewReconciler(client, config, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
+		logpipeline.NewReconciler(client, config, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
 		config)
 }
 
@@ -606,7 +606,7 @@ func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
 }
 
-func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
+func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, webhookConfig telemetry.WebhookConfig) *operator.TelemetryReconciler {
 	config := telemetry.Config{
 		Traces: telemetry.TracesConfig{
 			OTLPServiceName: traceOTLPServiceName,
@@ -619,7 +619,7 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, web
 		Webhook: webhookConfig,
 	}
 
-	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config), config)
+	return operator.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config), config)
 }
 
 func createWebhookConfig() telemetry.WebhookConfig {

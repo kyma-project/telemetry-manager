@@ -43,7 +43,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
-	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 )
@@ -124,7 +124,7 @@ var _ = BeforeSuite(func() {
 
 	logpipelineController := NewLogPipelineReconciler(
 		client,
-		logpipelinereconciler.NewReconciler(client, testLogPipelineConfig, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
+		logpipeline.NewReconciler(client, testLogPipelineConfig, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
 		testLogPipelineConfig)
 	err = logpipelineController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())

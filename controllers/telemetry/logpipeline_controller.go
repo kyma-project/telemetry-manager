@@ -27,19 +27,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 )
 
 // LogPipelineReconciler reconciles a LogPipeline object
 type LogPipelineReconciler struct {
 	client.Client
 
-	reconciler *logpipelinereconciler.Reconciler
+	reconciler *logpipeline.Reconciler
 
-	config logpipelinereconciler.Config
+	config logpipeline.Config
 }
 
-func NewLogPipelineReconciler(client client.Client, reconciler *logpipelinereconciler.Reconciler, config logpipelinereconciler.Config) *LogPipelineReconciler {
+func NewLogPipelineReconciler(client client.Client, reconciler *logpipeline.Reconciler, config logpipeline.Config) *LogPipelineReconciler {
 	return &LogPipelineReconciler{
 		Client:     client,
 		reconciler: reconciler,

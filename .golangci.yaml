@@ -52,14 +52,10 @@ linters-settings:
         alias: operatorv1alpha1
       - pkg: github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1
         alias: telemetryv1alpha1
-      - pkg: github.com/kyma-project/telemetry-manager/controllers/operator
-        alias: operatorcontrollers
       - pkg: github.com/kyma-project/telemetry-manager/controllers/telemetry
         alias: telemetrycontrollers
       - pkg: github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent
         alias: configmetricagent
-      - pkg: github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline
-        alias: logpipelinereconciler
       - pkg: github.com/kyma-project/telemetry-manager/internal/resources/common
         alias: commonresources
       - pkg: github.com/kyma-project/telemetry-manager/internal/resources/fluentbit
@@ -110,8 +106,6 @@ linters-settings:
         alias: utilruntime
       - pkg: k8s.io/client-go/kubernetes/scheme
         alias: clientgoscheme
-      - pkg: net/url
-        alias: neturl
       - pkg: sigs.k8s.io/controller-runtime
         alias: ctrl
       - pkg: sigs.k8s.io/controller-runtime/pkg/log

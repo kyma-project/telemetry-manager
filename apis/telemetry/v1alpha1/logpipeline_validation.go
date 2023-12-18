@@ -2,7 +2,7 @@ package v1alpha1
 
 import (
 	"fmt"
-	neturl "net/url"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -92,12 +92,12 @@ func validateHTTPOutput(httpOutput *HTTPOutput) error {
 func validURL(host string) bool {
 	host = strings.Trim(host, " ")
 
-	_, err := neturl.ParseRequestURI(host)
+	_, err := url.ParseRequestURI(host)
 	if err != nil {
 		return false
 	}
 
-	u, err := neturl.Parse(host)
+	u, err := url.Parse(host)
 	if err != nil || u.Scheme == "" || u.Host == "" {
 		return false
 	}
