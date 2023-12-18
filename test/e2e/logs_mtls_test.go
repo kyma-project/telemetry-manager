@@ -11,7 +11,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitlogpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -29,7 +29,7 @@ var _ = Describe("Logs mTLS", Label("logging"), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithTLS())
-		mockLogProducer := logproducer.New(logProducerName, mockNs)
+		mockLogProducer := loggen.New(logProducerName, mockNs)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-mtls-test")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)

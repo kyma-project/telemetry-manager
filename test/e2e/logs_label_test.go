@@ -14,7 +14,7 @@ import (
 	kitlogpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -33,7 +33,7 @@ var _ = Describe("Logs Drop Labels", Label("logging"), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs)
-		mockLogProducer := logproducer.New(logProducerName, mockNs).
+		mockLogProducer := loggen.New(logProducerName, mockNs).
 			WithAnnotations(map[string]string{"release": "v1.0.0"})
 		objs = append(objs, mockBackend.K8sObjects()...)
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-label-test")))

@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	kitlogpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
@@ -53,7 +53,7 @@ var _ = Describe("Access Logs", Label("logging"), func() {
 		objs = append(objs, istioAccessLogsPipeline.K8sObject())
 
 		// Abusing metrics provider for istio access logs
-		sampleApp := metricproducer.New(sampleAppNs, metricproducer.WithName("access-log-emitter"))
+		sampleApp := prommetricgen.New(sampleAppNs, prommetricgen.WithName("access-log-emitter"))
 		objs = append(objs, sampleApp.Pod().K8sObject())
 		urls.SetMetricPodURL(proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
 

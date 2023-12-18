@@ -12,7 +12,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
@@ -64,9 +64,9 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 			telemetrygen.New(app2Ns).K8sObject(),
 			telemetrygen.New(kitkyma.SystemNamespaceName).K8sObject(),
 
-			metricproducer.New(app1Ns).Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-			metricproducer.New(app2Ns).Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-			metricproducer.New(kitkyma.SystemNamespaceName).Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+			prommetricgen.New(app1Ns).Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+			prommetricgen.New(app2Ns).Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+			prommetricgen.New(kitkyma.SystemNamespaceName).Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		)
 
 		return objs
@@ -102,7 +102,7 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 		})
 
 		It("Should deliver Prometheus metrics from app1Ns to backend1", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend1Name], app1Ns, metricproducer.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend1Name], app1Ns, prommetricgen.MetricNames)
 		})
 
 		It("Should deliver OTLP metrics from app1Ns to backend1", func() {
@@ -119,7 +119,7 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 		})
 
 		It("Should deliver Prometheus metrics from app2Ns to backend2", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend2Name], app2Ns, metricproducer.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend2Name], app2Ns, prommetricgen.MetricNames)
 		})
 
 		It("Should deliver OTLP metrics from app2Ns to backend2", func() {

@@ -1,4 +1,4 @@
-package metricproducer
+package prommetricgen
 
 import (
 	"maps"

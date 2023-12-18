@@ -9,7 +9,7 @@ import (
 	kittracepipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
@@ -75,11 +75,11 @@ var _ = Describe("Traces", Label("tracing"), Ordered, func() {
 		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")))
 
 		// Abusing metrics provider for istio traces
-		istioSampleApp := metricproducer.New(istiofiedSampleAppNs, metricproducer.WithName(istiofiedSampleAppName))
+		istioSampleApp := prommetricgen.New(istiofiedSampleAppNs, prommetricgen.WithName(istiofiedSampleAppName))
 		objs = append(objs, istioSampleApp.Pod().K8sObject())
 		istiofiedAppURL = istioSampleApp.PodURL(proxyClient)
 
-		sampleApp := metricproducer.New(sampleAppNs, metricproducer.WithName(sampleAppName))
+		sampleApp := prommetricgen.New(sampleAppNs, prommetricgen.WithName(sampleAppName))
 		objs = append(objs, sampleApp.Pod().K8sObject())
 		appURL = sampleApp.PodURL(proxyClient)
 
