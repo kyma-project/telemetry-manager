@@ -34,7 +34,7 @@ data:
       paused: true
 ```
 
-The `global`, `tracing`, `logging`, `metrics` and `telemetry` fields are optional.
+The `global`, `tracing`, `logging`, `metrics`, and `telemetry` fields are optional.
 
 **Caveats**
 If you change the pipeline CR when the reconciliation is paused, these changes will not be applied immediately but in a periodic reconciliation cycle of one hour. To reconcile earlier, restart Telemetry Manager.
