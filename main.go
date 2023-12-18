@@ -67,7 +67,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
-	logpipelinevalidation "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
+	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -495,9 +495,9 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
 	return logpipelinewebhook.NewValidatingWebhookHandler(
 		client,
-		logpipelinevalidation.NewVariablesValidator(client),
-		logpipelinevalidation.NewMaxPipelinesValidator(maxLogPipelines),
-		logpipelinevalidation.NewFilesValidator(),
+		validation.NewVariablesValidator(client),
+		validation.NewMaxPipelinesValidator(maxLogPipelines),
+		validation.NewFilesValidator(),
 		admission.NewDecoder(scheme),
 		dryrun.NewDryRunner(client, createDryRunConfig()),
 		&telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: parsePlugins(deniedOutputPlugins), DeniedFilterPlugins: parsePlugins(deniedFilterPlugins)})

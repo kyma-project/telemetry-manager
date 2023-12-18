@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	logpipelinevalidation "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
+	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
 )
 
 //go:generate mockery --name DryRunner --filename dryrun.go
@@ -43,9 +43,9 @@ const (
 // +kubebuilder:webhook:path=/validate-logpipeline,mutating=false,failurePolicy=fail,sideEffects=None,groups=telemetry.kyma-project.io,resources=logpipelines,verbs=create;update,versions=v1alpha1,name=vlogpipeline.kb.io,admissionReviewVersions=v1
 type ValidatingWebhookHandler struct {
 	client.Client
-	variablesValidator          logpipelinevalidation.VariablesValidator
-	maxPipelinesValidator       logpipelinevalidation.MaxPipelinesValidator
-	fileValidator               logpipelinevalidation.FilesValidator
+	variablesValidator          validation.VariablesValidator
+	maxPipelinesValidator       validation.MaxPipelinesValidator
+	fileValidator               validation.FilesValidator
 	decoder                     *admission.Decoder
 	dryRunner                   DryRunner
 	logPipelineValidationConfig *telemetryv1alpha1.LogPipelineValidationConfig
@@ -53,9 +53,9 @@ type ValidatingWebhookHandler struct {
 
 func NewValidatingWebhookHandler(
 	client client.Client,
-	variablesValidator logpipelinevalidation.VariablesValidator,
-	maxPipelinesValidator logpipelinevalidation.MaxPipelinesValidator,
-	fileValidator logpipelinevalidation.FilesValidator,
+	variablesValidator validation.VariablesValidator,
+	maxPipelinesValidator validation.MaxPipelinesValidator,
+	fileValidator validation.FilesValidator,
 	decoder *admission.Decoder,
 	dryRunner DryRunner,
 	logPipelineValidationConfig *telemetryv1alpha1.LogPipelineValidationConfig,
