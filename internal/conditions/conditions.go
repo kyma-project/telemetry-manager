@@ -22,6 +22,7 @@ const (
 	ReasonMetricAgentDaemonSetReady       = "DaemonSetReady"
 	ReasonMetricAgentNotRequired          = "AgentNotRequired"
 	ReasonMetricConfigurationGenerated    = "ConfigurationGenerated"
+	ReasonMetricComponentsReady           = "MetricComponentsReady"
 
 	ReasonTraceGatewayDeploymentNotReady = "TraceGatewayDeploymentNotReady"
 	ReasonTraceGatewayDeploymentReady    = "TraceGatewayDeploymentReady"

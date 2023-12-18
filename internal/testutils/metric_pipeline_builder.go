@@ -25,6 +25,7 @@ type MetricPipelineBuilder struct {
 	basicAuthSecretNamespace   string
 	basicAuthSecretUserKey     string
 	basicAuthSecretPasswordKey string
+	statusConditions           []metav1.Condition
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
@@ -150,6 +151,11 @@ func (b *MetricPipelineBuilder) WithBasicAuthFromSecret(secretName, secretNamesp
 	return b
 }
 
+func (b *MetricPipelineBuilder) WithStatusCondition(cond metav1.Condition) *MetricPipelineBuilder {
+	b.statusConditions = append(b.statusConditions, cond)
+	return b
+}
+
 func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 	name := b.name
 	if name == "" {
@@ -159,6 +165,9 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 	pipeline := telemetryv1alpha1.MetricPipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+		},
+		Status: telemetryv1alpha1.MetricPipelineStatus{
+			Conditions: b.statusConditions,
 		},
 		Spec: telemetryv1alpha1.MetricPipelineSpec{
 			Input: telemetryv1alpha1.MetricPipelineInput{
