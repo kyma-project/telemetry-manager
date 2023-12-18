@@ -12,7 +12,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
 //go:generate mockery --name fileWriter --filename file_writer.go
@@ -64,7 +64,7 @@ func (f *fileWriterImpl) writeConfig(ctx context.Context, basePath string) error
 	err = f.client.Get(ctx, f.config.FluentBitConfigMapName, &cm)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			newCm := logpipelineresources.MakeConfigMap(f.config.FluentBitConfigMapName, includeSection)
+			newCm := fluentbit.MakeConfigMap(f.config.FluentBitConfigMapName, includeSection)
 			cm = *newCm
 		} else {
 			return err
