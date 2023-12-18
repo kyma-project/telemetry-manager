@@ -93,16 +93,12 @@ func (m *metricComponentsChecker) createMessageForReason(pipelines []v1alpha1.Me
 }
 
 func (m *metricComponentsChecker) addReasonPrefix(reason string) string {
-	switch reason {
-	case conditions.ReasonMetricGatewayDeploymentReady:
-	case conditions.ReasonMetricGatewayDeploymentNotReady:
+	switch {
+	case reason == conditions.ReasonMetricGatewayDeploymentReady || reason == conditions.ReasonMetricGatewayDeploymentNotReady:
 		return "MetricGateway" + reason
-	case conditions.ReasonMetricAgentDaemonSetReady:
-	case conditions.ReasonMetricAgentDaemonSetNotReady:
+	case reason == conditions.ReasonMetricAgentDaemonSetReady || reason == conditions.ReasonMetricAgentDaemonSetNotReady:
 		return "MetricAgent" + reason
-
-	case conditions.ReasonWaitingForLock:
-	case conditions.ReasonReferencedSecretMissing:
+	case reason == conditions.ReasonWaitingForLock || reason == conditions.ReasonReferencedSecretMissing:
 		return "MetricPipeline" + reason
 	}
 	return reason

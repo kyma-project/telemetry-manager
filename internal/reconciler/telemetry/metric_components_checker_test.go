@@ -142,7 +142,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
-				Reason:  "WaitingForLock",
+				Reason:  "MetricPipelineWaitingForLock",
 				Message: "Waiting for the lock",
 			},
 		},
