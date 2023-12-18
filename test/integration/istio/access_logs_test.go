@@ -47,7 +47,7 @@ var _ = Describe("Access Logs", Label("logging"), func() {
 
 		istioAccessLogsPipeline := kitlogpipeline.NewPipeline("pipeline-istio-access-logs").
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
-			WithIncludeContainer([]string{"istio-proxy"}).
+			WithIncludeContainers([]string{"istio-proxy"}).
 			WithHTTPOutput()
 		pipelineName = istioAccessLogsPipeline.Name()
 		objs = append(objs, istioAccessLogsPipeline.K8sObject())

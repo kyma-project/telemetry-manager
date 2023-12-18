@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/namespaces"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/gatewayprocs"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric"
@@ -87,23 +86,23 @@ func makeResolveServiceNameConfig() *TransformProcessor {
 	}
 }
 
-func makeFilterByNamespaceRuntimeInputConfig(namespaceSelector telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+func makeFilterByNamespaceRuntimeInputConfig(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
 	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceRuntime))
 }
 
-func makeFilterByNamespacePrometheusInputConfig(namespaceSelector telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+func makeFilterByNamespacePrometheusInputConfig(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
 	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourcePrometheus))
 }
 
-func makeFilterByNamespaceIstioInputConfig(namespaceSelector telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+func makeFilterByNamespaceIstioInputConfig(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
 	return makeFilterByNamespaceConfig(namespaceSelector, inputSourceEquals(metric.InputSourceIstio))
 }
 
-func makeFilterByNamespaceOtlpInputConfig(namespaceSelector telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
+func makeFilterByNamespaceOtlpInputConfig(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) *FilterProcessor {
 	return makeFilterByNamespaceConfig(namespaceSelector, otlpInputSource())
 }
 
-func makeFilterByNamespaceConfig(namespaceSelector telemetryv1alpha1.MetricPipelineInputNamespaceSelector, inputSourceCondition string) *FilterProcessor {
+func makeFilterByNamespaceConfig(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector, inputSourceCondition string) *FilterProcessor {
 	var filterExpressions []string
 
 	if len(namespaceSelector.Exclude) > 0 {
@@ -116,12 +115,6 @@ func makeFilterByNamespaceConfig(namespaceSelector telemetryv1alpha1.MetricPipel
 		namespacesConditions := createNamespacesConditions(namespaceSelector.Include)
 		includeNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, not(ottlexpr.JoinWithOr(namespacesConditions...)))
 		filterExpressions = append(filterExpressions, includeNamespacesExpr)
-	}
-
-	if !*namespaceSelector.System {
-		namespacesConditions := createNamespacesConditions(namespaces.System())
-		systemNamespacesExpr := ottlexpr.JoinWithAnd(inputSourceCondition, ottlexpr.JoinWithOr(namespacesConditions...))
-		filterExpressions = append(filterExpressions, systemNamespacesExpr)
 	}
 
 	return &FilterProcessor{

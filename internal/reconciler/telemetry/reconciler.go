@@ -36,7 +36,6 @@ type TracesConfig struct {
 }
 
 type MetricsConfig struct {
-	Enabled         bool
 	OTLPServiceName string
 	Namespace       string
 }

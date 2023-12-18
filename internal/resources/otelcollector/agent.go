@@ -26,7 +26,7 @@ const istioCertVolumeName = "istio-certs"
 func ApplyAgentResources(ctx context.Context, c client.Client, cfg *AgentConfig) error {
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
-	if err := applyCommonResources(ctx, c, name, makeAgentClusterRole(name)); err != nil {
+	if err := applyCommonResources(ctx, c, name, makeAgentClusterRole(name), cfg.allowedPorts); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -130,7 +130,8 @@ proxyMetadata:
   OUTPUT_CERTS: %s
 `, istioCertPath),
 		"sidecar.istio.io/userVolumeMount":              fmt.Sprintf(`[{"name": "%s", "mountPath": "%s"}]`, istioCertVolumeName, istioCertPath),
-		"traffic.sidecar.istio.io/includeInboundPorts":  "",
 		"traffic.sidecar.istio.io/includeOutboundPorts": strconv.Itoa(ports.OTLPGRPC),
+		"traffic.sidecar.istio.io/excludeInboundPorts":  strconv.Itoa(ports.Metrics),
+		"traffic.sidecar.istio.io/excludeOutboundPorts": strconv.Itoa(ports.IstioEnvoy),
 	}
 }

@@ -49,14 +49,14 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		// Default namespace objects.
 		metricPipeline := kitmetricpipeline.NewPipeline("pipeline-with-prometheus-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			PrometheusInput(true, kitmetricpipeline.IncludeSystemNamespaces())
+			PrometheusInput(true, kitmetricpipeline.IncludeNamespaces(mockNs))
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 
 		return objs
 	}
 
-	Context("When a metricpipeline with prometheus input exists", Ordered, func() {
+	Context("When a metricpipeline with Prometheus input exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -67,24 +67,23 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running metric gateway deployment", func() {
+		It("Ensures the metric gateway deployment is ready", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.MetricGatewayName)
 		})
 
-		It("Should have a metrics backend running", func() {
+		It("Ensures the metrics backend is ready", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
-
 		})
 
-		It("Should have a running metric agent daemonset", func() {
+		It("Ensures the metric agent daemonset is ready", func() {
 			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
-		It("Should have a running pipeline", func() {
+		It("Ensures the metricpipeline is running", func() {
 			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should verify custom metric scraping via annotated pods", func() {
+		It("Ensures custom metric scraped via annotated pods are sent to backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -113,7 +112,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should verify custom metric scraping via annotated services", func() {
+		It("Ensures custom metric scraped via annotated services are sent to backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -144,7 +143,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should verify no kubelet metrics", func() {
+		It("Ensures no kubeletstats metrics are sent to backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -155,30 +154,8 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should have metrics with service.name set to telemetry-metric-gateway", Label(operationalTest), func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					ContainMd(
-						ContainResourceAttrs(HaveKeyWithValue("service.name", kitkyma.MetricGatewayBaseName)),
-					),
-				))
-			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		})
-
-		It("Should have metrics with service.name set to telemetry-metric-agent", Label(operationalTest), func() {
-			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
-				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-				g.Expect(resp).To(HaveHTTPBody(
-					ContainMd(
-						ContainResourceAttrs(HaveKeyWithValue("service.name", kitkyma.MetricAgentBaseName)),
-					),
-				))
-			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		It("Ensures kubeletstats metrics from system namespaces are not sent to backend", func() {
+			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURL, kitkyma.SystemNamespaceName)
 		})
 	})
 })

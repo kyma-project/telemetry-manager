@@ -37,7 +37,7 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []telemetryv1
 func enablePrometheusMetricScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if *input.Prometheus.Enabled {
+		if input.Prometheus != nil && input.Prometheus.Enabled {
 			return true
 		}
 	}
@@ -47,7 +47,7 @@ func enablePrometheusMetricScraping(pipelines []telemetryv1alpha1.MetricPipeline
 func enableRuntimeMetricScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if *input.Runtime.Enabled {
+		if input.Runtime != nil && input.Runtime.Enabled {
 			return true
 		}
 	}
@@ -57,7 +57,7 @@ func enableRuntimeMetricScraping(pipelines []telemetryv1alpha1.MetricPipeline) b
 func enableIstioMetricScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
-		if *input.Istio.Enabled {
+		if input.Istio != nil && input.Istio.Enabled {
 			return true
 		}
 	}

@@ -59,12 +59,14 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		peerAuth := istio.NewPeerAuthentication(istiofiedBackendName, istiofiedBackendNs)
 		objs = append(objs, peerAuth.K8sObject(kitk8s.WithLabel("app", istiofiedBackendName)))
 
-		// Create 2 deployments (with and without side car) which would push the metrics to the metrics gateway.
+		// Create 2 deployments (with and without side-car) which would push the metrics to the metrics gateway.
 		podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)
 		objs = append(objs,
 			kitk8s.NewDeployment(pushMetricsDepName, backendNs).WithPodSpec(podSpec).K8sObject(),
 			kitk8s.NewDeployment(pushMetricsIstiofiedDepName, istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
 		)
+
+		objs = append(objs, kitk8s.NewNetworkPolicy("ingress-deny-all", kitkyma.SystemNamespaceName).K8sObject())
 
 		return objs
 	}

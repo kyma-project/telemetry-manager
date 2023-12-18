@@ -18,7 +18,7 @@ import (
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, clusterRole *rbacv1.ClusterRole) error {
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, clusterRole *rbacv1.ClusterRole, allowedPorts []int32) error {
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
 	if err := utils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
@@ -36,7 +36,7 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		return fmt.Errorf("failed to create metrics service: %w", err)
 	}
 
-	if err := utils.CreateOrUpdateNetworkPolicy(ctx, c, makeDenyPprofNetworkPolicy(name)); err != nil {
+	if err := utils.CreateOrUpdateNetworkPolicy(ctx, c, makeNetworkPolicy(name, allowedPorts)); err != nil {
 		return fmt.Errorf("failed to create deny pprof network policy: %w", err)
 	}
 
@@ -112,6 +112,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   strconv.Itoa(ports.Metrics),
+				"prometheus.io/scheme": "http",
 			},
 		},
 		Spec: corev1.ServiceSpec{
@@ -129,7 +130,7 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 	}
 }
 
-func makeDenyPprofNetworkPolicy(name types.NamespacedName) *networkingv1.NetworkPolicy {
+func makeNetworkPolicy(name types.NamespacedName, allowedPorts []int32) *networkingv1.NetworkPolicy {
 	labels := defaultLabels(name.Name)
 
 	return &networkingv1.NetworkPolicy{
@@ -152,34 +153,25 @@ func makeDenyPprofNetworkPolicy(name types.NamespacedName) *networkingv1.Network
 							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
 						},
 					},
-					Ports: makeNetworkPolicyPorts(collectorPorts()),
+					Ports: makeNetworkPolicyPorts(allowedPorts),
 				},
 			},
 		},
 	}
 }
 
-func makeNetworkPolicyPorts(ports []intstr.IntOrString) []networkingv1.NetworkPolicyPort {
+func makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
 	var networkPolicyPorts []networkingv1.NetworkPolicyPort
 
 	tcpProtocol := corev1.ProtocolTCP
 
 	for idx := range ports {
+		port := intstr.FromInt32(ports[idx])
 		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
 			Protocol: &tcpProtocol,
-			Port:     &ports[idx],
+			Port:     &port,
 		})
 	}
 
 	return networkPolicyPorts
-}
-
-func collectorPorts() []intstr.IntOrString {
-	return []intstr.IntOrString{
-		intstr.FromInt32(ports.OTLPHTTP),
-		intstr.FromInt32(ports.OTLPGRPC),
-		intstr.FromInt32(ports.OpenCensus),
-		intstr.FromInt32(ports.Metrics),
-		intstr.FromInt32(ports.HealthCheck),
-	}
 }

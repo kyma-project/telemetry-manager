@@ -13,14 +13,15 @@ import (
 type Pipeline struct {
 	persistent bool
 
-	name             string
-	secretKeyRef     *telemetryv1alpha1.SecretKeyRef
-	excludeContainer []string
-	includeContainer []string
-	keepAnnotations  bool
-	dropLabels       bool
-	output           telemetryv1alpha1.Output
-	filters          []telemetryv1alpha1.Filter
+	name              string
+	secretKeyRef      *telemetryv1alpha1.SecretKeyRef
+	systemNamespaces  bool
+	includeContainers []string
+	excludeContainers []string
+	keepAnnotations   bool
+	dropLabels        bool
+	output            telemetryv1alpha1.Output
+	filters           []telemetryv1alpha1.Filter
 }
 
 func NewPipeline(name string) *Pipeline {
@@ -38,13 +39,18 @@ func (p *Pipeline) WithSecretKeyRef(secretKeyRef *telemetryv1alpha1.SecretKeyRef
 	return p
 }
 
-func (p *Pipeline) WithIncludeContainer(names []string) *Pipeline {
-	p.includeContainer = names
+func (p *Pipeline) WithSystemNamespaces(enable bool) *Pipeline {
+	p.systemNamespaces = enable
 	return p
 }
 
-func (p *Pipeline) WithExcludeContainer(names []string) *Pipeline {
-	p.excludeContainer = names
+func (p *Pipeline) WithIncludeContainers(names []string) *Pipeline {
+	p.includeContainers = names
+	return p
+}
+
+func (p *Pipeline) WithExcludeContainers(names []string) *Pipeline {
+	p.excludeContainers = names
 	return p
 }
 
@@ -148,9 +154,12 @@ func (p *Pipeline) K8sObject() *telemetryv1alpha1.LogPipeline {
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Input: telemetryv1alpha1.Input{
 				Application: telemetryv1alpha1.ApplicationInput{
+					Namespaces: telemetryv1alpha1.InputNamespaces{
+						System: p.systemNamespaces,
+					},
 					Containers: telemetryv1alpha1.InputContainers{
-						Exclude: p.excludeContainer,
-						Include: p.includeContainer,
+						Include: p.includeContainers,
+						Exclude: p.excludeContainers,
 					},
 					KeepAnnotations: p.keepAnnotations,
 					DropLabels:      p.dropLabels,
