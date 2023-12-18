@@ -206,7 +206,7 @@ issues:
     - linters: [dupl]
       path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller.go
     - linters: [dupl]
-      path: internal/kubernetes/utils.go
+      path: internal/k8sutils/utils.go
     # Unify components checkers after getting rid of custom conditions in favor of metav1.Conditions
     - linters: [dupl]
       path: internal/reconciler/telemetry/(log|metric|trace)_components_checker.go
