@@ -74,7 +74,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, runtimeInputPipelineName)
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, runtimeInputPipelineName)
 		})
 
 		verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {

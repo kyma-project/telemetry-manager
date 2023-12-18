@@ -8,10 +8,12 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -19,6 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -66,8 +69,8 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelines.First())
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelines.Second())
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelines.First())
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelines.Second())
 		})
 
 		It("Should have a running metric gateway deployment", func() {
@@ -124,7 +127,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 
 		It("Should have only running pipelines", func() {
 			for _, pipeline := range pipelines.All() {
-				verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipeline)
+				verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipeline)
 				verifiers.MetricGatewayConfigShouldContainPipeline(ctx, k8sClient, pipeline)
 			}
 		})
@@ -136,7 +139,14 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 				pipelines.Append(pipeline.Name())
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
-				verifiers.MetricPipelineShouldNotBeRunning(ctx, k8sClient, pipeline.Name())
+				Eventually(func(g Gomega) {
+					var fetched telemetryv1alpha1.MetricPipeline
+					key := types.NamespacedName{Name: pipeline.Name()}
+					g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
+					g.Expect(meta.IsStatusConditionFalse(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
+					actualReason := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated).Reason
+					g.Expect(actualReason).To(Equal(conditions.ReasonWaitingForLock))
+				}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 				verifiers.MetricGatewayConfigShouldNotContainPipeline(ctx, k8sClient, pipeline.Name())
 			})
 		})
@@ -146,7 +156,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipelineCreatedFirst)).Should(Succeed())
 
 				for _, pipeline := range pipelines.All()[1:] {
-					verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipeline)
+					verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipeline)
 				}
 			})
 		})
@@ -198,8 +208,8 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, healthyPipelineName)
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, brokenPipelineName)
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, healthyPipelineName)
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, brokenPipelineName)
 		})
 
 		It("Should have a running metric gateway deployment", func() {

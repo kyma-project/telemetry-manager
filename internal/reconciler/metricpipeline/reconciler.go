@@ -44,7 +44,7 @@ type DaemonSetProber interface {
 type Reconciler struct {
 	client.Client
 	config             Config
-	prober             DeploymentProber
+	gatewayProber      DeploymentProber
 	agentProber        DaemonSetProber
 	overridesHandler   *overrides.Handler
 	istioStatusChecker istiostatus.Checker
@@ -54,7 +54,7 @@ func NewReconciler(client client.Client, config Config, gatewayProber Deployment
 	return &Reconciler{
 		Client:             client,
 		config:             config,
-		prober:             gatewayProber,
+		gatewayProber:      gatewayProber,
 		agentProber:        agentProber,
 		overridesHandler:   overridesHandler,
 		istioStatusChecker: istiostatus.NewChecker(client),

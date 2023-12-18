@@ -80,7 +80,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		})
 
 		It("Ensures the metricpipeline is running", func() {
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Ensures custom metric scraped via annotated pods are sent to backend", func() {
