@@ -40,7 +40,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
@@ -124,7 +124,7 @@ var _ = BeforeSuite(func() {
 
 	logpipelineController := NewLogPipelineReconciler(
 		client,
-		logpipelinereconciler.NewReconciler(client, testLogPipelineConfig, &utils.DaemonSetProber{Client: client}, overridesHandler),
+		logpipelinereconciler.NewReconciler(client, testLogPipelineConfig, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
 		testLogPipelineConfig)
 	err = logpipelineController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
@@ -134,8 +134,8 @@ var _ = BeforeSuite(func() {
 		logparser.NewReconciler(
 			client,
 			testLogParserConfig,
-			&utils.DaemonSetProber{Client: client},
-			&utils.DaemonSetAnnotator{Client: client},
+			&k8sutils.DaemonSetProber{Client: client},
+			&k8sutils.DaemonSetAnnotator{Client: client},
 			overridesHandler,
 		),
 		testLogParserConfig,
@@ -145,15 +145,15 @@ var _ = BeforeSuite(func() {
 
 	tracepipelineReconciler := NewTracePipelineReconciler(
 		client,
-		tracepipeline.NewReconciler(client, testTracePipelineReconcilerConfig, &utils.DeploymentProber{Client: client}, overridesHandler),
+		tracepipeline.NewReconciler(client, testTracePipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, overridesHandler),
 	)
 	err = tracepipelineReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
 	metricPipelineReconciler := NewMetricPipelineReconciler(
 		client,
-		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &utils.DeploymentProber{Client: client},
-			&utils.DaemonSetProber{Client: client}, overridesHandler))
+		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client},
+			&k8sutils.DaemonSetProber{Client: client}, overridesHandler))
 	err = metricPipelineReconciler.SetupWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 

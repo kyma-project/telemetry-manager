@@ -9,7 +9,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 )
 
 const parsersConfigMapKey = "parsers.conf"
@@ -20,7 +20,7 @@ type syncer struct {
 }
 
 func (s *syncer) syncFluentBitConfig(ctx context.Context) error {
-	cm, err := utils.GetOrCreateConfigMap(ctx, s, s.config.ParsersConfigMap)
+	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.config.ParsersConfigMap)
 	if err != nil {
 		return fmt.Errorf("unable to get parsers configmap: %w", err)
 	}

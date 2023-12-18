@@ -53,7 +53,7 @@ import (
 	operatorcontrollers "github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
@@ -469,7 +469,7 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 
 	return telemetrycontrollers.NewLogPipelineReconciler(
 		client,
-		logpipelinereconciler.NewReconciler(client, config, &utils.DaemonSetProber{Client: client}, overridesHandler),
+		logpipelinereconciler.NewReconciler(client, config, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
 		config)
 }
 
@@ -484,8 +484,8 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 		logparser.NewReconciler(
 			client,
 			config,
-			&utils.DaemonSetProber{Client: client},
-			&utils.DaemonSetAnnotator{Client: client},
+			&k8sutils.DaemonSetProber{Client: client},
+			&k8sutils.DaemonSetAnnotator{Client: client},
 			overridesHandler,
 		),
 		config,
@@ -538,7 +538,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 
 	return telemetrycontrollers.NewTracePipelineReconciler(
 		client,
-		tracepipeline.NewReconciler(client, config, &utils.DeploymentProber{Client: client}, overridesHandler),
+		tracepipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, overridesHandler),
 	)
 }
 
@@ -583,7 +583,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,
-		metricpipeline.NewReconciler(client, config, &utils.DeploymentProber{Client: client}, &utils.DaemonSetProber{Client: client}, overridesHandler))
+		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, overridesHandler))
 }
 
 func createDryRunConfig() dryrun.Config {

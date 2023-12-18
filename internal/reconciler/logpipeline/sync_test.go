@@ -15,7 +15,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils/mocks"
 	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 

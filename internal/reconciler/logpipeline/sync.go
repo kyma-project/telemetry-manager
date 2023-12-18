@@ -12,7 +12,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
@@ -52,7 +52,7 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 }
 
 func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployablePipelines []telemetryv1alpha1.LogPipeline) error {
-	cm, err := utils.GetOrCreateConfigMap(ctx, s, s.config.SectionsConfigMap)
+	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.config.SectionsConfigMap)
 	if err != nil {
 		return fmt.Errorf("unable to get section configmap: %w", err)
 	}
@@ -84,7 +84,7 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 }
 
 func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
-	cm, err := utils.GetOrCreateConfigMap(ctx, s, s.config.FilesConfigMap)
+	cm, err := k8sutils.GetOrCreateConfigMap(ctx, s, s.config.FilesConfigMap)
 	if err != nil {
 		return fmt.Errorf("unable to get files configmap: %w", err)
 	}
@@ -114,7 +114,7 @@ func (s *syncer) syncFilesConfigMap(ctx context.Context, pipeline *telemetryv1al
 }
 
 func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := utils.GetOrCreateSecret(ctx, s, s.config.EnvSecret)
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.EnvSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get env secret: %w", err)
 	}
@@ -156,7 +156,7 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 }
 
 func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemetryv1alpha1.LogPipeline) error {
-	oldSecret, err := utils.GetOrCreateSecret(ctx, s, s.config.OutputTLSConfigSecret)
+	oldSecret, err := k8sutils.GetOrCreateSecret(ctx, s, s.config.OutputTLSConfigSecret)
 	if err != nil {
 		return fmt.Errorf("unable to get tls config secret: %w", err)
 	}
