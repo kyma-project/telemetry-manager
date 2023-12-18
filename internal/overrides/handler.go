@@ -11,7 +11,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	logr "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Handler struct {
@@ -65,7 +65,7 @@ func (h *Handler) loadOverridesConfig(ctx context.Context) (*Config, error) {
 		return &overrideConfig, err
 	}
 
-	logf.FromContext(ctx).V(1).Info("Using overrides: %+v", overrideConfig)
+	logr.FromContext(ctx).V(1).Info("Using overrides: %+v", overrideConfig)
 
 	return &overrideConfig, nil
 }
@@ -75,7 +75,7 @@ func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
 	cmName := h.config.ConfigMapName
 	if err := h.client.Get(ctx, cmName, &cm); err != nil {
 		if apierrors.IsNotFound(err) {
-			logf.FromContext(ctx).V(1).Info("Could not find overrides configmap",
+			logr.FromContext(ctx).V(1).Info("Could not find overrides configmap",
 				"name", cmName.Name,
 				"namespace", cmName.Namespace)
 			return "", nil
@@ -106,7 +106,7 @@ func (h *Handler) syncLogLevel(ctx context.Context, config GlobalConfig) error {
 func (h *Handler) changeLogLevel(ctx context.Context, newLevel zapcore.Level) error {
 	oldLevel := h.atomicLevel.Level()
 
-	logf.FromContext(ctx).V(1).Info("Changing log level",
+	logr.FromContext(ctx).V(1).Info("Changing log level",
 		"old", oldLevel,
 		"new", newLevel)
 

@@ -8,7 +8,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	logr "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
@@ -22,7 +22,7 @@ type syncer struct {
 }
 
 func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
-	log := logf.FromContext(ctx)
+	log := logr.FromContext(ctx)
 
 	if err := s.syncSectionsConfigMap(ctx, pipeline, deployableLogPipelines); err != nil {
 		return fmt.Errorf("failed to sync sections: %v", err)

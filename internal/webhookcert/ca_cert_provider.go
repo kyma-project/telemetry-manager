@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	logr "sigs.k8s.io/controller-runtime/pkg/log"
 
 	utils "github.com/kyma-project/telemetry-manager/internal/kubernetes"
 )
@@ -55,7 +55,7 @@ func (p *caCertProviderImpl) provideCert(ctx context.Context, caSecretName types
 	}
 
 	if shouldCreateNew {
-		logf.FromContext(ctx).Info("Generating new CA cert/key",
+		logr.FromContext(ctx).Info("Generating new CA cert/key",
 			"secretName", caSecretName.Name,
 			"secretNamespace", caSecretName.Namespace)
 
@@ -77,7 +77,7 @@ func (p *caCertProviderImpl) provideCert(ctx context.Context, caSecretName types
 func (p *caCertProviderImpl) checkCASecret(ctx context.Context, caSecret *corev1.Secret) bool {
 	caCertPEM, err := p.fetchCACert(caSecret)
 	if err != nil {
-		logf.FromContext(ctx).Error(err, "Invalid ca secret. Creating a new one",
+		logr.FromContext(ctx).Error(err, "Invalid ca secret. Creating a new one",
 			"secretName", caSecret.Name,
 			"secretNamespace", caSecret.Namespace)
 		return false

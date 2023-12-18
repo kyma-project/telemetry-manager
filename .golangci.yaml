@@ -117,7 +117,7 @@ linters-settings:
       - pkg: sigs.k8s.io/controller-runtime
         alias: ctrl
       - pkg: sigs.k8s.io/controller-runtime/pkg/log
-        alias: logf
+        alias: logr
       - pkg: sigs.k8s.io/controller-runtime/pkg/log/zap
         alias: logzap
       - pkg: sigs.k8s.io/controller-runtime/pkg/metrics/server
