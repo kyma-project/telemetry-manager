@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Secret Rotation", Label("new"), func() {
+var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 	Context("When a metricpipeline with missing secret reference exists", Ordered, func() {
 		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", kitkyma.DefaultNamespaceName,
 			kitk8s.WithStringData("metric-host", "http://localhost:4317"))
