@@ -35,7 +35,7 @@ import (
 	logr "sigs.k8s.io/controller-runtime/pkg/log"
 	logzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -98,7 +98,7 @@ var _ = BeforeSuite(func() {
 		Scheme:         clientgoscheme.Scheme,
 		LeaderElection: false,
 		Metrics:        metricsserver.Options{BindAddress: "localhost:8082"},
-		WebhookServer: k8sWebhook.NewServer(k8sWebhook.Options{
+		WebhookServer: webhook.NewServer(webhook.Options{
 			Host:    webhookInstallOptions.LocalServingHost,
 			Port:    webhookInstallOptions.LocalServingPort,
 			CertDir: webhookInstallOptions.LocalServingCertDir,
@@ -118,7 +118,7 @@ var _ = BeforeSuite(func() {
 	By("registering LogPipeline webhook")
 	mgr.GetWebhookServer().Register(
 		"/validate-logpipeline",
-		&k8sWebhook.Admission{Handler: logPipelineValidator})
+		&webhook.Admission{Handler: logPipelineValidator})
 
 	//+kubebuilder:scaffold:webhook
 

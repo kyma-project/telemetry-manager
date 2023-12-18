@@ -45,7 +45,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -312,7 +312,7 @@ func main() {
 		LeaderElection:          true,
 		LeaderElectionNamespace: telemetryNamespace,
 		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
-		WebhookServer: k8sWebhook.NewServer(k8sWebhook.Options{
+		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    9443,
 			CertDir: certDir,
 		}),
@@ -403,8 +403,8 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 func enableLoggingController(mgr manager.Manager) {
 	setupLog.Info("Starting with logging controllers")
 
-	mgr.GetWebhookServer().Register("/validate-logpipeline", &k8sWebhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
-	mgr.GetWebhookServer().Register("/validate-logparser", &k8sWebhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
+	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
+	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
 
 	if err := createLogPipelineReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "LogPipeline")
