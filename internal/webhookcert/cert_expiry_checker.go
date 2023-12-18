@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	logr "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type certExpiryChecker interface {
@@ -30,7 +30,7 @@ func (c *certExpiryCheckerImpl) checkExpiry(ctx context.Context, certPEM []byte)
 	if nowTime.Before(softExpiryTime) {
 		return true, nil
 	}
-	logr.FromContext(ctx).Info("Cert expiry check failed",
+	logf.FromContext(ctx).Info("Cert expiry check failed",
 		"nowTime", nowTime,
 		"hardExpiryTime", hardExpiryTime,
 		"softExpiryTime", softExpiryTime)

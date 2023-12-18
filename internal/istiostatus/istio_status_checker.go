@@ -7,7 +7,7 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logr "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Checker struct {
@@ -27,7 +27,7 @@ func NewChecker(client client.Reader) Checker {
 func (isc *Checker) IsIstioActive(ctx context.Context) bool {
 	var crdList apiextensionsv1.CustomResourceDefinitionList
 	if err := isc.client.List(ctx, &crdList); err != nil {
-		logr.FromContext(ctx).Error(err, "Unable to list CRDs to check Istio status")
+		logf.FromContext(ctx).Error(err, "Unable to list CRDs to check Istio status")
 		return false
 	}
 

@@ -8,7 +8,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logr "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type DaemonSetProber struct {
@@ -16,7 +16,7 @@ type DaemonSetProber struct {
 }
 
 func (dsp *DaemonSetProber) IsReady(ctx context.Context, name types.NamespacedName) (bool, error) {
-	log := logr.FromContext(ctx)
+	log := logf.FromContext(ctx)
 
 	var ds appsv1.DaemonSet
 	if err := dsp.Get(ctx, name, &ds); err != nil {

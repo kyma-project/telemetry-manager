@@ -7,14 +7,14 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logr "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error {
-	log := logr.FromContext(ctx)
+	log := logf.FromContext(ctx)
 	var parser telemetryv1alpha1.LogParser
 	if err := r.Get(ctx, types.NamespacedName{Name: parserName}, &parser); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -53,7 +53,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 }
 
 func setCondition(ctx context.Context, client client.Client, parser *telemetryv1alpha1.LogParser, condition *telemetryv1alpha1.LogParserCondition) error {
-	log := logr.FromContext(ctx)
+	log := logf.FromContext(ctx)
 
 	log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s", parser.Name, condition.Type))
 

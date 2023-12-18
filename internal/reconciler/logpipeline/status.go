@@ -7,7 +7,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logr "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
@@ -57,7 +57,7 @@ func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName st
 		return nil
 	}
 
-	log := logr.FromContext(ctx)
+	log := logf.FromContext(ctx)
 
 	if pipeline.Spec.Output.IsLokiDefined() {
 		pending := telemetryv1alpha1.NewLogPipelineCondition(conditions.ReasonUnsupportedLokiOutput, telemetryv1alpha1.LogPipelinePending)
@@ -107,7 +107,7 @@ func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName st
 }
 
 func setCondition(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.LogPipeline, condition *telemetryv1alpha1.LogPipelineCondition) error {
-	log := logr.FromContext(ctx)
+	log := logf.FromContext(ctx)
 
 	log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s", pipeline.Name, condition.Type))
 

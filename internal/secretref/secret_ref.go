@@ -7,7 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logr "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
@@ -54,11 +54,11 @@ func GetValue(ctx context.Context, client client.Reader, ref telemetryv1alpha1.S
 func checkIfSecretHasKey(ctx context.Context, client client.Reader, ref telemetryv1alpha1.SecretKeyRef) bool {
 	var secret corev1.Secret
 	if err := client.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, &secret); err != nil {
-		logr.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to get secret '%s' from namespace '%s'", ref.Name, ref.Namespace))
+		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to get secret '%s' from namespace '%s'", ref.Name, ref.Namespace))
 		return false
 	}
 	if _, ok := secret.Data[ref.Key]; !ok {
-		logr.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to find key '%s' in secret '%s'", ref.Key, ref.Name))
+		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Unable to find key '%s' in secret '%s'", ref.Key, ref.Name))
 		return false
 	}
 

@@ -24,7 +24,7 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logr "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -72,7 +72,7 @@ func NewValidatingWebhookHandler(
 }
 
 func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
-	log := logr.FromContext(ctx)
+	log := logf.FromContext(ctx)
 
 	logPipeline := &telemetryv1alpha1.LogPipeline{}
 	if err := v.decoder.Decode(req, logPipeline); err != nil {
@@ -114,7 +114,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 }
 
 func (v *ValidatingWebhookHandler) validateLogPipeline(ctx context.Context, logPipeline *telemetryv1alpha1.LogPipeline) error {
-	log := logr.FromContext(ctx)
+	log := logf.FromContext(ctx)
 
 	var logPipelines telemetryv1alpha1.LogPipelineList
 	if err := v.List(ctx, &logPipelines); err != nil {

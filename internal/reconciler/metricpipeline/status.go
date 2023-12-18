@@ -7,7 +7,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logr "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
@@ -15,7 +15,7 @@ import (
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lockAcquired bool) error {
-	log := logr.FromContext(ctx)
+	log := logf.FromContext(ctx)
 
 	var pipeline telemetryv1alpha1.MetricPipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
@@ -66,7 +66,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 }
 
 func (r *Reconciler) updateGatewayStatus(ctx context.Context, pipelineName string) error {
-	log := logr.FromContext(ctx)
+	log := logf.FromContext(ctx)
 
 	var pipeline telemetryv1alpha1.MetricPipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
@@ -102,7 +102,7 @@ func (r *Reconciler) updateGatewayStatus(ctx context.Context, pipelineName strin
 }
 
 func (r *Reconciler) updateAgentStatus(ctx context.Context, pipelineName string) error {
-	log := logr.FromContext(ctx)
+	log := logf.FromContext(ctx)
 
 	var pipeline telemetryv1alpha1.MetricPipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
@@ -140,7 +140,7 @@ func (r *Reconciler) updateAgentStatus(ctx context.Context, pipelineName string)
 }
 
 func setCondition(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.MetricPipeline, condition *telemetryv1alpha1.MetricPipelineCondition) error {
-	log := logr.FromContext(ctx)
+	log := logf.FromContext(ctx)
 
 	log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s", pipeline.Name, condition.Type))
 

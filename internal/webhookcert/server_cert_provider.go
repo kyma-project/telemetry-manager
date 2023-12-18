@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	logr "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type serverCertConfig struct {
@@ -55,7 +55,7 @@ func (p *serverCertProviderImpl) provideCert(ctx context.Context, config serverC
 	}
 
 	if shouldCreateNew {
-		logr.FromContext(ctx).Info("Generating new server cert/key")
+		logf.FromContext(ctx).Info("Generating new server cert/key")
 
 		serverCertPEM, serverKeyPEM, err = p.generator.generateCert(config)
 		if err != nil {

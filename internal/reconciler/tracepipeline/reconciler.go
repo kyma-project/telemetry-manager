@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logr "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -69,7 +69,7 @@ func NewReconciler(client client.Client, config Config, prober DeploymentProber,
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logr.FromContext(ctx).V(1).Info("Reconciliation triggered")
+	logf.FromContext(ctx).V(1).Info("Reconciliation triggered")
 
 	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
 	if err != nil {
@@ -77,7 +77,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if overrideConfig.Tracing.Paused {
-		logr.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
+		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
 		return ctrl.Result{}, nil
 	}
 
@@ -121,7 +121,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
 	}
 	if len(deployablePipelines) == 0 {
-		logr.FromContext(ctx).V(1).Info("Skipping reconciliation: no trace pipeline ready for deployment")
+		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: no trace pipeline ready for deployment")
 		return nil
 	}
 
@@ -199,7 +199,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	var telemetries operatorv1alpha1.TelemetryList
 	if err := r.List(ctx, &telemetries); err != nil {
-		logr.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
+		logf.FromContext(ctx).V(1).Error(err, "Failed to list telemetry: using default scaling")
 		return defaultReplicaCount
 	}
 	for i := range telemetries.Items {

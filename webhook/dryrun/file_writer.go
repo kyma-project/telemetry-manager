@@ -8,7 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logr "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
@@ -155,7 +155,7 @@ func appendOrReplace(parsers *telemetryv1alpha1.LogParserList, parser *telemetry
 
 func deleteWorkDir(ctx context.Context, workDir string) {
 	if err := os.RemoveAll(workDir); err != nil {
-		log := logr.FromContext(ctx)
+		log := logf.FromContext(ctx)
 		log.Error(err, "Failed to remove Fluent Bit config directory")
 	}
 }

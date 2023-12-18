@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	logr "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
@@ -84,13 +84,13 @@ func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *TracePipelineReconciler) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	_, ok := object.(*operatorv1alpha1.Telemetry)
 	if !ok {
-		logr.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
+		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
 		return nil
 	}
 
 	requests, err := r.createRequestsForAllPipelines(ctx)
 	if err != nil {
-		logr.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
 	}
 	return requests
 }

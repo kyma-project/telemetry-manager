@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	logr "sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type certChainChecker interface {
@@ -30,7 +30,7 @@ func (c *certChainCheckerImpl) checkRoot(ctx context.Context, serverCertPEM []by
 
 	chains, err := serverCert.Verify(x509.VerifyOptions{Roots: roots})
 	if err != nil {
-		logr.FromContext(ctx).Info("Root cert check failed. CA cert is not found in the chain")
+		logf.FromContext(ctx).Info("Root cert check failed. CA cert is not found in the chain")
 		return false, fmt.Errorf("failed to verify x509 cert: %w", err)
 	}
 
