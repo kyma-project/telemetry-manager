@@ -14,6 +14,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	"errors"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
@@ -33,6 +34,38 @@ func TestUpdateStatus(t *testing.T) {
 		gatewayProberMock := &mocks.DeploymentProber{}
 		fakeGatewayName := types.NamespacedName{Name: "gateway", Namespace: "telemetry"}
 		gatewayProberMock.On("IsReady", mock.Anything, fakeGatewayName).Return(false, nil)
+
+		sut := Reconciler{
+			Client: fakeClient,
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{
+					BaseName:  fakeGatewayName.Name,
+					Namespace: fakeGatewayName.Namespace,
+				},
+			}},
+			gatewayProber: gatewayProberMock,
+		}
+		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricGatewayHealthy)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricGatewayHealthy)
+		require.Equal(t, metav1.ConditionFalse, cond.Status)
+		require.Equal(t, conditions.ReasonMetricGatewayDeploymentNotReady, cond.Reason)
+
+		mock.AssertExpectationsForObjects(t, gatewayProberMock)
+	})
+
+	t.Run("metric gateway prober fails", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		gatewayProberMock := &mocks.DeploymentProber{}
+		fakeGatewayName := types.NamespacedName{Name: "gateway", Namespace: "telemetry"}
+		gatewayProberMock.On("IsReady", mock.Anything, fakeGatewayName).Return(false, errors.New("failed to probe"))
 
 		sut := Reconciler{
 			Client: fakeClient,
@@ -100,6 +133,41 @@ func TestUpdateStatus(t *testing.T) {
 		agentProberMock := &mocks.DaemonSetProber{}
 		fakeAgentName := types.NamespacedName{Name: "agent", Namespace: "telemetry"}
 		agentProberMock.On("IsReady", mock.Anything, fakeAgentName).Return(false, nil)
+		sut := Reconciler{
+			Client: fakeClient,
+			config: Config{Agent: otelcollector.AgentConfig{
+				Config: otelcollector.Config{
+					BaseName:  fakeAgentName.Name,
+					Namespace: fakeAgentName.Namespace,
+				},
+			}},
+			gatewayProber: gatewayProberStub,
+			agentProber:   agentProberMock,
+		}
+		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.MetricPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricAgentHealthy)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricAgentHealthy)
+		require.Equal(t, metav1.ConditionFalse, cond.Status)
+		require.Equal(t, conditions.ReasonMetricAgentDaemonSetNotReady, cond.Reason)
+
+		mock.AssertExpectationsForObjects(t, agentProberMock)
+	})
+
+	t.Run("metric agent prober fails", func(t *testing.T) {
+		pipeline := testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+		gatewayProberStub := &mocks.DeploymentProber{}
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		agentProberMock := &mocks.DaemonSetProber{}
+		fakeAgentName := types.NamespacedName{Name: "agent", Namespace: "telemetry"}
+		agentProberMock.On("IsReady", mock.Anything, fakeAgentName).Return(false, errors.New("failed to probe"))
 		sut := Reconciler{
 			Client: fakeClient,
 			config: Config{Agent: otelcollector.AgentConfig{
