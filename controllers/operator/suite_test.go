@@ -24,8 +24,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.uber.org/zap"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	zapLog "go.uber.org/zap"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -119,7 +119,7 @@ var _ = BeforeSuite(func() {
 	}
 	client := mgr.GetClient()
 
-	atomicLogLevel := zapLog.NewAtomicLevel()
+	atomicLogLevel := zap.NewAtomicLevel()
 	var handlerConfig overrides.HandlerConfig
 	overridesHandler := overrides.New(client, atomicLogLevel, handlerConfig)
 
