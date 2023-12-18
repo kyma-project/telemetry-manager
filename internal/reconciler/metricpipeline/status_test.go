@@ -287,7 +287,8 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("waiting for lock", func(t *testing.T) {
-		pipeline := testutils.NewMetricPipelineBuilder().Build()
+		pipeline := testutils.NewMetricPipelineBuilder().WithBasicAuthFromSecret(
+			"some-secret", "some-namespace", "user", "password").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}

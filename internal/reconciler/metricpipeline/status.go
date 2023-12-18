@@ -87,15 +87,14 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonMetricConfigurationGenerated
 
+	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonReferencedSecretMissing
+	}
+
 	if !lockAcquired {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonWaitingForLock
-	}
-
-	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline)
-	if referencesNonExistentSecret {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonReferencedSecretMissing
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation))
