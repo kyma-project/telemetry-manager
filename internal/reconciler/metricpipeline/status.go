@@ -31,11 +31,11 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 		return nil
 	}
 
-	if err := r.setAgentReadyCondition(ctx, &pipeline); err != nil {
+	if err := r.setAgentHealthyCondition(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to set agent ready condition: %w", err)
 	}
 
-	if err := r.setGatewayReadyCondition(ctx, &pipeline); err != nil {
+	if err := r.setGatewayHealthyCondition(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to set gateway ready condition: %w", err)
 	}
 
@@ -48,7 +48,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 	return nil
 }
 
-func (r *Reconciler) setAgentReadyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonMetricAgentNotRequired
 
@@ -67,16 +67,11 @@ func (r *Reconciler) setAgentReadyCondition(ctx context.Context, pipeline *telem
 		}
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, metav1.Condition{
-		Type:    conditions.TypeMetricAgentHealthy,
-		Status:  status,
-		Reason:  reason,
-		Message: conditions.CommonMessageFor(reason),
-	})
+	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeMetricAgentHealthy, reason, status, pipeline.Generation))
 	return nil
 }
 
-func (r *Reconciler) setGatewayReadyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
 	gatewayName := types.NamespacedName{Name: r.config.Gateway.BaseName, Namespace: r.config.Gateway.Namespace}
 	ready, err := r.gatewayProber.IsReady(ctx, gatewayName)
 	if err != nil {
@@ -90,12 +85,7 @@ func (r *Reconciler) setGatewayReadyCondition(ctx context.Context, pipeline *tel
 		reason = conditions.ReasonMetricGatewayDeploymentReady
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, metav1.Condition{
-		Type:    conditions.TypeMetricGatewayHealthy,
-		Status:  status,
-		Reason:  reason,
-		Message: conditions.CommonMessageFor(reason),
-	})
+	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeMetricGatewayHealthy, reason, status, pipeline.Generation))
 	return nil
 }
 
@@ -114,10 +104,15 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 		reason = conditions.ReasonReferencedSecretMissing
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, metav1.Condition{
-		Type:    conditions.TypeConfigurationGenerated,
-		Status:  status,
-		Reason:  reason,
-		Message: conditions.CommonMessageFor(reason),
-	})
+	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation))
+}
+
+func newCondition(condType, reason string, status metav1.ConditionStatus, generation int64) metav1.Condition {
+	return metav1.Condition{
+		Type:               condType,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.CommonMessageFor(reason),
+		ObservedGeneration: generation,
+	}
 }
