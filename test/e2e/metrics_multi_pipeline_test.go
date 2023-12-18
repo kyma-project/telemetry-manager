@@ -8,6 +8,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -22,7 +23,6 @@ import (
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
-	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
@@ -143,7 +143,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 					var fetched telemetryv1alpha1.MetricPipeline
 					key := types.NamespacedName{Name: pipeline.Name()}
 					g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
-					g.Expect(meta.IsStatusConditionFalse(fetched.Status.Conditions, conditions.TypeConfigurationGenerated))
+					g.Expect(meta.IsStatusConditionFalse(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
 					actualReason := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated).Reason
 					g.Expect(actualReason).To(Equal(conditions.ReasonWaitingForLock))
 				}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())

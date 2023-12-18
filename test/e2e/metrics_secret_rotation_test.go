@@ -6,6 +6,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/types"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
@@ -14,8 +16,6 @@ import (
 	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
@@ -37,7 +37,7 @@ var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 				var fetched telemetryv1alpha1.MetricPipeline
 				key := types.NamespacedName{Name: metricPipeline.Name()}
 				g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
-				g.Expect(meta.IsStatusConditionFalse(fetched.Status.Conditions, conditions.TypeConfigurationGenerated))
+				g.Expect(meta.IsStatusConditionFalse(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
 				actualReason := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated).Reason
 				g.Expect(actualReason).To(Equal(conditions.ReasonReferencedSecretMissing))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
