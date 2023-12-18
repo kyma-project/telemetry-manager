@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -19,7 +20,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
@@ -136,7 +139,14 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 				pipelines.Append(pipeline.Name())
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
-				verifiers.MetricPipelineShouldNotBeRunning(ctx, k8sClient, pipeline.Name())
+				Eventually(func(g Gomega) {
+					var fetched telemetryv1alpha1.MetricPipeline
+					key := types.NamespacedName{Name: pipeline.Name()}
+					g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
+					g.Expect(meta.IsStatusConditionFalse(fetched.Status.Conditions, conditions.TypeConfigurationGenerated))
+					actualReason := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated).Reason
+					g.Expect(actualReason).To(Equal(conditions.ReasonWaitingForLock))
+				}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 				verifiers.MetricGatewayConfigShouldNotContainPipeline(ctx, k8sClient, pipeline.Name())
 			})
 		})

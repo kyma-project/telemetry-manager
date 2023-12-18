@@ -32,15 +32,6 @@ func MetricPipelineShouldBeHealthy(ctx context.Context, k8sClient client.Client,
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func MetricPipelineShouldNotBeRunning(ctx context.Context, k8sClient client.Client, pipelineName string) {
-	Consistently(func(g Gomega) {
-		//var pipeline telemetryv1alpha1.MetricPipeline
-		//key := types.NamespacedName{Name: pipelineName}
-		//g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		//g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.MetricPipelineRunning)).To(BeFalse())
-	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
-}
-
 func MetricGatewayConfigShouldContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) bool {
 		var collectorConfig corev1.ConfigMap
