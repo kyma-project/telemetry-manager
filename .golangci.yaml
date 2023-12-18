@@ -25,6 +25,7 @@ linters:
     - gosec
     - gosimple
     - govet
+    - importas
     - ineffassign
     - loggercheck
     - misspell
@@ -40,12 +41,80 @@ linters:
 
 linters-settings:
   dupl:
-    threshold: 100                 # Tokens count to trigger error.
+    threshold: 100 # Tokens count to trigger error.
+  importas:
+    no-unaliased: true
+    no-extra-aliases: true
+    alias:
+      - pkg: crypto/rand
+        alias: crand
+      - pkg: github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1
+        alias: operatorv1alpha1
+      - pkg: github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1
+        alias: telemetryv1alpha1
+      - pkg: github.com/kyma-project/telemetry-manager/controllers/telemetry
+        alias: telemetrycontrollers
+      - pkg: github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent
+        alias: configmetricagent
+      - pkg: github.com/kyma-project/telemetry-manager/internal/resources/common
+        alias: commonresources
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/k8s
+        alias: kitk8s
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma
+        alias: kitkyma
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma/overrides
+        alias: kitovrr
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log
+        alias: kitlogpipeline
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric
+        alias: kitmetricpipeline
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace
+        alias: kittracepipeline
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics
+        alias: kitmetrics
+      - pkg: github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces
+        alias: kittraces
+      - pkg: github.com/kyma-project/telemetry-manager/webhook/logparser
+        alias: logparserwebhook
+      - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline
+        alias: logpipelinewebhook
+      - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation/mocks
+        alias: logpipelinevalidationmocks
+      - pkg: go.opentelemetry.io/otel/sdk/trace
+        alias: tracesdk
+      - pkg: istio.io/api/security/v1beta1
+        alias: istiosecurityv1beta
+      - pkg: istio.io/api/type/v1beta1
+        alias: istiotypev1beta1
+      - pkg: istio.io/client-go/pkg/apis/security/v1beta1
+        alias: istiosecurityclientv1beta
+      - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
+        alias: $1$2
+      - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
+        alias: apiextensionsv1
+      - pkg: k8s.io/apimachinery/pkg/api/equality
+        alias: apiequality
+      - pkg: k8s.io/apimachinery/pkg/api/errors
+        alias: apierrors
+      - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
+        alias: metav1
+      - pkg: k8s.io/apimachinery/pkg/util/runtime
+        alias: utilruntime
+      - pkg: k8s.io/client-go/kubernetes/scheme
+        alias: clientgoscheme
+      - pkg: sigs.k8s.io/controller-runtime
+        alias: ctrl
+      - pkg: sigs.k8s.io/controller-runtime/pkg/log
+        alias: logf
+      - pkg: sigs.k8s.io/controller-runtime/pkg/log/zap
+        alias: logzap
+      - pkg: sigs.k8s.io/controller-runtime/pkg/metrics/server
+        alias: metricsserver
 
   errcheck:
-    check-type-assertions: true    # Reports type assertions: `a := b.(SomeStruct)`.
-    check-blank: true              # Report assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.
-    exclude-functions:             # List of functions to exclude from checking.
+    check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.
+    check-blank: true # Report assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.
+    exclude-functions: # List of functions to exclude from checking.
       - io/ioutil.ReadFile
       - io.Copy(*bytes.Buffer)
       - io.Copy(os.Stdout)
@@ -57,10 +126,10 @@ linters-settings:
 
   gci:
     sections:
-      - standard                                             # Standard packages.
-      - default                                              # Imports that could not be matched to another section type.
-      - prefix(github.com/kyma-project/telemetry-manager)    # Imports with the specified Prefix.
-      - blank                                                # Blank imports
+      - standard # Standard packages.
+      - default # Imports that could not be matched to another section type.
+      - prefix(github.com/kyma-project/telemetry-manager) # Imports with the specified Prefix.
+      - blank # Blank imports
     custom-order: true
 
   goimports:
@@ -70,11 +139,11 @@ linters-settings:
     check-shadowing: true
 
   loggercheck:
-    klog: true                   # Allows checking for the k8s.io/klog/v2.
-    zap: true                    # Allows checking for the go.uber.org/zap.
-    kitlog: false                # Prohibits checking for the github.com/go-kit/log.
-    logr: false                  # Prohibits checking for the github.com/go-logr/logr.
-    require-string-key: true     # Require all logging keys to be inlined constant strings.
+    klog: true # Allows checking for the k8s.io/klog/v2.
+    zap: true # Allows checking for the go.uber.org/zap.
+    kitlog: false # Prohibits checking for the github.com/go-kit/log.
+    logr: false # Prohibits checking for the github.com/go-logr/logr.
+    require-string-key: true # Require all logging keys to be inlined constant strings.
     no-printf-like: true
 
   misspell:
@@ -124,18 +193,21 @@ issues:
       text: "shadow: declaration of \"err\" shadows declaration at line ([\\d]+)"
       linters:
         - govet
-    - linters: [ dupl ]
+    - linters: [dupl]
       path: controllers/telemetry/(logparser|logpipeline|metricpipeline|tracepipeline)_controller.go
-    - linters: [ dupl ]
-      path: internal/kubernetes/utils.go
+    - linters: [dupl]
+      path: internal/k8sutils/utils.go
     # Unify components checkers after getting rid of custom conditions in favor of metav1.Conditions
-    - linters: [ dupl ]
+    - linters: [dupl]
       path: internal/reconciler/telemetry/(log|metric|trace)_components_checker.go
-    - linters: [ dupl ]
+    - linters: [dupl]
       path: test/testkit/matchers/(log|metric|trace)_matchers.go
-    - linters: [ errcheck ]
+    - linters: [errcheck]
       path: test/testkit/otlp/traces/traces.go
-    - linters: [ dupl ]
+    - linters: [dupl]
       path: test/testkit/verifiers/(deployment|daemonset|metrics|traces).go
-    - linters: [ dupl ]
+    - linters: [dupl]
       path: main.go
+    - linters:
+        - importas
+      text: has alias "" which is not part of config # Ignore false positives that emerged due to https://github.com/julz/importas/issues/15.

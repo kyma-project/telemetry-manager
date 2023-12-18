@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
@@ -18,9 +18,9 @@ type Pipeline struct {
 
 	id              string
 	name            string
-	otlpEndpointRef *telemetry.SecretKeyRef
+	otlpEndpointRef *telemetryv1alpha1.SecretKeyRef
 	otlpEndpoint    string
-	tls             *telemetry.OtlpTLS
+	tls             *telemetryv1alpha1.OtlpTLS
 }
 
 func NewPipeline(name string) *Pipeline {
@@ -36,22 +36,22 @@ func (p *Pipeline) WithOutputEndpoint(otlpEndpoint string) *Pipeline {
 	return p
 }
 
-func (p *Pipeline) WithOutputEndpointFromSecret(otlpEndpointRef *telemetry.SecretKeyRef) *Pipeline {
+func (p *Pipeline) WithOutputEndpointFromSecret(otlpEndpointRef *telemetryv1alpha1.SecretKeyRef) *Pipeline {
 	p.otlpEndpointRef = otlpEndpointRef
 	return p
 }
 
 func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
-	p.tls = &telemetry.OtlpTLS{
+	p.tls = &telemetryv1alpha1.OtlpTLS{
 		Insecure:           false,
 		InsecureSkipVerify: false,
-		CA: &telemetry.ValueType{
+		CA: &telemetryv1alpha1.ValueType{
 			Value: certs.CaCertPem.String(),
 		},
-		Cert: &telemetry.ValueType{
+		Cert: &telemetryv1alpha1.ValueType{
 			Value: certs.ClientCertPem.String(),
 		},
-		Key: &telemetry.ValueType{
+		Key: &telemetryv1alpha1.ValueType{
 			Value: certs.ClientKeyPem.String(),
 		},
 	}
@@ -73,32 +73,32 @@ func (p *Pipeline) Persistent(persistent bool) *Pipeline {
 	return p
 }
 
-func (p *Pipeline) K8sObject() *telemetry.TracePipeline {
-	var labels k8s.Labels
+func (p *Pipeline) K8sObject() *telemetryv1alpha1.TracePipeline {
+	var labels kitk8s.Labels
 	if p.persistent {
-		labels = k8s.PersistentLabel
+		labels = kitk8s.PersistentLabel
 	}
 	labels.Version(version)
 
-	otlpOutput := &telemetry.OtlpOutput{
-		Endpoint: telemetry.ValueType{},
+	otlpOutput := &telemetryv1alpha1.OtlpOutput{
+		Endpoint: telemetryv1alpha1.ValueType{},
 		TLS:      p.tls,
 	}
 	if p.otlpEndpointRef != nil {
-		otlpOutput.Endpoint.ValueFrom = &telemetry.ValueFromSource{
+		otlpOutput.Endpoint.ValueFrom = &telemetryv1alpha1.ValueFromSource{
 			SecretKeyRef: p.otlpEndpointRef,
 		}
 	} else {
 		otlpOutput.Endpoint.Value = p.otlpEndpoint
 	}
 
-	pipeline := telemetry.TracePipeline{
-		ObjectMeta: k8smeta.ObjectMeta{
+	pipeline := telemetryv1alpha1.TracePipeline{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:   p.Name(),
 			Labels: labels,
 		},
-		Spec: telemetry.TracePipelineSpec{
-			Output: telemetry.TracePipelineOutput{
+		Spec: telemetryv1alpha1.TracePipelineSpec{
+			Output: telemetryv1alpha1.TracePipelineOutput{
 				Otlp: otlpOutput,
 			},
 		},

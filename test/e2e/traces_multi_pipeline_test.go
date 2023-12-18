@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
+	kittracepipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
@@ -43,7 +43,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("tracing"), func() {
 				objs = append(objs, mockBackend.K8sObjects()...)
 				urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-				pipeline := kittrace.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+				pipeline := kittracepipeline.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
 				pipelines.Append(pipeline.Name())
 				objs = append(objs, pipeline.K8sObject())
 			}
@@ -90,7 +90,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("tracing"), func() {
 		makeResources := func() []client.Object {
 			var objs []client.Object
 			for i := 0; i < maxNumberOfTracePipelines; i++ {
-				pipeline := kittrace.NewPipeline(fmt.Sprintf("pipeline-%d", i))
+				pipeline := kittracepipeline.NewPipeline(fmt.Sprintf("pipeline-%d", i))
 				pipelines.Append(pipeline.Name())
 				objs = append(objs, pipeline.K8sObject())
 
@@ -123,7 +123,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("tracing"), func() {
 
 		It("Should have a pending pipeline", func() {
 			By("Creating an additional pipeline", func() {
-				pipeline := kittrace.NewPipeline("exceeding-pipeline")
+				pipeline := kittracepipeline.NewPipeline("exceeding-pipeline")
 				pipelineCreatedLater = pipeline.K8sObject()
 				pipelines.Append(pipeline.Name())
 
@@ -163,13 +163,13 @@ var _ = Describe("Traces Multi-Pipeline", Label("tracing"), func() {
 			objs = append(objs, mockBackend.K8sObjects()...)
 			urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-			healthyPipeline := kittrace.NewPipeline("healthy").WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+			healthyPipeline := kittracepipeline.NewPipeline("healthy").WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
 			healthyPipelineName = healthyPipeline.Name()
 			objs = append(objs, healthyPipeline.K8sObject())
 
 			unreachableHostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-broken", kitkyma.DefaultNamespaceName,
 				kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
-			brokenPipeline := kittrace.NewPipeline("broken").WithOutputEndpointFromSecret(unreachableHostSecret.SecretKeyRef("metric-host"))
+			brokenPipeline := kittracepipeline.NewPipeline("broken").WithOutputEndpointFromSecret(unreachableHostSecret.SecretKeyRef("metric-host"))
 			brokenPipelineName = brokenPipeline.Name()
 			objs = append(objs, brokenPipeline.K8sObject(), unreachableHostSecret.K8sObject())
 

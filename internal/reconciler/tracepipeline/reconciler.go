@@ -29,7 +29,7 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/trace/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
@@ -103,7 +103,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		}
 	}()
 
-	lock := kubernetes.NewResourceCountLock(r.Client, types.NamespacedName{
+	lock := k8sutils.NewResourceCountLock(r.Client, types.NamespacedName{
 		Name:      "telemetry-tracepipeline-lock",
 		Namespace: r.config.Gateway.Namespace,
 	}, r.config.MaxPipelines)
@@ -133,7 +133,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 // getDeployableTracePipelines returns the list of trace pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func getDeployableTracePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline, client client.Client, lock *kubernetes.ResourceCountLock) ([]telemetryv1alpha1.TracePipeline, error) {
+func getDeployableTracePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline, client client.Client, lock *k8sutils.ResourceCountLock) ([]telemetryv1alpha1.TracePipeline, error) {
 	var deployablePipelines []telemetryv1alpha1.TracePipeline
 	for i := range allPipelines {
 		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
@@ -186,7 +186,7 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	if err := otelcollector.ApplyGatewayResources(ctx,
-		kubernetes.NewOwnerReferenceSetter(r.Client, pipeline),
+		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
 			WithIstioConfig(fmt.Sprintf("%d, %d", ports.Metrics, ports.OpenCensus), isIstioActive).
 			WithAllowedPorts(allowedPorts)); err != nil {

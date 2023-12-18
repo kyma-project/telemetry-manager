@@ -3,10 +3,10 @@ package log
 import (
 	"strings"
 
-	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
@@ -14,14 +14,14 @@ type Pipeline struct {
 	persistent bool
 
 	name              string
-	secretKeyRef      *telemetry.SecretKeyRef
+	secretKeyRef      *telemetryv1alpha1.SecretKeyRef
 	systemNamespaces  bool
 	includeContainers []string
 	excludeContainers []string
 	keepAnnotations   bool
 	dropLabels        bool
-	output            telemetry.Output
-	filters           []telemetry.Filter
+	output            telemetryv1alpha1.Output
+	filters           []telemetryv1alpha1.Filter
 }
 
 func NewPipeline(name string) *Pipeline {
@@ -34,7 +34,7 @@ func (p *Pipeline) Name() string {
 	return p.name
 }
 
-func (p *Pipeline) WithSecretKeyRef(secretKeyRef *telemetry.SecretKeyRef) *Pipeline {
+func (p *Pipeline) WithSecretKeyRef(secretKeyRef *telemetryv1alpha1.SecretKeyRef) *Pipeline {
 	p.secretKeyRef = secretKeyRef
 	return p
 }
@@ -65,25 +65,25 @@ func (p *Pipeline) DropLabels(enable bool) *Pipeline {
 }
 
 func (p *Pipeline) WithStdout() *Pipeline {
-	p.output = telemetry.Output{
+	p.output = telemetryv1alpha1.Output{
 		Custom: "Name stdout",
 	}
 	return p
 }
 
 func (p *Pipeline) WithHTTPOutput() *Pipeline {
-	p.output = telemetry.Output{
-		HTTP: &telemetry.HTTPOutput{
+	p.output = telemetryv1alpha1.Output{
+		HTTP: &telemetryv1alpha1.HTTPOutput{
 			Dedot: true,
-			Host: telemetry.ValueType{
-				ValueFrom: &telemetry.ValueFromSource{
+			Host: telemetryv1alpha1.ValueType{
+				ValueFrom: &telemetryv1alpha1.ValueFromSource{
 					SecretKeyRef: p.secretKeyRef,
 				},
 			},
 			Port:   "9880",
 			URI:    "/",
 			Format: "json",
-			TLSConfig: telemetry.TLSConfig{
+			TLSConfig: telemetryv1alpha1.TLSConfig{
 				Disabled:                  true,
 				SkipCertificateValidation: true,
 			},
@@ -97,16 +97,16 @@ func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
 		return p
 	}
 
-	p.output.HTTP.TLSConfig = telemetry.TLSConfig{
+	p.output.HTTP.TLSConfig = telemetryv1alpha1.TLSConfig{
 		Disabled:                  false,
 		SkipCertificateValidation: false,
-		CA: &telemetry.ValueType{
+		CA: &telemetryv1alpha1.ValueType{
 			Value: certs.CaCertPem.String(),
 		},
-		Cert: &telemetry.ValueType{
+		Cert: &telemetryv1alpha1.ValueType{
 			Value: certs.ClientCertPem.String(),
 		},
-		Key: &telemetry.ValueType{
+		Key: &telemetryv1alpha1.ValueType{
 			Value: certs.ClientKeyPem.String(),
 		},
 	}
@@ -121,14 +121,14 @@ func (p *Pipeline) WithCustomOutput(host string) *Pipeline {
 	host   {{ HOST }}
 	format json`
 	customOutput := strings.Replace(customOutputTemplate, "{{ HOST }}", host, 1)
-	p.output = telemetry.Output{
+	p.output = telemetryv1alpha1.Output{
 		Custom: customOutput,
 	}
 	return p
 }
 
 func (p *Pipeline) WithFilter(filter string) *Pipeline {
-	p.filters = append(p.filters, telemetry.Filter{
+	p.filters = append(p.filters, telemetryv1alpha1.Filter{
 		Custom: filter,
 	})
 	return p
@@ -140,24 +140,24 @@ func (p *Pipeline) Persistent(persistent bool) *Pipeline {
 	return p
 }
 
-func (p *Pipeline) K8sObject() *telemetry.LogPipeline {
-	var labels k8s.Labels
+func (p *Pipeline) K8sObject() *telemetryv1alpha1.LogPipeline {
+	var labels kitk8s.Labels
 	if p.persistent {
-		labels = k8s.PersistentLabel
+		labels = kitk8s.PersistentLabel
 	}
 
-	return &telemetry.LogPipeline{
-		ObjectMeta: k8smeta.ObjectMeta{
+	return &telemetryv1alpha1.LogPipeline{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:   p.name,
 			Labels: labels,
 		},
-		Spec: telemetry.LogPipelineSpec{
-			Input: telemetry.Input{
-				Application: telemetry.ApplicationInput{
-					Namespaces: telemetry.InputNamespaces{
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			Input: telemetryv1alpha1.Input{
+				Application: telemetryv1alpha1.ApplicationInput{
+					Namespaces: telemetryv1alpha1.InputNamespaces{
 						System: p.systemNamespaces,
 					},
-					Containers: telemetry.InputContainers{
+					Containers: telemetryv1alpha1.InputContainers{
 						Include: p.includeContainers,
 						Exclude: p.excludeContainers,
 					},

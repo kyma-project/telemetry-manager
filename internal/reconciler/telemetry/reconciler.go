@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,10 +13,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
 
@@ -73,7 +73,7 @@ func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config) 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var telemetry operatorv1alpha1.Telemetry
 	if err := r.Client.Get(ctx, req.NamespacedName, &telemetry); err != nil {
-		log.FromContext(ctx).Info(req.NamespacedName.String() + " got deleted!")
+		logf.FromContext(ctx).Info(req.NamespacedName.String() + " got deleted!")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -108,7 +108,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 	if controllerutil.ContainsFinalizer(telemetry, finalizer) {
 		if r.dependentCRsFound(ctx) {
 			// Block deletion of the resource if there are still some dependent resources
-			log.FromContext(ctx).Info("Telemetry CR deletion is blocked because one or more dependent CRs (LogPipeline, LogParser, MetricPipeline, TracePipeline) still exist")
+			logf.FromContext(ctx).Info("Telemetry CR deletion is blocked because one or more dependent CRs (LogPipeline, LogParser, MetricPipeline, TracePipeline) still exist")
 			return nil
 		}
 
@@ -127,7 +127,7 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1a
 }
 
 func (r *Reconciler) deleteWebhook(ctx context.Context) error {
-	webhook := &admissionv1.ValidatingWebhookConfiguration{
+	webhook := &admissionregistrationv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: r.config.Webhook.CertConfig.WebhookName.Name,
 		},
@@ -157,15 +157,15 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	if err := controllerutil.SetOwnerReference(telemetry, &secret, r.Scheme); err != nil {
 		return fmt.Errorf("failed to set owner reference for secret: %w", err)
 	}
-	if err := kubernetes.CreateOrUpdateSecret(ctx, r.Client, &secret); err != nil {
+	if err := k8sutils.CreateOrUpdateSecret(ctx, r.Client, &secret); err != nil {
 		return fmt.Errorf("failed to update secret: %w", err)
 	}
 
-	var webhook admissionv1.ValidatingWebhookConfiguration
+	var webhook admissionregistrationv1.ValidatingWebhookConfiguration
 	if err := r.Get(ctx, r.config.Webhook.CertConfig.WebhookName, &webhook); err != nil {
 		return fmt.Errorf("failed to get webhook: %w", err)
 	}
-	if err := kubernetes.CreateOrUpdateValidatingWebhookConfiguration(ctx, r.Client, &webhook); err != nil {
+	if err := k8sutils.CreateOrUpdateValidatingWebhookConfiguration(ctx, r.Client, &webhook); err != nil {
 		return fmt.Errorf("failed to update webhook: %w", err)
 	}
 

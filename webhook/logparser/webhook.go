@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/webhook/logpipeline"
+	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
 )
 
 //go:generate mockery --name DryRunner --filename dryrun.go
@@ -66,7 +66,7 @@ func (v *ValidatingWebhookHandler) Handle(ctx context.Context, req admission.Req
 				Allowed: false,
 				Result: &metav1.Status{
 					Code:    int32(http.StatusForbidden),
-					Reason:  logpipeline.StatusReasonConfigurationError,
+					Reason:  logpipelinewebhook.StatusReasonConfigurationError,
 					Message: err.Error(),
 				},
 			},

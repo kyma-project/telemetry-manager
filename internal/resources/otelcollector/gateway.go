@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"maps"
 
-	"istio.io/api/security/v1beta1"
-	istiotypes "istio.io/api/type/v1beta1"
-	istiov1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+	istiosecurityv1beta "istio.io/api/security/v1beta1"
+	istiotypev1beta1 "istio.io/api/type/v1beta1"
+	istiosecurityclientv1beta "istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
@@ -32,32 +32,32 @@ func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayCon
 	}
 
 	secret := makeSecret(name, cfg.CollectorEnvVars)
-	if err := kubernetes.CreateOrUpdateSecret(ctx, c, secret); err != nil {
+	if err := k8sutils.CreateOrUpdateSecret(ctx, c, secret); err != nil {
 		return fmt.Errorf("failed to create env secret: %w", err)
 	}
 
 	configMap := makeConfigMap(name, cfg.CollectorConfig)
-	if err := kubernetes.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{*secret})
-	if err := kubernetes.CreateOrUpdateDeployment(ctx, c, makeGatewayDeployment(cfg, configChecksum, cfg.Istio)); err != nil {
+	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, makeGatewayDeployment(cfg, configChecksum, cfg.Istio)); err != nil {
 		return fmt.Errorf("failed to create deployment: %w", err)
 	}
 
-	if err := kubernetes.CreateOrUpdateService(ctx, c, makeOTLPService(cfg)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, makeOTLPService(cfg)); err != nil {
 		return fmt.Errorf("failed to create otlp service: %w", err)
 	}
 
 	if cfg.CanReceiveOpenCensus {
-		if err := kubernetes.CreateOrUpdateService(ctx, c, makeOpenCensusService(name)); err != nil {
+		if err := k8sutils.CreateOrUpdateService(ctx, c, makeOpenCensusService(name)); err != nil {
 			return fmt.Errorf("failed to create open census service: %w", err)
 		}
 	}
 
 	if cfg.Istio.Enabled {
-		if err := kubernetes.CreateOrUpdatePeerAuthentication(ctx, c, makePeerAuthentication(cfg)); err != nil {
+		if err := k8sutils.CreateOrUpdatePeerAuthentication(ctx, c, makePeerAuthentication(cfg)); err != nil {
 			return fmt.Errorf("failed to create peerauthentication: %w", err)
 		}
 	}
@@ -241,14 +241,14 @@ func makeOTLPService(cfg *GatewayConfig) *corev1.Service {
 	}
 }
 
-func makePeerAuthentication(cfg *GatewayConfig) *istiov1beta1.PeerAuthentication {
+func makePeerAuthentication(cfg *GatewayConfig) *istiosecurityclientv1beta.PeerAuthentication {
 	selectorLabels := defaultLabels(cfg.BaseName)
 
-	return &istiov1beta1.PeerAuthentication{
+	return &istiosecurityclientv1beta.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{Name: cfg.BaseName, Namespace: cfg.Namespace, Labels: selectorLabels},
-		Spec: v1beta1.PeerAuthentication{
-			Selector: &istiotypes.WorkloadSelector{MatchLabels: defaultLabels(cfg.BaseName)},
-			Mtls:     &v1beta1.PeerAuthentication_MutualTLS{Mode: v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE},
+		Spec: istiosecurityv1beta.PeerAuthentication{
+			Selector: &istiotypev1beta1.WorkloadSelector{MatchLabels: defaultLabels(cfg.BaseName)},
+			Mtls:     &istiosecurityv1beta.PeerAuthentication_MutualTLS{Mode: istiosecurityv1beta.PeerAuthentication_MutualTLS_PERMISSIVE},
 		},
 	}
 }

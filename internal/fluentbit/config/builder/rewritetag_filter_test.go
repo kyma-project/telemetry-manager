@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 func TestCreateRewriteTagFilterIncludeContainers(t *testing.T) {
@@ -16,13 +16,13 @@ func TestCreateRewriteTagFilterIncludeContainers(t *testing.T) {
 		StorageType:       "filesystem",
 	}
 
-	logPipeline := &v1alpha1.LogPipeline{
+	logPipeline := &telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "logpipeline1",
 		},
-		Spec: v1alpha1.LogPipelineSpec{
-			Input: v1alpha1.Input{Application: v1alpha1.ApplicationInput{
-				Containers: v1alpha1.InputContainers{
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			Input: telemetryv1alpha1.Input{Application: telemetryv1alpha1.ApplicationInput{
+				Containers: telemetryv1alpha1.InputContainers{
 					Include: []string{"container1", "container2"}}}}}}
 
 	expected := `[FILTER]
@@ -45,13 +45,13 @@ func TestCreateRewriteTagFilterExcludeContainers(t *testing.T) {
 		StorageType:       "filesystem",
 	}
 
-	logPipeline := &v1alpha1.LogPipeline{
+	logPipeline := &telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "logpipeline1",
 		},
-		Spec: v1alpha1.LogPipelineSpec{
-			Input: v1alpha1.Input{Application: v1alpha1.ApplicationInput{
-				Containers: v1alpha1.InputContainers{
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			Input: telemetryv1alpha1.Input{Application: telemetryv1alpha1.ApplicationInput{
+				Containers: telemetryv1alpha1.InputContainers{
 					Exclude: []string{"container1", "container2"}}}}}}
 
 	expected := `[FILTER]
@@ -74,12 +74,12 @@ func TestCreateRewriteTagFilterWithCustomOutput(t *testing.T) {
 		StorageType:       "filesystem",
 	}
 
-	logPipeline := &v1alpha1.LogPipeline{
+	logPipeline := &telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "logpipeline1",
 		},
-		Spec: v1alpha1.LogPipelineSpec{
-			Output: v1alpha1.Output{
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			Output: telemetryv1alpha1.Output{
 				Custom: `
     name stdout`,
 			},

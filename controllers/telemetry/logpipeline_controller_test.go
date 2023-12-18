@@ -20,12 +20,12 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	logpipelinereconciler "github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
-	logpipelineresources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
+	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
 var (
-	testLogPipelineConfig = logpipelinereconciler.Config{
+	testLogPipelineConfig = logpipeline.Config{
 		DaemonSet:             types.NamespacedName{Name: "test-telemetry-fluent-bit", Namespace: "default"},
 		ParsersConfigMap:      types.NamespacedName{Name: "test-telemetry-fluent-bit-parsers", Namespace: "default"},
 		LuaConfigMap:          types.NamespacedName{Name: "test-telemetry-fluent-bit-luascripts", Namespace: "default"},
@@ -34,7 +34,7 @@ var (
 		EnvSecret:             types.NamespacedName{Name: "test-telemetry-fluent-bit-env", Namespace: "default"},
 		OutputTLSConfigSecret: types.NamespacedName{Name: "test-telemetry-fluent-bit-output-tls-config", Namespace: "default"},
 		OverrideConfigMap:     types.NamespacedName{Name: "override-config", Namespace: "default"},
-		DaemonSetConfig: logpipelineresources.DaemonSetConfig{
+		DaemonSetConfig: fluentbit.DaemonSetConfig{
 			FluentBitImage:              "my-fluent-bit-image",
 			FluentBitConfigPrepperImage: "my-fluent-bit-config-image",
 			ExporterImage:               "my-exporter-image",

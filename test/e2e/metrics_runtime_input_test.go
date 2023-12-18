@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/otlp/kubeletstats"
@@ -42,7 +42,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		metricPipeline := kitmetric.NewPipeline("pipeline-with-runtime-input-enabled").
+		metricPipeline := kitmetricpipeline.NewPipeline("pipeline-with-runtime-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			RuntimeInput(true)
 		pipelineName = metricPipeline.Name()

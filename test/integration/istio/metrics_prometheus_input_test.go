@@ -12,7 +12,7 @@ import (
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
@@ -52,7 +52,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			unannotatedMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
 		}...)
 
-		metricPipeline := kitmetric.NewPipeline("pipeline-with-prometheus-input-enabled").
+		metricPipeline := kitmetricpipeline.NewPipeline("pipeline-with-prometheus-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			PrometheusInput(true)
 		objs = append(objs, metricPipeline.K8sObject())

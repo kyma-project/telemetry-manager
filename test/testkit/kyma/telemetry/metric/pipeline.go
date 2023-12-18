@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
@@ -154,9 +154,9 @@ func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
 }
 
 func (p *Pipeline) K8sObject() *telemetryv1alpha1.MetricPipeline {
-	var labels k8s.Labels
+	var labels kitk8s.Labels
 	if p.persistent {
-		labels = k8s.PersistentLabel
+		labels = kitk8s.PersistentLabel
 	}
 	labels.Version(version)
 
@@ -173,7 +173,7 @@ func (p *Pipeline) K8sObject() *telemetryv1alpha1.MetricPipeline {
 	}
 
 	metricPipeline := telemetryv1alpha1.MetricPipeline{
-		ObjectMeta: k8smeta.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:   p.Name(),
 			Labels: labels,
 		},

@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Exporter struct {
@@ -61,7 +61,7 @@ func toSpan(ctx context.Context, traceID pcommon.TraceID, spanID pcommon.SpanID,
 	}
 
 	return tracetest.SpanStub{
-		SpanContext: oteltrace.NewSpanContext(oteltrace.SpanContextConfig{
+		SpanContext: trace.NewSpanContext(trace.SpanContextConfig{
 			TraceID: [16]byte(traceID),
 			SpanID:  [8]byte(spanID),
 		}),
