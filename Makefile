@@ -122,6 +122,11 @@ e2e-test-metrics: provision-test-env ## Provision k3d cluster, deploy developmen
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 	make run-e2e-test-metrics
 
+.PHONY: e2e-test-telemetry
+e2e-test-telemetry: provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end telemetry tests.
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+	make run-e2e-test-telemetry
+
 .PHONY: e2e-test-logging-release
 e2e-test-logging-release: provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end logging tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
@@ -131,6 +136,11 @@ e2e-test-logging-release: provision-test-env ## Provision k3d cluster, deploy re
 e2e-test-tracing-release: provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end tracing tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
 	make run-e2e-test-tracing
+
+.PHONY: e2e-test-telemetry-release
+e2e-test-telemetry-release: provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end telemetry tests.
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
+	make run-e2e-test-telemetry
 
 .PHONY: run-e2e-test
 run-e2e-test: ginkgo test-matchers ## run all end-to-end tests using an existing cluster
@@ -153,6 +163,12 @@ run-e2e-test-tracing: ginkgo test-matchers ## run end-to-end tracing tests using
 .PHONY: run-e2e-test-metrics
 run-e2e-test-metrics: ginkgo test-matchers ## run end-to-end metrics tests using an existing cluster
 	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="metrics" ./test/e2e
+	mkdir -p ${ARTIFACTS}
+	mv junit.xml ${ARTIFACTS}
+
+.PHONY: run-e2e-test-telemetry
+run-e2e-test-telemetry: ginkgo test-matchers ## run end-to-end telemetry tests using an existing cluster
+	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="telemetry" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
