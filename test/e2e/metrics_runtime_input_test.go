@@ -98,7 +98,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 		})
 
 		It("Ensures the metricpipeline is running", func() {
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Ensures kubeletstats metrics are sent to backend", func() {

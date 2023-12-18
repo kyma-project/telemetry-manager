@@ -66,8 +66,8 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelines.First())
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelines.Second())
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelines.First())
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelines.Second())
 		})
 
 		It("Should have a running metric gateway deployment", func() {
@@ -124,7 +124,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 
 		It("Should have only running pipelines", func() {
 			for _, pipeline := range pipelines.All() {
-				verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipeline)
+				verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipeline)
 				verifiers.MetricGatewayConfigShouldContainPipeline(ctx, k8sClient, pipeline)
 			}
 		})
@@ -146,7 +146,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipelineCreatedFirst)).Should(Succeed())
 
 				for _, pipeline := range pipelines.All()[1:] {
-					verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipeline)
+					verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipeline)
 				}
 			})
 		})
@@ -198,8 +198,8 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, healthyPipelineName)
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, brokenPipelineName)
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, healthyPipelineName)
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, brokenPipelineName)
 		})
 
 		It("Should have a running metric gateway deployment", func() {

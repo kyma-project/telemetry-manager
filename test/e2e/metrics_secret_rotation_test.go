@@ -44,7 +44,7 @@ var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, hostSecret.K8sObject())).Should(Succeed())
 			})
 
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, metricPipeline.Name())
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, metricPipeline.Name())
 		})
 	})
 })
