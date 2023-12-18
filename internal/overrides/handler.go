@@ -65,7 +65,7 @@ func (h *Handler) loadOverridesConfig(ctx context.Context) (*Config, error) {
 		return &overrideConfig, err
 	}
 
-	logf.FromContext(ctx).V(1).Info("Using overrides: %+v", overrideConfig)
+	logf.FromContext(ctx).V(1).Info("Using overrides", "config", overrideConfig)
 
 	return &overrideConfig, nil
 }

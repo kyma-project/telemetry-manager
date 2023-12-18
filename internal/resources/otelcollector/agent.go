@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	configmetricagent "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
@@ -31,12 +31,12 @@ func ApplyAgentResources(ctx context.Context, c client.Client, cfg *AgentConfig)
 	}
 
 	configMap := makeConfigMap(name, cfg.CollectorConfig)
-	if err := kubernetes.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create configmap: %w", err)
 	}
 
 	configChecksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, []corev1.Secret{})
-	if err := kubernetes.CreateOrUpdateDaemonSet(ctx, c, makeAgentDaemonSet(cfg, configChecksum)); err != nil {
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, c, makeAgentDaemonSet(cfg, configChecksum)); err != nil {
 		return fmt.Errorf("failed to create daemonset: %w", err)
 	}
 

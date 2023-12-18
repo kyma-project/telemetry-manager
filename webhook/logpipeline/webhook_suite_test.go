@@ -28,19 +28,19 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	logzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/mocks"
-	validationmocks "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation/mocks"
+	logpipelinevalidationmocks "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation/mocks"
 )
 
 const (
@@ -54,9 +54,9 @@ var (
 	testEnv                   *envtest.Environment
 	ctx                       context.Context
 	cancel                    context.CancelFunc
-	variableValidatorMock     *validationmocks.VariablesValidator
-	maxPipelinesValidatorMock *validationmocks.MaxPipelinesValidator
-	fileValidatorMock         *validationmocks.FilesValidator
+	variableValidatorMock     *logpipelinevalidationmocks.VariablesValidator
+	maxPipelinesValidatorMock *logpipelinevalidationmocks.MaxPipelinesValidator
+	fileValidatorMock         *logpipelinevalidationmocks.FilesValidator
 	dryRunnerMock             *mocks.DryRunner
 )
 
@@ -67,7 +67,7 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	logf.SetLogger(logzap.New(logzap.WriteTo(GinkgoWriter), logzap.UseDevMode(true)))
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
@@ -83,22 +83,22 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = telemetryv1alpha1.AddToScheme(scheme.Scheme)
+	err = telemetryv1alpha1.AddToScheme(clientgoscheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	k8sClient, err = client.New(cfg, client.Options{Scheme: clientgoscheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
 	// start logPipeline webhook server using Manager
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:         scheme.Scheme,
+		Scheme:         clientgoscheme.Scheme,
 		LeaderElection: false,
 		Metrics:        metricsserver.Options{BindAddress: "localhost:8082"},
-		WebhookServer: k8sWebhook.NewServer(k8sWebhook.Options{
+		WebhookServer: webhook.NewServer(webhook.Options{
 			Host:    webhookInstallOptions.LocalServingHost,
 			Port:    webhookInstallOptions.LocalServingPort,
 			CertDir: webhookInstallOptions.LocalServingCertDir,
@@ -107,18 +107,18 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	variableValidatorMock = &validationmocks.VariablesValidator{}
+	variableValidatorMock = &logpipelinevalidationmocks.VariablesValidator{}
 	dryRunnerMock = &mocks.DryRunner{}
-	maxPipelinesValidatorMock = &validationmocks.MaxPipelinesValidator{}
-	fileValidatorMock = &validationmocks.FilesValidator{}
+	maxPipelinesValidatorMock = &logpipelinevalidationmocks.MaxPipelinesValidator{}
+	fileValidatorMock = &logpipelinevalidationmocks.FilesValidator{}
 	validationConfig := &telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: []string{"lua", "stdout"}, DeniedFilterPlugins: []string{"stdout"}}
 
-	logPipelineValidator := NewValidatingWebhookHandler(mgr.GetClient(), variableValidatorMock, maxPipelinesValidatorMock, fileValidatorMock, admission.NewDecoder(scheme.Scheme), dryRunnerMock, validationConfig)
+	logPipelineValidator := NewValidatingWebhookHandler(mgr.GetClient(), variableValidatorMock, maxPipelinesValidatorMock, fileValidatorMock, admission.NewDecoder(clientgoscheme.Scheme), dryRunnerMock, validationConfig)
 
 	By("registering LogPipeline webhook")
 	mgr.GetWebhookServer().Register(
 		"/validate-logpipeline",
-		&k8sWebhook.Admission{Handler: logPipelineValidator})
+		&webhook.Admission{Handler: logPipelineValidator})
 
 	//+kubebuilder:scaffold:webhook
 

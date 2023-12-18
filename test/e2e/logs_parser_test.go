@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
+	kitlogpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
@@ -40,7 +40,7 @@ var _ = Describe("Logs Parser", Label("logging"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "regex-parser-testing-service")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logHTTPPipeline := kitlog.NewPipeline(pipelineName).
+		logHTTPPipeline := kitlogpipeline.NewPipeline(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput()
 
@@ -49,7 +49,7 @@ Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$
 Time_Key time
 Time_Format %d/%b/%Y:%H:%M:%S %z
 Types user:string pass:string`
-		logRegexParser := kitlog.NewParser("my-regex-parser", parser)
+		logRegexParser := kitlogpipeline.NewParser("my-regex-parser", parser)
 		objs = append(objs, logHTTPPipeline.K8sObject())
 		objs = append(objs, logRegexParser.K8sObject())
 

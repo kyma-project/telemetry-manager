@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 )
 
 const (
@@ -65,7 +65,7 @@ func (p *caCertProviderImpl) provideCert(ctx context.Context, caSecretName types
 		}
 
 		newSecret := makeCASecret(caCertPEM, caKeyPEM, caSecretName)
-		if err = kubernetes.CreateOrUpdateSecret(ctx, p.client, &newSecret); err != nil {
+		if err = k8sutils.CreateOrUpdateSecret(ctx, p.client, &newSecret); err != nil {
 			return nil, nil, fmt.Errorf("failed to create ca cert caSecretName: %w", err)
 		}
 		return caCertPEM, caKeyPEM, nil

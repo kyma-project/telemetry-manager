@@ -9,14 +9,14 @@ import (
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 func TestMakeAgentConfig(t *testing.T) {
 	gatewayServiceName := types.NamespacedName{Name: "metrics", Namespace: "telemetry-system"}
 	t.Run("otlp exporter endpoint", func(t *testing.T) {
-		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, false)
+		collectorConfig := MakeConfig(gatewayServiceName, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, false)
 
 		actualExporterConfig := collectorConfig.Exporters.OTLP
 		require.Equal(t, "metrics.telemetry-system.svc.cluster.local:4317", actualExporterConfig.Endpoint)
@@ -24,7 +24,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 	t.Run("insecure", func(t *testing.T) {
 		t.Run("otlp exporter endpoint", func(t *testing.T) {
-			collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, false)
+			collectorConfig := MakeConfig(gatewayServiceName, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, false)
 
 			actualExporterConfig := collectorConfig.Exporters.OTLP
 			require.True(t, actualExporterConfig.TLS.Insecure)
@@ -32,14 +32,14 @@ func TestMakeAgentConfig(t *testing.T) {
 	})
 
 	t.Run("extensions", func(t *testing.T) {
-		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, false)
+		collectorConfig := MakeConfig(gatewayServiceName, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, false)
 
 		require.NotEmpty(t, collectorConfig.Extensions.HealthCheck.Endpoint)
 		require.Contains(t, collectorConfig.Service.Extensions, "health_check")
 	})
 
 	t.Run("telemetry", func(t *testing.T) {
-		collectorConfig := MakeConfig(gatewayServiceName, []v1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, false)
+		collectorConfig := MakeConfig(gatewayServiceName, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()}, false)
 
 		require.Equal(t, "info", collectorConfig.Service.Telemetry.Logs.Level)
 		require.Equal(t, "json", collectorConfig.Service.Telemetry.Logs.Encoding)
@@ -48,7 +48,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 	t.Run("single pipeline topology", func(t *testing.T) {
 		t.Run("no input enabled", func(t *testing.T) {
-			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 			}, false)
 
@@ -60,7 +60,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		})
 
 		t.Run("runtime input enabled", func(t *testing.T) {
-			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().RuntimeInput(true).Build(),
 			}, false)
 
@@ -76,7 +76,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		})
 
 		t.Run("prometheus input enabled", func(t *testing.T) {
-			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build(),
 			}, false)
 
@@ -92,7 +92,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		})
 
 		t.Run("istio input enabled", func(t *testing.T) {
-			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().IstioInput(true).Build(),
 			}, false)
 
@@ -109,7 +109,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		})
 
 		t.Run("multiple input enabled", func(t *testing.T) {
-			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).IstioInput(true).Build(),
 			}, false)
 
@@ -136,7 +136,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 	t.Run("multi pipeline topology", func(t *testing.T) {
 		t.Run("no pipeline has input enabled", func(t *testing.T) {
-			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().Build(),
 				testutils.NewMetricPipelineBuilder().Build(),
 			}, false)
@@ -149,7 +149,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		})
 
 		t.Run("some pipelines have runtime input enabled", func(t *testing.T) {
-			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().RuntimeInput(false).Build(),
 				testutils.NewMetricPipelineBuilder().RuntimeInput(true).Build(),
 			}, false)
@@ -166,7 +166,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		})
 
 		t.Run("all pipelines have runtime input enabled", func(t *testing.T) {
-			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().RuntimeInput(true).Build(),
 				testutils.NewMetricPipelineBuilder().RuntimeInput(true).Build(),
 			}, false)
@@ -183,7 +183,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		})
 
 		t.Run("some pipelines have prometheus input enabled", func(t *testing.T) {
-			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().PrometheusInput(false).Build(),
 				testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build(),
 			}, false)
@@ -200,7 +200,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		})
 
 		t.Run("all pipelines have prometheus input enabled", func(t *testing.T) {
-			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build(),
 				testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build(),
 			}, false)
@@ -217,7 +217,7 @@ func TestMakeAgentConfig(t *testing.T) {
 		})
 
 		t.Run("multiple input types enabled", func(t *testing.T) {
-			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+			collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build(),
 				testutils.NewMetricPipelineBuilder().RuntimeInput(true).Build(),
 			}, false)
@@ -258,7 +258,7 @@ func TestMakeAgentConfig(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				pipelines := []v1alpha1.MetricPipeline{
+				pipelines := []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).IstioInput(true).Build(),
 				}
 				config := MakeConfig(gatewayServiceName, pipelines, tt.istioActive)

@@ -6,13 +6,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 func TestProcessors(t *testing.T) {
 	t.Run("delete service name", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).Build(),
 		}, false)
 
@@ -23,7 +23,7 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("memory limiter proessor", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).Build(),
 		}, false)
 
@@ -34,7 +34,7 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("batch processor", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).Build(),
 		}, false)
 
@@ -45,7 +45,7 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("insert input source runtime", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).Build(),
 		}, false)
 
@@ -56,7 +56,7 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("insert input source runtime", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).Build(),
 		}, false)
 
@@ -68,7 +68,7 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("insert input source prometheus", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().RuntimeInput(true).PrometheusInput(true).Build(),
 		}, false)
 
@@ -80,7 +80,7 @@ func TestProcessors(t *testing.T) {
 	})
 
 	t.Run("insert input source istio", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().RuntimeInput(true).IstioInput(true).Build(),
 		}, false)
 

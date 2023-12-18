@@ -9,7 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
+	kitlogpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/logproducer"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
@@ -34,7 +34,7 @@ var _ = Describe("Logs Custom Output", Label("logging"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitlog.NewPipeline(pipelineName).WithCustomOutput(mockBackend.ExternalService.Host())
+		logPipeline := kitlogpipeline.NewPipeline(pipelineName).WithCustomOutput(mockBackend.ExternalService.Host())
 		objs = append(objs, logPipeline.K8sObject())
 
 		return objs

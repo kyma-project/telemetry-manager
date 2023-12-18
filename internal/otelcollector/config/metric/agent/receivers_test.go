@@ -6,13 +6,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 func TestReceivers(t *testing.T) {
 	t.Run("no input enabled", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().Build(),
 		}, false)
 
@@ -22,7 +22,7 @@ func TestReceivers(t *testing.T) {
 	})
 
 	t.Run("runtime input enabled", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().RuntimeInput(true).Build(),
 		}, false)
 
@@ -67,7 +67,7 @@ func TestReceivers(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+				collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 					testutils.NewMetricPipelineBuilder().PrometheusInput(true).Build(),
 				}, tt.istioActive)
 
@@ -92,7 +92,7 @@ func TestReceivers(t *testing.T) {
 	})
 
 	t.Run("istio input enabled", func(t *testing.T) {
-		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []v1alpha1.MetricPipeline{
+		collectorConfig := MakeConfig(types.NamespacedName{Name: "metrics-gateway"}, []telemetryv1alpha1.MetricPipeline{
 			testutils.NewMetricPipelineBuilder().IstioInput(true).Build(),
 		}, false)
 

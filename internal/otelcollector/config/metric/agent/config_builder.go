@@ -5,7 +5,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
@@ -16,7 +16,7 @@ type inputSources struct {
 	istio      bool
 }
 
-func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.MetricPipeline, isIstioActive bool) *Config {
+func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []telemetryv1alpha1.MetricPipeline, isIstioActive bool) *Config {
 	inputs := inputSources{
 		runtime:    enableRuntimeMetricScraping(pipelines),
 		prometheus: enablePrometheusMetricScraping(pipelines),
@@ -34,7 +34,7 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []v1alpha1.Me
 	}
 }
 
-func enablePrometheusMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
+func enablePrometheusMetricScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
 		if input.Prometheus != nil && input.Prometheus.Enabled {
@@ -44,7 +44,7 @@ func enablePrometheusMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
 	return false
 }
 
-func enableRuntimeMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
+func enableRuntimeMetricScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
 		if input.Runtime != nil && input.Runtime.Enabled {
@@ -54,7 +54,7 @@ func enableRuntimeMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
 	return false
 }
 
-func enableIstioMetricScraping(pipelines []v1alpha1.MetricPipeline) bool {
+func enableIstioMetricScraping(pipelines []telemetryv1alpha1.MetricPipeline) bool {
 	for i := range pipelines {
 		input := pipelines[i].Spec.Input
 		if input.Istio != nil && input.Istio.Enabled {

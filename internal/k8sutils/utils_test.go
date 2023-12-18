@@ -1,4 +1,4 @@
-package kubernetes
+package k8sutils
 
 import (
 	"context"
@@ -6,18 +6,18 @@ import (
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	appsv1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils/mocks"
 )
 
 func TestGetOrCreateConfigMapError(t *testing.T) {
 	mockClient := &mocks.Client{}
-	badReqErr := errors.NewBadRequest("")
+	badReqErr := apierrors.NewBadRequest("")
 	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 
 	configMapName := types.NamespacedName{Name: "some-cm", Namespace: "cm-ns"}
@@ -41,7 +41,7 @@ func TestGetOrCreateConfigMapGetSuccess(t *testing.T) {
 
 func TestGetOrCreateConfigMapCreateSuccess(t *testing.T) {
 	mockClient := &mocks.Client{}
-	notFoundErr := errors.NewNotFound(schema.GroupResource{}, "")
+	notFoundErr := apierrors.NewNotFound(schema.GroupResource{}, "")
 	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(notFoundErr)
 	mockClient.On("Create", mock.Anything, mock.Anything).Return(nil)
 
@@ -55,7 +55,7 @@ func TestGetOrCreateConfigMapCreateSuccess(t *testing.T) {
 
 func TestGetOrCreateSecretError(t *testing.T) {
 	mockClient := &mocks.Client{}
-	badReqErr := errors.NewBadRequest("")
+	badReqErr := apierrors.NewBadRequest("")
 	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 
 	secretName := types.NamespacedName{Name: "some-secret", Namespace: "secret-ns"}
@@ -67,7 +67,7 @@ func TestGetOrCreateSecretError(t *testing.T) {
 
 func TestGetOrCreateSecretSuccess(t *testing.T) {
 	mockClient := &mocks.Client{}
-	notFoundErr := errors.NewNotFound(schema.GroupResource{}, "")
+	notFoundErr := apierrors.NewNotFound(schema.GroupResource{}, "")
 	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(notFoundErr)
 	mockClient.On("Create", mock.Anything, mock.Anything).Return(nil)
 
@@ -144,14 +144,14 @@ func TestMergePodAnnotations(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			existing := v1.Deployment{
+			existing := appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "some-deployment",
 					Annotations: tt.existing,
 				},
 			}
 
-			desired := v1.Deployment{
+			desired := appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "some-deployment",
 					Annotations: tt.desired,

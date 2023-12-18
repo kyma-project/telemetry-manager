@@ -24,23 +24,23 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	zapLog "go.uber.org/zap"
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	logzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
@@ -67,8 +67,8 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-	atomicLogLevel := zapLog.NewAtomicLevel()
+	logf.SetLogger(logzap.New(logzap.WriteTo(GinkgoWriter), logzap.UseDevMode(true)))
+	atomicLogLevel := zap.NewAtomicLevel()
 
 	ctx, cancel = context.WithCancel(context.TODO())
 
@@ -83,20 +83,20 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = telemetryv1alpha1.AddToScheme(scheme.Scheme)
+	err = telemetryv1alpha1.AddToScheme(clientgoscheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
-	err = operatorv1alpha1.AddToScheme(scheme.Scheme)
+	err = operatorv1alpha1.AddToScheme(clientgoscheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	k8sClient, err = client.New(cfg, client.Options{Scheme: clientgoscheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
 	syncPeriod := 1 * time.Second
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:  scheme.Scheme,
+		Scheme:  clientgoscheme.Scheme,
 		Metrics: metricsserver.Options{BindAddress: "localhost:8080"},
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port: 19443,
@@ -124,7 +124,7 @@ var _ = BeforeSuite(func() {
 
 	logpipelineController := NewLogPipelineReconciler(
 		client,
-		logpipeline.NewReconciler(client, testLogPipelineConfig, &kubernetes.DaemonSetProber{Client: client}, overridesHandler),
+		logpipeline.NewReconciler(client, testLogPipelineConfig, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
 		testLogPipelineConfig)
 	err = logpipelineController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
@@ -134,8 +134,8 @@ var _ = BeforeSuite(func() {
 		logparser.NewReconciler(
 			client,
 			testLogParserConfig,
-			&kubernetes.DaemonSetProber{Client: client},
-			&kubernetes.DaemonSetAnnotator{Client: client},
+			&k8sutils.DaemonSetProber{Client: client},
+			&k8sutils.DaemonSetAnnotator{Client: client},
 			overridesHandler,
 		),
 		testLogParserConfig,
@@ -145,15 +145,15 @@ var _ = BeforeSuite(func() {
 
 	tracepipelineReconciler := NewTracePipelineReconciler(
 		client,
-		tracepipeline.NewReconciler(client, testTracePipelineReconcilerConfig, &kubernetes.DeploymentProber{Client: client}, overridesHandler),
+		tracepipeline.NewReconciler(client, testTracePipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, overridesHandler),
 	)
 	err = tracepipelineReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
 	metricPipelineReconciler := NewMetricPipelineReconciler(
 		client,
-		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &kubernetes.DeploymentProber{Client: client},
-			&kubernetes.DaemonSetProber{Client: client}, overridesHandler))
+		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client},
+			&k8sutils.DaemonSetProber{Client: client}, overridesHandler))
 	err = metricPipelineReconciler.SetupWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 

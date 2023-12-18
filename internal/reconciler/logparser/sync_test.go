@@ -7,14 +7,14 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils/mocks"
 )
 
 var (
@@ -26,7 +26,7 @@ var (
 
 func TestSyncParsersConfigMapErrorClientErrorReturnsError(t *testing.T) {
 	mockClient := &mocks.Client{}
-	badReqErr := errors.NewBadRequest("")
+	badReqErr := apierrors.NewBadRequest("")
 	mockClient.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 	mockClient.On("List", mock.Anything, mock.Anything, mock.Anything).Return(badReqErr)
 	sut := syncer{mockClient, testConfig}
@@ -39,8 +39,8 @@ func TestSyncParsersConfigMapErrorClientErrorReturnsError(t *testing.T) {
 func TestSuccessfulParserConfigMap(t *testing.T) {
 	var ctx context.Context
 
-	s := scheme.Scheme
-	err := telemetryv1alpha1.AddToScheme(scheme.Scheme)
+	s := clientgoscheme.Scheme
+	err := telemetryv1alpha1.AddToScheme(clientgoscheme.Scheme)
 	require.NoError(t, err)
 
 	lp := &telemetryv1alpha1.LogParser{

@@ -1,15 +1,15 @@
-package kubernetes
+package k8sutils
 
 import (
 	"context"
 	"fmt"
 	"sort"
 
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8slabels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -19,16 +19,16 @@ type DeploymentProber struct {
 }
 
 func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedName) (bool, error) {
-	var d v1.Deployment
+	var d appsv1.Deployment
 	if err := dp.Get(ctx, name, &d); err != nil {
 		return false, fmt.Errorf("failed to get %s/%s Deployment: %v", name.Namespace, name.Name, err)
 	}
 
 	desiredReplicas := *d.Spec.Replicas
-	var allReplicaSets v1.ReplicaSetList
+	var allReplicaSets appsv1.ReplicaSetList
 
 	listOps := &client.ListOptions{
-		LabelSelector: k8slabels.SelectorFromSet(d.Spec.Selector.MatchLabels),
+		LabelSelector: labels.SelectorFromSet(d.Spec.Selector.MatchLabels),
 		Namespace:     d.Namespace,
 	}
 	if err := dp.List(ctx, &allReplicaSets, listOps); err != nil {
@@ -48,8 +48,8 @@ func (dp *DeploymentProber) IsReady(ctx context.Context, name types.NamespacedNa
 	return isReady, nil
 }
 
-func getLatestReplicaSet(deployment *v1.Deployment, allReplicaSets *v1.ReplicaSetList) *v1.ReplicaSet {
-	var ownedReplicaSets []*v1.ReplicaSet
+func getLatestReplicaSet(deployment *appsv1.Deployment, allReplicaSets *appsv1.ReplicaSetList) *appsv1.ReplicaSet {
+	var ownedReplicaSets []*appsv1.ReplicaSet
 	for i := range allReplicaSets.Items {
 		if metav1.IsControlledBy(&allReplicaSets.Items[i], deployment) {
 			ownedReplicaSets = append(ownedReplicaSets, &allReplicaSets.Items[i])
@@ -64,7 +64,7 @@ func getLatestReplicaSet(deployment *v1.Deployment, allReplicaSets *v1.ReplicaSe
 }
 
 // findNewReplicaSet returns the new RS this given deployment targets (the one with the same pod template).
-func findNewReplicaSet(deployment *v1.Deployment, rsList []*v1.ReplicaSet) *v1.ReplicaSet {
+func findNewReplicaSet(deployment *appsv1.Deployment, rsList []*appsv1.ReplicaSet) *appsv1.ReplicaSet {
 	sort.Sort(replicaSetsByCreationTimestamp(rsList))
 	for i := range rsList {
 		if equalIgnoreHash(&rsList[i].Spec.Template, &deployment.Spec.Template) {
@@ -82,12 +82,12 @@ func findNewReplicaSet(deployment *v1.Deployment, rsList []*v1.ReplicaSet) *v1.R
 func equalIgnoreHash(template1, template2 *corev1.PodTemplateSpec) bool {
 	t1Copy := template1.DeepCopy()
 	t2Copy := template2.DeepCopy()
-	delete(t1Copy.Labels, v1.DefaultDeploymentUniqueLabelKey)
-	delete(t2Copy.Labels, v1.DefaultDeploymentUniqueLabelKey)
+	delete(t1Copy.Labels, appsv1.DefaultDeploymentUniqueLabelKey)
+	delete(t2Copy.Labels, appsv1.DefaultDeploymentUniqueLabelKey)
 	return apiequality.Semantic.DeepEqual(t1Copy, t2Copy)
 }
 
-type replicaSetsByCreationTimestamp []*v1.ReplicaSet
+type replicaSetsByCreationTimestamp []*appsv1.ReplicaSet
 
 func (o replicaSetsByCreationTimestamp) Len() int      { return len(o) }
 func (o replicaSetsByCreationTimestamp) Swap(i, j int) { o[i], o[j] = o[j], o[i] }

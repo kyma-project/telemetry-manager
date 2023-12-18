@@ -12,7 +12,7 @@ import (
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -81,10 +81,10 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		metricPipeline := kitmetric.NewPipeline("pipeline-with-istio-input-enabled").
+		metricPipeline := kitmetricpipeline.NewPipeline("pipeline-with-istio-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			OtlpInput(false).
-			IstioInput(true, kitmetric.IncludeNamespaces(app1Ns))
+			IstioInput(true, kitmetricpipeline.IncludeNamespaces(app1Ns))
 		objs = append(objs, metricPipeline.K8sObject())
 
 		app1 := kitk8s.NewPod("app-1", app1Ns).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics))
