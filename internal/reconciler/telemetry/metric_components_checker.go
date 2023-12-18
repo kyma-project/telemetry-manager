@@ -51,11 +51,16 @@ func (m *metricComponentsChecker) determineReason(pipelines []v1alpha1.MetricPip
 		return reason
 	}
 
-	return conditions.ReasonMetricComponentsReady
+	return conditions.ReasonMetricComponentsRunning
 }
 
 func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []v1alpha1.MetricPipeline) string {
-	condTypes := []string{conditions.TypeMetricAgentHealthy, conditions.TypeMetricGatewayHealthy, conditions.TypeConfigurationGenerated}
+	// condTypes order defines the priority of negative conditions
+	condTypes := []string{
+		conditions.TypeMetricGatewayHealthy,
+		conditions.TypeMetricAgentHealthy,
+		conditions.TypeConfigurationGenerated,
+	}
 	for _, pipeline := range pipelines {
 		for _, condType := range condTypes {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
@@ -68,7 +73,7 @@ func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []v1alp
 }
 
 func (m *metricComponentsChecker) determineConditionStatus(reason string) metav1.ConditionStatus {
-	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonMetricComponentsReady {
+	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonMetricComponentsRunning {
 		return metav1.ConditionTrue
 	}
 	return metav1.ConditionFalse
@@ -95,6 +100,10 @@ func (m *metricComponentsChecker) addReasonPrefix(reason string) string {
 	case conditions.ReasonMetricAgentDaemonSetReady:
 	case conditions.ReasonMetricAgentDaemonSetNotReady:
 		return "MetricAgent" + reason
+
+	case conditions.ReasonWaitingForLock:
+	case conditions.ReasonReferencedSecretMissing:
+		return "MetricPipeline" + reason
 	}
 	return reason
 }

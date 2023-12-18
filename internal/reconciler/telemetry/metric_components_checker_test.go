@@ -16,6 +16,10 @@ import (
 )
 
 func TestMetricComponentsCheck(t *testing.T) {
+	healthyGatewayCond := metav1.Condition{Type: conditions.TypeMetricGatewayHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady}
+	healthyAgentCond := metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricAgentDaemonSetReady}
+	configGeneratedCond := metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricConfigurationGenerated}
+
 	tests := []struct {
 		name                string
 		pipelines           []telemetryv1alpha1.MetricPipeline
@@ -36,35 +40,35 @@ func TestMetricComponentsCheck(t *testing.T) {
 			name: "should be healthy if all pipelines running",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricGatewayHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricAgentDaemonSetReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricConfigurationGenerated}).
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
 					Build(),
 				testutils.NewMetricPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricGatewayHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricAgentDaemonSetReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricConfigurationGenerated}).
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
 					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "True",
-				Reason:  "MetricComponentsReady",
-				Message: "",
+				Reason:  "MetricComponentsRunning",
+				Message: "All metric components are running",
 			},
 		},
 		{
 			name: "should not be healthy if one pipeline refs missing secret",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricGatewayHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricAgentDaemonSetReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricConfigurationGenerated}).
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
 					Build(),
 				testutils.NewMetricPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricGatewayHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricAgentDaemonSetReady}).
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
 					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonReferencedSecretMissing}).
 					Build(),
 			},
@@ -72,7 +76,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
-				Reason:  "ReferencedSecretMissing",
+				Reason:  "MetricPipelineReferencedSecretMissing",
 				Message: "One or more referenced Secrets are missing",
 			},
 		},
@@ -80,14 +84,14 @@ func TestMetricComponentsCheck(t *testing.T) {
 			name: "should not be healthy if one pipeline waiting for gateway",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricGatewayHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricAgentDaemonSetReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricConfigurationGenerated}).
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
 					Build(),
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonMetricGatewayDeploymentNotReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricAgentDaemonSetReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricConfigurationGenerated}).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
 					Build(),
 			},
 			telemetryInDeletion: false,
@@ -98,67 +102,86 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Message: "Metric gateway Deployment is not ready",
 			},
 		},
-		//{
-		//	name: "should ignore pipelines waiting for lock",
-		//	pipelines: []telemetryv1alpha1.MetricPipeline{
-		//		testutils.NewMetricPipelineBuilder().WithStatusConditions(
-		//			testutils.MetricPendingCondition(conditions.ReasonMetricGatewayDeploymentNotReady), testutils.MetricRunningCondition()).Build(),
-		//		testutils.NewMetricPipelineBuilder().WithStatusConditions(
-		//			testutils.MetricPendingCondition(conditions.ReasonWaitingForLock)).Build(),
-		//	},
-		//	telemetryInDeletion: false,
-		//	expectedCondition: &metav1.Condition{
-		//		Type:    "MetricComponentsHealthy",
-		//		Status:  "True",
-		//		Reason:  "MetricGatewayDeploymentReady",
-		//		Message: "Metric gateway Deployment is ready",
-		//	},
-		//},
-		//{
-		//	name: "should prioritize unready gateway reason over missing secret",
-		//	pipelines: []telemetryv1alpha1.MetricPipeline{
-		//		testutils.NewMetricPipelineBuilder().WithStatusConditions(
-		//			testutils.MetricPendingCondition(conditions.ReasonMetricGatewayDeploymentNotReady)).Build(),
-		//		testutils.NewMetricPipelineBuilder().WithStatusConditions(
-		//			testutils.MetricPendingCondition(conditions.ReasonReferencedSecretMissing)).Build(),
-		//	},
-		//	telemetryInDeletion: false,
-		//	expectedCondition: &metav1.Condition{
-		//		Type:    "MetricComponentsHealthy",
-		//		Status:  "False",
-		//		Reason:  "MetricGatewayDeploymentNotReady",
-		//		Message: "Metric gateway Deployment is not ready",
-		//	},
-		//},
-		//{
-		//	name: "should block deletion if there are existing pipelines",
-		//	pipelines: []telemetryv1alpha1.MetricPipeline{
-		//		testutils.NewMetricPipelineBuilder().WithName("foo").Build(),
-		//		testutils.NewMetricPipelineBuilder().WithName("bar").Build(),
-		//	},
-		//	telemetryInDeletion: true,
-		//	expectedCondition: &metav1.Condition{
-		//		Type:    "MetricComponentsHealthy",
-		//		Status:  "False",
-		//		Reason:  "ResourceBlocksDeletion",
-		//		Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (bar,foo)",
-		//	},
-		//},
-		//{
-		//	name: "should be unhealthy if metric agent not running",
-		//	pipelines: []telemetryv1alpha1.MetricPipeline{
-		//		testutils.NewMetricPipelineBuilder().WithStatusConditions(
-		//			testutils.MetricPendingCondition(conditions.ReasonMetricGatewayDeploymentNotReady), testutils.MetricRunningCondition()).Build(),
-		//		testutils.NewMetricPipelineBuilder().WithStatusConditions(testutils.MetricRunningCondition(), testutils.MetricPendingCondition(conditions.ReasonMetricAgentDaemonSetNotReady)).Build(),
-		//	},
-		//	telemetryInDeletion: false,
-		//	expectedCondition: &metav1.Condition{
-		//		Type:    "MetricComponentsHealthy",
-		//		Status:  "False",
-		//		Reason:  "ReasonMetricAgentDaemonSetNotReady",
-		//		Message: "Metric agent DaemonSet is not ready",
-		//	},
-		//},
+		{
+			name: "should not be healthy if one pipeline waiting for agent",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonMetricAgentDaemonSetNotReady}).
+					WithStatusCondition(configGeneratedCond).
+					Build(),
+			},
+			telemetryInDeletion: false,
+			expectedCondition: &metav1.Condition{
+				Type:    "MetricComponentsHealthy",
+				Status:  "False",
+				Reason:  "MetricAgentDaemonSetNotReady",
+				Message: "Metric agent DaemonSet is not ready",
+			},
+		},
+		{
+			name: "should not be healthy if one pipeline waiting for lock",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonWaitingForLock}).
+					Build(),
+			},
+			telemetryInDeletion: false,
+			expectedCondition: &metav1.Condition{
+				Type:    "MetricComponentsHealthy",
+				Status:  "False",
+				Reason:  "WaitingForLock",
+				Message: "Waiting for the lock",
+			},
+		},
+		{
+			name: "should prioritize unhealthy gateway reason over unhealthy agent",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonMetricGatewayDeploymentNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonMetricAgentDaemonSetNotReady}).
+					WithStatusCondition(configGeneratedCond).
+					Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonMetricGatewayDeploymentNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonMetricAgentDaemonSetNotReady}).
+					WithStatusCondition(configGeneratedCond).
+					Build(),
+			},
+			telemetryInDeletion: false,
+			expectedCondition: &metav1.Condition{
+				Type:    "MetricComponentsHealthy",
+				Status:  "False",
+				Reason:  "MetricGatewayDeploymentNotReady",
+				Message: "Metric gateway Deployment is not ready",
+			},
+		},
+		{
+			name: "should block deletion if there are existing pipelines",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("foo").Build(),
+				testutils.NewMetricPipelineBuilder().WithName("bar").Build(),
+			},
+			telemetryInDeletion: true,
+			expectedCondition: &metav1.Condition{
+				Type:    "MetricComponentsHealthy",
+				Status:  "False",
+				Reason:  "ResourceBlocksDeletion",
+				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (bar,foo)",
+			},
+		},
 	}
 
 	for _, test := range tests {
