@@ -18,7 +18,7 @@ import (
 	kittracepipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
-	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
+	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 

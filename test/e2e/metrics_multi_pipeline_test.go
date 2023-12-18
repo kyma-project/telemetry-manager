@@ -20,7 +20,7 @@ import (
 	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
+	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otel/metrics"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )

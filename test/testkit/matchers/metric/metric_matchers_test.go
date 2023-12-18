@@ -5,7 +5,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
+	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otel/metrics"
 )
 
 var _ = Describe("WithMds", func() {

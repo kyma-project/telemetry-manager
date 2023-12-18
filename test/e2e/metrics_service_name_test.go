@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
+	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otel/metrics"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
