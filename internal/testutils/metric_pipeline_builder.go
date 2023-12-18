@@ -8,22 +8,24 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
 )
 
 type MetricPipelineBuilder struct {
 	randSource rand.Source
 
-	name              string
-	endpoint          string
-	runtime           *telemetryv1alpha1.MetricPipelineRuntimeInput
-	prometheus        *telemetryv1alpha1.MetricPipelinePrometheusInput
-	istio             *telemetryv1alpha1.MetricPipelineIstioInput
-	otlp              *telemetryv1alpha1.MetricPipelineOtlpInput
-	basicAuthUser     string
-	basicAuthPassword string
-
-	conditions []telemetryv1alpha1.MetricPipelineCondition
+	name                       string
+	endpoint                   string
+	runtime                    *telemetryv1alpha1.MetricPipelineRuntimeInput
+	prometheus                 *telemetryv1alpha1.MetricPipelinePrometheusInput
+	istio                      *telemetryv1alpha1.MetricPipelineIstioInput
+	otlp                       *telemetryv1alpha1.MetricPipelineOtlpInput
+	basicAuthUser              string
+	basicAuthPassword          string
+	basicAuthSecretName        string
+	basicAuthSecretNamespace   string
+	basicAuthSecretUserKey     string
+	basicAuthSecretPasswordKey string
+	statusConditions           []metav1.Condition
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
@@ -141,22 +143,16 @@ func (b *MetricPipelineBuilder) WithBasicAuth(user, password string) *MetricPipe
 	return b
 }
 
-func MetricPendingCondition(reason string) telemetryv1alpha1.MetricPipelineCondition {
-	return telemetryv1alpha1.MetricPipelineCondition{
-		Reason: reason,
-		Type:   telemetryv1alpha1.MetricPipelinePending,
-	}
+func (b *MetricPipelineBuilder) WithBasicAuthFromSecret(secretName, secretNamespace, userKey, passwordKey string) *MetricPipelineBuilder {
+	b.basicAuthSecretName = secretName
+	b.basicAuthSecretNamespace = secretNamespace
+	b.basicAuthSecretUserKey = userKey
+	b.basicAuthSecretPasswordKey = passwordKey
+	return b
 }
 
-func MetricRunningCondition() telemetryv1alpha1.MetricPipelineCondition {
-	return telemetryv1alpha1.MetricPipelineCondition{
-		Reason: conditions.ReasonMetricGatewayDeploymentReady,
-		Type:   telemetryv1alpha1.MetricPipelineRunning,
-	}
-}
-
-func (b *MetricPipelineBuilder) WithStatusConditions(conditions ...telemetryv1alpha1.MetricPipelineCondition) *MetricPipelineBuilder {
-	b.conditions = conditions
+func (b *MetricPipelineBuilder) WithStatusCondition(cond metav1.Condition) *MetricPipelineBuilder {
+	b.statusConditions = append(b.statusConditions, cond)
 	return b
 }
 
@@ -169,6 +165,9 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 	pipeline := telemetryv1alpha1.MetricPipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+		},
+		Status: telemetryv1alpha1.MetricPipelineStatus{
+			Conditions: b.statusConditions,
 		},
 		Spec: telemetryv1alpha1.MetricPipelineSpec{
 			Input: telemetryv1alpha1.MetricPipelineInput{
@@ -186,17 +185,28 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 						Basic: &telemetryv1alpha1.BasicAuthOptions{
 							User: telemetryv1alpha1.ValueType{
 								Value: b.basicAuthUser,
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      b.basicAuthSecretName,
+										Namespace: b.basicAuthSecretNamespace,
+										Key:       b.basicAuthSecretUserKey,
+									},
+								},
 							},
 							Password: telemetryv1alpha1.ValueType{
 								Value: b.basicAuthPassword,
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      b.basicAuthSecretName,
+										Namespace: b.basicAuthSecretNamespace,
+										Key:       b.basicAuthSecretPasswordKey,
+									},
+								},
 							},
 						},
 					},
 				},
 			},
-		},
-		Status: telemetryv1alpha1.MetricPipelineStatus{
-			Conditions: b.conditions,
 		},
 	}
 

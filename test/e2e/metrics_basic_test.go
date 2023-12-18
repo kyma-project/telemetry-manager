@@ -155,7 +155,7 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 		})
 
 		It("Should have a running pipeline", Label(operationalTest), func() {
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should verify end-to-end metric delivery", Label(operationalTest), func() {
