@@ -79,6 +79,22 @@ func makeDropIfInputSourceOtlpConfig() *FilterProcessor {
 	}
 }
 
+func makeFilterToDropMetricsForTelemetryComponents() *FilterProcessor {
+	dropMetricsWithSourceMetricAgent := ottlexpr.JoinWithAnd(ottlexpr.IsMatch("name", "otel.*"), ottlexpr.HasAttrOnDatapoint("source_worklaod", "telemetry-metric-agent"))
+	dropMetricsWithDestinationTraceGateway := ottlexpr.JoinWithAnd(ottlexpr.IsMatch("name", "otel.*"), ottlexpr.HasAttrOnDatapoint("destination_workload", "telemetry-metric-gateway"))
+	dropMetricsWithDestinationMetricGateway := ottlexpr.JoinWithAnd(ottlexpr.IsMatch("name", "otel.*"), ottlexpr.HasAttrOnDatapoint("destination_workload", "telemetry-trace-collector"))
+
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Metric: []string{
+				ottlexpr.JoinWithOr(dropMetricsWithSourceMetricAgent,
+					dropMetricsWithDestinationTraceGateway,
+					dropMetricsWithDestinationMetricGateway),
+			},
+		},
+	}
+}
+
 func makeResolveServiceNameConfig() *TransformProcessor {
 	return &TransformProcessor{
 		ErrorMode:        "ignore",

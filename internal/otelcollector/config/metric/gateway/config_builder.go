@@ -106,6 +106,8 @@ func declareDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config)
 	}
 	if !isIstioInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
+		cfg.Processors.DropIstioMetricsToTelemetryComponents = makeFilterToDropMetricsForTelemetryComponents()
+
 	}
 	if !isOtlpInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceOtlp = makeDropIfInputSourceOtlpConfig()
