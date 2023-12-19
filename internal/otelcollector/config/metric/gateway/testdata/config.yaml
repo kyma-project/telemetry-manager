@@ -91,6 +91,10 @@ processors:
         metrics:
             datapoint:
                 - resource.attributes["kyma.source"] == "istio"
+    filter/drop-istio-metrics-to-telemetry-components:
+        metrics:
+            metric:
+                - (name, otel.* and HasAttrOnDatapoint( source_worklaod, telemetry-metric-agent) or name, otel.* and HasAttrOnDatapoint( destination_workload, telemetry-metric-gateway) or name, otel.* and HasAttrOnDatapoint( destination_workload, telemetry-trace-collector))
     transform/resolve-service-name:
         error_mode: ignore
         metric_statements:

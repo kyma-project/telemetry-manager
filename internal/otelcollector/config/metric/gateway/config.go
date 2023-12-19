@@ -27,7 +27,7 @@ type Processors struct {
 	DropIfInputSourceOtlp                 *FilterProcessor               `yaml:"filter/drop-if-input-source-otlp,omitempty"`
 	ResolveServiceName                    *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
 	DropKymaAttributes                    *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
-	DropIstioMetricsToTelemetryComponents *FilterProcessor               `yaml:"filter/drop-istio-metrics-to-telemetry-components,omitempty"`
+	DropIstioMetricsToTelemetryComponents *FilterProcessor               `yaml:"filter/drop-istio-metrics-to-internal-components,omitempty"`
 
 	// NamespaceFilters contains filter processors, which need different configurations per pipeline
 	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`
