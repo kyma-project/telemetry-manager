@@ -143,7 +143,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
 				Reason:  "MaxPipelinesExceeded",
-				Message: "Maximum Pipeline count limit exceeded",
+				Message: "Maximum pipeline count limit exceeded",
 			},
 		},
 		{

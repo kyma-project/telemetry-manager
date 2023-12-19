@@ -160,7 +160,7 @@ The state of the metric components is determined by the status condition of type
 | True             | ConfigurationGenerated  | Metric pipeline configuration successfully generated |
 | False            | DeploymentNotReady      | Metric gateway Deployment is not ready               |
 | False            | DaemonSetNotReady       | Metric agent DaemonSet is not ready                  |
-| False            | MaxPipelinesExceeded    | Maximum Pipeline count limit exceeded                |
+| False            | MaxPipelinesExceeded    | Maximum pipeline count exceeded                      |
 | False            | ReferencedSecretMissing | One or more referenced Secrets are missing           |
 
 

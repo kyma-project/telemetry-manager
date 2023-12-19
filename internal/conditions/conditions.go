@@ -31,7 +31,7 @@ const (
 var message = map[string]string{
 	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
 	ReasonReferencedSecretMissing: "One or more referenced Secrets are missing",
-	ReasonMaxPipelinesExceeded:    "Maximum Pipeline count limit exceeded",
+	ReasonMaxPipelinesExceeded:    "Maximum pipeline count limit exceeded",
 
 	ReasonFluentBitDSNotReady:   "Fluent Bit DaemonSet is not ready",
 	ReasonFluentBitDSReady:      "Fluent Bit DaemonSet is ready",
