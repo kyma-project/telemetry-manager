@@ -616,10 +616,11 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, web
 			OTLPServiceName: metricOTLPServiceName,
 			Namespace:       telemetryNamespace,
 		},
-		Webhook: webhookConfig,
+		Webhook:                webhookConfig,
+		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 	}
 
-	return operator.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config), config)
+	return operator.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config, overridesHandler), config)
 }
 
 func createWebhookConfig() telemetry.WebhookConfig {
