@@ -103,7 +103,7 @@ func TestLogComponentsCheck(t *testing.T) {
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
 					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
 				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonWaitingForLock)).Build(),
+					testutils.LogPendingCondition(conditions.ReasonMaxPipelinesExceeded)).Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{

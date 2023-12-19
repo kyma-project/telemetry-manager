@@ -9,7 +9,7 @@ const (
 const (
 	ReasonNoPipelineDeployed      = "NoPipelineDeployed"
 	ReasonReferencedSecretMissing = "ReferencedSecretMissing"
-	ReasonWaitingForLock          = "WaitingForLock"
+	ReasonMaxPipelinesExceeded    = "MaxPipelinesExceeded"
 	ReasonResourceBlocksDeletion  = "ResourceBlocksDeletion"
 
 	ReasonFluentBitDSNotReady   = "FluentBitDaemonSetNotReady"
@@ -31,7 +31,7 @@ const (
 var message = map[string]string{
 	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
 	ReasonReferencedSecretMissing: "One or more referenced Secrets are missing",
-	ReasonWaitingForLock:          "Waiting for the lock",
+	ReasonMaxPipelinesExceeded:    "Maximum Pipeline count limit exceeded",
 
 	ReasonFluentBitDSNotReady:   "Fluent Bit DaemonSet is not ready",
 	ReasonFluentBitDSReady:      "Fluent Bit DaemonSet is ready",

@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
-func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lockAcquired bool) error {
+func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool) error {
 	var pipeline telemetryv1alpha1.MetricPipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -33,7 +33,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setGatewayHealthyCondition(ctx, &pipeline)
-	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, lockAcquired)
+	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update MetricPipeline status: %w", err)
@@ -83,7 +83,7 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeMetricGatewayHealthy, reason, status, pipeline.Generation))
 }
 
-func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, lockAcquired bool) {
+func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, withinPipelineCountLimit bool) {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonMetricConfigurationGenerated
 
@@ -92,9 +92,9 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 		reason = conditions.ReasonReferencedSecretMissing
 	}
 
-	if !lockAcquired {
+	if !withinPipelineCountLimit {
 		status = metav1.ConditionFalse
-		reason = conditions.ReasonWaitingForLock
+		reason = conditions.ReasonMaxPipelinesExceeded
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation))

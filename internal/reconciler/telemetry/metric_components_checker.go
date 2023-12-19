@@ -98,7 +98,7 @@ func (m *metricComponentsChecker) addReasonPrefix(reason string) string {
 		return "MetricGateway" + reason
 	case reason == conditions.ReasonMetricAgentDaemonSetReady || reason == conditions.ReasonMetricAgentDaemonSetNotReady:
 		return "MetricAgent" + reason
-	case reason == conditions.ReasonWaitingForLock || reason == conditions.ReasonReferencedSecretMissing:
+	case reason == conditions.ReasonReferencedSecretMissing:
 		return "MetricPipeline" + reason
 	}
 	return reason
