@@ -26,6 +26,8 @@ tracing:
 logging:
   paused: true
 metrics:
+  paused: true
+telemetry:
   paused: true`
 
 type Overrides struct {

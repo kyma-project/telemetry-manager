@@ -7,7 +7,7 @@ import (
 	"k8s.io/utils/pointer"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
 const (
@@ -47,7 +47,7 @@ func (d *Deployment) WithAnnotations(annotations map[string]string) *Deployment 
 	return d
 }
 func (d *Deployment) K8sObject(opts ...testkit.OptFunc) *appsv1.Deployment {
-	labels := k8s.ProcessLabelOptions(opts...)
+	labels := kitk8s.ProcessLabelOptions(opts...)
 
 	containers := d.containers()
 	volumes := d.volumes()

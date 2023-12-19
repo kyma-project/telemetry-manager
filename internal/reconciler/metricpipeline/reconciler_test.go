@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 )
 
 var (
@@ -79,7 +79,7 @@ func TestGetDeployableMetricPipelines(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	l := kubernetes.NewResourceCountLock(fakeClient, lockName, 2)
+	l := k8sutils.NewResourceCountLock(fakeClient, lockName, 2)
 
 	err := l.TryAcquireLock(ctx, &pipeline1)
 	require.NoError(t, err)
@@ -96,7 +96,7 @@ func TestMultipleGetDeployableMetricPipelines(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	l := kubernetes.NewResourceCountLock(fakeClient, lockName, 2)
+	l := k8sutils.NewResourceCountLock(fakeClient, lockName, 2)
 
 	err := l.TryAcquireLock(ctx, &pipeline1)
 	require.NoError(t, err)
@@ -117,7 +117,7 @@ func TestMultipleGetDeployableMetricPipelinesWithoutLock(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	l := kubernetes.NewResourceCountLock(fakeClient, lockName, 2)
+	l := k8sutils.NewResourceCountLock(fakeClient, lockName, 2)
 
 	err := l.TryAcquireLock(ctx, &pipeline1)
 	require.NoError(t, err)
@@ -135,7 +135,7 @@ func TestGetDeployableMetricPipelinesWithMissingSecretReference(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	l := kubernetes.NewResourceCountLock(fakeClient, lockName, 2)
+	l := k8sutils.NewResourceCountLock(fakeClient, lockName, 2)
 
 	err := l.TryAcquireLock(ctx, &pipelineWithSecretRef)
 	require.NoError(t, err)
@@ -152,7 +152,7 @@ func TestGetDeployableMetricPipelinesWithoutLock(t *testing.T) {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = telemetryv1alpha1.AddToScheme(scheme)
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-	l := kubernetes.NewResourceCountLock(fakeClient, lockName, 2)
+	l := k8sutils.NewResourceCountLock(fakeClient, lockName, 2)
 
 	err := l.TryAcquireLock(ctx, &pipelineWithSecretRef)
 	require.NoError(t, err)

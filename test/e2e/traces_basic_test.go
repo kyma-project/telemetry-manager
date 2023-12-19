@@ -14,11 +14,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
+	kittracepipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -45,7 +45,7 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		pipeline := kittrace.NewPipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
+		pipeline := kittracepipeline.NewPipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			Persistent(isOperational())
 		pipelineName = pipeline.Name()
@@ -80,15 +80,15 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 		})
 
 		It("Should reject scaling below minimum", Label(operationalTest), func() {
-			var telemetry v1alpha1.Telemetry
+			var telemetry operatorv1alpha1.Telemetry
 			err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 			Expect(err).NotTo(HaveOccurred())
 
-			telemetry.Spec.Trace = &v1alpha1.TraceSpec{
-				Gateway: v1alpha1.TraceGatewaySpec{
-					Scaling: v1alpha1.Scaling{
-						Type: v1alpha1.StaticScalingStrategyType,
-						Static: &v1alpha1.StaticScaling{
+			telemetry.Spec.Trace = &operatorv1alpha1.TraceSpec{
+				Gateway: operatorv1alpha1.TraceGatewaySpec{
+					Scaling: operatorv1alpha1.Scaling{
+						Type: operatorv1alpha1.StaticScalingStrategyType,
+						Static: &operatorv1alpha1.StaticScaling{
 							Replicas: -1,
 						},
 					},
@@ -100,15 +100,15 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 
 		It("Should scale up trace gateway replicas", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
-				var telemetry v1alpha1.Telemetry
+				var telemetry operatorv1alpha1.Telemetry
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				telemetry.Spec.Trace = &v1alpha1.TraceSpec{
-					Gateway: v1alpha1.TraceGatewaySpec{
-						Scaling: v1alpha1.Scaling{
-							Type: v1alpha1.StaticScalingStrategyType,
-							Static: &v1alpha1.StaticScaling{
+				telemetry.Spec.Trace = &operatorv1alpha1.TraceSpec{
+					Gateway: operatorv1alpha1.TraceGatewaySpec{
+						Scaling: operatorv1alpha1.Scaling{
+							Type: operatorv1alpha1.StaticScalingStrategyType,
+							Static: &operatorv1alpha1.StaticScaling{
 								Replicas: 4,
 							},
 						},
@@ -131,15 +131,15 @@ var _ = Describe("Traces Basic", Label("tracing"), func() {
 
 		It("Should scale down trace gateway replicas", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
-				var telemetry v1alpha1.Telemetry
+				var telemetry operatorv1alpha1.Telemetry
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				telemetry.Spec.Trace = &v1alpha1.TraceSpec{
-					Gateway: v1alpha1.TraceGatewaySpec{
-						Scaling: v1alpha1.Scaling{
-							Type: v1alpha1.StaticScalingStrategyType,
-							Static: &v1alpha1.StaticScaling{
+				telemetry.Spec.Trace = &operatorv1alpha1.TraceSpec{
+					Gateway: operatorv1alpha1.TraceGatewaySpec{
+						Scaling: operatorv1alpha1.Scaling{
+							Type: operatorv1alpha1.StaticScalingStrategyType,
+							Static: &operatorv1alpha1.StaticScaling{
 								Replicas: 2,
 							},
 						},

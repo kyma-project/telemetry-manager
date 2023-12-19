@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -13,11 +13,11 @@ type FilesValidator struct {
 }
 
 // Validate provides a mock function with given fields: logPipeline, logPipelines
-func (_m *FilesValidator) Validate(logPipeline *v1alpha1.LogPipeline, logPipelines *v1alpha1.LogPipelineList) error {
+func (_m *FilesValidator) Validate(logPipeline *telemetryv1alpha1.LogPipeline, logPipelines *telemetryv1alpha1.LogPipelineList) error {
 	ret := _m.Called(logPipeline, logPipelines)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*v1alpha1.LogPipeline, *v1alpha1.LogPipelineList) error); ok {
+	if rf, ok := ret.Get(0).(func(*telemetryv1alpha1.LogPipeline, *telemetryv1alpha1.LogPipelineList) error); ok {
 		r0 = rf(logPipeline, logPipelines)
 	} else {
 		r0 = ret.Error(0)

@@ -12,10 +12,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetry "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitovrr "github.com/kyma-project/telemetry-manager/test/testkit/kyma/overrides"
-	kitlog "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
+	kitlogpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -40,7 +40,7 @@ var _ = Describe("Overrides", Label("logging"), Ordered, func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitlog.NewPipeline(pipelineName).
+		logPipeline := kitlogpipeline.NewPipeline(pipelineName).
 			WithSystemNamespaces(true).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
@@ -116,7 +116,7 @@ var _ = Describe("Overrides", Label("logging"), Ordered, func() {
 			lookupKey := types.NamespacedName{
 				Name: pipelineName,
 			}
-			var logPipeline telemetry.LogPipeline
+			var logPipeline telemetryv1alpha1.LogPipeline
 			err := k8sClient.Get(ctx, lookupKey, &logPipeline)
 			Expect(err).ToNot(HaveOccurred())
 

@@ -1,4 +1,4 @@
-package kubernetes
+package k8sutils
 
 import (
 	"context"

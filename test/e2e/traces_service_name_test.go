@@ -13,7 +13,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kittrace "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
+	kittracepipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
@@ -43,7 +43,7 @@ var _ = Describe("Traces Service Name", Label("tracing"), func() {
 
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		tracePipeline := kittrace.NewPipeline("pipeline-service-name-test").
+		tracePipeline := kittracepipeline.NewPipeline("pipeline-service-name-test").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
 		pipelineName = tracePipeline.Name()
 		objs = append(objs, tracePipeline.K8sObject())
