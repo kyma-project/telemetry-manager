@@ -86,7 +86,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 				testutils.NewTracePipelineBuilder().WithStatusConditions(
 					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
 				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(conditions.ReasonWaitingForLock)).Build(),
+					testutils.TracePendingCondition(conditions.ReasonMaxPipelinesExceeded)).Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{

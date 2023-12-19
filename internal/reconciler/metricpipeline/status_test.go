@@ -307,6 +307,6 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
-		require.Equal(t, conditions.ReasonWaitingForLock, cond.Reason)
+		require.Equal(t, conditions.ReasonMaxPipelinesExceeded, cond.Reason)
 	})
 }

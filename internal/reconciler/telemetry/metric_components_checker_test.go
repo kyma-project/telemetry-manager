@@ -125,7 +125,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should not be healthy if one pipeline waiting for lock",
+			name: "should not be healthy if max pipelines exceeded",
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
@@ -135,15 +135,15 @@ func TestMetricComponentsCheck(t *testing.T) {
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
 					WithStatusCondition(healthyAgentCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonWaitingForLock}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonMaxPipelinesExceeded}).
 					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
-				Reason:  "MetricPipelineWaitingForLock",
-				Message: "Waiting for the lock",
+				Reason:  "MaxPipelinesExceeded",
+				Message: "Maximum pipeline count limit exceeded",
 			},
 		},
 		{
