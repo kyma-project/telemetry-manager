@@ -22,9 +22,9 @@ func JoinWithAnd(parts ...string) string {
 }
 
 func IsMatch(key, regexPattern string) string {
-	return fmt.Sprintf("isMatch(\"%s\", \"%s\")", key, regexPattern)
+	return fmt.Sprintf("IsMatch(%s, \"%s\")", key, regexPattern)
 }
 
 func HasAttrOnDatapoint(key, value string) string {
-	return fmt.Sprintf("HasAttrOnDatapoint( \"%s\", \"%s\")", key, value)
+	return fmt.Sprintf("HasAttrOnDatapoint(\"%s\", \"%s\")", key, value)
 }
