@@ -26,7 +26,7 @@ Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/hel
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
+- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install)
 - Kubectl version 1.22.x or higher
 - Helm 3.x
 
