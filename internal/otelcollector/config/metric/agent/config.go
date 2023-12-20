@@ -101,12 +101,22 @@ const (
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	DeleteServiceName           *config.ResourceProcessor `yaml:"resource/delete-service-name,omitempty"`
-	InsertInputSourceRuntime    *config.ResourceProcessor `yaml:"resource/insert-input-source-runtime,omitempty"`
-	InsertInputSourcePrometheus *config.ResourceProcessor `yaml:"resource/insert-input-source-prometheus,omitempty"`
-	InsertInputSourceIstio      *config.ResourceProcessor `yaml:"resource/insert-input-source-istio,omitempty"`
+	DeleteServiceName                     *config.ResourceProcessor `yaml:"resource/delete-service-name,omitempty"`
+	InsertInputSourceRuntime              *config.ResourceProcessor `yaml:"resource/insert-input-source-runtime,omitempty"`
+	InsertInputSourcePrometheus           *config.ResourceProcessor `yaml:"resource/insert-input-source-prometheus,omitempty"`
+	InsertInputSourceIstio                *config.ResourceProcessor `yaml:"resource/insert-input-source-istio,omitempty"`
+	DropIstioMetricsToTelemetryComponents *FilterProcessor          `yaml:"filter/drop-istio-metrics-to-internal-components,omitempty"`
 }
 
 type Exporters struct {
 	OTLP config.OTLPExporter `yaml:"otlp"`
+}
+
+type FilterProcessor struct {
+	Metrics FilterProcessorMetrics `yaml:"metrics"`
+}
+
+type FilterProcessorMetrics struct {
+	DataPoint []string `yaml:"datapoint,omitempty"`
+	Metric    []string `yaml:"metric,omitempty"`
 }

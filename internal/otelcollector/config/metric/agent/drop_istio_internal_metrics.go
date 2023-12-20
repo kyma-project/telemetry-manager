@@ -1,6 +1,8 @@
-package gateway
+package agent
 
-import "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
+import (
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
+)
 
 var (
 	dropMetricsWithSourceMetricAgent        = ottlexpr.JoinWithAnd(ottlexpr.IsMatch("name", "istio.*"), ottlexpr.HasAttrOnDatapoint("source_workload", "telemetry-metric-agent"))

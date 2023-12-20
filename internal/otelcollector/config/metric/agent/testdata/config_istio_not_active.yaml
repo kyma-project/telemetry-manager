@@ -11,6 +11,7 @@ service:
                 - resource/delete-service-name
                 - resource/insert-input-source-istio
                 - batch
+                - filter/drop-istio-metrics-to-internal-components
             exporters:
                 - otlp
         metrics/prometheus:
@@ -198,6 +199,12 @@ processors:
             - action: insert
               key: kyma.source
               value: istio
+    filter/drop-istio-metrics-to-internal-components:
+        metrics:
+            metric:
+                - IsMatch(name, "istio.*") and HasAttrOnDatapoint("source_workload", "telemetry-metric-agent")
+                - IsMatch(name, "istio.*") and HasAttrOnDatapoint("destination_workload", "telemetry-metric-gateway")
+                - IsMatch(name, "istio.*") and HasAttrOnDatapoint("destination_workload", "telemetry-trace-collector")
 exporters:
     otlp:
         endpoint: metrics.telemetry-system.svc.cluster.local:4317
