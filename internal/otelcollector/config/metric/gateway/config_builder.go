@@ -90,20 +90,12 @@ func makeServiceConfig() config.Service {
 
 // declareComponentsForMetricPipeline enriches a Config (exporters, processors, etc.) with components for a given telemetryv1alpha1.MetricPipeline.
 func declareComponentsForMetricPipeline(ctx context.Context, otlpExporterBuilder *otlpexporter.ConfigBuilder, pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config, envVars otlpexporter.EnvVars) error {
-	declareDropInputFilters(pipeline, cfg)
-	//declareDropIstioInternalMetrics(pipeline, cfg)
+	declareDropFilters(pipeline, cfg)
 	declareNamespaceFilters(pipeline, cfg)
 	return declareOTLPExporter(ctx, otlpExporterBuilder, pipeline, cfg, envVars)
 }
 
-//func declareDropIstioInternalMetrics(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
-//	input := pipeline.Spec.Input
-//	if isIstioInputEnabled(input) {
-//		cfg.Processors.DropIstioMetricsToTelemetryComponents = agent.makeFilterToDropMetricsForTelemetryComponents()
-//	}
-//}
-
-func declareDropInputFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
+func declareDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config) {
 	input := pipeline.Spec.Input
 
 	if !isRuntimeInputEnabled(input) {
@@ -164,9 +156,18 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 
 	input := pipeline.Spec.Input
 
-	processors = append(processors, makeDropInputFilters(input)...)
-
-	//processors = append(processors, makeDropIstioInternalMetrics(input)...)
+	if !isRuntimeInputEnabled(input) {
+		processors = append(processors, "filter/drop-if-input-source-runtime")
+	}
+	if !isPrometheusInputEnabled(input) {
+		processors = append(processors, "filter/drop-if-input-source-prometheus")
+	}
+	if !isIstioInputEnabled(input) {
+		processors = append(processors, "filter/drop-if-input-source-istio")
+	}
+	if !isOtlpInputEnabled(input) {
+		processors = append(processors, "filter/drop-if-input-source-otlp")
+	}
 
 	if isRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
 		processors = append(processors, makeNamespaceFilterID(pipeline.Name, metric.InputSourceRuntime))
@@ -188,31 +189,6 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 		Processors: processors,
 		Exporters:  []string{makeOTLPExporterID(pipeline)},
 	}
-}
-
-//func makeDropIstioInternalMetrics(input telemetryv1alpha1.MetricPipelineInput) []string {
-//	var processors []string
-//	if isIstioInputEnabled(input) {
-//		processors = append(processors, "filter/drop-istio-metrics-to-internal-components")
-//	}
-//	return processors
-//}
-
-func makeDropInputFilters(input telemetryv1alpha1.MetricPipelineInput) []string {
-	var processors []string
-	if !isRuntimeInputEnabled(input) {
-		processors = append(processors, "filter/drop-if-input-source-runtime")
-	}
-	if !isPrometheusInputEnabled(input) {
-		processors = append(processors, "filter/drop-if-input-source-prometheus")
-	}
-	if !isIstioInputEnabled(input) {
-		processors = append(processors, "filter/drop-if-input-source-istio")
-	}
-	if !isOtlpInputEnabled(input) {
-		processors = append(processors, "filter/drop-if-input-source-otlp")
-	}
-	return processors
 }
 
 func shouldFilterByNamespace(namespaceSelector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) bool {
