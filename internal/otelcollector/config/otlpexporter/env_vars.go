@@ -38,21 +38,13 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 		secretData[basicAuthHeaderVariable] = []byte(basicAuthHeader)
 	}
 
-	endpoint, err := resolveValue(ctx, c, output.Endpoint)
+	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
+
+	endpointURL, err := resolveEndpointURL(ctx, c, output)
 	if err != nil {
 		return nil, err
 	}
-	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
-	secretData[otlpEndpointVariable] = endpoint
-
-	if len(output.Path) > 0 {
-		u, err := url.Parse(string(endpoint))
-		if err != nil {
-			return nil, err
-		}
-		u.Path = path.Join(u.Path, output.Path)
-		secretData[otlpEndpointVariable] = []byte(u.String())
-	}
+	secretData[otlpEndpointVariable] = endpointURL
 
 	for _, header := range output.Headers {
 		key := makeHeaderVariable(header, pipelineName)
@@ -91,6 +83,24 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 	}
 
 	return secretData, nil
+}
+
+func resolveEndpointURL(ctx context.Context, c client.Reader, output *telemetryv1alpha1.OtlpOutput) ([]byte, error) {
+	endpoint, err := resolveValue(ctx, c, output.Endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(output.Path) > 0 {
+		u, err := url.Parse(string(endpoint))
+		if err != nil {
+			return nil, err
+		}
+		u.Path = path.Join(u.Path, output.Path)
+		return []byte(u.String()), nil
+	}
+
+	return endpoint, nil
 }
 
 func formatBasicAuthHeader(username string, password string) string {
