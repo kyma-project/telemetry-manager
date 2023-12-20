@@ -13,30 +13,30 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
 func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, clusterRole *rbacv1.ClusterRole, allowedPorts []int32) error {
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
-	if err := kubernetes.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
 	}
 
-	if err := kubernetes.CreateOrUpdateClusterRole(ctx, c, clusterRole); err != nil {
+	if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, clusterRole); err != nil {
 		return fmt.Errorf("failed to create cluster role: %w", err)
 	}
 
-	if err := kubernetes.CreateOrUpdateClusterRoleBinding(ctx, c, makeClusterRoleBinding(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, makeClusterRoleBinding(name)); err != nil {
 		return fmt.Errorf("failed to create cluster role binding: %w", err)
 	}
 
-	if err := kubernetes.CreateOrUpdateService(ctx, c, makeMetricsService(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, makeMetricsService(name)); err != nil {
 		return fmt.Errorf("failed to create metrics service: %w", err)
 	}
 
-	if err := kubernetes.CreateOrUpdateNetworkPolicy(ctx, c, makeNetworkPolicy(name, allowedPorts)); err != nil {
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, makeNetworkPolicy(name, allowedPorts)); err != nil {
 		return fmt.Errorf("failed to create deny pprof network policy: %w", err)
 	}
 

@@ -131,15 +131,16 @@ The state of the trace components is determined by the status condition of type 
 
 The state of the metric components is determined by the status condition of type `MetricComponentsHealthy`:
 
-| Condition status | Condition reason                | Message                                                                                                                                      |
-|------------------|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| True             | NoPipelineDeployed              | No pipelines have been deployed                                                                                                              |
-| True             | MetricGatewayDeploymentReady    | Metric gateway Deployment is ready                                                                                                           |
-| True             | MetricAgentDaemonSetReady       | Metric agent DaemonSet is ready                                                                                                              |
-| False            | ReferencedSecretMissing         | One or more referenced Secrets are missing                                                                                                   |
-| False            | MetricGatewayDeploymentNotReady | Metric gateway Deployment is not ready                                                                                                       |
-| False            | MetricAgentDaemonSetNotReady    | Metric agent DaemonSet is not ready                                                                                                          |
-| False            | ResourceBlocksDeletion          | The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (resource-1, resource-2,...) |
+| Condition status | Condition reason                      | Message                                                                                                                                      |
+|------------------|---------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| True             | NoPipelineDeployed                    | No pipelines have been deployed                                                                                                              |
+| True             | MetricGatewayDeploymentReady          | Metric gateway Deployment is ready                                                                                                           |
+| True             | MetricAgentDaemonSetReady             | Metric agent DaemonSet is ready                                                                                                              |
+| False            | MetricPipelineReferencedSecretMissing | One or more referenced Secrets are missing                                                                                                   |
+| False            | MaxPipelinesExceeded                  | Maximum pipeline count exceeded                                                                                                              |
+| False            | MetricGatewayDeploymentNotReady       | Metric gateway Deployment is not ready                                                                                                       |
+| False            | MetricAgentDaemonSetNotReady          | Metric agent DaemonSet is not ready                                                                                                          |
+| False            | ResourceBlocksDeletion                | The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (resource-1, resource-2,...) |
 
 
 

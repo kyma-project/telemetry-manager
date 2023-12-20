@@ -20,7 +20,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -70,7 +70,7 @@ var _ = Describe("LogParser controller", Ordered, func() {
 		})
 		It("Should have configuration copied to parser configmap", func() {
 			Eventually(func() string {
-				var parserCm v1.ConfigMap
+				var parserCm corev1.ConfigMap
 				err := k8sClient.Get(ctx, testLogParserConfig.ParsersConfigMap, &parserCm)
 				if err != nil {
 					return err.Error()
@@ -86,7 +86,7 @@ var _ = Describe("LogParser controller", Ordered, func() {
 		})
 		It("Should reset to empty fluent-bit parser configmap", func() {
 			Eventually(func() string {
-				var parserCm v1.ConfigMap
+				var parserCm corev1.ConfigMap
 				err := k8sClient.Get(ctx, testLogParserConfig.ParsersConfigMap, &parserCm)
 				if err != nil {
 					return err.Error()

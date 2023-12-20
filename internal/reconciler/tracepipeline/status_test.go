@@ -269,7 +269,7 @@ func TestUpdateStatus(t *testing.T) {
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
 		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonWaitingForLock)
+		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMaxPipelinesExceeded)
 	})
 
 	t.Run("should add pending condition if acquired lock but trace gateway is not ready", func(t *testing.T) {

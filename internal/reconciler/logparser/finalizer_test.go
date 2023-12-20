@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -19,7 +19,7 @@ func TestEnsureFinalizer(t *testing.T) {
 		ctx := context.Background()
 		scheme := runtime.NewScheme()
 		_ = telemetryv1alpha1.AddToScheme(scheme)
-		parser := &telemetryv1alpha1.LogParser{ObjectMeta: v1.ObjectMeta{Name: "parser"}}
+		parser := &telemetryv1alpha1.LogParser{ObjectMeta: metav1.ObjectMeta{Name: "parser"}}
 		client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(parser).Build()
 
 		err := ensureFinalizer(ctx, client, parser)
@@ -34,9 +34,9 @@ func TestEnsureFinalizer(t *testing.T) {
 	t.Run("with DeletionTimestamp", func(t *testing.T) {
 		ctx := context.Background()
 		client := fake.NewClientBuilder().Build()
-		timestamp := v1.Now()
+		timestamp := metav1.Now()
 		parser := &telemetryv1alpha1.LogParser{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				DeletionTimestamp: &timestamp,
 				Name:              "parser"}}
 
@@ -49,7 +49,7 @@ func TestCleanupFinalizer(t *testing.T) {
 	t.Run("without DeletionTimestamp", func(t *testing.T) {
 		ctx := context.Background()
 		parser := &telemetryv1alpha1.LogParser{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:       "parser",
 				Finalizers: []string{finalizer},
 			},
@@ -64,9 +64,9 @@ func TestCleanupFinalizer(t *testing.T) {
 		ctx := context.Background()
 		scheme := runtime.NewScheme()
 		_ = telemetryv1alpha1.AddToScheme(scheme)
-		timestamp := v1.Now()
+		timestamp := metav1.Now()
 		parser := &telemetryv1alpha1.LogParser{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:              "parser",
 				Finalizers:        []string{finalizer},
 				DeletionTimestamp: &timestamp,

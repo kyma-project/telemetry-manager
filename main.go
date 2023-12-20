@@ -29,7 +29,7 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	istiosecv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+	istiosecurityclientv1beta "istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -45,15 +45,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	k8sWebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	operatorcontrollers "github.com/kyma-project/telemetry-manager/controllers/operator"
+	"github.com/kyma-project/telemetry-manager/controllers/operator"
 	telemetrycontrollers "github.com/kyma-project/telemetry-manager/controllers/telemetry"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/logger"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
@@ -67,7 +67,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
 	logpipelinewebhook "github.com/kyma-project/telemetry-manager/webhook/logpipeline"
-	logpipelinevalidation "github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
+	"github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -133,7 +133,7 @@ const (
 	overridesConfigMapName = "telemetry-override-config"
 	overridesConfigMapKey  = "override-config"
 	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.10-a5234020"
-	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20231206-af68e692"
+	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20231214-4555a23b"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
@@ -150,7 +150,7 @@ func init() {
 
 	utilruntime.Must(telemetryv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(istiosecv1beta1.AddToScheme(scheme))
+	utilruntime.Must(istiosecurityclientv1beta.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -303,7 +303,7 @@ func main() {
 		LeaderElection:          true,
 		LeaderElectionNamespace: telemetryNamespace,
 		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
-		WebhookServer: k8sWebhook.NewServer(k8sWebhook.Options{
+		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    9443,
 			CertDir: certDir,
 		}),
@@ -384,8 +384,8 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 func enableLoggingController(mgr manager.Manager) {
 	setupLog.Info("Starting with logging controllers")
 
-	mgr.GetWebhookServer().Register("/validate-logpipeline", &k8sWebhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
-	mgr.GetWebhookServer().Register("/validate-logparser", &k8sWebhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
+	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
+	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
 
 	if err := createLogPipelineReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "LogPipeline")
@@ -469,7 +469,7 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 
 	return telemetrycontrollers.NewLogPipelineReconciler(
 		client,
-		logpipeline.NewReconciler(client, config, &kubernetes.DaemonSetProber{Client: client}, overridesHandler),
+		logpipeline.NewReconciler(client, config, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
 		config)
 }
 
@@ -484,8 +484,8 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 		logparser.NewReconciler(
 			client,
 			config,
-			&kubernetes.DaemonSetProber{Client: client},
-			&kubernetes.DaemonSetAnnotator{Client: client},
+			&k8sutils.DaemonSetProber{Client: client},
+			&k8sutils.DaemonSetAnnotator{Client: client},
 			overridesHandler,
 		),
 		config,
@@ -495,9 +495,9 @@ func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogPa
 func createLogPipelineValidator(client client.Client) *logpipelinewebhook.ValidatingWebhookHandler {
 	return logpipelinewebhook.NewValidatingWebhookHandler(
 		client,
-		logpipelinevalidation.NewVariablesValidator(client),
-		logpipelinevalidation.NewMaxPipelinesValidator(maxLogPipelines),
-		logpipelinevalidation.NewFilesValidator(),
+		validation.NewVariablesValidator(client),
+		validation.NewMaxPipelinesValidator(maxLogPipelines),
+		validation.NewFilesValidator(),
 		admission.NewDecoder(scheme),
 		dryrun.NewDryRunner(client, createDryRunConfig()),
 		&telemetryv1alpha1.LogPipelineValidationConfig{DeniedOutPutPlugins: parsePlugins(deniedOutputPlugins), DeniedFilterPlugins: parsePlugins(deniedFilterPlugins)})
@@ -538,7 +538,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 
 	return telemetrycontrollers.NewTracePipelineReconciler(
 		client,
-		tracepipeline.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, overridesHandler),
+		tracepipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, overridesHandler),
 	)
 }
 
@@ -583,7 +583,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,
-		metricpipeline.NewReconciler(client, config, &kubernetes.DeploymentProber{Client: client}, &kubernetes.DaemonSetProber{Client: client}, overridesHandler))
+		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, overridesHandler))
 }
 
 func createDryRunConfig() dryrun.Config {
@@ -606,7 +606,7 @@ func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
 }
 
-func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, webhookConfig telemetry.WebhookConfig) *operatorcontrollers.TelemetryReconciler {
+func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, webhookConfig telemetry.WebhookConfig) *operator.TelemetryReconciler {
 	config := telemetry.Config{
 		Traces: telemetry.TracesConfig{
 			OTLPServiceName: traceOTLPServiceName,
@@ -616,10 +616,11 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, web
 			OTLPServiceName: metricOTLPServiceName,
 			Namespace:       telemetryNamespace,
 		},
-		Webhook: webhookConfig,
+		Webhook:                webhookConfig,
+		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 	}
 
-	return operatorcontrollers.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config), config)
+	return operator.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config, overridesHandler), config)
 }
 
 func createWebhookConfig() telemetry.WebhookConfig {

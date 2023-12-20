@@ -37,7 +37,9 @@ type MetricPipelineList struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:resource:scope=Cluster
 //+kubebuilder:subresource:status
-//+kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.conditions[-1].type`
+//+kubebuilder:printcolumn:name="Configuration Generated",type=string,JSONPath=`.status.conditions[?(@.type=="ConfigurationGenerated")].status`
+//+kubebuilder:printcolumn:name="Gateway Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="GatewayHealthy")].status`
+//+kubebuilder:printcolumn:name="Agent Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="AgentHealthy")].status`
 //+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // MetricPipeline is the Schema for the metricpipelines API.
@@ -133,67 +135,5 @@ type MetricPipelineOutput struct {
 // MetricPipelineStatus defines the observed state of MetricPipeline.
 type MetricPipelineStatus struct {
 	// An array of conditions describing the status of the pipeline.
-	Conditions []MetricPipelineCondition `json:"conditions,omitempty"`
-}
-
-type MetricPipelineConditionType string
-
-// These are the valid statuses of MetricPipeline.
-const (
-	MetricPipelinePending MetricPipelineConditionType = "Pending"
-	MetricPipelineRunning MetricPipelineConditionType = "Running"
-)
-
-// MetricPipelineCondition contains details for the current condition of this LogPipeline.
-type MetricPipelineCondition struct {
-	// Point in time the condition transitioned into a different state.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
-	// Reason of last transition.
-	Reason string `json:"reason,omitempty"`
-	// The possible transition types are:<br>- `Running`: The instance is ready and usable.<br>- `Pending`: The pipeline is being activated.
-	Type MetricPipelineConditionType `json:"type,omitempty"`
-}
-
-func NewMetricPipelineCondition(reason string, condType MetricPipelineConditionType) *MetricPipelineCondition {
-	return &MetricPipelineCondition{
-		LastTransitionTime: metav1.Now(),
-		Reason:             reason,
-		Type:               condType,
-	}
-}
-
-func (mps *MetricPipelineStatus) GetCondition(condType MetricPipelineConditionType) *MetricPipelineCondition {
-	for cond := range mps.Conditions {
-		if mps.Conditions[cond].Type == condType {
-			return &mps.Conditions[cond]
-		}
-	}
-	return nil
-}
-
-func (mps *MetricPipelineStatus) HasCondition(condition MetricPipelineConditionType) bool {
-	return mps.GetCondition(condition) != nil
-}
-
-func (mps *MetricPipelineStatus) SetCondition(cond MetricPipelineCondition) {
-	currentCond := mps.GetCondition(cond.Type)
-	if currentCond != nil && currentCond.Reason == cond.Reason {
-		return
-	}
-	if currentCond != nil {
-		cond.LastTransitionTime = currentCond.LastTransitionTime
-	}
-	newConditions := filterMetricPipelineCondition(mps.Conditions, cond.Type)
-	mps.Conditions = append(newConditions, cond)
-}
-
-func filterMetricPipelineCondition(conditions []MetricPipelineCondition, condType MetricPipelineConditionType) []MetricPipelineCondition {
-	var newConditions []MetricPipelineCondition
-	for _, cond := range conditions {
-		if cond.Type == condType {
-			continue
-		}
-		newConditions = append(newConditions, cond)
-	}
-	return newConditions
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }

@@ -21,7 +21,7 @@ Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](../../README.md) is [enabled](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
+- The [Telemetry module](../../README.md) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install)
 - kubectl version 1.22.x or higher
 - Helm 3.x
 

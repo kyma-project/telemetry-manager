@@ -30,11 +30,11 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	configbuilder "github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	"github.com/kyma-project/telemetry-manager/internal/kubernetes"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	resources "github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
+	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
@@ -47,9 +47,9 @@ type Config struct {
 	EnvSecret             types.NamespacedName
 	OutputTLSConfigSecret types.NamespacedName
 	OverrideConfigMap     types.NamespacedName
-	PipelineDefaults      configbuilder.PipelineDefaults
+	PipelineDefaults      builder.PipelineDefaults
 	Overrides             overrides.Config
-	DaemonSetConfig       resources.DaemonSetConfig
+	DaemonSetConfig       fluentbit.DaemonSetConfig
 }
 
 //go:generate mockery --name DaemonSetProber --filename daemon_set_prober.go
@@ -150,30 +150,30 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, pipelines []telemetryv1alpha1.LogPipeline) error {
-	ownerRefSetter := kubernetes.NewOwnerReferenceSetter(r.Client, pipeline)
+	ownerRefSetter := k8sutils.NewOwnerReferenceSetter(r.Client, pipeline)
 
 	serviceAccount := commonresources.MakeServiceAccount(r.config.DaemonSet)
-	if err := kubernetes.CreateOrUpdateServiceAccount(ctx, ownerRefSetter, serviceAccount); err != nil {
+	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, ownerRefSetter, serviceAccount); err != nil {
 		return fmt.Errorf("failed to create fluent bit service account: %w", err)
 	}
 
-	clusterRole := resources.MakeClusterRole(r.config.DaemonSet)
-	if err := kubernetes.CreateOrUpdateClusterRole(ctx, ownerRefSetter, clusterRole); err != nil {
+	clusterRole := fluentbit.MakeClusterRole(r.config.DaemonSet)
+	if err := k8sutils.CreateOrUpdateClusterRole(ctx, ownerRefSetter, clusterRole); err != nil {
 		return fmt.Errorf("failed to create fluent bit cluster role: %w", err)
 	}
 
 	clusterRoleBinding := commonresources.MakeClusterRoleBinding(r.config.DaemonSet)
-	if err := kubernetes.CreateOrUpdateClusterRoleBinding(ctx, ownerRefSetter, clusterRoleBinding); err != nil {
+	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, ownerRefSetter, clusterRoleBinding); err != nil {
 		return fmt.Errorf("failed to create fluent bit cluster role Binding: %w", err)
 	}
 
-	exporterMetricsService := resources.MakeExporterMetricsService(r.config.DaemonSet)
-	if err := kubernetes.CreateOrUpdateService(ctx, ownerRefSetter, exporterMetricsService); err != nil {
+	exporterMetricsService := fluentbit.MakeExporterMetricsService(r.config.DaemonSet)
+	if err := k8sutils.CreateOrUpdateService(ctx, ownerRefSetter, exporterMetricsService); err != nil {
 		return fmt.Errorf("failed to reconcile exporter metrics service: %w", err)
 	}
 
-	metricsService := resources.MakeMetricsService(r.config.DaemonSet)
-	if err := kubernetes.CreateOrUpdateService(ctx, ownerRefSetter, metricsService); err != nil {
+	metricsService := fluentbit.MakeMetricsService(r.config.DaemonSet)
+	if err := k8sutils.CreateOrUpdateService(ctx, ownerRefSetter, metricsService); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
 
@@ -181,18 +181,18 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 	if len(pipelines) == 0 {
 		includeSections = false
 	}
-	cm := resources.MakeConfigMap(r.config.DaemonSet, includeSections)
-	if err := kubernetes.CreateOrUpdateConfigMap(ctx, ownerRefSetter, cm); err != nil {
+	cm := fluentbit.MakeConfigMap(r.config.DaemonSet, includeSections)
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, ownerRefSetter, cm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit configmap: %w", err)
 	}
 
-	luaCm := resources.MakeLuaConfigMap(r.config.LuaConfigMap)
-	if err := kubernetes.CreateOrUpdateConfigMap(ctx, ownerRefSetter, luaCm); err != nil {
+	luaCm := fluentbit.MakeLuaConfigMap(r.config.LuaConfigMap)
+	if err := k8sutils.CreateOrUpdateConfigMap(ctx, ownerRefSetter, luaCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit lua configmap: %w", err)
 	}
 
-	parsersCm := resources.MakeParserConfigmap(r.config.ParsersConfigMap)
-	if err := kubernetes.CreateIfNotExistsConfigMap(ctx, ownerRefSetter, parsersCm); err != nil {
+	parsersCm := fluentbit.MakeParserConfigmap(r.config.ParsersConfigMap)
+	if err := k8sutils.CreateIfNotExistsConfigMap(ctx, ownerRefSetter, parsersCm); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit parser configmap: %w", err)
 	}
 
@@ -202,8 +202,8 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to calculate config checksum: %w", err)
 	}
 
-	daemonSet := resources.MakeDaemonSet(r.config.DaemonSet, checksum, r.config.DaemonSetConfig)
-	if err := kubernetes.CreateOrUpdateDaemonSet(ctx, ownerRefSetter, daemonSet); err != nil {
+	daemonSet := fluentbit.MakeDaemonSet(r.config.DaemonSet, checksum, r.config.DaemonSetConfig)
+	if err := k8sutils.CreateOrUpdateDaemonSet(ctx, ownerRefSetter, daemonSet); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit daemonset: %w", err)
 	}
 

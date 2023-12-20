@@ -7,7 +7,7 @@ import (
 	"k8s.io/utils/pointer"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
 type LogProducer struct {
@@ -30,7 +30,7 @@ func (lp *LogProducer) WithAnnotations(annotations map[string]string) *LogProduc
 }
 
 func (lp *LogProducer) K8sObject(labelOpts ...testkit.OptFunc) *appsv1.Deployment {
-	labels := k8s.ProcessLabelOptions(labelOpts...)
+	labels := kitk8s.ProcessLabelOptions(labelOpts...)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

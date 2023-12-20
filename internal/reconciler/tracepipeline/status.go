@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
-func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lockAcquired bool) error {
+func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool) error {
 	log := logf.FromContext(ctx)
 
 	var pipeline telemetryv1alpha1.TracePipeline
@@ -30,8 +30,8 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, lock
 		return nil
 	}
 
-	if !lockAcquired {
-		pending := telemetryv1alpha1.NewTracePipelineCondition(conditions.ReasonWaitingForLock, telemetryv1alpha1.TracePipelinePending)
+	if !withinPipelineCountLimit {
+		pending := telemetryv1alpha1.NewTracePipelineCondition(conditions.ReasonMaxPipelinesExceeded, telemetryv1alpha1.TracePipelinePending)
 
 		if pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning) {
 			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))

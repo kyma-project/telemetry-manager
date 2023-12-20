@@ -2,7 +2,7 @@ package tls
 
 import (
 	"bytes"
-	"crypto/rand"
+	crand "crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -34,7 +34,7 @@ func GenerateTLSCerts(serverDNSName string) (Certs, error) {
 	var certs Certs
 
 	// CA Certificate
-	caPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	caPrivateKey, err := rsa.GenerateKey(crand.Reader, 2048)
 	if err != nil {
 		return certs, err
 	}
@@ -44,7 +44,7 @@ func GenerateTLSCerts(serverDNSName string) (Certs, error) {
 	caTemplate.KeyUsage = x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature
 	caTemplate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
 
-	caCertBytes, err := x509.CreateCertificate(rand.Reader, caTemplate, caTemplate, caPrivateKey.Public(), caPrivateKey)
+	caCertBytes, err := x509.CreateCertificate(crand.Reader, caTemplate, caTemplate, caPrivateKey.Public(), caPrivateKey)
 	if err != nil {
 		return certs, err
 	}
@@ -55,7 +55,7 @@ func GenerateTLSCerts(serverDNSName string) (Certs, error) {
 	}
 
 	// Server Certificate (signed by CA certificate)
-	serverPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	serverPrivateKey, err := rsa.GenerateKey(crand.Reader, 2048)
 	if err != nil {
 		return certs, err
 	}
@@ -70,7 +70,7 @@ func GenerateTLSCerts(serverDNSName string) (Certs, error) {
 	serverTemplate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
 	serverTemplate.DNSNames = []string{serverDNSName}
 
-	serverBytes, err := x509.CreateCertificate(rand.Reader, serverTemplate, caTemplate, serverPrivateKey.Public(), caPrivateKey)
+	serverBytes, err := x509.CreateCertificate(crand.Reader, serverTemplate, caTemplate, serverPrivateKey.Public(), caPrivateKey)
 	if err != nil {
 		return certs, err
 	}
@@ -81,7 +81,7 @@ func GenerateTLSCerts(serverDNSName string) (Certs, error) {
 	}
 
 	// Client Certificate (signed by CA certificate)
-	clientPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	clientPrivateKey, err := rsa.GenerateKey(crand.Reader, 2048)
 	if err != nil {
 		return certs, err
 	}
@@ -95,7 +95,7 @@ func GenerateTLSCerts(serverDNSName string) (Certs, error) {
 	serverTemplate.KeyUsage = x509.KeyUsageDigitalSignature
 	serverTemplate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
 
-	clientCertBytes, err := x509.CreateCertificate(rand.Reader, clientTemplate, caTemplate, clientPrivateKey.Public(), caPrivateKey)
+	clientCertBytes, err := x509.CreateCertificate(crand.Reader, clientTemplate, caTemplate, clientPrivateKey.Public(), caPrivateKey)
 	if err != nil {
 		return certs, err
 	}

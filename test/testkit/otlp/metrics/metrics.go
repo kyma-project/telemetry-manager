@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	neturl "net/url"
+	"net/url"
 	"time"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -89,8 +89,8 @@ func setMetricDefaults(m pmetric.Metric) {
 	m.SetUnit("ms")
 }
 
-func NewHTTPExporter(url string, authProvider httpAuthProvider) (exporter Exporter, err error) {
-	urlSegments, err := neturl.Parse(url)
+func NewHTTPExporter(otlpURL string, authProvider httpAuthProvider) (exporter Exporter, err error) {
+	urlSegments, err := url.Parse(otlpURL)
 	if err != nil {
 		return exporter, fmt.Errorf("%w: %v", ErrInvalidURL, err)
 	}

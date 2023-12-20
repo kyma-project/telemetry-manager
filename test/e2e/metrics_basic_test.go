@@ -14,11 +14,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetric "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -45,7 +45,7 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		metricPipeline := kitmetric.NewPipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
+		metricPipeline := kitmetricpipeline.NewPipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			Persistent(isOperational())
 		pipelineName = metricPipeline.Name()
@@ -70,15 +70,15 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 		})
 
 		It("Should reject scaling below minimum", Label(operationalTest), func() {
-			var telemetry v1alpha1.Telemetry
+			var telemetry operatorv1alpha1.Telemetry
 			err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 			Expect(err).NotTo(HaveOccurred())
 
-			telemetry.Spec.Metric = &v1alpha1.MetricSpec{
-				Gateway: v1alpha1.MetricGatewaySpec{
-					Scaling: v1alpha1.Scaling{
-						Type: v1alpha1.StaticScalingStrategyType,
-						Static: &v1alpha1.StaticScaling{
+			telemetry.Spec.Metric = &operatorv1alpha1.MetricSpec{
+				Gateway: operatorv1alpha1.MetricGatewaySpec{
+					Scaling: operatorv1alpha1.Scaling{
+						Type: operatorv1alpha1.StaticScalingStrategyType,
+						Static: &operatorv1alpha1.StaticScaling{
 							Replicas: -1,
 						},
 					},
@@ -90,15 +90,15 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 
 		It("Should scale up metric gateway replicas", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
-				var telemetry v1alpha1.Telemetry
+				var telemetry operatorv1alpha1.Telemetry
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				telemetry.Spec.Metric = &v1alpha1.MetricSpec{
-					Gateway: v1alpha1.MetricGatewaySpec{
-						Scaling: v1alpha1.Scaling{
-							Type: v1alpha1.StaticScalingStrategyType,
-							Static: &v1alpha1.StaticScaling{
+				telemetry.Spec.Metric = &operatorv1alpha1.MetricSpec{
+					Gateway: operatorv1alpha1.MetricGatewaySpec{
+						Scaling: operatorv1alpha1.Scaling{
+							Type: operatorv1alpha1.StaticScalingStrategyType,
+							Static: &operatorv1alpha1.StaticScaling{
 								Replicas: 4,
 							},
 						},
@@ -121,15 +121,15 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 
 		It("Should scale down metric gateway replicas", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
-				var telemetry v1alpha1.Telemetry
+				var telemetry operatorv1alpha1.Telemetry
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				telemetry.Spec.Metric = &v1alpha1.MetricSpec{
-					Gateway: v1alpha1.MetricGatewaySpec{
-						Scaling: v1alpha1.Scaling{
-							Type: v1alpha1.StaticScalingStrategyType,
-							Static: &v1alpha1.StaticScaling{
+				telemetry.Spec.Metric = &operatorv1alpha1.MetricSpec{
+					Gateway: operatorv1alpha1.MetricGatewaySpec{
+						Scaling: operatorv1alpha1.Scaling{
+							Type: operatorv1alpha1.StaticScalingStrategyType,
+							Static: &operatorv1alpha1.StaticScaling{
 								Replicas: 2,
 							},
 						},
@@ -155,7 +155,7 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 		})
 
 		It("Should have a running pipeline", Label(operationalTest), func() {
-			verifiers.MetricPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should verify end-to-end metric delivery", Label(operationalTest), func() {
