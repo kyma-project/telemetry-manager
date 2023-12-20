@@ -163,7 +163,7 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 	processors := []string{"memory_limiter", "k8sattributes"}
 
 	input := pipeline.Spec.Input
-	
+
 	processors = append(processors, makeDropInputFilters(input)...)
 
 	processors = append(processors, makeDropIstioInternalMetrics(input)...)
