@@ -73,6 +73,39 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		telemetryExportURL string
 	)
 
+	sourcePodSpec := func() corev1.PodSpec {
+		return corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "source",
+					Image: curlImage,
+					Command: []string{
+						"/bin/sh",
+						"-c",
+						"while true; do curl http://destination:80; sleep 1; done",
+					},
+				},
+			},
+		}
+	}
+
+	destinationPodSpec := func() corev1.PodSpec {
+		return corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "destination",
+					Image: nginxImage,
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: 80,
+							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+				},
+			},
+		}
+	}
+
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject(),
@@ -89,40 +122,12 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 			IstioInput(true, kitmetricpipeline.IncludeNamespaces(app1Ns))
 		objs = append(objs, metricPipeline.K8sObject())
 
-		sourceSpec := corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  "source",
-					Image: curlImage,
-					Command: []string{
-						"/bin/sh",
-						"-c",
-						"while true; do curl http://destination:80; sleep 1; done",
-					},
-				},
-			},
-		}
-		destinationSpec := corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  "destination",
-					Image: nginxImage,
-					Ports: []corev1.ContainerPort{
-						{
-							ContainerPort: 80,
-							Protocol:      corev1.ProtocolTCP,
-						},
-					},
-				},
-			},
-		}
-
-		source1 := kitk8s.NewPod("source", app1Ns).WithPodSpec(sourceSpec)
-		destination1 := kitk8s.NewPod("destination", app1Ns).WithPodSpec(destinationSpec).WithLabel("app", "destination")
+		source1 := kitk8s.NewPod("source", app1Ns).WithPodSpec(sourcePodSpec())
+		destination1 := kitk8s.NewPod("destination", app1Ns).WithPodSpec(destinationPodSpec()).WithLabel("app", "destination")
 		service1 := kitk8s.NewService("destination", app1Ns).WithPort("http", 80)
 
-		source2 := kitk8s.NewPod("source", app2Ns).WithPodSpec(sourceSpec)
-		destination2 := kitk8s.NewPod("destination", app2Ns).WithPodSpec(destinationSpec).WithLabel("app", "destination")
+		source2 := kitk8s.NewPod("source", app2Ns).WithPodSpec(sourcePodSpec())
+		destination2 := kitk8s.NewPod("destination", app2Ns).WithPodSpec(destinationPodSpec()).WithLabel("app", "destination")
 		service2 := kitk8s.NewService("destination", app2Ns).WithPort("http", 80)
 
 		objs = append(objs, source1.K8sObject(), destination1.K8sObject(), service1.K8sObject(kitk8s.WithLabel("app", "destination")), source2.K8sObject(), destination2.K8sObject(), service2.K8sObject(kitk8s.WithLabel("app", "destination")))
