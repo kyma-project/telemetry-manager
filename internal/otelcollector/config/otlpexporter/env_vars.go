@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net/url"
+	"path"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -42,6 +44,15 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 	}
 	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
 	secretData[otlpEndpointVariable] = endpoint
+
+	if len(output.Path) > 0 {
+		u, err := url.Parse(string(endpoint))
+		if err != nil {
+			return nil, err
+		}
+		u.Path = path.Join(u.Path, output.Path)
+		secretData[otlpEndpointVariable] = []byte(u.String())
+	}
 
 	for _, header := range output.Headers {
 		key := makeHeaderVariable(header, pipelineName)

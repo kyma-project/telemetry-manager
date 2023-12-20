@@ -160,5 +160,7 @@ spec:
       enabled: true
   output:
     otlp:
+      protocol: http
       endpoint:
         value: http://mock-metric-receiver.metric-receiver:4317
+      path: /v1/test

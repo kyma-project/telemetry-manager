@@ -41,7 +41,7 @@ func TestMakeConfig(t *testing.T) {
 		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
 	}
 
-	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512)
+	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
 	otlpExporterConfig, envVars, err := cb.MakeConfig(context.Background())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -73,7 +73,7 @@ func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 		Headers:  headers,
 	}
 
-	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512)
+	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
 	otlpExporterConfig, envVars, err := cb.MakeConfig(context.Background())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -91,7 +91,7 @@ func TestMakeExporterConfigWithTLSInsecure(t *testing.T) {
 		TLS:      tls,
 	}
 
-	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512)
+	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
 	otlpExporterConfig, envVars, err := cb.MakeConfig(context.Background())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -109,7 +109,7 @@ func TestMakeExporterConfigWithTLSInsecureSkipVerify(t *testing.T) {
 		TLS:      tls,
 	}
 
-	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512)
+	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
 	otlpExporterConfig, envVars, err := cb.MakeConfig(context.Background())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)
@@ -138,7 +138,7 @@ func TestMakeExporterConfigWithmTLS(t *testing.T) {
 		TLS:      tls,
 	}
 
-	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512)
+	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
 	otlpExporterConfig, envVars, err := cb.MakeConfig(context.Background())
 	require.NoError(t, err)
 	require.NotNil(t, envVars)

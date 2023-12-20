@@ -197,6 +197,8 @@ spec:
                           - name
                           type: object
                         type: array
+                      path:
+                        type: string
                       protocol:
                         default: grpc
                         description: Defines the OTLP protocol (http or grpc). Default
@@ -314,7 +316,11 @@ spec:
                         type: object
                     required:
                     - endpoint
+                    - path
                     type: object
+                    x-kubernetes-validations:
+                    - message: Path only available with HTTP protocol
+                      rule: (has(self.protocol) && self.protocol == 'http') && (has(self.path))
                 required:
                 - otlp
                 type: object
