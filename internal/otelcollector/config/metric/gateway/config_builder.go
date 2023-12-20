@@ -163,19 +163,9 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 	processors := []string{"memory_limiter", "k8sattributes"}
 
 	input := pipeline.Spec.Input
+	
 	processors = append(processors, makeDropInputFilters(input)...)
-	//if !isRuntimeInputEnabled(input) {
-	//	processors = append(processors, "filter/drop-if-input-source-runtime")
-	//}
-	//if !isPrometheusInputEnabled(input) {
-	//	processors = append(processors, "filter/drop-if-input-source-prometheus")
-	//}
-	//if !isIstioInputEnabled(input) {
-	//	processors = append(processors, "filter/drop-if-input-source-istio")
-	//}
-	//if !isOtlpInputEnabled(input) {
-	//	processors = append(processors, "filter/drop-if-input-source-otlp")
-	//}
+
 	processors = append(processors, makeDropIstioInternalMetrics(input)...)
 
 	if isRuntimeInputEnabled(input) && shouldFilterByNamespace(input.Runtime.Namespaces) {
