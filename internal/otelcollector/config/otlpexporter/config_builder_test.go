@@ -59,6 +59,44 @@ func TestMakeConfig(t *testing.T) {
 	require.Equal(t, "300s", otlpExporterConfig.RetryOnFailure.MaxElapsedTime)
 }
 
+func TestMakeConfigTraceWithPath(t *testing.T) {
+	output := &telemetryv1alpha1.OtlpOutput{
+		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+		Path:     "/v1/test",
+		Protocol: "http",
+	}
+
+	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeTrace)
+	otlpExporterConfig, envVars, err := cb.MakeConfig(context.Background())
+	require.NoError(t, err)
+	require.NotNil(t, envVars)
+
+	require.NotNil(t, envVars["OTLP_ENDPOINT_TEST"])
+	require.Equal(t, envVars["OTLP_ENDPOINT_TEST"], []byte("otlp-endpoint/v1/test"))
+
+	require.Equal(t, "${OTLP_ENDPOINT_TEST}", otlpExporterConfig.TracesEndpoint)
+	require.Empty(t, otlpExporterConfig.Endpoint)
+}
+
+func TestMakeConfigMetricWithPath(t *testing.T) {
+	output := &telemetryv1alpha1.OtlpOutput{
+		Endpoint: telemetryv1alpha1.ValueType{Value: "otlp-endpoint"},
+		Path:     "/v1/test",
+		Protocol: "http",
+	}
+
+	cb := NewConfigBuilder(fake.NewClientBuilder().Build(), output, "test", 512, SignalTypeMetric)
+	otlpExporterConfig, envVars, err := cb.MakeConfig(context.Background())
+	require.NoError(t, err)
+	require.NotNil(t, envVars)
+
+	require.NotNil(t, envVars["OTLP_ENDPOINT_TEST"])
+	require.Equal(t, envVars["OTLP_ENDPOINT_TEST"], []byte("otlp-endpoint/v1/test"))
+
+	require.Equal(t, "${OTLP_ENDPOINT_TEST}", otlpExporterConfig.MetricsEndpoint)
+	require.Empty(t, otlpExporterConfig.Endpoint)
+}
+
 func TestMakeExporterConfigWithCustomHeaders(t *testing.T) {
 	headers := []telemetryv1alpha1.Header{
 		{

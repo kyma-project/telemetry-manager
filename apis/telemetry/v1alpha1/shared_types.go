@@ -79,8 +79,8 @@ type OtlpOutput struct {
 	// Defines the host and port (<host>:<port>) of an OTLP endpoint.
 	// +kubebuilder:validation:Required
 	Endpoint ValueType `json:"endpoint"`
-	// Defines OTLP export URL path
-	Path string `json:"path"`
+	// Defines OTLP export URL path (only for http protocol)
+	Path string `json:"path,omitempty"`
 	// Defines authentication options for the OTLP output
 	Authentication *AuthenticationOptions `json:"authentication,omitempty"`
 	// Defines custom headers to be added to outgoing HTTP or GRPC requests.
