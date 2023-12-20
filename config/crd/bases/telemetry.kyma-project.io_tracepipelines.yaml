@@ -198,6 +198,7 @@ spec:
                           type: object
                         type: array
                       path:
+                        description: Defines OTLP export URL path
                         type: string
                       protocol:
                         default: grpc
@@ -319,7 +320,7 @@ spec:
                     - path
                     type: object
                     x-kubernetes-validations:
-                    - message: Path only available with HTTP protocol
+                    - message: Path is only available with HTTP protocol
                       rule: (has(self.protocol) && self.protocol == 'http') && (has(self.path))
                 required:
                 - otlp
