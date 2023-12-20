@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -15,7 +16,6 @@ import (
 	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -26,6 +26,8 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		backendName = "backend"
 		app1Ns      = "app-1"
 		app2Ns      = "app-2"
+		nginxImage  = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
+		curlImage   = "europe-docker.pkg.dev/kyma-project/prod/external/curlimages/curl:7.78.0"
 	)
 
 	// https://istio.io/latest/docs/reference/config/metrics/
@@ -71,6 +73,39 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		telemetryExportURL string
 	)
 
+	sourcePodSpec := func() corev1.PodSpec {
+		return corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "source",
+					Image: curlImage,
+					Command: []string{
+						"/bin/sh",
+						"-c",
+						"while true; do curl http://destination:80; sleep 1; done",
+					},
+				},
+			},
+		}
+	}
+
+	destinationPodSpec := func() corev1.PodSpec {
+		return corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "destination",
+					Image: nginxImage,
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: 80,
+							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+				},
+			},
+		}
+	}
+
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject(),
@@ -87,9 +122,15 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 			IstioInput(true, kitmetricpipeline.IncludeNamespaces(app1Ns))
 		objs = append(objs, metricPipeline.K8sObject())
 
-		app1 := kitk8s.NewPod("app-1", app1Ns).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics))
-		app2 := kitk8s.NewPod("app-2", app2Ns).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics))
-		objs = append(objs, app1.K8sObject(), app2.K8sObject())
+		source1 := kitk8s.NewPod("source", app1Ns).WithPodSpec(sourcePodSpec())
+		destination1 := kitk8s.NewPod("destination", app1Ns).WithPodSpec(destinationPodSpec()).WithLabel("app", "destination")
+		service1 := kitk8s.NewService("destination", app1Ns).WithPort("http", 80)
+
+		source2 := kitk8s.NewPod("source", app2Ns).WithPodSpec(sourcePodSpec())
+		destination2 := kitk8s.NewPod("destination", app2Ns).WithPodSpec(destinationPodSpec()).WithLabel("app", "destination")
+		service2 := kitk8s.NewService("destination", app2Ns).WithPort("http", 80)
+
+		objs = append(objs, source1.K8sObject(), destination1.K8sObject(), service1.K8sObject(kitk8s.WithLabel("app", "destination")), source2.K8sObject(), destination2.K8sObject(), service2.K8sObject(kitk8s.WithLabel("app", "destination")))
 
 		return objs
 	}
@@ -142,11 +183,11 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should deliver metrics from app1Ns", func() {
+		It("Should deliver metrics from app-1 namespace", func() {
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, app1Ns, istioProxyMetricNames)
 		})
 
-		It("Should not deliver metrics from app2Ns", func() {
+		It("Should not deliver metrics from app-2 namespace", func() {
 			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURL, app2Ns)
 		})
 	})
