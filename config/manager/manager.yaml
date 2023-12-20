@@ -33,6 +33,7 @@ spec:
         args:
         - --cert-dir=/tmp
         - --fluent-bit-priority-class-name=telemetry-priority-class-high
+        - --metric-gateway-priority-class=telemetry-priority-class
         - --trace-collector-priority-class=telemetry-priority-class
         - --validating-webhook-enabled=true
         image: controller:latest
