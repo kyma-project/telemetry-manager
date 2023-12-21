@@ -3,10 +3,11 @@
 package e2e
 
 import (
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 )
 
 var _ = Describe("Metrics Validating Endpoint Path", Label("metrics"), Ordered, func() {
