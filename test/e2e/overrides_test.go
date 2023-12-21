@@ -36,15 +36,14 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(isOperational()))
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		logPipeline := kitlogpipeline.NewPipeline(pipelineName).
 			WithSystemNamespaces(true).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
-			WithHTTPOutput().
-			Persistent(isOperational())
+			WithHTTPOutput()
 		objs = append(objs, logPipeline.K8sObject())
 
 		return objs
@@ -70,15 +69,15 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 	})
 
 	Context("When a logpipeline with HTTP output exists", Ordered, func() {
-		It("Should have a running logpipeline", Label(operationalTest), func() {
+		It("Should have a running logpipeline", func() {
 			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a log backend running", Label(operationalTest), func() {
+		It("Should have a log backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
 		})
 
-		It("Should have INFO level logs in the backend", Label(operationalTest), func() {
+		It("Should have INFO level logs in the backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -92,7 +91,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should not have any DEBUG level logs in the backend", Label(operationalTest), func() {
+		It("Should not have any DEBUG level logs in the backend", func() {
 			Consistently(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -107,7 +106,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should add the overrides configmap and modify the log pipeline", Label(operationalTest), func() {
+		It("Should add the overrides configmap and modify the log pipeline", func() {
 			// Add overrides configmap
 			overrides = kitovrr.NewOverrides(kitovrr.DEBUG).K8sObject()
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, overrides)).Should(Succeed())
@@ -131,7 +130,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("Should have DEBUG level logs in the backend", Label(operationalTest), func() {
+		It("Should have DEBUG level logs in the backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
