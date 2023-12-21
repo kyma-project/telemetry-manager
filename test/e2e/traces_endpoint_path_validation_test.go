@@ -38,7 +38,7 @@ var _ = Describe("Traces Validating Endpoint Path", Label("tracing"), Ordered, f
 
 	Context("When a trace pipeline set endpoint path", Ordered, func() {
 
-		AfterAll(func() {
+		BeforeAll(func() {
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient,
 					tracePipelineWithGRPCAndWithoutPath, tracePipelineWithHTTPAndPath, tracePipelineWithHTTPAndWithoutPath)).Should(Succeed())

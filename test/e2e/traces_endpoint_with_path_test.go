@@ -3,6 +3,8 @@
 package e2e
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -15,18 +17,21 @@ import (
 
 var _ = Describe("Traces Endpoint with Path", Label("tracing"), func() {
 	const (
-		path                    = "/v1/mock"
-		endpoint                = "trace-mock"
-		endpointEndpointDataKey = "OTLP_ENDPOINT_MOCK_TRACE_ENDPOINT_PATH"
+		path     = "/v1/mock"
+		endpoint = "trace-mock"
 	)
+
+	var endpointDataKey string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
 		tracePipeline := kittracepipeline.NewPipeline("mock-trace-endpoint-path").
 			WithProtocol("http").
-			WithOutputEndpoint(endpoint).WithEndpointPath(path).
-			Persistent(true)
+			WithOutputEndpoint(endpoint).WithEndpointPath(path)
+
+		pipelineName := tracePipeline.Name()
+		endpointDataKey = fmt.Sprintf("%s_%s", "OTLP_ENDPOINT", kitkyma.MakeEnvVarCompliant(pipelineName))
 		objs = append(objs, tracePipeline.K8sObject())
 		return objs
 	}
@@ -34,6 +39,7 @@ var _ = Describe("Traces Endpoint with Path", Label("tracing"), func() {
 	Context("When a TracePipeline with path exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
+
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
@@ -41,7 +47,8 @@ var _ = Describe("Traces Endpoint with Path", Label("tracing"), func() {
 		})
 
 		It("Should have a secret with endpoint and path", func() {
-			verifiers.SecretShouldHaveValue(ctx, k8sClient, kitkyma.TraceGatewaySecretName, endpointEndpointDataKey, endpoint+path)
+			verifiers.SecretShouldHaveValue(ctx, k8sClient, kitkyma.TraceGatewaySecretName, endpointDataKey, endpoint+path)
 		})
 	})
+
 })

@@ -38,7 +38,7 @@ var _ = Describe("Metrics Validating Endpoint Path", Label("metrics"), Ordered, 
 
 	Context("When a MetricPipeline sets endpoint path", Ordered, func() {
 
-		AfterAll(func() {
+		BeforeAll(func() {
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient,
 					metricPipelineWithGRPCAndWithoutPath, metricPipelineWithHTTPAndPath, metricPipelineWithHTTPAndWithoutPath)).Should(Succeed())

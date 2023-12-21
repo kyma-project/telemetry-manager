@@ -3,6 +3,8 @@
 package e2e
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -15,18 +17,21 @@ import (
 
 var _ = Describe("Metrics Endpoint with Path", Label("metrics"), func() {
 	const (
-		path                    = "/v1/mock"
-		endpoint                = "metric-mock"
-		endpointEndpointDataKey = "OTLP_ENDPOINT_MOCK_METRIC_ENDPOINT_PATH"
+		path     = "/v1/mock"
+		endpoint = "metric-mock"
 	)
+
+	var endpointDataKey string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
 		metricPipeline := kitmetricpipeline.NewPipeline("mock-metric-endpoint-path").
 			WithProtocol("http").
-			WithOutputEndpoint(endpoint).WithEndpointPath(path).
-			Persistent(true)
+			WithOutputEndpoint(endpoint).WithEndpointPath(path)
+
+		pipelineName := metricPipeline.Name()
+		endpointDataKey = fmt.Sprintf("%s_%s", "OTLP_ENDPOINT", kitkyma.MakeEnvVarCompliant(pipelineName))
 		objs = append(objs, metricPipeline.K8sObject())
 		return objs
 	}
@@ -34,6 +39,7 @@ var _ = Describe("Metrics Endpoint with Path", Label("metrics"), func() {
 	Context("When a MetricPipeline with path exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
+
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
@@ -41,7 +47,7 @@ var _ = Describe("Metrics Endpoint with Path", Label("metrics"), func() {
 		})
 
 		It("Should have a secret with endpoint and path", func() {
-			verifiers.SecretShouldHaveValue(ctx, k8sClient, kitkyma.MetricGatewaySecretName, endpointEndpointDataKey, endpoint+path)
+			verifiers.SecretShouldHaveValue(ctx, k8sClient, kitkyma.MetricGatewaySecretName, endpointDataKey, endpoint+path)
 		})
 	})
 })
