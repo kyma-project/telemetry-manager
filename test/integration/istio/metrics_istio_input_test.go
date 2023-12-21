@@ -210,5 +210,5 @@ func verifyMetricIsNotPresent(backendUrl, key, value string) {
 				ContainDataPointAttrs(HaveKeyWithValue(key, value)),
 			))),
 		))
-	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

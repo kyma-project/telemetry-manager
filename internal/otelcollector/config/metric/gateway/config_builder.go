@@ -107,7 +107,6 @@ func declareDropFilters(pipeline *telemetryv1alpha1.MetricPipeline, cfg *Config)
 	if !isIstioInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceIstio = makeDropIfInputSourceIstioConfig()
 	}
-
 	if !isOtlpInputEnabled(input) {
 		cfg.Processors.DropIfInputSourceOtlp = makeDropIfInputSourceOtlpConfig()
 	}
@@ -155,7 +154,6 @@ func makeServicePipelineConfig(pipeline *telemetryv1alpha1.MetricPipeline) confi
 	processors := []string{"memory_limiter", "k8sattributes"}
 
 	input := pipeline.Spec.Input
-
 	if !isRuntimeInputEnabled(input) {
 		processors = append(processors, "filter/drop-if-input-source-runtime")
 	}
