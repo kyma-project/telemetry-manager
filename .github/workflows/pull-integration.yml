@@ -137,6 +137,47 @@ jobs:
       with:
         failure: failure()
 
+  e2e-telemetry-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          release: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run tests
+        run: make run-e2e-test-telemetry
+
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
+
+  e2e-telemetry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run tests
+        run: make run-e2e-test-telemetry
+
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
+
   e2e-integration-istio:
     runs-on: ubuntu-latest
     steps:
