@@ -102,11 +102,6 @@ provision-test-env: provision-k3d
 provision-k3d: k3d
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-k3d.sh
 
-.PHONY: e2e-test
-e2e-test: provision-test-env ## Provision k3d cluster and run end-to-end tests.
-	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
-	make run-e2e-test
-
 .PHONY: e2e-test-logging
 e2e-test-logging: provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
@@ -146,12 +141,6 @@ e2e-test-metrics-release: provision-test-env ## Provision k3d cluster, deploy re
 e2e-test-telemetry-release: provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end telemetry tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
 	make run-e2e-test-telemetry
-
-.PHONY: run-e2e-test
-run-e2e-test: ginkgo test-matchers ## run all end-to-end tests using an existing cluster
-	$(GINKGO) run --tags e2e --junit-report=junit.xml ./test/e2e
-	mkdir -p ${ARTIFACTS}
-	mv junit.xml ${ARTIFACTS}
 
 .PHONY: run-e2e-test-logging
 run-e2e-test-logging: ginkgo test-matchers ## run end-to-end metrics tests using an existing cluster
