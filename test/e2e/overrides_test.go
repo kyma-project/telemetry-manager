@@ -86,6 +86,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 					ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-operator")),
 						WithLevel(Equal("INFO")),
+						WithTimestamp(BeTemporally(">=", now)),
 					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -107,11 +108,9 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 		})
 
 		It("Should add the overrides configmap and modify the log pipeline", func() {
-			// Add overrides configmap
 			overrides = kitovrr.NewOverrides(kitovrr.DEBUG).K8sObject()
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, overrides)).Should(Succeed())
 
-			// Get logPipeline
 			lookupKey := types.NamespacedName{
 				Name: pipelineName,
 			}
@@ -119,13 +118,12 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 			err := k8sClient.Get(ctx, lookupKey, &logPipeline)
 			Expect(err).ToNot(HaveOccurred())
 
-			// Annotate logPipeline
 			if logPipeline.ObjectMeta.Annotations == nil {
 				logPipeline.ObjectMeta.Annotations = map[string]string{}
 			}
 			logPipeline.ObjectMeta.Annotations["test-annotation"] = "test-value"
 
-			// Update logPipeline
+			// Update the logPipeline to trigger the reconciliation loop, so that new DEBUG logs are generated
 			err = k8sClient.Update(ctx, &logPipeline)
 			Expect(err).ToNot(HaveOccurred())
 		})
