@@ -20,7 +20,7 @@ import (
 
 var _ = Describe("Telemetry Manager", func() {
 	Context("After deploying manifest", func() {
-		It("Should have kyma-system namespace", Label("logs", "traces", "metrics"), func() {
+		It("Should have kyma-system namespace", Label("telemetry"), func() {
 			var namespace corev1.Namespace
 			key := types.NamespacedName{
 				Name: kitkyma.SystemNamespaceName,
@@ -29,7 +29,7 @@ var _ = Describe("Telemetry Manager", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have a running manager deployment", Label("logs", "traces", "metrics"), func() {
+		It("Should have a running manager deployment", Label("telemetry"), func() {
 			var deployment appsv1.Deployment
 			key := types.NamespacedName{
 				Name:      "telemetry-operator",
@@ -58,7 +58,7 @@ var _ = Describe("Telemetry Manager", func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
 		})
 
-		It("Should have a webhook service", Label("logs", "traces", "metrics"), func() {
+		It("Should have a webhook service", Label("telemetry"), func() {
 			var service corev1.Service
 			key := types.NamespacedName{
 				Name:      "telemetry-operator-webhook",
@@ -76,7 +76,7 @@ var _ = Describe("Telemetry Manager", func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty())
 		})
 
-		It("Should have a metrics service", Label("logs", "traces", "metrics"), func() {
+		It("Should have a metrics service", Label("telemetry"), func() {
 			var service corev1.Service
 			key := types.NamespacedName{
 				Name:      "telemetry-operator-metrics",
@@ -136,7 +136,7 @@ var _ = Describe("Telemetry Manager", func() {
 			Expect(crd.Spec.Scope).To(Equal(apiextensionsv1.ClusterScoped))
 		})
 
-		It("Should have Telemetry CRD", func() {
+		It("Should have Telemetry CRD", Label("telemetry"), func() {
 			var crd apiextensionsv1.CustomResourceDefinition
 			key := types.NamespacedName{
 				Name: "telemetries.operator.kyma-project.io",
@@ -176,7 +176,7 @@ var _ = Describe("Telemetry Manager", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have a Busola extension for Telemetry CRD", Label("logs", "traces", "metrics"), func() {
+		It("Should have a Busola extension for Telemetry CRD", Label("telemetry"), func() {
 			var cm corev1.ConfigMap
 			key := types.NamespacedName{
 				Name:      "telemetry-module",
@@ -186,7 +186,7 @@ var _ = Describe("Telemetry Manager", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have a NetworkPolicy", Label("logs", "traces", "metrics"), func() {
+		It("Should have a NetworkPolicy", Label("telemetry"), func() {
 			var networkPolicy networkingv1.NetworkPolicy
 			key := types.NamespacedName{
 				Name:      "telemetry-operator-pprof-deny-ingress",
@@ -196,7 +196,7 @@ var _ = Describe("Telemetry Manager", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("Should have priority class resource created", Label("logs", "traces", "metrics"), func() {
+		It("Should have priority class resource created", Label("telemetry"), func() {
 			priorityClassNames := []string{"telemetry-priority-class", "telemetry-priority-class-high"}
 			var priorityClass schedulingv1.PriorityClass
 			for _, prioClass := range priorityClassNames {
