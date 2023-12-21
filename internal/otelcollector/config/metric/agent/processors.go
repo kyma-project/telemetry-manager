@@ -26,7 +26,7 @@ func makeProcessorsConfig(inputs inputSources) Processors {
 
 		if inputs.istio {
 			processorsConfig.InsertInputSourceIstio = makeEmittedByConfig(metric.InputSourceIstio)
-			processorsConfig.DropIstioMetricsToTelemetryComponents = makeFilterToDropMetricsForTelemetryComponents()
+			processorsConfig.DropInternalCommunication = makeFilterToDropMetricsForTelemetryComponents()
 		}
 	}
 

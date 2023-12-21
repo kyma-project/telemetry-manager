@@ -104,7 +104,7 @@ func TestMakeAgentConfig(t *testing.T) {
 			require.Len(t, collectorConfig.Service.Pipelines, 1)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/istio")
 			require.Equal(t, []string{"prometheus/istio"}, collectorConfig.Service.Pipelines["metrics/istio"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-istio", "batch", "filter/drop-istio-metrics-to-internal-components"}, collectorConfig.Service.Pipelines["metrics/istio"].Processors)
+			require.Equal(t, []string{"memory_limiter", "filter/drop-internal-communication", "resource/delete-service-name", "resource/insert-input-source-istio", "batch"}, collectorConfig.Service.Pipelines["metrics/istio"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/istio"].Exporters)
 		})
 
@@ -129,7 +129,7 @@ func TestMakeAgentConfig(t *testing.T) {
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/prometheus"].Exporters)
 			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/istio")
 			require.Equal(t, []string{"prometheus/istio"}, collectorConfig.Service.Pipelines["metrics/istio"].Receivers)
-			require.Equal(t, []string{"memory_limiter", "resource/delete-service-name", "resource/insert-input-source-istio", "batch", "filter/drop-istio-metrics-to-internal-components"}, collectorConfig.Service.Pipelines["metrics/istio"].Processors)
+			require.Equal(t, []string{"memory_limiter", "filter/drop-internal-communication", "resource/delete-service-name", "resource/insert-input-source-istio", "batch"}, collectorConfig.Service.Pipelines["metrics/istio"].Processors)
 			require.Equal(t, []string{"otlp"}, collectorConfig.Service.Pipelines["metrics/istio"].Exporters)
 		})
 	})

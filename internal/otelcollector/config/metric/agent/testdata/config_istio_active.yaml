@@ -8,10 +8,10 @@ service:
                 - prometheus/istio
             processors:
                 - memory_limiter
+                - filter/drop-internal-communication
                 - resource/delete-service-name
                 - resource/insert-input-source-istio
                 - batch
-                - filter/drop-istio-metrics-to-internal-components
             exporters:
                 - otlp
         metrics/prometheus:
@@ -296,7 +296,7 @@ processors:
             - action: insert
               key: kyma.source
               value: istio
-    filter/drop-istio-metrics-to-internal-components:
+    filter/drop-internal-communication:
         metrics:
             metric:
                 - IsMatch(name, "istio.*") and HasAttrOnDatapoint("source_workload", "telemetry-metric-agent")
