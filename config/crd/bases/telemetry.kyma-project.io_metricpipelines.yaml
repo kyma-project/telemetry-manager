@@ -465,7 +465,9 @@ spec:
                     type: object
                     x-kubernetes-validations:
                     - message: Path is only available with HTTP protocol
-                      rule: (has(self.protocol) && self.protocol == 'http') && (has(self.path))
+                      rule: ((!has(self.path) || size(self.path) <= 0) && (has(self.protocol)
+                        && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol
+                        == 'http')
                 required:
                 - otlp
                 type: object

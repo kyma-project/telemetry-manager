@@ -69,7 +69,7 @@ type OtlpTLS struct {
 }
 
 // OtlpOutput OTLP output configuration
-// +kubebuilder:validation:XValidation:rule="(has(self.protocol) && self.protocol == 'http') && (has(self.path))", message="Path is only available with HTTP protocol"
+// +kubebuilder:validation:XValidation:rule="((!has(self.path) || size(self.path) <= 0) && (has(self.protocol) && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol == 'http')", message="Path is only available with HTTP protocol"
 type OtlpOutput struct {
 	// Defines the OTLP protocol (http or grpc). Default is GRPC.
 	// +kubebuilder:validation:MinLength=1
