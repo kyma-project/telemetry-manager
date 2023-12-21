@@ -343,12 +343,14 @@ spec:
                           type: object
                         type: array
                       path:
-                        description: Defines OTLP export URL path (only for HTTP protocol)
+                        description: Defines OTLP export URL path (only for HTTP protocol),
+                          this value will override auto appended paths /v1/metrics
+                          and /v1/traces
                         type: string
                       protocol:
                         default: grpc
-                        description: Defines the OTLP protocol (HTTP or gRPC). Default
-                          is gRPC.
+                        description: Defines the OTLP protocol (http or grpc). Default
+                          is grpc.
                         enum:
                         - grpc
                         - http
