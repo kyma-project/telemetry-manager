@@ -36,7 +36,7 @@ var _ = Describe("Metrics Validating Endpoint Path", Label("metrics"), Ordered, 
 		WithProtocol("http").
 		Persistent(isOperational()).K8sObject()
 
-	Context("When a metric pipeline set endpoint path", Ordered, func() {
+	Context("When a MetricPipeline sets endpoint path", Ordered, func() {
 
 		AfterAll(func() {
 			DeferCleanup(func() {
@@ -45,23 +45,23 @@ var _ = Describe("Metrics Validating Endpoint Path", Label("metrics"), Ordered, 
 			})
 		})
 
-		It("Should reject a metricpipeline with path and default protocol", func() {
+		It("Should reject a MetricPipeline with path and default protocol", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, metricPipelineDefaultGRPCWithPath)).ShouldNot(Succeed())
 		})
 
-		It("Should reject a metricpipeline with path and grpc protocol", func() {
+		It("Should reject a MetricPipeline with path and gRPC protocol", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, metricPipelineWithGRPCAndPath)).ShouldNot(Succeed())
 		})
 
-		It("Should accept a metricpipeline with no path and grpc protocol", func() {
+		It("Should accept a MetricPipeline with no path and gRPC protocol", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, metricPipelineWithGRPCAndWithoutPath)).Should(Succeed())
 		})
 
-		It("Should accept a metricpipeline with no path and http protocol", func() {
+		It("Should accept a MetricPipeline with no path and HTTP protocol", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, metricPipelineWithHTTPAndWithoutPath)).Should(Succeed())
 		})
 
-		It("Should accept a metricpipeline with path and http protocol", func() {
+		It("Should accept a MetricPipeline with path and HTTP protocol", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, metricPipelineWithHTTPAndPath)).Should(Succeed())
 		})
 	})

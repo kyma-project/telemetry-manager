@@ -45,23 +45,23 @@ var _ = Describe("Traces Validating Endpoint Path", Label("tracing"), Ordered, f
 			})
 		})
 
-		It("Should reject a tracepipeline with path and default protocol", func() {
+		It("Should reject a TracePipeline with path and default protocol", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, tracePipelineDefaultGRPCWithPath)).ShouldNot(Succeed())
 		})
 
-		It("Should reject a tracepipeline with path and grpc protocol", func() {
+		It("Should reject a TracePipeline with path and gRPC protocol", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, tracePipelineWithGRPCAndPath)).ShouldNot(Succeed())
 		})
 
-		It("Should accept a tracepipeline with no path and grpc protocol", func() {
+		It("Should accept a TracePipeline with no path and gRPC protocol", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, tracePipelineWithGRPCAndWithoutPath)).Should(Succeed())
 		})
 
-		It("Should accept a tracepipeline with no path and http protocol", func() {
+		It("Should accept a TracePipeline with no path and HTTP protocol", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, tracePipelineWithHTTPAndWithoutPath)).Should(Succeed())
 		})
 
-		It("Should accept a tracepipeline with path and http protocol", func() {
+		It("Should accept a TracePipeline with path and HTTP protocol", func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, tracePipelineWithHTTPAndPath)).Should(Succeed())
 		})
 	})

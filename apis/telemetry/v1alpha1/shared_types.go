@@ -71,7 +71,7 @@ type OtlpTLS struct {
 // OtlpOutput OTLP output configuration
 // +kubebuilder:validation:XValidation:rule="((!has(self.path) || size(self.path) <= 0) && (has(self.protocol) && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol == 'http')", message="Path is only available with HTTP protocol"
 type OtlpOutput struct {
-	// Defines the OTLP protocol (http or grpc). Default is GRPC.
+	// Defines the OTLP protocol (HTTP or gRPC). Default is gRPC.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:default:=grpc
 	// +kubebuilder:validation:Enum=grpc;http
@@ -79,7 +79,7 @@ type OtlpOutput struct {
 	// Defines the host and port (<host>:<port>) of an OTLP endpoint.
 	// +kubebuilder:validation:Required
 	Endpoint ValueType `json:"endpoint"`
-	// Defines OTLP export URL path (only for http protocol)
+	// Defines OTLP export URL path (only for HTTP protocol)
 	Path string `json:"path,omitempty"`
 	// Defines authentication options for the OTLP output
 	Authentication *AuthenticationOptions `json:"authentication,omitempty"`
