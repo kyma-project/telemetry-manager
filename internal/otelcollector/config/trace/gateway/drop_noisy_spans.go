@@ -19,8 +19,6 @@ var (
 	operationIsIngress = ottlexpr.JoinWithOr(spanAttributeEquals("OperationName", "Ingress"), attributeMatches("name", "ingress.*"))
 	operationIsEgress  = ottlexpr.JoinWithOr(spanAttributeEquals("OperationName", "Egress"), attributeMatches("name", "egress.*"))
 
-	toFromKymaGrafana            = ottlexpr.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("grafana"))
-	toFromKymaAuthProxy          = ottlexpr.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("monitoring-auth-proxy-grafana"))
 	toFromTelemetryFluentBit     = ottlexpr.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-fluent-bit"))
 	toFromTelemetryTraceGateway  = ottlexpr.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-trace-collector"))
 	toFromTelemetryMetricGateway = ottlexpr.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-metric-gateway"))
@@ -42,8 +40,6 @@ func makeDropNoisySpansConfig() FilterProcessor {
 	return FilterProcessor{
 		Traces: Traces{
 			Span: []string{
-				toFromKymaGrafana,
-				toFromKymaAuthProxy,
 				toFromTelemetryFluentBit,
 				toFromTelemetryTraceGateway,
 				toFromTelemetryMetricGateway,

@@ -20,3 +20,11 @@ func JoinWithOr(parts ...string) string {
 func JoinWithAnd(parts ...string) string {
 	return strings.Join(parts, " and ")
 }
+
+func IsMatch(key, regexPattern string) string {
+	return fmt.Sprintf("IsMatch(%s, \"%s\")", key, regexPattern)
+}
+
+func HasAttrOnDatapoint(key, value string) string {
+	return fmt.Sprintf("HasAttrOnDatapoint(\"%s\", \"%s\")", key, value)
+}

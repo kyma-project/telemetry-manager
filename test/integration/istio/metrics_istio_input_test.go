@@ -190,5 +190,25 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		It("Should not deliver metrics from app-2 namespace", func() {
 			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURL, app2Ns)
 		})
+
+		It("Should verify that istio metric with source_workload=telemetry-metric-agent does not exist", func() {
+			verifyMetricIsNotPresent(telemetryExportURL, "source_workload", "telemetry-telemetry-gateway")
+		})
+		It("Should verify that istio metric with destination_workload=telemetry-metric-gateway does not exist", func() {
+			verifyMetricIsNotPresent(telemetryExportURL, "destination_workload", "telemetry-metric-gateway")
+		})
 	})
 })
+
+func verifyMetricIsNotPresent(backendUrl, key, value string) {
+	Consistently(func(g Gomega) {
+		resp, err := proxyClient.Get(backendUrl)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).NotTo(HaveHTTPBody(
+			ContainMd(ContainMetric(SatisfyAll(
+				ContainDataPointAttrs(HaveKeyWithValue(key, value)),
+			))),
+		))
+	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}

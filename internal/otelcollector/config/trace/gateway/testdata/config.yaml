@@ -83,8 +83,6 @@ processors:
     filter/drop-noisy-spans:
         traces:
             span:
-                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "grafana"
-                - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "monitoring-auth-proxy-grafana"
                 - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-fluent-bit"
                 - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-trace-collector"
                 - attributes["component"] == "proxy" and resource.attributes["k8s.namespace.name"] == "kyma-system" and attributes["istio.canonical_service"] == "telemetry-metric-gateway"
