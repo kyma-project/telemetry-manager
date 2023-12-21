@@ -23,7 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Service Name", Label("tracing"), func() {
+var _ = Describe("Traces Service Name", Label("traces"), func() {
 	const (
 		mockNs          = "trace-mocks-service-name" //#nosec G101 -- This is a false positive
 		mockBackendName = "trace-receiver"

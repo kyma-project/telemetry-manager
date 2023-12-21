@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Noisy Span Filter", Label("tracing"), func() {
+var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
 
 	const (
 		mockBackendName = "traces-filter-receiver"

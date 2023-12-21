@@ -22,7 +22,7 @@ import (
 	"net/http"
 )
 
-var _ = Describe("Traces", Label("tracing"), Ordered, func() {
+var _ = Describe("Traces", Label("traces"), Ordered, func() {
 	const (
 		mockNs          = "tracing-mock"
 		mockIstiofiedNs = "istiofied-tracing-mock"

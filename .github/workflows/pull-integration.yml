@@ -68,7 +68,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run tests
-      run: make run-e2e-test-tracing
+      run: make run-e2e-test-traces
 
     - name: Finalize Test
       uses: "./.github/template/finalize-test"
@@ -88,7 +88,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run tests
-      run: make run-e2e-test-tracing
+      run: make run-e2e-test-traces
 
     - name: Finalize Test
       uses: "./.github/template/finalize-test"
@@ -109,7 +109,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run tests
-      run: make run-e2e-test-logging
+      run: make run-e2e-test-logs
 
     - name: Finalize Test
       uses: "./.github/template/finalize-test"
@@ -129,7 +129,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run tests
-      run: make run-e2e-test-logging
+      run: make run-e2e-test-logs
 
     - name: Finalize Test
       uses: "./.github/template/finalize-test"

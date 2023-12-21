@@ -22,7 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Overrides", Label("logging"), Ordered, func() {
+var _ = Describe("Overrides", Label("logs"), Ordered, func() {
 	const (
 		mockBackendName = "overrides-receiver"
 		mockNs          = "overrides-http-output"
