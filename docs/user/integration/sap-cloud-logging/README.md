@@ -6,7 +6,7 @@
 | - | - |
 | Signal types | logs, traces, metrics |
 | Backend type | third-party remote |
-| OTLP-native | yes |
+| OTLP-native | yes for traces and metrics, no for logs |
 
 Learn how to define LogPipelines and TracePipelines to ingest application and access logs as well as distributed trace data in instances of [SAP Cloud Logging](https://help.sap.com/docs/cloud-logging?locale=en-US&version=Cloud).
 
