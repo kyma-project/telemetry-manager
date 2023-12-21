@@ -198,12 +198,12 @@ spec:
                           type: object
                         type: array
                       path:
-                        description: Defines OTLP export URL path (only for http protocol)
+                        description: Defines OTLP export URL path (only for HTTP protocol)
                         type: string
                       protocol:
                         default: grpc
-                        description: Defines the OTLP protocol (http or grpc). Default
-                          is GRPC.
+                        description: Defines the OTLP protocol (HTTP or gRPC). Default
+                          is gRPC.
                         enum:
                         - grpc
                         - http
