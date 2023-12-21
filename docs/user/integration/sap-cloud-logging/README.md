@@ -82,7 +82,7 @@ To enable log shipment to the SAP Cloud Logging service instance, follow this pr
     EOF      
     ```
 
-2. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
+1. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
 
     ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
@@ -122,12 +122,12 @@ To enable log shipment to the SAP Cloud Logging service instance, follow this pr
     EOF      
     ```
 
-   By default, Kyma sets Istio access logs to disabled. To enable Istio access logs selectively for your workload, follow [Enable Istio access logs](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-30-enable-istio-access-logs).
+   By default, Kyma sets Istio access logs to disabled. To enable Istio access logs selectively for your workload, follow [Enable Istio access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs).
    As a result, access logs can be analyzed in the default dashboards shipped for SAP BTP, Kyma runtime.
 
    >**CAUTION:** The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
 
-3. Wait for the LogPipeline to be in the `Running` state. To check the state, run:
+1. Wait for the LogPipeline to be in the `Running` state. To check the state, run:
 
     ```bash
     kubectl get logpipelines
@@ -160,7 +160,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
     > - Traces might consume a significant storage volume in Cloud Logging Service.
     > - The Kyma trace collector component does not scale automatically.
 
-2. Deploy the TracePipeline:
+1. Deploy the TracePipeline:
 
     ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
@@ -193,7 +193,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
     EOF
     ```
 
-3. Wait for the TracePipeline to be in the `Running` state. To check the state, run:
+1. Wait for the TracePipeline to be in the `Running` state. To check the state, run:
 
    ```bash
    kubectl get tracepipelines
@@ -246,9 +246,9 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
 
     By default, the MetricPipeline assures that a gateway is running in the cluster to push OTLP metrics.
 
-2. If you want to use additional metric collection, configure the presets under `input`. For the available options, see [Metrics](./../../04-metrics.md).
+1. If you want to use additional metric collection, configure the presets under `input`. For the available options, see [Metrics](./../../04-metrics.md).
 
-3. Wait for the MetricPipeline to be in the `Running` state. To check the state, run:
+1. Wait for the MetricPipeline to be in the `Running` state. To check the state, run:
 
    ```bash
    kubectl get metricpipelines
