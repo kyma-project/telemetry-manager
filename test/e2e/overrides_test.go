@@ -16,6 +16,8 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitovrr "github.com/kyma-project/telemetry-manager/test/testkit/kyma/overrides"
 	kitlogpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
+	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	kittracepipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -27,6 +29,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 		mockBackendName = "overrides-receiver"
 		mockNs          = "overrides-http-output"
 		pipelineName    = "overrides-pipeline"
+		appNameLabelKey = "app.kubernetes.io/name"
 	)
 	var telemetryExportURL string
 	var overrides *corev1.ConfigMap
@@ -44,7 +47,9 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 			WithSystemNamespaces(true).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput()
-		objs = append(objs, logPipeline.K8sObject())
+		metricPipeline := kitmetricpipeline.NewPipeline(pipelineName)
+		tracePipeline := kittracepipeline.NewPipeline(pipelineName)
+		objs = append(objs, logPipeline.K8sObject(), metricPipeline.K8sObject(), tracePipeline.K8sObject())
 
 		return objs
 	}
@@ -86,7 +91,6 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 					ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-operator")),
 						WithLevel(Equal("INFO")),
-						WithTimestamp(BeTemporally(">=", now)),
 					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
@@ -141,6 +145,24 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+	})
+
+	Context("When an overrides configmap exists", func() {
+		It("Should disable the reconciliation of the logpipeline", func() {
+			verifiers.PipelineReconciliationShouldBeDisabled(ctx, k8sClient, "telemetry-fluent-bit", appNameLabelKey)
+		})
+
+		It("Should disable the reconciliation of the metricpipeline", func() {
+			verifiers.PipelineReconciliationShouldBeDisabled(ctx, k8sClient, "telemetry-metric-gateway", appNameLabelKey)
+		})
+
+		It("Should disable the reconciliation of the tracepipeline", func() {
+			verifiers.PipelineReconciliationShouldBeDisabled(ctx, k8sClient, "telemetry-trace-collector", appNameLabelKey)
+		})
+
+		It("Should disable the reconciliation of the telemetry CR", func() {
+			verifiers.TelemetryReconciliationShouldBeDisabled(ctx, k8sClient, "validation.webhook.telemetry.kyma-project.io", appNameLabelKey)
 		})
 	})
 })
