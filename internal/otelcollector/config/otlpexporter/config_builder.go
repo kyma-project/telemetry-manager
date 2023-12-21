@@ -13,19 +13,26 @@ import (
 
 type EnvVars map[string][]byte
 
+const (
+	SignalTypeMetric = "metric"
+	SignalTypeTrace  = "trace"
+)
+
 type ConfigBuilder struct {
 	reader       client.Reader
 	otlpOutput   *telemetryv1alpha1.OtlpOutput
 	pipelineName string
 	queueSize    int
+	signalType   string
 }
 
-func NewConfigBuilder(reader client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, queueSize int) *ConfigBuilder {
+func NewConfigBuilder(reader client.Reader, otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, queueSize int, signalType string) *ConfigBuilder {
 	return &ConfigBuilder{
 		reader:       reader,
 		otlpOutput:   otlpOutput,
 		pipelineName: pipelineName,
 		queueSize:    queueSize,
+		signalType:   signalType,
 	}
 }
 
@@ -35,11 +42,11 @@ func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*config.OTLPExporter, 
 		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
 	}
 
-	exportersConfig := makeExportersConfig(cb.otlpOutput, cb.pipelineName, envVars, cb.queueSize)
+	exportersConfig := makeExportersConfig(cb.otlpOutput, cb.pipelineName, envVars, cb.queueSize, cb.signalType)
 	return exportersConfig, envVars, nil
 }
 
-func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, envVars map[string][]byte, queueSize int) *config.OTLPExporter {
+func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName string, envVars map[string][]byte, queueSize int, signalType string) *config.OTLPExporter {
 	headers := makeHeaders(otlpOutput, pipelineName)
 	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
 	otlpEndpointValue := string(envVars[otlpEndpointVariable])
@@ -61,6 +68,14 @@ func makeExportersConfig(otlpOutput *telemetryv1alpha1.OtlpOutput, pipelineName 
 		},
 	}
 
+	if len(otlpOutput.Path) > 0 && SignalTypeMetric == signalType {
+		otlpExporterConfig.Endpoint = ""
+		otlpExporterConfig.MetricsEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
+	}
+	if len(otlpOutput.Path) > 0 && SignalTypeTrace == signalType {
+		otlpExporterConfig.Endpoint = ""
+		otlpExporterConfig.TracesEndpoint = fmt.Sprintf("${%s}", otlpEndpointVariable)
+	}
 	return &otlpExporterConfig
 }
 
