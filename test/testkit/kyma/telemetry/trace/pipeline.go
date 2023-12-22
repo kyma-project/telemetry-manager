@@ -21,6 +21,8 @@ type Pipeline struct {
 	otlpEndpointRef *telemetryv1alpha1.SecretKeyRef
 	otlpEndpoint    string
 	tls             *telemetryv1alpha1.OtlpTLS
+	protocol        string
+	endpointPath    string
 }
 
 func NewPipeline(name string) *Pipeline {
@@ -73,6 +75,16 @@ func (p *Pipeline) Persistent(persistent bool) *Pipeline {
 	return p
 }
 
+func (p *Pipeline) WithProtocol(protocol string) *Pipeline {
+	p.protocol = protocol
+	return p
+}
+
+func (p *Pipeline) WithEndpointPath(path string) *Pipeline {
+	p.endpointPath = path
+	return p
+}
+
 func (p *Pipeline) K8sObject() *telemetryv1alpha1.TracePipeline {
 	var labels kitk8s.Labels
 	if p.persistent {
@@ -90,6 +102,14 @@ func (p *Pipeline) K8sObject() *telemetryv1alpha1.TracePipeline {
 		}
 	} else {
 		otlpOutput.Endpoint.Value = p.otlpEndpoint
+	}
+
+	if len(p.protocol) > 0 {
+		otlpOutput.Protocol = p.protocol
+	}
+
+	if len(p.endpointPath) > 0 {
+		otlpOutput.Path = p.endpointPath
 	}
 
 	pipeline := telemetryv1alpha1.TracePipeline{

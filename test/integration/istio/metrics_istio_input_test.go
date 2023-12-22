@@ -175,10 +175,28 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
-					ContainMd(ContainMetric(SatisfyAll(
-						ContainDataPointAttrs(HaveKey(BeElementOf(istioProxyMetricAttributes))),
-						ContainDataPointAttrs(HaveKeyWithValue("source_workload_namespace", app1Ns)),
-					))),
+					ContainMd(SatisfyAll(
+						ContainResourceAttrs(SatisfyAll(
+							HaveKeyWithValue("k8s.namespace.name", "app-1"),
+							HaveKeyWithValue("k8s.pod.name", "destination"),
+							HaveKeyWithValue("k8s.container.name", "istio-proxy"),
+							HaveKeyWithValue("service.name", "destination"),
+						)),
+						ContainMetric(SatisfyAll(
+							ContainDataPointAttrs(HaveKey(BeElementOf(istioProxyMetricAttributes))),
+							ContainDataPointAttrs(HaveKeyWithValue("source_workload_namespace", app1Ns)),
+							ContainDataPointAttrs(HaveKeyWithValue("destination_workload", "destination")),
+							ContainDataPointAttrs(HaveKeyWithValue("destination_app", "destination")),
+							ContainDataPointAttrs(HaveKeyWithValue("destination_service_name", "destination")),
+							ContainDataPointAttrs(HaveKeyWithValue("destination_service", "destination.app-1.svc.cluster.local")),
+							ContainDataPointAttrs(HaveKeyWithValue("destination_service_namespace", app1Ns)),
+							ContainDataPointAttrs(HaveKeyWithValue("destination_principal", "spiffe://cluster.local/ns/app-1/sa/default")),
+							ContainDataPointAttrs(HaveKeyWithValue("source_workload", "source")),
+							ContainDataPointAttrs(HaveKeyWithValue("source_principal", "spiffe://cluster.local/ns/app-1/sa/default")),
+							ContainDataPointAttrs(HaveKeyWithValue("response_code", "200")),
+							ContainDataPointAttrs(HaveKeyWithValue("request_protocol", "http")),
+							ContainDataPointAttrs(HaveKeyWithValue("connection_security_policy", "mutual_tls")),
+						)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
@@ -190,5 +208,25 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		It("Should not deliver metrics from app-2 namespace", func() {
 			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURL, app2Ns)
 		})
+
+		It("Should verify that istio metric with source_workload=telemetry-metric-agent does not exist", func() {
+			verifyMetricIsNotPresent(telemetryExportURL, "source_workload", "telemetry-telemetry-gateway")
+		})
+		It("Should verify that istio metric with destination_workload=telemetry-metric-gateway does not exist", func() {
+			verifyMetricIsNotPresent(telemetryExportURL, "destination_workload", "telemetry-metric-gateway")
+		})
 	})
 })
+
+func verifyMetricIsNotPresent(backendUrl, key, value string) {
+	Consistently(func(g Gomega) {
+		resp, err := proxyClient.Get(backendUrl)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).NotTo(HaveHTTPBody(
+			ContainMd(ContainMetric(SatisfyAll(
+				ContainDataPointAttrs(HaveKeyWithValue(key, value)),
+			))),
+		))
+	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
