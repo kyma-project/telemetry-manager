@@ -45,12 +45,12 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
-			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady},
+			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady},
 			expectedState:        operatorv1alpha1.StateReady,
 			expectedConditions: []metav1.Condition{
 				{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
-				{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady},
+				{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
 				{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady},
 			},
 			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
@@ -71,12 +71,12 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady},
-			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady},
+			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady},
 			expectedState:        operatorv1alpha1.StateWarning,
 			expectedConditions: []metav1.Condition{
 				{Type: "LogComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady},
-				{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady},
+				{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
 				{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady},
 			},
 			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
@@ -96,12 +96,12 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
 			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
-			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady},
+			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: "TraceComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonTraceGatewayDeploymentNotReady},
 			expectedState:        operatorv1alpha1.StateWarning,
 			expectedConditions: []metav1.Condition{
 				{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
-				{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady},
+				{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
 				{Type: "TraceComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonTraceGatewayDeploymentNotReady},
 			},
 			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{Metrics: &operatorv1alpha1.OTLPEndpoints{
@@ -174,12 +174,12 @@ func TestUpdateStatus(t *testing.T) {
 				},
 			},
 			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
-			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady},
+			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady},
 			expectedState:        operatorv1alpha1.StateDeleting,
 			expectedConditions: []metav1.Condition{
 				{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
-				{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady},
+				{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
 				{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady},
 			},
 			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
@@ -205,7 +205,7 @@ func TestUpdateStatus(t *testing.T) {
 				},
 			},
 			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
-			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady},
+			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
 			tracesCheckerReturn:  &metav1.Condition{Type: "TraceComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonResourceBlocksDeletion},
 			resources: []client.Object{
 				pointerFrom(testutils.NewTracePipelineBuilder().Build()),
@@ -213,7 +213,7 @@ func TestUpdateStatus(t *testing.T) {
 			expectedState: operatorv1alpha1.StateWarning,
 			expectedConditions: []metav1.Condition{
 				{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady},
-				{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricGatewayDeploymentReady},
+				{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
 				{Type: "TraceComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonResourceBlocksDeletion},
 			},
 			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{Metrics: &operatorv1alpha1.OTLPEndpoints{
