@@ -161,4 +161,46 @@ func TestProcessors(t *testing.T) {
 		expectedCondition = "resource.attributes[\"kyma.source\"] == nil and (resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
 		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric[0])
 	})
+
+	t.Run("diagnostic metric filter processor prometheus input using exclude", func(t *testing.T) {
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test").
+				PrometheusInput(true).
+				PrometheusInputDiagnosticMetrics(false).
+				Build()},
+		)
+		require.NoError(t, err)
+
+		prometheusScrapeFilter := collectorConfig.Processors.DropDiagnosticMetricsIfInputSourcePrometheus
+		require.NotNil(t, prometheusScrapeFilter)
+
+		require.Nil(t, collectorConfig.Processors.DropDiagnosticMetricsIfInputSourceIstio)
+
+		require.Len(t, prometheusScrapeFilter.Metrics.Exclude.MetricNames, 5)
+		require.ElementsMatch(t, prometheusScrapeFilter.Metrics.Exclude.MetricNames, []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"})
+		require.Equal(t, prometheusScrapeFilter.Metrics.Exclude.MatchType, "strict")
+		require.Equal(t, prometheusScrapeFilter.Metrics.Exclude.ResourceAttributes[0].Key, "kyma.source")
+		require.Equal(t, prometheusScrapeFilter.Metrics.Exclude.ResourceAttributes[0].Value, "prometheus")
+	})
+
+	t.Run("diagnostic metric filter processor prometheus input using exclude", func(t *testing.T) {
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test").
+				IstioInput(true).
+				IstioInputDiagnosticMetrics(false).
+				Build()},
+		)
+		require.NoError(t, err)
+
+		istioScrapeFilter := collectorConfig.Processors.DropDiagnosticMetricsIfInputSourceIstio
+		require.NotNil(t, istioScrapeFilter)
+
+		require.Nil(t, collectorConfig.Processors.DropDiagnosticMetricsIfInputSourcePrometheus)
+
+		require.Len(t, istioScrapeFilter.Metrics.Exclude.MetricNames, 5)
+		require.ElementsMatch(t, istioScrapeFilter.Metrics.Exclude.MetricNames, []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"})
+		require.Equal(t, istioScrapeFilter.Metrics.Exclude.MatchType, "strict")
+		require.Equal(t, istioScrapeFilter.Metrics.Exclude.ResourceAttributes[0].Key, "kyma.source")
+		require.Equal(t, istioScrapeFilter.Metrics.Exclude.ResourceAttributes[0].Value, "istio")
+	})
 }

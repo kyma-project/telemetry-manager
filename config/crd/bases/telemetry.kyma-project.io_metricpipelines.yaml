@@ -55,6 +55,14 @@ spec:
                   istio:
                     description: Configures istio-proxy metrics scraping.
                     properties:
+                      diagnosticMetrics:
+                        description: Configures diagnostic metrics scraping
+                        properties:
+                          enabled:
+                            description: If enabled, diagnostic metrics are scraped.
+                              The default is `false`.
+                            type: boolean
+                        type: object
                       enabled:
                         description: If enabled, metrics for istio-proxy containers
                           are scraped from Pods that have had the istio-proxy sidecar
@@ -119,6 +127,14 @@ spec:
                   prometheus:
                     description: Configures Prometheus scraping.
                     properties:
+                      diagnosticMetrics:
+                        description: Configures diagnostic metrics scraping
+                        properties:
+                          enabled:
+                            description: If enabled, diagnostic metrics are scraped.
+                              The default is `false`.
+                            type: boolean
+                        type: object
                       enabled:
                         description: If enabled, Pods marked with `prometheus.io/scrape=true`
                           annotation are scraped. The default is `false`.

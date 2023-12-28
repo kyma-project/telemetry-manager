@@ -161,4 +161,17 @@ spec:
   output:
     otlp:
       endpoint:
-        value: http://mock-metric-receiver.metric-receiver:4317
+        value: ingest-otlp-sf-1502277b-af0e-44ef-b169-a4d004105616.cls-01.cloud.logs.services.sap.hana.ondemand.com:443
+      tls:
+        cert:
+          valueFrom:
+            secretKeyRef:
+              name: cls-otlp
+              namespace: default
+              key: cls-test-cert.txt
+        key:
+          valueFrom:
+            secretKeyRef:
+              name: cls-otlp
+              namespace: default
+              key: cls-test-key.txt

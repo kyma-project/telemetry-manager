@@ -79,6 +79,23 @@ func makeDropIfInputSourceOtlpConfig() *FilterProcessor {
 	}
 }
 
+func makeDropDiagnosticMetricsForInput(inputName string) *FilterProcessor {
+	return &FilterProcessor{
+		Metrics: FilterProcessorMetrics{
+			Exclude: &MetricMatchProperties{
+				MatchType:   "strict",
+				MetricNames: []string{"up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"},
+				ResourceAttributes: []Attribute{
+					{
+						Key:   "kyma.source",
+						Value: inputName,
+					},
+				},
+			},
+		},
+	}
+}
+
 func makeResolveServiceNameConfig() *TransformProcessor {
 	return &TransformProcessor{
 		ErrorMode:        "ignore",

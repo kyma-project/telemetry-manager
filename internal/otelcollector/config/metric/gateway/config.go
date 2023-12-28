@@ -19,14 +19,16 @@ type Receivers struct {
 type Processors struct {
 	config.BaseProcessors `yaml:",inline"`
 
-	K8sAttributes               *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
-	InsertClusterName           *config.ResourceProcessor      `yaml:"resource/insert-cluster-name,omitempty"`
-	DropIfInputSourceRuntime    *FilterProcessor               `yaml:"filter/drop-if-input-source-runtime,omitempty"`
-	DropIfInputSourcePrometheus *FilterProcessor               `yaml:"filter/drop-if-input-source-prometheus,omitempty"`
-	DropIfInputSourceIstio      *FilterProcessor               `yaml:"filter/drop-if-input-source-istio,omitempty"`
-	DropIfInputSourceOtlp       *FilterProcessor               `yaml:"filter/drop-if-input-source-otlp,omitempty"`
-	ResolveServiceName          *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
-	DropKymaAttributes          *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
+	K8sAttributes                                *config.K8sAttributesProcessor `yaml:"k8sattributes,omitempty"`
+	InsertClusterName                            *config.ResourceProcessor      `yaml:"resource/insert-cluster-name,omitempty"`
+	DropDiagnosticMetricsIfInputSourcePrometheus *FilterProcessor               `yaml:"filter/drop-diagnostic-metrics-if-input-source-prometheus,omitempty"`
+	DropDiagnosticMetricsIfInputSourceIstio      *FilterProcessor               `yaml:"filter/drop-diagnostic-metrics-if-input-source-istio,omitempty"`
+	DropIfInputSourceRuntime                     *FilterProcessor               `yaml:"filter/drop-if-input-source-runtime,omitempty"`
+	DropIfInputSourcePrometheus                  *FilterProcessor               `yaml:"filter/drop-if-input-source-prometheus,omitempty"`
+	DropIfInputSourceIstio                       *FilterProcessor               `yaml:"filter/drop-if-input-source-istio,omitempty"`
+	DropIfInputSourceOtlp                        *FilterProcessor               `yaml:"filter/drop-if-input-source-otlp,omitempty"`
+	ResolveServiceName                           *TransformProcessor            `yaml:"transform/resolve-service-name,omitempty"`
+	DropKymaAttributes                           *config.ResourceProcessor      `yaml:"resource/drop-kyma-attributes,omitempty"`
 
 	// NamespaceFilters contains filter processors, which need different configurations per pipeline
 	NamespaceFilters NamespaceFilters `yaml:",inline,omitempty"`
@@ -39,8 +41,9 @@ type FilterProcessor struct {
 }
 
 type FilterProcessorMetrics struct {
-	DataPoint []string `yaml:"datapoint,omitempty"`
-	Metric    []string `yaml:"metric,omitempty"`
+	DataPoint []string               `yaml:"datapoint,omitempty"`
+	Metric    []string               `yaml:"metric,omitempty"`
+	Exclude   *MetricMatchProperties `yaml:"exclude,omitempty"`
 }
 
 type TransformProcessor struct {
@@ -52,4 +55,15 @@ type Exporters map[string]Exporter
 
 type Exporter struct {
 	OTLP *config.OTLPExporter `yaml:",inline,omitempty"`
+}
+
+type MetricMatchProperties struct {
+	MatchType          string      `yaml:"match_type,omitempty"`
+	MetricNames        []string    `yaml:"metric_names,omitempty"`
+	ResourceAttributes []Attribute `yaml:"resource_attributes,omitempty"`
+}
+
+type Attribute struct {
+	Key   string `yaml:"key"`
+	Value any    `yaml:"value"`
 }
