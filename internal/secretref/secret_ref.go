@@ -2,7 +2,9 @@ package secretref
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -26,6 +28,19 @@ func ReferencesNonExistentSecret(ctx context.Context, client client.Reader, gett
 	}
 
 	return false
+}
+
+func ValidateAndSanitizeTLSSecret(tlsCert, tlsKey []byte) ([]byte, []byte) {
+	_, err := tls.X509KeyPair(tlsCert, tlsKey)
+	if err != nil {
+		if noPemDataFoundError(err) {
+			certReplaced := []byte(strings.ReplaceAll(string(tlsCert), "\\n", "\n"))
+			keyReplaced := []byte(strings.ReplaceAll(string(tlsKey), "\\n", "\n"))
+			return certReplaced, keyReplaced
+		}
+	}
+
+	return tlsCert, tlsKey
 }
 
 func ReferencesSecret(secretName, secretNamespace string, getter Getter) bool {
@@ -63,4 +78,8 @@ func checkIfSecretHasKey(ctx context.Context, client client.Reader, ref telemetr
 	}
 
 	return true
+}
+
+func noPemDataFoundError(err error) bool {
+	return strings.Contains(err.Error(), "failed to find any PEM data in certificate input")
 }
