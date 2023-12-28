@@ -183,13 +183,6 @@ e2e-deploy-module: kyma kustomize provision-k3d provision-test-env ## Provision 
 run-e2e-deploy-module: kyma kustomize ## Deploy module with the lifecycle manager.
 	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} ./hack/deploy-module.sh
 
-.PHONY:
-e2e-coverage: ginkgo
-	@$(GINKGO) outline --format indent test/e2e/metrics_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
-	@$(GINKGO) outline --format indent test/e2e/traces_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
-	@$(GINKGO) outline --format indent test/e2e/logs_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
-
-
 .PHONY: integration-test-istio
 integration-test-istio: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run integration tests with istio.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
