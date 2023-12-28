@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Exclude Container", Label("logging"), Ordered, func() {
+var _ = Describe("Logs Exclude Container", Label("logs"), Ordered, func() {
 	const (
 		mockNs          = "log-exclude-container-mocks"
 		mockBackendName = "log-receiver-exclude-container"
