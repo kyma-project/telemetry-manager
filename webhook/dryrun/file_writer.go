@@ -15,10 +15,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
-//go:generate mockery --name fileWriter --filename file_writer.go
+//go:generate mockery --name fileWriter --filename file_writer.go --exported
 type fileWriter interface {
-	preparePipelineDryRun(ctx context.Context, workDir string, pipeline *telemetryv1alpha1.LogPipeline) (func(), error)
-	prepareParserDryRun(ctx context.Context, workDir string, pipeline *telemetryv1alpha1.LogParser) (func(), error)
+	PreparePipelineDryRun(ctx context.Context, workDir string, pipeline *telemetryv1alpha1.LogPipeline) (func(), error)
+	PrepareParserDryRun(ctx context.Context, workDir string, pipeline *telemetryv1alpha1.LogParser) (func(), error)
 }
 
 type fileWriterImpl struct {
@@ -26,7 +26,7 @@ type fileWriterImpl struct {
 	config Config
 }
 
-func (f *fileWriterImpl) prepareParserDryRun(ctx context.Context, workDir string, parser *telemetryv1alpha1.LogParser) (func(), error) {
+func (f *fileWriterImpl) PrepareParserDryRun(ctx context.Context, workDir string, parser *telemetryv1alpha1.LogParser) (func(), error) {
 	if err := makeDir(workDir); err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func (f *fileWriterImpl) prepareParserDryRun(ctx context.Context, workDir string
 	return func() { deleteWorkDir(ctx, workDir) }, nil
 }
 
-func (f *fileWriterImpl) preparePipelineDryRun(ctx context.Context, workDir string, pipeline *telemetryv1alpha1.LogPipeline) (func(), error) {
+func (f *fileWriterImpl) PreparePipelineDryRun(ctx context.Context, workDir string, pipeline *telemetryv1alpha1.LogPipeline) (func(), error) {
 	if err := makeDir(workDir); err != nil {
 		return nil, err
 	}
