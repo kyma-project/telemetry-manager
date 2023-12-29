@@ -41,9 +41,8 @@ type FilterProcessor struct {
 }
 
 type FilterProcessorMetrics struct {
-	DataPoint []string               `yaml:"datapoint,omitempty"`
-	Metric    []string               `yaml:"metric,omitempty"`
-	Exclude   *MetricMatchProperties `yaml:"exclude,omitempty"`
+	DataPoint []string `yaml:"datapoint,omitempty"`
+	Metric    []string `yaml:"metric,omitempty"`
 }
 
 type TransformProcessor struct {
@@ -55,15 +54,4 @@ type Exporters map[string]Exporter
 
 type Exporter struct {
 	OTLP *config.OTLPExporter `yaml:",inline,omitempty"`
-}
-
-type MetricMatchProperties struct {
-	MatchType          string      `yaml:"match_type,omitempty"`
-	MetricNames        []string    `yaml:"metric_names,omitempty"`
-	ResourceAttributes []Attribute `yaml:"resource_attributes,omitempty"`
-}
-
-type Attribute struct {
-	Key   string `yaml:"key"`
-	Value any    `yaml:"value"`
 }

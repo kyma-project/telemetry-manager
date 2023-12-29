@@ -61,7 +61,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				//Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
