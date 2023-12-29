@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -69,34 +68,8 @@ func (d *DryRunner) RunPipeline(ctx context.Context, pipeline *telemetryv1alpha1
 	path := filepath.Join(workDir, "fluent-bit.conf")
 	args := dryRunArgs()
 	args = append(args, "--config", path)
-	externalPluginArgs, err := d.externalPluginArgs()
-	if err != nil {
-		return err
-	}
-	args = append(args, externalPluginArgs...)
 
 	return d.runCmd(ctx, args)
-}
-
-func (d *DryRunner) externalPluginArgs() ([]string, error) {
-	var plugins []string
-	files, err := os.ReadDir(fluentBitPluginDirectory)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, f := range files {
-		if f.IsDir() {
-			continue
-		}
-		plugins = append(plugins, filepath.Join(fluentBitPluginDirectory, f.Name()))
-	}
-
-	var args []string
-	for _, plugin := range plugins {
-		args = append(args, "-e", plugin)
-	}
-	return args, nil
 }
 
 func (d *DryRunner) runCmd(ctx context.Context, args []string) error {
