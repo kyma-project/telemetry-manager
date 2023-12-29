@@ -418,8 +418,60 @@ spec:
 
 Note that metrics from system namespaces are excluded by default when a namespace selector for the `prometheus` or `runtime` input is not defined. However, for the `istio` and `otlp` input, metrics from system namespaces are included by default if the namespace selector is not defined.
 
+### Step 9: Enable Diagnostic Metrics
 
-### Step 9: Deploy the Pipeline
+When using the `prometheus` or `istio` input feature of the MetricPipeline, for every metric source typical scrape metrics are getting produced and these are concrete
+- up
+- scrape_duration_seconds
+- scrape_samples_scraped
+- scrape_samples_post_metric_relabeling
+- scrape_series_added
+
+These are rather technical metrics and useful for debugging and diagnose purposes. However, they are also causing data and they are by default disabled.
+
+To enable diagnostic metrics, define a MetricPipeline that has the `diagnosticMetrics` section defined in inputs `prometheus` or/and `istio`. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
+
+The following example collects diagnostic metrics only for input `istio`:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    istio:
+      enabled: true
+      diagnosticMetrics:
+        enabled: true
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
+
+The following example collects diagnostic metrics only for input `prometheus`:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    prometheus:
+      enabled: true
+      diagnosticMetrics:
+        enabled: true
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
+
+Note diagnostic metrics are available only for inputs `prometheus` adn `istio` and are disabled by default, diagnostic metrics for the `runtime` and `otlp` inputs is not available.
+
+### Step 10: Deploy the Pipeline
 
 To activate the constructed MetricPipeline, follow these steps:
 
