@@ -21,8 +21,7 @@ func dryRunArgs() []string {
 }
 
 const (
-	fluentBitPluginDirectory = "fluent-bit/lib"
-	fluentBitPath            = "fluent-bit/bin/fluent-bit"
+	fluentBitPath = "fluent-bit/bin/fluent-bit"
 )
 
 type Config struct {
