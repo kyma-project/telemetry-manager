@@ -469,7 +469,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-Note diagnostic metrics are available only for inputs `prometheus` adn `istio` and are disabled by default, diagnostic metrics for the `runtime` and `otlp` inputs is not available.
+Note diagnostic metrics are available only for inputs `prometheus` adn `istio` and are disabled by default.
 
 ### Step 10: Deploy the Pipeline
 
