@@ -183,13 +183,6 @@ e2e-deploy-module: kyma kustomize provision-k3d provision-test-env ## Provision 
 run-e2e-deploy-module: kyma kustomize ## Deploy module with the lifecycle manager.
 	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} ./hack/deploy-module.sh
 
-.PHONY:
-e2e-coverage: ginkgo
-	@$(GINKGO) outline --format indent test/e2e/metrics_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
-	@$(GINKGO) outline --format indent test/e2e/traces_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
-	@$(GINKGO) outline --format indent test/e2e/logs_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
-
-
 .PHONY: integration-test-istio
 integration-test-istio: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run integration tests with istio.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
@@ -201,6 +194,11 @@ run-integration-test-istio: ginkgo test-matchers ## run integration tests with i
 	$(GINKGO) run --tags istio --flake-attempts=5 --junit-report=junit.xml ./test/integration/istio
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
+
+.PHONY: check-coverage
+check-coverage: go-test-coverage
+	go test ./... -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
+	$(GO_TEST_COVERAGE) --config=./.testcoverage.yml
 
 ##@ Build
 
@@ -282,6 +280,7 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 GINKGO ?= $(LOCALBIN)/ginkgo
 GOLANGCI-LINT ?= $(LOCALBIN)/golangci-lint
+GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
 K3D ?= $(LOCALBIN)/k3d
 KYMA ?= $(LOCALBIN)/kyma-$(KYMA_STABILITY)
 
@@ -293,6 +292,7 @@ K3D_VERSION ?= v5.4.7
 GINKGO_VERSION ?= v2.13.2
 GORELEASER_VERSION ?= v1.17.1
 GOLANGCI-LINT_VERSION ?= latest
+GO_TEST_COVERAGE_VERSION ?= v2.8.2
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -330,6 +330,12 @@ ginkgo: $(GINKGO) ## Download ginkgo locally if necessary.
 $(GINKGO): $(LOCALBIN)
 	test -s $(GINKGO) && $(GINKGO) version | grep -q $(GINKGO_VERSION) || \
 	GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
+
+.PHONY: go-test-coverage
+go-test-coverage: $(GO_TEST_COVERAGE) ## Download go-test-coverage locally if necessary.
+$(GO_TEST_COVERAGE): $(LOCALBIN)
+	test -s $(GO_TEST_COVERAGE) && $(GO_TEST_COVERAGE) version | grep -q $(GO_TEST_COVERAGE_VERSION) || \
+	GOBIN=$(LOCALBIN) go install github.com/vladopajic/go-test-coverage/v2@$(GO_TEST_COVERAGE_VERSION)
 
 K3D_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh"
 .PHONY: k3d
