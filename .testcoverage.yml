@@ -19,7 +19,7 @@ threshold:
 # specific to more general rules.
 override:
   # Temporarily decrease coverage threshold for certain packages, we need to increase the coverage and remove these entries from the list
-  - threshold: 48
+  - threshold: 75
     path: ^webhook/dryrun$
   - threshold: 57
     path: ^internal/istiostatus$
@@ -36,6 +36,7 @@ exclude:
   paths:
     - ^apis                # apis should in general only contain Go structs and not unit tested
     - ^controllers         # controllers are covered by envtests and e2e tests
+    - mocks
     - ^internal/k8sutils   # k8sutils has to be dissected into smaller single-purpose packages, for now excluding from coverage check
     - ^internal/reconciler # reconciler are covered by envtests and e2e tests
     - ^internal/setup      # contains simple utils for setting up watchers
