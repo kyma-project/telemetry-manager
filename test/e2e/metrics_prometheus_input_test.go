@@ -61,7 +61,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			k8sObjects := makeResources()
 
 			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+				//Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -156,6 +156,17 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 
 		It("Ensures kubeletstats metrics from system namespaces are not sent to backend", func() {
 			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURL, kitkyma.SystemNamespaceName)
+		})
+
+		It("Ensures no diagnostic metrics are sent to backend", func() {
+			Eventually(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					Not(ContainMd(ContainMetric(WithName(BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"))))),
+				))
+			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 })

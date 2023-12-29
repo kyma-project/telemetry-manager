@@ -117,10 +117,10 @@ func declareDiagnosticMetricsDropFilters(pipeline *telemetryv1alpha1.MetricPipel
 	input := pipeline.Spec.Input
 
 	if isPrometheusInputEnabled(input) && !isPrometheusDiagnosticMetricsEnabled(input) {
-		cfg.Processors.DropDiagnosticMetricsIfInputSourcePrometheus = makeDropDiagnosticMetricsForInput("prometheus")
+		cfg.Processors.DropDiagnosticMetricsIfInputSourcePrometheus = makeDropDiagnosticMetricsForInput(inputSourceEquals(metric.InputSourcePrometheus))
 	}
 	if isIstioInputEnabled(input) && !isIstioDiagnosticMetricsEnabled(input) {
-		cfg.Processors.DropDiagnosticMetricsIfInputSourceIstio = makeDropDiagnosticMetricsForInput("istio")
+		cfg.Processors.DropDiagnosticMetricsIfInputSourceIstio = makeDropDiagnosticMetricsForInput(inputSourceEquals(metric.InputSourceIstio))
 	}
 }
 
