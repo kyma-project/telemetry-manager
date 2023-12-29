@@ -88,6 +88,8 @@ type MetricPipelinePrometheusInput struct {
 	//+kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
+	//+optional
+	//+kubebuilder:default={enabled: false}
 	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
@@ -109,6 +111,8 @@ type MetricPipelineIstioInput struct {
 	//+optional
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
+	//+optional
+	//+kubebuilder:default={enabled: false}
 	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
