@@ -1,16 +1,16 @@
 package dryrun
 
 import (
+	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"context"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun/mocks"
-	"strings"
 )
 
 func TestDryRunner_RunPipeline(t *testing.T) {
