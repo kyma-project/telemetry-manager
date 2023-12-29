@@ -427,7 +427,7 @@ When using the `prometheus` or `istio` input feature of the MetricPipeline, for 
 - scrape_samples_post_metric_relabeling
 - scrape_series_added
 
-These are rather technical metrics and useful for debugging and diagnose purposes. However, they are also causing data and they are by default disabled.
+These are rather technical metrics and useful for debugging and diagnostic purposes. 
 
 To enable diagnostic metrics, define a MetricPipeline that has the `diagnosticMetrics` section defined in inputs `prometheus` or/and `istio`. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
 
@@ -469,7 +469,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-Note diagnostic metrics are available only for inputs `prometheus` adn `istio` and are disabled by default, diagnostic metrics for the `runtime` and `otlp` inputs is not available.
+Note diagnostic metrics are available only for inputs `prometheus` adn `istio` and are disabled by default.
 
 ### Step 10: Deploy the Pipeline
 
