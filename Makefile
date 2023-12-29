@@ -334,7 +334,7 @@ $(GINKGO): $(LOCALBIN)
 .PHONY: go-test-coverage
 go-test-coverage: $(GO_TEST_COVERAGE) ## Download go-test-coverage locally if necessary.
 $(GO_TEST_COVERAGE): $(LOCALBIN)
-	test -s $(GO_TEST_COVERAGE) && $(GO_TEST_COVERAGE) version | grep -q $(GO_TEST_COVERAGE_VERSION) || \
+	test -s $(GO_TEST_COVERAGE) && $(GO_TEST_COVERAGE) --version | grep -q $(GO_TEST_COVERAGE_VERSION) || \
 	GOBIN=$(LOCALBIN) go install github.com/vladopajic/go-test-coverage/v2@$(GO_TEST_COVERAGE_VERSION)
 
 K3D_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh"
