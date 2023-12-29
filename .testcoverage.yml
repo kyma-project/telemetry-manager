@@ -10,7 +10,7 @@ local-prefix: "github.com/kyma-project/telemetry-manager"
 threshold:
   # (optional; default 0)
   # The minimum coverage that each package should have
-  package: 50
+  package: 60
 
 # Holds regexp rules which will override thresholds for matched files or packages using their paths.
 #
