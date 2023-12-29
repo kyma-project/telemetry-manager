@@ -10,7 +10,7 @@ local-prefix: "github.com/kyma-project/telemetry-manager"
 threshold:
   # (optional; default 0)
   # The minimum coverage that each package should have
-  package: 60
+  package: 90
 
 # Holds regexp rules which will override thresholds for matched files or packages using their paths.
 #
@@ -18,21 +18,29 @@ threshold:
 # If project has multiple rules that match same path, override rules should be listed in order from
 # specific to more general rules.
 override:
-  # Increase coverage threshold to 100% for `foo` package (default is 80, as configured above)
+  # Temporarily decrease coverage threshold for certain packages, we need to increase the coverage and remove these entries from the list
   - threshold: 48
     path: ^webhook/dryrun$
+  - threshold: 57
+    path: ^internal/istiostatus$
+  - threshold: 86
+    path: ^internal/otelcollector/config/otlpexporter$
+  - threshold: 72
+    path: ^internal/resources/otelcollector$
+  - threshold: 86
+    path: ^internal/webhookcert$
 
 # Holds regexp rules which will exclude matched files or packages from coverage statistics
 exclude:
   # Exclude files or packages matching their paths
   paths:
-    - ^apis
-    - ^controllers
-    - ^internal/k8sutils
-    - ^internal/reconciler
-    - ^internal/setup
-    - ^test
-    - ^webhook/logpipeline
+    - ^apis                # apis should in general only contain Go structs and not unit tested
+    - ^controllers         # controllers are covered by envtests and e2e tests
+    - ^internal/k8sutils   # k8sutils has to be dissected into smaller single-purpose packages, for now excluding from coverage check
+    - ^internal/reconciler # reconciler are covered by envtests and e2e tests
+    - ^internal/setup      # contains simple utils for setting up watchers
+    - ^test                # e2e and integration tests
+    - ^webhook/logpipeline # logpipeline webhooks is covered by envtests and e2e tests
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by
