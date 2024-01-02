@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net/url"
+	"path"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -62,12 +64,13 @@ func makeAuthenticationEnvVar(ctx context.Context, c client.Reader, secretData m
 }
 
 func makeOTLPEndpointEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
-	endpoint, err := resolveValue(ctx, c, output.Endpoint)
+	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
+
+	endpointURL, err := resolveEndpointURL(ctx, c, output)
 	if err != nil {
 		return nil, err
 	}
-	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
-	secretData[otlpEndpointVariable] = endpoint
+	secretData[otlpEndpointVariable] = endpointURL
 	return secretData, err
 }
 
@@ -112,6 +115,24 @@ func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][
 		}
 	}
 	return secretData, nil
+}
+
+func resolveEndpointURL(ctx context.Context, c client.Reader, output *telemetryv1alpha1.OtlpOutput) ([]byte, error) {
+	endpoint, err := resolveValue(ctx, c, output.Endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(output.Path) > 0 {
+		u, err := url.Parse(string(endpoint))
+		if err != nil {
+			return nil, err
+		}
+		u.Path = path.Join(u.Path, output.Path)
+		return []byte(u.String()), nil
+	}
+
+	return endpoint, nil
 }
 
 func formatBasicAuthHeader(username string, password string) string {

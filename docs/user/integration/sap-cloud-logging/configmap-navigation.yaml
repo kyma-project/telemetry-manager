@@ -12,7 +12,7 @@ data:
           isEnabled: true
           stage: SECONDARY
           nodes:
-          - category: CLS
+          - category: SAP Cloud Logging
             children:
             - label: Dashboards
               link: https://{PLACEHOLDER}/app/dashboards#/view/maintained-by-perfx_kyma-content-package_Kyma-Overview

@@ -32,7 +32,6 @@ var (
 
 	//TODO: should be system namespaces after solving https://github.com/kyma-project/telemetry-manager/issues/380
 	fromVMScrapeAgent        = ottlexpr.JoinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, userAgentMatches("vm_promscrape"))
-	fromPrometheusWithinKyma = ottlexpr.JoinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, namespacesIsKymaSystem, userAgentMatches("Prometheus\\\\/.*"))
 	fromTelemetryMetricAgent = ottlexpr.JoinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, userAgentMatches("kyma-otelcol\\\\/.*"))
 )
 
@@ -49,7 +48,6 @@ func makeDropNoisySpansConfig() FilterProcessor {
 				toTelemetryTraceInternalService,
 				toTelemetryMetricService,
 				fromVMScrapeAgent,
-				fromPrometheusWithinKyma,
 				fromTelemetryMetricAgent,
 			},
 		},

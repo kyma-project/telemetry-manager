@@ -17,8 +17,6 @@ type Level string
 
 const (
 	DEBUG Level = "debug"
-	INFO  Level = "info"
-	ERROR Level = "error"
 )
 
 const overridesTemplate = `global:

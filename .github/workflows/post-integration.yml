@@ -17,13 +17,9 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    # uses an older go version by default, so configure go with newest version
-    - name: Setup go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21'
-        cache: true
-  
+    - name: Setup Golang
+      uses: "./.github/template/setup-golang"
+
     # wait for the build to succeed so that the manager image is available
     - name: Wait for the 'post-telemetry-manager-build' job to succeed
       uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20

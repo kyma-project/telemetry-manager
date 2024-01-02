@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Parser", Label("logging"), Ordered, func() {
+var _ = Describe("Logs Parser", Label("logs"), Ordered, func() {
 	const (
 		mockNs          = "log-parser-mocks"
 		mockBackendName = "log-receiver-parser"

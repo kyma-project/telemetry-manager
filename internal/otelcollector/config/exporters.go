@@ -1,11 +1,13 @@
 package config
 
 type OTLPExporter struct {
-	Endpoint       string            `yaml:"endpoint,omitempty"`
-	Headers        map[string]string `yaml:"headers,omitempty"`
-	TLS            TLS               `yaml:"tls,omitempty"`
-	SendingQueue   SendingQueue      `yaml:"sending_queue,omitempty"`
-	RetryOnFailure RetryOnFailure    `yaml:"retry_on_failure,omitempty"`
+	MetricsEndpoint string            `yaml:"metrics_endpoint,omitempty"`
+	TracesEndpoint  string            `yaml:"traces_endpoint,omitempty"`
+	Endpoint        string            `yaml:"endpoint,omitempty"`
+	Headers         map[string]string `yaml:"headers,omitempty"`
+	TLS             TLS               `yaml:"tls,omitempty"`
+	SendingQueue    SendingQueue      `yaml:"sending_queue,omitempty"`
+	RetryOnFailure  RetryOnFailure    `yaml:"retry_on_failure,omitempty"`
 }
 
 type TLS struct {
