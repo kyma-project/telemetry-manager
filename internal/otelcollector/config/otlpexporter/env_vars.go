@@ -21,7 +21,30 @@ const (
 )
 
 func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
+	var err error
 	secretData := make(map[string][]byte)
+
+	secretData, err = makeAuthenticationEnvVar(ctx, c, secretData, output, pipelineName)
+	if err != nil {
+		return nil, err
+	}
+	secretData, err = makeOTLPEndpointEnvVar(ctx, c, secretData, output, pipelineName)
+	if err != nil {
+		return nil, err
+	}
+	secretData, err = makeHeaderEnvVar(ctx, c, secretData, output, pipelineName)
+	if err != nil {
+		return nil, err
+	}
+	secretData, err = makeTLSEnvVar(ctx, c, secretData, output, pipelineName)
+	if err != nil {
+		return nil, err
+	}
+
+	return secretData, nil
+}
+
+func makeAuthenticationEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
 	if output.Authentication != nil && output.Authentication.Basic.IsDefined() {
 		username, err := resolveValue(ctx, c, output.Authentication.Basic.User)
 		if err != nil {
@@ -35,14 +58,20 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 		basicAuthHeaderVariable := fmt.Sprintf("%s_%s", basicAuthHeaderVariablePrefix, envvar.MakeEnvVarCompliant(pipelineName))
 		secretData[basicAuthHeaderVariable] = []byte(basicAuthHeader)
 	}
+	return secretData, nil
+}
 
+func makeOTLPEndpointEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
 	endpoint, err := resolveValue(ctx, c, output.Endpoint)
 	if err != nil {
 		return nil, err
 	}
 	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
 	secretData[otlpEndpointVariable] = endpoint
+	return secretData, err
+}
 
+func makeHeaderEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
 	for _, header := range output.Headers {
 		key := makeHeaderVariable(header, pipelineName)
 		value, err := resolveValue(ctx, c, header.ValueType)
@@ -51,7 +80,10 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 		}
 		secretData[key] = value
 	}
+	return secretData, nil
+}
 
+func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
 	if output.TLS != nil {
 		if output.TLS.CA.IsDefined() {
 			ca, err := resolveValue(ctx, c, *output.TLS.CA)
@@ -79,7 +111,6 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 			secretData = secretref.SanitizeTlSValueOrSecret(secretData, makeTLSKeyVariable(pipelineName), makeTLSCertVariable(pipelineName))
 		}
 	}
-
 	return secretData, nil
 }
 
