@@ -30,14 +30,24 @@ func ReferencesNonExistentSecret(ctx context.Context, client client.Reader, gett
 	return false
 }
 
-func ValidateAndSanitizeTLSSecret(tlsCert, tlsKey []byte) ([]byte, []byte) {
+func SanitizeTlSValueOrSecret(secretData map[string][]byte, tlsKeyVariable, tlsCertVariable string) map[string][]byte {
+	tlsKeyValue, tlsKeyExists := secretData[tlsKeyVariable]
+	tlsCertValue, tlsCertExists := secretData[tlsCertVariable]
+	// Both tls key and cert are required to perform validation
+	if !tlsKeyExists || !tlsCertExists {
+		return secretData
+	}
+	secretData[tlsCertVariable], secretData[tlsKeyVariable] = validateAndSanitizeTLSSecret(tlsCertValue, tlsKeyValue)
+	return secretData
+}
+
+func validateAndSanitizeTLSSecret(tlsCert, tlsKey []byte) ([]byte, []byte) {
 	_, err := tls.X509KeyPair(tlsCert, tlsKey)
 	if err != nil {
-		if noPemDataFoundError(err) {
-			certReplaced := []byte(strings.ReplaceAll(string(tlsCert), "\\n", "\n"))
-			keyReplaced := []byte(strings.ReplaceAll(string(tlsKey), "\\n", "\n"))
-			return certReplaced, keyReplaced
-		}
+		certReplaced := []byte(strings.ReplaceAll(string(tlsCert), "\\n", "\n"))
+		keyReplaced := []byte(strings.ReplaceAll(string(tlsKey), "\\n", "\n"))
+		return certReplaced, keyReplaced
+
 	}
 
 	return tlsCert, tlsKey
@@ -78,8 +88,4 @@ func checkIfSecretHasKey(ctx context.Context, client client.Reader, ref telemetr
 	}
 
 	return true
-}
-
-func noPemDataFoundError(err error) bool {
-	return strings.Contains(err.Error(), "failed to find any PEM data in certificate input")
 }

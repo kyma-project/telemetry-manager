@@ -77,6 +77,10 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 			tlsConfigKeyVariable := makeTLSKeyVariable(pipelineName)
 			secretData[tlsConfigKeyVariable] = key
 		}
+		// Validate cert and key
+		if output.TLS.Cert.IsDefined() && output.TLS.Key.IsDefined() {
+			secretData = secretref.SanitizeTlSValueOrSecret(secretData, makeTLSKeyVariable(pipelineName), makeTLSCertVariable(pipelineName))
+		}
 	}
 
 	return secretData, nil

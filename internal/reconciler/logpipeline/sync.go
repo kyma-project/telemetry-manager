@@ -199,9 +199,11 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 		if err = controllerutil.SetOwnerReference(&logPipelines[i], &newSecret, s.Scheme()); err != nil {
 			return fmt.Errorf("unable to set owner reference for tls config secret: %w", err)
 		}
-		if tls.Cert.IsDefined() && tls.Key.IsDefined() {
-			newSecret.Data = sanitizeTlSValueOrSecret(logPipelines[i].Name, newSecret.Data)
 
+		if tls.Cert.IsDefined() && tls.Key.IsDefined() {
+			tlsKey := fmt.Sprintf("%s-key.key", logPipelines[i].Name)
+			tlsCert := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
+			newSecret.Data = secretref.SanitizeTlSValueOrSecret(newSecret.Data, tlsCert, tlsKey)
 		}
 	}
 
@@ -239,19 +241,6 @@ func (s *syncer) copySecretData(ctx context.Context, sourceRef telemetryv1alpha1
 		sourceRef.Key,
 		sourceRef.Name,
 		sourceRef.Namespace)
-}
-
-func sanitizeTlSValueOrSecret(pipelineName string, secretData map[string][]byte) map[string][]byte {
-	tlsKey := fmt.Sprintf("%s-key.key", pipelineName)
-	tlsCert := fmt.Sprintf("%s-cert.crt", pipelineName)
-	tlsKeyValue, tlsKeyExists := secretData[tlsKey]
-	tlsCertValue, tlsCertExists := secretData[tlsCert]
-	// Both tls key and cert are required to perform validation
-	if !tlsKeyExists || !tlsCertExists {
-		return secretData
-	}
-	secretData[tlsCert], secretData[tlsKey] = secretref.ValidateAndSanitizeTLSSecret(tlsCertValue, tlsKeyValue)
-	return secretData
 }
 
 // isLogPipelineDeployable checks if logpipeline is ready to be rendered into the fluentbit configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
