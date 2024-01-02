@@ -56,8 +56,6 @@ spec:
                     description: Configures istio-proxy metrics scraping.
                     properties:
                       diagnosticMetrics:
-                        default:
-                          enabled: false
                         description: Configures diagnostic metrics scraping
                         properties:
                           enabled:
@@ -130,8 +128,6 @@ spec:
                     description: Configures Prometheus scraping.
                     properties:
                       diagnosticMetrics:
-                        default:
-                          enabled: false
                         description: Configures diagnostic metrics scraping
                         properties:
                           enabled:

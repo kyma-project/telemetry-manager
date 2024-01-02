@@ -89,7 +89,6 @@ type MetricPipelinePrometheusInput struct {
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	//+optional
-	//+kubebuilder:default={enabled: false}
 	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
@@ -112,7 +111,6 @@ type MetricPipelineIstioInput struct {
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
 	// Configures diagnostic metrics scraping
 	//+optional
-	//+kubebuilder:default={enabled: false}
 	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
