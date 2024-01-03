@@ -267,7 +267,7 @@ stringData:
   token: YYY
 ```
 
-The value of the token can be stored in the referenced secret without any prefix or scheme (in this example, the token has the prefix Bearer), and it can be configured in the header section of the MetricPipeline.
+The value of the token can be stored in the referenced secret without any prefix or scheme (in this example, the token has the prefix Bearer), and it can be configured in the headers section of the MetricPipeline.
 
 ### Step 3: Rotate the Secret
 
