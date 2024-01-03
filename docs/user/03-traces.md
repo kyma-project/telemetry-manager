@@ -167,7 +167,8 @@ spec:
         value: https://backend.example.com/otlp:4317
       headers:
       - name: Authorization
-        value: "Bearer myToken"
+        prefix: Bearer
+        value: "myToken"
 ```
 
 <!-- tabs:end -->
@@ -253,6 +254,7 @@ spec:
         value: https://backend.example.com:4317
       headers:
       - name: Authorization
+        prefix: Bearer
         valueFrom:
           secretKeyRef:
               name: backend
@@ -274,9 +276,10 @@ stringData:
   endpoint: https://backend.example.com:4317
   user: myUser
   password: XXX
-  token: Bearer YYY
+  token: YYY
 ```
 
+The value of the token can be stored in the referenced secret without any prefix or scheme (in this example, the token has the prefix Bearer), and it can be configured in the header section of the TracePipeline.
 ### Step 4: Rotate the Secret
 
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
