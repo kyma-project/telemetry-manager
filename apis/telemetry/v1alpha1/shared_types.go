@@ -53,6 +53,8 @@ type Header struct {
 	Name string `json:"name"`
 	// Defines the header value.
 	ValueType `json:",inline"`
+	// Defines the header value prefix, the prefix uses by default a single space character as separator
+	Prefix string `json:"prefix,omitempty"`
 }
 
 type OtlpTLS struct {

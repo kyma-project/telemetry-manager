@@ -23,6 +23,7 @@ type Pipeline struct {
 	tls             *telemetryv1alpha1.OtlpTLS
 	protocol        string
 	endpointPath    string
+	headers         []telemetryv1alpha1.Header
 }
 
 func NewPipeline(name string) *Pipeline {
@@ -82,6 +83,11 @@ func (p *Pipeline) WithProtocol(protocol string) *Pipeline {
 
 func (p *Pipeline) WithEndpointPath(path string) *Pipeline {
 	p.endpointPath = path
+	return p
+}
+
+func (p *Pipeline) WithHeaders(headers []telemetryv1alpha1.Header) *Pipeline {
+	p.headers = headers
 	return p
 }
 
