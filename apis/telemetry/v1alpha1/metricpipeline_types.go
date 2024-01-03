@@ -87,6 +87,9 @@ type MetricPipelinePrometheusInput struct {
 	//+optional
 	//+kubebuilder:default={exclude: {kyma-system, kube-system, istio-system, compass-system}}
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
+	// Configures diagnostic metrics scraping
+	//+optional
+	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
 // MetricPipelineRuntimeInput defines the runtime scraping section.
@@ -106,6 +109,9 @@ type MetricPipelineIstioInput struct {
 	// Describes whether istio-proxy metrics from specific Namespaces are selected. System Namespaces are enabled by default.
 	//+optional
 	Namespaces *MetricPipelineInputNamespaceSelector `json:"namespaces,omitempty"`
+	// Configures diagnostic metrics scraping
+	//+optional
+	DiagnosticMetrics *DiagnosticMetrics `json:"diagnosticMetrics,omitempty"`
 }
 
 // MetricPipelineOtlpInput defines the collection of push-based metrics that use the OpenTelemetry protocol.
@@ -130,6 +136,12 @@ type MetricPipelineInputNamespaceSelector struct {
 type MetricPipelineOutput struct {
 	// Defines an output using the OpenTelemetry protocol.
 	Otlp *OtlpOutput `json:"otlp"`
+}
+
+// DiagnosticMetrics defines the diagnostic metrics configuration section
+type DiagnosticMetrics struct {
+	// If enabled, diagnostic metrics are scraped. The default is `false`.
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // MetricPipelineStatus defines the observed state of MetricPipeline.

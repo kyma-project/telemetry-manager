@@ -418,8 +418,60 @@ spec:
 
 Note that metrics from system namespaces are excluded by default when a namespace selector for the `prometheus` or `runtime` input is not defined. However, for the `istio` and `otlp` input, metrics from system namespaces are included by default if the namespace selector is not defined.
 
+### Step 9: Enable Diagnostic Metrics
 
-### Step 9: Deploy the Pipeline
+When using the `prometheus` or `istio` input feature of the MetricPipeline, typical scrape metrics are produced for every metric source. These metrics include:
+- `up`
+- `scrape_duration_seconds`
+- `scrape_samples_scraped`
+- `scrape_samples_post_metric_relabeling`
+- `scrape_series_added`
+
+These are rather technical metrics, useful for debugging and diagnostic purposes. 
+
+To enable diagnostic metrics, define a MetricPipeline that has the `diagnosticMetrics` section defined in inputs `prometheus` or/and `istio`. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
+
+The following example collects diagnostic metrics only for input `istio`:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    istio:
+      enabled: true
+      diagnosticMetrics:
+        enabled: true
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
+
+The following example collects diagnostic metrics only for input `prometheus`:
+
+```yaml
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: backend
+spec:
+  input:
+    prometheus:
+      enabled: true
+      diagnosticMetrics:
+        enabled: true
+  output:
+    otlp:
+      endpoint:
+        value: https://backend.example.com:4317
+```
+
+Diagnostic metrics are only available for inputs `prometheus` and `istio`. They are disabled by default.
+
+### Step 10: Deploy the Pipeline
 
 To activate the constructed MetricPipeline, follow these steps:
 

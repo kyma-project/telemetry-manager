@@ -129,6 +129,51 @@ func TestMakeConfig(t *testing.T) {
 
 		t.Run("with prometheus input enabled", func(t *testing.T) {
 			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").PrometheusInput(true).PrometheusInputDiagnosticMetrics(true).Build()},
+			)
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Equal(t, []string{"memory_limiter",
+				"k8sattributes",
+				"filter/drop-if-input-source-runtime",
+				"filter/drop-if-input-source-istio",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
+				"resource/drop-kyma-attributes",
+				"batch",
+			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
+		})
+
+		t.Run("with prometheus input enabled and diagnostic metrics disabled", func(t *testing.T) {
+			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").PrometheusInput(true).PrometheusInputDiagnosticMetrics(false).Build()},
+			)
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Equal(t, []string{"memory_limiter",
+				"k8sattributes",
+				"filter/drop-if-input-source-runtime",
+				"filter/drop-if-input-source-istio",
+				"filter/drop-diagnostic-metrics-if-input-source-prometheus",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
+				"resource/drop-kyma-attributes",
+				"batch",
+			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
+		})
+
+		t.Run("with prometheus input enabled and diagnostic metrics implicitly disabled", func(t *testing.T) {
+			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test").PrometheusInput(true).Build()},
 			)
 			require.NoError(t, err)
@@ -142,6 +187,7 @@ func TestMakeConfig(t *testing.T) {
 				"k8sattributes",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-istio",
+				"filter/drop-diagnostic-metrics-if-input-source-prometheus",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
 				"resource/drop-kyma-attributes",
@@ -173,6 +219,51 @@ func TestMakeConfig(t *testing.T) {
 
 		t.Run("with istio input enabled", func(t *testing.T) {
 			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").IstioInput(true).IstioInputDiagnosticMetrics(true).Build()},
+			)
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Equal(t, []string{"memory_limiter",
+				"k8sattributes",
+				"filter/drop-if-input-source-runtime",
+				"filter/drop-if-input-source-prometheus",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
+				"resource/drop-kyma-attributes",
+				"batch",
+			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
+		})
+
+		t.Run("with istio input enabled and diagnostic metrics disabled", func(t *testing.T) {
+			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().WithName("test").IstioInput(true).IstioInputDiagnosticMetrics(false).Build()},
+			)
+			require.NoError(t, err)
+
+			require.Contains(t, collectorConfig.Exporters, "otlp/test")
+
+			require.Contains(t, collectorConfig.Service.Pipelines, "metrics/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Exporters, "otlp/test")
+			require.Contains(t, collectorConfig.Service.Pipelines["metrics/test"].Receivers, "otlp")
+			require.Equal(t, []string{"memory_limiter",
+				"k8sattributes",
+				"filter/drop-if-input-source-runtime",
+				"filter/drop-if-input-source-prometheus",
+				"filter/drop-diagnostic-metrics-if-input-source-istio",
+				"resource/insert-cluster-name",
+				"transform/resolve-service-name",
+				"resource/drop-kyma-attributes",
+				"batch",
+			}, collectorConfig.Service.Pipelines["metrics/test"].Processors)
+		})
+
+		t.Run("with istio input enabled and diagnostic metrics implicitly disabled", func(t *testing.T) {
+			collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().WithName("test").IstioInput(true).Build()},
 			)
 			require.NoError(t, err)
@@ -186,6 +277,7 @@ func TestMakeConfig(t *testing.T) {
 				"k8sattributes",
 				"filter/drop-if-input-source-runtime",
 				"filter/drop-if-input-source-prometheus",
+				"filter/drop-diagnostic-metrics-if-input-source-istio",
 				"resource/insert-cluster-name",
 				"transform/resolve-service-name",
 				"resource/drop-kyma-attributes",
@@ -274,6 +366,7 @@ func TestMakeConfig(t *testing.T) {
 			"filter/drop-if-input-source-runtime",
 			"filter/drop-if-input-source-istio",
 			"filter/test-2-filter-by-namespace-prometheus-input",
+			"filter/drop-diagnostic-metrics-if-input-source-prometheus",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
 			"resource/drop-kyma-attributes",
@@ -287,6 +380,7 @@ func TestMakeConfig(t *testing.T) {
 			"k8sattributes",
 			"filter/drop-if-input-source-runtime",
 			"filter/drop-if-input-source-prometheus",
+			"filter/drop-diagnostic-metrics-if-input-source-istio",
 			"resource/insert-cluster-name",
 			"transform/resolve-service-name",
 			"resource/drop-kyma-attributes",
