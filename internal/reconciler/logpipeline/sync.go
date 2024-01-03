@@ -183,27 +183,24 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 			}
 		}
 
-		if tls.Cert.IsDefined() {
-			targetKey := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
-			if err := s.copyFromValueOrSecret(ctx, *tls.Cert, targetKey, newSecret.Data); err != nil {
+		if tls.Cert.IsDefined() && tls.Key.IsDefined() {
+			targetCertVariable := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
+			if err := s.copyFromValueOrSecret(ctx, *tls.Cert, targetCertVariable, newSecret.Data); err != nil {
 				return err
 			}
-		}
-		if tls.Key.IsDefined() {
-			targetKey := fmt.Sprintf("%s-key.key", logPipelines[i].Name)
-			if err := s.copyFromValueOrSecret(ctx, *tls.Key, targetKey, newSecret.Data); err != nil {
+
+			targetKeyVariable := fmt.Sprintf("%s-key.key", logPipelines[i].Name)
+			if err := s.copyFromValueOrSecret(ctx, *tls.Key, targetKeyVariable, newSecret.Data); err != nil {
 				return err
 			}
+
+			sanitizedCert, sanitizedKey := secretref.ValidateAndSanitizeTLSSecret(newSecret.Data[targetCertVariable], newSecret.Data[targetKeyVariable])
+			newSecret.Data[targetCertVariable] = sanitizedCert
+			newSecret.Data[targetKeyVariable] = sanitizedKey
 		}
 
 		if err = controllerutil.SetOwnerReference(&logPipelines[i], &newSecret, s.Scheme()); err != nil {
 			return fmt.Errorf("unable to set owner reference for tls config secret: %w", err)
-		}
-
-		if tls.Cert.IsDefined() && tls.Key.IsDefined() {
-			tlsKey := fmt.Sprintf("%s-key.key", logPipelines[i].Name)
-			tlsCert := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
-			newSecret.Data = secretref.SanitizeTlSValueOrSecret(newSecret.Data, tlsCert, tlsKey)
 		}
 	}
 

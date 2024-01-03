@@ -26,19 +26,19 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 	var err error
 	secretData := make(map[string][]byte)
 
-	secretData, err = makeAuthenticationEnvVar(ctx, c, secretData, output, pipelineName)
+	err = makeAuthenticationEnvVar(ctx, c, secretData, output, pipelineName)
 	if err != nil {
 		return nil, err
 	}
-	secretData, err = makeOTLPEndpointEnvVar(ctx, c, secretData, output, pipelineName)
+	err = makeOTLPEndpointEnvVar(ctx, c, secretData, output, pipelineName)
 	if err != nil {
 		return nil, err
 	}
-	secretData, err = makeHeaderEnvVar(ctx, c, secretData, output, pipelineName)
+	err = makeHeaderEnvVar(ctx, c, secretData, output, pipelineName)
 	if err != nil {
 		return nil, err
 	}
-	secretData, err = makeTLSEnvVar(ctx, c, secretData, output, pipelineName)
+	err = makeTLSEnvVar(ctx, c, secretData, output, pipelineName)
 	if err != nil {
 		return nil, err
 	}
@@ -46,52 +46,52 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 	return secretData, nil
 }
 
-func makeAuthenticationEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
+func makeAuthenticationEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) error {
 	if output.Authentication != nil && output.Authentication.Basic.IsDefined() {
 		username, err := resolveValue(ctx, c, output.Authentication.Basic.User)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		password, err := resolveValue(ctx, c, output.Authentication.Basic.Password)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		basicAuthHeader := formatBasicAuthHeader(string(username), string(password))
 		basicAuthHeaderVariable := fmt.Sprintf("%s_%s", basicAuthHeaderVariablePrefix, envvar.MakeEnvVarCompliant(pipelineName))
 		secretData[basicAuthHeaderVariable] = []byte(basicAuthHeader)
 	}
-	return secretData, nil
+	return nil
 }
 
-func makeOTLPEndpointEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
+func makeOTLPEndpointEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) error {
 	otlpEndpointVariable := makeOtlpEndpointVariable(pipelineName)
 
 	endpointURL, err := resolveEndpointURL(ctx, c, output)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	secretData[otlpEndpointVariable] = endpointURL
-	return secretData, err
+	return err
 }
 
-func makeHeaderEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
+func makeHeaderEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) error {
 	for _, header := range output.Headers {
 		key := makeHeaderVariable(header, pipelineName)
 		value, err := resolveValue(ctx, c, header.ValueType)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		secretData[key] = value
 	}
-	return secretData, nil
+	return nil
 }
 
-func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) (map[string][]byte, error) {
+func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][]byte, output *telemetryv1alpha1.OtlpOutput, pipelineName string) error {
 	if output.TLS != nil {
 		if output.TLS.CA.IsDefined() {
 			ca, err := resolveValue(ctx, c, *output.TLS.CA)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			tlsConfigCaVariable := makeTLSCaVariable(pipelineName)
 			secretData[tlsConfigCaVariable] = ca
@@ -99,22 +99,25 @@ func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][
 		if output.TLS.Cert.IsDefined() && output.TLS.Key.IsDefined() {
 			cert, err := resolveValue(ctx, c, *output.TLS.Cert)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			tlsConfigCertVariable := makeTLSCertVariable(pipelineName)
-			secretData[tlsConfigCertVariable] = cert
 
 			key, err := resolveValue(ctx, c, *output.TLS.Key)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			tlsConfigKeyVariable := makeTLSKeyVariable(pipelineName)
-			secretData[tlsConfigKeyVariable] = key
 
-			secretData = secretref.SanitizeTlSValueOrSecret(secretData, makeTLSKeyVariable(pipelineName), makeTLSCertVariable(pipelineName))
+			sanitizedCert, sanitizedKey := secretref.ValidateAndSanitizeTLSSecret(cert, key)
+
+			tlsConfigCertVariable := makeTLSCertVariable(pipelineName)
+			secretData[tlsConfigCertVariable] = sanitizedCert
+
+			tlsConfigKeyVariable := makeTLSKeyVariable(pipelineName)
+			secretData[tlsConfigKeyVariable] = sanitizedKey
+
 		}
 	}
-	return secretData, nil
+	return nil
 }
 
 func resolveEndpointURL(ctx context.Context, c client.Reader, output *telemetryv1alpha1.OtlpOutput) ([]byte, error) {

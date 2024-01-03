@@ -30,18 +30,7 @@ func ReferencesNonExistentSecret(ctx context.Context, client client.Reader, gett
 	return false
 }
 
-func SanitizeTlSValueOrSecret(secretData map[string][]byte, tlsKeyVariable, tlsCertVariable string) map[string][]byte {
-	tlsKeyValue, tlsKeyExists := secretData[tlsKeyVariable]
-	tlsCertValue, tlsCertExists := secretData[tlsCertVariable]
-	// Both tls key and cert are required to perform validation
-	if !tlsKeyExists || !tlsCertExists {
-		return secretData
-	}
-	secretData[tlsCertVariable], secretData[tlsKeyVariable] = validateAndSanitizeTLSSecret(tlsCertValue, tlsKeyValue)
-	return secretData
-}
-
-func validateAndSanitizeTLSSecret(tlsCert, tlsKey []byte) ([]byte, []byte) {
+func ValidateAndSanitizeTLSSecret(tlsCert, tlsKey []byte) ([]byte, []byte) {
 	_, err := tls.X509KeyPair(tlsCert, tlsKey)
 	if err != nil {
 		certReplaced := []byte(strings.ReplaceAll(string(tlsCert), "\\n", "\n"))
