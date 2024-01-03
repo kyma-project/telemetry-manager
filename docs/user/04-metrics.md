@@ -420,14 +420,14 @@ Note that metrics from system namespaces are excluded by default when a namespac
 
 ### Step 9: Enable Diagnostic Metrics
 
-When using the `prometheus` or `istio` input feature of the MetricPipeline, for every metric source typical scrape metrics are getting produced and these are concrete
-- up
-- scrape_duration_seconds
-- scrape_samples_scraped
-- scrape_samples_post_metric_relabeling
-- scrape_series_added
+When using the `prometheus` or `istio` input feature of the MetricPipeline, typical scrape metrics are produced for every metric source. These metrics include:
+- `up`
+- `scrape_duration_seconds`
+- `scrape_samples_scraped`
+- `scrape_samples_post_metric_relabeling`
+- `scrape_series_added`
 
-These are rather technical metrics and useful for debugging and diagnostic purposes. 
+These are rather technical metrics, useful for debugging and diagnostic purposes. 
 
 To enable diagnostic metrics, define a MetricPipeline that has the `diagnosticMetrics` section defined in inputs `prometheus` or/and `istio`. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
 
@@ -469,7 +469,7 @@ spec:
         value: https://backend.example.com:4317
 ```
 
-Note diagnostic metrics are available only for inputs `prometheus` adn `istio` and are disabled by default.
+Diagnostic metrics are only available for inputs `prometheus` and `istio`. They are disabled by default.
 
 ### Step 10: Deploy the Pipeline
 
