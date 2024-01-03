@@ -57,6 +57,8 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 
 	Context("When a running TracePipeline exists", Ordered, func() {
 		const telemetryName = "telemetry-2"
+		const traceGRPCEndpoint = "http://traceFoo.kyma-system:4317"
+		const traceHTTPEndpoint = "http://traceFoo.kyma-system:4318"
 
 		BeforeAll(func() {
 			telemetry := &operatorv1alpha1.Telemetry{
@@ -94,6 +96,20 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 
 				return telemetry.Status.State, nil
 			}, timeout, interval).Should(Equal(operatorv1alpha1.StateReady))
+		})
+
+		It("Should have Telemetry with TracePipeline endpoints", func() {
+			Eventually(func(g Gomega) {
+				lookupKey := types.NamespacedName{
+					Name:      telemetryName,
+					Namespace: telemetryNamespace,
+				}
+				var telemetry operatorv1alpha1.Telemetry
+				g.Expect(k8sClient.Get(ctx, lookupKey, &telemetry)).Should(Succeed())
+				g.Expect(telemetry.Status.GatewayEndpoints.Traces).ShouldNot(BeNil())
+				g.Expect(telemetry.Status.GatewayEndpoints.Traces.GRPC).Should(Equal(traceGRPCEndpoint))
+				g.Expect(telemetry.Status.GatewayEndpoints.Traces.HTTP).Should(Equal(traceHTTPEndpoint))
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 
@@ -191,4 +207,58 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 			}, timeout, interval).Should(Succeed())
 		})
 	})
+
+	Context("When a running MetricPipeline exists", Ordered, func() {
+		const telemetryName = "telemetry-5"
+		const metricGRPCEndpoint = "http://metricFoo.kyma-system:4317"
+		const metricHTTPEndpoint = "http://metricFoo.kyma-system:4318"
+
+		BeforeAll(func() {
+			telemetry := &operatorv1alpha1.Telemetry{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      telemetryName,
+					Namespace: telemetryNamespace,
+				},
+			}
+			runningMetricPipeline := testutils.NewMetricPipelineBuilder().Build()
+
+			DeferCleanup(func() {
+				Expect(k8sClient.Delete(ctx, &runningMetricPipeline)).Should(Succeed())
+				Expect(k8sClient.Delete(ctx, telemetry)).Should(Succeed())
+			})
+			Expect(k8sClient.Create(ctx, &runningMetricPipeline)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
+		})
+
+		It("Should have Telemetry with ready state", func() {
+			Eventually(func() (operatorv1alpha1.State, error) {
+				lookupKey := types.NamespacedName{
+					Name:      telemetryName,
+					Namespace: telemetryNamespace,
+				}
+				var telemetry operatorv1alpha1.Telemetry
+				err := k8sClient.Get(ctx, lookupKey, &telemetry)
+				if err != nil {
+					return "", err
+				}
+
+				return telemetry.Status.State, nil
+			}, timeout, interval).Should(Equal(operatorv1alpha1.StateReady))
+		})
+
+		It("Should have Telemetry with MetricPipeline endpoints", func() {
+			Eventually(func(g Gomega) {
+				lookupKey := types.NamespacedName{
+					Name:      telemetryName,
+					Namespace: telemetryNamespace,
+				}
+				var telemetry operatorv1alpha1.Telemetry
+				g.Expect(k8sClient.Get(ctx, lookupKey, &telemetry)).Should(Succeed())
+				g.Expect(telemetry.Status.GatewayEndpoints.Metrics).ShouldNot(BeNil())
+				g.Expect(telemetry.Status.GatewayEndpoints.Metrics.GRPC).Should(Equal(metricGRPCEndpoint))
+				g.Expect(telemetry.Status.GatewayEndpoints.Metrics.HTTP).Should(Equal(metricHTTPEndpoint))
+			}, timeout, interval).Should(Succeed())
+		})
+	})
+
 })
