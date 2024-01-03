@@ -27,7 +27,6 @@ type Pipeline struct {
 	tls             *telemetryv1alpha1.OtlpTLS
 	protocol        string
 	endpointPath    string
-	headers         []telemetryv1alpha1.Header
 }
 
 func NewPipeline(name string) *Pipeline {
@@ -166,11 +165,6 @@ func (p *Pipeline) WithEndpointPath(path string) *Pipeline {
 	return p
 }
 
-func (p *Pipeline) WithHeaders(headers []telemetryv1alpha1.Header) *Pipeline {
-	p.headers = headers
-	return p
-}
-
 func (p *Pipeline) K8sObject() *telemetryv1alpha1.MetricPipeline {
 	var labels kitk8s.Labels
 	if p.persistent {
@@ -196,10 +190,6 @@ func (p *Pipeline) K8sObject() *telemetryv1alpha1.MetricPipeline {
 
 	if len(p.endpointPath) > 0 {
 		otlpOutput.Path = p.endpointPath
-	}
-
-	if len(p.headers) > 0 {
-		otlpOutput.Headers = p.headers
 	}
 
 	metricPipeline := telemetryv1alpha1.MetricPipeline{

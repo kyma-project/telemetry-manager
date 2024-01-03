@@ -43,6 +43,18 @@ func validateSecret(secret corev1.Secret, expectedUsername, expectedPassword str
 	return nil
 }
 
+func validateSecretDataWithKey(secret corev1.Secret, secretKey, expected string) error {
+	secretData := secret.Data[secretKey]
+	if secretData == nil {
+		return fmt.Errorf("the key '%s' is not in secret '%s'", secretKey, secret.Name)
+	}
+
+	if string(secretData) != expected {
+		return fmt.Errorf("extracted data is not equal to expected: %s != %s", string(secretData), expected)
+	}
+	return nil
+}
+
 func getAuthInfoFromHeader(header []byte) (string, string, error) {
 	trimmedHeader := strings.TrimPrefix(string(header), "Basic ")
 	decodedHeader, err := base64.StdEncoding.DecodeString(trimmedHeader)

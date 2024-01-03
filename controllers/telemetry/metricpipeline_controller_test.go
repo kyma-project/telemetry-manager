@@ -44,6 +44,15 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 	const (
 		timeout  = time.Second * 100
 		interval = time.Millisecond * 250
+
+		customHeaderName       = "Token"
+		customHeaderPrefix     = "Api-Token"
+		customHeaderPlainValue = "foo_token"
+
+		customHeaderNameForSecret   = "Authorization"
+		customHeaderPrefixForSecret = "Bearer"
+		customHeaderSecretKey       = "headerKey"
+		customHeaderSecretData      = "bar_token"
 	)
 
 	BeforeAll(func() {
@@ -59,6 +68,19 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			},
 			Data: data,
 		}
+
+		customHeaderSecretData := map[string][]byte{
+			customHeaderSecretKey: []byte(customHeaderSecretData),
+		}
+
+		customHeaderSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "custom-auth-header-metric",
+				Namespace: "default",
+			},
+			Data: customHeaderSecretData,
+		}
+
 		metricPipeline := &telemetryv1alpha1.MetricPipeline{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "dummy",
@@ -89,15 +111,39 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 								},
 							},
 						},
+						Headers: []telemetryv1alpha1.Header{
+							{
+								Name:   customHeaderName,
+								Prefix: customHeaderPrefix,
+								ValueType: telemetryv1alpha1.ValueType{
+									Value: customHeaderPlainValue,
+								},
+							},
+							{
+								Name:   customHeaderNameForSecret,
+								Prefix: customHeaderPrefixForSecret,
+								ValueType: telemetryv1alpha1.ValueType{
+									ValueFrom: &telemetryv1alpha1.ValueFromSource{
+										SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+											Key:       customHeaderSecretKey,
+											Name:      "custom-auth-header-metric",
+											Namespace: "default",
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
 		}
 
 		Expect(k8sClient.Create(ctx, secret)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, customHeaderSecret)).Should(Succeed())
 		Expect(k8sClient.Create(ctx, metricPipeline)).Should(Succeed())
 
 		DeferCleanup(func() {
+			Expect(k8sClient.Delete(ctx, customHeaderSecret)).Should(Succeed())
 			Expect(k8sClient.Delete(ctx, metricPipeline)).Should(Succeed())
 		})
 	})
@@ -241,6 +287,34 @@ var _ = Describe("Deploying a MetricPipeline", Ordered, func() {
 			}
 
 			return validateSecret(otelCollectorSecret, "new-secret-username", "new-secret-password")
+		}, timeout, interval).Should(BeNil())
+	})
+
+	It("Should have a secret with custom header value and prefix", func() {
+		Eventually(func() error {
+			var otelCollectorSecret corev1.Secret
+			if err := k8sClient.Get(ctx, types.NamespacedName{
+				Name:      "telemetry-metric-gateway",
+				Namespace: "telemetry-system",
+			}, &otelCollectorSecret); err != nil {
+				return err
+			}
+
+			return validateSecretDataWithKey(otelCollectorSecret, "HEADER_DUMMY_TOKEN", fmt.Sprintf("%s %s", customHeaderPrefix, customHeaderPlainValue))
+		}, timeout, interval).Should(BeNil())
+	})
+
+	It("Should have a secret with custom header value and prefix from secret value", func() {
+		Eventually(func() error {
+			var otelCollectorSecret corev1.Secret
+			if err := k8sClient.Get(ctx, types.NamespacedName{
+				Name:      "telemetry-metric-gateway",
+				Namespace: "telemetry-system",
+			}, &otelCollectorSecret); err != nil {
+				return err
+			}
+
+			return validateSecretDataWithKey(otelCollectorSecret, "HEADER_DUMMY_AUTHORIZATION", fmt.Sprintf("%s %s", customHeaderPrefixForSecret, customHeaderSecretData))
 		}, timeout, interval).Should(BeNil())
 	})
 

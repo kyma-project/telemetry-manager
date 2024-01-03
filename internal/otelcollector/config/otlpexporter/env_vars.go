@@ -53,7 +53,7 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 		if err != nil {
 			return nil, err
 		}
-		secretData[key] = resolveHeaderValuePrefix(header, value)
+		secretData[key] = prefixHeaderValue(header, value)
 	}
 
 	if output.TLS != nil {
@@ -86,7 +86,7 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 	return secretData, nil
 }
 
-func resolveHeaderValuePrefix(header telemetryv1alpha1.Header, value []byte) []byte {
+func prefixHeaderValue(header telemetryv1alpha1.Header, value []byte) []byte {
 	if len(strings.TrimSpace(header.Prefix)) > 0 {
 		return []byte(fmt.Sprintf("%s %s", strings.TrimSpace(header.Prefix), string(value)))
 	}

@@ -169,8 +169,9 @@ spec:
                               description: Defines the header name.
                               type: string
                             prefix:
-                              description: Defines the header value prefix, the prefix
-                                uses by default a single space character as separator
+                              description: Defines an optional header value prefix.
+                                The prefix is separated from the value by a space
+                                character.
                               type: string
                             value:
                               description: The value as plain text.
