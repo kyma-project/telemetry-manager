@@ -31,3 +31,4 @@ jobs:
         run: make release
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GORELEASER_CURRENT_TAG: "${{ github.ref_name }}" # Explicitly set release tag to do not use -dev tag

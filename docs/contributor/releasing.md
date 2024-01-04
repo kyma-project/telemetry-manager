@@ -10,8 +10,17 @@ This release process covers the steps to release new major and minor versions fo
 
 3. Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
-4. Bump the `telemetry-manager/main` branch with the new versions for the dependent images.
-   Create a PR to `telemetry-manager/main` with the following changes:
+4. In the `telemetry-manager` repository, create a release branch.
+   The name of this branch must follow the `release-x.y` pattern, such as `release-1.0`.
+
+   ```bash
+   git fetch upstream
+   git checkout --no-track -b {RELEASE_BRANCH} upstream/main
+   git push upstream {RELEASE_BRANCH}
+   ```
+
+5. Bump the `telemetry-manager/{RELEASE_BRANCH}` branch with the new versions for the dependent images.
+   Create a PR to `telemetry-manager/{RELEASE_BRANCH}` with the following changes:
    - `Makefile`:
       - For the `IMG` variable, update the tag of the `telemetry-manager` image with the new module version following the `x.y.z` pattern. For example, `IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.0.0`.
    - `config/manager/kustomization.yaml`:
@@ -21,16 +30,7 @@ This release process covers the steps to release new major and minor versions fo
         - Update the tag of the `telemetry-manager` image with the new module version following the `x.y.z` pattern. For example, `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.0.0`.
         - Ensure that all other images have the same versions as those used in the `main.go` file.
 
-5. Merge the PR.
-
-6. In the `telemetry-manager` repository, create a release branch.
-   The name of this branch must follow the `release-x.y` pattern, such as `release-1.0`.
-
-   ```bash
-   git fetch upstream
-   git checkout --no-track -b {RELEASE_BRANCH} upstream/main
-   git push upstream {RELEASE_BRANCH}
-   ```
+6. Merge the PR.
 
 7. In the `telemetry-manager/{RELEASE_BRANCH}` branch, create release tags for the head commit.
 
@@ -39,7 +39,7 @@ This release process covers the steps to release new major and minor versions fo
    git tag {RELEASE_DEV_VERSION}
    ```
 
-   Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`, and replace {RELEASE_DEV_VERSION} with the new development module version, for example, `1.0.0-dev`. The release tags point to the HEAD commit in `telemetry-manager/main` and `telemetry-manager/{RELEASE_BRANCH}` branches.
+   Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`, and replace {RELEASE_DEV_VERSION} with the new development module version, for example, `1.0.0-dev`. The release tags point to the HEAD commit in `telemetry-manager/{RELEASE_BRANCH}` branch.
 
 8. Push the tags to the upstream repository.
 
@@ -58,6 +58,8 @@ This release process covers the steps to release new major and minor versions fo
      git push --delete upstream {RELEASE_VERSION}
      git push upstream {RELEASE_VERSION}
      ```
+
+10. If the previous release was a bugfix version (patch release) that contains cherry-picked changes, these changes might appear again in the generated change log. Edit the release description and remove redundant entries if necessary.
 
 ## Changelog
 
