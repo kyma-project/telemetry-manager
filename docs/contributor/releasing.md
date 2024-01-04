@@ -39,7 +39,7 @@ This release process covers the steps to release new major and minor versions fo
    git tag {RELEASE_DEV_VERSION}
    ```
 
-   Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`, and replace {RELEASE_DEV_VERSION} with the new development module version, for example, `1.0.0-dev`. The release tags point to the HEAD commit in `telemetry-manager/{RELEASE_BRANCH}` branches.
+   Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`, and replace {RELEASE_DEV_VERSION} with the new development module version, for example, `1.0.0-dev`. The release tags point to the HEAD commit in `telemetry-manager/{RELEASE_BRANCH}` branch.
 
 8. Push the tags to the upstream repository.
 
@@ -59,7 +59,7 @@ This release process covers the steps to release new major and minor versions fo
      git push upstream {RELEASE_VERSION}
      ```
 
-10. If the previous release was a bugfix version that contains cherry-picked changes, these change might appear again in the generated change log. Edit the release description and remove redundant entries if necessary.
+10. If the previous release was a bugfix version (patch release) that contains cherry-picked changes, these changes might appear again in the generated change log. Edit the release description and remove redundant entries if necessary.
 
 ## Changelog
 
