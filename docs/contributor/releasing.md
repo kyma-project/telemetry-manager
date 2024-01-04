@@ -10,7 +10,16 @@ This release process covers the steps to release new major and minor versions fo
 
 3. Create a new [GitHub milestone](https://github.com/kyma-project/telemetry-manager/milestones) for the next version.
 
-4. Bump the `telemetry-manager/main` branch with the new versions for the dependent images.
+4. In the `telemetry-manager` repository, create a release branch.
+   The name of this branch must follow the `release-x.y` pattern, such as `release-1.0`.
+
+   ```bash
+   git fetch upstream
+   git checkout --no-track -b {RELEASE_BRANCH} upstream/main
+   git push upstream {RELEASE_BRANCH}
+   ```
+
+5. Bump the `telemetry-manager/main` branch with the new versions for the dependent images.
    Create a PR to `telemetry-manager/main` with the following changes:
    - `Makefile`:
       - For the `IMG` variable, update the tag of the `telemetry-manager` image with the new module version following the `x.y.z` pattern. For example, `IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.0.0`.
@@ -21,16 +30,7 @@ This release process covers the steps to release new major and minor versions fo
         - Update the tag of the `telemetry-manager` image with the new module version following the `x.y.z` pattern. For example, `europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.0.0`.
         - Ensure that all other images have the same versions as those used in the `main.go` file.
 
-5. Merge the PR.
-
-6. In the `telemetry-manager` repository, create a release branch.
-   The name of this branch must follow the `release-x.y` pattern, such as `release-1.0`.
-
-   ```bash
-   git fetch upstream
-   git checkout --no-track -b {RELEASE_BRANCH} upstream/main
-   git push upstream {RELEASE_BRANCH}
-   ```
+6. Merge the PR.
 
 7. In the `telemetry-manager/{RELEASE_BRANCH}` branch, create release tags for the head commit.
 
