@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/tlsvalidation"
 	"net/url"
 	"path"
 
@@ -107,7 +108,7 @@ func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][
 				return err
 			}
 
-			sanitizedCert, sanitizedKey := secretref.ValidateAndSanitizeTLSSecret(cert, key)
+			sanitizedCert, sanitizedKey := tlsvalidation.SanitizeTLSSecret(cert, key)
 
 			tlsConfigCertVariable := makeTLSCertVariable(pipelineName)
 			secretData[tlsConfigCertVariable] = sanitizedCert

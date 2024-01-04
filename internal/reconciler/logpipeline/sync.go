@@ -13,7 +13,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
-	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/tlsvalidation"
 	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
@@ -194,7 +194,7 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 				return err
 			}
 
-			sanitizedCert, sanitizedKey := secretref.ValidateAndSanitizeTLSSecret(newSecret.Data[targetCertVariable], newSecret.Data[targetKeyVariable])
+			sanitizedCert, sanitizedKey := tlsvalidation.SanitizeTLSSecret(newSecret.Data[targetCertVariable], newSecret.Data[targetKeyVariable])
 			newSecret.Data[targetCertVariable] = sanitizedCert
 			newSecret.Data[targetKeyVariable] = sanitizedKey
 		}
