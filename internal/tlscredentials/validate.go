@@ -1,4 +1,4 @@
-package tlsvalidation
+package tlscredentials
 
 import (
 	"crypto/tls"
