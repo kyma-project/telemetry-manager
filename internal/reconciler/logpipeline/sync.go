@@ -13,6 +13,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	"github.com/kyma-project/telemetry-manager/internal/tls"
 	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
@@ -174,24 +175,28 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 			continue
 		}
 
-		tls := output.HTTP.TLSConfig
-		if tls.CA.IsDefined() {
+		tlsConfig := output.HTTP.TLSConfig
+		if tlsConfig.CA.IsDefined() {
 			targetKey := fmt.Sprintf("%s-ca.crt", logPipelines[i].Name)
-			if err := s.copyFromValueOrSecret(ctx, *tls.CA, targetKey, newSecret.Data); err != nil {
+			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.CA, targetKey, newSecret.Data); err != nil {
 				return err
 			}
 		}
-		if tls.Cert.IsDefined() {
-			targetKey := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
-			if err := s.copyFromValueOrSecret(ctx, *tls.Cert, targetKey, newSecret.Data); err != nil {
+
+		if tlsConfig.Cert.IsDefined() && tlsConfig.Key.IsDefined() {
+			targetCertVariable := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
+			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.Cert, targetCertVariable, newSecret.Data); err != nil {
 				return err
 			}
-		}
-		if tls.Key.IsDefined() {
-			targetKey := fmt.Sprintf("%s-key.key", logPipelines[i].Name)
-			if err := s.copyFromValueOrSecret(ctx, *tls.Key, targetKey, newSecret.Data); err != nil {
+
+			targetKeyVariable := fmt.Sprintf("%s-key.key", logPipelines[i].Name)
+			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.Key, targetKeyVariable, newSecret.Data); err != nil {
 				return err
 			}
+
+			sanitizedCert, sanitizedKey := tls.SanitizeSecret(newSecret.Data[targetCertVariable], newSecret.Data[targetKeyVariable])
+			newSecret.Data[targetCertVariable] = sanitizedCert
+			newSecret.Data[targetKeyVariable] = sanitizedKey
 		}
 
 		if err = controllerutil.SetOwnerReference(&logPipelines[i], &newSecret, s.Scheme()); err != nil {
