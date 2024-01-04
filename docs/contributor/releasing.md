@@ -19,8 +19,8 @@ This release process covers the steps to release new major and minor versions fo
    git push upstream {RELEASE_BRANCH}
    ```
 
-5. Bump the `telemetry-manager/main` branch with the new versions for the dependent images.
-   Create a PR to `telemetry-manager/main` with the following changes:
+5. Bump the `telemetry-manager/{RELEASE_BRANCH}` branch with the new versions for the dependent images.
+   Create a PR to `telemetry-manager/{RELEASE_BRANCH}` with the following changes:
    - `Makefile`:
       - For the `IMG` variable, update the tag of the `telemetry-manager` image with the new module version following the `x.y.z` pattern. For example, `IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.0.0`.
    - `config/manager/kustomization.yaml`:
@@ -39,7 +39,7 @@ This release process covers the steps to release new major and minor versions fo
    git tag {RELEASE_DEV_VERSION}
    ```
 
-   Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`, and replace {RELEASE_DEV_VERSION} with the new development module version, for example, `1.0.0-dev`. The release tags point to the HEAD commit in `telemetry-manager/main` and `telemetry-manager/{RELEASE_BRANCH}` branches.
+   Replace {RELEASE_VERSION} with the new module version, for example, `1.0.0`, and replace {RELEASE_DEV_VERSION} with the new development module version, for example, `1.0.0-dev`. The release tags point to the HEAD commit in `telemetry-manager/{RELEASE_BRANCH}` branches.
 
 8. Push the tags to the upstream repository.
 
