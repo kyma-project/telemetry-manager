@@ -59,6 +59,8 @@ This release process covers the steps to release new major and minor versions fo
      git push upstream {RELEASE_VERSION}
      ```
 
+10. If the previous release was a bugfix version that contains cherry-picked changes, these change might appear again in the generated change log. Edit the release description and remove redundant entries if necessary.
+
 ## Changelog
 
 Every PR's title must adhere to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification for an automatic changelog generation. It is enforced by a [semantic-pull-request](https://github.com/marketplace/actions/semantic-pull-request) GitHub Action.
