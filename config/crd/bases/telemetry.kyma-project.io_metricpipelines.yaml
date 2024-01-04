@@ -329,6 +329,11 @@ spec:
                             name:
                               description: Defines the header name.
                               type: string
+                            prefix:
+                              description: Defines an optional header value prefix.
+                                The prefix is separated from the value by a space
+                                character.
+                              type: string
                             value:
                               description: The value as plain text.
                               type: string

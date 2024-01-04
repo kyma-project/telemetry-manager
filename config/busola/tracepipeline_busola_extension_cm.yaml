@@ -85,6 +85,9 @@ data:
                       - name: Name
                         source: name
                         visibility: $exists(name)
+                      - name: Prefix
+                        source: prefix
+                        visibility: $exists(prefix)
                       - name: Value
                         source: value
                         visibility: $exists(value)
@@ -238,6 +241,10 @@ data:
               children:
                 - name: Name
                   path: name
+                  widget: Text
+                  simple: true
+                - name: Prefix
+                  path: prefix
                   widget: Text
                   simple: true
                 - name: Value

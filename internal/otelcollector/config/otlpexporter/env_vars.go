@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -52,7 +53,7 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 		if err != nil {
 			return nil, err
 		}
-		secretData[key] = value
+		secretData[key] = prefixHeaderValue(header, value)
 	}
 
 	if output.TLS != nil {
@@ -83,6 +84,14 @@ func makeEnvVars(ctx context.Context, c client.Reader, output *telemetryv1alpha1
 	}
 
 	return secretData, nil
+}
+
+func prefixHeaderValue(header telemetryv1alpha1.Header, value []byte) []byte {
+	if len(strings.TrimSpace(header.Prefix)) > 0 {
+		return []byte(fmt.Sprintf("%s %s", strings.TrimSpace(header.Prefix), string(value)))
+	}
+
+	return value
 }
 
 func resolveEndpointURL(ctx context.Context, c client.Reader, output *telemetryv1alpha1.OtlpOutput) ([]byte, error) {
