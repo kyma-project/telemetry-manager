@@ -17,20 +17,23 @@ const (
 	AppLabelValue = "workload"
 
 	// Predefined names for Kubernetes resources
-	PodWithBothLabelsName     = "pod-with-both-app-labels" //#nosec G101 -- This is a false positive
-	PodWithAppLabelName       = "pod-with-app-label"
-	DeploymentName            = "deployment"
-	StatefulSetName           = "stateful-set"
-	DaemonSetName             = "daemon-set"
-	JobName                   = "job"
-	PodWithUnknownServiceName = "pod-with-unknown-service"
+	PodWithBothLabelsName            = "pod-with-both-app-labels" //#nosec G101 -- This is a false positive
+	PodWithAppLabelName              = "pod-with-app-label"
+	DeploymentName                   = "deployment"
+	StatefulSetName                  = "stateful-set"
+	DaemonSetName                    = "daemon-set"
+	JobName                          = "job"
+	PodWithNoLabelsName              = "pod-with-no-labels"
+	PodWithUnknownServicePatternName = "pod-with-unknown-service-pattern"
+	PodWithUnknownServiceName        = "pod-with-unknown-service"
 )
 
 // K8sObjects generates and returns a list of Kubernetes objects
 // that are set up for testing service name enrichment.
 func K8sObjects(namespace string, signalType telemetrygen.SignalType) []client.Object {
 	podSpecWithUndefinedServiceNameAttr := telemetrygen.PodSpec(signalType, "")
-	podSpecWithUnknownServiceNameAttr := telemetrygen.PodSpec(signalType, "unknown_service:bash")
+	podSpecWithUnknownServiceNamePatternAttr := telemetrygen.PodSpec(signalType, "unknown_service:bash")
+	podSpecWithUnknownServiceNameAttr := telemetrygen.PodSpec(signalType, "unknown_service")
 	return []client.Object{
 		kitk8s.NewPod(PodWithBothLabelsName, namespace).
 			WithLabel("app.kubernetes.io/name", KubeAppLabelValue).
@@ -45,6 +48,8 @@ func K8sObjects(namespace string, signalType telemetrygen.SignalType) []client.O
 		kitk8s.NewStatefulSet(StatefulSetName, namespace).WithPodSpec(podSpecWithUndefinedServiceNameAttr).K8sObject(),
 		kitk8s.NewDaemonSet(DaemonSetName, namespace).WithPodSpec(podSpecWithUndefinedServiceNameAttr).K8sObject(),
 		kitk8s.NewJob(JobName, namespace).WithPodSpec(podSpecWithUndefinedServiceNameAttr).K8sObject(),
+		kitk8s.NewPod(PodWithNoLabelsName, namespace).WithPodSpec(podSpecWithUndefinedServiceNameAttr).K8sObject(),
+		kitk8s.NewPod(PodWithUnknownServicePatternName, namespace).WithPodSpec(podSpecWithUnknownServiceNamePatternAttr).K8sObject(),
 		kitk8s.NewPod(PodWithUnknownServiceName, namespace).WithPodSpec(podSpecWithUnknownServiceNameAttr).K8sObject(),
 	}
 }

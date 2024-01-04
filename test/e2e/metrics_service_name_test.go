@@ -115,6 +115,10 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 			verifyServiceNameAttr(servicenamebundle.JobName, servicenamebundle.JobName)
 		})
 
+		It("Should set undefined service.name attribute to Pod name", func() {
+			verifyServiceNameAttr(servicenamebundle.PodWithNoLabelsName, servicenamebundle.PodWithNoLabelsName)
+		})
+
 		It("Should set undefined service.name attribute to unknown_service", func() {
 			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP)
 			kitmetrics.MakeAndSendGaugeMetrics(proxyClient, gatewayPushURL)
@@ -131,7 +135,11 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should set unknown service.name attribute to Pod name", func() {
+		It("Should enrich service.name attribute when its value is unknown_service:<process.executable.name>", func() {
+			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServicePatternName, servicenamebundle.PodWithUnknownServicePatternName)
+		})
+
+		It("Should enrich service.name attribute when its value is unknown_service", func() {
 			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServiceName, servicenamebundle.PodWithUnknownServiceName)
 		})
 
