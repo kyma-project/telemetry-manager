@@ -21,7 +21,7 @@ The downside is that only a limited set of features is available. If you want to
 
 The gateways automatically enrich your data by adding the following attributes:
 
-- `service.name`: The logical name of the service that emits the telemetry data. If not provided by the user, it is populated from Kubernetes metadata, based on the following hierarchy of labels and names:
+- `service.name`: The logical name of the service that emits the telemetry data. If not provided by the user or its value contains the substring `unknown_service`, then it is populated from Kubernetes metadata, based on the following hierarchy of labels and names:
   1. `app.kubernetes.io/name` Pod label value.
   2. `app` Pod label value.
   3. Deployment/DaemonSet/StatefulSet/Job name.
