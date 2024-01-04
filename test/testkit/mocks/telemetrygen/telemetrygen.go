@@ -1,11 +1,12 @@
 package telemetrygen
 
 import (
+	"fmt"
+
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	"fmt"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
