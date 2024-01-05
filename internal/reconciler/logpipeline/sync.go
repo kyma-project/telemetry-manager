@@ -182,6 +182,7 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 				return err
 			}
 		}
+
 		if tlsConfig.Cert.IsDefined() && tlsConfig.Key.IsDefined() {
 			targetCertVariable := fmt.Sprintf("%s-cert.crt", logPipelines[i].Name)
 			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.Cert, targetCertVariable, newSecret.Data); err != nil {
@@ -192,6 +193,7 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 			if err := s.copyFromValueOrSecret(ctx, *tlsConfig.Key, targetKeyVariable, newSecret.Data); err != nil {
 				return err
 			}
+
 			sanitizedCert, sanitizedKey := tls.SanitizeSecret(newSecret.Data[targetCertVariable], newSecret.Data[targetKeyVariable])
 			newSecret.Data[targetCertVariable] = sanitizedCert
 			newSecret.Data[targetKeyVariable] = sanitizedKey
