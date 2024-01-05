@@ -270,10 +270,15 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 
 	var envSecret corev1.Secret
 	if err := r.Get(ctx, r.config.EnvSecret, &envSecret); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.EnvSecret.Namespace, r.config.EnvSecret.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s Secret: %v", r.config.EnvSecret.Namespace, r.config.EnvSecret.Name, err)
 	}
 
-	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret}), nil
+	var tlsSecret corev1.Secret
+	if err := r.Get(ctx, r.config.OutputTLSConfigSecret, &tlsSecret); err != nil {
+		return "", fmt.Errorf("failed to get %s/%s Secret: %v", r.config.OutputTLSConfigSecret.Namespace, r.config.OutputTLSConfigSecret.Name, err)
+	}
+
+	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret, tlsSecret}), nil
 }
 
 // getDeployableLogPipelines returns the list of log pipelines that are ready to be rendered into the Fluent Bit configuration.
