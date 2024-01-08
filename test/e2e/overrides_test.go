@@ -16,17 +16,20 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitovrr "github.com/kyma-project/telemetry-manager/test/testkit/kyma/overrides"
 	kitlogpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
+	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
+	kittracepipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Overrides", Label("logging"), Ordered, func() {
+var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 	const (
 		mockBackendName = "overrides-receiver"
 		mockNs          = "overrides-http-output"
 		pipelineName    = "overrides-pipeline"
+		appNameLabelKey = "app.kubernetes.io/name"
 	)
 	var telemetryExportURL string
 	var overrides *corev1.ConfigMap
@@ -36,16 +39,17 @@ var _ = Describe("Overrides", Label("logging"), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(isOperational()))
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		logPipeline := kitlogpipeline.NewPipeline(pipelineName).
 			WithSystemNamespaces(true).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
-			WithHTTPOutput().
-			Persistent(isOperational())
-		objs = append(objs, logPipeline.K8sObject())
+			WithHTTPOutput()
+		metricPipeline := kitmetricpipeline.NewPipeline(pipelineName)
+		tracePipeline := kittracepipeline.NewPipeline(pipelineName)
+		objs = append(objs, logPipeline.K8sObject(), metricPipeline.K8sObject(), tracePipeline.K8sObject())
 
 		return objs
 	}
@@ -70,15 +74,15 @@ var _ = Describe("Overrides", Label("logging"), Ordered, func() {
 	})
 
 	Context("When a logpipeline with HTTP output exists", Ordered, func() {
-		It("Should have a running logpipeline", Label(operationalTest), func() {
+		It("Should have a running logpipeline", func() {
 			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a log backend running", Label(operationalTest), func() {
+		It("Should have a log backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
 		})
 
-		It("Should have INFO level logs in the backend", Label(operationalTest), func() {
+		It("Should have INFO level logs in the backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -92,7 +96,7 @@ var _ = Describe("Overrides", Label("logging"), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should not have any DEBUG level logs in the backend", Label(operationalTest), func() {
+		It("Should not have any DEBUG level logs in the backend", func() {
 			Consistently(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -107,12 +111,10 @@ var _ = Describe("Overrides", Label("logging"), Ordered, func() {
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should add the overrides configmap and modify the log pipeline", Label(operationalTest), func() {
-			// Add overrides configmap
+		It("Should add the overrides configmap and modify the log pipeline", func() {
 			overrides = kitovrr.NewOverrides(kitovrr.DEBUG).K8sObject()
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, overrides)).Should(Succeed())
 
-			// Get logPipeline
 			lookupKey := types.NamespacedName{
 				Name: pipelineName,
 			}
@@ -120,18 +122,17 @@ var _ = Describe("Overrides", Label("logging"), Ordered, func() {
 			err := k8sClient.Get(ctx, lookupKey, &logPipeline)
 			Expect(err).ToNot(HaveOccurred())
 
-			// Annotate logPipeline
 			if logPipeline.ObjectMeta.Annotations == nil {
 				logPipeline.ObjectMeta.Annotations = map[string]string{}
 			}
 			logPipeline.ObjectMeta.Annotations["test-annotation"] = "test-value"
 
-			// Update logPipeline
+			// Update the logPipeline to trigger the reconciliation loop, so that new DEBUG logs are generated
 			err = k8sClient.Update(ctx, &logPipeline)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("Should have DEBUG level logs in the backend", Label(operationalTest), func() {
+		It("Should have DEBUG level logs in the backend", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -144,6 +145,24 @@ var _ = Describe("Overrides", Label("logging"), Ordered, func() {
 					))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+	})
+
+	Context("When an overrides configmap exists", func() {
+		It("Should disable the reconciliation of the logpipeline", func() {
+			verifiers.PipelineReconciliationShouldBeDisabled(ctx, k8sClient, "telemetry-fluent-bit", appNameLabelKey)
+		})
+
+		It("Should disable the reconciliation of the metricpipeline", func() {
+			verifiers.PipelineReconciliationShouldBeDisabled(ctx, k8sClient, "telemetry-metric-gateway", appNameLabelKey)
+		})
+
+		It("Should disable the reconciliation of the tracepipeline", func() {
+			verifiers.PipelineReconciliationShouldBeDisabled(ctx, k8sClient, "telemetry-trace-collector", appNameLabelKey)
+		})
+
+		It("Should disable the reconciliation of the telemetry CR", func() {
+			verifiers.TelemetryReconciliationShouldBeDisabled(ctx, k8sClient, "validation.webhook.telemetry.kyma-project.io", appNameLabelKey)
 		})
 	})
 })

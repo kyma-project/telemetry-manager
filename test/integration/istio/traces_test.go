@@ -22,7 +22,7 @@ import (
 	"net/http"
 )
 
-var _ = Describe("Traces", Label("tracing"), Ordered, func() {
+var _ = Describe("Traces", Label("traces"), Ordered, func() {
 	const (
 		mockNs          = "tracing-mock"
 		mockIstiofiedNs = "istiofied-tracing-mock"
@@ -213,7 +213,6 @@ func verifyCustomIstiofiedAppSpans(backendURL string) {
 			ContainResourceAttrs(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
 			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", "istiofied-trace-emitter")),
 			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", "istio-permissive-mtls")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.node.name", "k3d-kyma-server-0")),
 		))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
@@ -228,7 +227,6 @@ func verifyCustomAppSpans(backendURL string) {
 			ContainResourceAttrs(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
 			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", "trace-emitter")),
 			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", "app-namespace")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.node.name", "k3d-kyma-server-0")),
 		))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

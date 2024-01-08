@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/ottlexpr"
 )
 
 func ResolveServiceNameStatements() []config.TransformProcessorStatements {
@@ -31,9 +32,18 @@ func ResolveServiceNameStatements() []config.TransformProcessorStatements {
 	}
 }
 
-const serviceNameNotDefinedCondition = "attributes[\"service.name\"] == nil or attributes[\"service.name\"] == \"\" or attributes[\"service.name\"] == \"unknown_service\""
+// serviceNameNotDefinedBasicCondition specifies the cases for which the service.name attribute is not defined
+// without considering the "unknown_service" and the "unknown_service:<process.executable.name>" cases
+const serviceNameNotDefinedBasicCondition = "attributes[\"service.name\"] == nil or attributes[\"service.name\"] == \"\""
 
 func inferServiceNameFromAttr(attrKey string) string {
+	// serviceNameNotDefinedCondition builds up on the serviceNameNotDefinedBasicCondition
+	// to consider the "unknown_service" and the "unknown_service:<process.executable.name>" cases
+	serviceNameNotDefinedCondition := fmt.Sprintf(
+		"%s or %s",
+		serviceNameNotDefinedBasicCondition,
+		ottlexpr.IsMatch("attributes[\"service.name\"]", "unknown_service"),
+	)
 	return fmt.Sprintf(
 		"set(attributes[\"service.name\"], attributes[\"%s\"]) where %s",
 		attrKey,
@@ -44,6 +54,6 @@ func inferServiceNameFromAttr(attrKey string) string {
 func setDefaultServiceName() string {
 	return fmt.Sprintf(
 		"set(attributes[\"service.name\"], \"unknown_service\") where %s",
-		serviceNameNotDefinedCondition,
+		serviceNameNotDefinedBasicCondition,
 	)
 }

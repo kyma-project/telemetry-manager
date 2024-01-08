@@ -66,6 +66,9 @@ data:
                 visibility: $exists(spec.input.prometheus.namespaces.exclude)
                 source: spec.input.prometheus.namespaces.exclude
                 separator: ', '
+              - name: Diagnostic Metrics
+                visibility: $exists(spec.input.prometheus.diagnosticMetrics.enabled)
+                source: spec.input.prometheus.diagnosticMetrics.enabled
           - name: Istio
             widget: Panel
             visibility: $exists(spec.input.istio)
@@ -83,6 +86,9 @@ data:
                 visibility: $exists(spec.input.istio.namespaces.exclude)
                 source: spec.input.istio.namespaces.exclude
                 separator: ', '
+              - name: Diagnostic Metrics
+                visibility: $exists(spec.input.istio.diagnosticMetrics.enabled)
+                source: spec.input.istio.diagnosticMetrics.enabled
           - name: Runtime
             widget: Panel
             visibility: $exists(spec.input.runtime)
@@ -181,6 +187,9 @@ data:
                       - name: Name
                         source: name
                         visibility: $exists(name)
+                      - name: Prefix
+                        source: prefix
+                        visibility: $exists(prefix)
                       - name: Value
                         source: value
                         visibility: $exists(value)
@@ -269,6 +278,9 @@ data:
               defaultExpanded: true
               children:
                 - path: '[]'
+            - name: Enable Diagnostic Metrics
+              path: diagnosticMetrics.enabled
+              simple: true
         - name: Istio
           path: istio
           widget: FormGroup
@@ -289,6 +301,9 @@ data:
               defaultExpanded: true
               children:
                 - path: '[]'
+            - name: Enable Diagnostic Metrics
+              path: diagnosticMetrics.enabled
+              simple: true
         - name: Runtime
           path: runtime
           widget: FormGroup
@@ -419,6 +434,10 @@ data:
               children:
                 - name: Name
                   path: name
+                  widget: Text
+                  simple: true
+                - name: Prefix
+                  path: prefix
                   widget: Text
                   simple: true
                 - name: Value

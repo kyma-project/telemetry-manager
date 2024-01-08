@@ -1,15 +1,14 @@
 # Image URL to use all building/pushing image targets
-IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.6.0
+IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.27.1
-ISTIO_VERSION ?= 1.2.0
+ISTIO_VERSION ?= 1.2.1
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
 # Operating system type
 OS_TYPE ?= $(shell uname)
 PROJECT_DIR ?= $(shell pwd)
 ARTIFACTS ?= $(shell pwd)/artifacts
-GARDENER_GCP_MACHINE_TYPE ?= n1-standard-8
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -102,57 +101,67 @@ provision-test-env: provision-k3d
 provision-k3d: k3d
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-k3d.sh
 
-.PHONY: e2e-test
-e2e-test: provision-test-env ## Provision k3d cluster and run end-to-end tests.
+.PHONY: e2e-test-logs
+e2e-test-logs: provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end logs tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
-	make run-e2e-test
+	make run-e2e-test-logs
 
-.PHONY: e2e-test-logging
-e2e-test-logging: provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end logging tests.
+.PHONY: e2e-test-traces
+e2e-test-traces: provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end traces tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
-	make run-e2e-test-logging
-
-.PHONY: e2e-test-tracing
-e2e-test-tracing: provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end tracing tests.
-	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
-	make run-e2e-test-tracing
+	make run-e2e-test-traces
 
 .PHONY: e2e-test-metrics
 e2e-test-metrics: provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end metrics tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 	make run-e2e-test-metrics
 
-.PHONY: e2e-test-logging-release
-e2e-test-logging-release: provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end logging tests.
-	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
-	make run-e2e-test-logging
+.PHONY: e2e-test-telemetry
+e2e-test-telemetry: provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end telemetry tests.
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+	make run-e2e-test-telemetry
 
-.PHONY: e2e-test-tracing-release
-e2e-test-tracing-release: provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end tracing tests.
+.PHONY: e2e-test-logs-release
+e2e-test-logs-release: provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end logs tests.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
-	make run-e2e-test-tracing
+	make run-e2e-test-logs
 
-.PHONY: run-e2e-test
-run-e2e-test: ginkgo test-matchers ## run all end-to-end tests using an existing cluster
-	$(GINKGO) run --tags e2e --junit-report=junit.xml ./test/e2e
+.PHONY: e2e-test-traces-release
+e2e-test-traces-release: provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end traces tests.
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
+	make run-e2e-test-traces
+
+.PHONY: e2e-test-metrics-release
+e2e-test-metrics-release: provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end metrics tests.
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
+	make run-e2e-test-metrics
+
+.PHONY: e2e-test-telemetry-release
+e2e-test-telemetry-release: provision-test-env ## Provision k3d cluster, deploy release (default) variant and run end-to-end telemetry tests.
+	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
+	make run-e2e-test-telemetry
+
+.PHONY: run-e2e-test-logs
+run-e2e-test-logs: ginkgo test-matchers ## run end-to-end logs tests using an existing cluster
+	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="logs" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
-.PHONY: run-e2e-test-logging
-run-e2e-test-logging: ginkgo test-matchers ## run end-to-end metrics tests using an existing cluster
-	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="logging" ./test/e2e
-	mkdir -p ${ARTIFACTS}
-	mv junit.xml ${ARTIFACTS}
-
-.PHONY: run-e2e-test-tracing
-run-e2e-test-tracing: ginkgo test-matchers ## run end-to-end tracing tests using an existing cluster
-	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="tracing" ./test/e2e
+.PHONY: run-e2e-test-traces
+run-e2e-test-traces: ginkgo test-matchers ## run end-to-end traces tests using an existing cluster
+	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="traces" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
 .PHONY: run-e2e-test-metrics
 run-e2e-test-metrics: ginkgo test-matchers ## run end-to-end metrics tests using an existing cluster
 	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="metrics" ./test/e2e
+	mkdir -p ${ARTIFACTS}
+	mv junit.xml ${ARTIFACTS}
+
+.PHONY: run-e2e-test-telemetry
+run-e2e-test-telemetry: ginkgo test-matchers ## run end-to-end telemetry tests using an existing cluster
+	$(GINKGO) run --tags e2e --junit-report=junit.xml --label-filter="telemetry" ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
@@ -174,13 +183,6 @@ e2e-deploy-module: kyma kustomize provision-k3d provision-test-env ## Provision 
 run-e2e-deploy-module: kyma kustomize ## Deploy module with the lifecycle manager.
 	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} ./hack/deploy-module.sh
 
-.PHONY:
-e2e-coverage: ginkgo
-	@$(GINKGO) outline --format indent test/e2e/metrics_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
-	@$(GINKGO) outline --format indent test/e2e/tracing_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
-	@$(GINKGO) outline --format indent test/e2e/logging_test.go  | awk -F "," '{print $$1" "$$2}' | tail -n +2
-
-
 .PHONY: integration-test-istio
 integration-test-istio: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run integration tests with istio.
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
@@ -192,6 +194,11 @@ run-integration-test-istio: ginkgo test-matchers ## run integration tests with i
 	$(GINKGO) run --tags istio --flake-attempts=5 --junit-report=junit.xml ./test/integration/istio
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
+
+.PHONY: check-coverage
+check-coverage: go-test-coverage
+	go test ./... -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
+	$(GO_TEST_COVERAGE) --config=./.testcoverage.yml
 
 ##@ Build
 
@@ -273,6 +280,7 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 GINKGO ?= $(LOCALBIN)/ginkgo
 GOLANGCI-LINT ?= $(LOCALBIN)/golangci-lint
+GO_TEST_COVERAGE ?= $(LOCALBIN)/go-test-coverage
 K3D ?= $(LOCALBIN)/k3d
 KYMA ?= $(LOCALBIN)/kyma-$(KYMA_STABILITY)
 
@@ -282,8 +290,9 @@ TABLE_GEN_VERSION ?= v0.0.0-20230523174756-3dae9f177ffd
 CONTROLLER_TOOLS_VERSION ?= v0.11.3
 K3D_VERSION ?= v5.4.7
 GINKGO_VERSION ?= v2.13.2
-GORELEASER_VERSION ?= v1.17.1
+GORELEASER_VERSION ?= v1.23.0
 GOLANGCI-LINT_VERSION ?= latest
+GO_TEST_COVERAGE_VERSION ?= v2.8.2
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -321,6 +330,12 @@ ginkgo: $(GINKGO) ## Download ginkgo locally if necessary.
 $(GINKGO): $(LOCALBIN)
 	test -s $(GINKGO) && $(GINKGO) version | grep -q $(GINKGO_VERSION) || \
 	GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
+
+.PHONY: go-test-coverage
+go-test-coverage: $(GO_TEST_COVERAGE) ## Download go-test-coverage locally if necessary.
+$(GO_TEST_COVERAGE): $(LOCALBIN)
+	test -s $(GO_TEST_COVERAGE) && $(GO_TEST_COVERAGE) --version | grep -q $(GO_TEST_COVERAGE_VERSION) || \
+	GOBIN=$(LOCALBIN) go install github.com/vladopajic/go-test-coverage/v2@$(GO_TEST_COVERAGE_VERSION)
 
 K3D_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh"
 .PHONY: k3d
@@ -363,7 +378,6 @@ endif
 run-tests-with-git-image: ## Run e2e tests on existing cluster using image related to git commit sha
 	kubectl create namespace kyma-system
 	IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
-	make run-e2e-test
 	make run-integration-test-istio
 
 .PHONY: gardener-integration-test
@@ -375,7 +389,7 @@ gardener-integration-test: ## Provision gardener cluster and run integration tes
 
 .PHONY: provision-gardener
 provision-gardener: kyma ## Provision gardener cluster with latest k8s version
-	${KYMA} provision gardener gcp -t ${GARDENER_GCP_MACHINE_TYPE} -c ${GARDENER_SA_PATH} -n test-${GIT_COMMIT_SHA} -p ${GARDENER_PROJECT} -s ${GARDENER_SECRET_NAME} -k ${GARDENER_K8S_VERSION}\
+	${KYMA} provision gardener gcp -c ${GARDENER_SA_PATH} -n test-${GIT_COMMIT_SHA} -p ${GARDENER_PROJECT} -s ${GARDENER_SECRET_NAME} -k ${GARDENER_K8S_VERSION}\
 		--hibernation-start="00 ${HIBERNATION_HOUR} * * ?"
 
 .PHONY: deprovision-gardener

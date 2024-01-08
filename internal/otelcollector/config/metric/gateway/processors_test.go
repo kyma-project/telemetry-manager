@@ -161,4 +161,40 @@ func TestProcessors(t *testing.T) {
 		expectedCondition = "resource.attributes[\"kyma.source\"] == nil and (resource.attributes[\"k8s.namespace.name\"] == \"ns-1\" or resource.attributes[\"k8s.namespace.name\"] == \"ns-2\")"
 		require.Equal(t, expectedCondition, namespaceFilters["filter/test-filter-by-namespace-otlp-input"].Metrics.Metric[0])
 	})
+
+	t.Run("diagnostic metric filter processor prometheus input using exclude", func(t *testing.T) {
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test").
+				PrometheusInput(true).
+				PrometheusInputDiagnosticMetrics(false).
+				Build()},
+		)
+		require.NoError(t, err)
+
+		prometheusScrapeFilter := collectorConfig.Processors.DropDiagnosticMetricsIfInputSourcePrometheus
+		require.NotNil(t, prometheusScrapeFilter)
+		require.Nil(t, collectorConfig.Processors.DropDiagnosticMetricsIfInputSourceIstio)
+		expectedCondition := "resource.attributes[\"kyma.source\"] == \"prometheus\" and (name == \"up\" or name == \"scrape_duration_seconds\" or name == \"scrape_samples_scraped\" or name == \"scrape_samples_post_metric_relabeling\" or name == \"scrape_series_added\")"
+		require.Len(t, prometheusScrapeFilter.Metrics.Metric, 1)
+		require.Equal(t, prometheusScrapeFilter.Metrics.Metric[0], expectedCondition)
+	})
+
+	t.Run("diagnostic metric filter processor prometheus input using exclude", func(t *testing.T) {
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
+			testutils.NewMetricPipelineBuilder().WithName("test").
+				IstioInput(true).
+				IstioInputDiagnosticMetrics(false).
+				Build()},
+		)
+		require.NoError(t, err)
+
+		istioScrapeFilter := collectorConfig.Processors.DropDiagnosticMetricsIfInputSourceIstio
+		require.NotNil(t, istioScrapeFilter)
+
+		require.Nil(t, collectorConfig.Processors.DropDiagnosticMetricsIfInputSourcePrometheus)
+
+		require.Len(t, istioScrapeFilter.Metrics.Metric, 1)
+		expectedCondition := "resource.attributes[\"kyma.source\"] == \"istio\" and (name == \"up\" or name == \"scrape_duration_seconds\" or name == \"scrape_samples_scraped\" or name == \"scrape_samples_post_metric_relabeling\" or name == \"scrape_series_added\")"
+		require.Equal(t, istioScrapeFilter.Metrics.Metric[0], expectedCondition)
+	})
 }

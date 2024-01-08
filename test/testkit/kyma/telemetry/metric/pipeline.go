@@ -137,6 +137,20 @@ func (p *Pipeline) IstioInput(enable bool, opts ...InputOptions) *Pipeline {
 	return p
 }
 
+func (p *Pipeline) PrometheusInputDiagnosticMetrics(enable bool) *Pipeline {
+	p.prometheus.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{
+		Enabled: enable,
+	}
+	return p
+}
+
+func (p *Pipeline) IstioInputDiagnosticMetrics(enable bool) *Pipeline {
+	p.istio.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{
+		Enabled: enable,
+	}
+	return p
+}
+
 func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
 	p.tls = &telemetryv1alpha1.OtlpTLS{
 		Insecure:           false,

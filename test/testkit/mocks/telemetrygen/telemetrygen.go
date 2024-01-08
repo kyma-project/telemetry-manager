@@ -1,6 +1,8 @@
 package telemetrygen
 
 import (
+	"fmt"
+
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -33,16 +35,18 @@ const (
 )
 
 func New(namespace string) *kitk8s.Pod {
-	return kitk8s.NewPod("telemetrygen", namespace).WithPodSpec(PodSpec(SignalTypeMetrics))
+	return kitk8s.NewPod("telemetrygen", namespace).WithPodSpec(PodSpec(SignalTypeMetrics, ""))
 }
 
-func PodSpec(signalType SignalType) corev1.PodSpec {
+func PodSpec(signalType SignalType, serviceNameAttrValue string) corev1.PodSpec {
 	var gatewayPushURL string
 	if signalType == SignalTypeTraces {
 		gatewayPushURL = "telemetry-otlp-traces.kyma-system:4317"
 	} else if signalType == SignalTypeMetrics {
 		gatewayPushURL = "telemetry-otlp-metrics.kyma-system:4317"
 	}
+
+	serviceNameAttr := fmt.Sprintf("service.name=\"%s\"", serviceNameAttrValue)
 
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
@@ -58,7 +62,7 @@ func PodSpec(signalType SignalType) corev1.PodSpec {
 					"--otlp-endpoint",
 					gatewayPushURL,
 					"--otlp-attributes",
-					"service.name=\"\"",
+					serviceNameAttr,
 					"--otlp-insecure",
 				},
 				ImagePullPolicy: corev1.PullAlways,

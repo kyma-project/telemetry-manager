@@ -215,6 +215,17 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		It("Should verify that istio metric with destination_workload=telemetry-metric-gateway does not exist", func() {
 			verifyMetricIsNotPresent(telemetryExportURL, "destination_workload", "telemetry-metric-gateway")
 		})
+
+		It("Ensures no diagnostic metrics are sent to backend", func() {
+			Consistently(func(g Gomega) {
+				resp, err := proxyClient.Get(telemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					Not(ContainMd(ContainMetric(WithName(BeElementOf("up", "scrape_duration_seconds", "scrape_samples_scraped", "scrape_samples_post_metric_relabeling", "scrape_series_added"))))),
+				))
+			}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
 	})
 })
 

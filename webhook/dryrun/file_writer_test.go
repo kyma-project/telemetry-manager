@@ -55,7 +55,7 @@ func TestPreparePipelineDryRun(t *testing.T) {
 	}
 
 	pipeline := mustLoadManifest[*telemetryv1alpha1.LogPipeline](scheme, "testdata/given/logpipeline-1.yaml")
-	_, err := sut.preparePipelineDryRun(context.Background(), "testdata/actual/pipelines", pipeline)
+	_, err := sut.PreparePipelineDryRun(context.Background(), "testdata/actual/pipelines", pipeline)
 	require.NoError(t, err)
 
 	requireEqualFiles(t, "testdata/expected/pipelines/fluent-bit.conf", "testdata/actual/pipelines/fluent-bit.conf")
@@ -74,7 +74,7 @@ func TestPrepareParsersDryRunAddParser(t *testing.T) {
 	sut := fileWriterImpl{client: client}
 
 	added := mustLoadManifest[*telemetryv1alpha1.LogParser](scheme, "testdata/given/logparser-2.yaml")
-	_, err := sut.prepareParserDryRun(context.Background(), "testdata/actual/parsers", added)
+	_, err := sut.PrepareParserDryRun(context.Background(), "testdata/actual/parsers", added)
 	require.NoError(t, err)
 
 	requireEqualFiles(t, "testdata/expected/parsers/dynamic-parsers/parsers.conf", "testdata/actual/parsers/dynamic-parsers/parsers.conf")
@@ -93,7 +93,7 @@ func TestPrepareParsersDryRunUpdateParser(t *testing.T) {
 	sut := fileWriterImpl{client: client}
 
 	updated := mustLoadManifest[*telemetryv1alpha1.LogParser](scheme, "testdata/given/logparser-2.yaml")
-	_, err := sut.prepareParserDryRun(context.Background(), "testdata/actual/parsers", updated)
+	_, err := sut.PrepareParserDryRun(context.Background(), "testdata/actual/parsers", updated)
 	require.NoError(t, err)
 
 	requireEqualFiles(t, "testdata/expected/parsers/dynamic-parsers/parsers.conf", "testdata/actual/parsers/dynamic-parsers/parsers.conf")

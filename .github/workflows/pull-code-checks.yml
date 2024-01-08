@@ -23,7 +23,7 @@ jobs:
     - name: Run tests
       run: make test
 
-  linting:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -32,9 +32,21 @@ jobs:
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
-      - name: Run linting
+      - name: Run lint
         uses: golangci/golangci-lint-action@v3
         with:
           install-mode: binary
           version: latest
           args: --timeout=5m --config=./.golangci.yaml
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
+
+      - name: Run coverage check
+        run: make check-coverage

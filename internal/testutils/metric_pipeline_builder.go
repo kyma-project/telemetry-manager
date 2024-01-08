@@ -118,6 +118,33 @@ func (b *MetricPipelineBuilder) IstioInput(enable bool, opts ...InputOptions) *M
 	return b
 }
 
+func (b *MetricPipelineBuilder) PrometheusInputDiagnosticMetrics(enable bool) *MetricPipelineBuilder {
+	if b.prometheus == nil {
+		b.prometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{}
+	}
+
+	if b.prometheus.DiagnosticMetrics == nil {
+		b.prometheus.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{}
+	}
+	b.prometheus.DiagnosticMetrics.Enabled = enable
+
+	return b
+}
+
+func (b *MetricPipelineBuilder) IstioInputDiagnosticMetrics(enable bool) *MetricPipelineBuilder {
+	if b.istio == nil {
+		b.istio = &telemetryv1alpha1.MetricPipelineIstioInput{}
+	}
+
+	if b.istio.DiagnosticMetrics == nil {
+		b.istio.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{}
+	}
+
+	b.istio.DiagnosticMetrics.Enabled = enable
+
+	return b
+}
+
 func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
 	if b.otlp == nil {
 		b.otlp = &telemetryv1alpha1.MetricPipelineOtlpInput{}
