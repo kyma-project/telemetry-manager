@@ -54,20 +54,6 @@ func MakeAndSendVictoriaMetricsAgentTraces(proxyClient *apiserver.ProxyClient, o
 	return traceID
 }
 
-func MakeAndSendPrometheusAgentTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
-	spanAttrs := pcommon.NewMap()
-	spanAttrs.PutStr("http.method", "GET")
-	spanAttrs.PutStr("component", "proxy")
-	spanAttrs.PutStr("OperationName", "Ingress")
-	spanAttrs.PutStr("user_agent", "Prometheus/0.1.0")
-
-	resourceAttrs := pcommon.NewMap()
-	resourceAttrs.PutStr("k8s.namespace.name", kitkyma.SystemNamespaceName)
-
-	traceID, _ := MakeAndSendTracesWithAttributes(proxyClient, otlpPushURL, spanAttrs, resourceAttrs)
-	return traceID
-}
-
 func MakeAndSendMetricAgentScrapeTraces(proxyClient *apiserver.ProxyClient, otlpPushURL string) pcommon.TraceID {
 	spanAttrs := pcommon.NewMap()
 	spanAttrs.PutStr("http.method", "GET")
