@@ -4,17 +4,17 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 )
 
 const (
-	replicas           = 1
-	otelCollectorImage = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.89.0-25ff4383"
-	nginxImage         = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
-	fluentDImage       = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1"
+	replicas           int32 = 1
+	otelCollectorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.89.0-25ff4383"
+	nginxImage               = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
+	fluentDImage             = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1"
 )
 
 type Deployment struct {
@@ -59,7 +59,7 @@ func (d *Deployment) K8sObject(opts ...testkit.OptFunc) *appsv1.Deployment {
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: pointer.Int32(replicas),
+			Replicas: ptr.To(replicas),
 			Selector: &metav1.LabelSelector{MatchLabels: labels},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -68,7 +68,7 @@ func (d *Deployment) K8sObject(opts ...testkit.OptFunc) *appsv1.Deployment {
 				Spec: corev1.PodSpec{
 					Containers: containers,
 					SecurityContext: &corev1.PodSecurityContext{
-						FSGroup: pointer.Int64(101),
+						FSGroup: ptr.To[int64](101),
 					},
 					Volumes: volumes,
 				},
@@ -84,7 +84,7 @@ func (d *Deployment) containers() []corev1.Container {
 			Image: otelCollectorImage,
 			Args:  []string{"--config=/etc/collector/config.yaml"},
 			SecurityContext: &corev1.SecurityContext{
-				RunAsUser: pointer.Int64(101),
+				RunAsUser: ptr.To[int64](101),
 			},
 			VolumeMounts: []corev1.VolumeMount{
 				{Name: "config", MountPath: "/etc/collector"},

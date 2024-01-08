@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const checksumAnnotationKey = "checksum/logpipeline-config"
@@ -73,20 +73,20 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 					ServiceAccountName: name.Name,
 					PriorityClassName:  dsConfig.PriorityClassName,
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsNonRoot:   pointer.Bool(false),
+						RunAsNonRoot:   ptr.To(false),
 						SeccompProfile: &corev1.SeccompProfile{Type: "RuntimeDefault"},
 					},
 					Containers: []corev1.Container{
 						{
 							Name: "fluent-bit",
 							SecurityContext: &corev1.SecurityContext{
-								AllowPrivilegeEscalation: pointer.Bool(false),
+								AllowPrivilegeEscalation: ptr.To(false),
 								Capabilities: &corev1.Capabilities{
 									Add:  []corev1.Capability{"FOWNER"},
 									Drop: []corev1.Capability{"ALL"},
 								},
-								Privileged:             pointer.Bool(false),
-								ReadOnlyRootFilesystem: pointer.Bool(true),
+								Privileged:             ptr.To(false),
+								ReadOnlyRootFilesystem: ptr.To(true),
 							},
 							Image:           dsConfig.FluentBitImage,
 							ImagePullPolicy: "IfNotPresent",
@@ -94,7 +94,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 								{
 									SecretRef: &corev1.SecretEnvSource{
 										LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-env", name.Name)},
-										Optional:             pointer.Bool(true),
+										Optional:             ptr.To(true),
 									},
 								},
 							},
@@ -152,9 +152,9 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
-								AllowPrivilegeEscalation: pointer.Bool(false),
-								Privileged:               pointer.Bool(false),
-								ReadOnlyRootFilesystem:   pointer.Bool(true),
+								AllowPrivilegeEscalation: ptr.To(false),
+								Privileged:               ptr.To(false),
+								ReadOnlyRootFilesystem:   ptr.To(true),
 								Capabilities: &corev1.Capabilities{
 									Drop: []corev1.Capability{"ALL"},
 								},
@@ -198,7 +198,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-sections", name.Name)},
-									Optional:             pointer.Bool(true),
+									Optional:             ptr.To(true),
 								},
 							},
 						},
@@ -207,7 +207,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-parsers", name.Name)},
-									Optional:             pointer.Bool(true),
+									Optional:             ptr.To(true),
 								},
 							},
 						},
@@ -216,7 +216,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-files", name.Name)},
-									Optional:             pointer.Bool(true),
+									Optional:             ptr.To(true),
 								},
 							},
 						},
