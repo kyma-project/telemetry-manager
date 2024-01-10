@@ -1,11 +1,12 @@
 resources:
 - manager.yaml
 - metrics_service.yaml
+- alerts_webhook_service.yaml
 - priority_class.yaml
 - priority_class_high.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager
-  newTag: main
+  newName: skhalashatsap/telemetry-operator
+  newTag: prom-test

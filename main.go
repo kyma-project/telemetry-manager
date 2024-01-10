@@ -75,6 +75,7 @@ import (
 	//nolint:gosec // pprof package is required for performance analysis.
 	_ "net/http/pprof"
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
+	"io"
 )
 
 var (
@@ -291,6 +292,41 @@ func main() {
 		if err != nil {
 			mutex.Lock()
 			setupLog.Error(err, "Cannot start pprof server")
+			mutex.Unlock()
+		}
+	}()
+
+	go func() {
+		handler := func(w http.ResponseWriter, r *http.Request) {
+			body, readErr := io.ReadAll(r.Body)
+			if readErr != nil {
+				http.Error(w, "Error reading request body", http.StatusInternalServerError)
+				return
+			}
+			defer r.Body.Close()
+
+			mutex.Lock()
+			setupLog.Info("Webhook was called", "req", string(body))
+			mutex.Unlock()
+
+			w.WriteHeader(http.StatusOK)
+		}
+
+		// Create a ServeMux to route requests
+		mux := http.NewServeMux()
+
+		// Register the alertsHandler for the /api/v2/alerts path
+		mux.HandleFunc("/api/v2/alerts", handler)
+
+		server := &http.Server{
+			Addr:              ":9090",
+			ReadHeaderTimeout: 10 * time.Second,
+			Handler:           mux,
+		}
+
+		if serverErr := server.ListenAndServe(); serverErr != nil {
+			mutex.Lock()
+			setupLog.Error(serverErr, "Cannot start webhook server")
 			mutex.Unlock()
 		}
 	}()
