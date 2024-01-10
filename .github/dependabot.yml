@@ -8,7 +8,7 @@ updates:
     commit-message:
       prefix: "chore(dependabot)"
     labels:
-      - "area/dependencies"
+      - "area/dependency"
 
   - package-ecosystem: "gomod"
     directory: "/"
@@ -21,4 +21,4 @@ updates:
     commit-message:
       prefix: "chore(dependabot)"
     labels:
-      - "area/dependencies"
+      - "area/dependency"
