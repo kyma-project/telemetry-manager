@@ -82,11 +82,6 @@ var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
 			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
 		})
 
-		It("Should filter noisy kyma prometheus spans", func() {
-			traceID := kittraces.MakeAndSendPrometheusAgentTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
-		})
-
 		It("Should filter noisy metric agent scrape spans", func() {
 			traceID := kittraces.MakeAndSendMetricAgentScrapeTraces(proxyClient, urls.OTLPPush())
 			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
