@@ -101,7 +101,7 @@ spec:
   tracing:
   - providers:
     - name: "kyma-traces"
-  randomSamplingPercentage: 5.00
+    randomSamplingPercentage: 5.00
 ```
 
 ### Step 3a: Add Authentication Details From Plain Text

@@ -3,15 +3,15 @@ package otelcollector
 import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 )
 
 const (
-	configMapKey           = "relay.conf"
-	collectorUser          = 10001
-	collectorContainerName = "collector"
+	configMapKey                 = "relay.conf"
+	collectorUser          int64 = 10001
+	collectorContainerName       = "collector"
 )
 
 type podSpecOption = func(pod *corev1.PodSpec)
@@ -82,16 +82,16 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: baseName,
 							},
-							Optional: pointer.Bool(true),
+							Optional: ptr.To(true),
 						},
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					Privileged:               pointer.Bool(false),
-					RunAsUser:                pointer.Int64(collectorUser),
-					RunAsNonRoot:             pointer.Bool(true),
-					ReadOnlyRootFilesystem:   pointer.Bool(true),
-					AllowPrivilegeEscalation: pointer.Bool(false),
+					Privileged:               ptr.To(false),
+					RunAsUser:                ptr.To(collectorUser),
+					RunAsNonRoot:             ptr.To(true),
+					ReadOnlyRootFilesystem:   ptr.To(true),
+					AllowPrivilegeEscalation: ptr.To(false),
 					SeccompProfile: &corev1.SeccompProfile{
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
 					},
@@ -114,8 +114,8 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 		},
 		ServiceAccountName: baseName,
 		SecurityContext: &corev1.PodSecurityContext{
-			RunAsUser:    pointer.Int64(collectorUser),
-			RunAsNonRoot: pointer.Bool(true),
+			RunAsUser:    ptr.To(collectorUser),
+			RunAsNonRoot: ptr.To(true),
 			SeccompProfile: &corev1.SeccompProfile{
 				Type: corev1.SeccompProfileTypeRuntimeDefault,
 			},
