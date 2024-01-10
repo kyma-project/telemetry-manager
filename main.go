@@ -76,6 +76,7 @@ import (
 	_ "net/http/pprof"
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
 	"io"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
 var (
@@ -296,6 +297,7 @@ func main() {
 		}
 	}()
 
+	alertEvents := make(chan event.GenericEvent, 100)
 	go func() {
 		handler := func(w http.ResponseWriter, r *http.Request) {
 			body, readErr := io.ReadAll(r.Body)
@@ -308,6 +310,8 @@ func main() {
 			mutex.Lock()
 			setupLog.Info("Webhook was called", "req", string(body))
 			mutex.Unlock()
+
+			alertEvents <- event.GenericEvent{}
 
 			w.WriteHeader(http.StatusOK)
 		}
@@ -381,7 +385,7 @@ func main() {
 
 	enableLoggingController(mgr)
 	enableTracingController(mgr)
-	enableMetricsController(mgr)
+	enableMetricsController(mgr, alertEvents)
 
 	webhookConfig := createWebhookConfig()
 
@@ -442,9 +446,9 @@ func enableTracingController(mgr manager.Manager) {
 	}
 }
 
-func enableMetricsController(mgr manager.Manager) {
+func enableMetricsController(mgr manager.Manager, alertEvents chan event.GenericEvent) {
 	setupLog.Info("Starting with metrics controller")
-	if err := createMetricPipelineReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+	if err := createMetricPipelineReconciler(mgr.GetClient(), alertEvents).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "MetricPipeline")
 		os.Exit(1)
 	}
@@ -578,7 +582,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 	)
 }
 
-func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.MetricPipelineReconciler {
+func createMetricPipelineReconciler(client client.Client, alertEvents chan event.GenericEvent) *telemetrycontrollers.MetricPipelineReconciler {
 	config := metricpipeline.Config{
 		Agent: otelcollector.AgentConfig{
 			Config: otelcollector.Config{
@@ -619,6 +623,7 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,
+		alertEvents,
 		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, overridesHandler))
 }
 

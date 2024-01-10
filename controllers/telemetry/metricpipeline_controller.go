@@ -36,19 +36,23 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/setup"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // MetricPipelineReconciler reconciles a MetricPipeline object
 type MetricPipelineReconciler struct {
 	client.Client
 
-	reconciler *metricpipeline.Reconciler
+	reconciler  *metricpipeline.Reconciler
+	alertEvents chan event.GenericEvent
 }
 
-func NewMetricPipelineReconciler(client client.Client, reconciler *metricpipeline.Reconciler) *MetricPipelineReconciler {
+func NewMetricPipelineReconciler(client client.Client, alertEvents chan event.GenericEvent, reconciler *metricpipeline.Reconciler) *MetricPipelineReconciler {
 	return &MetricPipelineReconciler{
-		Client:     client,
-		reconciler: reconciler,
+		Client:      client,
+		reconciler:  reconciler,
+		alertEvents: alertEvents,
 	}
 }
 
@@ -61,6 +65,8 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// We use `Watches` instead of `Owns` to trigger a reconciliation also when owned objects without the controller flag are changed.
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&telemetryv1alpha1.MetricPipeline{}).
+		WatchesRawSource(&source.Channel{Source: r.alertEvents},
+			handler.EnqueueRequestsFromMapFunc(r.mapPrometheusAlertEvent)).
 		Watches(
 			&corev1.ConfigMap{},
 			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{})).
@@ -86,6 +92,15 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
 		).Complete(r)
+}
+
+func (r *MetricPipelineReconciler) mapPrometheusAlertEvent(ctx context.Context, _ client.Object) []reconcile.Request {
+	logf.FromContext(ctx).Info("Handling Prometheus alert event")
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+	return requests
 }
 
 func (r *MetricPipelineReconciler) mapCRDChanges(ctx context.Context, object client.Object) []reconcile.Request {

@@ -129,9 +129,9 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		}
 	}
 
-	//if err = batchQueryPrometheus(ctx); err != nil {
-	//	return err
-	//}
+	if err = queryAlerts(ctx); err != nil {
+		return err
+	}
 
 	return nil
 }

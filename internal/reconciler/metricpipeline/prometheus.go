@@ -10,6 +10,33 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+const prometheusAPIURL = "http://prometheus-server.default:80"
+
+func queryAlerts(ctx context.Context) error {
+	client, err := api.NewClient(api.Config{
+		Address: prometheusAPIURL,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create Prometheus client: %w", err)
+	}
+
+	v1api := v1.NewAPI(client)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	start := time.Now()
+	alerts, err := v1api.Alerts(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to query Prometheus alerts: %w", err)
+	}
+
+	logf.FromContext(ctx).Info("Prometheus alert query succeeded!",
+		"elapsed_ms", time.Since(start).Milliseconds(),
+		"alerts", alerts)
+	return nil
+}
+
 func batchQueryPrometheus(ctx context.Context) error {
 	queries := []string{
 		"rate(otelcol_exporter_send_failed_metric_points[5m]) > 0",
@@ -28,17 +55,15 @@ func batchQueryPrometheus(ctx context.Context) error {
 			return fmt.Errorf("failed to perform query: %s", query)
 		}
 	}
-	elapased := time.Since(start)
 
-	logf.FromContext(ctx).Info("Prometheus batch query succeeded!", "elapsed_ms", elapased.Milliseconds())
+	logf.FromContext(ctx).Info("Prometheus batch query succeeded!", "elapsed_ms", time.Since(start).Milliseconds())
 
 	return nil
 }
 
 func queryPrometheus(ctx context.Context, query string) error {
-	apiURL := "http://prometheus-server.default:80"
 	client, err := api.NewClient(api.Config{
-		Address: apiURL,
+		Address: prometheusAPIURL,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create Prometheus client: %w", err)

@@ -46,6 +46,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -156,6 +157,7 @@ var _ = BeforeSuite(func() {
 
 	metricPipelineReconciler := NewMetricPipelineReconciler(
 		client,
+		make(chan event.GenericEvent),
 		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client},
 			&k8sutils.DaemonSetProber{Client: client}, overridesHandler))
 	err = metricPipelineReconciler.SetupWithManager(mgr)
