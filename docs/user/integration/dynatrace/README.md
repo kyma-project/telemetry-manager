@@ -56,7 +56,7 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
 1. Install Dynatrace with the namespace you prepared earlier.
    >**NOTE:** By default, Dynatrace uses the classic full-stack injection. However, for better stability, we recommend using the [cloud-native fullstack injection](https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/installation/cloud-native-fullstack).
 
-2. In the DynaKube resource, configure the correct `apiUrl` of your environemnt.
+2. In the DynaKube resource, configure the correct `apiUrl` of your environment.
 
 3. In the DynaKube resource, exclude Kyma system namespaces by adding the following snippet:
 
@@ -96,7 +96,7 @@ Follow the instructions in [Dynatrace: Generate an access token](https://docs.dy
 To create a new Secret containing your access token, replace the `{API_TOKEN}` placeholder with the token you created and run the following command:
 
 ```bash
-kubectl -n $DYNATRACE_NS create secret generic dynatrace-token --from-literal="apiToken=Api-Token {API_TOKEN}"
+kubectl -n $DYNATRACE_NS create secret generic dynakube --from-literal="apiToken=<API_TOKEN>" --from-literal="dataIngestToken=<DATA_INGEST_TOKEN>
 ```
 
 ### Ingest Traces
@@ -122,7 +122,7 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
     The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
 
     > **CAUTION:** Be cautious when you configure the **randomSamplingPercentage**:
-    > - Traces might consume a significant storage volume in Cloud Logging Service.
+    > - Traces might consume a significant storage volume in Dynatrace.
     > - The Kyma trace collector component does not scale automatically.
 
 1. Deploy the TracePipeline and replace the `{ENVIRONMENT_ID}` placeholder with the environment Id of your Dynatrace instance:
