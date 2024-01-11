@@ -255,3 +255,4 @@ make docker-push
 make install
 make deploy
 ```
+11. Intentionally break any scrape Target to fire the InstanceDown alert. Look at Telemetry Manager logs, you should see that Prometheus pushing alerts via the endpoint, which triggers immediate reconciliation.
