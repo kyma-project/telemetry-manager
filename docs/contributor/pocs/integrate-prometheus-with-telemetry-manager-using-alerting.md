@@ -1,3 +1,14 @@
+# Integrate Prometheus with Telemetry Manager using Alerting
+
+## Goal
+
+The goal of the PoC is to have a corase-grained implementation of integrating Prometheus into Telemetry Manager using Alerting
+
+## Setup
+
+1. Create a Kubernetes cluster (k3d or Gardener)
+2. Create an overrides file for Prometheus Helm Chart and call it `overrides.yaml`
+```yaml
 alertmanager:
   enabled: false
 
@@ -75,3 +86,10 @@ serverFiles:
           - source_labels: [__meta_kubernetes_pod_node_name]
             action: replace
             target_label: node
+
+```
+3. Deploy Prometheus
+```shell
+kubectl create ns prometheus
+helm install -f overrides.yaml  prometheus prometheus-community/prometheus
+```
