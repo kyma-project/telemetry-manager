@@ -129,10 +129,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		}
 	}
 
-	if err = queryAlerts(ctx); err != nil {
-		return err
-	}
-
 	return nil
 }
 
