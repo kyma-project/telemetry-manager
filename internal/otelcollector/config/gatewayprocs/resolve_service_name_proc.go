@@ -42,7 +42,7 @@ func inferServiceNameFromAttr(attrKey string) string {
 	serviceNameNotDefinedCondition := fmt.Sprintf(
 		"%s or %s",
 		serviceNameNotDefinedBasicCondition,
-		ottlexpr.IsMatch("attributes[\"service.name\"]", "unknown_service"),
+		ottlexpr.IsMatch("attributes[\"service.name\"]", "^unknown_service(:.+)?$"),
 	)
 	return fmt.Sprintf(
 		"set(attributes[\"service.name\"], attributes[\"%s\"]) where %s",

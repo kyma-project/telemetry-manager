@@ -135,12 +135,18 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should enrich service.name attribute when its value is unknown_service:<process.executable.name>", func() {
+		It("Should enrich service.name attribute when its value is unknown_service", func() {
+			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServiceName, servicenamebundle.PodWithUnknownServiceName)
+		})
+
+		It("Should enrich service.name attribute when its value is following the unknown_service:<process.executable.name> pattern", func() {
 			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServicePatternName, servicenamebundle.PodWithUnknownServicePatternName)
 		})
 
-		It("Should enrich service.name attribute when its value is unknown_service", func() {
-			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServiceName, servicenamebundle.PodWithUnknownServiceName)
+		It("Should NOT enrich service.name attribute when its value is not following the unknown_service:<process.executable.name> pattern", func() {
+			verifyServiceNameAttr(servicenamebundle.PodWithInvalidStartForUnknownServicePatternName, servicenamebundle.AttrWithInvalidStartForUnknownServicePattern)
+			verifyServiceNameAttr(servicenamebundle.PodWithInvalidEndForUnknownServicePatternName, servicenamebundle.AttrWithInvalidEndForUnknownServicePattern)
+			verifyServiceNameAttr(servicenamebundle.PodWithMissingProcessForUnknownServicePatternName, servicenamebundle.AttrWithMissingProcessForUnknownServicePattern)
 		})
 
 		It("Should have no kyma resource attributes", func() {
