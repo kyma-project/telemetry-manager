@@ -75,8 +75,6 @@ import (
 	//nolint:gosec // pprof package is required for performance analysis.
 	_ "net/http/pprof"
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
-	"io"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
 var (
@@ -297,44 +295,6 @@ func main() {
 		}
 	}()
 
-	alertEvents := make(chan event.GenericEvent, 100)
-	go func() {
-		handler := func(w http.ResponseWriter, r *http.Request) {
-			body, readErr := io.ReadAll(r.Body)
-			if readErr != nil {
-				http.Error(w, "Error reading request body", http.StatusInternalServerError)
-				return
-			}
-			defer r.Body.Close()
-
-			mutex.Lock()
-			setupLog.Info("Webhook was called", "req", string(body))
-			mutex.Unlock()
-
-			alertEvents <- event.GenericEvent{}
-
-			w.WriteHeader(http.StatusOK)
-		}
-
-		// Create a ServeMux to route requests
-		mux := http.NewServeMux()
-
-		// Register the alertsHandler for the /api/v2/alerts path
-		mux.HandleFunc("/api/v2/alerts", handler)
-
-		server := &http.Server{
-			Addr:              ":9090",
-			ReadHeaderTimeout: 10 * time.Second,
-			Handler:           mux,
-		}
-
-		if serverErr := server.ListenAndServe(); serverErr != nil {
-			mutex.Lock()
-			setupLog.Error(serverErr, "Cannot start webhook server")
-			mutex.Unlock()
-		}
-	}()
-
 	syncPeriod := 1 * time.Minute
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
@@ -385,7 +345,7 @@ func main() {
 
 	enableLoggingController(mgr)
 	enableTracingController(mgr)
-	enableMetricsController(mgr, alertEvents)
+	enableMetricsController(mgr)
 
 	webhookConfig := createWebhookConfig()
 
@@ -446,9 +406,9 @@ func enableTracingController(mgr manager.Manager) {
 	}
 }
 
-func enableMetricsController(mgr manager.Manager, alertEvents chan event.GenericEvent) {
+func enableMetricsController(mgr manager.Manager) {
 	setupLog.Info("Starting with metrics controller")
-	if err := createMetricPipelineReconciler(mgr.GetClient(), alertEvents).SetupWithManager(mgr); err != nil {
+	if err := createMetricPipelineReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "MetricPipeline")
 		os.Exit(1)
 	}
@@ -582,7 +542,7 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 	)
 }
 
-func createMetricPipelineReconciler(client client.Client, alertEvents chan event.GenericEvent) *telemetrycontrollers.MetricPipelineReconciler {
+func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.MetricPipelineReconciler {
 	config := metricpipeline.Config{
 		Agent: otelcollector.AgentConfig{
 			Config: otelcollector.Config{
@@ -623,7 +583,6 @@ func createMetricPipelineReconciler(client client.Client, alertEvents chan event
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,
-		alertEvents,
 		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, overridesHandler))
 }
 
