@@ -95,9 +95,9 @@ serverFiles:
 kubectl create ns prometheus
 helm install -f overrides.yaml  prometheus prometheus-community/prometheus
 ```
-4. Implement an endpoint to be called by Prometheus in the Telemetry Manager by copying the following snippet into `main.go`:
+4. Create an endpoint in Telemetry Manager to be invoked by Prometheus:
 ```go
-	alertEvents := make(chan event.GenericEvent, 1024)
+	reconcileTriggerChan := make(chan event.GenericEvent, 1024)
 	go func() {
 		handler := func(w http.ResponseWriter, r *http.Request) {
 			body, readErr := io.ReadAll(r.Body)
@@ -107,11 +107,8 @@ helm install -f overrides.yaml  prometheus prometheus-community/prometheus
 			}
 			defer r.Body.Close()
 
-			mutex.Lock()
-			setupLog.Info("Webhook was called", "req", string(body))
-			mutex.Unlock()
-
-			alertEvents <- event.GenericEvent{}
+			// TODO: add more context about which objects have to reconciled 
+			reconcileTriggerChan <- event.GenericEvent{}
 
 			w.WriteHeader(http.StatusOK)
 		}
@@ -134,13 +131,13 @@ helm install -f overrides.yaml  prometheus prometheus-community/prometheus
 ```
 5. Trigger reconciliation in MetricPipelineController whenever the endpoint is called by Prometheus:
 ```go
-func NewMetricPipelineReconciler(client client.Client, alertEvents chan event.GenericEvent, reconciler *metricpipeline.Reconciler) *MetricPipelineReconciler {
+func NewMetricPipelineReconciler(client client.Client, reconcileTriggerChan chan event.GenericEvent, reconciler *metricpipeline.Reconciler) *MetricPipelineReconciler {
 	return &MetricPipelineReconciler{
 		Client:     client,
 		reconciler: reconciler,
 		Client:      client,
 		reconciler:  reconciler,
-		alertEvents: alertEvents,
+        reconcileTriggerChan: reconcileTriggerChan,
 	}
 }
 
@@ -149,7 +146,7 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
     // We use `Watches` instead of `Owns` to trigger a reconciliation also when owned objects without the controller flag are changed.
     return ctrl.NewControllerManagedBy(mgr).
             For(&telemetryv1alpha1.MetricPipeline{}).
-            WatchesRawSource(&source.Channel{Source: r.alertEvents},
+            WatchesRawSource(&source.Channel{Source: r.reconcileTriggerChan},
             handler.EnqueueRequestsFromMapFunc(r.mapPrometheusAlertEvent)).
 		...
 }
@@ -162,4 +159,99 @@ func (r *MetricPipelineReconciler) mapPrometheusAlertEvent(ctx context.Context, 
     }
     return requests
 }
+```
+6. Query Prometheus alerts in the Reconcile function:
+```go
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/prometheus/client_golang/api"
+	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+const prometheusAPIURL = "http://prometheus-server.default:80"
+
+func queryAlerts(ctx context.Context) error {
+	client, err := api.NewClient(api.Config{
+		Address: prometheusAPIURL,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create Prometheus client: %w", err)
+	}
+
+	v1api := promv1.NewAPI(client)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	start := time.Now()
+	alerts, err := v1api.Alerts(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to query Prometheus alerts: %w", err)
+	}
+
+	logf.FromContext(ctx).Info("Prometheus alert query succeeded!",
+		"elapsed_ms", time.Since(start).Milliseconds(),
+		"alerts", alerts)
+	return nil
+}
+```
+
+8. Add a Kubernetes service for the alerts endpoint to the kustomize file:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: operator-alerts-webhook
+  namespace: system
+spec:
+  ports:
+    - name: webhook
+      port: 9090
+      targetPort: 9090
+  selector:
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/instance: telemetry
+    kyma-project.io/component: controller
+    control-plane: telemetry-operator
+```
+9. Whitelist the endpoint port (9090) in the operator network policy:
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: operator-pprof-deny-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: operator
+      app.kubernetes.io/instance: telemetry
+      kyma-project.io/component: controller
+      control-plane: telemetry-operator
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8081
+        - protocol: TCP
+          port: 9443
+        - protocol: TCP
+          port: 9090
+```
+10. Deploy the modified Telemetry Manager:
+```shell
+export IMG=$DEV_IMAGE_REPO
+make docker-build
+make docker-push
+make install
+make deploy
 ```
