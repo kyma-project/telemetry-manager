@@ -1,4 +1,4 @@
-# 1. Fluent Bit Configuration and File-System Buffer Usage
+# 2. Fluent Bit Configuration and File-System Buffer Usage
 
 Date: 2023-11-23
 
