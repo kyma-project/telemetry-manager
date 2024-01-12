@@ -84,7 +84,7 @@ Next, you set up the ingestion of custom span and Istio span data, and, optional
 
 ### Create Access Token
 
-To push custom metrics and spans to Dynatrace, set up an [API Token](https://docs.dynatrace.com/docs/manage/access-control/access-tokens).
+To push custom metrics and spans to Dynatrace, set up an [Access Token](https://docs.dynatrace.com/docs/manage/access-control/access-tokens).
 
 Follow the instructions in [Dynatrace: Generate an access token](https://docs.dynatrace.com/docs/manage/access-control/access-tokens#create-api-token) and select the following scopes:
 
@@ -96,7 +96,7 @@ Follow the instructions in [Dynatrace: Generate an access token](https://docs.dy
 To create a new Secret containing your access token, replace the `{API_TOKEN}` placeholder with the token you created and run the following command:
 
 ```bash
-kubectl -n $DYNATRACE_NS create secret generic dynakube --from-literal="apiToken=<API_TOKEN>" --from-literal="dataIngestToken=<DATA_INGEST_TOKEN>
+kubectl -n $DYNATRACE_NS create secret generic dynakube --from-literal="apiToken=<API_TOKEN>"
 ```
 
 ### Ingest Traces
@@ -137,9 +137,11 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
         output:
             otlp:
                 endpoint:
-                    value: https://{ENVIRONMENT_ID}.live.dynatrace.com/api/v2/otlp
+                    value: https://{ENVIRONMENT_ID}.live.dynatrace.com/api
+                path: v2/otlp/v1/metrics
                 headers:
                     - name: Authorization
+                      prefix: Api-Token
                       valueFrom:
                           secretKeyRef:
                               name: dynatrace-token
