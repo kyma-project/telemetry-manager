@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -32,10 +33,11 @@ var _ = Describe("Traces Secret Rotation", Label("traces"), func() {
 		})
 
 		It("Should not have trace gateway deployment", func() {
-			Consistently(func(g Gomega) {
+			Eventually(func(g Gomega) bool {
 				var deployment appsv1.Deployment
-				g.Expect(k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)).To(Succeed())
-			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
+				err := k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
 		})
 
 		It("Should have running tracepipeline", func() {
