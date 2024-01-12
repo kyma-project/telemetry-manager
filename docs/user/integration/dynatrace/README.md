@@ -96,7 +96,7 @@ Follow the instructions in [Dynatrace: Generate an access token](https://docs.dy
 To create a new Secret containing your access token, replace the `{API_TOKEN}` placeholder with the token you created, replace the `{API_URL}` placeholder with the Dynatrace endpoint and run the following command:
 
 ```bash
-kubectl -n $DYNATRACE_NS create secret generic dynakube --from-literal="apiToken=<API_TOKEN>" --from-literal="apiUrl=<API_URL>"
+kubectl -n $DYNATRACE_NS create secret generic dynakube --from-literal="apiToken=<API_TOKEN>" --from-literal="apiurl=<API_URL>"
 ```
 
 ### Ingest Traces
@@ -125,7 +125,7 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
     > - Traces might consume a significant storage volume in Dynatrace.
     > - The Kyma trace collector component does not scale automatically.
 
-1. Deploy the TracePipeline and replace the `{ENVIRONMENT_ID}` placeholder with the environment Id of your Dynatrace instance:
+1. Deploy the TracePipeline:
 
     ```bash
     cat <<EOF | kubectl apply -f -
@@ -137,7 +137,11 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
         output:
             otlp:
                 endpoint:
-                    value: https://{ENVIRONMENT_ID}.live.dynatrace.com/api
+                    valueFrom:
+                        secretKeyRef:
+                            name: dynakube
+                            namespace: ${DYNATRACE_NS}
+                            key: apiurl
                 path: v2/otlp/v1/metrics
                 headers:
                     - name: Authorization
@@ -157,7 +161,7 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
 
 To collect custom metrics, you usually use the [Dynatrace annotation approach](https://docs.dynatrace.com/docs/platform-modules/infrastructure-monitoring/container-platform-monitoring/kubernetes-monitoring/monitor-prometheus-metrics), because the Dynatrace OTLP integration is [limited](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/ingest/migration-guide-otlp-exporter#migrate-collector-configuration). As long as your workload is conform to the limitations (not exporting histograms, using delta aggregation temporality), you can use the metric functionality to push OTLP metrics to Dynatrace. In this case, the Prometheus feature of the MetricPipeline cannot be used because it hits the limitations by design.
 
-1. Deploy the MetricPipeline and replace the `{ENVIRONMENT_ID}` placeholder with the environment Id of Dynatrace SaaS:
+1. Deploy the MetricPipeline:
 
     ```bash
     cat <<EOF | kubectl apply -f -
@@ -169,7 +173,11 @@ To collect custom metrics, you usually use the [Dynatrace annotation approach](h
         output:
             otlp:
                 endpoint:
-                    value: https://{ENVIRONMENT_ID}.live.dynatrace.com/api/v2/otlp
+                    valueFrom: 
+                        secretKeyRef:
+                            name: dynakube
+                            namespace: ${DYNATRACE_NS}
+                            key: apiurl
                 headers:
                     - name: Authorization
                       valueFrom:
