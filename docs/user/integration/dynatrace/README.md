@@ -144,7 +144,7 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
                       prefix: Api-Token
                       valueFrom:
                           secretKeyRef:
-                              name: dynatrace-token
+                              name: dynakube
                               namespace: ${DYNATRACE_NS}
                               key: apiToken
                 protocol: http
