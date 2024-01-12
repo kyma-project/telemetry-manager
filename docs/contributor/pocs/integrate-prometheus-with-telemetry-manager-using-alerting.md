@@ -2,7 +2,7 @@
 
 ## Goal
 
-The goal of the Proof of Concept is to test out integrating Prometheus into Telemetry Manager using Alerting.
+The goal of the Proof of Concept is to test integrating Prometheus into Telemetry Manager using Alerting.
 
 ## Setup
 
