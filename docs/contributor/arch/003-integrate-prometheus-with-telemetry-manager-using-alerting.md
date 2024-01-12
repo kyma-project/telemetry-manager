@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-As outlined in [ADR 001: Trace/Metric Pipeline status based on OTel Collector metrics](./001-otel-collector-metric-based-pipeline-status.md), our objective is to utilize a managed Prometheus instance to reflect specific telemetry flow issues (such as backpressure, data loss, backend unavailability) in the status of a telemetry pipeline Custom Resource (CR).
+As outlined in [ADR 001: Trace/Metric Pipeline status based on OTel Collector metrics](./001-otel-collector-metric-based-pipeline-status.md), our objective is to utilize a managed Prometheus instance to reflect specific telemetry flow issues (such as backpressure, data loss, backend unavailability) in the status of a telemetry pipeline custom resource (CR).
 We have previously determined that both Prometheus and its configuration will be managed within the Telemetry Manager's code, aligning with our approach for managing Fluent Bit and OTel Collector.
 
 To address the integration of Prometheus querying into the reconciliation loop, a Proof of Concept was executed.
