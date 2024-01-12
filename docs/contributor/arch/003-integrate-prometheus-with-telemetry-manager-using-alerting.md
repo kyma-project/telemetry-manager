@@ -44,7 +44,7 @@ The obtained alerts are then translated into corresponding Custom Resource (CR) 
 #### Webhook for Immediate Reconciliation
 The Telemetry Manager exposes an endpoint intended to be invoked by Prometheus whenever there is a change in the state of alerts. To facilitate this, we can configure Prometheus to treat our endpoint as an Alertmanager instance. Upon receiving a call, this endpoint initiates an immediate reconciliation of all affected resources using the https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/builder#Builder.WatchesRawSource with https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/source#Channel.
 
-By adopting this approach, we offload the heavy-lifting associated with expression evaluation and waiting to Prometheus.
+By adopting this approach, we transfer the effort associated with expression evaluation and waiting to Prometheus.
 
 ## Consequences
 
