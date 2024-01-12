@@ -32,10 +32,10 @@ var _ = Describe("Traces Secret Rotation", Label("traces"), func() {
 		})
 
 		It("Should not have trace gateway deployment", func() {
-			Consistently(func(g Gomega) {
+			Consistently(func(g Gomega) error {
 				var deployment appsv1.Deployment
-				g.Expect(k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)).To(Succeed())
-			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
+				return k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
+			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(HaveOccurred())
 		})
 
 		It("Should have running tracepipeline", func() {

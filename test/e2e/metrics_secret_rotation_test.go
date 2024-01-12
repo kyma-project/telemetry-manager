@@ -44,10 +44,10 @@ var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 		})
 
 		It("Should not have metric gateway deployment", func() {
-			Consistently(func(g Gomega) {
+			Consistently(func(g Gomega) error {
 				var deployment appsv1.Deployment
-				g.Expect(k8sClient.Get(ctx, kitkyma.MetricGatewayName, &deployment)).To(Succeed())
-			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
+				return k8sClient.Get(ctx, kitkyma.MetricGatewayName, &deployment)
+			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(HaveOccurred())
 		})
 
 		It("Should have running metricpipeline", func() {
