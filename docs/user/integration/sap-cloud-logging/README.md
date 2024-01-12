@@ -24,6 +24,7 @@ SAP Cloud Logging is an instance-based and environment-agnostic observability se
   - [Ship Distributed Traces to SAP Cloud Logging](#ship-distributed-traces-to-sap-cloud-logging)
   - [Ship Metrics to SAP Cloud Logging](#ship-metrics-to-sap-cloud-logging)
   - [Kyma Dashboard Integration](#kyma-dashboard-integration)
+  - [SAP Cloud Logging Alerts](#sap-cloud-logging-alerts)
 
 ## Prerequisites
 
@@ -284,3 +285,41 @@ For easier access, add a navigation node to the Observability section as well as
     kubectl apply -f configmap-navigation.yaml
     kubectl apply -f configmap-deeplinks.yaml
     ```
+
+## SAP Cloud Logging Alerts
+
+SAP Cloud Logging provides an alerting mechanism based on the OpenSearch Dashboards [alerting plugin](https://opensearch.org/docs/1.3/observing-your-data/alerting/index/). In the following it is described how to define and import recommended alerts.
+
+### Import
+
+The alerts defined in the subsequent chapters are based on JSON documents defining a `Monitor` for the alerting plugin. Such monitor work instantly after import, however the configured notification action is missing a `destination` which needs to be added manually afterwards. Also, adjust the intervals and thresholds to your needs as a general guidance cannot be given.
+
+To import a monitor, go to `Management > Dev Tools` in the Cloud Logging Dashboard and execute `POST _plugins/_alerting/monitors` followed by the contents of the respective JSON content. Afterwards, you will find the new monitor definition at `OpenSearch Plugins > Alerting`.
+
+### Recommended Alerts
+
+In the following table you will find the definitions of recommended alerts with some basic description.
+
+| Category | File | Description |
+| -- | -- | -- |
+| Cloud Logging | [OpenSearch cluster health](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-health.json) | The OpenSearch cluster itself can get in an unhealthy state which gets indicated by a "red" status using the [cluster health](https://opensearch.org/docs/1.3/api-reference/cluster-api/cluster-health) API.|
+| Kyma Telemetry Integration | [Application log ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-app-log-ingestion.json) | The LogPipeline for shipping [application logs](#ship-logs-to-sap-cloud-logging) might loose connectivity to SAP Cloud Logging resulting in no application logs being ingested anymore.|
+| Kyma Telemetry Integration | [Access log ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-access-log-ingestion.json) | The LogPipeline for shipping [access logs](#ship-logs-to-sap-cloud-logging) might loose connectivity to SAP Cloud Logging resulting in no application logs being ingested anymore. |
+| Kyma Telemetry Integration | [Trace ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-trace-ingestion.json) | The TracePipeline for shipping [traces](#ship-distributed-traces-to-sap-cloud-logging) might loose connectivity to SAP Cloud Logging resulting in no application logs being ingested anymore. |
+| Kyma Telemetry Integration | [Metric ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-metric-ingestion.json) | The MetricPipeline for shipping [metrics](#ship-metrics-to-sap-cloud-logging) might loose connectivity to SAP Cloud Logging resulting in no application logs being ingested anymore. |
+
+## SAP Cloud Logging Dashboards
+
+SAP Cloud Logging provides already an extensive set of Dashboards under `OpenSearch Dashboards > Dashboard` revealing insights in traffic and application logs. These dashboards are prefixed with `Kyma_` and are based on both kind of [log ingestion](#ship-logs-to-sap-cloud-logging) (application and access logs).
+
+Additionally you can introspect distributed traces under `OpenSearch Plugins > Observability`.
+
+Dashboards for metrics ingested via a MetricPipeline need to be created manually. The following templates can be used by importing the linked files in the `Stack Management > Saved Objects` section.
+
+| Category | File | Description |
+| -- | -- | -- |
+| Container Metrics | [OpenSearch cluster health](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-health.json) | The OpenSearch cluster itself can get in an unhealthy state which gets indicated by a "red" status using the [cluster health](https://opensearch.org/docs/1.3/api-reference/cluster-api/cluster-health) API.|
+| Kyma Telemetry Integration | [Application log ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-app-log-ingestion.json) | The LogPipeline for shipping [application logs](#ship-logs-to-sap-cloud-logging) might loose connectivity to SAP Cloud Logging resulting in no application logs being ingested anymore.|
+| Kyma Telemetry Integration | [Access log ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-access-log-ingestion.json) | The LogPipeline for shipping [access logs](#ship-logs-to-sap-cloud-logging) might loose connectivity to SAP Cloud Logging resulting in no application logs being ingested anymore. |
+| Kyma Telemetry Integration | [Trace ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-trace-ingestion.json) | The TracePipeline for shipping [traces](#ship-distributed-traces-to-sap-cloud-logging) might loose connectivity to SAP Cloud Logging resulting in no application logs being ingested anymore. |
+| Kyma Telemetry Integration | [Metric ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-metric-ingestion.json) | The MetricPipeline for shipping [metrics](#ship-metrics-to-sap-cloud-logging) might loose connectivity to SAP Cloud Logging resulting in no application logs being ingested anymore. |
