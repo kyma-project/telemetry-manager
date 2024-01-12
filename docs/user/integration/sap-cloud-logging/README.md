@@ -313,13 +313,3 @@ In the following table you will find the definitions of recommended alerts with 
 SAP Cloud Logging provides already an extensive set of Dashboards under `OpenSearch Dashboards > Dashboard` revealing insights in traffic and application logs. These dashboards are prefixed with `Kyma_` and are based on both kind of [log ingestion](#ship-logs-to-sap-cloud-logging) (application and access logs).
 
 Additionally you can introspect distributed traces under `OpenSearch Plugins > Observability`.
-
-Dashboards for metrics ingested via a MetricPipeline need to be created manually. The following templates can be used by importing the linked files in the `Stack Management > Saved Objects` section.
-
-| Category | File | Description |
-| -- | -- | -- |
-| Container Metrics | [OpenSearch cluster health](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-health.json) | The OpenSearch cluster itself can get in an unhealthy state which gets indicated by a "red" status using the [cluster health](https://opensearch.org/docs/1.3/api-reference/cluster-api/cluster-health) API.|
-| Kyma Telemetry Integration | [Application log ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-app-log-ingestion.json) | The LogPipeline for shipping [application logs](#ship-logs-to-sap-cloud-logging) might loose connectivity to SAP Cloud Logging resulting in no application logs being ingested anymore.|
-| Kyma Telemetry Integration | [Access log ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-access-log-ingestion.json) | The LogPipeline for shipping [access logs](#ship-logs-to-sap-cloud-logging) might loose connectivity to SAP Cloud Logging resulting in no application logs being ingested anymore. |
-| Kyma Telemetry Integration | [Trace ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-trace-ingestion.json) | The TracePipeline for shipping [traces](#ship-distributed-traces-to-sap-cloud-logging) might loose connectivity to SAP Cloud Logging resulting in no application logs being ingested anymore. |
-| Kyma Telemetry Integration | [Metric ingestion](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/alert-metric-ingestion.json) | The MetricPipeline for shipping [metrics](#ship-metrics-to-sap-cloud-logging) might loose connectivity to SAP Cloud Logging resulting in no application logs being ingested anymore. |
