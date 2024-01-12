@@ -5,5 +5,9 @@
       "pattern": "^/",
       "replacement": "{{BASEURL}}/"
     }
-  ]
+  ],
+  "ignorePatterns": [ 
+    {
+      "pattern": "^https://raw\\.githubusercontent\\.com/kyma-project/telemetry-manager/main/docs/user/integration/sap-cloud-logging/.+\\.json"
+    },
 }
