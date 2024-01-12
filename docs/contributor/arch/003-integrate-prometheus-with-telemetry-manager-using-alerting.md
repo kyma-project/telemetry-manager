@@ -29,7 +29,7 @@ If we directly query Prometheus, we would need to implement such a mechanism to 
 
 Fortunately, we can leverage the Alerting feature of Prometheus to address the aforementioned challenges. The proposed workflow is as follows:
 
-### Rendering Alerting Rules:
+### Rendering Alerting Rules
 Telemetry Manager dynamically generates alerting rules based on the deployed pipeline configuration.
 These alerting rules are then mounted into the Prometheus pod, which is also deployed by the Telemetry Manager.
 
