@@ -33,7 +33,7 @@ Fortunately, we can leverage the Alerting feature of Prometheus to address the a
 Telemetry Manager dynamically generates alerting rules based on the deployed pipeline configuration.
 These alerting rules are then mounted into the Prometheus pod, which is also deployed by the Telemetry Manager.
 
-### Alert Retrieval in Reconciliation:
+### Alert Retrieval in Reconciliation
 During each reconciliation iteration, the Telemetry Manager queries the [Prometheus Alerts API](https://prometheus.io/docs/prometheus/latest/querying/api/#alerts) using `github.com/prometheus/client_golang` to retrieve information about all fired alerts.
 The obtained alerts are then translated into corresponding Custom Resource (CR) statuses.
 
