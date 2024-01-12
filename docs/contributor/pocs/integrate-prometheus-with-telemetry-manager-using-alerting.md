@@ -1,4 +1,4 @@
-# Integrate Prometheus with Telemetry Manager using Alerting
+# Integrate Prometheus With Telemetry Manager Using Alerting
 
 ## Goal
 
