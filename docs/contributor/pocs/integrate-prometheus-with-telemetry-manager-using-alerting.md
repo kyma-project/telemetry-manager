@@ -200,7 +200,7 @@ func queryAlerts(ctx context.Context) error {
 }
 ```
 
-8. Add a Kubernetes service for the alerts endpoint to the kustomize file:
+7. Add a Kubernetes service for the alerts endpoint to the kustomize file:
 ```yaml
 apiVersion: v1
 kind: Service
@@ -218,7 +218,7 @@ spec:
     kyma-project.io/component: controller
     control-plane: telemetry-operator
 ```
-9. Whitelist the endpoint port (9090) in the operator network policy:
+8. Whitelist the endpoint port (9090) in the operator network policy:
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -247,7 +247,7 @@ spec:
         - protocol: TCP
           port: 9090
 ```
-10. Deploy the modified Telemetry Manager:
+9. Deploy the modified Telemetry Manager:
 ```shell
 export IMG=$DEV_IMAGE_REPO
 make docker-build
@@ -255,4 +255,4 @@ make docker-push
 make install
 make deploy
 ```
-11. Intentionally break any scrape Target to fire the InstanceDown alert. Look at Telemetry Manager logs, you should see that Prometheus is pushing alerts via the endpoint, which triggers immediate reconciliation.
+10. Intentionally break any scrape Target to fire the InstanceDown alert. Look at Telemetry Manager logs, you should see that Prometheus is pushing alerts via the endpoint, which triggers immediate reconciliation.
