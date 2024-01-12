@@ -93,7 +93,7 @@ Follow the instructions in [Dynatrace: Generate an access token](https://docs.dy
 
 ### Create Secret
 
-To create a new Secret containing your access token, replace the `{API_TOKEN}` placeholder with the token you created, replace the `{API_URL}` placeholder with the Dynatrace endpoint and run the following command:
+To create a new Secret containing your access token, replace the `{API_TOKEN}` placeholder with the token you created, replace the `{API_URL}` placeholder with the Dynatrace SaaS endpoint and run the following command:
 
 ```bash
 kubectl -n $DYNATRACE_NS create secret generic dynakube --from-literal="apiToken=<API_TOKEN>" --from-literal="apiurl=<API_URL>"
@@ -173,7 +173,7 @@ To collect custom metrics, you usually use the [Dynatrace annotation approach](h
         output:
             otlp:
                 endpoint:
-                    valueFrom: 
+                    valueFrom:
                         secretKeyRef:
                             name: dynakube
                             namespace: ${DYNATRACE_NS}
@@ -182,7 +182,7 @@ To collect custom metrics, you usually use the [Dynatrace annotation approach](h
                     - name: Authorization
                       valueFrom:
                           secretKeyRef:
-                              name: dynatrace-token
+                              name: dynakube
                               namespace: ${DYNATRACE_NS}
                               key: apiToken
                 protocol: http
