@@ -18,7 +18,7 @@ To address the integration of Prometheus querying into the reconciliation loop, 
 The results of the query tests affirm that invoking Prometheus APIs won't notably impact the overall reconciliation time. In theory, we could directly query Prometheus within the Reconcile routine. However, this straightforward approach presents a few challenges:
 
 ### Timing of Invocation
-Our current reconciliation strategy triggers either when a change occurs or every minute. While this is acceptable for periodic status updates, it may not be optimal when considering future plans to leverage Prometheus for autoscaling decisions.
+Our current reconciliation strategy triggers either when a change occurs or every minute. While this is acceptable for periodic status updates, it may not be optimal when considering future plans to use Prometheus for autoscaling decisions.
 
 ### Flakiness Mitigation
 To ensure reliability and avoid false alerts, it's crucial to introduce a delay before signaling a problem. As suggested in [OTel Collector monitoring best practices](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/monitoring.md):
