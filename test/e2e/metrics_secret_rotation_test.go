@@ -16,6 +16,7 @@ import (
 	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
@@ -44,10 +45,11 @@ var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 		})
 
 		It("Should not have metric gateway deployment", func() {
-			Consistently(func(g Gomega) error {
+			Eventually(func(g Gomega) bool {
 				var deployment appsv1.Deployment
-				return k8sClient.Get(ctx, kitkyma.MetricGatewayName, &deployment)
-			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(HaveOccurred())
+				err := k8sClient.Get(ctx, kitkyma.MetricGatewayName, &deployment)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
 		})
 
 		It("Should have running metricpipeline", func() {

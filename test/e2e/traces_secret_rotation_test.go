@@ -12,6 +12,7 @@ import (
 	kittracepipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 var _ = Describe("Traces Secret Rotation", Label("traces"), func() {
@@ -32,10 +33,11 @@ var _ = Describe("Traces Secret Rotation", Label("traces"), func() {
 		})
 
 		It("Should not have trace gateway deployment", func() {
-			Consistently(func(g Gomega) error {
+			Eventually(func(g Gomega) bool {
 				var deployment appsv1.Deployment
-				return k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
-			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(HaveOccurred())
+				err := k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
 		})
 
 		It("Should have running tracepipeline", func() {
