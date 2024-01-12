@@ -1,4 +1,4 @@
-# 3. Integrate Prometheus with Telemetry Manager using Alerting
+# 3. Integrate Prometheus With Telemetry Manager Using Alerting
 
 Date: 2024-01-11
 
