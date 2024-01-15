@@ -48,6 +48,8 @@ The Telemetry module supports the convenient shipment of applications and access
 1. Deploy the LogPipeline for application logs:
 
    <div tabs name="applicationlogs">
+     <details><summary>Code: Application Logs</summary>
+
     ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -85,6 +87,7 @@ The Telemetry module supports the convenient shipment of applications and access
           uri: /customindex/kyma
     EOF
     ```
+      </details>
     </div>
 
 2. Wait for the LogPipeline to be in the `Running` state. To check the state, run:
@@ -95,14 +98,16 @@ The Telemetry module supports the convenient shipment of applications and access
 
 ### Set Up Access Logs
 
-1. By default, Kyma sets Istio access logs to disabled. To enable Istio access logs selectively for your workload, follow [Enable Istio access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs).
+1. By default, Istio access logs are disabled in Kyma. To enable Istio access logs selectively for your workload, follow [Enable Istio access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs).
    As a result, you can analyze access logs in the default dashboards shipped for SAP BTP, Kyma runtime.
 
    >**CAUTION:** The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
 
-1. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
+2. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
 
    <div tabs name="accesslogs">
+     <details><summary>Code: Access Logs</summary>
+
     ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -140,9 +145,10 @@ The Telemetry module supports the convenient shipment of applications and access
           uri: /customindex/istio-envoy-kyma
     EOF
     ```
+      </details>
     </div>
 
-1. Wait for the LogPipeline to be in the `Running` state. To check the state, run:
+3. Wait for the LogPipeline to be in the `Running` state. To check the state, run:
 
     ```bash
     kubectl get logpipelines
@@ -156,6 +162,8 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
 1. Deploy the Istio Telemetry resource:
 
    <div tabs name="istiotraces">
+     <details><summary>Code: Istio Traces</summary>
+
    ```bash
     kubectl apply -n istio-system -f - <<EOF
     apiVersion: telemetry.istio.io/v1alpha1
@@ -169,6 +177,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
         randomSamplingPercentage: 1.0
     EOF
     ```
+     </details>
    </div>
 
     The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
@@ -180,6 +189,8 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
 1. Deploy the TracePipeline:
 
    <div tabs name="distributedtraces">
+     <details><summary>Code: Distributed Traces</summary>
+
    ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -210,6 +221,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
                   key: ingest-otlp-key
     EOF
     ```
+     </details>
    </div>
 
 1. Wait for the TracePipeline to be in the `Running` state. To check the state, run:
@@ -226,6 +238,8 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
 1. Deploy the MetricPipeline:
 
    <div tabs name="SAPCloudLogging">
+     <details><summary>Code: SAP Cloud Logging</summary>
+
    ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
     apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -263,6 +277,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
                   key: ingest-otlp-key
     EOF
     ```
+     </details>
    </div>
 
     By default, the MetricPipeline assures that a gateway is running in the cluster to push OTLP metrics.
