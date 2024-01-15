@@ -298,7 +298,7 @@ To import a monitor, go to `Management > Dev Tools` in the Cloud Logging Dashboa
 
 ### Recommended Alerts
 
-In the following table you will find the definitions of recommended alerts with some basic description.
+Depending on the pipelines you are using, enable the some or all of the following alerts: 
 
 | Category | File | Description |
 | -- | -- | -- |
