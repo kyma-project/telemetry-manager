@@ -99,7 +99,7 @@ The Telemetry module supports the convenient shipment of applications and access
 ### Set Up Access Logs
 
 1. By default, Istio access logs are disabled in Kyma. To enable Istio access logs selectively for your workload, follow [Enable Istio access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs).
-   As a result, you can analyze access logs in the default dashboards shipped for SAP BTP, Kyma runtime.
+   As a result, you can analyze access logs in the default SAP Cloud Logging dashboards shipped for SAP BTP, Kyma runtime.
 
    >**CAUTION:** The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
 
