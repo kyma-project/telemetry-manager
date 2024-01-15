@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -44,10 +45,11 @@ var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 		})
 
 		It("Should not have metric gateway deployment", func() {
-			Consistently(func(g Gomega) {
+			Eventually(func(g Gomega) bool {
 				var deployment appsv1.Deployment
-				g.Expect(k8sClient.Get(ctx, kitkyma.MetricGatewayName, &deployment)).To(Succeed())
-			}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).ShouldNot(Succeed())
+				err := k8sClient.Get(ctx, kitkyma.MetricGatewayName, &deployment)
+				return apierrors.IsNotFound(err)
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
 		})
 
 		It("Should have running metricpipeline", func() {

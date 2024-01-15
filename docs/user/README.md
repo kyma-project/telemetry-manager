@@ -90,18 +90,4 @@ The API of the Telemetry module is based on Kubernetes Custom Resource Definitio
 
 ## Resource Usage
 
-When using the module without further API usage, the Telemetry Manager is running with a footprint of:
-- Minimal   5M Mem / 0.01 CPU
-- Maximal 100M Mem / 0.10 CPU
-
-Activation of the first LogPipeline causes the deployment of the log agent running an instance per Node:
-- Per node minimal   50M Mem / 0.1 CPU
-- Per node Maximal 1000M Mem / 1.0 CPU
-
-Activation of the first TracePipeline causes the deployment of the trace gateway running with two replicas:
-- 2 * minimal  250M Mem / 0.2 CPU
-- 2 * Maximal 2000M Mem / 1.2 CPU
-
-Activation of the first MetricPipeline causes the deployment of the metric gateway running with 2 replicas and the metric agent running per Node:
-- 2 * minimal   30M Mem / 0.01 CPU + per node minimal   50M Mem / 0.01 CPU
-- 2 * Maximal 1000M Mem / 1.00 CPU + per node maximal 1200M Mem / 1.00 CPU
+To learn more about the resources used by the Telemetry module, see [Kyma Modules' Sizing](https://help.sap.com/docs/btp/sap-business-technology-platform/kyma-modules-sizing#telemetry).
