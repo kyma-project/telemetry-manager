@@ -48,7 +48,7 @@ The Telemetry module supports the convenient shipment of applications and access
 1. Deploy the LogPipeline for application logs:
 
    <div tabs name="applicationlogs">
-     <details><summary>Code: Application Logs</summary>
+     <details><summary>Script: Application Logs</summary>
 
     ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
@@ -106,7 +106,7 @@ The Telemetry module supports the convenient shipment of applications and access
 2. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
 
    <div tabs name="accesslogs">
-     <details><summary>Code: Access Logs</summary>
+     <details><summary>Script: Access Logs</summary>
 
     ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
@@ -162,7 +162,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
 1. Deploy the Istio Telemetry resource:
 
    <div tabs name="istiotraces">
-     <details><summary>Code: Istio Traces</summary>
+     <details><summary>Script: Istio Traces</summary>
 
    ```bash
     kubectl apply -n istio-system -f - <<EOF
@@ -189,7 +189,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
 1. Deploy the TracePipeline:
 
    <div tabs name="distributedtraces">
-     <details><summary>Code: Distributed Traces</summary>
+     <details><summary>Script: Distributed Traces</summary>
 
    ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
@@ -238,7 +238,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
 1. Deploy the MetricPipeline:
 
    <div tabs name="SAPCloudLogging">
-     <details><summary>Code: SAP Cloud Logging</summary>
+     <details><summary>Script: SAP Cloud Logging</summary>
 
    ```bash
     kubectl apply -n sap-cloud-logging-integration -f - <<EOF
