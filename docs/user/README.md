@@ -71,13 +71,17 @@ For more information, see [Metrics](04-metrics.md) and [Gateways](gateways.md).
 
 ## Integration Guides
 
-With the Telemetry module you can collect telemetry data and ship the data to backends. For details, read the following guides:
+With the Telemetry module you can collect telemetry data and ship the data to backends.
 
-- [OpenTelemetry Demo App](integration/opentelemetry-demo/README.md)
+Read the following guides for integration of different backends:
+
 - [SAP Cloud Logging](integration/sap-cloud-logging/README.md)
 - [Dynatrace](integration/dynatrace/README.md)
 - [Loki](integration/loki/README.md)
 - [Jaeger](integration/jaeger/README.md)
+
+Read the following guides to learn how to collect data from applications:
+- [OpenTelemetry Demo App](integration/opentelemetry-demo/README.md)
 
 ## API / Custom Resource Definitions
 
