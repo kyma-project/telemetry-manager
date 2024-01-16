@@ -33,7 +33,7 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
 - Kyma as the target deployment environment
 - The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install)
 - Active Dynatrace environment with permissions to create new access tokens
-- - A Secret in the respective namespace in the Kyma cluster, holding the access tokens and endpoints for the Dynatrace instance. In this guide, the Secret is named `dynakube` and the namespace `dynatrace` as illustrated in this [example](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/dynatrace/secret-example.yaml).
+- A Secret in the respective namespace in the Kyma cluster, holding the access tokens and endpoints for the Dynatrace instance. In this guide, the Secret is named `dynakube` and the namespace `dynatrace` as illustrated in this [example](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/dynatrace/secret-example.yaml).
 - Helm 3.x if you want to deploy the [OpenTelemetry sample application](../opentelemetry-demo/README.md)
 
 ## Prepare the Namespace
@@ -95,7 +95,7 @@ Follow the instructions in [Dynatrace: Generate an access token](https://docs.dy
 Additionally create [apitoken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens) by selecting template `Kubernetes: Dynatrace Operator`.
 ### Create Secret
 
-To create a new Secret containing your access tokens, replace the `{API_TOKEN}` and `{DATA_INGEST_TOKEN}` placeholder with the `apitoken` and `dataIngestToken` you created, replace the `{API_URL}` placeholder with the Dynatrace SaaS endpoint, and run the following command:
+To create a new Secret containing your access tokens, replace the `{API_TOKEN}` and `{DATA_INGEST_TOKEN}` placeholder with the `apitoken` and `dataIngestToken` you created, replace the `{API_URL}` placeholder with the Dynatrace endpoint, and run the following command:
 
 ```bash
 kubectl -n $DYNATRACE_NS create secret generic dynakube --from-literal="apiToken=<API_TOKEN>" --from-literal="dataIngestToken=<DATA_INGEST_TOKEN>" --from-literal="apiurl=<API_URL>"
