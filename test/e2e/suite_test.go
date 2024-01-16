@@ -21,6 +21,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
@@ -31,12 +32,13 @@ const (
 )
 
 var (
-	ctx                 context.Context
-	cancel              context.CancelFunc
-	k8sClient           client.Client
-	proxyClient         *apiserver.ProxyClient
-	testEnv             *envtest.Environment
-	telemetryK8sObjects []client.Object
+	ctx                context.Context
+	cancel             context.CancelFunc
+	k8sClient          client.Client
+	proxyClient        *apiserver.ProxyClient
+	testEnv            *envtest.Environment
+	telemetryK8sObject client.Object
+	k8sObjects         []client.Object
 )
 
 func TestE2E(t *testing.T) {
@@ -67,16 +69,21 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	telemetryK8sObjects = []client.Object{kitk8s.NewTelemetry("default", "kyma-system").Persistent(isOperational()).K8sObject()}
+	telemetryK8sObject := kitk8s.NewTelemetry("default", "kyma-system").Persistent(isOperational()).K8sObject()
+	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject()
+	k8sObjects := []client.Object{
+		telemetryK8sObject,
+		denyAllNetworkPolicyK8sObject,
+	}
 
-	Expect(kitk8s.CreateObjects(ctx, k8sClient, telemetryK8sObjects...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).To(Succeed())
 
 	proxyClient, err = apiserver.NewProxyClient(testEnv.Config)
 	Expect(err).NotTo(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {
-	Expect(kitk8s.DeleteObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
+	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 	if !isOperational() {
 		Eventually(func(g Gomega) {
 			var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
