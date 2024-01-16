@@ -34,6 +34,7 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
 - The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install)
 - Active Dynatrace environment with permissions to create new access tokens
 - A Secret in the respective namespace in the Kyma cluster, holding the access tokens and endpoints for the Dynatrace instance. In this guide, the Secret is named `dynakube` and the namespace `dynatrace` as illustrated in this [example](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/dynatrace/secret-example.yaml).
+  >**NOTE:** If you don't have the required access tokens you can create the Secret [later](#create-access-token-and-secret).
 - Helm 3.x if you want to deploy the [OpenTelemetry sample application](../opentelemetry-demo/README.md)
 
 ## Prepare the Namespace
@@ -83,7 +84,7 @@ As a result, you see data arriving in your environment, advanced Kubernetes moni
 
 Next, you set up the ingestion of custom span and Istio span data, and, optionally, custom metrics based on OTLP.
 
-### Create Access Token
+### Create Access Token and Secret
 
 To push custom metrics and spans to Dynatrace, set up [dataIngestToken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens).
 
@@ -93,7 +94,6 @@ Follow the instructions in [Dynatrace: Generate an access token](https://docs.dy
 - **Ingest OpenTelemetry traces**
 
 Additionally create [apitoken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens) by selecting template `Kubernetes: Dynatrace Operator`.
-### Create Secret
 
 To create a new Secret containing your access tokens, replace the `{API_TOKEN}` and `{DATA_INGEST_TOKEN}` placeholder with the `apitoken` and `dataIngestToken` you created, replace the `{API_URL}` placeholder with the Dynatrace endpoint, and run the following command:
 
