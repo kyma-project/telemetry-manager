@@ -58,7 +58,7 @@ Run the Helm upgrade command, which installs the chart if not present yet.
 helm upgrade --install --create-namespace -n $K8S_NAMESPACE $HELM_JAEGER_RELEASE jaegertracing/jaeger -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/jaeger/values.yaml
 ```
 
-You can either use the [`values.yaml`](./values.yaml) provided in this `jaeger` folder, which contains customized settings deviating from the default settings, or create your own `values.yaml` file.
+The command above uses a prepared [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/jaeger/values.yaml) provided in this `jaeger` folder, which contains customized settings deviating from the default settings. Alternatively, you could create your own `values.yaml` file and adjust the command.
 
 ### Verify the Installation
 
