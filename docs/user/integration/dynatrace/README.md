@@ -34,7 +34,7 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
 - The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install)
 - Active Dynatrace environment with permissions to create new access tokens
 - A Secret in the respective namespace in the Kyma cluster, holding the access tokens and endpoints for the Dynatrace instance. In this guide, the Secret is named `dynakube` and the namespace `dynatrace` as illustrated in this [example](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/dynatrace/secret-example.yaml).
-  >**NOTE:** If you don't have the required access tokens you can create the Secret [later](#create-access-token-and-secret).
+  >**NOTE:** If you don't have the required access tokens, you can create the Secret [later](#create-access-token-and-secret).
 - Helm 3.x if you want to deploy the [OpenTelemetry sample application](../opentelemetry-demo/README.md)
 
 ## Prepare the Namespace
@@ -86,20 +86,19 @@ Next, you set up the ingestion of custom span and Istio span data, and, optional
 
 ### Create Access Token and Secret
 
-To push custom metrics and spans to Dynatrace, set up [dataIngestToken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens).
+1. To push custom metrics and spans to Dynatrace, set up a [dataIngestToken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens).
 
-Follow the instructions in [Dynatrace: Generate an access token](https://docs.dynatrace.com/docs/manage/access-control/access-tokens#create-api-token) and select the following scopes:
+   Follow the instructions in [Dynatrace: Generate an access token](https://docs.dynatrace.com/docs/manage/access-control/access-tokens#create-api-token) and select the following scopes:
 
-- **Ingest metrics**
-- **Ingest OpenTelemetry traces**
+   - **Ingest metrics**
+   - **Ingest OpenTelemetry traces**
 
-Additionally create [apitoken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens) by selecting template `Kubernetes: Dynatrace Operator`.
+2. Create an [apitoken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens) by selecting the template `Kubernetes: Dynatrace Operator`.
 
-To create a new Secret containing your access tokens, replace the `{API_TOKEN}` and `{DATA_INGEST_TOKEN}` placeholder with the `apitoken` and `dataIngestToken` you created, replace the `{API_URL}` placeholder with the Dynatrace endpoint, and run the following command:
+3. To create a new Secret containing your access tokens, replace the `{API_TOKEN}` and `{DATA_INGEST_TOKEN}` placeholder with the `apitoken` and `dataIngestToken` you created, replace the `{API_URL}` placeholder with the Dynatrace endpoint, and run the following command:
 
-```bash
-kubectl -n $DYNATRACE_NS create secret generic dynakube --from-literal="apiToken=<API_TOKEN>" --from-literal="dataIngestToken=<DATA_INGEST_TOKEN>" --from-literal="apiurl=<API_URL>"
-```
+   ```bash
+   kubectl -n $DYNATRACE_NS create secret generic dynakube --from-literal="apiToken=<API_TOKEN>" --from-literal="dataIngestToken=<DATA_INGEST_TOKEN>" --from-literal="apiurl=<API_URL>"
 
 ### Ingest Traces
 
