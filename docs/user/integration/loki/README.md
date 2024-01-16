@@ -100,7 +100,7 @@ helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} promtail grafana/p
   Install Fluent Bit with Kyma's LogPipeline
   </summary>
 
->**CAUTION:** This setup uses an unsupported output plugin for the LogPipline.
+>**CAUTION:** This setup uses an unsupported output plugin for the LogPipeline.
 
 Apply the LogPipeline:
 
@@ -118,7 +118,7 @@ Apply the LogPipeline:
       output:
          custom: |
             name   loki
-            host   ${HELM_LOKI_RELEASE}-headless.${K8S_NAMESPACE}.svc.cluster.local
+            host   ${HELM_LOKI_RELEASE}.${K8S_NAMESPACE}.svc.cluster.local
             port   3100
             auto_kubernetes_labels off
             labels job=fluentbit, container=\$kubernetes['container_name'], namespace=\$kubernetes['namespace_name'], pod=\$kubernetes['pod_name'], node=\$kubernetes['host'], app=\$kubernetes['labels']['app'],app=\$kubernetes['labels']['app.kubernetes.io/name']
