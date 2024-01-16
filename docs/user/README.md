@@ -71,7 +71,7 @@ For more information, see [Metrics](04-metrics.md) and [Gateways](gateways.md).
 
 ## Integration Guides
 
-With the Telemetry module you can collect telemetry data and ship the data to backends.
+With the Telemetry module, you can collect telemetry data and ship the data to backends.
 
 Read the following guides for integration of different backends:
 
