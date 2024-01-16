@@ -71,7 +71,7 @@ var _ = BeforeSuite(func() {
 
 	telemetryK8sObject := kitk8s.NewTelemetry("default", "kyma-system").Persistent(isOperational()).K8sObject()
 	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject()
-	k8sObjects := []client.Object{
+	k8sObjects = []client.Object{
 		telemetryK8sObject,
 		denyAllNetworkPolicyK8sObject,
 	}
