@@ -91,7 +91,7 @@ Run the Helm upgrade command, which installs the chart if not present yet.
 helm upgrade --version 0.26.1 --install --create-namespace -n $K8S_NAMESPACE $HELM_OTEL_RELEASE open-telemetry/opentelemetry-demo -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/opentelemetry-demo/values.yaml
 ```
 
-The command above uses a prepared [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/opentelemetry-demo/values.yaml) provided in this `opentelemetry-demo` folder, which contains customized settings deviating from the default settings. Alternatively, you could create your own `values.yaml` file and adjust the command. The customizations in the prepared `values.yaml` cover the following areas:
+The previous command uses the[values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/opentelemetry-demo/values.yaml) provided in this `opentelemetry-demo` folder, which contains customized settings deviating from the default settings. The customizations in the provided `values.yaml` cover the following areas:
 
 - Disable the observability tooling provided with the chart
 - Configure Kyma Telemetry instead

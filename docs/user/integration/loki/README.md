@@ -63,9 +63,11 @@ You install the Loki stack with a Helm upgrade command, which installs the chart
 helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} ${HELM_LOKI_RELEASE} grafana/loki -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/loki-values.yaml
 ```
 
-The command above uses a prepared [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/loki-values.yaml) provided in this `loki` folder, which contains customized settings deviating from the default settings. Alternatively, you could create your own `values.yaml` file and adjust the command. The customizations in the prepared `values.yaml` cover the following areas:
-- activates the `singleBinary` mode
-- disables additional components that are usually used when running Loki as a central backend.
+The previous command uses the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/loki-values.yaml) provided in this `loki` folder, which contains customized settings deviating from the default settings. Alternatively, you can create your own `values.yaml` file and adjust the command. The customizations in the prepared `values.yaml` cover the following areas:
+- activate the `singleBinary` mode
+- disable additional components that are typically used when running Loki as a central backend.
+
+Alternatively, you can create your own `values.yaml` file and adjust the command.
 
 ### Verify Loki Installation
 
