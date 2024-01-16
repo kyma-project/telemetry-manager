@@ -85,7 +85,7 @@ As a result, you see data arriving in your environment, advanced Kubernetes moni
 Next, you set up the ingestion of custom span and Istio span data, and, optionally, custom metrics based on OTLP.
 
 ### Create Access Token and Secret
-
+>**NOTE:** if you have already created `dynakube` Secret in prerequisites then skip this step.
 1. To push custom metrics and spans to Dynatrace, set up a [dataIngestToken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens).
 
    Follow the instructions in [Dynatrace: Generate an access token](https://docs.dynatrace.com/docs/manage/access-control/access-tokens#create-api-token) and select the following scopes:
