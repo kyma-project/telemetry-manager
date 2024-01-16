@@ -83,8 +83,6 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		objs = append(objs, sampleApp.Pod().K8sObject())
 		appURL = sampleApp.PodURL(proxyClient)
 
-		objs = append(objs, kitk8s.NewNetworkPolicy("ingress-deny-all", kitkyma.SystemNamespaceName).K8sObject())
-
 		return objs
 	}
 
