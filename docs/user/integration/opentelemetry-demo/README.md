@@ -98,6 +98,8 @@ The previous command uses the[values.yaml](https://raw.githubusercontent.com/kym
 - Extend memory limits of the demo apps to avoid crashes caused by memory exhaustion
 - Adjust initContainers and services of demo apps to work proper with Istio
 
+Alternatively, you can create your own `values.yaml` file and adjust the command.
+
 ### Verify the Application
 
 To verify that the application is running properly, set up port forwarding and call the respective local hosts.
