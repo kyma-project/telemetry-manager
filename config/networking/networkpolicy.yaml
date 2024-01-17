@@ -11,6 +11,7 @@ spec:
       control-plane: telemetry-operator
   policyTypes:
     - Ingress
+    - Egress
   ingress:
     - from:
         - ipBlock:
@@ -22,3 +23,7 @@ spec:
           port: 8081
         - protocol: TCP
           port: 9443
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
