@@ -145,6 +145,7 @@ func makeNetworkPolicy(name types.NamespacedName, allowedPorts []int32) *network
 			},
 			PolicyTypes: []networkingv1.PolicyType{
 				networkingv1.PolicyTypeIngress,
+				networkingv1.PolicyTypeEgress,
 			},
 			Ingress: []networkingv1.NetworkPolicyIngressRule{
 				{
@@ -154,6 +155,15 @@ func makeNetworkPolicy(name types.NamespacedName, allowedPorts []int32) *network
 						},
 					},
 					Ports: makeNetworkPolicyPorts(allowedPorts),
+				},
+			},
+			Egress: []networkingv1.NetworkPolicyEgressRule{
+				{
+					To: []networkingv1.NetworkPolicyPeer{
+						{
+							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
+						},
+					},
 				},
 			},
 		},
