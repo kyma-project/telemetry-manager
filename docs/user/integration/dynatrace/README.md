@@ -33,8 +33,6 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
 - Kyma as the target deployment environment
 - The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install)
 - Active Dynatrace environment with permissions to create new access tokens
-- A Secret in the respective namespace in the Kyma cluster, holding the access tokens and endpoints for the Dynatrace instance. In this guide, the Secret is named `dynakube` and the namespace `dynatrace` as illustrated in this [example](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/dynatrace/secret-example.yaml).
-  >**NOTE:** If you don't have the required access tokens, you can create the Secret [later](#create-access-token-and-secret).
 - Helm 3.x if you want to deploy the [OpenTelemetry sample application](../opentelemetry-demo/README.md)
 
 ## Prepare the Namespace
@@ -85,7 +83,6 @@ As a result, you see data arriving in your environment, advanced Kubernetes moni
 Next, you set up the ingestion of custom span and Istio span data, and, optionally, custom metrics based on OTLP.
 
 ### Create Secret
->**NOTE:** if you have already created `dynakube` Secret in prerequisites then skip this step.
 1. To push custom metrics and spans to Dynatrace, set up a [dataIngestToken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens).
 
    Follow the instructions in [Dynatrace: Generate an access token](https://docs.dynatrace.com/docs/manage/access-control/access-tokens#create-api-token) and select the following scopes:
@@ -99,7 +96,8 @@ Next, you set up the ingestion of custom span and Istio span data, and, optional
 
    ```bash
    kubectl -n $DYNATRACE_NS create secret generic dynakube --from-literal="apiToken=<API_TOKEN>" --from-literal="dataIngestToken=<DATA_INGEST_TOKEN>" --from-literal="apiurl=<API_URL>"
-
+   ```
+   verify the Secret created above looks similar to the [example Secret](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/dynatrace/secret-example.yaml)
 ### Ingest Traces
 
 To start ingesting custom spans and Istio spans, you must enable the Istio tracing feature and then deploy a TracePipeline.
