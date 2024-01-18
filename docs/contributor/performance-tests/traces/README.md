@@ -80,9 +80,9 @@ All test scenarios will use single test script [run-load-test.sh](assets/run-loa
 
 ## Test Results
 
-| Test Name                 | Receiver Accepted Spans / sec | Exporter Exported Spans / sec | Exporter Queue Size | Pod Memory Usage | Pod CPU Usage |
-|---------------------------|-------------------------------|-------------------------------|---------------------|------------------|---------------|
-| OTEL Image Version 0.91.0 | 0                             | 0                             | 0                   | 0                | 0             |
+|          Test Name          |  Receiver Accepted Spans / sec |  Exporter Exported Spans / sec |  Exporter Queue Size |  Pod Memory Usage |  Pod CPU Usage |
+|:---------------------------:|-------------------------------:|-------------------------------:|---------------------:|------------------:|---------------:|
+|  OTEL Image Version 0.91.0  |                              0 |                              0 |                    0 |                 0 |              0 |
 
 
 
