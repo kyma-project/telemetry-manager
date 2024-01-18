@@ -177,7 +177,7 @@ To collect custom metrics, you usually use the [Dynatrace annotation approach](h
                             name: dynakube
                             namespace: ${DYNATRACE_NS}
                             key: apiurl
-                            path: v2/otlp/v1/metrics
+                path: v2/otlp/v1/metrics
                 headers:
                     - name: Authorization
                       valueFrom:
