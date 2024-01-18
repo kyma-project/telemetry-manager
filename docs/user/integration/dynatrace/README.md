@@ -90,9 +90,9 @@ Next, you set up the ingestion of custom span and Istio span data, and, optional
    - **Ingest metrics**
    - **Ingest OpenTelemetry traces**
 
-2. Create an [apitoken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens) by selecting the template `Kubernetes: Dynatrace Operator`.
+2. Create an [apiToken](https://docs.dynatrace.com/docs/manage/access-control/access-tokens) by selecting the template `Kubernetes: Dynatrace Operator`.
 
-3. To create a new Secret containing your access tokens, replace the `{API_TOKEN}` and `{DATA_INGEST_TOKEN}` placeholder with the `apitoken` and `dataIngestToken` you created, replace the `{API_URL}` placeholder with the Dynatrace endpoint, and run the following command:
+3. To create a new Secret containing your access tokens, replace the `<API_TOKEN>` and `<DATA_INGEST_TOKEN>` placeholder with the `apiToken` and `dataIngestToken` you created, replace the `<API_URL>` placeholder with the Dynatrace endpoint, and run the following command:
 
    ```bash
    kubectl -n $DYNATRACE_NS create secret generic dynakube --from-literal="apiToken=<API_TOKEN>" --from-literal="dataIngestToken=<DATA_INGEST_TOKEN>" --from-literal="apiurl=<API_URL>"
@@ -121,7 +121,7 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
     The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
 
     > **CAUTION:** Be cautious when you configure the **randomSamplingPercentage**:
-    > - Traces might consume a significant storage volume in Dynatrace.
+    > - Could cause high volume of traces.
     > - The Kyma trace collector component does not scale automatically.
 
 1. Deploy the TracePipeline:
