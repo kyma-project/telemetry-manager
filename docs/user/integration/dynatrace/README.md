@@ -141,7 +141,7 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
                             name: dynakube
                             namespace: ${DYNATRACE_NS}
                             key: apiurl
-                path: v2/otlp/v1/metrics
+                path: v2/otlp/v1/traces
                 headers:
                     - name: Authorization
                       prefix: Api-Token
@@ -177,6 +177,7 @@ To collect custom metrics, you usually use the [Dynatrace annotation approach](h
                             name: dynakube
                             namespace: ${DYNATRACE_NS}
                             key: apiurl
+                            path: v2/otlp/v1/metrics
                 headers:
                     - name: Authorization
                       valueFrom:
