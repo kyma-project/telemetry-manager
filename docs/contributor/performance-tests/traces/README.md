@@ -80,9 +80,9 @@ All test scenarios use a single test script [run-load-test.sh](assets/run-load-t
 
 ## Test Results
 
-|          Test Name          |  Receiver Accepted Spans / sec |  Exporter Exported Spans / sec |  Exporter Queue Size |  Pod Memory Usage |  Pod CPU Usage |
-|:---------------------------:|-------------------------------:|-------------------------------:|---------------------:|------------------:|---------------:|
-|  OTEL Image Version 0.91.0  |                              0 |                              0 |                    0 |                 0 |              0 |
-
+|              Test Name               |                  Receiver Accepted Spans / sec |        Exporter Exported Spans / sec |  Exporter Queue Size | Pod Memory Usage (Bytes) |     Pod CPU Usage |
+|:------------------------------------:|-----------------------------------------------:|-------------------------------------:|---------------------:|-------------------------:|------------------:|
+| OTEL Image Version 0.91.0 Throughput |                                       19815.05 |                             19815.05 |                    0 |       87007232, 88920064 |      0.979, 0.921 |
+                                                                                                                                                             
 
 
