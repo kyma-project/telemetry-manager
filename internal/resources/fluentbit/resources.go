@@ -58,15 +58,15 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels(),
+				MatchLabels: Labels(),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels(),
+					Labels:      Labels(),
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
@@ -264,7 +264,7 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-metrics", name.Name),
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   strconv.Itoa(metricsPort),
@@ -281,7 +281,7 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromString("http"),
 				},
 			},
-			Selector: labels(),
+			Selector: Labels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
@@ -293,7 +293,7 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-exporter-metrics", name.Name),
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   strconv.Itoa(metricsPort),
@@ -309,7 +309,7 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 					TargetPort: intstr.FromString("http-metrics"),
 				},
 			},
-			Selector: labels(),
+			Selector: Labels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
@@ -359,7 +359,7 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 		},
 		Data: map[string]string{
 			"custom_parsers.conf": parserConfig,
@@ -373,7 +373,7 @@ func MakeParserConfigmap(name types.NamespacedName) *corev1.ConfigMap {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 		},
 		Data: map[string]string{"parsers.conf": ""},
 	}
@@ -416,13 +416,13 @@ end
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 		},
 		Data: map[string]string{"filter-script.lua": luaFilter},
 	}
 }
 
-func labels() map[string]string {
+func Labels() map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":     "fluent-bit",
 		"app.kubernetes.io/instance": "telemetry",

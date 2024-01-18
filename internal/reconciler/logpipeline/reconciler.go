@@ -31,6 +31,8 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
+	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
@@ -70,6 +72,7 @@ type Reconciler struct {
 	unsupportedLogPipelines prometheus.Gauge
 	syncer                  syncer
 	overridesHandler        *overrides.Handler
+	istioStatusChecker      istiostatus.Checker
 }
 
 func NewReconciler(client client.Client, config Config, prober DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
@@ -82,6 +85,7 @@ func NewReconciler(client client.Client, config Config, prober DaemonSetProber, 
 	metrics.Registry.MustRegister(r.allLogPipelines, r.unsupportedLogPipelines)
 	r.syncer = syncer{client, config}
 	r.overridesHandler = overridesHandler
+	r.istioStatusChecker = istiostatus.NewChecker(client)
 
 	return &r
 }
@@ -207,6 +211,15 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to reconcile fluent bit daemonset: %w", err)
 	}
 
+	allowedPorts := getFluentBitPorts()
+	if r.istioStatusChecker.IsIstioActive(ctx) {
+		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
+	}
+	networkPolicy := commonresources.MakeNetworkPolicy(r.config.DaemonSet, allowedPorts, fluentbit.Labels())
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, ownerRefSetter, networkPolicy); err != nil {
+		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
+	}
+
 	return nil
 }
 
@@ -299,4 +312,11 @@ func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1al
 	}
 
 	return deployablePipelines
+}
+
+func getFluentBitPorts() []int32 {
+	return []int32{
+		ports.Metrics,
+		ports.HTTP,
+	}
 }
