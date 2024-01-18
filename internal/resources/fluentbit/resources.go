@@ -3,8 +3,8 @@ package fluentbit
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
-	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -13,7 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
-	"strings"
+
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 )
 
 const checksumAnnotationKey = "checksum/logpipeline-config"
