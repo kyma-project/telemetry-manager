@@ -25,7 +25,7 @@ override:
     path: ^internal/istiostatus$
   - threshold: 86
     path: ^internal/otelcollector/config/otlpexporter$
-  - threshold: 72
+  - threshold: 85
     path: ^internal/resources/otelcollector$
   - threshold: 86
     path: ^internal/webhookcert$
