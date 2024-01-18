@@ -200,9 +200,14 @@ func TestApplyGatewayResources(t *testing.T) {
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
 		}, np.Labels)
-		require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress}, np.Spec.PolicyTypes)
-		require.Equal(t, np.Spec.Ingress[0].From[0].IPBlock.CIDR, "0.0.0.0/0")
+		require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress}, np.Spec.PolicyTypes)
+		require.Len(t, np.Spec.Ingress, 1)
+		require.Len(t, np.Spec.Ingress[0].From, 1)
+		require.Equal(t, "0.0.0.0/0", np.Spec.Ingress[0].From[0].IPBlock.CIDR)
 		require.Len(t, np.Spec.Ingress[0].Ports, 2)
+		require.Len(t, np.Spec.Egress, 1)
+		require.Len(t, np.Spec.Egress[0].To, 1)
+		require.Equal(t, "0.0.0.0/0", np.Spec.Egress[0].To[0].IPBlock.CIDR)
 	})
 
 	t.Run("should create metrics service", func(t *testing.T) {
