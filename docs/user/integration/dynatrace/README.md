@@ -97,7 +97,7 @@ Next, you set up the ingestion of custom span and Istio span data, and, optional
    ```bash
    kubectl -n $DYNATRACE_NS create secret generic dynakube --from-literal="apiToken=<API_TOKEN>" --from-literal="dataIngestToken=<DATA_INGEST_TOKEN>" --from-literal="apiurl=<API_URL>"
    ```
-   verify the Secret created above looks similar to the [example Secret](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/dynatrace/secret-example.yaml)
+4. Verify the Secret you created looks similar to the [example Secret](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/dynatrace/secret-example.yaml).
 ### Ingest Traces
 
 To start ingesting custom spans and Istio spans, you must enable the Istio tracing feature and then deploy a TracePipeline.
