@@ -63,19 +63,19 @@ All test scenarios use a single test script [run-load-test.sh](assets/run-load-t
 2. To test the queuing and retry capabilities of TracePipeline with simulated backend outages, run:
 
 ```shell
-./run-load-test.sh -b
+./run-load-test.sh -b true
 ```
 
 3. To test the average throughput with 3 TracePipelines simultaneously end-to-end, run:
 
 ```shell
-./run-load-test.sh -m
+./run-load-test.sh -m true
 ```
 
 4. To test the queuing and retry capabilities of 3 TracePipelines with simulated backend outages, run:
 
 ```shell
-./run-load-test.sh -m -b
+./run-load-test.sh -m true -b true
 ```
 
 ## Test Results
