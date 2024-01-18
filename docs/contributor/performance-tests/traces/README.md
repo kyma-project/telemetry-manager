@@ -16,9 +16,9 @@ This document describes a reproducible test setup to determine the limits and KP
 
 ### Assumptions
 
-The tests are executed for 20 minutes for each test case to have a stabilized output and reliable KPIs. Generated traces contains at least 2 spans and each span have 40 attributes to simulate an average trace span size.  
+The tests are executed for 20 minutes for each test case to have a stabilized output and reliable KPIs. Generated traces contain at least 2 spans, and each span has 40 attributes to simulate an average trace span size.  
 
-Following test cases identified:
+The following test cases are identified:
 
 1. Test average throughput end-to-end. 
 2. Test queuing and retry capabilities of TracePipeline with simulated backend outages.
@@ -28,19 +28,19 @@ Following test cases identified:
 
 ## Setup
 
-The following diagram shows test setup used for all test cases. 
+The following diagram shows the test setup used for all test cases. 
 
 ![Metric gateway exported metrics](./assets/trace_perf_test_setup.jpeg)
 
-In all test scenarios a preconfigured trace load generator deployed on test cluster, the trace load generator feed test TracePipeline over pipeline service instance to ensure all trace gateway instances get loaded with test data.
+In all test scenarios, a preconfigured trace load generator is deployed on the test cluster. To ensure all trace gateway instances are loaded with test data, the trace load generator feeds the test TracePipeline over a pipeline service instance .
 
-A prometheus instance deployed on the test cluster to collect relevant metrics from trace gateway instances and fetch the metrics end of test as test scenario result.
+A Prometheus instance is deployed on the test cluster to collect relevant metrics from trace gateway instances and to fetch the metrics at the end of the test as test scenario result.
 
-All test scenarios also get a Test Backend deployed to simulate end-to-end behaviour.
+All test scenarios also have a test backend deployed to simulate end-to-end behaviour.
 
-Each test scenario has own test scripts responsible for preparing test scenario and deploying on test cluster, run the scenario, and fetch relevant metrics/KPIs end of test run. The test results end of test printed out.
+Each test scenario has its own test scripts responsible for preparing test scenario and deploying on test cluster, running the scenario, and fetching relevant metrics/KPIs at the end of the test run. After the test, the test results are printed out.
 
-A typical test result output will look like following:
+A typical test result output looks like the following example:
 
 ```shell
  Receiver accepted spans,Average,12867.386144069678
@@ -54,25 +54,25 @@ A typical test result output will look like following:
 
 ## Test Script
 
-All test scenarios will use single test script [run-load-test.sh](assets/run-load-test.sh), script provides two parameter `-m` for multi TracePipeline scenarios and `-b` for backpressure scenarios
-1. To run test case Test average throughput end-to-end, execute
+All test scenarios use a single test script [run-load-test.sh](assets/run-load-test.sh), which provides two parameters: `-m` for multi TracePipeline scenarios, and `-b` for backpressure scenarios
+1. To test the average throughput end-to-end, run:
 
 ```shell
 ./run-load-test.sh
 ```
-2. To run test case Test queuing and retry capabilities of TracePipeline with simulated backend outages, execute
+2. To test the queuing and retry capabilities of TracePipeline with simulated backend outages, run:
 
 ```shell
 ./run-load-test.sh -b
 ```
 
-3. To run test case Test average throughput with 3 TracePipelines simultaneously end-to-end, execute
+3. To test the average throughput with 3 TracePipelines simultaneously end-to-end, run:
 
 ```shell
 ./run-load-test.sh -m
 ```
 
-4. To run test case Test queuing and retry capabilities of 3 TracePipeline with simulated backend outages, execute
+4. To test the queuing and retry capabilities of 3 TracePipelines with simulated backend outages, run:
 
 ```shell
 ./run-load-test.sh -m -b
