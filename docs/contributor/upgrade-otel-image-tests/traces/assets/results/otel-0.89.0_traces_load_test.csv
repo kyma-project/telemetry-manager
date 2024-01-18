@@ -1,0 +1,5 @@
+"Receiver accepted spans","Average","20211.2"
+"Exporter exported spans","Average","20224"
+"Exporter queue size","Average","0"
+"Pod memory","telemetry-trace-collector-c54dcb8c4-f2rjp","69361664"
+"Pod memory","telemetry-trace-collector-c54dcb8c4-2fjzn","61722624"
