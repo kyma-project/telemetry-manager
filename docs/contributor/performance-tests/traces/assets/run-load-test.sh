@@ -77,7 +77,7 @@ function cleanup() {
 
     curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-trace-collector-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | [ "Exporter queue size", "Average", .value[1] ] | @csv' | xargs printf "\033[0;31m %s \033[0m \n"
 
-    curl -fs --data-urlencode 'query=sum(container_memory_working_set_bytes{namespace="kyma-system", container="collector"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}) by (pod)' localhost:9090/api/v1/query | jq -r '.data.result[] | [ "Pod memory", .metric.pod, .value[1] ] | @csv' | xargs printf "\033[0;31m %s \033[0m \n"
+    curl -fs --data-urlencode 'query=sum(container_memory_working_set_bytes{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}) by (pod)' localhost:9090/api/v1/query | jq -r '.data.result[] | [ "Pod memory", .metric.pod, .value[1] ] | @csv' | xargs printf "\033[0;31m %s \033[0m \n"
 
     curl -fs --data-urlencode 'query=sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}) by (pod)' localhost:9090/api/v1/query | jq -r '.data.result[] | [ "Pod CPU", .metric.pod, .value[1] ] | @csv' | xargs printf "\033[0;31m %s \033[0m \n"
     kill %1
