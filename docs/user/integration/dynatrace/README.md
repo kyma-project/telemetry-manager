@@ -56,7 +56,7 @@ There are different ways to deploy Dynatrace on Kubernetes. All [deployment opti
 1. Install Dynatrace with the namespace you prepared earlier.
    >**NOTE:** By default, Dynatrace uses the classic full-stack injection. However, for better stability, we recommend using the [cloud-native fullstack injection](https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/installation/cloud-native-fullstack).
 
-2. In the DynaKube resource, configure the correct `apiUrl` of your environment.
+2. In the DynaKube resource, configure the correct `apiurl` of your environment.
 
 3. In the DynaKube resource, exclude Kyma system namespaces by adding the following snippet:
 
