@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/uuid v1.5.0
-	github.com/onsi/ginkgo/v2 v2.14.0
+	github.com/onsi/ginkgo/v2 v2.15.0
 	github.com/onsi/gomega v1.31.0
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/common v0.46.0
