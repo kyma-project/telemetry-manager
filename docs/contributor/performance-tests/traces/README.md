@@ -30,7 +30,7 @@ The following test cases are identified:
 
 The following diagram shows the test setup used for all test cases. 
 
-![Metric gateway exported metrics](./assets/trace_perf_test_setup.svg)
+![Metric gateway exported metrics](./assets/trace_perf_test_setup.drawio.svg)
 
 In all test scenarios, a preconfigured trace load generator is deployed on the test cluster. To ensure all trace gateway instances are loaded with test data, the trace load generator feeds the test TracePipeline over a pipeline service instance .
 
