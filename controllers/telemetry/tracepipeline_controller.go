@@ -35,6 +35,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/setup"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // TracePipelineReconciler reconciles a TracePipeline object
@@ -61,19 +62,24 @@ func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&telemetryv1alpha1.TracePipeline{}).
 		Watches(
 			&corev1.ConfigMap{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{}),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		Watches(
 			&appsv1.Deployment{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{}),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		Watches(
 			&corev1.Secret{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{}),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		Watches(
 			&corev1.Service{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{}),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		Watches(
 			&networkingv1.NetworkPolicy{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{})).
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.TracePipeline{}),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		Watches(
 			&operatorv1alpha1.Telemetry{},
 			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),

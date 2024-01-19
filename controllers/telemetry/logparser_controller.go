@@ -26,6 +26,8 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
 
 // LogParserReconciler reconciles a Logparser object
@@ -53,6 +55,7 @@ func (r *LogParserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&telemetryv1alpha1.LogParser{}).
 		Watches(
 			&corev1.ConfigMap{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogParser{})).
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogParser{}),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		Complete(r)
 }

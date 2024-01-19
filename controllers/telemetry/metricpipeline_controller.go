@@ -36,6 +36,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/setup"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // MetricPipelineReconciler reconciles a MetricPipeline object
@@ -63,19 +64,24 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&telemetryv1alpha1.MetricPipeline{}).
 		Watches(
 			&corev1.ConfigMap{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{})).
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{}),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		Watches(
 			&appsv1.Deployment{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{})).
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{}),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		Watches(
 			&corev1.Secret{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{})).
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{}),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		Watches(
 			&corev1.Service{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{})).
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{}),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		Watches(
 			&networkingv1.NetworkPolicy{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{})).
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{}),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		Watches(
 			&apiextensionsv1.CustomResourceDefinition{},
 			handler.EnqueueRequestsFromMapFunc(r.mapCRDChanges),
