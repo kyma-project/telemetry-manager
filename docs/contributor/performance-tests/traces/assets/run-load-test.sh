@@ -1,6 +1,5 @@
 #!/bin/sh
 
-JQ_COLORS="0;90:0;39:0;39:0;39:0;32:1;39:1;39:1;34"
 PROMETHEUS_NAMESPACE="prometheus"
 HELM_PROM_RELEASE="prometheus"
 NAMESPACE="trace-load-test"
@@ -20,16 +19,16 @@ function setup() {
     # Deploy prometheus
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
     helm repo update
-    helm upgrade --install -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f values.yaml --set grafana.adminPassword=myPwd
+    helm upgrade --install -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/performance-tests/traces/assets/values.yaml --set grafana.adminPassword=myPwd
 
     if "$MAX_PIPELINE"; then
-        kubectl apply -f trace-max-pipeline.yaml
+        kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/performance-tests/traces/assets/trace-max-pipeline.yaml
     fi
     # Deploy test setup
-    kubectl apply -f trace-load-test-setup.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/performance-tests/traces/assets/trace-load-test-setup.yaml
 
     if "$BACKPRESSURE_TEST"; then
-        kubectl apply -f trace-backpressure-config.yaml
+        kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/performance-tests/traces/assets/trace-backpressure-config.yaml
         sleep 3
         kubectl rollout restart deployment trace-receiver -n trace-load-test
     fi
@@ -77,15 +76,15 @@ function cleanup() {
 
     curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-trace-collector-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | [ "Exporter queue size", "Average", .value[1] ] | @csv' | xargs printf "\033[0;31m %s \033[0m \n"
 
-    curl -fs --data-urlencode 'query=sum(container_memory_working_set_bytes{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}) by (pod)' localhost:9090/api/v1/query | jq -r '.data.result[] | [ "Pod memory", .metric.pod, .value[1] ] | @csv' | xargs printf "\033[0;31m %s \033[0m \n"
+    curl -fs --data-urlencode 'query=(sum(container_memory_working_set_bytes{namespace="kyma-system", container="collector"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}) by (pod)) / 1024 / 1024' localhost:9090/api/v1/query | jq -r '.data.result[] | [ "Pod memory", .metric.pod, .value[1] ] | @csv' | xargs printf "\033[0;31m %s \033[0m \n"
 
     curl -fs --data-urlencode 'query=sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}) by (pod)' localhost:9090/api/v1/query | jq -r '.data.result[] | [ "Pod CPU", .metric.pod, .value[1] ] | @csv' | xargs printf "\033[0;31m %s \033[0m \n"
     kill %1
 
     if "$MAX_PIPELINE"; then
-      kubectl delete -f trace-max-pipeline.yaml
+      kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/performance-tests/traces/assets/trace-max-pipeline.yaml
     fi
-    kubectl delete -f trace-load-test-setup.yaml
+    kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/performance-tests/traces/assets/trace-load-test-setup.yaml
 
     helm delete -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE}
 }

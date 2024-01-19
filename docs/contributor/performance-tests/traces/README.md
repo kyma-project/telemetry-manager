@@ -30,7 +30,7 @@ The following test cases are identified:
 
 The following diagram shows the test setup used for all test cases. 
 
-![Metric gateway exported metrics](./assets/trace_perf_test_setup.jpeg)
+![Metric gateway exported metrics](./assets/trace_perf_test_setup.drawio.svg)
 
 In all test scenarios, a preconfigured trace load generator is deployed on the test cluster. To ensure all trace gateway instances are loaded with test data, the trace load generator feeds the test TracePipeline over a pipeline service instance .
 
@@ -80,10 +80,12 @@ All test scenarios use a single test script [run-load-test.sh](assets/run-load-t
 
 ## Test Results
 
-|               Test Name                |                  Receiver Accepted Spans / sec | Exporter Exported Spans / sec | Exporter Queue Size |  Pod Memory Usage (Bytes) | Pod CPU Usage |
-|:--------------------------------------:|-----------------------------------------------:|------------------------------:|--------------------:|--------------------------:|--------------:|
-|  OTEL Image Version 0.91.0 Throughput  |                                       19815.05 |                      19815.05 |                   0 |      137007232, 139920064 |  0.979, 0.921 |
-| OTEL Image Version 0.91.0 Backpressure |                                         9574.4 |                          1280 |                 509 |    1929478144, 1726021632 |  0.723, 0.702 |
+|                   Test Description                   |                  Receiver Accepted Spans / sec |    Exporter Exported Spans / sec | Exporter Queue Size | Pod Memory Usage (MBytes) |            Pod CPU Usage |
+|:----------------------------------------------------:|-----------------------------------------------:|---------------------------------:|--------------------:|--------------------------:|-------------------------:|
+|         OTEL Image Version 0.91.0 Throughput         |                                       19815.05 |                         19815.05 |                   0 |               137, 139.92 |             0.979, 0.921 |
+|        OTEL Image Version 0.91.0 Backpressure        |                                         9574.4 |                             1280 |                 509 |              1929.4, 1726 |             0.723, 0.702 |
+|  OTEL Image Version 0.91.0 MultiPipeline Throughput  |                                        13158.4 |                         38929.06 |                   0 |                 117, 98.5 |             1.307, 1.351 |
+| OTEL Image Version 0.91.0 MultiPipeline Backpressure |                                         9663.8 |                           1331.2 |                 510 |              2029.8, 1686 |             0.733, 0.696 |
                                                                                                                                                              
 
 
