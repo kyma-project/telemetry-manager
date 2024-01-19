@@ -30,15 +30,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"github.com/kyma-project/telemetry-manager/internal/setup"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // MetricPipelineReconciler reconciles a MetricPipeline object
