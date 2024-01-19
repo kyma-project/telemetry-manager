@@ -67,7 +67,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	logf.FromContext(ctx).V(1).Info("Reconciliation",
+	logf.FromContext(ctx).V(1).Info("Reconciling",
 		"global_overrides", overrideConfig.Global,
 		"metrics_overrides", overrideConfig.Metrics,
 	)
