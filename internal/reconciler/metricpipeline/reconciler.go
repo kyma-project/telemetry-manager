@@ -62,15 +62,12 @@ func NewReconciler(client client.Client, config Config, gatewayProber Deployment
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logf.FromContext(ctx).V(1).Info("Reconciling")
+
 	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
-	logf.FromContext(ctx).V(1).Info("Reconciling",
-		"global_overrides", overrideConfig.Global,
-		"metrics_overrides", overrideConfig.Metrics,
-	)
 
 	if overrideConfig.Metrics.Paused {
 		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
