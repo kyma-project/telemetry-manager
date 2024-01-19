@@ -71,16 +71,18 @@ func NewReconciler(client client.Client, config Config, prober DaemonSetProber, 
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := logf.FromContext(ctx)
-	log.V(1).Info("Reconciliation triggered")
-
 	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
+	logf.FromContext(ctx).V(1).Info("Reconciliation",
+		"global_overrides", overrideConfig.Global,
+		"logging_overrides", overrideConfig.Logging,
+	)
+
 	if overrideConfig.Logging.Paused {
-		log.V(1).Info("Skipping reconciliation of logparser as reconciliation is paused.")
+		logf.FromContext(ctx).V(1).Info("Skipping reconciliation of logparser as reconciliation is paused.")
 		return ctrl.Result{}, nil
 	}
 

@@ -87,21 +87,23 @@ func NewReconciler(client client.Client, config Config, prober DaemonSetProber, 
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := logf.FromContext(ctx)
-	log.V(1).Info("Reconciliation triggered")
-
 	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
+	logf.FromContext(ctx).V(1).Info("Reconciliation",
+		"global_overrides", overrideConfig.Global,
+		"logging_overrides", overrideConfig.Logging,
+	)
+
 	if overrideConfig.Logging.Paused {
-		log.V(1).Info("Skipping reconciliation of logpipeline as reconciliation is paused.")
+		logf.FromContext(ctx).V(1).Info("Skipping reconciliation of logpipeline as reconciliation is paused.")
 		return ctrl.Result{}, nil
 	}
 
 	if err := r.updateMetrics(ctx); err != nil {
-		log.Error(err, "Failed to get all LogPipelines while updating metrics")
+		logf.FromContext(ctx).Error(err, "Failed to get all LogPipelines while updating metrics")
 	}
 
 	var pipeline telemetryv1alpha1.LogPipeline
