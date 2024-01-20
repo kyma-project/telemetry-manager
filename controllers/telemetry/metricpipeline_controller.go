@@ -30,13 +30,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
-	"github.com/kyma-project/telemetry-manager/internal/setup"
+	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 // MetricPipelineReconciler reconciles a MetricPipeline object
@@ -59,39 +59,40 @@ func (r *MetricPipelineReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// We use `Watches` instead of `Owns` to trigger a reconciliation also when owned objects without the controller flag are changed.
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&telemetryv1alpha1.MetricPipeline{}).
-		Watches(
-			&corev1.ConfigMap{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{}),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
-		Watches(
-			&appsv1.Deployment{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{}),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
-		Watches(
-			&corev1.Secret{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{}),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
-		Watches(
-			&corev1.Service{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{}),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
-		Watches(
-			&networkingv1.NetworkPolicy{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.MetricPipeline{}),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
-		Watches(
-			&apiextensionsv1.CustomResourceDefinition{},
-			handler.EnqueueRequestsFromMapFunc(r.mapCRDChanges),
-			builder.WithPredicates(setup.CreateOrDelete()),
-		).
-		Watches(
-			&operatorv1alpha1.Telemetry{},
-			handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
-			builder.WithPredicates(setup.CreateOrUpdateOrDelete()),
-		).Complete(r)
+	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1alpha1.MetricPipeline{})
+
+	ownedResourceTypesToWatch := []client.Object{
+		&appsv1.Deployment{},
+		&appsv1.DaemonSet{},
+		&corev1.ConfigMap{},
+		&corev1.Secret{},
+		&corev1.Service{},
+		&corev1.ServiceAccount{},
+		&rbacv1.ClusterRole{},
+		&rbacv1.ClusterRoleBinding{},
+		&networkingv1.NetworkPolicy{},
+	}
+
+	for _, resource := range ownedResourceTypesToWatch {
+		b = b.Watches(
+			resource,
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
+				mgr.GetRESTMapper(),
+				&telemetryv1alpha1.MetricPipeline{},
+			),
+			builder.WithPredicates(predicate.OwnedResourceChanged()),
+		)
+	}
+
+	return b.Watches(
+		&apiextensionsv1.CustomResourceDefinition{},
+		handler.EnqueueRequestsFromMapFunc(r.mapCRDChanges),
+		builder.WithPredicates(predicate.CreateOrDelete()),
+	).Watches(
+		&operatorv1alpha1.Telemetry{},
+		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
+		builder.WithPredicates(predicate.CreateOrUpdateOrDelete()),
+	).Complete(r)
 }
 
 func (r *MetricPipelineReconciler) mapCRDChanges(ctx context.Context, object client.Object) []reconcile.Request {

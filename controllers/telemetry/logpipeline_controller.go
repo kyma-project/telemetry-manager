@@ -19,6 +19,9 @@ limitations under the License.
 import (
 	"context"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/predicate"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -26,10 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 )
 
 // LogPipelineReconciler reconciles a LogPipeline object
@@ -54,35 +53,28 @@ func (r *LogPipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 }
 
 func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&telemetryv1alpha1.LogPipeline{}).
-		Watches(
-			&appsv1.DaemonSet{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{}),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
-		Watches(
-			&corev1.Service{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{}),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
-		Watches(
-			&corev1.ConfigMap{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{}),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
-		Watches(
-			&corev1.ServiceAccount{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{}),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
-		Watches(
-			&rbacv1.ClusterRole{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{}),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
-		Watches(
-			&rbacv1.ClusterRoleBinding{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{}),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
-		Watches(
-			&corev1.Secret{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogPipeline{}),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
-		Complete(r)
+	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1alpha1.LogPipeline{})
+
+	ownedResourceTypesToWatch := []client.Object{
+		&appsv1.DaemonSet{},
+		&corev1.ConfigMap{},
+		&corev1.Secret{},
+		&corev1.Service{},
+		&corev1.ServiceAccount{},
+		&rbacv1.ClusterRole{},
+		&rbacv1.ClusterRoleBinding{},
+	}
+
+	for _, resource := range ownedResourceTypesToWatch {
+		b = b.Watches(
+			resource,
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(),
+				mgr.GetRESTMapper(),
+				&telemetryv1alpha1.LogPipeline{},
+			),
+			builder.WithPredicates(predicate.OwnedResourceChanged()),
+		)
+	}
+
+	return b.Complete(r)
 }
