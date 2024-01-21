@@ -20,6 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
+	networkingv1 "k8s.io/api/networking/v1"
 )
 
 const (
@@ -86,6 +87,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if overrideConfig.Telemetry.Paused {
 		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: paused using override config")
 		return ctrl.Result{}, nil
+	}
+
+	if err := r.CleanUpOldNetworkPolicies(ctx); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to clean up old network policies: %w", err)
 	}
 
 	var telemetry operatorv1alpha1.Telemetry
@@ -186,5 +191,29 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 		return fmt.Errorf("failed to update webhook: %w", err)
 	}
 
+	return nil
+}
+
+func (r *Reconciler) CleanUpOldNetworkPolicies(ctx context.Context) error {
+	OldNetworkPoliciesNames := []string{
+		"telemetry-operator-pprof-deny-ingress",
+		"telemetry-metric-gateway-pprof-deny-ingress",
+		"telemetry-metric-agent-pprof-deny-ingress",
+		"telemetry-trace-collector-pprof-deny-ingress",
+	}
+	for _, networkPolicyName := range OldNetworkPoliciesNames {
+		networkPolicy := &networkingv1.NetworkPolicy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      networkPolicyName,
+				Namespace: r.config.OverridesConfigMapName.Namespace,
+			},
+		}
+		if err := r.Delete(ctx, networkPolicy); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return fmt.Errorf("failed to delete old network policy \"%s\": %w", networkPolicyName, err)
+		}
+	}
 	return nil
 }
