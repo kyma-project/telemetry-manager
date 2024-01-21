@@ -195,7 +195,6 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 }
 
 func (r *Reconciler) CleanUpOldNetworkPolicies(ctx context.Context) error {
-	logf.FromContext(ctx).V(1).Info("Running CleanUpOldNetworkPolicies function")
 	OldNetworkPoliciesNames := []string{
 		"telemetry-operator-pprof-deny-ingress",
 		"telemetry-metric-gateway-pprof-deny-ingress",
@@ -211,7 +210,6 @@ func (r *Reconciler) CleanUpOldNetworkPolicies(ctx context.Context) error {
 		}
 		if err := r.Delete(ctx, networkPolicy); err != nil {
 			if apierrors.IsNotFound(err) {
-				logf.FromContext(ctx).V(1).Info(fmt.Sprintf("Can not find network policy with name %s and namespace %s", networkPolicyName, r.config.OverridesConfigMapName.Namespace))
 				continue
 			}
 			return fmt.Errorf("failed to delete old network policy \"%s\": %w", networkPolicyName, err)
