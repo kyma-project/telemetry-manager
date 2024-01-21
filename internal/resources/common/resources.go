@@ -38,7 +38,7 @@ func MakeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 func MakeNetworkPolicy(name types.NamespacedName, allowedPorts []int32, labels map[string]string) *networkingv1.NetworkPolicy {
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name + "-pprof-deny-ingress",
+			Name:      name.Name,
 			Namespace: name.Namespace,
 			Labels:    labels,
 		},

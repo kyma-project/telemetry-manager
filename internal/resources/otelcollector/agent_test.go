@@ -169,7 +169,7 @@ func TestApplyAgentResources(t *testing.T) {
 
 		np := nps.Items[0]
 		require.NotNil(t, np)
-		require.Equal(t, name+"-pprof-deny-ingress", np.Name)
+		require.Equal(t, name, np.Name)
 		require.Equal(t, namespace, np.Namespace)
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,

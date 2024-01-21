@@ -189,7 +189,7 @@ var _ = Describe("Telemetry Manager", func() {
 		It("Should have a NetworkPolicy", Label("telemetry"), func() {
 			var networkPolicy networkingv1.NetworkPolicy
 			key := types.NamespacedName{
-				Name:      "telemetry-operator-pprof-deny-ingress",
+				Name:      "telemetry-operator",
 				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &networkPolicy)
