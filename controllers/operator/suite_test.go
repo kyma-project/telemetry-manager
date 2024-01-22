@@ -39,6 +39,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -119,7 +120,8 @@ var _ = BeforeSuite(func() {
 			OTLPServiceName: "metricFoo",
 			Namespace:       "kyma-system",
 		},
-		Webhook: webhookConfig,
+		Webhook:                webhookConfig,
+		OverridesConfigMapName: types.NamespacedName{Name: "telemetry-override-config", Namespace: "kyma-system"},
 	}
 	client := mgr.GetClient()
 
