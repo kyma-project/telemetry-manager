@@ -11,8 +11,6 @@ import (
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
-	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -44,19 +42,19 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
 		telemetryIstiofiedExportURL = mockIstiofiedBackend.TelemetryExportURL(proxyClient)
 
-		metricPipeline := kitmetricpipeline.NewPipeline("pipeline-with-otlp-input-enabled").
+		metricPipeline := kitk8s.NewMetricPipeline("pipeline-with-otlp-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			OtlpInput(true)
 		objs = append(objs, metricPipeline.K8sObject())
 
-		metricPipelineIstiofiedBackend := kitmetricpipeline.NewPipeline("pipeline-with-otlp-input-enabled-with-istiofied-backend").
+		metricPipelineIstiofiedBackend := kitk8s.NewMetricPipeline("pipeline-with-otlp-input-enabled-with-istiofied-backend").
 			WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRef()).
 			OtlpInput(true)
 
 		objs = append(objs, metricPipelineIstiofiedBackend.K8sObject())
 
 		// set peerauthentication to strict explicitly
-		peerAuth := istio.NewPeerAuthentication(istiofiedBackendName, istiofiedBackendNs)
+		peerAuth := kitk8s.NewPeerAuthentication(istiofiedBackendName, istiofiedBackendNs)
 		objs = append(objs, peerAuth.K8sObject(kitk8s.WithLabel("app", istiofiedBackendName)))
 
 		// Create 2 deployments (with and without side-car) which would push the metrics to the metrics gateway.

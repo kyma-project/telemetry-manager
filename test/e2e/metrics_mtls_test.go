@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otel/metrics"
@@ -38,7 +37,7 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		metricPipeline := kitmetricpipeline.NewPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
+		metricPipeline := kitk8s.NewMetricPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			WithTLS(mockBackend.TLSCerts)
 		pipelineName = metricPipeline.Name()

@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
@@ -43,9 +42,9 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		runtimeInputPipeline := kitmetricpipeline.NewPipeline("pipeline-service-name-test").
+		runtimeInputPipeline := kitk8s.NewMetricPipeline("pipeline-service-name-test").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			RuntimeInput(true, kitmetricpipeline.IncludeNamespaces(kitkyma.SystemNamespaceName))
+			RuntimeInput(true, kitk8s.IncludeNamespaces(kitkyma.SystemNamespaceName))
 		runtimeInputPipelineName = runtimeInputPipeline.Name()
 		objs = append(objs, runtimeInputPipeline.K8sObject())
 

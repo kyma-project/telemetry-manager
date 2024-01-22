@@ -14,10 +14,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitovrr "github.com/kyma-project/telemetry-manager/test/testkit/kyma/overrides"
-	kitlogpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
-	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
-	kittracepipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -43,12 +39,12 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitlogpipeline.NewPipeline(pipelineName).
+		logPipeline := kitk8s.NewLogPipeline(pipelineName).
 			WithSystemNamespaces(true).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput()
-		metricPipeline := kitmetricpipeline.NewPipeline(pipelineName)
-		tracePipeline := kittracepipeline.NewPipeline(pipelineName)
+		metricPipeline := kitk8s.NewLogPipeline(pipelineName)
+		tracePipeline := kitk8s.NewTracePipeline(pipelineName)
 		objs = append(objs, logPipeline.K8sObject(), metricPipeline.K8sObject(), tracePipeline.K8sObject())
 
 		return objs
@@ -112,7 +108,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 		})
 
 		It("Should add the overrides configmap and modify the log pipeline", func() {
-			overrides = kitovrr.NewOverrides(kitovrr.DEBUG).K8sObject()
+			overrides = kitk8s.NewOverrides(kitk8s.DEBUG).K8sObject()
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, overrides)).Should(Succeed())
 
 			lookupKey := types.NamespacedName{

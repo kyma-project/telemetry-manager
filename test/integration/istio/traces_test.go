@@ -6,7 +6,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kittracepipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
@@ -60,11 +59,11 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
 		telemetryIstiofiedExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		istioTracePipeline := kittracepipeline.NewPipeline("istiofied-app-traces").WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRef())
+		istioTracePipeline := kitk8s.NewTracePipeline("istiofied-app-traces").WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRef())
 		istiofiedPipelineName = istioTracePipeline.Name()
 		objs = append(objs, istioTracePipeline.K8sObject())
 
-		tracePipeline := kittracepipeline.NewPipeline("app-traces").WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+		tracePipeline := kitk8s.NewTracePipeline("app-traces").WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
 		pipelineName = tracePipeline.Name()
 		objs = append(objs, tracePipeline.K8sObject())
 

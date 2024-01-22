@@ -10,7 +10,6 @@ import (
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
@@ -32,7 +31,7 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, mockBackend.K8sObjects()...)
 
-		pipelineWithoutOTLP := kitmetricpipeline.NewPipeline("pipeline-without-otlp-input-enabled").
+		pipelineWithoutOTLP := kitk8s.NewMetricPipeline("pipeline-without-otlp-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			OtlpInput(false)
 		objs = append(objs, pipelineWithoutOTLP.K8sObject())

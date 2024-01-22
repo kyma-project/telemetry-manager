@@ -12,7 +12,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
-	kitlogpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
@@ -45,7 +44,7 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		istioAccessLogsPipeline := kitlogpipeline.NewPipeline("pipeline-istio-access-logs").
+		istioAccessLogsPipeline := kitk8s.NewLogPipeline("pipeline-istio-access-logs").
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithIncludeContainers([]string{"istio-proxy"}).
 			WithHTTPOutput()
