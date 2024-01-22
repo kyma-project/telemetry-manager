@@ -212,7 +212,7 @@ func (r *Reconciler) CleanUpOldNetworkPolicies(ctx context.Context) error {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
-			return fmt.Errorf("failed to delete old network policy \"%s\": %w", networkPolicyName, err)
+			return fmt.Errorf("failed to delete old network policy %s in namespace %s: %w", networkPolicyName, r.config.OverridesConfigMapName.Namespace, err)
 		}
 	}
 	return nil
