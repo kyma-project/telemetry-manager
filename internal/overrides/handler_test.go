@@ -48,6 +48,17 @@ func TestLoadOverrides(t *testing.T) {
 			expectedLogLevel:  zapcore.InfoLevel,
 		},
 		{
+			name: "unknown log level",
+			configMapData: map[string]string{
+				"test-key": `global:
+  logLevel: ultradebug`,
+			},
+			defaultLevel:      zapcore.InfoLevel,
+			expectedOverrides: nil,
+			expectError:       true,
+			expectedLogLevel:  zapcore.InfoLevel,
+		},
+		{
 			name: "valid configmap",
 			configMapData: map[string]string{
 				"test-key": `global:

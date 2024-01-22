@@ -11,7 +11,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Handler struct {
@@ -41,7 +40,7 @@ func (h *Handler) LoadOverrides(ctx context.Context) (*Config, error) {
 		return nil, fmt.Errorf("failed to load overrides config: %w", err)
 	}
 
-	if err := h.syncLogLevel(ctx, overrideConfig.Global); err != nil {
+	if err := h.syncLogLevel(overrideConfig.Global); err != nil {
 		return nil, fmt.Errorf("failed to sync log level: %w", err)
 	}
 
@@ -65,8 +64,6 @@ func (h *Handler) loadOverridesConfig(ctx context.Context) (*Config, error) {
 		return &overrideConfig, err
 	}
 
-	logf.FromContext(ctx).V(1).Info("Using overrides", "config", overrideConfig)
-
 	return &overrideConfig, nil
 }
 
@@ -75,12 +72,9 @@ func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
 	cmName := h.config.ConfigMapName
 	if err := h.client.Get(ctx, cmName, &cm); err != nil {
 		if apierrors.IsNotFound(err) {
-			logf.FromContext(ctx).V(1).Info("Could not find overrides configmap",
-				"name", cmName.Name,
-				"namespace", cmName.Namespace)
 			return "", nil
 		}
-		return "", fmt.Errorf("failed to get overrides configmapp: %w", err)
+		return "", fmt.Errorf("failed to get overrides configmap: %w", err)
 	}
 	if data, ok := cm.Data[h.config.ConfigMapKey]; ok {
 		return data, nil
@@ -88,7 +82,7 @@ func (h *Handler) readConfigMapOrEmpty(ctx context.Context) (string, error) {
 	return "", nil
 }
 
-func (h *Handler) syncLogLevel(ctx context.Context, config GlobalConfig) error {
+func (h *Handler) syncLogLevel(config GlobalConfig) error {
 	var newLogLevel zapcore.Level
 	if config.LogLevel == "" {
 		newLogLevel = h.defaultLevel
@@ -100,16 +94,6 @@ func (h *Handler) syncLogLevel(ctx context.Context, config GlobalConfig) error {
 		}
 	}
 
-	return h.changeLogLevel(ctx, newLogLevel)
-}
-
-func (h *Handler) changeLogLevel(ctx context.Context, newLevel zapcore.Level) error {
-	oldLevel := h.atomicLevel.Level()
-
-	logf.FromContext(ctx).V(1).Info("Changing log level",
-		"old", oldLevel,
-		"new", newLevel)
-
-	h.atomicLevel.SetLevel(newLevel)
+	h.atomicLevel.SetLevel(newLogLevel)
 	return nil
 }

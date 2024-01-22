@@ -76,7 +76,7 @@ func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, 
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logf.FromContext(ctx).V(1).Info("Reconciliation triggered")
+	logf.FromContext(ctx).V(1).Info("Reconciling")
 
 	overrideConfig, err := r.overridesHandler.LoadOverrides(ctx)
 	if err != nil {
