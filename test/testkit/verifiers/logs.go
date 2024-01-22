@@ -9,12 +9,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
+	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func LogsShouldBeDelivered(proxyClient *apiserver.ProxyClient, expectedPodNamePrefix string, telemetryExportURL string) {
+func LogsShouldBeDelivered(proxyClient *apiserverproxy.ProxyClient, expectedPodNamePrefix string, telemetryExportURL string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())

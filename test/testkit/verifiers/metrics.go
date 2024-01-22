@@ -15,7 +15,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
+	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -52,7 +52,7 @@ func MetricGatewayConfigShouldNotContainPipeline(ctx context.Context, k8sClient 
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(BeTrue())
 }
 
-func MetricsShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL string, metrics []pmetric.Metric) {
+func MetricsShouldBeDelivered(proxyClient *apiserverproxy.ProxyClient, telemetryExportURL string, metrics []pmetric.Metric) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -63,7 +63,7 @@ func MetricsShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExpor
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL, namespace string, metricNames []string) {
+func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.ProxyClient, telemetryExportURL, namespace string, metricNames []string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -79,7 +79,7 @@ func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserver.ProxyClient, t
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL, namespace string) {
+func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserverproxy.ProxyClient, telemetryExportURL, namespace string) {
 	Consistently(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())

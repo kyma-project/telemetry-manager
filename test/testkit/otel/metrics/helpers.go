@@ -7,10 +7,10 @@ import (
 	"github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
+	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 )
 
-func MakeAndSendGaugeMetrics(proxyClient *apiserver.ProxyClient, otlpPushURL string) []pmetric.Metric {
+func MakeAndSendGaugeMetrics(proxyClient *apiserverproxy.ProxyClient, otlpPushURL string) []pmetric.Metric {
 	builder := NewBuilder()
 	var gauges []pmetric.Metric
 	for i := 0; i < 50; i++ {
@@ -23,7 +23,7 @@ func MakeAndSendGaugeMetrics(proxyClient *apiserver.ProxyClient, otlpPushURL str
 	return gauges
 }
 
-func sendGaugeMetrics(ctx context.Context, proxyClient *apiserver.ProxyClient, metrics pmetric.Metrics, otlpPushURL string) error {
+func sendGaugeMetrics(ctx context.Context, proxyClient *apiserverproxy.ProxyClient, metrics pmetric.Metrics, otlpPushURL string) error {
 	sender, err := NewHTTPExporter(otlpPushURL, proxyClient)
 	if err != nil {
 		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)

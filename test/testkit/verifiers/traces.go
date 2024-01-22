@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
+	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -57,7 +57,7 @@ func TraceCollectorConfigShouldNotContainPipeline(ctx context.Context, k8sClient
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(BeTrue())
 }
 
-func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExportURL string,
+func TracesShouldBeDelivered(proxyClient *apiserverproxy.ProxyClient, telemetryExportURL string,
 	traceID pcommon.TraceID,
 	spanIDs []pcommon.SpanID,
 	spanAttrs pcommon.Map) {
@@ -81,7 +81,7 @@ func TracesShouldBeDelivered(proxyClient *apiserver.ProxyClient, telemetryExport
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func TracesShouldNotBePresent(proxyClient *apiserver.ProxyClient, telemetryExportURL string, traceID pcommon.TraceID) {
+func TracesShouldNotBePresent(proxyClient *apiserverproxy.ProxyClient, telemetryExportURL string, traceID pcommon.TraceID) {
 	Consistently(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
