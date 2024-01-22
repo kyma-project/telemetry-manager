@@ -21,7 +21,7 @@ Learn how to use [Jaeger](https://github.com/jaegertracing/helm-charts/tree/main
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](../../README.md) is [enabled](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
+- The [Telemetry module](../../README.md) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install)
 - kubectl version 1.22.x or higher
 - Helm 3.x
 
@@ -58,7 +58,7 @@ Run the Helm upgrade command, which installs the chart if not present yet.
 helm upgrade --install --create-namespace -n $K8S_NAMESPACE $HELM_JAEGER_RELEASE jaegertracing/jaeger -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/jaeger/values.yaml
 ```
 
-You can either use the [`values.yaml`](./values.yaml) provided in this `jaeger` folder, which contains customized settings deviating from the default settings, or create your own `values.yaml` file.
+The previous command uses the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/jaeger/values.yaml) provided in this `jaeger` folder, which contains customized settings deviating from the default settings. Alternatively, you can create your own `values.yaml` file and adjust the command.
 
 ### Verify the Installation
 

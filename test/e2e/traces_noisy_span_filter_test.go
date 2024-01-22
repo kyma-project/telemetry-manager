@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Noisy Span Filter", Label("tracing"), func() {
+var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
 
 	const (
 		mockBackendName = "traces-filter-receiver"
@@ -79,11 +79,6 @@ var _ = Describe("Traces Noisy Span Filter", Label("tracing"), func() {
 
 		It("Should filter noisy victoria metrics spans", func() {
 			traceID := kittraces.MakeAndSendVictoriaMetricsAgentTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
-		})
-
-		It("Should filter noisy kyma prometheus spans", func() {
-			traceID := kittraces.MakeAndSendPrometheusAgentTraces(proxyClient, urls.OTLPPush())
 			verifiers.TracesShouldNotBePresent(proxyClient, urls.MockBackendExport(mockBackendName), traceID)
 		})
 

@@ -24,6 +24,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.uber.org/zap"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -36,6 +37,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
 )
 
@@ -51,6 +53,10 @@ var (
 )
 
 func TestAPIs(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping envtest")
+	}
+
 	RegisterFailHandler(Fail)
 
 	RunSpecs(t, "Controller Suite")
@@ -117,8 +123,12 @@ var _ = BeforeSuite(func() {
 	}
 	client := mgr.GetClient()
 
+	atomicLogLevel := zap.NewAtomicLevel()
+	var handlerConfig overrides.HandlerConfig
+	overridesHandler := overrides.New(client, atomicLogLevel, handlerConfig)
+
 	telemetryReconciler := NewTelemetryReconciler(client,
-		telemetry.NewReconciler(client, mgr.GetScheme(), config),
+		telemetry.NewReconciler(client, mgr.GetScheme(), config, overridesHandler),
 		config)
 	err = telemetryReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())

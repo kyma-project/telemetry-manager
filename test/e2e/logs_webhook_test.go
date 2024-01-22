@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Validating Webhook", Label("logging"), Ordered, func() {
+var _ = Describe("Logs Validating Webhook", Label("logs"), Ordered, func() {
 	Context("Before deploying a logpipeline", func() {
 		It("Should have a healthy webhook", func() {
 			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)

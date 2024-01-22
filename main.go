@@ -129,11 +129,11 @@ var (
 )
 
 const (
-	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.89.0-25ff4383"
+	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.91.0-2a8b115a"
 	overridesConfigMapName = "telemetry-override-config"
 	overridesConfigMapKey  = "override-config"
-	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.1.10-a5234020"
-	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20231206-af68e692"
+	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.2.1-8adfb683"
+	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20231214-4555a23b"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-operator-webhook"
@@ -616,10 +616,11 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, web
 			OTLPServiceName: metricOTLPServiceName,
 			Namespace:       telemetryNamespace,
 		},
-		Webhook: webhookConfig,
+		Webhook:                webhookConfig,
+		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 	}
 
-	return operator.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config), config)
+	return operator.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config, overridesHandler), config)
 }
 
 func createWebhookConfig() telemetry.WebhookConfig {

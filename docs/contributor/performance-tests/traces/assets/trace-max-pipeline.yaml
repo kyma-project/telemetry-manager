@@ -1,0 +1,20 @@
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: load-test-2
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: http://trace-receiver.trace-load-test:4317
+
+---
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: TracePipeline
+metadata:
+  name: load-test-3
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: http://trace-receiver.trace-load-test:4317

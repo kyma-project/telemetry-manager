@@ -101,7 +101,7 @@ spec:
   tracing:
   - providers:
     - name: "kyma-traces"
-  randomSamplingPercentage: 5.00
+    randomSamplingPercentage: 5.00
 ```
 
 ### Step 3a: Add Authentication Details From Plain Text
@@ -167,7 +167,8 @@ spec:
         value: https://backend.example.com/otlp:4317
       headers:
       - name: Authorization
-        value: "Bearer myToken"
+        prefix: Bearer
+        value: "myToken"
 ```
 
 <!-- tabs:end -->
@@ -253,6 +254,7 @@ spec:
         value: https://backend.example.com:4317
       headers:
       - name: Authorization
+        prefix: Bearer
         valueFrom:
           secretKeyRef:
               name: backend
@@ -274,9 +276,10 @@ stringData:
   endpoint: https://backend.example.com:4317
   user: myUser
   password: XXX
-  token: Bearer YYY
+  token: YYY
 ```
 
+The value of the token can be stored in the referenced Secret without any prefix or scheme, and it can be configured in the headers section of the TracePipeline. In this example, the token has the prefix Bearer.
 ### Step 4: Rotate the Secret
 
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
@@ -377,7 +380,7 @@ spec:
 
 #### **Trace Context Without Spans**
   
-To enable the propagation of the [w3c-tracecontext](https://www.w3.org/TR/trace-context/) only, without reporting any spans (so the actual tracing feature is disabled), you must enable the `kyma-traces` provider with a sampling rate of 0. With this configuration, you get the relevant trace context into the [access logs](https://kyma-project.io/#/istio/user/02-operation-guides/operations/02-30-enable-istio-access-logs) without any active trace reporting.
+To enable the propagation of the [w3c-tracecontext](https://www.w3.org/TR/trace-context/) only, without reporting any spans (so the actual tracing feature is disabled), you must enable the `kyma-traces` provider with a sampling rate of 0. With this configuration, you get the relevant trace context into the [access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs) without any active trace reporting.
 
   ```yaml
   apiVersion: telemetry.istio.io/v1alpha1

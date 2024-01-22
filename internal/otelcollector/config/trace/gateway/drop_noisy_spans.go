@@ -19,8 +19,6 @@ var (
 	operationIsIngress = ottlexpr.JoinWithOr(spanAttributeEquals("OperationName", "Ingress"), attributeMatches("name", "ingress.*"))
 	operationIsEgress  = ottlexpr.JoinWithOr(spanAttributeEquals("OperationName", "Egress"), attributeMatches("name", "egress.*"))
 
-	toFromKymaGrafana            = ottlexpr.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("grafana"))
-	toFromKymaAuthProxy          = ottlexpr.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("monitoring-auth-proxy-grafana"))
 	toFromTelemetryFluentBit     = ottlexpr.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-fluent-bit"))
 	toFromTelemetryTraceGateway  = ottlexpr.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-trace-collector"))
 	toFromTelemetryMetricGateway = ottlexpr.JoinWithAnd(componentIsProxy, namespacesIsKymaSystem, istioCanonicalNameEquals("telemetry-metric-gateway"))
@@ -34,7 +32,6 @@ var (
 
 	//TODO: should be system namespaces after solving https://github.com/kyma-project/telemetry-manager/issues/380
 	fromVMScrapeAgent        = ottlexpr.JoinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, userAgentMatches("vm_promscrape"))
-	fromPrometheusWithinKyma = ottlexpr.JoinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, namespacesIsKymaSystem, userAgentMatches("Prometheus\\\\/.*"))
 	fromTelemetryMetricAgent = ottlexpr.JoinWithAnd(componentIsProxy, methodIsGet, operationIsIngress, userAgentMatches("kyma-otelcol\\\\/.*"))
 )
 
@@ -42,8 +39,6 @@ func makeDropNoisySpansConfig() FilterProcessor {
 	return FilterProcessor{
 		Traces: Traces{
 			Span: []string{
-				toFromKymaGrafana,
-				toFromKymaAuthProxy,
 				toFromTelemetryFluentBit,
 				toFromTelemetryTraceGateway,
 				toFromTelemetryMetricGateway,
@@ -53,7 +48,6 @@ func makeDropNoisySpansConfig() FilterProcessor {
 				toTelemetryTraceInternalService,
 				toTelemetryMetricService,
 				fromVMScrapeAgent,
-				fromPrometheusWithinKyma,
 				fromTelemetryMetricAgent,
 			},
 		},

@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Access Logs", Label("logging"), func() {
+var _ = Describe("Access Logs", Label("logs"), func() {
 	const (
 		mockNs          = "istio-access-logs-mocks"
 		mockBackendName = "istio-access-logs-backend"

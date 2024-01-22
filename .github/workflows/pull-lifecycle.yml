@@ -17,12 +17,8 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    # uses an older go version by default, so configure go with newest version
-    - name: Setup golang
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21'
-        cache: true
+    - name: Setup Golang
+      uses: "./.github/template/setup-golang"
 
     - name: Provision K3D
       shell: bash

@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Drop Labels", Label("logging"), Ordered, func() {
+var _ = Describe("Logs Drop Labels", Label("logs"), Ordered, func() {
 	const (
 		mockNs          = "log-keep-label-mocks"
 		mockBackendName = "log-receiver-label"

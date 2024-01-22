@@ -25,6 +25,8 @@ type Pipeline struct {
 	istio           *telemetryv1alpha1.MetricPipelineIstioInput
 	otlp            *telemetryv1alpha1.MetricPipelineOtlpInput
 	tls             *telemetryv1alpha1.OtlpTLS
+	protocol        string
+	endpointPath    string
 }
 
 func NewPipeline(name string) *Pipeline {
@@ -135,6 +137,20 @@ func (p *Pipeline) IstioInput(enable bool, opts ...InputOptions) *Pipeline {
 	return p
 }
 
+func (p *Pipeline) PrometheusInputDiagnosticMetrics(enable bool) *Pipeline {
+	p.prometheus.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{
+		Enabled: enable,
+	}
+	return p
+}
+
+func (p *Pipeline) IstioInputDiagnosticMetrics(enable bool) *Pipeline {
+	p.istio.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{
+		Enabled: enable,
+	}
+	return p
+}
+
 func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
 	p.tls = &telemetryv1alpha1.OtlpTLS{
 		Insecure:           false,
@@ -150,6 +166,16 @@ func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
 		},
 	}
 
+	return p
+}
+
+func (p *Pipeline) WithProtocol(protocol string) *Pipeline {
+	p.protocol = protocol
+	return p
+}
+
+func (p *Pipeline) WithEndpointPath(path string) *Pipeline {
+	p.endpointPath = path
 	return p
 }
 
@@ -170,6 +196,14 @@ func (p *Pipeline) K8sObject() *telemetryv1alpha1.MetricPipeline {
 		}
 	} else {
 		otlpOutput.Endpoint.Value = p.otlpEndpoint
+	}
+
+	if len(p.protocol) > 0 {
+		otlpOutput.Protocol = p.protocol
+	}
+
+	if len(p.endpointPath) > 0 {
+		otlpOutput.Path = p.endpointPath
 	}
 
 	metricPipeline := telemetryv1alpha1.MetricPipeline{

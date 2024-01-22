@@ -22,7 +22,7 @@ Learn how to install the OpenTelemetry [demo application](https://github.com/ope
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](../../README.md) is [enabled](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
+- The [Telemetry module](../../README.md) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install)
 - kubectl version 1.22.x or higher
 - Helm 3.x
 
@@ -91,12 +91,14 @@ Run the Helm upgrade command, which installs the chart if not present yet.
 helm upgrade --version 0.26.1 --install --create-namespace -n $K8S_NAMESPACE $HELM_OTEL_RELEASE open-telemetry/opentelemetry-demo -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/opentelemetry-demo/values.yaml
 ```
 
-You can either use the [values.yaml](./values.yaml) provided in this `opentelemetry-demo` folder, which contains customized settings deviating from the default settings, or create your own `values.yaml` file. The customizations cover the following areas:
+The previous command uses the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/opentelemetry-demo/values.yaml) provided in this `opentelemetry-demo` folder, which contains customized settings deviating from the default settings. The customizations in the provided `values.yaml` cover the following areas:
 
 - Disable the observability tooling provided with the chart
 - Configure Kyma Telemetry instead
 - Extend memory limits of the demo apps to avoid crashes caused by memory exhaustion
 - Adjust initContainers and services of demo apps to work proper with Istio
+
+Alternatively, you can create your own `values.yaml` file and adjust the command.
 
 ### Verify the Application
 

@@ -91,31 +91,35 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		}
 
-		It("Should set service.name to app.kubernetes.io/name label value", func() {
+		It("Should set undefined service.name attribute to app.kubernetes.io/name label value", func() {
 			verifyServiceNameAttr(servicenamebundle.PodWithBothLabelsName, servicenamebundle.KubeAppLabelValue)
 		})
 
-		It("Should set service.name to app label value", func() {
+		It("Should set undefined service.name attribute to app label value", func() {
 			verifyServiceNameAttr(servicenamebundle.PodWithAppLabelName, servicenamebundle.AppLabelValue)
 		})
 
-		It("Should set service.name to Deployment name", func() {
+		It("Should set undefined service.name attribute to Deployment name", func() {
 			verifyServiceNameAttr(servicenamebundle.DeploymentName, servicenamebundle.DeploymentName)
 		})
 
-		It("Should set service.name to StatefulSet name", func() {
+		It("Should set undefined service.name attribute to StatefulSet name", func() {
 			verifyServiceNameAttr(servicenamebundle.StatefulSetName, servicenamebundle.StatefulSetName)
 		})
 
-		It("Should set service.name to DaemonSet name", func() {
+		It("Should set undefined service.name attribute to DaemonSet name", func() {
 			verifyServiceNameAttr(servicenamebundle.DaemonSetName, servicenamebundle.DaemonSetName)
 		})
 
-		It("Should set service.name to Job name", func() {
+		It("Should set undefined service.name attribute to Job name", func() {
 			verifyServiceNameAttr(servicenamebundle.JobName, servicenamebundle.JobName)
 		})
 
-		It("Should set service.name to unknown_service", func() {
+		It("Should set undefined service.name attribute to Pod name", func() {
+			verifyServiceNameAttr(servicenamebundle.PodWithNoLabelsName, servicenamebundle.PodWithNoLabelsName)
+		})
+
+		It("Should set undefined service.name attribute to unknown_service", func() {
 			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP)
 			kitmetrics.MakeAndSendGaugeMetrics(proxyClient, gatewayPushURL)
 			Eventually(func(g Gomega) {
@@ -129,6 +133,20 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 					),
 				))
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		It("Should enrich service.name attribute when its value is unknown_service", func() {
+			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServiceName, servicenamebundle.PodWithUnknownServiceName)
+		})
+
+		It("Should enrich service.name attribute when its value is following the unknown_service:<process.executable.name> pattern", func() {
+			verifyServiceNameAttr(servicenamebundle.PodWithUnknownServicePatternName, servicenamebundle.PodWithUnknownServicePatternName)
+		})
+
+		It("Should NOT enrich service.name attribute when its value is not following the unknown_service:<process.executable.name> pattern", func() {
+			verifyServiceNameAttr(servicenamebundle.PodWithInvalidStartForUnknownServicePatternName, servicenamebundle.AttrWithInvalidStartForUnknownServicePattern)
+			verifyServiceNameAttr(servicenamebundle.PodWithInvalidEndForUnknownServicePatternName, servicenamebundle.AttrWithInvalidEndForUnknownServicePattern)
+			verifyServiceNameAttr(servicenamebundle.PodWithMissingProcessForUnknownServicePatternName, servicenamebundle.AttrWithMissingProcessForUnknownServicePattern)
 		})
 
 		It("Should have no kyma resource attributes", func() {

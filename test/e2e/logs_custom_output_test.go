@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Custom Output", Label("logging"), Ordered, func() {
+var _ = Describe("Logs Custom Output", Label("logs"), Ordered, func() {
 	const (
 		mockBackendName = "log-receiver"
 		mockNs          = "log-custom-output"

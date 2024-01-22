@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -22,8 +21,7 @@ func dryRunArgs() []string {
 }
 
 const (
-	fluentBitPluginDirectory = "fluent-bit/lib"
-	fluentBitPath            = "fluent-bit/bin/fluent-bit"
+	fluentBitPath = "fluent-bit/bin/fluent-bit"
 )
 
 type Config struct {
@@ -47,7 +45,7 @@ func NewDryRunner(c client.Client, config Config) *DryRunner {
 
 func (d *DryRunner) RunParser(ctx context.Context, parser *telemetryv1alpha1.LogParser) error {
 	workDir := newWorkDirPath()
-	cleanup, err := d.fileWriter.prepareParserDryRun(ctx, workDir, parser)
+	cleanup, err := d.fileWriter.PrepareParserDryRun(ctx, workDir, parser)
 	if err != nil {
 		return err
 	}
@@ -60,7 +58,7 @@ func (d *DryRunner) RunParser(ctx context.Context, parser *telemetryv1alpha1.Log
 
 func (d *DryRunner) RunPipeline(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
 	workDir := newWorkDirPath()
-	cleanup, err := d.fileWriter.preparePipelineDryRun(ctx, workDir, pipeline)
+	cleanup, err := d.fileWriter.PreparePipelineDryRun(ctx, workDir, pipeline)
 	if err != nil {
 		return err
 	}
@@ -69,38 +67,12 @@ func (d *DryRunner) RunPipeline(ctx context.Context, pipeline *telemetryv1alpha1
 	path := filepath.Join(workDir, "fluent-bit.conf")
 	args := dryRunArgs()
 	args = append(args, "--config", path)
-	externalPluginArgs, err := d.externalPluginArgs()
-	if err != nil {
-		return err
-	}
-	args = append(args, externalPluginArgs...)
 
 	return d.runCmd(ctx, args)
 }
 
-func (d *DryRunner) externalPluginArgs() ([]string, error) {
-	var plugins []string
-	files, err := os.ReadDir(fluentBitPluginDirectory)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, f := range files {
-		if f.IsDir() {
-			continue
-		}
-		plugins = append(plugins, filepath.Join(fluentBitPluginDirectory, f.Name()))
-	}
-
-	var args []string
-	for _, plugin := range plugins {
-		args = append(args, "-e", plugin)
-	}
-	return args, nil
-}
-
 func (d *DryRunner) runCmd(ctx context.Context, args []string) error {
-	outBytes, err := d.commandRunner.run(ctx, fluentBitPath, args...)
+	outBytes, err := d.commandRunner.Run(ctx, fluentBitPath, args...)
 	out := string(outBytes)
 	if err != nil {
 		if strings.Contains(out, "error") || strings.Contains(out, "Error") {

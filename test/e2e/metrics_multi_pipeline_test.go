@@ -145,7 +145,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 					g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
 					g.Expect(meta.IsStatusConditionFalse(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
 					actualReason := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated).Reason
-					g.Expect(actualReason).To(Equal(conditions.ReasonWaitingForLock))
+					g.Expect(actualReason).To(Equal(conditions.ReasonMaxPipelinesExceeded))
 				}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 				verifiers.MetricGatewayConfigShouldNotContainPipeline(ctx, k8sClient, pipeline.Name())
 			})

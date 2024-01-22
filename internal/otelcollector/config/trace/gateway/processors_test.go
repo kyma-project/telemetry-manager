@@ -75,8 +75,7 @@ func TestProcessors(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.TracePipeline{testutils.NewTracePipelineBuilder().Build()})
 		require.NoError(t, err)
 
-		require.Equal(t, 13, len(collectorConfig.Processors.DropNoisySpans.Traces.Span), "Span filter list size is wrong")
-		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, toFromKymaGrafana, "toFromKymaGrafana span filter is missing")
+		require.Equal(t, 10, len(collectorConfig.Processors.DropNoisySpans.Traces.Span), "Span filter list size is wrong")
 		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, toFromTelemetryFluentBit, "toFromTelemetryFluentBit span filter is missing")
 		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, toFromTelemetryTraceGateway, "toFromTelemetryTraceGateway span filter is missing")
 		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, toFromTelemetryMetricGateway, "toFromTelemetryMetricGateway span filter is missing")
@@ -86,7 +85,6 @@ func TestProcessors(t *testing.T) {
 		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, toTelemetryTraceInternalService, "toTelemetryTraceInternalService span filter is missing")
 		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, toTelemetryMetricService, "toTelemetryTraceInternalService span filter is missing")
 		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, fromVMScrapeAgent, "fromVmScrapeAgent span filter is missing")
-		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, fromPrometheusWithinKyma, "fromPrometheusWithinKyma span filter is missing")
 		require.Contains(t, collectorConfig.Processors.DropNoisySpans.Traces.Span, fromTelemetryMetricAgent, "fromTelemetryMetricAgent span filter is missing")
 	})
 }

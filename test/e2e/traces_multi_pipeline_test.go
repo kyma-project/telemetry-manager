@@ -22,7 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Multi-Pipeline", Label("tracing"), func() {
+var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 	Context("When multiple tracepipelines exist", Ordered, func() {
 		const (
 			mockNs           = "traces-multi-pipeline"

@@ -26,7 +26,7 @@ Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/hel
 ## Prerequisites
 
 - Kyma as the target deployment environment
-- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/08-install-uninstall-upgrade-kyma-module?id=install-uninstall-and-upgrade-kyma-with-a-module)
+- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install)
 - Kubectl version 1.22.x or higher
 - Helm 3.x
 
@@ -63,7 +63,11 @@ You install the Loki stack with a Helm upgrade command, which installs the chart
 helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} ${HELM_LOKI_RELEASE} grafana/loki -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/loki-values.yaml
 ```
 
-In any case, you can either create your own `values.yaml` file, or use the [loki-values.yaml](./loki-values.yaml) provided in this `loki` folder, which contains customized settings deviating from the default settings: The provided `values.yaml` file activates the `singleBinary` mode and disables additional components that are usually used when running Loki as a central backend.
+The previous command uses the [values.yaml](https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/loki-values.yaml) provided in this `loki` folder, which contains customized settings deviating from the default settings. Alternatively, you can create your own `values.yaml` file and adjust the command. The customizations in the prepared `values.yaml` cover the following areas:
+- activate the `singleBinary` mode
+- disable additional components that are typically used when running Loki as a central backend.
+
+Alternatively, you can create your own `values.yaml` file and adjust the command.
 
 ### Verify Loki Installation
 
@@ -96,7 +100,7 @@ helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} promtail grafana/p
   Install Fluent Bit with Kyma's LogPipeline
   </summary>
 
->**CAUTION:** This setup uses an unsupported output plugin for the LogPipline.
+>**CAUTION:** This setup uses an unsupported output plugin for the LogPipeline.
 
 Apply the LogPipeline:
 
@@ -114,7 +118,7 @@ Apply the LogPipeline:
       output:
          custom: |
             name   loki
-            host   ${HELM_LOKI_RELEASE}-headless.${K8S_NAMESPACE}.svc.cluster.local
+            host   ${HELM_LOKI_RELEASE}.${K8S_NAMESPACE}.svc.cluster.local
             port   3100
             auto_kubernetes_labels off
             labels job=fluentbit, container=\$kubernetes['container_name'], namespace=\$kubernetes['namespace_name'], pod=\$kubernetes['pod_name'], node=\$kubernetes['host'], app=\$kubernetes['labels']['app'],app=\$kubernetes['labels']['app.kubernetes.io/name']

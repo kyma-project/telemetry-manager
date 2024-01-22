@@ -30,12 +30,21 @@ spec:
         value: https://myBackend:4317
 status:
   conditions:
-  - lastTransitionTime: "2022-12-13T14:33:27Z"
-    reason: MetricGatewayDeploymentNotReady
-    type: Pending
-  - lastTransitionTime: "2022-12-13T14:33:28Z"
-    reason: MetricGatewayDeploymentReady
-    type: Running
+  - lastTransitionTime: "2024-01-09T07:02:16Z"
+    message: "Metric agent DaemonSet is ready"
+    reason: DaemonSetReady
+    status: "True"
+    type: AgentHealthy
+  - lastTransitionTime: "2024-01-08T10:40:18Z"
+    message: "Metric gateway Deployment is ready"
+    reason: DeploymentReady
+    status: "True"
+    type: GatewayHealthy
+  - lastTransitionTime: "2023-12-28T11:27:04Z"
+    message: ""
+    reason: ConfigurationGenerated
+    status: "True"
+    type: ConfigurationGenerated
 ```
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
@@ -57,6 +66,8 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | ---- | ----------- | ---- |
 | **input**  | object | Configures different inputs to send additional metrics to the metric gateway. |
 | **input.&#x200b;istio**  | object | Configures istio-proxy metrics scraping. |
+| **input.&#x200b;istio.&#x200b;diagnosticMetrics**  | object | Configures diagnostic metrics scraping |
+| **input.&#x200b;istio.&#x200b;diagnosticMetrics.&#x200b;enabled**  | boolean | If enabled, diagnostic metrics are scraped. The default is `false`. |
 | **input.&#x200b;istio.&#x200b;enabled**  | boolean | If enabled, metrics for istio-proxy containers are scraped from Pods that have had the istio-proxy sidecar injected. The default is `false`. |
 | **input.&#x200b;istio.&#x200b;namespaces**  | object | Describes whether istio-proxy metrics from specific Namespaces are selected. System Namespaces are enabled by default. |
 | **input.&#x200b;istio.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
@@ -67,6 +78,8 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
 | **input.&#x200b;otlp.&#x200b;namespaces.&#x200b;include**  | \[\]string | Include metrics from the specified Namespace names only. |
 | **input.&#x200b;prometheus**  | object | Configures Prometheus scraping. |
+| **input.&#x200b;prometheus.&#x200b;diagnosticMetrics**  | object | Configures diagnostic metrics scraping |
+| **input.&#x200b;prometheus.&#x200b;diagnosticMetrics.&#x200b;enabled**  | boolean | If enabled, diagnostic metrics are scraped. The default is `false`. |
 | **input.&#x200b;prometheus.&#x200b;enabled**  | boolean | If enabled, Pods marked with `prometheus.io/scrape=true` annotation are scraped. The default is `false`. |
 | **input.&#x200b;prometheus.&#x200b;namespaces**  | object | Describes whether Prometheus metrics from specific Namespaces are selected. System Namespaces are disabled by default. |
 | **input.&#x200b;prometheus.&#x200b;namespaces.&#x200b;exclude**  | \[\]string | Exclude metrics from the specified Namespace names only. |
@@ -103,13 +116,15 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **output.&#x200b;otlp.&#x200b;endpoint.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
 | **output.&#x200b;otlp.&#x200b;headers**  | \[\]object | Defines custom headers to be added to outgoing HTTP or GRPC requests. |
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;name** (required) | string | Defines the header name. |
+| **output.&#x200b;otlp.&#x200b;headers.&#x200b;prefix**  | string | Defines an optional header value prefix. The prefix is separated from the value by a space character. |
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;value**  | string | The value as plain text. |
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom**  | object | The value as a reference to a resource. |
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef**  | object | Refers to the value of a specific key in a Secret. You must provide `name` and `namespace` of the Secret, as well as the name of the `key`. |
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;key**  | string | The name of the attribute of the Secret holding the referenced value. |
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;name**  | string | The name of the Secret containing the referenced value |
 | **output.&#x200b;otlp.&#x200b;headers.&#x200b;valueFrom.&#x200b;secretKeyRef.&#x200b;namespace**  | string | The name of the Namespace containing the Secret with the referenced value. |
-| **output.&#x200b;otlp.&#x200b;protocol**  | string | Defines the OTLP protocol (http or grpc). Default is GRPC. |
+| **output.&#x200b;otlp.&#x200b;path**  | string | Defines OTLP export URL path (only for the HTTP protocol). This value overrides auto-appended paths /v1/metrics and /v1/traces |
+| **output.&#x200b;otlp.&#x200b;protocol**  | string | Defines the OTLP protocol (http or grpc). Default is grpc. |
 | **output.&#x200b;otlp.&#x200b;tls**  | object | Defines TLS options for the OTLP output. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca**  | object | Defines an optional CA certificate for server certificate verification when using TLS. The certificate must be provided in PEM format. |
 | **output.&#x200b;otlp.&#x200b;tls.&#x200b;ca.&#x200b;value**  | string | The value as plain text. |
@@ -153,14 +168,14 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 
 The state of the metric components is determined by the status condition of type `MetricComponentsHealthy`:
 
-| Condition status | Condition reason | Message                                                                                                                                      |
-|------------------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------| 
-| True             | DeploymentReady | Metric gateway Deployment is ready                                                                                                           |
-| True             | DaemonSetReady | Metric agent DaemonSet is ready                                                                                                              |
-| True             | ConfigurationGenerated | Metric pipeline configuration successfully generated                                                                                         |
-| False            | DeploymentNotReady | Metric gateway Deployment is not ready                                                                                                       |
-| False            | DaemonSetNotReady | Metric agent DaemonSet is not ready                                                                                                          |
-| False            | WaitingForLock | The deletion of the module is blocked. To unblock the deletion, delete the following resources: MetricPipelines (resource-1, resource-2,...) |
-| False            | ReferencedSecretMissing | One or more referenced Secrets are missing                                                                                                   |
+| Condition status | Condition reason        | Message                                              |
+|------------------|-------------------------|------------------------------------------------------| 
+| True             | DeploymentReady         | Metric gateway Deployment is ready                   |
+| True             | DaemonSetReady          | Metric agent DaemonSet is ready                      |
+| True             | ConfigurationGenerated  | Metric pipeline configuration successfully generated |
+| False            | DeploymentNotReady      | Metric gateway Deployment is not ready               |
+| False            | DaemonSetNotReady       | Metric agent DaemonSet is not ready                  |
+| False            | MaxPipelinesExceeded    | Maximum pipeline count exceeded                      |
+| False            | ReferencedSecretMissing | One or more referenced Secrets are missing           |
 
 
