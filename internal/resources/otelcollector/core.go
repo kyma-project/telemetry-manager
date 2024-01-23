@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
@@ -36,7 +36,7 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		return fmt.Errorf("failed to create metrics service: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, makeNetworkPolicy(name, allowedPorts)); err != nil {
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, allowedPorts, defaultLabels(name.Name))); err != nil {
 		return fmt.Errorf("failed to create deny pprof network policy: %w", err)
 	}
 
@@ -128,50 +128,4 @@ func makeMetricsService(name types.NamespacedName) *corev1.Service {
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
-}
-
-func makeNetworkPolicy(name types.NamespacedName, allowedPorts []int32) *networkingv1.NetworkPolicy {
-	labels := defaultLabels(name.Name)
-
-	return &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name + "-pprof-deny-ingress",
-			Namespace: name.Namespace,
-			Labels:    labels,
-		},
-		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			PolicyTypes: []networkingv1.PolicyType{
-				networkingv1.PolicyTypeIngress,
-			},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{
-				{
-					From: []networkingv1.NetworkPolicyPeer{
-						{
-							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
-						},
-					},
-					Ports: makeNetworkPolicyPorts(allowedPorts),
-				},
-			},
-		},
-	}
-}
-
-func makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
-	var networkPolicyPorts []networkingv1.NetworkPolicyPort
-
-	tcpProtocol := corev1.ProtocolTCP
-
-	for idx := range ports {
-		port := intstr.FromInt32(ports[idx])
-		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
-			Protocol: &tcpProtocol,
-			Port:     &port,
-		})
-	}
-
-	return networkPolicyPorts
 }

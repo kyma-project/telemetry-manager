@@ -25,6 +25,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -119,7 +120,8 @@ var _ = BeforeSuite(func() {
 			OTLPServiceName: "metricFoo",
 			Namespace:       "kyma-system",
 		},
-		Webhook: webhookConfig,
+		Webhook:                webhookConfig,
+		OverridesConfigMapName: types.NamespacedName{Name: "telemetry-override-config", Namespace: "kyma-system"},
 	}
 	client := mgr.GetClient()
 
