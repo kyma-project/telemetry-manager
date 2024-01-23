@@ -80,12 +80,22 @@ All test scenarios use a single test script [run-load-test.sh](assets/run-load-t
 
 ## Test Results
 
-|                   Test Description                   |                  Receiver Accepted Spans / sec |    Exporter Exported Spans / sec | Exporter Queue Size | Pod Memory Usage (MBytes) |            Pod CPU Usage |
-|:----------------------------------------------------:|-----------------------------------------------:|---------------------------------:|--------------------:|--------------------------:|-------------------------:|
+<table>
+<tr><td rowspan="4">Happy Case</td><td>Receiver Accepted Spans / sec </td></tr><tr><td>Exporter Exported Spans / sec</td></tr>
+</table>
+
+
+<div class="table-wrapper" markdown="block">
+
+
+|                   Test Description                   |                  Receiver Accepted Spans / sec |    Exporter Exported Spans / sec | Exporter Queue Size | Pod Memory Usage (MBytes) |            Pod CPU Usage |                   Test Description                   |                  Receiver Accepted Spans / sec |    Exporter Exported Spans / sec | Exporter Queue Size | Pod Memory Usage (MBytes) |            Pod CPU Usage |
+|:----------------------------------------------------:|-----------------------------------------------:|---------------------------------:|--------------------:|--------------------------:|-------------------------:|:----------------------------------------------------:|-----------------------------------------------:|---------------------------------:|--------------------:|--------------------------:|-------------------------:|
 |         OTEL Image Version 0.91.0 Throughput         |                                       19815.05 |                         19815.05 |                   0 |               137, 139.92 |             0.979, 0.921 |
 |        OTEL Image Version 0.91.0 Backpressure        |                                         9574.4 |                             1280 |                 509 |              1929.4, 1726 |             0.723, 0.702 |
 |  OTEL Image Version 0.91.0 MultiPipeline Throughput  |                                        13158.4 |                         38929.06 |                   0 |                 117, 98.5 |             1.307, 1.351 |
 | OTEL Image Version 0.91.0 MultiPipeline Backpressure |                                         9663.8 |                           1331.2 |                 510 |              2029.8, 1686 |             0.733, 0.696 |
-                                                                                                                                                             
+|         OTEL Image Version 0.92.0 Throughput         |                                       21146.3  |                         21146.3  |                   0 |               72.37, 50.95|             1.038, 0.926 |
+|        OTEL Image Version 0.92.0 Backpressure        |                                         3293.86|                            2918.4|                 204 |            866.07, 873.41 |             0.581, 0.619 |
 
+</div>
 
