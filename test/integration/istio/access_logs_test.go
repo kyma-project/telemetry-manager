@@ -11,13 +11,13 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
