@@ -14,7 +14,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -23,7 +22,7 @@ var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 	Context("When a metricpipeline with missing secret reference exists", Ordered, func() {
 		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", kitkyma.DefaultNamespaceName,
 			kitk8s.WithStringData("metric-host", "http://localhost:4317"))
-		metricPipeline := kitmetricpipeline.NewPipeline("without-secret").WithOutputEndpointFromSecret(hostSecret.SecretKeyRef("metric-host"))
+		metricPipeline := kitk8s.NewMetricPipeline("without-secret").WithOutputEndpointFromSecret(hostSecret.SecretKeyRef("metric-host"))
 
 		BeforeAll(func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, metricPipeline.K8sObject())).Should(Succeed())

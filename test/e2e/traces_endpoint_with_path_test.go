@@ -11,7 +11,6 @@ import (
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kittracepipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -26,7 +25,7 @@ var _ = Describe("Traces Endpoint with Path", Label("tracing"), func() {
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		tracePipeline := kittracepipeline.NewPipeline("mock-trace-endpoint-path").
+		tracePipeline := kitk8s.NewTracePipeline("mock-trace-endpoint-path").
 			WithProtocol("http").
 			WithOutputEndpoint(endpoint).WithEndpointPath(path)
 

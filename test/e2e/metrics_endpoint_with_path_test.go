@@ -11,7 +11,6 @@ import (
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -26,7 +25,7 @@ var _ = Describe("Metrics Endpoint with Path", Label("metrics"), func() {
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		metricPipeline := kitmetricpipeline.NewPipeline("mock-metric-endpoint-path").
+		metricPipeline := kitk8s.NewMetricPipeline("mock-metric-endpoint-path").
 			WithProtocol("http").
 			WithOutputEndpoint(endpoint).WithEndpointPath(path)
 

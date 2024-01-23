@@ -18,9 +18,9 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
 	istiosecv1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	. "github.com/onsi/ginkgo/v2"
@@ -46,7 +46,7 @@ var (
 	ctx                context.Context
 	cancel             context.CancelFunc
 	k8sClient          client.Client
-	proxyClient        *apiserver.ProxyClient
+	proxyClient        *apiserverproxy.Client
 	testEnv            *envtest.Environment
 	telemetryK8sObject client.Object
 	k8sObjects         []client.Object
@@ -90,7 +90,7 @@ var _ = BeforeSuite(func() {
 
 	Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).To(Succeed())
 
-	proxyClient, err = apiserver.NewProxyClient(testEnv.Config)
+	proxyClient, err = apiserverproxy.NewClient(testEnv.Config)
 	Expect(err).NotTo(HaveOccurred())
 })
 

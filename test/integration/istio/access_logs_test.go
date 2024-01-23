@@ -11,14 +11,13 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	"github.com/kyma-project/telemetry-manager/test/testkit/kyma/istio"
-	kitlogpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -45,7 +44,7 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		istioAccessLogsPipeline := kitlogpipeline.NewPipeline("pipeline-istio-access-logs").
+		istioAccessLogsPipeline := kitk8s.NewLogPipeline("pipeline-istio-access-logs").
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithIncludeContainers([]string{"istio-proxy"}).
 			WithHTTPOutput()
@@ -53,7 +52,7 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 		objs = append(objs, istioAccessLogsPipeline.K8sObject())
 
 		// Abusing metrics provider for istio access logs
-		sampleApp := metricproducer.New(sampleAppNs, metricproducer.WithName("access-log-emitter"))
+		sampleApp := prommetricgen.New(sampleAppNs, prommetricgen.WithName("access-log-emitter"))
 		objs = append(objs, sampleApp.Pod().K8sObject())
 		urls.SetMetricPodURL(proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
 
