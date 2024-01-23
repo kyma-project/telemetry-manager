@@ -12,7 +12,7 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 )
 
-func MakeAndSendTraces(proxyClient *apiserverproxy.ProxyClient, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map) {
+func MakeAndSendTraces(proxyClient *apiserverproxy.Client, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map) {
 	traceID := NewTraceID()
 	var spanIDs []pcommon.SpanID
 	for i := 0; i < 100; i++ {
@@ -30,7 +30,7 @@ func MakeAndSendTraces(proxyClient *apiserverproxy.ProxyClient, otlpPushURL stri
 	return traceID, spanIDs, attrs
 }
 
-func MakeAndSendTracesWithAttributes(proxyClient *apiserverproxy.ProxyClient, otlpPushURL string, attributes pcommon.Map, resAttributes pcommon.Map) (pcommon.TraceID, []pcommon.SpanID) {
+func MakeAndSendTracesWithAttributes(proxyClient *apiserverproxy.Client, otlpPushURL string, attributes pcommon.Map, resAttributes pcommon.Map) (pcommon.TraceID, []pcommon.SpanID) {
 	traceID := NewTraceID()
 	var spanIDs = []pcommon.SpanID{NewSpanID()}
 
@@ -41,7 +41,7 @@ func MakeAndSendTracesWithAttributes(proxyClient *apiserverproxy.ProxyClient, ot
 	return traceID, spanIDs
 }
 
-func MakeAndSendVictoriaMetricsAgentTraces(proxyClient *apiserverproxy.ProxyClient, otlpPushURL string) pcommon.TraceID {
+func MakeAndSendVictoriaMetricsAgentTraces(proxyClient *apiserverproxy.Client, otlpPushURL string) pcommon.TraceID {
 	spanAttrs := pcommon.NewMap()
 	spanAttrs.PutStr("http.method", "GET")
 	spanAttrs.PutStr("component", "proxy")
@@ -54,7 +54,7 @@ func MakeAndSendVictoriaMetricsAgentTraces(proxyClient *apiserverproxy.ProxyClie
 	return traceID
 }
 
-func MakeAndSendMetricAgentScrapeTraces(proxyClient *apiserverproxy.ProxyClient, otlpPushURL string) pcommon.TraceID {
+func MakeAndSendMetricAgentScrapeTraces(proxyClient *apiserverproxy.Client, otlpPushURL string) pcommon.TraceID {
 	spanAttrs := pcommon.NewMap()
 	spanAttrs.PutStr("http.method", "GET")
 	spanAttrs.PutStr("component", "proxy")
@@ -67,7 +67,7 @@ func MakeAndSendMetricAgentScrapeTraces(proxyClient *apiserverproxy.ProxyClient,
 	return traceID
 }
 
-func MakeAndSendIstioHealthzEndpointTraces(proxyClient *apiserverproxy.ProxyClient, otlpPushURL string) pcommon.TraceID {
+func MakeAndSendIstioHealthzEndpointTraces(proxyClient *apiserverproxy.Client, otlpPushURL string) pcommon.TraceID {
 	spanAttrs := pcommon.NewMap()
 	spanAttrs.PutStr("http.method", "GET")
 	spanAttrs.PutStr("component", "proxy")
@@ -82,7 +82,7 @@ func MakeAndSendIstioHealthzEndpointTraces(proxyClient *apiserverproxy.ProxyClie
 	return traceID
 }
 
-func MakeAndSendTraceServiceTraces(proxyClient *apiserverproxy.ProxyClient, otlpPushURL string) pcommon.TraceID {
+func MakeAndSendTraceServiceTraces(proxyClient *apiserverproxy.Client, otlpPushURL string) pcommon.TraceID {
 	spanAttrs := pcommon.NewMap()
 	spanAttrs.PutStr("http.method", "POST")
 	spanAttrs.PutStr("component", "proxy")
@@ -96,7 +96,7 @@ func MakeAndSendTraceServiceTraces(proxyClient *apiserverproxy.ProxyClient, otlp
 	return traceID
 }
 
-func MakeAndSendTraceInternalServiceTraces(proxyClient *apiserverproxy.ProxyClient, otlpPushURL string) pcommon.TraceID {
+func MakeAndSendTraceInternalServiceTraces(proxyClient *apiserverproxy.Client, otlpPushURL string) pcommon.TraceID {
 	spanAttrs := pcommon.NewMap()
 	spanAttrs.PutStr("http.method", "POST")
 	spanAttrs.PutStr("component", "proxy")
@@ -110,7 +110,7 @@ func MakeAndSendTraceInternalServiceTraces(proxyClient *apiserverproxy.ProxyClie
 	return traceID
 }
 
-func MakeAndSendMetricServiceTraces(proxyClient *apiserverproxy.ProxyClient, otlpPushURL string) pcommon.TraceID {
+func MakeAndSendMetricServiceTraces(proxyClient *apiserverproxy.Client, otlpPushURL string) pcommon.TraceID {
 	spanAttrs := pcommon.NewMap()
 	spanAttrs.PutStr("http.method", "POST")
 	spanAttrs.PutStr("component", "proxy")
@@ -124,7 +124,7 @@ func MakeAndSendMetricServiceTraces(proxyClient *apiserverproxy.ProxyClient, otl
 	return traceID
 }
 
-func MakeAndSendTraceGatewayTraces(proxyClient *apiserverproxy.ProxyClient, otlpPushURL string) pcommon.TraceID {
+func MakeAndSendTraceGatewayTraces(proxyClient *apiserverproxy.Client, otlpPushURL string) pcommon.TraceID {
 	spanAttrs := pcommon.NewMap()
 	spanAttrs.PutStr("component", "proxy")
 	spanAttrs.PutStr("istio.canonical_service", "telemetry-trace-collector")
@@ -136,7 +136,7 @@ func MakeAndSendTraceGatewayTraces(proxyClient *apiserverproxy.ProxyClient, otlp
 	return traceID
 }
 
-func MakeAndSendMetricGatewayTraces(proxyClient *apiserverproxy.ProxyClient, otlpPushURL string) pcommon.TraceID {
+func MakeAndSendMetricGatewayTraces(proxyClient *apiserverproxy.Client, otlpPushURL string) pcommon.TraceID {
 	spanAttrs := pcommon.NewMap()
 	spanAttrs.PutStr("component", "proxy")
 	spanAttrs.PutStr("istio.canonical_service", "telemetry-metric-gateway")
@@ -148,7 +148,7 @@ func MakeAndSendMetricGatewayTraces(proxyClient *apiserverproxy.ProxyClient, otl
 	return traceID
 }
 
-func MakeAndSendMetricAgentTraces(proxyClient *apiserverproxy.ProxyClient, otlpPushURL string) pcommon.TraceID {
+func MakeAndSendMetricAgentTraces(proxyClient *apiserverproxy.Client, otlpPushURL string) pcommon.TraceID {
 	spanAttrs := pcommon.NewMap()
 	spanAttrs.PutStr("component", "proxy")
 	spanAttrs.PutStr("istio.canonical_service", "telemetry-metric-agent")
@@ -160,7 +160,7 @@ func MakeAndSendMetricAgentTraces(proxyClient *apiserverproxy.ProxyClient, otlpP
 	return traceID
 }
 
-func MakeAndSendFluentBitTraces(proxyClient *apiserverproxy.ProxyClient, otlpPushURL string) pcommon.TraceID {
+func MakeAndSendFluentBitTraces(proxyClient *apiserverproxy.Client, otlpPushURL string) pcommon.TraceID {
 	spanAttrs := pcommon.NewMap()
 	spanAttrs.PutStr("component", "proxy")
 	spanAttrs.PutStr("istio.canonical_service", "telemetry-fluent-bit")
@@ -172,7 +172,7 @@ func MakeAndSendFluentBitTraces(proxyClient *apiserverproxy.ProxyClient, otlpPus
 	return traceID
 }
 
-func sendTraces(ctx context.Context, proxyClient *apiserverproxy.ProxyClient, traces ptrace.Traces, otlpPushURL string) error {
+func sendTraces(ctx context.Context, proxyClient *apiserverproxy.Client, traces ptrace.Traces, otlpPushURL string) error {
 	sender, err := NewHTTPSender(ctx, otlpPushURL, proxyClient)
 	if err != nil {
 		return fmt.Errorf("unable to create an OTLP HTTP Metric Exporter instance: %w", err)

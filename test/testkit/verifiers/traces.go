@@ -57,7 +57,7 @@ func TraceCollectorConfigShouldNotContainPipeline(ctx context.Context, k8sClient
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(BeTrue())
 }
 
-func TracesShouldBeDelivered(proxyClient *apiserverproxy.ProxyClient, telemetryExportURL string,
+func TracesShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL string,
 	traceID pcommon.TraceID,
 	spanIDs []pcommon.SpanID,
 	spanAttrs pcommon.Map) {
@@ -81,7 +81,7 @@ func TracesShouldBeDelivered(proxyClient *apiserverproxy.ProxyClient, telemetryE
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func TracesShouldNotBePresent(proxyClient *apiserverproxy.ProxyClient, telemetryExportURL string, traceID pcommon.TraceID) {
+func TracesShouldNotBePresent(proxyClient *apiserverproxy.Client, telemetryExportURL string, traceID pcommon.TraceID) {
 	Consistently(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())

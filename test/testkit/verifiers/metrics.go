@@ -52,7 +52,7 @@ func MetricGatewayConfigShouldNotContainPipeline(ctx context.Context, k8sClient 
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(BeTrue())
 }
 
-func MetricsShouldBeDelivered(proxyClient *apiserverproxy.ProxyClient, telemetryExportURL string, metrics []pmetric.Metric) {
+func MetricsShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL string, metrics []pmetric.Metric) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -63,7 +63,7 @@ func MetricsShouldBeDelivered(proxyClient *apiserverproxy.ProxyClient, telemetry
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.ProxyClient, telemetryExportURL, namespace string, metricNames []string) {
+func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL, namespace string, metricNames []string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -79,7 +79,7 @@ func MetricsFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.ProxyClie
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserverproxy.ProxyClient, telemetryExportURL, namespace string) {
+func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL, namespace string) {
 	Consistently(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())

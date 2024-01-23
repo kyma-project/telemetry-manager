@@ -72,7 +72,7 @@ type MetricProducer struct {
 	labels    map[string]string
 }
 
-func (mp *MetricProducer) PodURL(proxyClient *apiserverproxy.ProxyClient) string {
+func (mp *MetricProducer) PodURL(proxyClient *apiserverproxy.Client) string {
 	return proxyClient.ProxyURLForPod(mp.namespace, mp.name, mp.MetricsEndpoint(), mp.MetricsPort())
 }
 

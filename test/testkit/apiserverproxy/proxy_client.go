@@ -10,15 +10,15 @@ import (
 	"k8s.io/client-go/transport"
 )
 
-type ProxyClient struct {
+type Client struct {
 	bearerToken     string
 	tlsClientConfig *tls.Config
 	apiURL          string
 }
 
-// NewProxyClient returns a provider for all HTTPS-related authentication information to be used
+// NewClient returns a provider for all HTTPS-related authentication information to be used
 // for accessing in-cluster resources.
-func NewProxyClient(config *rest.Config) (*ProxyClient, error) {
+func NewClient(config *rest.Config) (*Client, error) {
 	transportConfig, err := config.TransportConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transport config: %w", err)
@@ -31,23 +31,23 @@ func NewProxyClient(config *rest.Config) (*ProxyClient, error) {
 	}
 	tlsClientConfig.InsecureSkipVerify = true
 
-	return &ProxyClient{
+	return &Client{
 		bearerToken:     transportConfig.BearerToken,
 		tlsClientConfig: tlsClientConfig,
 		apiURL:          config.Host,
 	}, nil
 }
 
-func (a ProxyClient) TLSConfig() *tls.Config {
+func (a Client) TLSConfig() *tls.Config {
 	return a.tlsClientConfig
 }
 
-func (a ProxyClient) Token() string {
+func (a Client) Token() string {
 	return "Bearer " + a.bearerToken
 }
 
 // ProxyURLForService composes a proxy url for a service.
-func (a ProxyClient) ProxyURLForService(namespace, service, path string, port int) string {
+func (a Client) ProxyURLForService(namespace, service, path string, port int) string {
 	return fmt.Sprintf(
 		`%s/api/v1/namespaces/%s/services/http:%s:%d/proxy/%s`,
 		a.apiURL,
@@ -59,7 +59,7 @@ func (a ProxyClient) ProxyURLForService(namespace, service, path string, port in
 }
 
 // ProxyURLForPod composes a proxy url for a pod.
-func (a ProxyClient) ProxyURLForPod(namespace, pod, path string, port int) string {
+func (a Client) ProxyURLForPod(namespace, pod, path string, port int) string {
 	return fmt.Sprintf(
 		`%s/api/v1/namespaces/%s/pods/http:%s:%d/proxy/%s`,
 		a.apiURL,
@@ -71,7 +71,7 @@ func (a ProxyClient) ProxyURLForPod(namespace, pod, path string, port int) strin
 }
 
 // Get performs an HTTPS request to the in-cluster resource identifiable by ProxyURLForService or ProxyURLForPod.
-func (a ProxyClient) Get(proxyURL string) (*http.Response, error) {
+func (a Client) Get(proxyURL string) (*http.Response, error) {
 	client := &http.Client{Transport: &http.Transport{
 		TLSClientConfig: a.tlsClientConfig,
 	}}

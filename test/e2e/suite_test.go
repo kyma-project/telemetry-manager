@@ -34,7 +34,7 @@ var (
 	ctx                 context.Context
 	cancel              context.CancelFunc
 	k8sClient           client.Client
-	proxyClient         *apiserverproxy.ProxyClient
+	proxyClient         *apiserverproxy.Client
 	testEnv             *envtest.Environment
 	telemetryK8sObjects []client.Object
 )
@@ -71,7 +71,7 @@ var _ = BeforeSuite(func() {
 
 	Expect(kitk8s.CreateObjects(ctx, k8sClient, telemetryK8sObjects...)).To(Succeed())
 
-	proxyClient, err = apiserverproxy.NewProxyClient(testEnv.Config)
+	proxyClient, err = apiserverproxy.NewClient(testEnv.Config)
 	Expect(err).NotTo(HaveOccurred())
 })
 
