@@ -43,7 +43,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 			WithSystemNamespaces(true).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput()
-		metricPipeline := kitk8s.NewLogPipeline(pipelineName)
+		metricPipeline := kitk8s.NewMetricPipeline(pipelineName)
 		tracePipeline := kitk8s.NewTracePipeline(pipelineName)
 		objs = append(objs, logPipeline.K8sObject(), metricPipeline.K8sObject(), tracePipeline.K8sObject())
 
