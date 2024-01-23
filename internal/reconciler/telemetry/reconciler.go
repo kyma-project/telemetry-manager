@@ -89,7 +89,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, nil
 	}
 
-	if err := r.CleanUpOldNetworkPolicies(ctx); err != nil {
+	if err := r.cleanUpOldNetworkPolicies(ctx); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to clean up old network policies: %w", err)
 	}
 
@@ -194,7 +194,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 	return nil
 }
 
-func (r *Reconciler) CleanUpOldNetworkPolicies(ctx context.Context) error {
+func (r *Reconciler) cleanUpOldNetworkPolicies(ctx context.Context) error {
 	OldNetworkPoliciesNames := []string{
 		"telemetry-operator-pprof-deny-ingress",
 		"telemetry-metric-gateway-pprof-deny-ingress",
