@@ -55,7 +55,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 
 	annotations := make(map[string]string)
 	annotations[checksumAnnotationKey] = checksum
-	annotations[istioExcludeInboundPorts] = fmt.Sprintf("%v,%v", ports.HTTP, ports.Metrics)
+	annotations[istioExcludeInboundPorts] = fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics)
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -150,7 +150,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "http-metrics",
-									ContainerPort: ports.Metrics,
+									ContainerPort: ports.ExporterMetrics,
 									Protocol:      "TCP",
 								},
 							},
@@ -297,7 +297,7 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 			Labels:    Labels(),
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   strconv.Itoa(ports.Metrics),
+				"prometheus.io/port":   strconv.Itoa(ports.ExporterMetrics),
 				"prometheus.io/scheme": "http",
 			},
 		},
@@ -306,7 +306,7 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 				{
 					Name:       "http-metrics",
 					Protocol:   "TCP",
-					Port:       int32(ports.Metrics),
+					Port:       int32(ports.ExporterMetrics),
 					TargetPort: intstr.FromString("http-metrics"),
 				},
 			},

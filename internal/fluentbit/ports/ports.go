@@ -1,7 +1,7 @@
 package ports
 
 const (
-	HTTP       = 2020
-	Metrics    = 2021
-	IstioEnvoy = 15090
+	HTTP            = 2020
+	ExporterMetrics = 2021
+	IstioEnvoy      = 15090
 )

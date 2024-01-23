@@ -316,7 +316,7 @@ func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1al
 
 func getFluentBitPorts() []int32 {
 	return []int32{
-		ports.Metrics,
+		ports.ExporterMetrics,
 		ports.HTTP,
 	}
 }
