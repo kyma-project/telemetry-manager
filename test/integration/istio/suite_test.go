@@ -43,13 +43,13 @@ var (
 )
 
 var (
-	ctx                 context.Context
-	cancel              context.CancelFunc
-	k8sClient           client.Client
-	proxyClient         *apiserverproxy.Client
-	testEnv             *envtest.Environment
-	telemetryK8sObjects []client.Object
-	k8sObjects          []client.Object
+	ctx                context.Context
+	cancel             context.CancelFunc
+	k8sClient          client.Client
+	proxyClient        *apiserverproxy.Client
+	testEnv            *envtest.Environment
+	telemetryK8sObject client.Object
+	k8sObjects         []client.Object
 )
 
 func TestIstioIntegration(t *testing.T) {
