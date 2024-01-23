@@ -34,9 +34,6 @@ func (dsp *DaemonSetProber) IsReady(ctx context.Context, name types.NamespacedNa
 	desired := ds.Status.DesiredNumberScheduled
 	ready := ds.Status.NumberReady
 
-	log.V(1).Info(fmt.Sprintf("Checking DaemonSet: updated: %d, desired: %d, ready: %d, generation: %d, observed generation: %d",
-		updated, desired, ready, generation, observedGeneration), "name", name.Name)
-
 	return observedGeneration == generation && updated == desired && ready >= desired, nil
 }
 

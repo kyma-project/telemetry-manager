@@ -102,6 +102,8 @@ linters-settings:
         alias: logzap
       - pkg: sigs.k8s.io/controller-runtime/pkg/metrics/server
         alias: metricsserver
+      - pkg: sigs.k8s.io/controller-runtime/pkg/predicate
+        alias: ctrlpredicate
 
   errcheck:
     check-type-assertions: true # Reports type assertions: `a := b.(SomeStruct)`.

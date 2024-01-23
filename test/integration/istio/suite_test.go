@@ -49,6 +49,7 @@ var (
 	proxyClient         *apiserverproxy.Client
 	testEnv             *envtest.Environment
 	telemetryK8sObjects []client.Object
+	k8sObjects          []client.Object
 )
 
 func TestIstioIntegration(t *testing.T) {
@@ -80,16 +81,21 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	telemetryK8sObjects = []client.Object{kitk8s.NewTelemetry("default", "kyma-system").Persistent(isOperational()).K8sObject()}
+	telemetryK8sObject = kitk8s.NewTelemetry("default", "kyma-system").Persistent(isOperational()).K8sObject()
+	denyAllNetworkPolicyK8sObject := kitk8s.NewNetworkPolicy("deny-all-ingress-and-egress", kitkyma.SystemNamespaceName).K8sObject()
+	k8sObjects = []client.Object{
+		telemetryK8sObject,
+		denyAllNetworkPolicyK8sObject,
+	}
 
-	Expect(kitk8s.CreateObjects(ctx, k8sClient, telemetryK8sObjects...)).To(Succeed())
+	Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).To(Succeed())
 
 	proxyClient, err = apiserverproxy.NewClient(testEnv.Config)
 	Expect(err).NotTo(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {
-	Expect(kitk8s.DeleteObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
+	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 	if !isOperational() {
 		Eventually(func(g Gomega) {
 			var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration

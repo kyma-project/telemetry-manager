@@ -30,8 +30,8 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/telemetry"
-	"github.com/kyma-project/telemetry-manager/internal/setup"
 )
 
 type TelemetryReconciler struct {
@@ -58,23 +58,24 @@ func (r *TelemetryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&operatorv1alpha1.Telemetry{}).
 		Watches(
 			&corev1.Secret{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &operatorv1alpha1.Telemetry{})).
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &operatorv1alpha1.Telemetry{}),
+			builder.WithPredicates(predicate.OwnedResourceChanged())).
 		Watches(
 			&admissionregistrationv1.ValidatingWebhookConfiguration{},
 			handler.EnqueueRequestsFromMapFunc(r.mapWebhook),
-			builder.WithPredicates(setup.DeleteOrUpdate())).
+			builder.WithPredicates(predicate.UpdateOrDelete())).
 		Watches(
 			&telemetryv1alpha1.LogPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapLogPipeline),
-			builder.WithPredicates(setup.CreateOrUpdateOrDelete())).
+			builder.WithPredicates(predicate.CreateOrUpdateOrDelete())).
 		Watches(
 			&telemetryv1alpha1.TracePipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapTracePipeline),
-			builder.WithPredicates(setup.CreateOrUpdateOrDelete())).
+			builder.WithPredicates(predicate.CreateOrUpdateOrDelete())).
 		Watches(
 			&telemetryv1alpha1.MetricPipeline{},
 			handler.EnqueueRequestsFromMapFunc(r.mapMetricPipeline),
-			builder.WithPredicates(setup.CreateOrUpdateOrDelete()))
+			builder.WithPredicates(predicate.CreateOrUpdateOrDelete()))
 
 	return b.Complete(r)
 }

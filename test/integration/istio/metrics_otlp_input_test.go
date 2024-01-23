@@ -64,8 +64,6 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 			kitk8s.NewDeployment(pushMetricsIstiofiedDepName, istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
 		)
 
-		objs = append(objs, kitk8s.NewNetworkPolicy("ingress-deny-all", kitkyma.SystemNamespaceName).K8sObject())
-
 		return objs
 	}
 

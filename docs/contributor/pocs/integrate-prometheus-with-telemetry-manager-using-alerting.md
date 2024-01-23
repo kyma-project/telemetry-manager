@@ -221,7 +221,7 @@ Follow these steps to set up the required environment:
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
     metadata:
-      name: operator-pprof-deny-ingress
+      name: operator
     spec:
       podSelector:
         matchLabels:
