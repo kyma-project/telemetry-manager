@@ -48,7 +48,7 @@ Regex  ^(?<user>[^ ]*) (?<pass>[^ ]*)$
 Time_Key time
 Time_Format %d/%b/%Y:%H:%M:%S %z
 Types user:string pass:string`
-		logRegexParser := kitk8s.NewParser("my-regex-parser", parser)
+		logRegexParser := kitk8s.NewLogParser("my-regex-parser", parser)
 		objs = append(objs, logHTTPPipeline.K8sObject())
 		objs = append(objs, logRegexParser.K8sObject())
 
