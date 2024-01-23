@@ -195,13 +195,13 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 }
 
 func (r *Reconciler) cleanUpOldNetworkPolicies(ctx context.Context) error {
-	OldNetworkPoliciesNames := []string{
+	oldNetworkPoliciesNames := []string{
 		"telemetry-operator-pprof-deny-ingress",
 		"telemetry-metric-gateway-pprof-deny-ingress",
 		"telemetry-metric-agent-pprof-deny-ingress",
 		"telemetry-trace-collector-pprof-deny-ingress",
 	}
-	for _, networkPolicyName := range OldNetworkPoliciesNames {
+	for _, networkPolicyName := range oldNetworkPoliciesNames {
 		networkPolicy := &networkingv1.NetworkPolicy{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      networkPolicyName,
