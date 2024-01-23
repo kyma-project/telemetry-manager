@@ -56,6 +56,9 @@ func MakeNetworkPolicy(name types.NamespacedName, allowedPorts []int32, labels m
 						{
 							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
 						},
+						{
+							IPBlock: &networkingv1.IPBlock{CIDR: "::/0"},
+						},
 					},
 					Ports: makeNetworkPolicyPorts(allowedPorts),
 				},
@@ -65,6 +68,9 @@ func MakeNetworkPolicy(name types.NamespacedName, allowedPorts []int32, labels m
 					To: []networkingv1.NetworkPolicyPeer{
 						{
 							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
+						},
+						{
+							IPBlock: &networkingv1.IPBlock{CIDR: "::/0"},
 						},
 					},
 				},

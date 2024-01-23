@@ -16,6 +16,8 @@ spec:
     - from:
         - ipBlock:
             cidr: 0.0.0.0/0
+        - ipBlock:
+            cidr: ::/0
       ports:
         - protocol: TCP
           port: 8080
@@ -27,3 +29,5 @@ spec:
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
+        - ipBlock:
+            cidr: ::/0
