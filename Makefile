@@ -191,7 +191,7 @@ integration-test-istio: ginkgo k3d | test-matchers provision-test-env ## Provisi
 .PHONY: run-integration-test-istio
 run-integration-test-istio: ginkgo test-matchers ## run integration tests with istio on an existing cluster
 	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
-	$(GINKGO) run --tags istio --flake-attempts=5 --junit-report=junit.xml ./test/integration/istio
+	$(GINKGO) run --tags istio --junit-report=junit.xml ./test/integration/istio
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
