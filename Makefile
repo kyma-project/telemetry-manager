@@ -171,7 +171,7 @@ upgrade-test: provision-k3d ## Provision k3d cluster and run upgrade tests.
 
 .PHONY: run-upgrade-test
 run-upgrade-test: ginkgo
-	$(GINKGO) run --tags e2e --junit-report=junit.xml --flake-attempts=5 --label-filter="operational && !metrics" -v ./test/e2e
+	$(GINKGO) run --tags e2e --junit-report=junit.xml --flake-attempts=5 --label-filter="operational" -v ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
