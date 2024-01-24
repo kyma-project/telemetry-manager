@@ -1,0 +1,9 @@
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: aws-cloudwatch
+spec:
+  output:
+    otlp:
+      endpoint:
+        value: http://otel-collector.test.svc.cluster.local:4317
