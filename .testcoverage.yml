@@ -25,7 +25,7 @@ override:
     path: ^internal/istiostatus$
   - threshold: 86
     path: ^internal/otelcollector/config/otlpexporter$
-  - threshold: 72
+  - threshold: 85
     path: ^internal/resources/otelcollector$
   - threshold: 86
     path: ^internal/webhookcert$
@@ -39,7 +39,6 @@ exclude:
     - mocks
     - ^internal/k8sutils   # k8sutils has to be dissected into smaller single-purpose packages, for now excluding from coverage check
     - ^internal/reconciler # reconciler are covered by envtests and e2e tests
-    - ^internal/setup      # contains simple utils for setting up watchers
     - ^test                # e2e and integration tests
     - ^webhook/logpipeline # logpipeline webhooks is covered by envtests and e2e tests
 

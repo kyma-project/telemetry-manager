@@ -1,4 +1,4 @@
-package metricproducer
+package prommetricgen
 
 import (
 	"maps"
@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
+	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 )
 
 const (
@@ -72,7 +72,7 @@ type MetricProducer struct {
 	labels    map[string]string
 }
 
-func (mp *MetricProducer) PodURL(proxyClient *apiserver.ProxyClient) string {
+func (mp *MetricProducer) PodURL(proxyClient *apiserverproxy.Client) string {
 	return proxyClient.ProxyURLForPod(mp.namespace, mp.name, mp.MetricsEndpoint(), mp.MetricsPort())
 }
 

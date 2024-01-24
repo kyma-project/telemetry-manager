@@ -1,4 +1,4 @@
-package overrides
+package k8s
 
 import (
 	"strings"

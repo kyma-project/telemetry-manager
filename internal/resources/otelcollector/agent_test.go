@@ -169,16 +169,37 @@ func TestApplyAgentResources(t *testing.T) {
 
 		np := nps.Items[0]
 		require.NotNil(t, np)
-		require.Equal(t, name+"-pprof-deny-ingress", np.Name)
+		require.Equal(t, name, np.Name)
 		require.Equal(t, namespace, np.Namespace)
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
 		}, np.Labels)
-		require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress}, np.Spec.PolicyTypes)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name": name,
+		}, np.Spec.PodSelector.MatchLabels)
+		require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress}, np.Spec.PolicyTypes)
 		require.Len(t, np.Spec.Ingress, 1)
-		require.Len(t, np.Spec.Ingress[0].From, 1)
-		require.Equal(t, np.Spec.Ingress[0].From[0].IPBlock.CIDR, "0.0.0.0/0")
+		require.Len(t, np.Spec.Ingress[0].From, 2)
+		require.Equal(t, "0.0.0.0/0", np.Spec.Ingress[0].From[0].IPBlock.CIDR)
+		require.Equal(t, "::/0", np.Spec.Ingress[0].From[1].IPBlock.CIDR)
 		require.Len(t, np.Spec.Ingress[0].Ports, 2)
+		tcpProtocol := corev1.ProtocolTCP
+		port5555 := intstr.FromInt32(5555)
+		port6666 := intstr.FromInt32(6666)
+		require.Equal(t, []networkingv1.NetworkPolicyPort{
+			{
+				Protocol: &tcpProtocol,
+				Port:     &port5555,
+			},
+			{
+				Protocol: &tcpProtocol,
+				Port:     &port6666,
+			},
+		}, np.Spec.Ingress[0].Ports)
+		require.Len(t, np.Spec.Egress, 1)
+		require.Len(t, np.Spec.Egress[0].To, 2)
+		require.Equal(t, "0.0.0.0/0", np.Spec.Egress[0].To[0].IPBlock.CIDR)
+		require.Equal(t, "::/0", np.Spec.Egress[0].To[1].IPBlock.CIDR)
 	})
 
 	t.Run("should create metrics service", func(t *testing.T) {

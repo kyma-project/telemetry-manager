@@ -3,6 +3,7 @@ package fluentbit
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -12,6 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/ports"
 )
 
 const checksumAnnotationKey = "checksum/logpipeline-config"
@@ -52,21 +55,21 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 
 	annotations := make(map[string]string)
 	annotations[checksumAnnotationKey] = checksum
-	annotations[istioExcludeInboundPorts] = "2020,2021"
+	annotations[istioExcludeInboundPorts] = fmt.Sprintf("%v,%v", ports.HTTP, ports.ExporterMetrics)
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels(),
+				MatchLabels: Labels(),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels(),
+					Labels:      Labels(),
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
@@ -101,7 +104,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "http",
-									ContainerPort: 2020,
+									ContainerPort: ports.HTTP,
 									Protocol:      "TCP",
 								},
 							},
@@ -147,7 +150,7 @@ func MakeDaemonSet(name types.NamespacedName, checksum string, dsConfig DaemonSe
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "http-metrics",
-									ContainerPort: 2021,
+									ContainerPort: ports.ExporterMetrics,
 									Protocol:      "TCP",
 								},
 							},
@@ -259,15 +262,14 @@ func MakeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 }
 
 func MakeMetricsService(name types.NamespacedName) *corev1.Service {
-	metricsPort := 2020
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-metrics", name.Name),
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   strconv.Itoa(metricsPort),
+				"prometheus.io/port":   strconv.Itoa(ports.HTTP),
 				"prometheus.io/scheme": "http",
 				"prometheus.io/path":   "/api/v1/metrics/prometheus",
 			},
@@ -277,26 +279,25 @@ func MakeMetricsService(name types.NamespacedName) *corev1.Service {
 				{
 					Name:       "http",
 					Protocol:   "TCP",
-					Port:       int32(metricsPort),
+					Port:       int32(ports.HTTP),
 					TargetPort: intstr.FromString("http"),
 				},
 			},
-			Selector: labels(),
+			Selector: Labels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }
 
 func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
-	metricsPort := 2021
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-exporter-metrics", name.Name),
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 			Annotations: map[string]string{
 				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   strconv.Itoa(metricsPort),
+				"prometheus.io/port":   strconv.Itoa(ports.ExporterMetrics),
 				"prometheus.io/scheme": "http",
 			},
 		},
@@ -305,11 +306,11 @@ func MakeExporterMetricsService(name types.NamespacedName) *corev1.Service {
 				{
 					Name:       "http-metrics",
 					Protocol:   "TCP",
-					Port:       int32(metricsPort),
+					Port:       int32(ports.ExporterMetrics),
 					TargetPort: intstr.FromString("http-metrics"),
 				},
 			},
-			Selector: labels(),
+			Selector: Labels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
@@ -334,7 +335,7 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
     Parsers_File dynamic-parsers/parsers.conf
     HTTP_Server On
     HTTP_Listen 0.0.0.0
-    HTTP_Port 2020
+    HTTP_Port {{ HTTP_PORT }}
     storage.path /data/flb-storage/
     storage.metrics on
 
@@ -350,7 +351,7 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
     Alias null-null
 
 `
-
+	fluentBitConfig = strings.Replace(fluentBitConfig, "{{ HTTP_PORT }}", strconv.Itoa(ports.HTTP), 1)
 	if includeSections {
 		fluentBitConfig = fluentBitConfig + "@INCLUDE dynamic/*.conf" + "\n"
 	}
@@ -359,7 +360,7 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 		},
 		Data: map[string]string{
 			"custom_parsers.conf": parserConfig,
@@ -373,7 +374,7 @@ func MakeParserConfigmap(name types.NamespacedName) *corev1.ConfigMap {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 		},
 		Data: map[string]string{"parsers.conf": ""},
 	}
@@ -416,13 +417,13 @@ end
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
-			Labels:    labels(),
+			Labels:    Labels(),
 		},
 		Data: map[string]string{"filter-script.lua": luaFilter},
 	}
 }
 
-func labels() map[string]string {
+func Labels() map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":     "fluent-bit",
 		"app.kubernetes.io/instance": "telemetry",

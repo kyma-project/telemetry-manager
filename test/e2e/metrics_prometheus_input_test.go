@@ -12,11 +12,10 @@ import (
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
-	"github.com/kyma-project/telemetry-manager/test/testkit/otlp/kubeletstats"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -38,18 +37,18 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 
 		// Mocks namespace objects.
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
-		mockMetricProducer := metricproducer.New(mockNs)
+		mockMetricProducer := prommetricgen.New(mockNs)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		objs = append(objs, []client.Object{
-			mockMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-			mockMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+			mockMetricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+			mockMetricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		}...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		// Default namespace objects.
-		metricPipeline := kitmetricpipeline.NewPipeline("pipeline-with-prometheus-input-enabled").
+		metricPipeline := kitk8s.NewMetricPipeline("pipeline-with-prometheus-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
-			PrometheusInput(true, kitmetricpipeline.IncludeNamespaces(mockNs))
+			PrometheusInput(true, kitk8s.IncludeNamespaces(mockNs))
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 
@@ -92,20 +91,20 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				// targets discovered via annotated pods must have no service label
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(metricproducer.MetricCPUTemperature.Name)),
-						WithType(Equal(metricproducer.MetricCPUTemperature.Type)),
+						WithName(Equal(prommetricgen.MetricCPUTemperature.Name)),
+						WithType(Equal(prommetricgen.MetricCPUTemperature.Type)),
 					))),
 					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(metricproducer.MetricCPUEnergyHistogram.Name)),
-						WithType(Equal(metricproducer.MetricCPUEnergyHistogram.Type)),
+						WithName(Equal(prommetricgen.MetricCPUEnergyHistogram.Name)),
+						WithType(Equal(prommetricgen.MetricCPUEnergyHistogram.Type)),
 					))),
 					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(metricproducer.MetricHardwareHumidity.Name)),
-						WithType(Equal(metricproducer.MetricHardwareHumidity.Type)),
+						WithName(Equal(prommetricgen.MetricHardwareHumidity.Name)),
+						WithType(Equal(prommetricgen.MetricHardwareHumidity.Type)),
 					))),
 					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(metricproducer.MetricHardDiskErrorsTotal.Name)),
-						WithType(Equal(metricproducer.MetricHardDiskErrorsTotal.Type)),
+						WithName(Equal(prommetricgen.MetricHardDiskErrorsTotal.Name)),
+						WithType(Equal(prommetricgen.MetricHardDiskErrorsTotal.Type)),
 					))),
 				),
 				))
@@ -119,23 +118,23 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(SatisfyAll(
 					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(metricproducer.MetricCPUTemperature.Name)),
-						WithType(Equal(metricproducer.MetricCPUTemperature.Type)),
+						WithName(Equal(prommetricgen.MetricCPUTemperature.Name)),
+						WithType(Equal(prommetricgen.MetricCPUTemperature.Type)),
 						ContainDataPointAttrs(HaveKey("service")),
 					))),
 					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(metricproducer.MetricCPUEnergyHistogram.Name)),
-						WithType(Equal(metricproducer.MetricCPUEnergyHistogram.Type)),
+						WithName(Equal(prommetricgen.MetricCPUEnergyHistogram.Name)),
+						WithType(Equal(prommetricgen.MetricCPUEnergyHistogram.Type)),
 						ContainDataPointAttrs(HaveKey("service")),
 					))),
 					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(metricproducer.MetricHardwareHumidity.Name)),
-						WithType(Equal(metricproducer.MetricHardwareHumidity.Type)),
+						WithName(Equal(prommetricgen.MetricHardwareHumidity.Name)),
+						WithType(Equal(prommetricgen.MetricHardwareHumidity.Type)),
 						ContainDataPointAttrs(HaveKey("service")),
 					))),
 					ContainMd(ContainMetric(SatisfyAll(
-						WithName(Equal(metricproducer.MetricHardDiskErrorsTotal.Name)),
-						WithType(Equal(metricproducer.MetricHardDiskErrorsTotal.Type)),
+						WithName(Equal(prommetricgen.MetricHardDiskErrorsTotal.Name)),
+						WithType(Equal(prommetricgen.MetricHardDiskErrorsTotal.Type)),
 						ContainDataPointAttrs(HaveKey("service")),
 					))),
 				),

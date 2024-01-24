@@ -5,12 +5,12 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"github.com/kyma-project/telemetry-manager/test/testkit/k8s/apiserver"
+	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/prometheus"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func ShouldExposeCollectorMetrics(proxyClient *apiserver.ProxyClient, metricsURL string) {
+func ShouldExposeCollectorMetrics(proxyClient *apiserverproxy.Client, metricsURL string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(metricsURL)
 		g.Expect(err).NotTo(HaveOccurred())

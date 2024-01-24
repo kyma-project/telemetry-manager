@@ -21,10 +21,12 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 )
 
@@ -53,6 +55,7 @@ func (r *LogParserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&telemetryv1alpha1.LogParser{}).
 		Watches(
 			&corev1.ConfigMap{},
-			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogParser{})).
+			handler.EnqueueRequestForOwner(mgr.GetClient().Scheme(), mgr.GetRESTMapper(), &telemetryv1alpha1.LogParser{}),
+			builder.WithPredicates(predicate.OwnedResourceChanged())).
 		Complete(r)
 }

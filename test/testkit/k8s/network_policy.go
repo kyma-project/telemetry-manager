@@ -29,6 +29,7 @@ func (n *DenyAllNetworkPolicy) K8sObject() *networkingv1.NetworkPolicy {
 			PodSelector: metav1.LabelSelector{},
 			PolicyTypes: []networkingv1.PolicyType{
 				networkingv1.PolicyTypeIngress,
+				networkingv1.PolicyTypeEgress,
 			},
 		},
 	}

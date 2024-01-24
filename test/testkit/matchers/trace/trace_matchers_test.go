@@ -6,7 +6,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
-	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otlp/traces"
+	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
 )
 
 var _ = Describe("WithTds", func() {
