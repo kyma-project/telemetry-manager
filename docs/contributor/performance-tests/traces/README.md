@@ -80,28 +80,28 @@ All test scenarios use a single test script [run-load-test.sh](assets/run-load-t
 
 ## Test Results
 
-|                                               Test Description |     0.91     |               0.92 |
-|---------------------------------------------------------------:|:------------:|-------------------:|
-|                 Single Pipeline- Receiver Accepted Spans / sec |   19815.05   |            21146.3 |
-|                  Single Pipeline-Exporter Exported Spans / sec |   19815.05   |            21146.3 |
-|                            Single Pipeline-Exporter Queue Size |      0       |                  0 |
-|                      Single Pipeline-Pod Memory Usage (MBytes) | 137, 139.92  |       72.37, 50.95 |
-|                                Single Pipeline - Pod CPU Usage | 0.979, 0.921 |       1.038, 0.926 |
-|                 Multi Pipeline - Receiver Accepted Spans / sec |   13158.4    |            12757.6 |
-|                 Multi Pipeline - Exporter Exported Spans / sec |   38929.06   |            38212.2 |
-|                           Multi Pipeline - Exporter Queue Size |      0       |                  0 |
-|                     Multi Pipeline - Pod Memory Usage (MBytes) |  117, 98.5   |       90.3, 111.28 |
-|                                  Multi Pipeline - od CPU Usage | 1.307, 1.351 |          1.36,1.19 |
-|  Single Pipeline - BackPressure- Receiver Accepted Spans / sec |    9574.4    |             3293.6 |
-| Single Pipeline - BackPressure - Exporter Exported Spans / sec |     1280     |             2918.4 |
-|           Single Pipeline - BackPressure - Exporter Queue Size |     509      |                204 |
-|     Single Pipeline - BackPressure - Pod Memory Usage (MBytes) | 1929.4, 1726 |      866.07, 873.4 |
-|                 Single Pipeline - BackPressure - Pod CPU Usage | 0.723, 0.702 |          0.58,0.61 |
-|  Multi Pipeline - BackPressure - Receiver Accepted Spans / sec |    9663.8    |             9694.6 |
-|  Multi Pipeline - BackPressure - Exporter Exported Spans / sec |    1331.2    |             1399.5 |
-|            Multi Pipeline - BackPressure - Exporter Queue Size |     510      |                510 |
-|     Multi Pipeline - BackPressure -  Pod Memory Usage (MBytes) | 2029.8, 1686 |     1730.6, 1796.6 |
-|                    Multi Pipeline - BackPressure-Pod CPU Usage | 0.733, 0.696 |       0.736, 0.728 |
+|                                               Test Description |     0.91     |           0.92 |
+|---------------------------------------------------------------:|:------------:|---------------:|
+|                Single Pipeline - Receiver Accepted Spans / sec |   19815.05   |        21146.3 |
+|                Single Pipeline - Exporter Exported Spans / sec |   19815.05   |        21146.3 |
+|                          Single Pipeline - Exporter Queue Size |      0       |              0 |
+|                    Single Pipeline - Pod Memory Usage (MBytes) | 137, 139.92  |   72.37, 50.95 |
+|                                Single Pipeline - Pod CPU Usage | 0.979, 0.921 |   1.038, 0.926 |
+|                 Multi Pipeline - Receiver Accepted Spans / sec |   13158.4    |        12757.6 |
+|                 Multi Pipeline - Exporter Exported Spans / sec |   38929.06   |        38212.2 |
+|                           Multi Pipeline - Exporter Queue Size |      0       |              0 |
+|                     Multi Pipeline - Pod Memory Usage (MBytes) |  117, 98.5   |   90.3, 111.28 |
+|                                 Multi Pipeline - Pod CPU Usage | 1.307, 1.351 |      1.36,1.19 |
+| Single Pipeline - BackPressure - Receiver Accepted Spans / sec |    9574.4    |         3293.6 |
+| Single Pipeline - BackPressure - Exporter Exported Spans / sec |     1280     |         2918.4 |
+|           Single Pipeline - BackPressure - Exporter Queue Size |     509      |            204 |
+|     Single Pipeline - BackPressure - Pod Memory Usage (MBytes) | 1929.4, 1726 |  866.07, 873.4 |
+|                 Single Pipeline - BackPressure - Pod CPU Usage | 0.723, 0.702 |      0.58,0.61 |
+|  Multi Pipeline - BackPressure - Receiver Accepted Spans / sec |    9663.8    |         9694.6 |
+|  Multi Pipeline - BackPressure - Exporter Exported Spans / sec |    1331.2    |         1399.5 |
+|            Multi Pipeline - BackPressure - Exporter Queue Size |     510      |            510 |
+|      Multi Pipeline - BackPressure - Pod Memory Usage (MBytes) | 2029.8, 1686 | 1730.6, 1796.6 |
+|                  Multi Pipeline - BackPressure - Pod CPU Usage | 0.733, 0.696 |   0.736, 0.728 |
                                                                                                                                                              
 
 
