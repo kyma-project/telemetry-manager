@@ -80,12 +80,14 @@ All test scenarios use a single test script [run-load-test.sh](assets/run-load-t
 
 ## Test Results
 
-|                   Test Description                   |                  Receiver Accepted Spans / sec |    Exporter Exported Spans / sec | Exporter Queue Size | Pod Memory Usage (MBytes) |            Pod CPU Usage |
-|:----------------------------------------------------:|-----------------------------------------------:|---------------------------------:|--------------------:|--------------------------:|-------------------------:|
-|         OTEL Image Version 0.91.0 Throughput         |                                       19815.05 |                         19815.05 |                   0 |               137, 139.92 |             0.979, 0.921 |
-|        OTEL Image Version 0.91.0 Backpressure        |                                         9574.4 |                             1280 |                 509 |              1929.4, 1726 |             0.723, 0.702 |
-|  OTEL Image Version 0.91.0 MultiPipeline Throughput  |                                        13158.4 |                         38929.06 |                   0 |                 117, 98.5 |             1.307, 1.351 |
-| OTEL Image Version 0.91.0 MultiPipeline Backpressure |                                         9663.8 |                           1331.2 |                 510 |              2029.8, 1686 |             0.733, 0.696 |
-                                                                                                                                                             
 
 
+<div class="table-wrapper" markdown="block">
+
+| Version/Test |       Single Pipeline       |                             |                     |                      |               |       Multi Pipeline        |                             |                     |                      |               | Single Pipeline Backpressure |                             |                     |                      |               | Multi Pipeline Backpressure |                             |                     |                      |               |
+|-------------:|:---------------------------:|:---------------------------:|:-------------------:|:--------------------:|:-------------:|:---------------------------:|:---------------------------:|:-------------------:|:--------------------:|:-------------:|:----------------------------:|:---------------------------:|:-------------------:|:--------------------:|:-------------:|:---------------------------:|:---------------------------:|:-------------------:|:--------------------:|:-------------:|
+|              | Receiver Accepted Spans/sec | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Spans/sec | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Spans/sec  | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Spans/sec | Exporter Exported Spans/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |
+|         0.91 |          19815.05           |          19815.05           |          0          |     137, 139.92      | 0.979, 0.921  |           13158.4           |          38929.06           |          0          |      117, 98.5       | 1.307, 1.351  |            9574.4            |            1280             |         509         |     1929.4, 1726     | 0.723, 0.702  |           9663.8            |           1331.2            |         510         |     2029.8, 1686     | 0.733, 0.696  |
+|         0.92 |           21146.3           |           21146.3           |          0          |     72.37, 50.95     | 1.038, 0.926  |           12757.6           |           38212.2           |          0          |     90.3, 111.28     |  1.36, 1.19   |            3293.6            |           2918.4            |         204         |    866.07, 873.4     |  0.58, 0.61   |           9694.6            |           1399.5            |         510         |    1730.6, 1796.6    | 0.736, 0.728  |
+
+</div>
