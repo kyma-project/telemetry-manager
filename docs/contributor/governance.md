@@ -12,7 +12,7 @@ To achieve both aspects, call:
 make manifests
 ```
 
-Additionally, a [Github Action](./../../.github/workflows/pull-code-checks.yml) verifies this operation.
+Additionally, a [Github Action](../../.github/workflows/pr-code-checks.yml) verifies this operation.
 
 ## Sourcecode Linting
 
