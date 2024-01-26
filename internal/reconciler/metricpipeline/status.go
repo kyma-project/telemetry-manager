@@ -35,10 +35,10 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
 	r.setMetricFlowHealthCondition(&pipeline, alertName)
 
-	fmt.Printf("Fetching conditions: %v\n", &pipeline.Status.Conditions)
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update MetricPipeline status: %w", err)
 	}
+	fmt.Printf("Fetching conditions after update: %v\n", &pipeline.Status.Conditions)
 
 	return nil
 }
@@ -102,14 +102,14 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 }
 
 func (r *Reconciler) setMetricFlowHealthCondition(pipeline *telemetryv1alpha1.MetricPipeline, alertName string) {
-	status := metav1.ConditionTrue
-	reason := conditions.FetchReasonFromAlert(alertName)
-
-	if alertName != "" {
-		status = metav1.ConditionFalse
+	if alertName == "" {
+		return
 	}
 
+	status := metav1.ConditionFalse
+	reason := conditions.FetchReasonFromAlert(alertName)
 	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeMetricFlowHealthy, reason, status, pipeline.Generation))
+
 }
 
 func newCondition(condType, reason string, status metav1.ConditionStatus, generation int64) metav1.Condition {
