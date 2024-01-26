@@ -163,7 +163,7 @@ func queryAlerts(ctx context.Context) (error, string) {
 	logf.FromContext(ctx).Info("Prometheus alert query succeeded!",
 		"elapsed_ms", time.Since(start).Milliseconds(),
 		"alerts", alerts)
-	if len(alerts.Alerts) > 0 {
+	if len(alerts.Alerts) == 0 {
 		return nil, ""
 	}
 
