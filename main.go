@@ -301,13 +301,13 @@ func main() {
 	reconcileTriggerChan := make(chan event.GenericEvent, 1024)
 	go func() {
 		handler := func(w http.ResponseWriter, r *http.Request) {
-			body, readErr := io.ReadAll(r.Body)
+			_, readErr := io.ReadAll(r.Body)
 			if readErr != nil {
 				http.Error(w, "Error reading request body", http.StatusInternalServerError)
 				return
 			}
 			defer r.Body.Close()
-			setupLog.Info("Http request Body", body)
+			//setupLog.Info("Http request Body", body)
 
 			// TODO: add more context about which objects have to reconciled
 			reconcileTriggerChan <- event.GenericEvent{}
