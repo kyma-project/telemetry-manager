@@ -102,14 +102,15 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 }
 
 func (r *Reconciler) setMetricFlowHealthCondition(pipeline *telemetryv1alpha1.MetricPipeline, alertName string) {
-	if alertName == "" {
-		return
+	status := metav1.ConditionTrue
+	reason := conditions.ReasonMetricFlowHealthy
+
+	if alertName != "" {
+		status = metav1.ConditionFalse
+		reason = conditions.FetchReasonFromAlert(alertName)
 	}
 
-	status := metav1.ConditionFalse
-	reason := conditions.FetchReasonFromAlert(alertName)
 	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeMetricFlowHealthy, reason, status, pipeline.Generation))
-
 }
 
 func newCondition(condType, reason string, status metav1.ConditionStatus, generation int64) metav1.Condition {

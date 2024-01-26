@@ -28,6 +28,7 @@ const (
 	ReasonTraceGatewayDeploymentNotReady = "TraceGatewayDeploymentNotReady"
 	ReasonTraceGatewayDeploymentReady    = "TraceGatewayDeploymentReady"
 
+	ReasonMetricFlowHealthy    = "MetricFlowHealthy"
 	ReasonPipelineDropsMetrics = "PipelineDropsMetrics"
 )
 
