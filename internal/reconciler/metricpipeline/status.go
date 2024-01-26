@@ -3,7 +3,6 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
-func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool) error {
+func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool, alertName string) error {
 	var pipeline telemetryv1alpha1.MetricPipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -34,6 +33,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
+	r.setMetricFlowHealthCondition(&pipeline, alertName)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update MetricPipeline status: %w", err)
@@ -108,4 +108,15 @@ func newCondition(condType, reason string, status metav1.ConditionStatus, genera
 		Message:            conditions.CommonMessageFor(reason),
 		ObservedGeneration: generation,
 	}
+}
+
+func (r *Reconciler) setMetricFlowHealthCondition(pipeline *telemetryv1alpha1.MetricPipeline, alertName string) {
+	status := metav1.ConditionTrue
+	reason := conditions.FetchReasonFromAlert(alertName)
+
+	if alertName != "" {
+		status = metav1.ConditionFalse
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeMetricFlowHealthy, reason, status, pipeline.Generation))
 }

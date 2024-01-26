@@ -20,8 +20,11 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"io"
+	networkingv1 "k8s.io/api/networking/v1"
 	"net/http"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"strings"
 	"sync"
 	"time"
@@ -32,7 +35,6 @@ import (
 	istiosecurityclientv1beta "istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/fields"
@@ -123,6 +125,7 @@ var (
 	metricGatewayDynamicCPURequest    string
 	metricGatewayMemoryRequest        string
 	metricGatewayDynamicMemoryRequest string
+	reconcileTriggerChan              chan event.GenericEvent
 
 	enableWebhook bool
 	mutex         sync.Mutex
@@ -291,6 +294,38 @@ func main() {
 		if err != nil {
 			mutex.Lock()
 			setupLog.Error(err, "Cannot start pprof server")
+			mutex.Unlock()
+		}
+	}()
+
+	reconcileTriggerChan := make(chan event.GenericEvent, 1024)
+	go func() {
+		handler := func(w http.ResponseWriter, r *http.Request) {
+			body, readErr := io.ReadAll(r.Body)
+			if readErr != nil {
+				http.Error(w, "Error reading request body", http.StatusInternalServerError)
+				return
+			}
+			defer r.Body.Close()
+			setupLog.Info("Http request Body", body)
+
+			// TODO: add more context about which objects have to reconciled
+			reconcileTriggerChan <- event.GenericEvent{}
+			w.WriteHeader(http.StatusOK)
+		}
+
+		mux := http.NewServeMux()
+		mux.HandleFunc("/api/v2/alerts", handler)
+
+		server := &http.Server{
+			Addr:              ":9090",
+			ReadHeaderTimeout: 10 * time.Second,
+			Handler:           mux,
+		}
+
+		if serverErr := server.ListenAndServe(); serverErr != nil {
+			mutex.Lock()
+			setupLog.Error(serverErr, "Cannot start webhook server")
 			mutex.Unlock()
 		}
 	}()
@@ -583,7 +618,8 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,
-		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, overridesHandler))
+		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
+		reconcileTriggerChan)
 }
 
 func createDryRunConfig() dryrun.Config {

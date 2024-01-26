@@ -3,7 +3,10 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+	"github.com/prometheus/client_golang/api"
+	"time"
 
+	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -23,6 +26,7 @@ import (
 )
 
 const defaultReplicaCount int32 = 2
+const prometheusAPIURL = "http://prometheus-server.default:80"
 
 type Config struct {
 	Agent                  otelcollector.AgentConfig
@@ -86,8 +90,13 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	var err error
 	lockAcquired := true
 
+	err, alert := queryAlerts(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to query Prometheus: %w", err)
+	}
+
 	defer func() {
-		if statusErr := r.updateStatus(ctx, pipeline.Name, lockAcquired); statusErr != nil {
+		if statusErr := r.updateStatus(ctx, pipeline.Name, lockAcquired, alert); statusErr != nil {
 			if err != nil {
 				err = fmt.Errorf("failed while updating status: %v: %v", statusErr, err)
 			} else {
@@ -130,6 +139,40 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	return nil
+}
+
+func queryAlerts(ctx context.Context) (error, string) {
+	client, err := api.NewClient(api.Config{
+		Address: prometheusAPIURL,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create Prometheus client: %w", err), ""
+	}
+
+	v1api := promv1.NewAPI(client)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	start := time.Now()
+	alerts, err := v1api.Alerts(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to query Prometheus alerts: %w", err), ""
+	}
+
+	logf.FromContext(ctx).Info("Prometheus alert query succeeded!",
+		"elapsed_ms", time.Since(start).Milliseconds(),
+		"alerts", alerts)
+	if len(alerts.Alerts) > 0 {
+		return nil, ""
+	}
+
+	for _, alert := range alerts.Alerts {
+		if alert.State == promv1.AlertStateFiring {
+			return nil, string(alert.Labels["alertname"])
+		}
+	}
+	return nil, ""
 }
 
 // getDeployableMetricPipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.

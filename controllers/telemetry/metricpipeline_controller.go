@@ -19,7 +19,10 @@ package telemetry
 import (
 	"context"
 	"fmt"
-
+	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/predicate"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -29,27 +32,25 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/predicate"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 )
 
 // MetricPipelineReconciler reconciles a MetricPipeline object
 type MetricPipelineReconciler struct {
 	client.Client
 
-	reconciler *metricpipeline.Reconciler
+	reconciler           *metricpipeline.Reconciler
+	reconcileTriggerChan chan event.GenericEvent
 }
 
-func NewMetricPipelineReconciler(client client.Client, reconciler *metricpipeline.Reconciler) *MetricPipelineReconciler {
+func NewMetricPipelineReconciler(client client.Client, reconciler *metricpipeline.Reconciler, reconcileTriggerChan chan event.GenericEvent) *MetricPipelineReconciler {
 	return &MetricPipelineReconciler{
-		Client:     client,
-		reconciler: reconciler,
+		Client:               client,
+		reconciler:           reconciler,
+		reconcileTriggerChan: reconcileTriggerChan,
 	}
 }
 
@@ -93,6 +94,19 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		builder.WithPredicates(predicate.CreateOrUpdateOrDelete()),
 	).Complete(r)
+	//	WatchesRawSource(
+	//	&source.Channel{Source: r.reconcileTriggerChan},
+	//	handler.EnqueueRequestsFromMapFunc(r.mapPrometheusAlertEvent),
+	//).Complete(r)
+}
+
+func (r *MetricPipelineReconciler) mapPrometheusAlertEvent(ctx context.Context, _ client.Object) []reconcile.Request {
+	logf.FromContext(ctx).Info("Handling Prometheus alert event")
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+	return requests
 }
 
 func (r *MetricPipelineReconciler) mapCRDChanges(ctx context.Context, object client.Object) []reconcile.Request {

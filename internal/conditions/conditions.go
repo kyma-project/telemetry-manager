@@ -4,6 +4,7 @@ const (
 	TypeMetricGatewayHealthy   = "GatewayHealthy"
 	TypeMetricAgentHealthy     = "AgentHealthy"
 	TypeConfigurationGenerated = "ConfigurationGenerated"
+	TypeMetricFlowHealthy      = "MetricFlowHealthy"
 )
 
 const (
@@ -26,6 +27,8 @@ const (
 
 	ReasonTraceGatewayDeploymentNotReady = "TraceGatewayDeploymentNotReady"
 	ReasonTraceGatewayDeploymentReady    = "TraceGatewayDeploymentReady"
+
+	ReasonPipelineDropsMetrics = "PipelineDropsMetrics"
 )
 
 var message = map[string]string{
@@ -45,6 +48,12 @@ var message = map[string]string{
 
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
+
+	ReasonPipelineDropsMetrics: "Pipeline is dropping Metrics",
+}
+
+var alertMap = map[string]string{
+	"ExporterDroppedMetrics": ReasonPipelineDropsMetrics,
 }
 
 // CommonMessageFor returns a human-readable message corresponding to a given reason.
@@ -52,6 +61,13 @@ var message = map[string]string{
 func CommonMessageFor(reason string) string {
 	if condMessage, found := message[reason]; found {
 		return condMessage
+	}
+	return ""
+}
+
+func FetchReasonFromAlert(alertName string) string {
+	if reasonMsg, found := alertMap[alertName]; found {
+		return reasonMsg
 	}
 	return ""
 }
