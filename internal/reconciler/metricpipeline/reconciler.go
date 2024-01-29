@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/prometheus/client_golang/api"
+	"slices"
 	"time"
 
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
@@ -27,6 +28,8 @@ import (
 
 const defaultReplicaCount int32 = 2
 const prometheusAPIURL = "http://prometheus-server.default:80"
+
+var criticalAlerts = []string{"ExporterDroppedMetrics", "ReceiverDroppedMetrics", "ExporterDroppedSpans", "ReceiverDroppedSpans", "ReceiverDroppedLogs"}
 
 type Config struct {
 	Agent                  otelcollector.AgentConfig
@@ -52,6 +55,7 @@ type Reconciler struct {
 	agentProber        DaemonSetProber
 	overridesHandler   *overrides.Handler
 	istioStatusChecker istiostatus.Checker
+	currentAlerts      string
 }
 
 func NewReconciler(client client.Client, config Config, gatewayProber DeploymentProber, agentProber DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
@@ -62,6 +66,7 @@ func NewReconciler(client client.Client, config Config, gatewayProber Deployment
 		agentProber:        agentProber,
 		overridesHandler:   overridesHandler,
 		istioStatusChecker: istiostatus.NewChecker(client),
+		currentAlerts:      "",
 	}
 }
 
@@ -90,10 +95,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	var err error
 	lockAcquired := true
 
-	err, alert := queryAlerts(ctx)
+	err, alert := queryAlerts(ctx, r.currentAlerts)
 	if err != nil {
 		return fmt.Errorf("failed to query Prometheus: %w", err)
 	}
+	r.currentAlerts = alert
 
 	defer func() {
 		if statusErr := r.updateStatus(ctx, pipeline.Name, lockAcquired, alert); statusErr != nil {
@@ -141,7 +147,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	return nil
 }
 
-func queryAlerts(ctx context.Context) (error, string) {
+func queryAlerts(ctx context.Context, currentAlert string) (error, string) {
 	client, err := api.NewClient(api.Config{
 		Address: prometheusAPIURL,
 	})
@@ -167,12 +173,66 @@ func queryAlerts(ctx context.Context) (error, string) {
 		return nil, ""
 	}
 
-	for _, alert := range alerts.Alerts {
-		if alert.State == promv1.AlertStateFiring {
-			return nil, string(alert.Labels["alertname"])
+	alert := fetchAlert(alerts, currentAlert)
+
+	//for _, alert := range alerts.Alerts {
+	//	if alert.State == promv1.AlertStateFiring {
+	//		return nil, string(alert.Labels["alertname"])
+	//	}
+	//}
+	return nil, alert
+}
+
+func fetchAlert(alerts promv1.AlertsResult, currentAlert string) string {
+	if len(alerts.Alerts) == 0 {
+		return ""
+	}
+	firingAlerts := fetchFiringAlerts(alerts.Alerts)
+	// Verify if current Alert is still firing and if critical then dont change the state
+	if currentAlert != "" && firingAlertsContainsAlert(currentAlert, firingAlerts) {
+		if slices.Contains(criticalAlerts, currentAlert) {
+			return currentAlert
 		}
 	}
-	return nil, ""
+	alert := fetchCriticalAlerts(firingAlerts)
+	if alert != "" {
+		return alert
+	}
+	return fetchNonCriticalAlerts(firingAlerts)
+}
+
+func firingAlertsContainsAlert(alertName string, alerts []promv1.Alert) bool {
+	for _, alert := range alerts {
+		if string(alert.Labels["alertname"]) == alertName {
+			return true
+		}
+	}
+	return false
+}
+
+func fetchFiringAlerts(alerts []promv1.Alert) []promv1.Alert {
+	var firingAlerts []promv1.Alert
+	for _, alert := range alerts {
+		if alert.State == promv1.AlertStateFiring {
+			firingAlerts = append(firingAlerts, alert)
+		}
+	}
+	return firingAlerts
+}
+func fetchCriticalAlerts(alerts []promv1.Alert) string {
+	for _, alert := range alerts {
+		if slices.Contains(criticalAlerts, string(alert.Labels["alertname"])) {
+			return string(alert.Labels["alertname"])
+		}
+	}
+	return ""
+}
+
+func fetchNonCriticalAlerts(alerts []promv1.Alert) string {
+	for _, alert := range alerts {
+		return string(alert.Labels["alertname"])
+	}
+	return ""
 }
 
 // getDeployableMetricPipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.

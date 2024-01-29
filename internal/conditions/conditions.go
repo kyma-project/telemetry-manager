@@ -28,8 +28,8 @@ const (
 	ReasonTraceGatewayDeploymentNotReady = "TraceGatewayDeploymentNotReady"
 	ReasonTraceGatewayDeploymentReady    = "TraceGatewayDeploymentReady"
 
-	ReasonMetricFlowHealthy    = "MetricFlowHealthy"
-	ReasonPipelineDropsMetrics = "PipelineDropsMetrics"
+	ReasonMetricFlowHealthy      = "MetricFlowHealthy"
+	ReasonExporterDroppedMetrics = "PipelineDropsMetrics"
 )
 
 var message = map[string]string{
@@ -50,11 +50,11 @@ var message = map[string]string{
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
 
-	ReasonPipelineDropsMetrics: "Pipeline is dropping Metrics",
+	ReasonExporterDroppedMetrics: "OTEL Exporter in Metric Pipeline is dropping Metrics",
 }
 
 var alertMap = map[string]string{
-	"ExporterDroppedMetrics": ReasonPipelineDropsMetrics,
+	"ExporterDroppedMetrics": ReasonExporterDroppedMetrics,
 }
 
 // CommonMessageFor returns a human-readable message corresponding to a given reason.
