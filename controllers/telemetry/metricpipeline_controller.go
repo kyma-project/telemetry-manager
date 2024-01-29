@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // MetricPipelineReconciler reconciles a MetricPipeline object
@@ -93,11 +94,10 @@ func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		&operatorv1alpha1.Telemetry{},
 		handler.EnqueueRequestsFromMapFunc(r.mapTelemetryChanges),
 		builder.WithPredicates(predicate.CreateOrUpdateOrDelete()),
+	).WatchesRawSource(
+		&source.Channel{Source: r.reconcileTriggerChan},
+		handler.EnqueueRequestsFromMapFunc(r.mapPrometheusAlertEvent),
 	).Complete(r)
-	//	WatchesRawSource(
-	//	&source.Channel{Source: r.reconcileTriggerChan},
-	//	handler.EnqueueRequestsFromMapFunc(r.mapPrometheusAlertEvent),
-	//).Complete(r)
 }
 
 func (r *MetricPipelineReconciler) mapPrometheusAlertEvent(ctx context.Context, _ client.Object) []reconcile.Request {

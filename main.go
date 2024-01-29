@@ -298,7 +298,7 @@ func main() {
 		}
 	}()
 
-	reconcileTriggerChan := make(chan event.GenericEvent, 1024)
+	reconcileTriggerChan = make(chan event.GenericEvent, 1024)
 	go func() {
 		handler := func(w http.ResponseWriter, r *http.Request) {
 			_, readErr := io.ReadAll(r.Body)
