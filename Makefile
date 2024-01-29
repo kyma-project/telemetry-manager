@@ -1,8 +1,10 @@
 # Image URL to use all building/pushing image targets
 IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.27.1
+ENVTEST_K8S_VERSION = 1.28.0
+GARDENER_K8S_VERSION = 1.28.4
 ISTIO_VERSION ?= 1.3.0
+
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
 # Operating system type
@@ -369,9 +371,6 @@ $(KYMA):
 GIT_COMMIT_SHA=$(shell git rev-parse --short=8 HEAD)
 GIT_COMMIT_DATE=$(shell git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_COMMIT_SHA})
 HIBERNATION_HOUR=$(shell echo $$(( ( $(shell date +%H | sed s/^0//g) + 5 ) % 24 )))
-ifneq (,$(GARDENER_SA_PATH))
-GARDENER_K8S_VERSION?=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud gcp -o=jsonpath='{.spec.kubernetes.versions[0].version}')
-endif
 
 # log tests are excluded for now as they are too flaky
 .PHONY: run-tests-with-git-image
