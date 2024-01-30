@@ -12,17 +12,17 @@ To achieve both aspects, call:
 make manifests
 ```
 
-Additionally, a [Github Action](./../../.github/workflows/pull-code-checks.yml) verifies this operation.
+Additionally, a [Github Action](../../.github/workflows/pr-code-checks.yml) verifies this operation.
 
 ## Sourcecode Linting
 
 For the source code linting, the development team uses [golangci-lint](https://golangci-lint.run) with fine-grained configuration.
 
-Additionally, a [Github Action](./../../.github/workflows/pull-code-checks.yml) verifies this operation.
+Additionally, a [Github Action](../../.github/workflows/pr-code-checks.yml) verifies this operation.
 
 ### Linters in Action
 
-The following linters are configured and integrated as a CI stage using a [Github Action](./../../.github/workflows/pull-code-checks.yml).
+The following linters are configured and integrated as a CI stage using a [Github Action](../../.github/workflows/pr-code-checks.yml).
 
 <details>
 <summary>List of Linters</summary>

@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: operator-pprof-deny-ingress
+  name: operator
 spec:
   podSelector:
     matchLabels:
@@ -11,10 +11,13 @@ spec:
       control-plane: telemetry-operator
   policyTypes:
     - Ingress
+    - Egress
   ingress:
     - from:
         - ipBlock:
             cidr: 0.0.0.0/0
+        - ipBlock:
+            cidr: ::/0
       ports:
         - protocol: TCP
           port: 8080
@@ -22,3 +25,9 @@ spec:
           port: 8081
         - protocol: TCP
           port: 9443
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+        - ipBlock:
+            cidr: ::/0

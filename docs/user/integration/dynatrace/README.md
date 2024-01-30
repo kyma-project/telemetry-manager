@@ -23,7 +23,6 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
   - [Prepare the Namespace](#prepare-the-namespace)
   - [Dynatrace Setup](#dynatrace-setup)
   - [Telemetry Module Setup](#telemetry-module-setup)
-    - [Create Access Token](#create-access-token)
     - [Create Secret](#create-secret)
     - [Ingest Traces](#ingest-traces)
     - [Ingest Metrics](#ingest-metrics)

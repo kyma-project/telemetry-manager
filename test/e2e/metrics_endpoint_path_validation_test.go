@@ -7,31 +7,30 @@ import (
 	. "github.com/onsi/gomega"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
-	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 )
 
 var _ = Describe("Metrics Validating Endpoint Path", Label("metrics"), Ordered, func() {
 
-	metricPipelineDefaultGRPCWithPath := kitmetricpipeline.NewPipeline("metricpipeline-default-reject-with-path").
+	metricPipelineDefaultGRPCWithPath := kitk8s.NewMetricPipeline("metricpipeline-default-reject-with-path").
 		WithOutputEndpoint("mock-endpoint:4817").WithEndpointPath("/v1/mock/metrics").
 		Persistent(isOperational()).K8sObject()
 
-	metricPipelineWithGRPCAndPath := kitmetricpipeline.NewPipeline("metricpipeline-reject-with-grpc-and-path").
+	metricPipelineWithGRPCAndPath := kitk8s.NewMetricPipeline("metricpipeline-reject-with-grpc-and-path").
 		WithOutputEndpoint("mock-endpoint:4817").WithEndpointPath("/v1/mock/metrics").
 		WithProtocol("grpc").
 		Persistent(isOperational()).K8sObject()
 
-	metricPipelineWithGRPCAndWithoutPath := kitmetricpipeline.NewPipeline("metricpipeline-accept-with-grpc-and-no-path").
+	metricPipelineWithGRPCAndWithoutPath := kitk8s.NewMetricPipeline("metricpipeline-accept-with-grpc-and-no-path").
 		WithOutputEndpoint("mock-endpoint:4817").
 		WithProtocol("grpc").
 		Persistent(isOperational()).K8sObject()
 
-	metricPipelineWithHTTPAndPath := kitmetricpipeline.NewPipeline("metricpipeline-accept-with-http-and-path").
+	metricPipelineWithHTTPAndPath := kitk8s.NewMetricPipeline("metricpipeline-accept-with-http-and-path").
 		WithOutputEndpoint("mock-endpoint:4817").WithEndpointPath("/v1/mock/metrics").
 		WithProtocol("http").
 		Persistent(isOperational()).K8sObject()
 
-	metricPipelineWithHTTPAndWithoutPath := kitmetricpipeline.NewPipeline("metricpipeline-accept-with-http-and-no-path").
+	metricPipelineWithHTTPAndWithoutPath := kitk8s.NewMetricPipeline("metricpipeline-accept-with-http-and-no-path").
 		WithOutputEndpoint("mock-endpoint:4817").
 		WithProtocol("http").
 		Persistent(isOperational()).K8sObject()

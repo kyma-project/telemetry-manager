@@ -12,10 +12,9 @@ import (
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -37,16 +36,16 @@ var _ = Describe("Metrics Prometheus Input Diagnostic Metrics", Label("metrics")
 
 		// Mocks namespace objects.
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
-		mockMetricProducer := metricproducer.New(mockNs)
+		mockMetricProducer := prommetricgen.New(mockNs)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		objs = append(objs, []client.Object{
-			mockMetricProducer.Pod().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
-			mockMetricProducer.Service().WithPrometheusAnnotations(metricproducer.SchemeHTTP).K8sObject(),
+			mockMetricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
+			mockMetricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		}...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		// Default namespace objects.
-		metricPipeline := kitmetricpipeline.NewPipeline("pipeline-with-prometheus-input-diagnostic-enabled").
+		metricPipeline := kitk8s.NewMetricPipeline("pipeline-with-prometheus-input-diagnostic-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			PrometheusInput(true).PrometheusInputDiagnosticMetrics(true)
 		pipelineName = metricPipeline.Name()

@@ -14,7 +14,6 @@ import (
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitlogpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
@@ -137,7 +136,7 @@ var _ = Describe("Telemetry Module", Label("telemetry"), Ordered, func() {
 
 		It("Should not delete Telemetry when LogPipeline exists", func() {
 			By("Deleting telemetry", func() {
-				Expect(kitk8s.ForceDeleteObjects(ctx, k8sClient, telemetryK8sObjects...)).Should(Succeed())
+				Expect(kitk8s.ForceDeleteObjects(ctx, k8sClient, telemetryK8sObject)).Should(Succeed())
 			})
 
 			Eventually(func(g Gomega) {
@@ -217,7 +216,7 @@ func testWebhookReconciliation() {
 }
 
 func makeTestPipelineK8sObjects() []client.Object {
-	logPipeline := kitlogpipeline.NewPipeline(telemetryTestK8SObjectName).WithStdout()
+	logPipeline := kitk8s.NewLogPipeline(telemetryTestK8SObjectName).WithStdout()
 	return []client.Object{
 		logPipeline.K8sObject(),
 	}

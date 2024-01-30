@@ -18,9 +18,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kitmetricpipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/metric"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otlp/metrics"
+	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otel/metrics"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -45,13 +44,11 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		metricPipeline := kitmetricpipeline.NewPipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
+		metricPipeline := kitk8s.NewMetricPipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
 			Persistent(isOperational())
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
-
-		objs = append(objs, kitk8s.NewNetworkPolicy("ingress-deny-all", kitkyma.SystemNamespaceName).K8sObject())
 
 		return objs
 	}

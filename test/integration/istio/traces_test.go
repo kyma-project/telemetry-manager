@@ -6,10 +6,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	kittracepipeline "github.com/kyma-project/telemetry-manager/test/testkit/kyma/telemetry/trace"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/metricproducer"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
@@ -60,11 +59,11 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
 		telemetryIstiofiedExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		istioTracePipeline := kittracepipeline.NewPipeline("istiofied-app-traces").WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRef())
+		istioTracePipeline := kitk8s.NewTracePipeline("istiofied-app-traces").WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRef())
 		istiofiedPipelineName = istioTracePipeline.Name()
 		objs = append(objs, istioTracePipeline.K8sObject())
 
-		tracePipeline := kittracepipeline.NewPipeline("app-traces").WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+		tracePipeline := kitk8s.NewTracePipeline("app-traces").WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
 		pipelineName = tracePipeline.Name()
 		objs = append(objs, tracePipeline.K8sObject())
 
@@ -75,15 +74,13 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")))
 
 		// Abusing metrics provider for istio traces
-		istioSampleApp := metricproducer.New(istiofiedSampleAppNs, metricproducer.WithName(istiofiedSampleAppName))
+		istioSampleApp := prommetricgen.New(istiofiedSampleAppNs, prommetricgen.WithName(istiofiedSampleAppName))
 		objs = append(objs, istioSampleApp.Pod().K8sObject())
 		istiofiedAppURL = istioSampleApp.PodURL(proxyClient)
 
-		sampleApp := metricproducer.New(sampleAppNs, metricproducer.WithName(sampleAppName))
+		sampleApp := prommetricgen.New(sampleAppNs, prommetricgen.WithName(sampleAppName))
 		objs = append(objs, sampleApp.Pod().K8sObject())
 		appURL = sampleApp.PodURL(proxyClient)
-
-		objs = append(objs, kitk8s.NewNetworkPolicy("ingress-deny-all", kitkyma.SystemNamespaceName).K8sObject())
 
 		return objs
 	}

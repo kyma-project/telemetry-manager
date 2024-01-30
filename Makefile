@@ -171,7 +171,7 @@ upgrade-test: provision-k3d ## Provision k3d cluster and run upgrade tests.
 
 .PHONY: run-upgrade-test
 run-upgrade-test: ginkgo
-	$(GINKGO) run --tags e2e --junit-report=junit.xml --flake-attempts=5 --label-filter="operational && !metrics" -v ./test/e2e
+	$(GINKGO) run --tags e2e --junit-report=junit.xml --flake-attempts=5 --label-filter="operational" -v ./test/e2e
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
@@ -191,7 +191,7 @@ integration-test-istio: ginkgo k3d | test-matchers provision-test-env ## Provisi
 .PHONY: run-integration-test-istio
 run-integration-test-istio: ginkgo test-matchers ## run integration tests with istio on an existing cluster
 	ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
-	$(GINKGO) run --tags istio --flake-attempts=5 --junit-report=junit.xml ./test/integration/istio
+	$(GINKGO) run --tags istio --junit-report=junit.xml ./test/integration/istio
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
@@ -289,7 +289,7 @@ KUSTOMIZE_VERSION ?= v5.0.1
 TABLE_GEN_VERSION ?= v0.0.0-20230523174756-3dae9f177ffd
 CONTROLLER_TOOLS_VERSION ?= v0.11.3
 K3D_VERSION ?= v5.4.7
-GINKGO_VERSION ?= v2.14.0
+GINKGO_VERSION ?= v2.15.0
 GORELEASER_VERSION ?= v1.23.0
 GOLANGCI-LINT_VERSION ?= latest
 GO_TEST_COVERAGE_VERSION ?= v2.8.2

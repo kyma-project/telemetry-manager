@@ -1,4 +1,4 @@
-package trace
+package k8s
 
 import (
 	"fmt"
@@ -7,13 +7,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
-const version = "1.0.0"
-
-type Pipeline struct {
+type TracePipeline struct {
 	persistent bool
 
 	id              string
@@ -25,25 +22,25 @@ type Pipeline struct {
 	endpointPath    string
 }
 
-func NewPipeline(name string) *Pipeline {
-	return &Pipeline{
+func NewTracePipeline(name string) *TracePipeline {
+	return &TracePipeline{
 		id:           uuid.New().String(),
 		name:         name,
 		otlpEndpoint: "http://unreachable:4317",
 	}
 }
 
-func (p *Pipeline) WithOutputEndpoint(otlpEndpoint string) *Pipeline {
+func (p *TracePipeline) WithOutputEndpoint(otlpEndpoint string) *TracePipeline {
 	p.otlpEndpoint = otlpEndpoint
 	return p
 }
 
-func (p *Pipeline) WithOutputEndpointFromSecret(otlpEndpointRef *telemetryv1alpha1.SecretKeyRef) *Pipeline {
+func (p *TracePipeline) WithOutputEndpointFromSecret(otlpEndpointRef *telemetryv1alpha1.SecretKeyRef) *TracePipeline {
 	p.otlpEndpointRef = otlpEndpointRef
 	return p
 }
 
-func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
+func (p *TracePipeline) WithTLS(certs tls.Certs) *TracePipeline {
 	p.tls = &telemetryv1alpha1.OtlpTLS{
 		Insecure:           false,
 		InsecureSkipVerify: false,
@@ -61,7 +58,7 @@ func (p *Pipeline) WithTLS(certs tls.Certs) *Pipeline {
 	return p
 }
 
-func (p *Pipeline) Name() string {
+func (p *TracePipeline) Name() string {
 	if p.persistent {
 		return p.name
 	}
@@ -69,26 +66,26 @@ func (p *Pipeline) Name() string {
 	return fmt.Sprintf("%s-%s", p.name, p.id)
 }
 
-func (p *Pipeline) Persistent(persistent bool) *Pipeline {
+func (p *TracePipeline) Persistent(persistent bool) *TracePipeline {
 	p.persistent = persistent
 
 	return p
 }
 
-func (p *Pipeline) WithProtocol(protocol string) *Pipeline {
+func (p *TracePipeline) WithProtocol(protocol string) *TracePipeline {
 	p.protocol = protocol
 	return p
 }
 
-func (p *Pipeline) WithEndpointPath(path string) *Pipeline {
+func (p *TracePipeline) WithEndpointPath(path string) *TracePipeline {
 	p.endpointPath = path
 	return p
 }
 
-func (p *Pipeline) K8sObject() *telemetryv1alpha1.TracePipeline {
-	var labels kitk8s.Labels
+func (p *TracePipeline) K8sObject() *telemetryv1alpha1.TracePipeline {
+	var labels Labels
 	if p.persistent {
-		labels = kitk8s.PersistentLabel
+		labels = PersistentLabel
 	}
 	labels.Version(version)
 
