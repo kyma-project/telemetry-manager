@@ -18,11 +18,11 @@ The Kyma Telemetry module supports you in integrating with observability backend
 1. Export your Namespace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
 
     ```bash
-    export KYMA_NS="{NAMESPACE}"
+    export K8S_NAMESPACE="{NAMESPACE}"
     ```
 1. If you haven't created a Namespace yet, do it now:
     ```bash
-    kubectl create namespace $KYMA_NS
+    kubectl create namespace $K8S_NAMESPACE
     ```
 
 ### Create AWS IAM User
@@ -69,7 +69,7 @@ After creating a Secret and configuring the required users in AWS, deploy the AW
 
 1. Deploy the AWS Distro:
     ```bash
-    kubectl -n $KYMA_NS apply -f ./resources/aws-otel.yaml
+    kubectl -n $K8S_NAMESPACE apply -f ./resources/aws-otel.yaml
     ```
 
 ### Set up Kyma Telemetry
@@ -99,15 +99,15 @@ To verify the results of CloudWatch and X-Ray, deploy sample applications for ea
 The sample app that generates traces in the following example is documented by AWS in their documentation: [Deploy a sample application to test the AWS Distro for OpenTelemetry Collector](https://docs.aws.amazon.com/eks/latest/userguide/sample-app.html).
 1. Deploy the traffic generator app:
     ```bash
-    kubectl apply -n ${KYMA_NS} -f ./sample-app/traffic-generator.yaml
+    kubectl apply -n ${K8S_NAMESPACE} -f ./sample-app/traffic-generator.yaml
     ```
 1. Deploy an example app:
     ```bash
-    kubectl apply -n ${KYMA_NS} -f ./sample-app/deployment.yaml
+    kubectl apply -n ${K8S_NAMESPACE} -f ./sample-app/deployment.yaml
     ```
 1. To access the application, port-forward it:
     ```bash
-    kubectl -n ${KYMA_NS} port-forward svc/sample-app 4567
+    kubectl -n ${K8S_NAMESPACE} port-forward svc/sample-app 4567
     ```
 1. Make some requests to the application, for example, `localhost:4567` or `localhost:4567/outgoing-http-call`.
 1. Go to **AWS X-Ray** > **Traces**.
