@@ -6,6 +6,9 @@ metadata:
 spec:
   output:
     otlp:
+      tls:
+        insecure: true
+        insecureSkipVerify: true
       endpoint:
         value: http://trace-receiver.trace-load-test:4317
 
@@ -166,6 +169,7 @@ kind: Deployment
 metadata:
   labels:
     app: trace-receiver
+    sidecar.istio.io/inject: "true"
   name: trace-receiver
   namespace: trace-load-test
 spec:
@@ -177,6 +181,7 @@ spec:
     metadata:
       labels:
         app: trace-receiver
+        sidecar.istio.io/inject: "true"
     spec:
       volumes:
         - name: collector-config

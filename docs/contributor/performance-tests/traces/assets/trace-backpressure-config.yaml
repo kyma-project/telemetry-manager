@@ -1,25 +1,21 @@
-apiVersion: v1
-kind: ConfigMap
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
 metadata:
-  name: trace-receiver
+  name: trace-receiver-fault
   namespace: trace-load-test
-  labels:
-    app: trace-receiver
-data:
-  config.yaml: |
-    receivers:
-      otlp:
-        protocols:
-          grpc: {}
-          http: {}
-    exporters:
-      debug:
-        verbosity: detailed
-    service:
-      pipelines:
-        traces:
-          receivers:
-            - otlp
-          exporters:
-            - debug
----
+spec:
+  hosts:
+    - trace-receiver
+  http:
+    - fault:
+        abort:
+          httpStatus: 503
+          percentage:
+            value: 70
+        delay:
+          percentage:
+            value: 70
+          fixedDelay: 1s
+      route:
+        - destination:
+            host: trace-receiver
