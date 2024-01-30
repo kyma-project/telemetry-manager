@@ -3,6 +3,7 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,7 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
 
-func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool, alertName string) error {
+func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool, alert prometheus.Alerts) error {
 	var pipeline telemetryv1alpha1.MetricPipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -33,7 +34,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
-	r.setMetricFlowHealthCondition(&pipeline, alertName)
+	r.setMetricFlowHealthCondition(&pipeline, alert)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update MetricPipeline status: %w", err)
@@ -101,14 +102,14 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation))
 }
 
-func (r *Reconciler) setMetricFlowHealthCondition(pipeline *telemetryv1alpha1.MetricPipeline, alertName string) {
-	fmt.Printf("Alertname is: %v\n", alertName)
+func (r *Reconciler) setMetricFlowHealthCondition(pipeline *telemetryv1alpha1.MetricPipeline, alert prometheus.Alerts) {
+	fmt.Printf("Alertname is: %v\n", alert.Name)
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonMetricFlowHealthy
 
-	if alertName != "" {
+	if alert.Name != "" {
 		status = metav1.ConditionFalse
-		reason = conditions.FetchReasonFromAlert(alertName)
+		reason = conditions.FetchReasonFromAlert(alert)
 	}
 
 	fmt.Printf("Status is: %v, Reason: %v\n", status, reason)

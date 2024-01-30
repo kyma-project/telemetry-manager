@@ -1,5 +1,10 @@
 package conditions
 
+import (
+	"github.com/kyma-project/telemetry-manager/internal/prometheus"
+	"strings"
+)
+
 const (
 	TypeMetricGatewayHealthy   = "GatewayHealthy"
 	TypeMetricAgentHealthy     = "AgentHealthy"
@@ -30,6 +35,8 @@ const (
 
 	ReasonMetricFlowHealthy      = "MetricFlowHealthy"
 	ReasonExporterDroppedMetrics = "PipelineDropsMetrics"
+
+	ReasonUnknown = "ReasonUnknown"
 )
 
 var message = map[string]string{
@@ -50,11 +57,13 @@ var message = map[string]string{
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
 
-	ReasonExporterDroppedMetrics: "OTEL Exporter in Metric Pipeline is dropping Metrics",
+	ReasonExporterDroppedMetrics: "Pipeline pipelineName is dropping Metrics",
+	ReasonUnknown:                "Cannot determine the pipeline state",
 }
 
 var alertMap = map[string]string{
-	"ExporterDroppedMetrics": ReasonExporterDroppedMetrics,
+	"ExporterDropsMetricPoints": ReasonExporterDroppedMetrics,
+	"Unknown":                   ReasonUnknown,
 }
 
 // CommonMessageFor returns a human-readable message corresponding to a given reason.
@@ -66,9 +75,9 @@ func CommonMessageFor(reason string) string {
 	return ""
 }
 
-func FetchReasonFromAlert(alertName string) string {
-	if reasonMsg, found := alertMap[alertName]; found {
-		return reasonMsg
+func FetchReasonFromAlert(alert prometheus.Alerts) string {
+	if reasonMsg, found := alertMap[alert.Name]; found {
+		return strings.Replace(reasonMsg, "pipelineName", alert.PipelineInfo, 1)
 	}
 	return ""
 }

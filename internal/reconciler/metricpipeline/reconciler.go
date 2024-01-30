@@ -3,17 +3,6 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
-	"github.com/prometheus/client_golang/api"
-	"slices"
-	"time"
-
-	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
-	"gopkg.in/yaml.v3"
-	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/istiostatus"
@@ -22,14 +11,17 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/gateway"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const defaultReplicaCount int32 = 2
-const prometheusAPIURL = "http://prometheus-server.default:80"
-
-var criticalAlerts = []string{"ExporterDroppedMetrics", "ReceiverDroppedMetrics", "ExporterDroppedSpans", "ReceiverDroppedSpans", "ReceiverDroppedLogs"}
 
 type Config struct {
 	Agent                  otelcollector.AgentConfig
@@ -55,7 +47,7 @@ type Reconciler struct {
 	agentProber        DaemonSetProber
 	overridesHandler   *overrides.Handler
 	istioStatusChecker istiostatus.Checker
-	currentAlerts      string
+	currentAlert       prometheus.Alerts
 }
 
 func NewReconciler(client client.Client, config Config, gatewayProber DeploymentProber, agentProber DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
@@ -66,7 +58,7 @@ func NewReconciler(client client.Client, config Config, gatewayProber Deployment
 		agentProber:        agentProber,
 		overridesHandler:   overridesHandler,
 		istioStatusChecker: istiostatus.NewChecker(client),
-		currentAlerts:      "",
+		currentAlert:       prometheus.NewAlerts(),
 	}
 }
 
@@ -95,14 +87,15 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	var err error
 	lockAcquired := true
 
-	err, alert := queryAlerts(ctx, r.currentAlerts)
+	err, alert := prometheus.QueryAlerts(ctx, r.currentAlert)
 	if err != nil {
-		return fmt.Errorf("failed to query Prometheus: %w", err)
+		logf.FromContext(ctx).V(1).Info(fmt.Sprintf("failed to query Prometheus: %w", err))
+		alert = prometheus.SetUnknownAlert()
 	}
-	r.currentAlerts = alert
+	r.currentAlert = alert
 
 	defer func() {
-		if statusErr := r.updateStatus(ctx, pipeline.Name, lockAcquired, alert); statusErr != nil {
+		if statusErr := r.updateStatus(ctx, pipeline.Name, lockAcquired, r.currentAlert); statusErr != nil {
 			if err != nil {
 				err = fmt.Errorf("failed while updating status: %v: %v", statusErr, err)
 			} else {
@@ -145,94 +138,6 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	return nil
-}
-
-func queryAlerts(ctx context.Context, currentAlert string) (error, string) {
-	client, err := api.NewClient(api.Config{
-		Address: prometheusAPIURL,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create Prometheus client: %w", err), ""
-	}
-
-	v1api := promv1.NewAPI(client)
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
-	start := time.Now()
-	alerts, err := v1api.Alerts(ctx)
-
-	if err != nil {
-		return fmt.Errorf("failed to query Prometheus alerts: %w", err), ""
-	}
-
-	logf.FromContext(ctx).Info("Prometheus alert query succeeded!",
-		"elapsed_ms", time.Since(start).Milliseconds(),
-		"alerts", alerts)
-	if len(alerts.Alerts) == 0 {
-		return nil, ""
-	}
-
-	alert := fetchAlert(alerts, currentAlert)
-
-	//for _, alert := range alerts.Alerts {
-	//	if alert.State == promv1.AlertStateFiring {
-	//		return nil, string(alert.Labels["alertname"])
-	//	}
-	//}
-	return nil, alert
-}
-
-func fetchAlert(alerts promv1.AlertsResult, currentAlert string) string {
-	if len(alerts.Alerts) == 0 {
-		return ""
-	}
-	firingAlerts := fetchFiringAlerts(alerts.Alerts)
-	// Verify if current Alert is still firing and if critical then dont change the state
-	if currentAlert != "" && firingAlertsContainsAlert(currentAlert, firingAlerts) {
-		if slices.Contains(criticalAlerts, currentAlert) {
-			return currentAlert
-		}
-	}
-	alert := fetchCriticalAlerts(firingAlerts)
-	if alert != "" {
-		return alert
-	}
-	return fetchNonCriticalAlerts(firingAlerts)
-}
-
-func firingAlertsContainsAlert(alertName string, alerts []promv1.Alert) bool {
-	for _, alert := range alerts {
-		if string(alert.Labels["alertname"]) == alertName {
-			return true
-		}
-	}
-	return false
-}
-
-func fetchFiringAlerts(alerts []promv1.Alert) []promv1.Alert {
-	var firingAlerts []promv1.Alert
-	for _, alert := range alerts {
-		if alert.State == promv1.AlertStateFiring {
-			firingAlerts = append(firingAlerts, alert)
-		}
-	}
-	return firingAlerts
-}
-func fetchCriticalAlerts(alerts []promv1.Alert) string {
-	for _, alert := range alerts {
-		if slices.Contains(criticalAlerts, string(alert.Labels["alertname"])) {
-			return string(alert.Labels["alertname"])
-		}
-	}
-	return ""
-}
-
-func fetchNonCriticalAlerts(alerts []promv1.Alert) string {
-	for _, alert := range alerts {
-		return string(alert.Labels["alertname"])
-	}
-	return ""
 }
 
 // getDeployableMetricPipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
