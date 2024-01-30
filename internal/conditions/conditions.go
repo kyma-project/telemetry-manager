@@ -62,8 +62,8 @@ var message = map[string]string{
 }
 
 var alertMap = map[string]string{
-	"ExporterDropsMetricPoints": ReasonExporterDroppedMetrics,
-	"Unknown":                   ReasonUnknown,
+	"ExporterDroppedMetrics": ReasonExporterDroppedMetrics,
+	"Unknown":                ReasonUnknown,
 }
 
 // CommonMessageFor returns a human-readable message corresponding to a given reason.

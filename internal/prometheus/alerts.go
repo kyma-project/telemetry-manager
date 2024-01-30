@@ -137,10 +137,10 @@ func fetchNonCriticalAlerts(alerts []promv1.Alert) Alerts {
 }
 
 func FetchPipelineInfo(alert promv1.Alert) string {
-	if string(alert.Labels["alertname"]) == "ExporterDropsMetricPoints" || string(alert.Labels["alertname"]) == "ExporterDropsSpans" || string(alert.Labels["alertname"]) == "ExporterDropsLogs" {
+	if string(alert.Labels["alertname"]) == "ExporterDropsMetric" || string(alert.Labels["alertname"]) == "ExporterDropsSpans" || string(alert.Labels["alertname"]) == "ExporterDropsLogs" {
 		return string(alert.Labels["exporter"])
 	}
-	if string(alert.Labels["alertname"]) == "ReceiverDropsMetricPoints" || string(alert.Labels["alertname"]) == "ReceiverDropsSpans" || string(alert.Labels["alertname"]) == "ReceiverDropsLogs" {
+	if string(alert.Labels["alertname"]) == "ReceiverDropsMetric" || string(alert.Labels["alertname"]) == "ReceiverDropsSpans" || string(alert.Labels["alertname"]) == "ReceiverDropsLogs" {
 		return string(alert.Labels["receiver"])
 	}
 	return ""
