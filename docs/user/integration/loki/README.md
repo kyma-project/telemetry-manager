@@ -83,22 +83,17 @@ kubectl -n ${K8S_NAMESPACE} get pod -l app.kubernetes.io/name=loki
 
 To ingest the application logs from within your cluster to Loki, you can either choose an installation based on [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/), which is the log collector recommended by Loki and provides a ready-to-use setup. Alternatively, you can use Kyma's LogPipeline feature based on Fluent Bit.
 
-<div tabs name="default-settings" group="configuration">
-  <details>
-  <summary label="promtail-installation">
-  Install Promtail
-  </summary>
+<!-- tabs:start -->
+
+#### **Install Promtail**
 
 To install Promtail pointing it to the previously installed Loki instance, run:
 
 ```bash
 helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} promtail grafana/promtail -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/user/integration/loki/promtail-values.yaml --set "config.clients[0].url=https://${HELM_LOKI_RELEASE}.${K8S_NAMESPACE}.svc.cluster.local:3100/loki/api/v1/push"
 ```
-  </details>
-  <details>
-  <summary label="fluent-bit-installation">
-  Install Fluent Bit with Kyma's LogPipeline
-  </summary>
+
+#### **Install Fluent Bit with Kyma's LogPipeline**
 
 >**CAUTION:** This setup uses an unsupported output plugin for the LogPipeline.
 
@@ -129,8 +124,7 @@ When the status of the applied LogPipeline resource turns into `Running`, the un
 
 >**NOTE:** The used output plugin configuration uses a static label map to assign labels of a Pod to Loki log streams. It's not recommended to activate the `auto_kubernetes_labels` feature for using all labels of a Pod because this lowers the performance. Follow [Loki's labelling best practices](https://grafana.com/docs/loki/latest/best-practices/) for a tailor-made setup that fits your workload configuration.
 
-  </details>
-</div>
+<!-- tabs:end -->
 
 ### Verify the Setup by Accessing Logs Using the Loki API
 
