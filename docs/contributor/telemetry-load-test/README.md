@@ -12,6 +12,9 @@ This document describes a reproducible test setup to determine the limits and KP
 - curl 8.4.x
 - jq 1.6
 
+## Test Script
+
+All test scenarios use a single test script [run-load-test.sh](assets/run-load-test.sh), which provides four parameters: '`-t` for test type supported values are `traces, metrics, metricagent`, `-n` for test name e.g. `0.92 Traces`,`-m` for multi pipeline scenarios, and `-b` for backpressure scenarios
 
 ## Traces Test 
 
@@ -45,39 +48,33 @@ Each test scenario has its own test scripts responsible for preparing test scena
 A typical test result output looks like the following example:
 
 ```shell
- Receiver accepted spans, 12867
- Exporter exported spans, 38585
- Exporter queue size, 0
- Pod memory (MB), 147
- Pod memory (MB), 160
- Pod CPU, 1.4
- Pod CPU, 1.4
+|          |Receiver Accepted Span/sec  |Exporter Exported Span/sec  |Exporter Queue Size |    Pod Memory Usage(MB)    |    Pod CPU Usage     |
+|   0.92   |           5992             |           5993             |           0        |        225, 178            |        1.6, 1.5      |
 ```
 
-### Test Script
+### Running Tests
 
-All test scenarios use a single test script [run-load-test.sh](assets/run-load-test.sh), which provides two parameters: `-m` for multi TracePipeline scenarios, and `-b` for backpressure scenarios
 1. To test the average throughput end-to-end, run:
 
 ```shell
-./run-load-test.sh traces
+./run-load-test.sh -t traces -n "0.92"
 ```
 2. To test the queuing and retry capabilities of TracePipeline with simulated backend outages, run:
 
 ```shell
-./run-load-test.sh traces -b true
+./run-load-test.sh -t traces -n "0.92" -b true
 ```
 
 3. To test the average throughput with 3 TracePipelines simultaneously end-to-end, run:
 
 ```shell
-./run-load-test.sh traces -m true
+./run-load-test.sh -t traces -n "0.92" -m true
 ```
 
 4. To test the queuing and retry capabilities of 3 TracePipelines with simulated backend outages, run:
 
 ```shell
-./run-load-test.sh traces -m true -b true
+./run-load-test.sh -t traces -n "0.92" -m true -b true
 ```
 
 ### Test Results
@@ -117,15 +114,13 @@ Backend outages simulated with Istio Fault Injection, 70% of traffic to the Test
 
 The tests are executed for 20 minutes for each test case to have a stabilized output and reliable KPIs. 
 Contrast to Metric Gateway test, Metric Agent test deploy passive metric producer ([Avalanche Prometheus metric load generator](https://blog.freshtracks.io/load-testing-prometheus-metric-ingestion-5b878711711c)) and metrics will be scraped by Metric Agent from the producer.
-Test setup deploy 20 individual metric producer pods each of this producer produces 1000 Metrics with 20 metric series, Metric Agent collect metrics via Pod scraping as well as Service scraping to test both Metric Agent receivers configuration.
+Test setup deploy 20 individual metric producer pods each of this producer produces 1000 Metrics with 10 metric series, Metric Agent collect metrics via Pod scraping as well as Service scraping to test both Metric Agent receivers configuration.
 
 
 The following test cases are identified:
 
 1. Test average throughput end-to-end.
 2. Test queuing and retry capabilities of Metric Agent with simulated backend outages.
-3. Test average throughput with 3 MetricPipelines simultaneously end-to-end.
-4. Test queuing and retry capabilities of 3 MetricPipeline with simulated backend outages.
 
 Backend outages simulated with Istio Fault Injection, 70% of traffic to the Test Backend will return `HTTP 503` to simulate service outages
 
@@ -144,33 +139,31 @@ All test scenarios also have a test backend deployed to simulate end-to-end beha
 
 Each test scenario has its own test scripts responsible for preparing test scenario and deploying on test cluster, running the scenario, and fetching relevant metrics/KPIs at the end of the test run. After the test, the test results are printed out.
 
-### Test Script
-
-All test scenarios use a single test script [run-load-test.sh](assets/run-load-test.sh), which provides two parameters: `-m` for multi TracePipeline scenarios, and `-b` for backpressure scenarios
+### Running Tests
 
 #### Metric Gateway
 
 1. To test the average throughput end-to-end, run:
 
 ```shell
-./run-load-test.sh metrics
+./run-load-test.sh -t metrics -n "0.92"
 ```
 2. To test the queuing and retry capabilities of Metric Gateway with simulated backend outages, run:
 
 ```shell
-./run-load-test.sh metrics -b true
+./run-load-test.sh -t metrics -n "0.92" -b true
 ```
 
 3. To test the average throughput with 3 TracePipelines simultaneously end-to-end, run:
 
 ```shell
-./run-load-test.sh metrics -m true
+./run-load-test.sh -t metrics -n "0.92" -m true
 ```
 
 4. To test the queuing and retry capabilities of 3 TracePipelines with simulated backend outages, run:
 
 ```shell
-./run-load-test.sh metrics -m true -b true
+./run-load-test.sh -t metrics -n "0.92" -m true -b true
 ```
 
 #### Test Results
@@ -179,10 +172,10 @@ All test scenarios use a single test script [run-load-test.sh](assets/run-load-t
 
 <div class="table-wrapper" markdown="block">
 
-| Version/Test |       Single Pipeline        |                              |                     |                      |               |        Multi Pipeline        |                              |                     |                      |               | Single Pipeline Backpressure  |                              |                     |                      |               | Multi Pipeline Backpressure  |                              |                     |                      |               |
-|-------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:-----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|
-|              | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec  | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |
-|         0.92 |           21146.3            |           21146.3            |          0          |     72.37, 50.95     | 1.038, 0.926  |           12757.6            |           38212.2            |          0          |     90.3, 111.28     |  1.36, 1.19   |            3293.6             |            2918.4            |         204         |    866.07, 873.4     |  0.58, 0.61   |            9694.6            |            1399.5            |         510         |    1730.6, 1796.6    | 0.736, 0.728  |
+| Version/Test |       Single Pipeline        |                              |                     |                      |               |        Multi Pipeline        |                              |                     |                      |               | Single Pipeline Backpressure |                              |                     |                      |               | Multi Pipeline Backpressure  |                              |                     |                      |               |
+|-------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|:----------------------------:|:----------------------------:|:-------------------:|:--------------------:|:-------------:|
+|              | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |
+|         0.92 |             5992             |             5993             |          0          |       225, 178       |   1.6, 1.5    |             4882             |            14647             |          0          |       165, 255       |   1.7, 1.8    |             635              |             636              |         114         |       770, 707       |     0, 0      |             965              |             1910             |         400         |      1694, 1500      |   0.1, 0.1    |
 
 </div>
 
@@ -191,22 +184,10 @@ All test scenarios use a single test script [run-load-test.sh](assets/run-load-t
 1. To test the average throughput end-to-end, run:
 
 ```shell
-./run-load-test.sh metricagent
+./run-load-test.sh -t metricagent -n "0.92"
 ```
 2. To test the queuing and retry capabilities of Metric Agent with simulated backend outages, run:
 
 ```shell
-./run-load-test.sh metricagent -b true
-```
-
-3. To test the average throughput with 3 TracePipelines simultaneously end-to-end, run:
-
-```shell
-./run-load-test.sh metricagent -m true
-```
-
-4. To test the queuing and retry capabilities of 3 TracePipelines with simulated backend outages, run:
-
-```shell
-./run-load-test.sh metricagent -m true -b true
+./run-load-test.sh -t metricagent -n "0.92" -b true
 ```
