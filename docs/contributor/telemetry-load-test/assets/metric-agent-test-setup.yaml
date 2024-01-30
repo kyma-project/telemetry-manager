@@ -50,7 +50,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - --metric-count=1000
-            - --series-count=20
+            - --series-count=10
             - --port=8080
           resources:
             limits:
