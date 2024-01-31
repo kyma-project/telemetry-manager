@@ -99,7 +99,7 @@ A typical test result output looks like the following example:
 
 ## Metrics Test
 
-Metric test consists of two main test scenarios. The first scenario tests the Metric Gateway KPIs, and the second one tests Metric Agent KPIs.
+The metrics test consists of two main test scenarios. The first scenario tests the Metric Gateway KPIs, and the second one tests Metric Agent KPIs.
 
 ### Metric Gateway Test and Assumptions
 
