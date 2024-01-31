@@ -202,9 +202,7 @@ function cleanup() {
 
         kubectl delete namespace $PROMETHEUS_NAMESPACE
 
-        echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST\n"
-        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Receiver Accepted Metric/sec" "Exporter Exported Metric/sec" "Exporter Queue Size" "Pod Memory Usage(MB)" "Pod CPU Usage"
-        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
+        print_metric_result "$TEST_NAME" "$TEST_TARGET" "$MAX_PIPELINE" "$BACKPRESSURE_TEST" "$RECEIVED" "$EXPORTED" "$QUEUE" "$MEMORY" "$CPU"
 
     fi
 
@@ -235,11 +233,16 @@ function cleanup() {
 
         kubectl delete namespace $PROMETHEUS_NAMESPACE
 
-        echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST\n"
-        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Receiver Accepted Metric/sec" "Exporter Exported Metric/sec" "Exporter Queue Size" "Pod Memory Usage(MB)" "Pod CPU Usage"
-        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
+        print_metric_result "$TEST_NAME" "$TEST_TARGET" "$MAX_PIPELINE" "$BACKPRESSURE_TEST" "$RECEIVED" "$EXPORTED" "$QUEUE" "$MEMORY" "$CPU"
     fi
 
+}
+
+
+function print_metric_result(){
+        echo "\nPrinting Test Results for $1 $2, Multi Pipeline $3, Backpressure $4\n"
+        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Receiver Accepted Metric/sec" "Exporter Exported Metric/sec" "Exporter Queue Size" "Pod Memory Usage(MB)" "Pod CPU Usage"
+        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "$1" "$5" "$6" "$7" "${8//$'\n'/,}" "${9//$'\n'/,}"
 }
 
 echo "$TEST_NAME Load Test for $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST"
