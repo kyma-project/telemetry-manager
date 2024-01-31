@@ -68,18 +68,18 @@ After creating the IAM Policies, create an IAM user:
 ### Create a Secret with AWS Credentials
 
 To connect the AWS Distro to the AWS services, create a secret containing the credentials of the created IAM user into the Kyma cluster. In the following command, replace `{ACCESS_KEY}` with your access key, `{SECRET_ACCESS_KEY}` with your secret access key, and `{AWS_REGION}` with the AWS region you want to use:
- ```bash
+ 
+```bash
  kubectl create secret generic aws-credentials -n $K8S_NAMESPACE --from-literal=AWS_ACCESS_KEY_ID={ACCESS_KEY} --from-literal=AWS_SECRET_ACCESS_KEY={SECRET_ACCESS_KEY} --from-literal=AWS_REGION={AWS_REGION}
  ```
 
 ## Deploy the AWS Distro
 
-After creating a Secret and configuring the required users in AWS, deploy the AWS Distro. It is a specific distribution of an OTel collector, which converts and dispatches the OTLP-based metrics and trace data in the cluster to the AWS-specific format and protocol.
+Deploy the AWS Distro which is a specific distribution of an OTel collector. It converts and dispatches the OTLP-based metrics and traces in the cluster to the AWS-specific format and protocol.
 
-1. Deploy the AWS Distro:
-    ```bash
-    kubectl -n $K8S_NAMESPACE apply -f aws-otel.yaml
-    ```
+ ```bash
+ kubectl -n $K8S_NAMESPACE apply -f aws-otel.yaml
+ ```
 
 ## Set Up Kyma Pipelines
 
