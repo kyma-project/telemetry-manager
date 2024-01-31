@@ -25,7 +25,7 @@ All test scenarios use a single test script [run-load-test.sh](assets/run-load-t
 
 ### Assumptions
 
-The tests are executed for 20 minutes for each test case to have a stabilized output and reliable KPIs. Generated traces contain at least 2 spans, and each span has 40 attributes to simulate an average trace span size.  
+The tests are executed for 20 minutes, so that each test case has a stabilized output and reliable KPIs. Generated traces contain at least 2 spans, and each span has 40 attributes to simulate an average trace span size.  
 
 The following test cases are identified:
 
@@ -99,11 +99,11 @@ A typical test result output looks like the following example:
 
 ## Metrics Test
 
-Metric test consist of two main test scenario, first scenario test Metric Gateway KPIs and second one test Metric Agent KPIs 
+Metric test consists of two main test scenarios. The first scenario tests the Metric Gateway KPIs, and the second one tests Metric Agent KPIs.
 
 ### Metric Gateway Test and Assumptions
 
-The tests are executed for 20 minutes for each test case to have a stabilized output and reliable KPIs. Generated metrics contain 10 attributes to simulate an average metric size, test simulate `2000` individual metric producer and each one pushes metrics every `30 second` to the Metric Gateway.
+The tests are executed for 20 minutes, so that each test case has a stabilized output and reliable KPIs. Generated metrics contain 10 attributes to simulate an average metric size; the test simulates 2000 individual metrics producers, and each one pushes metrics every 30 second to the Metric Gateway.
 
 
 The following test cases are identified:
@@ -113,7 +113,7 @@ The following test cases are identified:
 3. Test average throughput with 3 MetricPipelines simultaneously end-to-end.
 4. Test queuing and retry capabilities of 3 MetricPipeline with simulated backend outages.
 
-Backend outages simulated with Istio Fault Injection, 70% of traffic to the Test Backend will return `HTTP 503` to simulate service outages
+Backend outages are simulated with Istio Fault Injection: 70% of the traffic to the test backend will return `HTTP 503` to simulate service outages.
 
 ### Metric Agent Test and Assumptions
 
