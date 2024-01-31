@@ -69,7 +69,7 @@ After creating a Secret and configuring the required users in AWS, deploy the AW
 
 1. Deploy the AWS Distro:
     ```bash
-    kubectl -n $K8S_NAMESPACE apply -f ./resources/aws-otel.yaml
+    kubectl -n $K8S_NAMESPACE apply -f aws-otel.yaml
     ```
 
 ### Set up Kyma Telemetry
