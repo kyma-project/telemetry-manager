@@ -6,6 +6,15 @@ The Kyma Telemetry module supports you in integrating with observability backend
 
 ![overview](../assets/cloudwatch.drawio.svg)
 
+## Table of Content
+
+- [Prerequisites](#prerequisites)
+- [Preparation](#preparation)
+- [Set Up AWS Credentials](#set-up-aws-credentials)
+- [Deploy the AWS Distro](#deploy-the-aws-distro)
+- [Set Up Kyma Pipelines](#set-up-kyma-pipelines)
+- [Verify the Results](#verify-the-results)
+
 ## Prerequisites
 
 - Kyma as the target deployment environment
@@ -13,9 +22,8 @@ The Kyma Telemetry module supports you in integrating with observability backend
 - Kubectl version 1.22.x or higher
 - AWS account with permissions to create new users and security policies
 
-## Installation
 
-### Preparation
+## Preparation
 
 1. Export your Namespace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
 
@@ -26,6 +34,7 @@ The Kyma Telemetry module supports you in integrating with observability backend
     ```bash
     kubectl create namespace $K8S_NAMESPACE
     ```
+## Set Up AWS Credentials
 
 ### Create AWS IAM User
 
@@ -56,7 +65,7 @@ After creating the IAM Policies, create an IAM user:
 1. Describe the purpose of this access key and click **Create access key**.
 1. Copy and save the access key and the Secret access key.
 
-### Create a secret with AWS Credentials
+### Create a Secret with AWS Credentials
 
 To connect the AWS Distro to the AWS services, put the credentials of the created IAM user into the Kyma cluster.
 
@@ -65,7 +74,7 @@ To connect the AWS Distro to the AWS services, put the credentials of the create
     kubectl create secret generic aws-credentials --from-literal=AWS_ACCESS_KEY_ID={ACCESS_KEY} --from-literal=AWS_SECRET_ACCESS_KEY={SECRET_ACCESS_KEY} --from-literal=AWS_REGION={AWS_REGION}
     ```
 
-### Deploy the AWS Distro
+## Deploy the AWS Distro
 
 After creating a Secret and configuring the required users in AWS, deploy the AWS Distro. It is a specific distribution of an OTel collector, which converts and dispatches the OTLP-based metrics and trace data in the cluster to the AWS-specific format and protocol.
 
@@ -74,7 +83,7 @@ After creating a Secret and configuring the required users in AWS, deploy the AW
     kubectl -n $K8S_NAMESPACE apply -f aws-otel.yaml
     ```
 
-### Set up Kyma Telemetry
+## Set Up Kyma Pipelines
 
 Use the Kyma Telemetry module to enable ingestion of the signals from your workloads:
 
@@ -154,7 +163,7 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
    EOF
    ```
 
-## Verify the results by deploying sample apps
+## Verify the Results
 
 To verify the results of CloudWatch and X-Ray, deploy sample applications for each service.
 
@@ -184,12 +193,3 @@ The sample app that generates traces in the following example is documented by A
 1. Select the widget type and click **Next**.
 1. Select what you want to observe, either metrics or logs, and click **Next**.
 1. Decide which metrics or logs to include and click **Create widget**.
-
-## AWS OTEL Collector and TraceId specifics
-
-Currently, there is no mechanism to convert TraceId from W3C context into the AWS TraceId format. Because of that, your application should emit traces with IDs of the format compatible with AWS TraceId. To do that, you can use one of the available ADOT(AWS Distro for OpenTelemetry) SDKs:
-* [Go](https://aws-otel.github.io/docs/getting-started/go-sdk)
-* [Java](https://aws-otel.github.io/docs/getting-started/java-sdk)
-* [JavaScript](https://aws-otel.github.io/docs/getting-started/javascript-sdk)
-* [.NET](https://aws-otel.github.io/docs/getting-started/dotnet-sdk)
-* [Python](https://aws-otel.github.io/docs/getting-started/python-sdk)
