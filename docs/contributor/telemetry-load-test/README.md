@@ -14,7 +14,12 @@ This document describes a reproducible test setup to determine the limits and KP
 
 ## Test Script
 
-All test scenarios use a single test script [run-load-test.sh](assets/run-load-test.sh), which provides four parameters: '`-t` for test type supported values are `traces, metrics, metricagent`, `-n` for test name e.g. `0.92 Traces`,`-m` for multi pipeline scenarios, and `-b` for backpressure scenarios
+All test scenarios use a single test script [run-load-test.sh](assets/run-load-test.sh), which provides following parameters: 
+
+- `-t` The test target type supported values are `traces, metrics, metricagent`, default is `traces`
+- `-n` Test name e.g. `0.92`
+- `-m` Enables multi pipeline scenarios, default is `false` 
+- `-b` Enables backpressure scenarios, default is `false`
 
 ## Traces Test 
 
