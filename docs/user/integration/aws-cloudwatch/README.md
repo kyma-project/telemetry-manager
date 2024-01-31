@@ -165,31 +165,10 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
 
 ## Verify the Results
 
-To verify the results of CloudWatch and X-Ray, deploy sample applications for each service.
+Verify that the logs and metrics are exported to CloudWatch and that the traces are exported to X-Ray.
 
-### Verify CloudWatch traces, logs, and metrics arrival
-
-The sample app that generates traces in the following example is documented by AWS in their documentation: [Deploy a sample application to test the AWS Distro for OpenTelemetry Collector](https://docs.aws.amazon.com/eks/latest/userguide/sample-app.html).
-1. Deploy the traffic generator app:
-    ```bash
-    kubectl apply -n ${K8S_NAMESPACE} -f ./sample-app/traffic-generator.yaml
-    ```
-1. Deploy an example app:
-    ```bash
-    kubectl apply -n ${K8S_NAMESPACE} -f ./sample-app/deployment.yaml
-    ```
-1. To access the application, port-forward it:
-    ```bash
-    kubectl -n ${K8S_NAMESPACE} port-forward svc/sample-app 4567
-    ```
-1. Make some requests to the application, for example, `localhost:4567` or `localhost:4567/outgoing-http-call`.
-1. Go to **AWS X-Ray** > **Traces**.
-1. To verify the logs, go to **AWS CloudWatch** > **Log groups** and select your cluster. Now, you can open `aws-integration.sample-app-*` and view the logs of your application.
-1. To verify metrics, go to **All metrics** and open the `aws-integration/otel-collector`.
-
-### Create the dashboard to observe incoming metrics and logs
-
-1. Go to **Dashboards** > **Create dashboard** and enter the name.
-1. Select the widget type and click **Next**.
-1. Select what you want to observe, either metrics or logs, and click **Next**.
-1. Decide which metrics or logs to include and click **Create widget**.
+1. [Install the OpenTelemetry demo application](../opentelemetry-demo/README.md).
+2. In your AWS account, search for **CloudWatch**
+3. To verify the traces: under **X-Ray traces**, go to **Traces**.
+3. To verify the logs: under **Logs**, go to **Log groups** and select the log group of your cluster which has a name that follows the pattern `/logs/{CLUSTER_IDENTIFIER}`. Now, you can open the log stream you want and view the logs. The name of each log stream follows the pattern `{NAMESPACE}.{POD_NAME}.{CONTAINER_NAME}`.
+4. To verify the metrics: under **Metrics**, go to **All metrics**.
