@@ -111,10 +111,11 @@ func (r *Reconciler) setMetricFlowHealthCondition(pipeline *telemetryv1alpha1.Me
 		status = metav1.ConditionFalse
 		reason = conditions.FetchReasonFromAlert(alert)
 	}
+	msg := conditions.MessageForAlerts(alert)
 
-	fmt.Printf("Status is: %v, Reason: %v\n", status, reason)
+	fmt.Printf("Status is: %v, Reason: %v, msg: %v\n", status, reason)
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeMetricFlowHealthy, reason, status, pipeline.Generation))
+	meta.SetStatusCondition(&pipeline.Status.Conditions, newConditionForAlerts(conditions.TypeMetricFlowHealthy, reason, status, msg, pipeline.Generation))
 }
 
 func newCondition(condType, reason string, status metav1.ConditionStatus, generation int64) metav1.Condition {
@@ -123,6 +124,16 @@ func newCondition(condType, reason string, status metav1.ConditionStatus, genera
 		Status:             status,
 		Reason:             reason,
 		Message:            conditions.CommonMessageFor(reason),
+		ObservedGeneration: generation,
+	}
+}
+
+func newConditionForAlerts(condType, reason, msg string, status metav1.ConditionStatus, generation int64) metav1.Condition {
+	return metav1.Condition{
+		Type:               condType,
+		Status:             status,
+		Reason:             reason,
+		Message:            msg,
 		ObservedGeneration: generation,
 	}
 }

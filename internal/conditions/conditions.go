@@ -77,6 +77,18 @@ func CommonMessageFor(reason string) string {
 }
 
 func FetchReasonFromAlert(alert prometheus.Alerts) string {
+	if reason, found := alertMap[alert.Name]; found {
+		//fmt.Printf("PipelineName: %v\n", alert.PipelineInfo)
+		return reason
+	}
+	return ""
+}
+
+func MessageForAlerts(alert prometheus.Alerts) string {
+	reason := FetchReasonFromAlert(alert)
+	if reason == "" {
+		return ""
+	}
 	if reasonMsg, found := alertMap[alert.Name]; found {
 		fmt.Printf("PipelineName: %v\n", alert.PipelineInfo)
 		return strings.Replace(reasonMsg, "pipelineName", alert.PipelineInfo, 1)
