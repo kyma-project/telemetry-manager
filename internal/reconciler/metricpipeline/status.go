@@ -113,7 +113,7 @@ func (r *Reconciler) setMetricFlowHealthCondition(pipeline *telemetryv1alpha1.Me
 	}
 	msg := conditions.MessageForAlerts(alert)
 
-	fmt.Printf("Status is: %v, Reason: %v, msg: %v\n", status, reason)
+	fmt.Printf("Status is: %v, Reason: %v, msg: %v\n", status, reason, msg)
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, newConditionForAlerts(conditions.TypeMetricFlowHealthy, reason, msg, status, pipeline.Generation))
 }

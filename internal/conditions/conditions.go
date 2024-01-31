@@ -89,7 +89,7 @@ func MessageForAlerts(alert prometheus.Alerts) string {
 	if reason == "" {
 		return ""
 	}
-	if reasonMsg, found := alertMap[alert.Name]; found {
+	if reasonMsg, found := message[reason]; found {
 		fmt.Printf("PipelineName: %v\n", alert.PipelineInfo)
 		return strings.Replace(reasonMsg, "pipelineName", alert.PipelineInfo, 1)
 	}
