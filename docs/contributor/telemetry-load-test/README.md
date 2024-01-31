@@ -131,9 +131,9 @@ The following diagram shows the test setup used for all Metric test cases.
 ![Metric Test Setup](./assets/metric_perf_test_setup.drawio.svg)
 
 
-In all test scenarios, a preconfigured trace load generator is deployed on the test cluster. To ensure all metric gateway instances are loaded with test data, the trace load generator feeds the test MetricPipeline over a pipeline service instance, in Metric Agent test, test data scraped from test data producer and pushed to the Metric Gateway. 
+In all test scenarios, a preconfigured trace load generator is deployed on the test cluster. To ensure all Metric Gateway instances are loaded with test data, the trace load generator feeds the test MetricPipeline over a pipeline service instance, in Metric Agent test, test data scraped from test data producer and pushed to the Metric Gateway. 
 
-A Prometheus instance is deployed on the test cluster to collect relevant metrics from trace gateway instances and to fetch the metrics at the end of the test as test scenario result.
+A Prometheus instance is deployed on the test cluster to collect relevant metrics from Metric Gateway and Metric Agent instances and to fetch the metrics at the end of the test as test scenario result.
 
 All test scenarios also have a test backend deployed to simulate end-to-end behaviour.
 
