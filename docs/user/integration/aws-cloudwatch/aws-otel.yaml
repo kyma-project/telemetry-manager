@@ -29,6 +29,7 @@ data:
         region: ${AWS_REGION}
       awsemf:
         region: ${AWS_REGION}
+        log_retention: 7
       logging/metrics:
         verbosity: basic
       logging/traces:
