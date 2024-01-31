@@ -117,9 +117,9 @@ Backend outages simulated with Istio Fault Injection, 70% of traffic to the Test
 
 ### Metric Agent Test and Assumptions
 
-The tests are executed for 20 minutes for each test case to have a stabilized output and reliable KPIs. 
-Contrast to Metric Gateway test, Metric Agent test deploy passive metric producer ([Avalanche Prometheus metric load generator](https://blog.freshtracks.io/load-testing-prometheus-metric-ingestion-5b878711711c)) and metrics will be scraped by Metric Agent from the producer.
-Test setup deploy 20 individual metric producer pods each of this producer produces 1000 Metrics with 10 metric series, Metric Agent collect metrics via Pod scraping as well as Service scraping to test both Metric Agent receivers configuration.
+The tests are executed for 20 minutes, so that each test case has a stabilized output and reliable KPIs. 
+In contrast to the Metric Gateway test, the Metric Agent test deploys a passive metric producer ([Avalanche Prometheus metric load generator](https://blog.freshtracks.io/load-testing-prometheus-metric-ingestion-5b878711711c)) and the metrics are scraped by Metric Agent from the producer.
+The test setup deploys 20 individual metric producer Pods; each which produces 1000 metrics with 10 metric series. To test both Metric Agent receiver configurations, Metric Agent collects metrics with Pod scraping as well as Service scraping.
 
 
 The following test cases are identified:
