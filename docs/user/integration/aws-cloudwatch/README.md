@@ -96,7 +96,7 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
      output:
        custom: |
          Name cloudwatch_logs
-         region \$AWS_REGION
+         region \${AWS_REGION}
          auto_create_group On
          log_group_template /logs/\$cluster_identifier
          log_group_name /logs/kyma-cluster         
