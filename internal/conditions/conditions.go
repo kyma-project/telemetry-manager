@@ -1,6 +1,7 @@
 package conditions
 
 import (
+	"fmt"
 	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 	"strings"
 )
@@ -77,6 +78,7 @@ func CommonMessageFor(reason string) string {
 
 func FetchReasonFromAlert(alert prometheus.Alerts) string {
 	if reasonMsg, found := alertMap[alert.Name]; found {
+		fmt.Printf("PipelineName: %v\n", alert.PipelineInfo)
 		return strings.Replace(reasonMsg, "pipelineName", alert.PipelineInfo, 1)
 	}
 	return ""
