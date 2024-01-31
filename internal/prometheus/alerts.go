@@ -117,8 +117,9 @@ func fetchCriticalAlerts(alerts []promv1.Alert) Alerts {
 	for _, alert := range alerts {
 		if string(alert.Labels["severity"]) == "critical" {
 			return Alerts{
-				Name:     string(alert.Labels["alertname"]),
-				Severity: string(alert.Labels["severity"]),
+				Name:         string(alert.Labels["alertname"]),
+				Severity:     string(alert.Labels["severity"]),
+				PipelineInfo: FetchPipelineInfo(alert),
 			}
 		}
 	}
