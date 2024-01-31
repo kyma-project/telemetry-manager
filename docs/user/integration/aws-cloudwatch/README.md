@@ -85,7 +85,7 @@ Deploy the AWS Distro which is a specific distribution of an OTel collector. It 
 
 Use the Kyma Telemetry module to enable ingestion of the signals from your workloads:
 
-1. Enable a LogPipeline that ships container logs of all workloads directly to the AWS X-Ray service. Use the same Secret as for the AWS Distro, bypassing the AWS Distro. Replace the `{NAMESPACE}` placeholder in the following command and run it:
+1. Deploy a LogPipeline:
    ```bash
    kubectl apply -f - <<EOF
    apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -124,8 +124,9 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
              key: AWS_REGION
    EOF
    ```
-   >     **NOTE:** For now, the logging integration is inconsistent with the metrics and tracing integration. It will be updated to the common approach as soon as the AWS Distro supports logs, and the Kyma logging module uses OTLP.
-2. Enable a TracePipeline in the cluster so that all components have a well-defined OTLP-based push URL in the cluster to send trace data to. Replace the `{NAMESPACE}` placeholder in the following command and run it:
+   > NOTE: For now, the logs integration is inconsistent with the metrics and traces integration. It will be updated to the common approach as soon as the AWS Distro supports logs and the Kyma Telemetry module uses OTLP logs.
+
+2. Deploy a TracePipeline:
    ```bash
    kubectl apply -f - <<EOF
    apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -139,7 +140,8 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
            value: http://otel-collector.$K8S_NAMESPACE.svc.cluster.local:4317
    EOF
    ```
-3. Enable a MetricPipeline in the cluster so that all components have a well-defined OTLP-based push URL in the cluster to send metric data to. Also, the MetricPipeline activates annotation-based metric scraping for workloads. Replace the `{NAMESPACE}` placeholder in the following command and run it:
+
+3. Deploy a MetricPipeline:
    ```bash
    kubectl apply -f - <<EOF
    apiVersion: telemetry.kyma-project.io/v1alpha1
