@@ -6,9 +6,11 @@ The Kyma Telemetry module supports you in integrating with observability backend
 
 ![overview](../assets/cloudwatch.drawio.svg)
 
-## Prerequisistes
+## Prerequisites
 
 - Kyma as the target deployment environment
+- The [Telemetry module](https://kyma-project.io/#/telemetry-manager/user/README) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install)
+- Kubectl version 1.22.x or higher
 - AWS account with permissions to create new users and security policies
 
 ## Installation
