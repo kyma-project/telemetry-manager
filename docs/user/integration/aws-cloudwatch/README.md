@@ -168,7 +168,8 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
 Verify that the logs and metrics are exported to CloudWatch and that the traces are exported to X-Ray.
 
 1. [Install the OpenTelemetry demo application](../opentelemetry-demo/README.md).
-2. In your AWS account, search for **CloudWatch**
-3. To verify the traces: under **X-Ray traces**, go to **Traces**.
-3. To verify the logs: under **Logs**, go to **Log groups** and select the log group of your cluster which has a name that follows the pattern `/logs/{CLUSTER_IDENTIFIER}`. Now, you can open the log stream you want and view the logs. The name of each log stream follows the pattern `{NAMESPACE}.{POD_NAME}.{CONTAINER_NAME}`.
-4. To verify the metrics: under **Metrics**, go to **All metrics**.
+2. In your AWS account, search for **CloudWatch**.
+3. From the drop-down list in the top-right corner of the page, select the same AWS region as the one you have chosen when [creating the secret with AWS credentials](#create-a-secret-with-aws-credentials).
+4. To verify the traces: under **X-Ray traces**, go to **Traces**.
+5. To verify the logs: under **Logs**, go to **Log groups** and select the log group of your cluster which has a name that follows the pattern `/logs/{CLUSTER_IDENTIFIER}`. Now, you can open the log stream you want and view the logs. The name of each log stream follows the pattern `{NAMESPACE}.{POD_NAME}.{CONTAINER_NAME}`.
+6. To verify the metrics: under **Metrics**, go to **All metrics**.
