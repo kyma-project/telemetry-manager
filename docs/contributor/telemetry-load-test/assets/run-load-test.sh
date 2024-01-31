@@ -76,10 +76,6 @@ function setup_metric() {
 }
 
 function setup_metric_agent() {
-    if "$MAX_PIPELINE"; then
-        kubectl apply -f metric-agent-max-pipeline.yaml
-    fi
-
     # Deploy test setup
     kubectl apply -f metric-agent-test-setup.yaml
 
@@ -218,10 +214,6 @@ function cleanup() {
         CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system", pod=~"telemetry-metric-agent.*"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
 
         kill %1
-
-        if "$MAX_PIPELINE"; then
-          kubectl delete -f metric-agent-max-pipeline.yaml
-        fi
 
         if "$BACKPRESSURE_TEST"; then
             kubectl delete -f metric-backpressure-config.yaml
