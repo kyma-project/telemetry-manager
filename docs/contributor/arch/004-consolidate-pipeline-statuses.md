@@ -22,7 +22,7 @@ What makes things tricky is that there may be Kyma customers who rely on the old
 ## Decision
 
 Roll out the change for `LogPipeline` and `TracePipeline` in multiple phases:
-1. Augment the existing custom condition structures with missing required fields from `metav1.Condition`, like `Status` and `Message`. Make them optional. Extend the controllers' logic to populate them with reasonable values. Such a rollout can be done without bumping `v1alpha1` API group since we will only add optional fields.
+1. Augment the existing custom condition structures with the missing required fields from `metav1.Condition`, like `Status` and `Message`. Make them optional. Extend the controllers' logic to populate them with reasonable values. We can roll that out without bumping the `v1alpha1` API group, because we will only add optional fields.
 2. Replace custom condition structures with `metav1.Condition`. Technically, it's a breaking change as some optional fields become required. However, we can maintain the API version because the status is automatically reconciled and should never be directly set by a user.
 3. Set new conditions in the status (`GatewayHealthy`/`AgentHealthy`, `ConfigurationGenerated`) and append old conditions to the list (`Pending`, `Running`). This way, we preserve the semantic, because the user would still infer a pipeline healthiness from the last condition in the list. Migrate to new conditions in E2E tests and `Telemetry` state propagation. Deprecate the old conditions and announce it in the Release Notes.
   ```yaml
