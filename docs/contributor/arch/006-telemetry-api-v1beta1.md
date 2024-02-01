@@ -1,4 +1,4 @@
-# 5. Telemetry API v1beta1
+# 6. Telemetry API v1beta1
 
 Date: 2024-01-02
 
