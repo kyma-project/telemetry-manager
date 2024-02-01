@@ -5,6 +5,9 @@ metadata:
 spec:
   output:
     otlp:
+      tls:
+        insecure: true
+        insecureSkipVerify: true
       endpoint:
         value: http://trace-receiver.trace-load-test:4317
 
@@ -16,5 +19,8 @@ metadata:
 spec:
   output:
     otlp:
+      tls:
+        insecure: true
+        insecureSkipVerify: true
       endpoint:
         value: http://trace-receiver.trace-load-test:4317

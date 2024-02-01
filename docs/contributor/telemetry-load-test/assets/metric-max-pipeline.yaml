@@ -1,0 +1,26 @@
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: load-test-2
+spec:
+  output:
+    otlp:
+      tls:
+        insecure: true
+        insecureSkipVerify: true
+      endpoint:
+        value: http://metric-receiver.metric-load-test:4317
+
+---
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: MetricPipeline
+metadata:
+  name: load-test-3
+spec:
+  output:
+    otlp:
+      tls:
+        insecure: true
+        insecureSkipVerify: true
+      endpoint:
+        value: http://metric-receiver.metric-load-test:4317
