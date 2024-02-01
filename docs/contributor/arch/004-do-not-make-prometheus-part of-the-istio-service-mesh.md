@@ -11,10 +11,11 @@ Accepted
 As outlined in [ADR 001: Trace/Metric Pipeline status based on OTel Collector metrics](./001-otel-collector-metric-based-pipeline-status.md), our objective is to utilize a managed Prometheus instance to reflect specific telemetry flow issues (such as backpressure, data loss, backend unavailability) in the status of a telemetry pipeline custom resource (CR).
 To address the integration of Prometheus querying into the reconciliation loop, a [Proof of Concept was executed](./003-integrate-prometheus-with-telemetry-manager-using-alerting.md).
 
-For the querying to be successful, the telemetry manager should be able to reach prometheus. Since operator is not in Istio service mesh we should make conscious decision if we should have Prometheus server part of Istio service mesh or not.
+For the querying to be successful, the Telemetry Manager should be able to reach Prometheus. Because the Telemetry Manager is not in the Istio service mesh, we must decide whether we should have the Prometheus server as part of he Istio service mesh or not.
 
 ## Decision
 The Telemetry manager which queries metrics from Prometheus is not part of the service mesh.
+
 ## Problem
 When Prometheus is not part of Istio service mesh, it would cause metrics data to be transported unencrypted, thus the metrics could be counterfeited. This would mean that we get wrong information about the possible issue with observability components. The side effects could be following:
  - Customer gets wrongly notified because of false positives.
