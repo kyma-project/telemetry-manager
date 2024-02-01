@@ -16,6 +16,9 @@ That approach was used for `LogPipeline` and `TracePipeline` CRDs. Later on, we 
 
 ### Goal
 
+Standardize the status structure across all Custom Resource Definitions (CRDs) and adhere to API conventions. This will bring consistency in the status structure, making it more straightforward to manage and comprehend for end-users.
+What makes things tricky is that there may be Kyma customers who rely on the old status structure for `LogPipeline` and `TracePipeline` CRDs. We need to ensure that the transition is smooth and that we don't break anything.
+
 ## Decision
 
 ## Consequences
