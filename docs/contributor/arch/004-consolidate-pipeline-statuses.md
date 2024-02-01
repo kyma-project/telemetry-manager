@@ -40,11 +40,17 @@ status:
     reason: ConfigurationGenerated
     status: "True"
     type: ConfigurationGenerated
-  - lastTransitionTime: "2024-02-01T10:43:14Z"
-    message: Trace gateway Deployment is ready
+  - lastTransitionTime: "2024-02-01T08:24:02Z"
+    message: Trace gateway Deployment is not ready
     observedGeneration: 1
     reason: DeploymentReady
     status: "False"
+    type: Pending
+  - lastTransitionTime: "2024-02-01T08:26:02Z"
+    message: Trace gateway Deployment is ready
+    observedGeneration: 1
+    reason: DeploymentReady
+    status: "True"
     type: Running
   ```
 4. After the deprecation period, remove the old conditions from the list.
