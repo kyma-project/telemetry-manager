@@ -21,7 +21,7 @@ It's time to move to `v1beta1`.
 * `Running` and `Pending` conditions are removed from `LogPipeline` and `TracePipeline` (see [Consolidate Pipeline Statuses](./004-consolidate-pipeline-statuses.md)).
 * `LogParser` is removed.
 
-2. Set `v1beta1` as the storage version in respective CRDs. Both `v1alpha1` and `v1beta1` will be served.
+2. Set `v1beta1` as the storage version in respective CRDs. Both `v1alpha1` and `v1beta1` will be served. Update the user-facing documentation.
 3. Set up a conversion webhook to convert `v1alpha1` to `v1beta1` and vice versa. Since Loki output is not used anymore, a conversion with data loss is acceptable.
 4. Change all API references in the codebase to `v1beta1`.
 5. Run [storage version migrator](https://github.com/kubernetes-sigs/kube-storage-version-migrator) on customer clusters to migrate existing resources to `v1beta1`.
