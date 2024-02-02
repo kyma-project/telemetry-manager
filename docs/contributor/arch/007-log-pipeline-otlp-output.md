@@ -39,7 +39,7 @@ spec:
 ```
 
 Existing Fluent Bit-backed features, including log enrichment, namespace, and container filtering, will be reimplemented using OTel Collector.
-While OTel Collector supports a rich set of features, certain Fluent Bit specific features, like custom filters, will not be compatible with the new `OTLP` output.
+While OTel Collector supports a rich set of features, certain Fluent Bit-specific features, like custom filters, will not be compatible with the new `OTLP` output.
 Kyma users will still be able to use the old `HTTP` output for some time, but it will be deprecated and eventually removed.
 
 Since the new field is optional, there's no need for an API version bump.
