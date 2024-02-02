@@ -9,7 +9,7 @@ Accepted
 ## Context
 
 Currently, `LogPipeline` is backed by FluentBit for log processing.
-However, we want transition to OTel Collector to consolidate logging, tracing, and metrics capabilities of the Telemetry module.
+However, we want to transition to OTel Collector to consolidate logging, tracing, and metrics capabilities of the Telemetry module.
 The challenge is to achieve this transition gradually without causing disruption.
 
 ## Decision
