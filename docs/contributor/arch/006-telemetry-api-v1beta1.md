@@ -15,7 +15,9 @@ It's time to move to `v1beta1`.
 ## Decision
 
 1. Create a new `v1beta1.telemetry.kyma-project.io` API group, mirroring `v1alpha1.telemetry.kyma-project.io` but with the following changes:
-* Loki output is removed `LogPipeline`
+* `Loki` output is removed `LogPipeline`
+* The `System` option in the LogPipeline input namespace selector is removed. Instead, it has been replaced with the default behavior of excluding system namespaces, aligning with the approach taken for `MetricPipeline`
+* `Application` input is renamed to `Tail` and an `Enabled` field is added to it, aligning with the approach taken for `MetricPipeline`
 * `Running` and `Pending` conditions are removed from `LogPipeline` and `TracePipeline` (see [Consolidate Pipeline Statuses](./004-consolidate-pipeline-statuses.md))
 * `LogParser` is removed
 
