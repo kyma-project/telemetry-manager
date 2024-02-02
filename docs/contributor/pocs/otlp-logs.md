@@ -2,17 +2,17 @@
 
 ## Scope and Goals
 
-When integrating an OTLP compliant logging backend, applications can either ingest their logs directly or emit them to STDOUT and have a log collector to process logs and forward them.
-With this PoC, we evaluated how the [filelog receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/filelogreceiver) of the OpenTelemetry Collector can be configured to transform structured JSON logs that are emitted by Kubernetes workloads to STDOUT to the [OTLP logs data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/).
-The OpenTelemtry Collector should move JSON attributes to the `attributes` map of the log record, extract other fields like the severity, timestamp, write the actual log message to the `body` field, and add missing information to be compliant with the semantic conventions for `attributes` and `resource` attributes.
+When integrating an OTLP compliant logging backend, applications can either ingest their logs directly or emit them to STDOUT and use a log collector to process and forward the logs.
+With this PoC, we evaluated how the OpenTelemetry Collector's [filelog receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/filelogreceiver) can be configured to transform structured JSON logs emitted by Kubernetes workloads to STDOUT, and subsequently to the [OTLP logs data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/).
+OpenTelemtry Collector should move JSON attributes to the `attributes` map of the log record, extract other fields like **severity** or **timestamp**, write the actual log message to the **body** field, and add any missing information to ensure that the **attributes** and **resource** attributes comply with the semantic conventions.
 
-Logs that are ingested by the application using the OTLP protocol are not covered by this PoC. We assume that the application is already filling the log record fields with the intended values.
+This PoC does not cover logs ingested by the application using the OTLP protocol. We assume that the application already fills the log record fields with the intended values.
 
 ## Setup
 
-We created a Helm values file for the open-telemetry/opentelemetry-collector chart that parses and transforms container logs in the described way. We use an SAP Cloud Logging instance as the OTLP compliant logging backend. To deploy the setup, follow these steps:
+We created a Helm values file for the `open-telemetry/opentelemetry-collector` chart that parses and transforms container logs in the described way. We use an SAP Cloud Logging instance as the OTLP compliant logging backend. To deploy the setup, follow these steps:
 
-1. Create a SAP Cloud Logging instance and have the endpoint, client certificate and key under the keys `ingest-otlp-endpoint`, `ingest-otlp-cert` and `ingest-otlp-key` in a Kubernetes secret in the `otel-logging` namespace. This can be done using a ServiceBinding with the BTP Operator.
+1. Create an SAP Cloud Logging instance. Store the endpoint, client certificate, and key under the keys `ingest-otlp-endpoint`, `ingest-otlp-cert`, and `ingest-otlp-key` respectively, in a Kubernetes Secret within the `otel-logging` namespace.
 
 2. Deploy the OpenTelemetry Collector Helm chart with the values file [otlp-logs.yaml](../assets/otel-logs-values.yaml):
 
@@ -24,7 +24,7 @@ We created a Helm values file for the open-telemetry/opentelemetry-collector cha
 
 ## Results
 
-We tested different log formats to evaluate the filelog receiver configuration. The following example of a log record that was emitted by the telemetry-metric-agent demonstrates the transformation. The original log record looks as follows:
+We tested different log formats to evaluate the filelog receiver configuration. The following example of a log record emitted by telemetry-metric-agent demonstrates the transformation. The original log record looks as follows:
 
 ```
 {"level":"info","ts":1706781583.437593,"caller":"exporterhelper/retry_sender.go:129","msg":"Exporting failed. Will retry the request after interval.","kind":"exporter","data_type":"metrics","name":"otlp","error":"rpc error: code = Unavailable desc = no healthy upstream","interval":"6.132976949s"}
@@ -94,13 +94,13 @@ This processed log record arrives in the SAP Cloud Logging (OpenSearch):
 }
 ```
 
-The OpenTelemetry Collector configuration moves all JSON fields to the `attribtues` map. The user given log message, which emitted in the `msg` JSON field, is moved to the OTLP `body` field.
-The `level` JSON field is used to determine `severityName` and `severityNumber` fields. The mapping is done automatically using the severity_parser operator.
-Operators for the filelog receiver determine the emitting Pod. Other resource attributes are added by the k8sattributes processor to fulfill the semantic conventions.
+The OpenTelemetry Collector configuration moves all JSON fields to the `attributes` map. The user-given log message emitted in the **msg** JSON field is moved to the OTLP **body** field.
+The **level** JSON field determines the **severityName** and **severityNumber** fields. The mapping is automatically performed using the severity_parser operator.
+Operators for the filelog receiver determine the emitting Pod. The k8sattributes processor adds other resource attributes to fulfill the semantic conventions.
 The k8sattributes processor is also used to create resource attributes for pod labels. The same could be done with annotations.
 An operator for the filelog receiver preserves the originating filesystem path of the record to be compliant with the semantic conventions for logs.
-In the used configuration, we move the original log record to the `original` attribute for debugging purposes.
+In the used configuration, we move the original log record to the **original** attribute for debugging purposes.
 
-The OpenTelemetry Collector setup is able to extract the log message from different attributes, based on their existence. I.e., it is possible to support different logging libraries.
+The OpenTelemetry Collector setup is able to extract the log message from different attributes, depending on their presence. This means that it is possible to support different logging libraries.
 
-Non-JSON logs are for now preserved in the Body field while the enchrichment with resource attributes is still done.
+Non-JSON logs are preserved in the **body** field until the enrichment with resource attributes is completed.
