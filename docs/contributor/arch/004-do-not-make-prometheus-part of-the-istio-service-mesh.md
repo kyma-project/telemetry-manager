@@ -1,4 +1,4 @@
-# 4. Do not make Prometheus part of Istio service mesh
+# 4. Do Not Make Prometheus Part of Istio Service Mesh
 
 Date: 30.01.2024
 
@@ -19,12 +19,12 @@ The Telemetry manager which queries metrics from Prometheus is not part of the s
 ## Problem
 When Prometheus is not part of Istio service mesh, it would cause metrics data to be transported unencrypted, thus the metrics could be counterfeited. This would mean that we get wrong information about the possible issue with observability components. The side effects could be following:
  - Customer gets wrongly notified because of false positives.
- - Telemetry operator gets wrong decision about the scaling: like scaling down when scaling up is needed causing data loss
+ - Telemetry operator gets wrong decision about the scaling, like scaling down when scaling up is needed, thus causing data loss
 
 ## Argument 
-- The network policy which enables telemetry manager to accept data from a desired IP address in kubernetes cluster reduces the attack vector. It also increases the attack complexity as the attacker would need to have access to the underlying node to perform the attack.
-- Making the prometheus part of the Istio service mesh would add a strong dependency to istio service mesh. In case of any issue in the Istio service mesh there will be no monitoring data from Prometheus available thus Status information and Scaling decisions would not be reliable.
+- The network policy that enables Telemetry Manager to accept data from a desired IP address in Kubernetes cluster reduces the attack vector. It also increases the attack complexity, because the attacker would need to have access to the underlying node to perform the attack.
+- Making Prometheus part of the Istio service mesh would add a strong dependency to Istio service mesh. In case of any issue in the Istio service mesh, there will be no monitoring data from Prometheus available, thus status information and scaling decisions would not be reliable.
 
 ## Summary
-Based on above arguments of complex attack vector and unreachable monitoring information in case of problems with Istio service mesh, its decided prometheus not to be part of the Istio service mesh.
+Based on the arguments of complex attack vector and unreachable monitoring information in case of problems with Istio service mesh, it's decided that Prometheus will not to be part of the Istio service mesh.
 
