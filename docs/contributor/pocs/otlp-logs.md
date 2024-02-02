@@ -4,7 +4,7 @@
 
 When integrating an OTLP compliant logging backend, applications can either ingest their logs directly or emit them to STDOUT and use a log collector to process and forward the logs.
 With this PoC, we evaluated how the OpenTelemetry Collector's [filelog receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/filelogreceiver) can be configured to transform structured JSON logs emitted by Kubernetes workloads to STDOUT, and subsequently to the [OTLP logs data model](https://opentelemetry.io/docs/specs/otel/logs/data-model/).
-OpenTelemtry Collector should move JSON attributes to the `attributes` map of the log record, extract other fields like **severity** or **timestamp**, write the actual log message to the **body** field, and add any missing information to ensure that the **attributes** and **resource** attributes comply with the semantic conventions.
+OpenTelemtry Collector should move JSON attributes to the **attributes** map of the log record, extract other fields like **severity** or **timestamp**, write the actual log message to the **body** field, and add any missing information to ensure that the **attributes** and **resource** attributes comply with the semantic conventions.
 
 This PoC does not cover logs ingested by the application using the OTLP protocol. We assume that the application already fills the log record fields with the intended values.
 
@@ -94,7 +94,7 @@ This processed log record arrives in the SAP Cloud Logging (OpenSearch):
 }
 ```
 
-The OpenTelemetry Collector configuration moves all JSON fields to the `attributes` map. The user-given log message emitted in the **msg** JSON field is moved to the OTLP **body** field.
+The OpenTelemetry Collector configuration moves all JSON fields to the **attributes** map. The user-given log message emitted in the **msg** JSON field is moved to the OTLP **body** field.
 The **level** JSON field determines the **severityName** and **severityNumber** fields. The mapping is automatically performed using the severity_parser operator.
 Operators for the filelog receiver determine the emitting Pod. The k8sattributes processor adds other resource attributes to fulfill the semantic conventions.
 The k8sattributes processor is also used to create resource attributes for pod labels. The same could be done with annotations.
