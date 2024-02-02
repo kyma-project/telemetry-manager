@@ -46,7 +46,7 @@ Since the new field is optional, there's no need for an API version bump.
 
 ## Consequences
 
-Kyma users will have the flexibility to choose between FluentBit and OTel Collector-based outputs, enabling a gradual transition.
+Kyma users will have the flexibility to choose between Fluent Bit and OTel Collector-based outputs, enabling a gradual transition.
 The controller must be able to handle configurations and resource management for both FluentBit and OTel Collector.
 It's crucial to ensure that, in scenarios involving multiple pipelines, only one output type can be selected to maintain consistency and simplicity in the system. That can be ensured by a validating webhook.
 
