@@ -97,7 +97,7 @@ This processed log record arrives in the SAP Cloud Logging (OpenSearch):
 The OpenTelemetry Collector configuration moves all JSON fields to the `attribtues` map. The user given log message, which emitted in the `msg` JSON field, is moved to the OTLP `body` field.
 The `level` JSON field is used to determine `severityName` and `severityNumber` fields. The mapping is done automatically using the severity_parser operator.
 Operators for the filelog receiver determine the emitting Pod. Other resource attributes are added by the k8sattributes processor to fulfill the semantic conventions.
-The k8sattributes processor is alos used to create resource attributes for pod labels. The same could be done with annotations.
+The k8sattributes processor is also used to create resource attributes for pod labels. The same could be done with annotations.
 An operator for the filelog receiver preserves the originating filesystem path of the record to be compliant with the semantic conventions for logs.
 In the used configuration, we move the original log record to the `original` attribute for debugging purposes.
 
