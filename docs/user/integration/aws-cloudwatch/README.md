@@ -1,4 +1,4 @@
-# Integrate Kyma with AWS CloudWatch
+# Integrate Kyma with AWS CloudWatch and X-Ray
 
 ## Overview
 
