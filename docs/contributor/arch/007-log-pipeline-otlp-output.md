@@ -19,7 +19,7 @@ However, manual editing of the label remains possible.
 * The Kubernetes API server allows any client to request objects at any version, making it impossible to maintain clear separation between versions.
 
 An alternative approach involves introducing a new kind (e.g., `LogFlow`) or another API group (e.g., `logpipeline.flow.kyma-project.io`).
-However, this option is less favorable as it would require a substantial effort to migrate existing resources. We would also like to keep the old names as they accurately reflect the purpose of the resourcea.
+However, this option is less favorable as it would require a substantial effort to migrate existing resources. We would also like to keep the old names as they accurately reflect the purpose of the resource.
 
 ## Decision
 
