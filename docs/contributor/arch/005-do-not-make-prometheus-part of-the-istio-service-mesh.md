@@ -23,7 +23,7 @@ When Prometheus is not part of the Istio service mesh, it will cause metrics dat
 
 ## Argument 
 - The network policy that enables Telemetry Manager to accept data from a desired IP address in the Kubernetes cluster reduces the attack vector. It also increases the attack complexity because the attacker would need access to the underlying node to perform the attack.
-- Making Prometheus part of the Istio service mesh would add a strong dependency to Istio service mesh. In case of any issue in the Istio service mesh, there will be no monitoring data from Prometheus available, thus status information and scaling decisions would not be reliable.
+- Making Prometheus part of the Istio service mesh would add a strong dependency to the Istio service mesh. In case of any issue in the Istio service mesh, there will be no monitoring data from Prometheus available thus, status information and scaling decisions would not be reliable.
 
 ## Summary
 Based on the arguments of complex attack vector and unreachable monitoring information in case of problems with the Istio service mesh, it's decided that Prometheus will not be part of the Istio service mesh.
