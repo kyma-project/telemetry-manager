@@ -1,8 +1,8 @@
-# Integrate Kyma with AWS CloudWatch and X-Ray
+# Integrate Kyma with Amazon CloudWatch and AWS X-Ray
 
 ## Overview
 
-The Kyma Telemetry module supports you in integrating with observability backends in a convenient way. The following example outlines how to integrate with [AWS CloudWatch](https://aws.amazon.com/cloudwatch) as a backend. Because CloudWatch does not support OTLP ingestion natively, you must deploy the [AWS Distro for OpenTelemetry](https://aws-otel.github.io) additionally.
+The Kyma Telemetry module supports you in ingesting logs, metrics and traces and integrating with observability backends in a convenient way. The following example outlines how to integrate with [Amazon CloudWatch](https://aws.amazon.com/cloudwatch) and [AWS X-Ray](https://aws.amazon.com/xray/) as backends. Since CloudWatch and X-Ray do not support OTLP ingestion natively, you must additionally deploy the [AWS Distro for OpenTelemetry](https://aws-otel.github.io).
 
 ![overview](../assets/cloudwatch.drawio.svg)
 
