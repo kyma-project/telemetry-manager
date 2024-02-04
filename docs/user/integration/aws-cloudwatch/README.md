@@ -75,7 +75,7 @@ kubectl create secret generic aws-credentials -n $K8S_NAMESPACE --from-literal=A
 
 ## Deploy the AWS Distro
 
-Deploy the AWS Distro which is a specific distribution of an OTel collector. It converts and dispatches the OTLP-based metrics and traces in the cluster to the AWS-specific format and protocol.
+Deploy the AWS Distro which is an AWS-supported distribution of an OTel collector. The [AWS X-Ray Tracing Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/awsxrayexporter) used in the collector converts OTLP traces to [AWS X-Ray Segment Documents](https://docs.aws.amazon.com/xray/latest/devguide/xray-api-segmentdocuments.html) and then sends them directly to X-Ray. The [AWS CloudWatch EMF Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/awsemfexporter/README.md) used in the collector converts OTLP metrics to [AWS CloudWatch Embedded Metric Format(EMF)](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Specification.html) and then sends them directly to CloudWatch Logs. The retention of these CloudWatch Logs is set to 7 days. You can change that to fit your needs by adjusting the `log_retention` value for the `awsemf` exporter in the [`aws-otel.yaml`](aws-otel.yaml) file.
 
  ```bash
 kubectl -n $K8S_NAMESPACE apply -f aws-otel.yaml
@@ -86,6 +86,7 @@ kubectl -n $K8S_NAMESPACE apply -f aws-otel.yaml
 Use the Kyma Telemetry module to enable ingestion of the signals from your workloads:
 
 1. Deploy a LogPipeline:
+> **NOTE:** The retention of of the logs is set to 7 days. You can change that to fit your needs by adjusting the `log_retention_days` value.
    ```bash
    kubectl apply -f - <<EOF
    apiVersion: telemetry.kyma-project.io/v1alpha1
