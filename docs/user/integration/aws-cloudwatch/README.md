@@ -25,12 +25,12 @@ The Kyma Telemetry module supports you in ingesting logs, metrics and traces and
 
 ## Preparation
 
-1. Export your Namespace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
+1. Export your namespace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
 
     ```bash
     export K8S_NAMESPACE="{NAMESPACE}"
     ```
-1. If you haven't created a Namespace yet, do it now:
+1. If you haven't created a namespace yet, do it now:
     ```bash
     kubectl create namespace $K8S_NAMESPACE
     ```
@@ -75,7 +75,7 @@ kubectl create secret generic aws-credentials -n $K8S_NAMESPACE --from-literal=A
 
 ## Deploy the AWS Distro
 
-Deploy the AWS Distro which is an AWS-supported distribution of an OTel collector. The [AWS X-Ray Tracing Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/awsxrayexporter) used in the collector converts OTLP traces to [AWS X-Ray Segment Documents](https://docs.aws.amazon.com/xray/latest/devguide/xray-api-segmentdocuments.html) and then sends them directly to X-Ray. The [AWS CloudWatch EMF Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/awsemfexporter/README.md) used in the collector converts OTLP metrics to [AWS CloudWatch Embedded Metric Format(EMF)](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Specification.html) and then sends them directly to CloudWatch Logs. The retention of these CloudWatch Logs is set to 7 days. You can change that to fit your needs by adjusting the `log_retention` value for the `awsemf` exporter in the [`aws-otel.yaml`](aws-otel.yaml) file.
+Deploy the AWS Distro, which is an AWS-supported distribution of an OTel collector. The [AWS X-Ray Tracing Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/awsxrayexporter) used in the collector converts OTLP traces to [AWS X-Ray Segment Documents](https://docs.aws.amazon.com/xray/latest/devguide/xray-api-segmentdocuments.html) and then sends them directly to X-Ray. The [AWS CloudWatch EMF Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/awsemfexporter/README.md) used in the collector converts OTLP metrics to [AWS CloudWatch Embedded Metric Format(EMF)](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Specification.html) and then sends them directly to CloudWatch Logs. The retention of these CloudWatch Logs is set to 7 days. You can change that to fit your needs by adjusting the `log_retention` value for the `awsemf` exporter in the [`aws-otel.yaml`](aws-otel.yaml) file.
 
  ```bash
 kubectl -n $K8S_NAMESPACE apply -f aws-otel.yaml
