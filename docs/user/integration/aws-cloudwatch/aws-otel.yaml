@@ -18,11 +18,11 @@ data:
           http:
     processors:
       memory_limiter:
-        limit_mib: 50
         check_interval: 1s
-      batch/traces:
+        limit_percentage: 60
+        spike_limit_percentage: 40
+      batch:
         timeout: 1s
-        send_batch_size: 50
     exporters:
       awsxray:
         region: ${AWS_REGION}
@@ -42,10 +42,11 @@ data:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [memory_limiter, batch/traces]
+          processors: [memory_limiter, batch]
           exporters: [awsxray, logging/traces]
         metrics:
           receivers: [otlp, prometheus]
+          processors: [memory_limiter, batch]
           exporters: [awsemf, logging/metrics]
       telemetry:
         logs:
@@ -82,11 +83,11 @@ spec:
           imagePullPolicy: IfNotPresent
           resources:
             limits:
-              cpu: "1"
-              memory: 1Gi
+              cpu: 1200m
+              memory: 2000Mi
             requests:
-              cpu: 25m
-              memory: 32Mi
+              cpu: 200m
+              memory: 256Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
