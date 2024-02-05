@@ -12,6 +12,7 @@
   - [Dynatrace](/telemetry-manager/user/integration/dynatrace/README.md)
   - [Loki](/telemetry-manager/user/integration/loki/README.md)
   - [Jaeger](/telemetry-manager/user/integration/jaeger/README.md)
+  - [Amazon CloudWatch and AWS X-Ray](/telemetry-manager/user/integration/aws-cloudwatch/README.md)
 - [Resources](/telemetry-manager/user/resources/README.md)
   - [Telemetry](/telemetry-manager/user/resources/01-telemetry.md)
   - [LogPipeline](/telemetry-manager/user/resources/02-logpipeline.md)
