@@ -2,6 +2,12 @@
 
 ## Overview
 
+| Category|                       |
+| - |-----------------------|
+| Signal types | traces, logs, metrics |
+| Backend type | third-party remote    |
+| OTLP-native | no                    |
+
 Learn how to use [Amazon CloudWatch](https://aws.amazon.com/cloudwatch) and [AWS X-Ray](https://aws.amazon.com/xray/) as backends for the Kyma Telemetry module.
 
 Fluent Bit ingests logs directly into CloudWatch using the [Amazon CloudWatch output plugin](https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch). Because CloudWatch and X-Ray do not support OTLP ingestion natively, the Metric Gateway and Trace Gateway must first ingest the OTLP Metrics and OTLP Traces into the [AWS Distro for OpenTelemetry](https://aws-otel.github.io). Then, the AWS Distro converts the OTLP Metrics and OTLP Traces to the format required by CloudWatch and X-Ray respectively and ingests the metrics into CloudWatch and traces into X-Ray.
