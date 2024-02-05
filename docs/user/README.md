@@ -80,7 +80,7 @@ Read the following guides for integration of different backends:
 - [Loki](integration/loki/README.md)
 - [Jaeger](integration/jaeger/README.md)
 
-Read the following guides to learn how to collect data from applications:
+Read the following guide to learn how to collect data from applications:
 - [OpenTelemetry Demo App](integration/opentelemetry-demo/README.md)
 
 ## API / Custom Resource Definitions
