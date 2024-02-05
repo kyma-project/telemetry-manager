@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -73,7 +72,6 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	//nolint:gosec // pprof package is required for performance analysis.
-	_ "net/http/pprof"
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
 )
 
@@ -281,25 +279,12 @@ func main() {
 		}
 	}()
 
-	go func() {
-		server := &http.Server{
-			Addr:              ":6060",
-			ReadHeaderTimeout: 10 * time.Second,
-		}
-
-		err := server.ListenAndServe()
-		if err != nil {
-			mutex.Lock()
-			setupLog.Error(err, "Cannot start pprof server")
-			mutex.Unlock()
-		}
-	}()
-
 	syncPeriod := 1 * time.Minute
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                  scheme,
 		Metrics:                 metricsserver.Options{BindAddress: ":8080"},
 		HealthProbeBindAddress:  ":8081",
+		PprofBindAddress:        ":6060",
 		LeaderElection:          true,
 		LeaderElectionNamespace: telemetryNamespace,
 		LeaderElectionID:        "cdd7ef0b.kyma-project.io",
@@ -312,7 +297,6 @@ func main() {
 
 			// The operator handles various resource that are namespace-scoped, and additionally some resources that are cluster-scoped (clusterroles, clusterrolebindings, etc.).
 			// For namespace-scoped resources we want to restrict the operator permissions to only fetch resources from a given namespace.
-
 			ByObject: map[client.Object]cache.ByObject{
 				&appsv1.Deployment{}:          {Field: setNamespaceFieldSelector()},
 				&appsv1.ReplicaSet{}:          {Field: setNamespaceFieldSelector()},
