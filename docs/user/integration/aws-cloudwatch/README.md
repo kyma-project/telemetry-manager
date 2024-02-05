@@ -25,7 +25,7 @@ Fluent Bit ingests logs directly into CloudWatch using the [Amazon CloudWatch ou
 - AWS account with permissions to create new users and security policies
 
 
-## Preparation
+## Prepare the Namespace
 
 1. Export your namespace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
 
