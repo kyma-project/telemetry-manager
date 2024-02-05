@@ -11,7 +11,7 @@ Fluent Bit ingests logs directly into CloudWatch using the [Amazon CloudWatch ou
 ## Table of Content
 
 - [Prerequisites](#prerequisites)
-- [Preparation](#preparation)
+- [Prepare the Namespace](#prepare-the-namespace)
 - [Set Up AWS Credentials](#set-up-aws-credentials)
 - [Deploy the AWS Distro](#deploy-the-aws-distro)
 - [Set Up Kyma Pipelines](#set-up-kyma-pipelines)
