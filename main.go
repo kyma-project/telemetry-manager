@@ -22,7 +22,6 @@ import (
 	"flag"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-logr/zapr"
@@ -123,7 +122,6 @@ var (
 	metricGatewayDynamicMemoryRequest string
 
 	enableWebhook bool
-	mutex         sync.Mutex
 )
 
 const (
