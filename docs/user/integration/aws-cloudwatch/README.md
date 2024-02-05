@@ -40,7 +40,7 @@ The Kyma Telemetry module supports you in ingesting logs, metrics and traces and
 
 1. In your AWS account, create an [IAM policy](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html) for the **CloudWatch Logs** service with the actions **CreateLogGroup**, **CreateLogStream**, **PutLogEvents**, and **PutRetentionPolicy**, and specify the resource [ARNs](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html) for the selected actions.
 2. In your AWS account, create an [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html) and attach the policy you just created, as well as the policy **AWSXrayWriteOnlyAccess**.
-3. For the [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html) you just created, create an access key for an application running outside AWS. Copy and Save the **access key** and **secret access key** as you will need them in the next step [Create a Secret with AWS Credentials](#Create-a-Secret-with-AWS-Credentials)
+3. For the [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html) you just created, create an access key for an application running outside AWS. Copy and Save the **access key** and **secret access key**; you need them to [Create a Secret with AWS Credentials](#Create-a-Secret-with-AWS-Credentials).
 
 
 ### Create a Secret with AWS Credentials
