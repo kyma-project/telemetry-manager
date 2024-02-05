@@ -68,7 +68,7 @@ kubectl -n $K8S_NAMESPACE apply -f aws-otel.yaml
 Use the Kyma Telemetry module to enable ingestion of the signals from your workloads:
 
 1. Deploy a LogPipeline:
-> **NOTE:** The retention of of the logs is set to 7 days. You can change that to fit your needs by adjusting the `log_retention_days` value.
+   > **NOTE:** The retention of of the CloudWatch Logs  is set to 7 days. You can change that to fit your needs by adjusting the `log_retention_days` value.
    ```bash
    kubectl apply -f - <<EOF
    apiVersion: telemetry.kyma-project.io/v1alpha1
