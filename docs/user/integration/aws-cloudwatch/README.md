@@ -38,32 +38,10 @@ The Kyma Telemetry module supports you in ingesting logs, metrics and traces and
 
 ### Create AWS IAM User
 
-Create an IAM user and assign to it the specific IAM policies that are needed to let the AWS Distro communicate with the AWS services.
+1. In your AWS account, create an [IAM policy](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html) for the **CloudWatch Logs** service with the actions **CreateLogGroup**, **CreateLogStream**, **PutLogEvents**, and **PutRetentionPolicy**, and specify the resource [ARNs](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html) for the selected actions.
+2. In your AWS account, create an [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html) and attach the policy you just created, as well as the policy **AWSXrayWriteOnlyAccess**.
+3. For the [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html) you just created, create an access key for an application running outside AWS. Copy and Save the **access key** and **secret access key** as you will need them in the next step [Create a Secret with AWS Credentials](#Create-a-Secret-with-AWS-Credentials)
 
-First, create the IAM policy for **CloudWatch** service:
-1. In your AWS account, search for **IAM**, go to **Policies** > **Create policy**.
-1. Select the **CloudWatch** service.
-1. Select the actions **GetMetricData**, **PutMetricData**, **ListMetrics** and click **Next**.
-1. Enter the policy name and click **Create policy**.
-
-Next, create the IAM policy for **CloudWatch Logs** service:
-1. In your AWS account, search for **IAM**, go to **Policies** > **Create policy**.
-1. Select the **CloudWatch Logs** service.
-1. Select the actions **CreateLogGroup**, **CreateLogStream**, **PutLogEvents**, **PutRetentionPolicy** and click **Next**.
-1. Specify the resource [ARNs](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference-arns.html) for the selected actions.
-1. Enter the policy name and click **Create policy**.
-
-After creating the IAM Policies, create an IAM user:
-1. In your AWS account, search for **IAM**, go to **Users** > **Create user**.
-1. Enter the user name and click **Next**.
-1. Select **Attach policies directly**.
-1. Select the two policies you created previously, as well as the policy **AWSXrayWriteOnlyAccess**.
-1. Click **Next** > **Create User**.
-1. Open the new user.
-1. Under **Security credentials**, click **Create access key**.
-1. Select **Application running outside AWS** and click **Next**.
-1. Describe the purpose of this access key and click **Create access key**.
-1. Copy and save the access key and the secret access key.
 
 ### Create a Secret with AWS Credentials
 
