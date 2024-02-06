@@ -393,10 +393,10 @@ gardener-integration-test: ## Provision gardener cluster and run integration tes
 
 .PHONY: provision-gardener
 provision-gardener: kyma ## Provision gardener cluster with latest k8s version
-	${KYMA} provision gardener gcp -c ${GARDENER_SA_PATH} -n test-${GIT_COMMIT_SHA} -p ${GARDENER_PROJECT} -s ${GARDENER_SECRET_NAME} -k ${GARDENER_K8S_VERSION_FULL}\
+	${KYMA} provision gardener gcp -c ${GARDENER_SA_PATH} -n test-${GIT_COMMIT_SHA}-${GARDENER_K8S_VERSION} -p ${GARDENER_PROJECT} -s ${GARDENER_SECRET_NAME} -k ${GARDENER_K8S_VERSION_FULL}\
 		--hibernation-start="00 ${HIBERNATION_HOUR} * * ?"
 
 .PHONY: deprovision-gardener
 deprovision-gardener: kyma ## Deprovision gardener cluster
-	kubectl --kubeconfig=${GARDENER_SA_PATH} annotate shoot test-${GIT_COMMIT_SHA} confirmation.gardener.cloud/deletion=true
+	kubectl --kubeconfig=${GARDENER_SA_PATH} annotate shoot test-${GIT_COMMIT_SHA}-${GARDENER_K8S_VERSION} confirmation.gardener.cloud/deletion=true
 	kubectl --kubeconfig=${GARDENER_SA_PATH} delete shoot test-${GIT_COMMIT_SHA} --wait=false

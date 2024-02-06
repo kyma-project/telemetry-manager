@@ -13,7 +13,6 @@ on:
 jobs:
   gardener-integration-test:
     strategy:
-        max-parallel: 1 # avoid 2 clusters at the same time using same name
         matrix:
           k8s_version: [1.27, 1.28]
     runs-on: ubuntu-latest
