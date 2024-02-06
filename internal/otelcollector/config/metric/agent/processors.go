@@ -44,8 +44,8 @@ func makeBatchProcessorConfig() *config.BatchProcessor {
 func makeMemoryLimiterConfig() *config.MemoryLimiter {
 	return &config.MemoryLimiter{
 		CheckInterval:        "0.1s",
-		LimitPercentage:      80,
-		SpikeLimitPercentage: 15,
+		LimitPercentage:      75,
+		SpikeLimitPercentage: 20,
 	}
 }
 

@@ -129,7 +129,7 @@ var (
 )
 
 const (
-	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.92.0-5386a2ed"
+	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.93.0-fdc9e6c4"
 	overridesConfigMapName = "telemetry-override-config"
 	overridesConfigMapKey  = "override-config"
 	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.2.1-8adfb683"
@@ -226,7 +226,7 @@ func main() {
 	flag.StringVar(&traceGatewayDynamicMemoryLimit, "trace-collector-dynamic-memory-limit", "1500Mi", "Additional memory limit for tracing OpenTelemetry Collector per TracePipeline")
 	flag.StringVar(&traceGatewayCPURequest, "trace-collector-cpu-request", "100m", "CPU request for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceGatewayDynamicCPURequest, "trace-collector-dynamic-cpu-request", "100m", "Additional CPU request for tracing OpenTelemetry Collector per TracePipeline")
-	flag.StringVar(&traceGatewayMemoryRequest, "trace-collector-memory-request", "256Mi", "Memory request for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayMemoryRequest, "trace-collector-memory-request", "32Mi", "Memory request for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceGatewayDynamicMemoryRequest, "trace-collector-dynamic-memory-request", "0", "Additional memory request for tracing OpenTelemetry Collector per TracePipeline")
 	flag.IntVar(&maxTracePipelines, "trace-collector-pipelines", 3, "Maximum number of TracePipelines to be created. If 0, no limit is applied.")
 
