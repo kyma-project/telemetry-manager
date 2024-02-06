@@ -275,8 +275,8 @@ processors:
         send_batch_max_size: 1024
     memory_limiter:
         check_interval: 0.1s
-        limit_percentage: 80
-        spike_limit_percentage: 15
+        limit_percentage: 75
+        spike_limit_percentage: 20
     resource/delete-service-name:
         attributes:
             - action: delete
