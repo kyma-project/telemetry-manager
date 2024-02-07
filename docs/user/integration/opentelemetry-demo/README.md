@@ -23,7 +23,7 @@ Learn how to install the OpenTelemetry [demo application](https://github.com/ope
 
 - Kyma as the target deployment environment
 - The [Telemetry module](../../README.md) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install)
-- kubectl version 1.22.x or higher
+- [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl)
 - Helm 3.x
 
 ## Installation

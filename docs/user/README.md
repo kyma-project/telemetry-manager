@@ -79,6 +79,7 @@ Read the following guides for integration of different backends:
 - [Dynatrace](integration/dynatrace/README.md)
 - [Loki](integration/loki/README.md)
 - [Jaeger](integration/jaeger/README.md)
+- [Amazon CloudWatch and AWS X-Ray](integration/aws-cloudwatch/README.md)
 
 Read the following guide to learn how to collect data from applications:
 - [OpenTelemetry Demo App](integration/opentelemetry-demo/README.md)
