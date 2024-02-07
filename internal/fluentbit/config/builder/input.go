@@ -26,7 +26,7 @@ func createInputSection(pipeline *telemetryv1alpha1.LogPipeline, includePath, ex
 }
 
 func createIncludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
-	var toInclude []string
+	var includePath []string
 
 	includeNamespaces := []string{"*"}
 	if len(pipeline.Spec.Input.Application.Namespaces.Include) > 0 {
@@ -40,15 +40,15 @@ func createIncludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
 
 	for _, ns := range includeNamespaces {
 		for _, container := range includeContainers {
-			toInclude = append(toInclude, makeLogPath(ns, "*", container))
+			includePath = append(includePath, makeLogPath(ns, "*", container))
 		}
 	}
 
-	return strings.Join(toInclude, ",")
+	return strings.Join(includePath, ",")
 }
 
 func createExcludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
-	toExclude := []string{
+	excludePath := []string{
 		makeLogPath("kyma-system", "telemetry-fluent-bit-*", "fluent-bit"),
 	}
 
@@ -58,14 +58,14 @@ func createExcludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
 	}
 
 	for _, ns := range excludeNamespaces {
-		toExclude = append(toExclude, makeLogPath(ns, "*", "*"))
+		excludePath = append(excludePath, makeLogPath(ns, "*", "*"))
 	}
 
 	for _, container := range pipeline.Spec.Input.Application.Containers.Exclude {
-		toExclude = append(toExclude, makeLogPath("*", "*", container))
+		excludePath = append(excludePath, makeLogPath("*", "*", container))
 	}
 
-	return strings.Join(toExclude, ",")
+	return strings.Join(excludePath, ",")
 }
 
 func makeLogPath(namespace, pod, container string) string {
