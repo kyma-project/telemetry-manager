@@ -28,16 +28,18 @@ func createInputSection(pipeline *telemetryv1alpha1.LogPipeline, includePath, ex
 func createIncludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
 	var toInclude []string
 
-	if len(pipeline.Spec.Input.Application.Namespaces.Include) == 0 {
-		pipeline.Spec.Input.Application.Namespaces.Include = append(pipeline.Spec.Input.Application.Namespaces.Include, "*")
+	includeNamespaces := []string{"*"}
+	if len(pipeline.Spec.Input.Application.Namespaces.Include) > 0 {
+		includeNamespaces = pipeline.Spec.Input.Application.Namespaces.Include
 	}
 
-	if len(pipeline.Spec.Input.Application.Containers.Include) == 0 {
-		pipeline.Spec.Input.Application.Containers.Include = append(pipeline.Spec.Input.Application.Containers.Include, "*")
+	includeContainers := []string{"*"}
+	if len(pipeline.Spec.Input.Application.Containers.Include) > 0 {
+		includeContainers = pipeline.Spec.Input.Application.Containers.Include
 	}
 
-	for _, ns := range pipeline.Spec.Input.Application.Namespaces.Include {
-		for _, container := range pipeline.Spec.Input.Application.Containers.Include {
+	for _, ns := range includeNamespaces {
+		for _, container := range includeContainers {
 			toInclude = append(toInclude, makeLogPath(ns, "*", container))
 		}
 	}
@@ -50,11 +52,12 @@ func createExcludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
 		makeLogPath("kyma-system", "telemetry-fluent-bit-*", "fluent-bit"),
 	}
 
-	if !pipeline.Spec.Input.Application.Namespaces.System {
-		pipeline.Spec.Input.Application.Namespaces.Exclude = append(pipeline.Spec.Input.Application.Namespaces.Exclude, namespaces.System()...)
+	excludeNamespaces := pipeline.Spec.Input.Application.Namespaces.Exclude
+	if !pipeline.Spec.Input.Application.Namespaces.System && len(pipeline.Spec.Input.Application.Namespaces.Include) == 0 && len(pipeline.Spec.Input.Application.Namespaces.Exclude) == 0 {
+		excludeNamespaces = namespaces.System()
 	}
 
-	for _, ns := range pipeline.Spec.Input.Application.Namespaces.Exclude {
+	for _, ns := range excludeNamespaces {
 		toExclude = append(toExclude, makeLogPath(ns, "*", "*"))
 	}
 
