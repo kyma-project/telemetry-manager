@@ -26,43 +26,46 @@ func createInputSection(pipeline *telemetryv1alpha1.LogPipeline, includePath, ex
 }
 
 func createIncludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
-	var toInclude []string
+	var includePath []string
 
-	if len(pipeline.Spec.Input.Application.Namespaces.Include) == 0 {
-		pipeline.Spec.Input.Application.Namespaces.Include = append(pipeline.Spec.Input.Application.Namespaces.Include, "*")
+	includeNamespaces := []string{"*"}
+	if len(pipeline.Spec.Input.Application.Namespaces.Include) > 0 {
+		includeNamespaces = pipeline.Spec.Input.Application.Namespaces.Include
 	}
 
-	if len(pipeline.Spec.Input.Application.Containers.Include) == 0 {
-		pipeline.Spec.Input.Application.Containers.Include = append(pipeline.Spec.Input.Application.Containers.Include, "*")
+	includeContainers := []string{"*"}
+	if len(pipeline.Spec.Input.Application.Containers.Include) > 0 {
+		includeContainers = pipeline.Spec.Input.Application.Containers.Include
 	}
 
-	for _, ns := range pipeline.Spec.Input.Application.Namespaces.Include {
-		for _, container := range pipeline.Spec.Input.Application.Containers.Include {
-			toInclude = append(toInclude, makeLogPath(ns, "*", container))
+	for _, ns := range includeNamespaces {
+		for _, container := range includeContainers {
+			includePath = append(includePath, makeLogPath(ns, "*", container))
 		}
 	}
 
-	return strings.Join(toInclude, ",")
+	return strings.Join(includePath, ",")
 }
 
 func createExcludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
-	toExclude := []string{
+	excludePath := []string{
 		makeLogPath("kyma-system", "telemetry-fluent-bit-*", "fluent-bit"),
 	}
 
-	if !pipeline.Spec.Input.Application.Namespaces.System {
-		pipeline.Spec.Input.Application.Namespaces.Exclude = append(pipeline.Spec.Input.Application.Namespaces.Exclude, namespaces.System()...)
+	excludeNamespaces := pipeline.Spec.Input.Application.Namespaces.Exclude
+	if !pipeline.Spec.Input.Application.Namespaces.System && len(pipeline.Spec.Input.Application.Namespaces.Include) == 0 && len(pipeline.Spec.Input.Application.Namespaces.Exclude) == 0 {
+		excludeNamespaces = namespaces.System()
 	}
 
-	for _, ns := range pipeline.Spec.Input.Application.Namespaces.Exclude {
-		toExclude = append(toExclude, makeLogPath(ns, "*", "*"))
+	for _, ns := range excludeNamespaces {
+		excludePath = append(excludePath, makeLogPath(ns, "*", "*"))
 	}
 
 	for _, container := range pipeline.Spec.Input.Application.Containers.Exclude {
-		toExclude = append(toExclude, makeLogPath("*", "*", container))
+		excludePath = append(excludePath, makeLogPath("*", "*", container))
 	}
 
-	return strings.Join(toExclude, ",")
+	return strings.Join(excludePath, ",")
 }
 
 func makeLogPath(namespace, pod, container string) string {

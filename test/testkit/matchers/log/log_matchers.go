@@ -30,11 +30,6 @@ func ContainLd(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return WithLds(gomega.ContainElement(matcher))
 }
 
-// ConsistOfLds is an alias for WithLds(gomega.ConsistOf()).
-func ConsistOfLds(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return WithLds(gomega.ConsistOf(matcher))
-}
-
 func WithLogRecords(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(ld plog.Logs) ([]plog.LogRecord, error) {
 		return getLogRecords(ld), nil
@@ -46,11 +41,6 @@ func ContainLogRecord(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return WithLogRecords(gomega.ContainElement(matcher))
 }
 
-// ConsistOfLogRecords is an alias for WithLogRecords(gomega.ConsistOf()).
-func ConsistOfLogRecords(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return WithLogRecords(gomega.ConsistOf(matcher))
-}
-
 func WithContainerName(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(lr plog.LogRecord) string {
 		kubernetesAttrs := getKubernetesAttributes(lr)
@@ -60,6 +50,18 @@ func WithContainerName(matcher types.GomegaMatcher) types.GomegaMatcher {
 		}
 
 		return containerName.Str()
+	}, matcher)
+}
+
+func WithNamespace(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(lr plog.LogRecord) string {
+		kubernetesAttrs := getKubernetesAttributes(lr)
+		namespaceName, hasNamespaceName := kubernetesAttrs.Get("namespace_name")
+		if !hasNamespaceName || namespaceName.Type() != pcommon.ValueTypeStr {
+			return ""
+		}
+
+		return namespaceName.Str()
 	}, matcher)
 }
 
