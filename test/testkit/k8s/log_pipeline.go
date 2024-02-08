@@ -15,6 +15,8 @@ type LogPipeline struct {
 	name              string
 	secretKeyRef      *telemetryv1alpha1.SecretKeyRef
 	systemNamespaces  bool
+	includeNamespaces []string
+	excludeNamespaces []string
 	includeContainers []string
 	excludeContainers []string
 	keepAnnotations   bool
@@ -40,6 +42,16 @@ func (p *LogPipeline) WithSecretKeyRef(secretKeyRef *telemetryv1alpha1.SecretKey
 
 func (p *LogPipeline) WithSystemNamespaces(enable bool) *LogPipeline {
 	p.systemNamespaces = enable
+	return p
+}
+
+func (p *LogPipeline) WithIncludeNamespaces(namespaces []string) *LogPipeline {
+	p.includeNamespaces = namespaces
+	return p
+}
+
+func (p *LogPipeline) WithExcludeNamespaces(namespaces []string) *LogPipeline {
+	p.excludeNamespaces = namespaces
 	return p
 }
 
@@ -154,7 +166,9 @@ func (p *LogPipeline) K8sObject() *telemetryv1alpha1.LogPipeline {
 			Input: telemetryv1alpha1.Input{
 				Application: telemetryv1alpha1.ApplicationInput{
 					Namespaces: telemetryv1alpha1.InputNamespaces{
-						System: p.systemNamespaces,
+						System:  p.systemNamespaces,
+						Include: p.includeNamespaces,
+						Exclude: p.excludeNamespaces,
 					},
 					Containers: telemetryv1alpha1.InputContainers{
 						Include: p.includeContainers,
