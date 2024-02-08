@@ -90,7 +90,7 @@ var _ = Describe("Logs Include Namespaces", Label("logs"), Ordered, func() {
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should have no no logs from kube-system in the backend", func() {
+		It("Should have no logs from kube-system in the backend", func() {
 			Consistently(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
