@@ -7,6 +7,7 @@ import (
 const (
 	DefaultNamespaceName     = "default"
 	SystemNamespaceName      = "kyma-system"
+	KubeNamespace            = "kube-system"
 	IstioSystemNamespaceName = "istio-system"
 
 	MetricGatewayBaseName = "telemetry-metric-gateway"

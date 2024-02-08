@@ -5,6 +5,7 @@ package e2e
 import (
 	"net/http"
 
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,7 +41,7 @@ var _ = Describe("Logs Exclude Namespace", Label("logs"), Ordered, func() {
 		logPipeline := kitk8s.NewLogPipeline(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
-			WithExcludeNamespaces([]string{"kyma-system"})
+			WithExcludeNamespaces([]string{kitkyma.SystemNamespaceName})
 		objs = append(objs, logPipeline.K8sObject())
 
 		return objs
@@ -81,7 +82,7 @@ var _ = Describe("Logs Exclude Namespace", Label("logs"), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPBody(
 					ContainLd(
 						SatisfyAll(
-							ContainLogRecord(WithNamespace(Equal("kube-system"))),
+							ContainLogRecord(WithNamespace(Equal(kitkyma.KubeNamespace))),
 							ContainLogRecord(WithNamespace(Equal(mockNs))),
 						)),
 				))
@@ -94,7 +95,7 @@ var _ = Describe("Logs Exclude Namespace", Label("logs"), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(Not(ContainLd(ContainLogRecord(
-					WithNamespace(Equal("kyma-system"))))),
+					WithNamespace(Equal(kitkyma.SystemNamespaceName))))),
 				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
