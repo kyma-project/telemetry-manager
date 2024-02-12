@@ -32,39 +32,13 @@ type TracePipelineOutput struct {
 	Otlp *OtlpOutput `json:"otlp"`
 }
 
-type TracePipelineConditionType string
-
-// These are the valid statuses of TracePipeline.
-const (
-	TracePipelinePending TracePipelineConditionType = "Pending"
-	TracePipelineRunning TracePipelineConditionType = "Running"
-)
-
-// TracePipelineCondition contains details for the current condition of this LogPipeline.
-type TracePipelineCondition struct {
-	// Point in time the condition transitioned into a different state.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
-	// Reason of last transition.
-	Reason string `json:"reason,omitempty"`
-	// The possible transition types are:<br>- `Running`: The instance is ready and usable.<br>- `Pending`: The pipeline is being activated.
-	Type TracePipelineConditionType `json:"type,omitempty"`
-}
-
 // Defines the observed state of TracePipeline.
 type TracePipelineStatus struct {
 	// An array of conditions describing the status of the pipeline.
-	Conditions []TracePipelineCondition `json:"conditions,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-func NewTracePipelineCondition(reason string, condType TracePipelineConditionType) *TracePipelineCondition {
-	return &TracePipelineCondition{
-		LastTransitionTime: metav1.Now(),
-		Reason:             reason,
-		Type:               condType,
-	}
-}
-
-func (tps *TracePipelineStatus) GetCondition(condType TracePipelineConditionType) *TracePipelineCondition {
+func (tps *TracePipelineStatus) GetCondition(condType string) *metav1.Condition {
 	for cond := range tps.Conditions {
 		if tps.Conditions[cond].Type == condType {
 			return &tps.Conditions[cond]
@@ -73,11 +47,11 @@ func (tps *TracePipelineStatus) GetCondition(condType TracePipelineConditionType
 	return nil
 }
 
-func (tps *TracePipelineStatus) HasCondition(condition TracePipelineConditionType) bool {
-	return tps.GetCondition(condition) != nil
+func (tps *TracePipelineStatus) HasCondition(condType string) bool {
+	return tps.GetCondition(condType) != nil
 }
 
-func (tps *TracePipelineStatus) SetCondition(cond TracePipelineCondition) {
+func (tps *TracePipelineStatus) SetCondition(cond metav1.Condition) {
 	currentCond := tps.GetCondition(cond.Type)
 	if currentCond != nil && currentCond.Reason == cond.Reason {
 		return
@@ -89,8 +63,8 @@ func (tps *TracePipelineStatus) SetCondition(cond TracePipelineCondition) {
 	tps.Conditions = append(newConditions, cond)
 }
 
-func filterTracePipelineCondition(conditions []TracePipelineCondition, condType TracePipelineConditionType) []TracePipelineCondition {
-	var newConditions []TracePipelineCondition
+func filterTracePipelineCondition(conditions []metav1.Condition, condType string) []metav1.Condition {
+	var newConditions []metav1.Condition
 	for _, cond := range conditions {
 		if cond.Type == condType {
 			continue
