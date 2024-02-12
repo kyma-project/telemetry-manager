@@ -4,6 +4,8 @@ const (
 	TypeMetricGatewayHealthy   = "GatewayHealthy"
 	TypeMetricAgentHealthy     = "AgentHealthy"
 	TypeConfigurationGenerated = "ConfigurationGenerated"
+	TypeRunning                = "Running"
+	TypePending                = "Pending"
 )
 
 const (
