@@ -38,42 +38,6 @@ type TracePipelineStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-func (tps *TracePipelineStatus) GetCondition(condType string) *metav1.Condition {
-	for cond := range tps.Conditions {
-		if tps.Conditions[cond].Type == condType {
-			return &tps.Conditions[cond]
-		}
-	}
-	return nil
-}
-
-func (tps *TracePipelineStatus) HasCondition(condType string) bool {
-	return tps.GetCondition(condType) != nil
-}
-
-func (tps *TracePipelineStatus) SetCondition(cond metav1.Condition) {
-	currentCond := tps.GetCondition(cond.Type)
-	if currentCond != nil && currentCond.Reason == cond.Reason {
-		return
-	}
-	if currentCond != nil {
-		cond.LastTransitionTime = currentCond.LastTransitionTime
-	}
-	newConditions := filterTracePipelineCondition(tps.Conditions, cond.Type)
-	tps.Conditions = append(newConditions, cond)
-}
-
-func filterTracePipelineCondition(conditions []metav1.Condition, condType string) []metav1.Condition {
-	var newConditions []metav1.Condition
-	for _, cond := range conditions {
-		if cond.Type == condType {
-			continue
-		}
-		newConditions = append(newConditions, cond)
-	}
-	return newConditions
-}
-
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
