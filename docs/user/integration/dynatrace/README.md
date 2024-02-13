@@ -188,6 +188,6 @@ To collect custom metrics, you usually use the [Dynatrace annotation approach](h
     EOF
     ```
 
-1. Start pushing metrics to the metric gateway using [delta aggregation temporality.](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/overview/metrics#temporality)
+1. Start pushing metrics to the metric gateway using [delta aggregation temporality.](https://docs.dynatrace.com/docs/extend-dynatrace/opentelemetry/getting-started/metrics/limitations#aggregation-temporality)
 
 1. To find metrics from your Kyma cluster in the Dynatrace UI, go to **Observe & Explore** > **Metrics**.
