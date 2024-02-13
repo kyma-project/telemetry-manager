@@ -86,7 +86,8 @@ spec:
 
 ### Step 2. Enable Istio Tracing
 
->**CAUTION:** The provided Istio feature uses an API in alpha state, which may change in future releases.
+> [!WARNING]
+> The provided Istio feature uses an API in alpha state, which may change in future releases.
 
 By default, the tracing feature of the Istio module is disabled to avoid increased network utilization if there is no TracePipeline.
 To activate the Istio tracing feature with a sampling rate of 5% (for recommendations, see [Istio](#istio)), use a resource similar to the following:
@@ -314,7 +315,8 @@ Kyma bundles several modules which are potentially involved in user flows. Appli
 
 The Istio module is crucial in distributed tracing because it provides the [ingress gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/). Usually, this is where external requests enter the cluster scope and are enriched with trace context if it hasn't happened yet. Furthermore, every component that's part of the Istio Service Mesh runs an Istio proxy, which propagates the context properly but also creates span data. If Istio tracing is activated and taking care of trace propagation in your application, you get a complete picture of a trace, because every component automatically contributes span data. Also, Istio tracing is pre-configured to be based on the vendor-neutral [w3c-tracecontext](https://www.w3.org/TR/trace-context/) protocol.
 
->**CAUTION:** The provided Istio feature uses an API in alpha state, which may change in future releases.
+> [!WARNING]
+> The provided Istio feature uses an API in alpha state, which may change in future releases.
 
  The Istio module is configured with an [extension provider](https://istio.io/latest/docs/tasks/observability/telemetry/) called `kyma-traces`. To activate the provider on the global mesh level using the Istio [Telemetry API](https://istio.io/latest/docs/reference/config/telemetry/#Tracing), place a resource to the `istio-system` namespace. The following snippets help setting up the Istio tracing feature:
 
@@ -340,8 +342,9 @@ spec:
 
 By default, the sampling rate is configured to 1%. That means that only 1 trace out of 100 traces is reported to the trace gateway, and all others are dropped. The sampling decision itself is propagated as part of the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) so that either all involved components are reporting the span data of a trace, or none. 
 
->**TIP:** If you increase the sampling rate, you send more data your tracing backend and cause much higher network utilization in the cluster. 
->To reduce costs and performance impacts in a production setup, a very low percentage of around 5% is recommended.
+> [!TIP]
+> If you increase the sampling rate, you send more data your tracing backend and cause much higher network utilization in the cluster. 
+> To reduce costs and performance impacts in a production setup, a very low percentage of around 5% is recommended.
 
 To configure an "always-on" sampling, set the sampling rate to 100%:
 

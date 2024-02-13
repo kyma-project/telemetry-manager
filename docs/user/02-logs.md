@@ -160,7 +160,8 @@ spec:
     ...
 ```
 
-> **CAUTION:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
+> [!WARNING]
+> If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
 Telemetry Manager supports different types of [Fluent Bit filter](https://docs.fluentbit.io/manual/concepts/data-pipeline/filter). The example uses the filters [grep](https://docs.fluentbit.io/manual/pipeline/filters/grep) and [record_modifier](https://docs.fluentbit.io/manual/pipeline/filters/record-modifier).
 
@@ -296,7 +297,8 @@ spec:
     ...
 ```
 
-> **NOTE:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
+> [!NOTE]
+> If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
 ### Step 4: Rotate the Secret
 
