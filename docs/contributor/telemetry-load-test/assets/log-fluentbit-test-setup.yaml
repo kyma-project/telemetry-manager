@@ -5,7 +5,7 @@ metadata:
 spec:
   output:
     http:
-      dedot: true
+      dedot: false
       format: json
       host:
         value: log-receiver.log-load-test
@@ -28,7 +28,7 @@ metadata:
   name: log-load-generator
   namespace: log-load-test
 spec:
-  replicas: 10
+  replicas: 40
   selector:
     matchLabels:
       app: logs-load-generator
@@ -39,7 +39,7 @@ spec:
     spec:
       containers:
         - args:
-            - -b=100
+            - -b=104857600
             - -f=json
             - -l
           image: mingrammer/flog
@@ -92,7 +92,7 @@ data:
       @type http
       port 9880
       bind 0.0.0.0
-      body_size_limit 32m
+      body_size_limit 100m
       add_http_headers true
       <parse>
         @type json

@@ -93,11 +93,14 @@ function setup_metric_agent() {
 }
 
 function setup_fluentbit() {
+    if "$MAX_PIPELINE"; then
+        kubectl apply -f log-fluentbit-max-pipeline.yaml
+    fi
     # Deploy test setup
     kubectl apply -f log-fluentbit-test-setup.yaml
 
     if "$BACKPRESSURE_TEST"; then
-        kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-agent-backpressure-config.yaml
+        kubectl apply -f log-fluentbit-backpressure-config.yaml
     fi
 }
 
@@ -157,9 +160,9 @@ function wait_for_metric_agent_resources() {
 
 # shellcheck disable=SC2112
 function wait_for_fluentbit_resources() {
+    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-receiver
     kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit
     kubectl -n ${LOG_NAMESPACE} rollout status deployment log-load-generator
-    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-receiver
 }
 
 # shellcheck disable=SC2112
@@ -169,148 +172,158 @@ function cleanup() {
 
     echo "Test results collecting"
     if [ "$TEST_TARGET" = "traces" ]; then
-        RECEIVED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_receiver_accepted_spans{service="telemetry-trace-collector-metrics"}[20m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        EXPORTED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_exporter_sent_spans{exporter=~"otlp/load-test.*"}[20m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        QUEUE=$(curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-trace-collector-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        MEMORY=$(curl -fs --data-urlencode 'query=round((sum(container_memory_working_set_bytes{namespace="kyma-system", container="collector"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}) by (pod)) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        kill %1
-
-        restarts=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-trace-collector -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
-
-        if "$MAX_PIPELINE"; then
-          kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-max-pipeline.yaml
-        fi
-
-        if "$BACKPRESSURE_TEST"; then
-            kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-backpressure-config.yaml
-        fi
-
-        kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-load-test-setup.yaml
-
-        helm delete -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE}
-
-        kubectl delete namespace $PROMETHEUS_NAMESPACE
-
-        echo "\nTrace Gateway got $restarts time restarted\n"
-
-        echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST\n"
-        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Receiver Accepted Span/sec" "Exporter Exported Span/sec" "Exporter Queue Size" "Pod Memory Usage(MB)" "Pod CPU Usage"
-        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
+        get_result_and_cleanup_trace
     fi
 
     if [ "$TEST_TARGET" = "metrics" ]; then
-        RECEIVED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_receiver_accepted_metric_points{service="telemetry-metric-gateway-metrics"}[20m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        EXPORTED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_exporter_sent_metric_points{exporter=~"otlp/load-test.*"}[20m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        QUEUE=$(curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-gateway-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        MEMORY=$(curl -fs --data-urlencode 'query=round((sum(container_memory_working_set_bytes{namespace="kyma-system", pod=~"telemetry-metric-gateway.*", container="collector"}) by (pod)) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system", pod=~"telemetry-metric-gateway.*"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-        kill %1
-
-        restarts=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
-
-        if "$MAX_PIPELINE"; then
-          kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-max-pipeline.yaml
-        fi
-
-        if "$BACKPRESSURE_TEST"; then
-            kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-backpressure-config.yaml
-        fi
-
-        kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-load-test-setup.yaml
-
-        helm delete -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE}
-
-        kubectl delete namespace $PROMETHEUS_NAMESPACE
-
-        echo "\nMetric Gateway got $restarts time restarted\n"
-
-        print_metric_result "$TEST_NAME" "$TEST_TARGET" "$MAX_PIPELINE" "$BACKPRESSURE_TEST" "$RECEIVED" "$EXPORTED" "$QUEUE" "$MEMORY" "$CPU"
-
+        get_result_and_cleanup_metric
     fi
 
     if [ "$TEST_TARGET" = "metricagent" ]; then
-        RECEIVED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_receiver_accepted_metric_points{service="telemetry-metric-agent-metrics"}[20m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        EXPORTED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_exporter_sent_metric_points{service=~"telemetry-metric-agent-metrics"}[20m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        QUEUE=$(curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-agent-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        MEMORY=$(curl -fs --data-urlencode 'query=round((sum(container_memory_working_set_bytes{namespace="kyma-system", pod=~"telemetry-metric-agent.*", container="collector"}) by (pod)) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system", pod=~"telemetry-metric-agent.*"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        kill %1
-
-        restartsGateway=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
-
-        restartsAgent=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-agent -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
-
-        if "$BACKPRESSURE_TEST"; then
-            kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-agent-backpressure-config.yaml
-        fi
-
-        kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-agent-test-setup.yaml
-
-        helm delete -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE}
-
-        kubectl delete namespace $PROMETHEUS_NAMESPACE
-
-        echo "\nTest run for $TEST_DURATION seconds\n"
-        echo "\nMetric Gateway got $restartsGateway time restarted\n"
-        echo "\nMetric Agent got $restartsAgent time restarted\n"
-
-        print_metric_result "$TEST_NAME" "$TEST_TARGET" "$MAX_PIPELINE" "$BACKPRESSURE_TEST" "$RECEIVED" "$EXPORTED" "$QUEUE" "$MEMORY" "$CPU"
+        get_result_and_cleanup_metricagent
     fi
 
     if [ "$TEST_TARGET" = "fluentbit" ]; then
-        RECEIVED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_input_bytes_total{service="telemetry-fluent-bit-metrics", name="load-test-1"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        EXPORTED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        QUEUE=$(curl -fs --data-urlencode 'query=round((sum(rate(telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        MEMORY=$(curl -fs --data-urlencode 'query=round((sum(container_memory_working_set_bytes{namespace="kyma-system", container="fluent-bit"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-fluent-bit"}) by (pod)) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-fluent-bit"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
-
-        kill %1
-
-        restarts=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=fluent-bit -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
-
-        if "$BACKPRESSURE_TEST"; then
-            kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-backpressure-config.yaml
-        fi
-
-        kubectl delete -f log-fluentbit-test-setup.yaml
-
-        helm delete -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE}
-
-        kubectl delete namespace $PROMETHEUS_NAMESPACE
-
-        echo "\nLogPipeline Pods got $restarts time restarted\n"
-
-        echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST\n"
-        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Input Bytes Processing Rate/sec" "Output Bytes Processing Rate/sec" "Filesystem Buffer Usage" "Pod Memory Usage(MB)" "Pod CPU Usage"
-        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
+        get_result_and_cleanup_fluentbit
     fi
+
+    helm delete -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE}
+
+    kubectl delete namespace $PROMETHEUS_NAMESPACE
 
 }
 
+# shellcheck disable=SC2112
+function get_result_and_cleanup_trace() {
+    RECEIVED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_receiver_accepted_spans{service="telemetry-trace-collector-metrics"}[20m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+    EXPORTED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_exporter_sent_spans{exporter=~"otlp/load-test.*"}[20m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+    QUEUE=$(curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-trace-collector-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+    MEMORY=$(curl -fs --data-urlencode 'query=round((sum(container_memory_working_set_bytes{namespace="kyma-system", container="collector"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}) by (pod)) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+    CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-trace-collector"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+    kill %1
+
+    restarts=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-trace-collector -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
+
+    if "$MAX_PIPELINE"; then
+      kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-max-pipeline.yaml
+    fi
+
+    if "$BACKPRESSURE_TEST"; then
+        kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-backpressure-config.yaml
+    fi
+
+    kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-load-test-setup.yaml
+
+    echo "\nTrace Gateway got $restarts time restarted\n"
+
+    echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST\n"
+    printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Receiver Accepted Span/sec" "Exporter Exported Span/sec" "Exporter Queue Size" "Pod Memory Usage(MB)" "Pod CPU Usage"
+    printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
+}
+
+# shellcheck disable=SC2112
+function get_result_and_cleanup_metric() {
+    RECEIVED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_receiver_accepted_metric_points{service="telemetry-metric-gateway-metrics"}[20m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+    EXPORTED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_exporter_sent_metric_points{exporter=~"otlp/load-test.*"}[20m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+    QUEUE=$(curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-gateway-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+    MEMORY=$(curl -fs --data-urlencode 'query=round((sum(container_memory_working_set_bytes{namespace="kyma-system", pod=~"telemetry-metric-gateway.*", container="collector"}) by (pod)) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+    CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system", pod=~"telemetry-metric-gateway.*"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+    kill %1
+
+    restarts=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
+
+    if "$MAX_PIPELINE"; then
+      kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-max-pipeline.yaml
+    fi
+
+    if "$BACKPRESSURE_TEST"; then
+        kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-backpressure-config.yaml
+    fi
+
+    kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-load-test-setup.yaml
+
+    echo "\nMetric Gateway got $restarts time restarted\n"
+
+    print_metric_result "$TEST_NAME" "$TEST_TARGET" "$MAX_PIPELINE" "$BACKPRESSURE_TEST" "$RECEIVED" "$EXPORTED" "$QUEUE" "$MEMORY" "$CPU"
+}
+
+# shellcheck disable=SC2112
+function get_result_and_cleanup_metricagent() {
+   RECEIVED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_receiver_accepted_metric_points{service="telemetry-metric-agent-metrics"}[20m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   EXPORTED=$(curl -fs --data-urlencode 'query=round(avg(sum(rate(otelcol_exporter_sent_metric_points{service=~"telemetry-metric-agent-metrics"}[20m]))))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   QUEUE=$(curl -fs --data-urlencode 'query=avg(sum(otelcol_exporter_queue_size{service="telemetry-metric-agent-metrics"}))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   MEMORY=$(curl -fs --data-urlencode 'query=round((sum(container_memory_working_set_bytes{namespace="kyma-system", pod=~"telemetry-metric-agent.*", container="collector"}) by (pod)) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system", pod=~"telemetry-metric-agent.*"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   kill %1
+
+   restartsGateway=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-gateway -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
+
+   restartsAgent=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-agent -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
+
+   if "$BACKPRESSURE_TEST"; then
+       kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-agent-backpressure-config.yaml
+   fi
+
+   kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-agent-test-setup.yaml
+
+   echo "\nTest run for $TEST_DURATION seconds\n"
+   echo "\nMetric Gateway got $restartsGateway time restarted\n"
+   echo "\nMetric Agent got $restartsAgent time restarted\n"
+
+   print_metric_result "$TEST_NAME" "$TEST_TARGET" "$MAX_PIPELINE" "$BACKPRESSURE_TEST" "$RECEIVED" "$EXPORTED" "$QUEUE" "$MEMORY" "$CPU"
+}
+
+# shellcheck disable=SC2112
+function get_result_and_cleanup_fluentbit() {
+   RECEIVED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_input_bytes_total{service="telemetry-fluent-bit-metrics", name="load-test-1"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   EXPORTED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   QUEUE=$(curl -fs --data-urlencode 'query=round((sum(rate(telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   MEMORY=$(curl -fs --data-urlencode 'query=round((sum(container_memory_working_set_bytes{namespace="kyma-system", container="fluent-bit"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-fluent-bit"}) by (pod)) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-fluent-bit"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+   kill %1
+
+   restarts=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=fluent-bit -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
+
+   if "$MAX_PIPELINE"; then
+       kubectl delete -f log-fluentbit-max-pipeline.yaml
+   fi
+
+   if "$BACKPRESSURE_TEST"; then
+       kubectl delete -f log-fluentbit-backpressure-config.yaml
+   fi
+
+   kubectl delete -f log-fluentbit-test-setup.yaml
+
+   echo "\nLogPipeline Pods got $restarts time restarted\n"
+
+   echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST\n"
+   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "" "Input Bytes Processing Rate/sec" "Output Bytes Processing Rate/sec" "Filesystem Buffer Usage" "Pod Memory Usage(MB)" "Pod CPU Usage"
+   printf "|%-10s|%-35s|%-35s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
+}
 
 function print_metric_result(){
-        echo "\nPrinting Test Results for $1 $2, Multi Pipeline $3, Backpressure $4\n"
-        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Receiver Accepted Metric/sec" "Exporter Exported Metric/sec" "Exporter Queue Size" "Pod Memory Usage(MB)" "Pod CPU Usage"
-        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "$1" "$5" "$6" "$7" "${8//$'\n'/,}" "${9//$'\n'/,}"
+    echo "\nPrinting Test Results for $1 $2, Multi Pipeline $3, Backpressure $4\n"
+    printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Receiver Accepted Metric/sec" "Exporter Exported Metric/sec" "Exporter Queue Size" "Pod Memory Usage(MB)" "Pod CPU Usage"
+    printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "$1" "$5" "$6" "$7" "${8//$'\n'/,}" "${9//$'\n'/,}"
 }
 
 echo "$TEST_NAME Load Test for $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST, test duration $TEST_DURATION seconds"

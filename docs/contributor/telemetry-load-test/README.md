@@ -214,3 +214,74 @@ Each test scenario has its own test scripts responsible for preparing test scena
 |         0.93 |            19949             |            19946             |          0          |       704,729        |    0.2,0.2    |            16699             |            16591             |         107         |       852,771        |    0.2,0.2    |
 
 </div>
+
+
+## Log Test (Fluent-Bit)
+
+### Assumptions
+
+The tests are executed for 20 minutes, so that each test case has a stabilized output and reliable KPIs.
+The Log test deploys a passive log producer ([Flog](https://github.com/mingrammer/flog)) and the log are collected by Fluent-Bit from each producer instance.
+The test setup deploys 40 individual log producer Pods; each which produces ~100 MByte logs. 
+
+The following test cases are identified:
+
+1. Test average throughput end-to-end.
+2. Test buffering and retry capabilities of LogPipeline with simulated backend outages.
+3. Test average throughput with 3 LogPipelines simultaneously end-to-end.
+4. Test buffering and retry capabilities of 3 LogPipeline with simulated backend outages.
+
+Backend outages simulated with Istio Fault Injection, 70% of traffic to the Test Backend will return `HTTP 503` to simulate service outages.
+
+### Setup
+
+The following diagram shows the test setup used for all test cases.
+
+![LogPipeline Test Setup](./assets/log_perf_test_setup.drawio.svg)
+
+In all test scenarios, a preconfigured trace load generator is deployed on the test cluster.
+
+A Prometheus instance is deployed on the test cluster to collect relevant metrics from Fluent-Bit instances and to fetch the metrics at the end of the test as test scenario result.
+
+All test scenarios also have a test backend deployed to simulate end-to-end behaviour.
+
+Each test scenario has its own test scripts responsible for preparing test scenario and deploying on test cluster, running the scenario, and fetching relevant metrics/KPIs at the end of the test run. After the test, the test results are printed out.
+
+### Running Tests
+
+1. To test the average throughput end-to-end, run:
+
+```shell
+./run-load-test.sh -t fluentbit -n "2.2.1"
+```
+2. To test the buffering and retry capabilities of LogPipeline with simulated backend outages, run:
+
+```shell
+./run-load-test.sh -t fluentbit -n "2.2.1" -b true
+```
+
+3. To test the average throughput with 3 LogPipelines simultaneously end-to-end, run:
+
+```shell
+./run-load-test.sh -t fluentbit -n "2.2.1" -m true
+```
+
+4. To test the buffering and retry capabilities of 3 LogPipelines with simulated backend outages, run:
+
+```shell
+./run-load-test.sh -t fluentbit -n "2.2.1" -m true -b true
+```
+
+#### Test Results
+
+
+
+<div class="table-wrapper" markdown="block">
+
+| Version/Test |             Single Pipeline             |                                          |                                 |                      |               |             Multi Pipeline              |                                          |                                 |                      |               |      Single Pipeline Backpressure       |                                          |                                 |                      |               |       Multi Pipeline Backpressure       |                                          |                                 |                      |               |
+|-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|
+|              | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage |
+|        2.2.1 |                  7294                   |                   3847                   |              80553              |       185,181        |    0.8,0.9    |                  2484                   |                   1205                   |              94435              |       321,325        |    0.8,0.8    |                  7611                   |                   665                    |              36704              |       208,219        |    0.8,0.8    |                  2501                   |                   231                    |              97754              |       325,320        |    0.8,0.8    |
+|        2.2.2 |                  7193                   |                   3543                   |              59217              |       175,179        |    0.8,0.8    |                  2482                   |                   1631                   |              79641              |       329,323        |    0.8,0.8    |                  7513                   |                   709                    |              44238              |       205,195        |    0.8,0.8    |                  2462                   |                   348                    |              94187              |       321,315        |    0.8,0.8    |
+
+</div>

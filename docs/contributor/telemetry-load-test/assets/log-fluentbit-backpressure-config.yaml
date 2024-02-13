@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: log-receiver-fault
+  namespace: log-load-test
+spec:
+  hosts:
+    - log-receiver
+  http:
+    - fault:
+        abort:
+          httpStatus: 503
+          percentage:
+            value: 70
+        delay:
+          percentage:
+            value: 70
+          fixedDelay: 1s
+      route:
+        - destination:
+            host: log-receiver
