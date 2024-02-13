@@ -10,6 +10,7 @@ PROMETHEUS_NAMESPACE="prometheus"
 HELM_PROM_RELEASE="prometheus"
 TRACE_NAMESPACE="trace-load-test"
 METRIC_NAMESPACE="metric-load-test"
+LOG_NAMESPACE="log-load-test"
 MAX_PIPELINE="false"
 BACKPRESSURE_TEST="false"
 TEST_TARGET="traces"
@@ -49,6 +50,11 @@ function setup() {
     then
         setup_metric_agent
     fi
+
+   if [ "$TEST_TARGET" = "fluentbit" ];
+    then
+        setup_fluentbit
+  fi
 }
 
 # shellcheck disable=SC2112
@@ -86,6 +92,15 @@ function setup_metric_agent() {
     fi
 }
 
+function setup_fluentbit() {
+    # Deploy test setup
+    kubectl apply -f log-fluentbit-test-setup.yaml
+
+    if "$BACKPRESSURE_TEST"; then
+        kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/metric-agent-backpressure-config.yaml
+    fi
+}
+
 # shellcheck disable=SC2112
 function wait_for_resources() {
 
@@ -104,6 +119,11 @@ function wait_for_resources() {
   if [ "$TEST_TARGET" = "metricagent" ];
   then
       wait_for_metric_agent_resources
+  fi
+
+  if [ "$TEST_TARGET" = "fluentbit" ];
+  then
+      wait_for_fluentbit_resources
   fi
 
   echo "\nRunning Tests\n"
@@ -133,6 +153,13 @@ function wait_for_metric_agent_resources() {
     kubectl -n kyma-system rollout status daemonset telemetry-metric-agent
     kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-agent-load-generator
     kubectl -n ${METRIC_NAMESPACE} rollout status deployment metric-receiver
+}
+
+# shellcheck disable=SC2112
+function wait_for_fluentbit_resources() {
+    kubectl -n kyma-system rollout status daemonset telemetry-fluent-bit
+    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-load-generator
+    kubectl -n ${LOG_NAMESPACE} rollout status deployment log-receiver
 }
 
 # shellcheck disable=SC2112
@@ -243,6 +270,38 @@ function cleanup() {
         echo "\nMetric Agent got $restartsAgent time restarted\n"
 
         print_metric_result "$TEST_NAME" "$TEST_TARGET" "$MAX_PIPELINE" "$BACKPRESSURE_TEST" "$RECEIVED" "$EXPORTED" "$QUEUE" "$MEMORY" "$CPU"
+    fi
+
+    if [ "$TEST_TARGET" = "fluentbit" ]; then
+        RECEIVED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_input_bytes_total{service="telemetry-fluent-bit-metrics", name="load-test-1"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+        EXPORTED=$(curl -fs --data-urlencode 'query=round((sum(rate(fluentbit_output_proc_bytes_total{service="telemetry-fluent-bit-metrics"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+        QUEUE=$(curl -fs --data-urlencode 'query=round((sum(rate(telemetry_fsbuffer_usage_bytes{service="telemetry-fluent-bit-exporter-metrics"}[5m])) / 1024))' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+        MEMORY=$(curl -fs --data-urlencode 'query=round((sum(container_memory_working_set_bytes{namespace="kyma-system", container="fluent-bit"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-fluent-bit"}) by (pod)) / 1024 / 1024)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+        CPU=$(curl -fs --data-urlencode 'query=round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace="kyma-system"} * on(namespace,pod) group_left(workload) namespace_workload_pod:kube_pod_owner:relabel{namespace="kyma-system", workload="telemetry-fluent-bit"}) by (pod), 0.1)' localhost:9090/api/v1/query | jq -r '.data.result[] | .value[1]')
+
+        kill %1
+
+        restarts=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=fluent-bit -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
+
+        if "$BACKPRESSURE_TEST"; then
+            kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/trace-backpressure-config.yaml
+        fi
+
+        kubectl delete -f log-fluentbit-test-setup.yaml
+
+        helm delete -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE}
+
+        kubectl delete namespace $PROMETHEUS_NAMESPACE
+
+        echo "\nLogPipeline Pods got $restarts time restarted\n"
+
+        echo "\nPrinting Test Results for $TEST_NAME $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backpressure $BACKPRESSURE_TEST\n"
+        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "" "Input Bytes Processing Rate/sec" "Output Bytes Processing Rate/sec" "Filesystem Buffer Usage" "Pod Memory Usage(MB)" "Pod CPU Usage"
+        printf "|%-10s|%-30s|%-30s|%-30s|%-30s|%-30s|\n" "$TEST_NAME" "$RECEIVED" "$EXPORTED" "$QUEUE" "${MEMORY//$'\n'/,}" "${CPU//$'\n'/,}"
     fi
 
 }
