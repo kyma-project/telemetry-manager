@@ -106,7 +106,8 @@ The Telemetry module supports the convenient shipment of applications and access
 1. By default, Istio access logs are disabled in Kyma. To enable Istio access logs selectively for your workload, follow [Enable Istio access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs).
    As a result, you can analyze access logs in the default SAP Cloud Logging dashboards shipped for SAP BTP, Kyma runtime.
 
-   >**CAUTION:** The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
+   > [!WARNING]
+   > The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
 
 2. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
 
@@ -187,7 +188,8 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
 
     The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
 
-    > **CAUTION:** Be cautious when you configure the **randomSamplingPercentage**:
+    > [!WARNING]
+    > Be cautious when you configure the **randomSamplingPercentage**:
     > - Traces might consume a significant storage volume in Cloud Logging Service.
     > - The Kyma trace collector component does not scale automatically.
 
