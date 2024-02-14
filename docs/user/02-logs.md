@@ -77,7 +77,8 @@ An output is a data destination configured by a [Fluent Bit output](https://docs
 
 - **http**, which sends the data to the specified HTTP destination. The output is designed to integrate with a [Fluentd HTTP Input](https://docs.fluentd.org/input/http), which opens up a huge ecosystem of integration possibilities.
 - **custom**, which supports the configuration of any destination in the Fluent Bit configuration syntax.
-  >**CAUTION:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
+  > [!WARNING]
+  > If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
   See the following example of the `custom` output:
 
@@ -160,7 +161,8 @@ spec:
     ...
 ```
 
-> **CAUTION:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
+> [!WARNING]
+> If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
 Telemetry Manager supports different types of [Fluent Bit filter](https://docs.fluentbit.io/manual/concepts/data-pipeline/filter). The example uses the filters [grep](https://docs.fluentbit.io/manual/pipeline/filters/grep) and [record_modifier](https://docs.fluentbit.io/manual/pipeline/filters/record-modifier).
 
@@ -296,7 +298,8 @@ spec:
     ...
 ```
 
-> **NOTE:** If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
+> [!NOTE]
+> If you use a `custom` output, you put the LogPipeline in the [unsupported mode](#unsupported-mode).
 
 ### Step 4: Rotate the Secret
 

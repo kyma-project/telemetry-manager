@@ -16,12 +16,17 @@ Fluent Bit ingests logs directly into CloudWatch using the [Amazon CloudWatch ou
 
 ## Table of Content
 
-- [Prerequisites](#prerequisites)
-- [Prepare the Namespace](#prepare-the-namespace)
-- [Set Up AWS Credentials](#set-up-aws-credentials)
-- [Deploy the AWS Distro](#deploy-the-aws-distro)
-- [Set Up Kyma Pipelines](#set-up-kyma-pipelines)
-- [Verify the Results](#verify-the-results)
+- [Integrate Kyma with Amazon CloudWatch and AWS X-Ray](#integrate-kyma-with-amazon-cloudwatch-and-aws-x-ray)
+  - [Overview](#overview)
+  - [Table of Content](#table-of-content)
+  - [Prerequisites](#prerequisites)
+  - [Prepare the Namespace](#prepare-the-namespace)
+  - [Set Up AWS Credentials](#set-up-aws-credentials)
+    - [Create AWS IAM User](#create-aws-iam-user)
+    - [Create a Secret with AWS Credentials](#create-a-secret-with-aws-credentials)
+  - [Deploy the AWS Distro](#deploy-the-aws-distro)
+  - [Set Up Kyma Pipelines](#set-up-kyma-pipelines)
+  - [Verify the Results](#verify-the-results)
 
 ## Prerequisites
 
@@ -63,7 +68,8 @@ kubectl create secret generic aws-credentials -n $K8S_NAMESPACE --from-literal=A
 
 Deploy the AWS Distro, which is an AWS-supported distribution of an OTel collector. The [AWS X-Ray Tracing Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/awsxrayexporter) used in the collector converts OTLP traces to [AWS X-Ray Segment Documents](https://docs.aws.amazon.com/xray/latest/devguide/xray-api-segmentdocuments.html) and then sends them directly to X-Ray. The [AWS CloudWatch EMF Exporter](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/awsemfexporter/README.md) used in the collector converts OTLP metrics to [AWS CloudWatch Embedded Metric Format(EMF)](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Embedded_Metric_Format_Specification.html) and then sends them directly to CloudWatch Logs.
 
-> **NOTE:** The retention of these CloudWatch Logs is set to 7 days. You can change that to fit your needs by adjusting the `log_retention` value for the `awsemf` exporter in the [`aws-otel.yaml`](aws-otel.yaml) file.
+> [!NOTE]
+> The retention of these CloudWatch Logs is set to 7 days. You can change that to fit your needs by adjusting the `log_retention` value for the `awsemf` exporter in the [`aws-otel.yaml`](aws-otel.yaml) file.
 
  ```bash
 kubectl -n $K8S_NAMESPACE apply -f aws-otel.yaml
@@ -74,7 +80,9 @@ kubectl -n $K8S_NAMESPACE apply -f aws-otel.yaml
 Use the Kyma Telemetry module to enable ingestion of the signals from your workloads:
 
 1. Deploy a LogPipeline:
-   > **NOTE:** The retention of of the CloudWatch Logs is set to 7 days. You can change that to fit your needs by adjusting the `log_retention_days` value.
+   > [!NOTE]
+   > The retention of of the CloudWatch Logs is set to 7 days. You can change that to fit your needs by adjusting the `log_retention_days` value.
+
    ```bash
    kubectl apply -f - <<EOF
    apiVersion: telemetry.kyma-project.io/v1alpha1

@@ -10,7 +10,8 @@
 
 Learn how to use [Loki](https://github.com/grafana/loki/tree/main/production/helm/loki) as a logging backend with Kyma's [LogPipeline](../../02-logs.md) or with [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/).
 
->**CAUTION:** This guide uses the Grafana Loki version, which is distributed under AGPL-3.0 only and might not be free of charge for commercial usage.
+> [!WARNING]
+> This guide uses the Grafana Loki version, which is distributed under AGPL-3.0 only and might not be free of charge for commercial usage.
 
 ![setup](./../assets/loki.drawio.svg)
 
@@ -95,7 +96,8 @@ helm upgrade --install --create-namespace -n ${K8S_NAMESPACE} promtail grafana/p
 
 #### **Install Fluent Bit with Kyma's LogPipeline**
 
->**CAUTION:** This setup uses an unsupported output plugin for the LogPipeline.
+> [!WARNING]
+> This setup uses an unsupported output plugin for the LogPipeline.
 
 Apply the LogPipeline:
 
@@ -122,7 +124,8 @@ Apply the LogPipeline:
 
 When the status of the applied LogPipeline resource turns into `Running`, the underlying Fluent Bit is reconfigured and log shipment to your Loki instance is active.
 
->**NOTE:** The used output plugin configuration uses a static label map to assign labels of a Pod to Loki log streams. It's not recommended to activate the `auto_kubernetes_labels` feature for using all labels of a Pod because this lowers the performance. Follow [Loki's labelling best practices](https://grafana.com/docs/loki/latest/best-practices/) for a tailor-made setup that fits your workload configuration.
+> [!NOTE]
+> The used output plugin configuration uses a static label map to assign labels of a Pod to Loki log streams. It's not recommended to activate the `auto_kubernetes_labels` feature for using all labels of a Pod because this lowers the performance. Follow [Loki's labelling best practices](https://grafana.com/docs/loki/latest/best-practices/) for a tailor-made setup that fits your workload configuration.
 
 <!-- tabs:end -->
 
