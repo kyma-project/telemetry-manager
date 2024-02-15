@@ -84,7 +84,7 @@ spec:
       containers:
         - args:
             - --config=/etc/collector/config.yaml
-          image: europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.93.0-fdc9e6c4
+          image: otel/opentelemetry-collector-contrib:0.92.0
           imagePullPolicy: IfNotPresent
           name: otel-collector
           securityContext:
