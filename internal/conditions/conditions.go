@@ -1,11 +1,15 @@
 package conditions
 
+import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 const (
 	TypeMetricGatewayHealthy   = "GatewayHealthy"
 	TypeMetricAgentHealthy     = "AgentHealthy"
 	TypeConfigurationGenerated = "ConfigurationGenerated"
-	TypeRunning                = "Running"
-	TypePending                = "Pending"
+	// NOTE: The "Running" and "Pending" types will be deprecated
+	// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
+	TypeRunning = "Running"
+	TypePending = "Pending"
 )
 
 const (
@@ -47,6 +51,16 @@ var message = map[string]string{
 
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
+}
+
+func New(condType, reason string, status metav1.ConditionStatus, generation int64) metav1.Condition {
+	return metav1.Condition{
+		Type:               condType,
+		Status:             status,
+		Reason:             reason,
+		Message:            CommonMessageFor(reason),
+		ObservedGeneration: generation,
+	}
 }
 
 // CommonMessageFor returns a human-readable message corresponding to a given reason.
