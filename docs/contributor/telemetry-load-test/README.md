@@ -16,7 +16,7 @@ This document describes a reproducible test setup to determine the limits and KP
 
 All test scenarios use a single test script [run-load-test.sh](assets/run-load-test.sh), which provides following parameters: 
 
-- `-t` The test target type supported values are `traces, metrics, metricagent`, default is `traces`
+- `-t` The test target type supported values are `traces, metrics, metricagent, logs-fluentbit`, default is `traces`
 - `-n` Test name e.g. `0.92`
 - `-m` Enables multi pipeline scenarios, default is `false` 
 - `-b` Enables backpressure scenarios, default is `false`
@@ -212,5 +212,76 @@ Each test scenario has its own test scripts responsible for preparing test scena
 |              | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage | Receiver Accepted Metric/sec | Exporter Exported Metric/sec | Exporter Queue Size | Pod Memory Usage(MB) | Pod CPU Usage |
 |         0.92 |            20123             |            20137             |          0          |       704, 747       |   0.2, 0.2    |            19952             |            15234             |          0          |       751, 736       |   0.3, 0.2    |
 |         0.93 |            19949             |            19946             |          0          |       704,729        |    0.2,0.2    |            16699             |            16591             |         107         |       852,771        |    0.2,0.2    |
+
+</div>
+
+
+## Log Test (Fluent-Bit)
+
+### Assumptions
+
+The tests are executed for 20 minutes, so that each test case has a stabilized output and reliable KPIs.
+The Log test deploys a passive log producer ([Flog](https://github.com/mingrammer/flog)), and the logs are collected by Fluent Bit from each producer instance.
+The test setup deploys 20 individual log producer Pods; each of which produces ~10 MByte logs. 
+
+The following test cases are identified:
+
+1. Test average throughput end-to-end.
+2. Test buffering and retry capabilities of LogPipeline with simulated backend outages.
+3. Test average throughput with 3 LogPipelines simultaneously end-to-end.
+4. Test buffering and retry capabilities of 3 LogPipeline with simulated backend outages.
+
+Backend outages are simulated with Istio Fault Injection, 70% of traffic to the test backend will return `HTTP 503` to simulate service outages.
+
+### Setup
+
+The following diagram shows the test setup used for all test cases.
+
+![LogPipeline Test Setup](./assets/log_perf_test_setup.drawio.svg)
+
+In all test scenarios, a preconfigured trace load generator is deployed on the test cluster.
+
+A Prometheus instance is deployed on the test cluster to collect relevant metrics from Fluent Bit instances and to fetch the metrics at the end of the test as test scenario result.
+
+All test scenarios also have a test backend deployed to simulate end-to-end behaviour.
+
+Each test scenario has its own test scripts responsible for preparing the test scenario and deploying it on the test cluster, running the scenario, and fetching relevant metrics and KPIs at the end of the test run. After the test, the test results are printed out.
+
+### Running Tests
+
+1. To test the average throughput end-to-end, run:
+
+```shell
+./run-load-test.sh -t logs-fluentbit -n "2.2.1"
+```
+2. To test the buffering and retry capabilities of LogPipeline with simulated backend outages, run:
+
+```shell
+./run-load-test.sh -t logs-fluentbit -n "2.2.1" -b true
+```
+
+3. To test the average throughput with 3 LogPipelines simultaneously end-to-end, run:
+
+```shell
+./run-load-test.sh -t logs-fluentbit -n "2.2.1" -m true
+```
+
+4. To test the buffering and retry capabilities of 3 LogPipelines with simulated backend outages, run:
+
+```shell
+./run-load-test.sh -t logs-fluentbit -n "2.2.1" -m true -b true
+```
+
+#### Test Results
+
+
+
+<div class="table-wrapper" markdown="block">
+
+| Version/Test |             Single Pipeline             |                                          |                                 |                      |               |             Multi Pipeline              |                                          |                                 |                      |               |      Single Pipeline Backpressure       |                                          |                                 |                      |               |       Multi Pipeline Backpressure       |                                          |                                 |                      |               |
+|-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|
+|              | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage |
+|        2.2.1 |                  5165                   |                   8541                   |              68518              |       172,190        |      1,1      |                  2009                   |                   2195                   |             102932              |       332,320        |    0.9,0.9    |                  5914                   |                   1498                   |              79247              |       184,176        |     0.9,1     |                  1979                   |                   489                    |              83442              |       310,322        |    0.9,0.9    |
+|        2.2.2 |                  5159                   |                   7811                   |              75545              |       171,170        |      1,1      |                  1910                   |                   2516                   |             103780              |       324,324        |    0.9,0.9    |                  5857                   |                   1513                   |              72494              |       189,200        |      1,1      |                  1860                   |                   421                    |              90852              |       314,322        |    0.9,0.9    |
 
 </div>
