@@ -23,7 +23,7 @@ An OOM situation is un-probable now, but we have far exceeded our cost target, a
 Optimal solution is best of two worlds, to get as close to our limit as possible but never beyond it. This way we can delay GC cycles until they are necessary.
 This will make our application fast but at the same time we can be sure that never cross the threshold, that makes our application safe from being OOM-killed
 
-### GC targets are always relative
+### Go GC targets
 
 We want to make sure use of memory we have without going above it, before Go 1.19 you had only one knob to turn, the `GOGC` environment variable. This environment variable accept a relative target com,pared the current live heap size.
 The default value for GOGC is 100 and meaning that the heap should double before GC should run again.
@@ -59,12 +59,39 @@ We would be in a situation where the regular and GC execution would compete for 
 
 All the usable memory has been used up, and nothing can be freed anymore. That is a failure scenario, and fast failure is preferred. That makes the limit a `soft` limit.
 
-## Without GOMEMLIMT
+## Test with TracePipeline
 
+The test goal is care about OOM safety as well as about throughput performance of TracePipeline, the TracePipeline is a memory intensive application and is a perfect candidate to benefit from GOMEMLIMIT.
 
+For this experiment, we wil use TracePipeline with OpenTelemetry Collector version 0.92.
+We will load TracePipeline with huge amount of traces and observe GC behaviour and memory usage during test and see when run OOM, in all scenarios same test data used.
 
-## With GOMEMLIMIT
+### Without GOMEMLIMT
 
+For first run, we don't use GOMEMLIMIT, GOGC is set to 100, and available memory is 2Gib
 
+![TracePipeline without GOMEMLIMIT](./assets/without-gomemlimit.jpg)
+
+As we can see from memory snapshot above, application start around ~980Mib live heap and next GC target is ~1.88Gib. After GC cycle from 1.88Gib is new target would be ~3.7Gib which already above available memory and application will run OOM.
+
+### With GOMEMLIMIT
+
+For second run, we use GOMEMLIMIT with the value 1.8Gib, and GOGC is set to 100, and available memory is 2Gib.
+
+![TracePipeline with GOMEMLIMIT](./assets/with-gomemlimit.jpg)
+
+As we can see situation changed dramatically, no GC cycles until we reach our soft limit 1.8Gib also GC less aggressive but after we get closer to our soft limit 1.8Gib the Gc get more aggressive and run often to recover memory.
+
+In summary GOMEMLIMIT made the GC more aggressive when less memory available, The memory usage not exceeded our soft limit 1.8Gib
 
 ## Conclusion
+
+- With our experiments we are able to prove we could get our TracePipeline crashed on a 2Gib Pod with load test, even when constant load is less than 2Gib 
+- After using `GOMEMLIMIT=1.8Gib` TracePipeline no longer crashed and could efficiently use the available memory
+- Before Go 1.19, the Go runtime could only set relative GC targets. That would make it very hard to use the available memory efficiently
+
+Does that mean that GOMEMLIMIT is safe to avoid OOM? No,  a Go application that gets heavy isage still has to ensure allocation efficiency, simply setting a GOMEMLIMIT will not guarantee OOM will not happen.
+As we explain above te GOMEMLIMIT is a soft limit and there are no guarantee application will stay with in the limit, the memory snapshot below show exactly this situation.
+The TracePipeline configured with GOMEMLIMIT 1.8Gib but application get much more load after reach the configured limit. In this situation Go runtime will try to keep application within the limits for a while but when there are no other than allocate more memory, application will run OOM.
+
+![TracePipeline with GOMEMLIMIT and OOM](./assets/with-gomemlimit-oom.jpg)
