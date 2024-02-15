@@ -191,42 +191,6 @@ type LogPipelineStatus struct {
 	UnsupportedMode bool `json:"unsupportedMode,omitempty"`
 }
 
-func (lps *LogPipelineStatus) GetCondition(condType string) *metav1.Condition {
-	for cond := range lps.Conditions {
-		if lps.Conditions[cond].Type == condType {
-			return &lps.Conditions[cond]
-		}
-	}
-	return nil
-}
-
-func (lps *LogPipelineStatus) HasCondition(condType string) bool {
-	return lps.GetCondition(condType) != nil
-}
-
-func (lps *LogPipelineStatus) SetCondition(cond metav1.Condition) {
-	currentCond := lps.GetCondition(cond.Type)
-	if currentCond != nil && currentCond.Reason == cond.Reason {
-		return
-	}
-	if currentCond != nil {
-		cond.LastTransitionTime = currentCond.LastTransitionTime
-	}
-	newConditions := filterOutCondition(lps.Conditions, cond.Type)
-	lps.Conditions = append(newConditions, cond)
-}
-
-func filterOutCondition(conditions []metav1.Condition, condType string) []metav1.Condition {
-	var newConditions []metav1.Condition
-	for _, cond := range conditions {
-		if cond.Type == condType {
-			continue
-		}
-		newConditions = append(newConditions, cond)
-	}
-	return newConditions
-}
-
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status

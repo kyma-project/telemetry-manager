@@ -12,6 +12,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -60,43 +61,39 @@ func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName st
 
 	log := logf.FromContext(ctx)
 
-	// If one of the conditions has an empty "Status", it means that the old LogPipelineCondition was used when this pipeline was created
-	// In this case, the required "Status" and "Message" fields need to be populated with proper values
-	if len(pipeline.Status.Conditions) > 0 && pipeline.Status.Conditions[0].Status == "" {
-		populateMissingConditionFields(ctx, r.Client, &pipeline)
-	}
-
 	if pipeline.Spec.Output.IsLokiDefined() {
-		pending := newCondition(
+		pending := conditions.New(
 			conditions.TypePending,
 			conditions.ReasonUnsupportedLokiOutput,
 			metav1.ConditionTrue,
 			pipeline.Generation,
 		)
 
-		if pipeline.Status.HasCondition(conditions.TypeRunning) {
-			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))
-			pipeline.Status.Conditions = []metav1.Condition{}
+		if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeRunning) != nil {
+			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Removing the Running condition", pipeline.Name, pending.Type))
+			meta.RemoveStatusCondition(&pipeline.Status.Conditions, conditions.TypeRunning)
 		}
 
-		return setCondition(ctx, r.Client, &pipeline, pending)
+		meta.SetStatusCondition(&pipeline.Status.Conditions, pending)
+		return updateStatus(ctx, r.Client, &pipeline)
 	}
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, &pipeline)
 	if referencesNonExistentSecret {
-		pending := newCondition(
+		pending := conditions.New(
 			conditions.TypePending,
 			conditions.ReasonReferencedSecretMissing,
 			metav1.ConditionTrue,
 			pipeline.Generation,
 		)
 
-		if pipeline.Status.HasCondition(conditions.TypeRunning) {
-			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))
-			pipeline.Status.Conditions = []metav1.Condition{}
+		if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeRunning) != nil {
+			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Removing the Running condition", pipeline.Name, pending.Type))
+			meta.RemoveStatusCondition(&pipeline.Status.Conditions, conditions.TypeRunning)
 		}
 
-		return setCondition(ctx, r.Client, &pipeline, pending)
+		meta.SetStatusCondition(&pipeline.Status.Conditions, pending)
+		return updateStatus(ctx, r.Client, &pipeline)
 	}
 
 	fluentBitReady, err := r.prober.IsReady(ctx, r.config.DaemonSet)
@@ -105,67 +102,47 @@ func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName st
 	}
 
 	if fluentBitReady {
-		if pipeline.Status.HasCondition(conditions.TypeRunning) {
-			return nil
+		existingPending := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypePending)
+		if existingPending != nil {
+			newPending := conditions.New(
+				conditions.TypePending,
+				existingPending.Reason,
+				metav1.ConditionFalse,
+				pipeline.Generation,
+			)
+			meta.SetStatusCondition(&pipeline.Status.Conditions, newPending)
 		}
 
-		running := newCondition(
+		running := conditions.New(
 			conditions.TypeRunning,
 			conditions.ReasonFluentBitDSReady,
 			metav1.ConditionTrue,
 			pipeline.Generation,
 		)
-		return setCondition(ctx, r.Client, &pipeline, running)
+		meta.SetStatusCondition(&pipeline.Status.Conditions, running)
+
+		return updateStatus(ctx, r.Client, &pipeline)
 	}
 
-	pending := newCondition(
+	pending := conditions.New(
 		conditions.TypePending,
 		conditions.ReasonFluentBitDSNotReady,
 		metav1.ConditionTrue,
 		pipeline.Generation,
 	)
 
-	if pipeline.Status.HasCondition(conditions.TypeRunning) {
-		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", pipeline.Name, pending.Type))
-		pipeline.Status.Conditions = []metav1.Condition{}
+	if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeRunning) != nil {
+		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Removing the Running condition", pipeline.Name, pending.Type))
+		meta.RemoveStatusCondition(&pipeline.Status.Conditions, conditions.TypeRunning)
 	}
 
-	return setCondition(ctx, r.Client, &pipeline, pending)
+	meta.SetStatusCondition(&pipeline.Status.Conditions, pending)
+	return updateStatus(ctx, r.Client, &pipeline)
 }
 
-func populateMissingConditionFields(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.LogPipeline) error {
-	log := logf.FromContext(ctx)
-	log.V(1).Info(fmt.Sprintf("Populating missing fields in the Status conditions for %s", pipeline.Name))
-
-	for i := range pipeline.Status.Conditions {
-		pipeline.Status.Conditions[i].Status = metav1.ConditionTrue
-		pipeline.Status.Conditions[i].Message = conditions.CommonMessageFor(pipeline.Status.Conditions[i].Reason)
-	}
-
+func updateStatus(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.LogPipeline) error {
 	if err := client.Status().Update(ctx, pipeline); err != nil {
-		return fmt.Errorf("failed to update LogPipeline status when poplulating missing fields in conditions: %v", err)
-	}
-	return nil
-}
-
-func newCondition(condType, reason string, status metav1.ConditionStatus, generation int64) *metav1.Condition {
-	return &metav1.Condition{
-		LastTransitionTime: metav1.Now(),
-		Type:               condType,
-		Status:             status,
-		Reason:             reason,
-		Message:            conditions.CommonMessageFor(reason),
-		ObservedGeneration: generation,
-	}
-}
-
-func setCondition(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.LogPipeline, condition *metav1.Condition) error {
-	log := logf.FromContext(ctx)
-	log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s", pipeline.Name, condition.Type))
-
-	pipeline.Status.SetCondition(*condition)
-	if err := client.Status().Update(ctx, pipeline); err != nil {
-		return fmt.Errorf("failed to update LogPipeline status to %s: %v", condition.Type, err)
+		return fmt.Errorf("failed to update LogPipeline status: %w", err)
 	}
 	return nil
 }
