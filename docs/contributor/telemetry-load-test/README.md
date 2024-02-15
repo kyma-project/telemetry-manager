@@ -221,8 +221,8 @@ Each test scenario has its own test scripts responsible for preparing test scena
 ### Assumptions
 
 The tests are executed for 20 minutes, so that each test case has a stabilized output and reliable KPIs.
-The Log test deploys a passive log producer ([Flog](https://github.com/mingrammer/flog)) and the log are collected by Fluent-Bit from each producer instance.
-The test setup deploys 20 individual log producer Pods; each which produces ~10 MByte logs. 
+The Log test deploys a passive log producer ([Flog](https://github.com/mingrammer/flog)), and the logs are collected by Fluent Bit from each producer instance.
+The test setup deploys 20 individual log producer Pods; each of which produces ~10 MByte logs. 
 
 The following test cases are identified:
 
@@ -231,7 +231,7 @@ The following test cases are identified:
 3. Test average throughput with 3 LogPipelines simultaneously end-to-end.
 4. Test buffering and retry capabilities of 3 LogPipeline with simulated backend outages.
 
-Backend outages simulated with Istio Fault Injection, 70% of traffic to the Test Backend will return `HTTP 503` to simulate service outages.
+Backend outages are simulated with Istio Fault Injection, 70% of traffic to the test backend will return `HTTP 503` to simulate service outages.
 
 ### Setup
 
@@ -241,11 +241,11 @@ The following diagram shows the test setup used for all test cases.
 
 In all test scenarios, a preconfigured trace load generator is deployed on the test cluster.
 
-A Prometheus instance is deployed on the test cluster to collect relevant metrics from Fluent-Bit instances and to fetch the metrics at the end of the test as test scenario result.
+A Prometheus instance is deployed on the test cluster to collect relevant metrics from Fluent Bit instances and to fetch the metrics at the end of the test as test scenario result.
 
 All test scenarios also have a test backend deployed to simulate end-to-end behaviour.
 
-Each test scenario has its own test scripts responsible for preparing test scenario and deploying on test cluster, running the scenario, and fetching relevant metrics/KPIs at the end of the test run. After the test, the test results are printed out.
+Each test scenario has its own test scripts responsible for preparing the test scenario and deploying it on the test cluster, running the scenario, and fetching relevant metrics and KPIs at the end of the test run. After the test, the test results are printed out.
 
 ### Running Tests
 
