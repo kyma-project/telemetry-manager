@@ -61,42 +61,6 @@ type LogParserStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-func (lps *LogParserStatus) GetCondition(condType string) *metav1.Condition {
-	for cond := range lps.Conditions {
-		if lps.Conditions[cond].Type == condType {
-			return &lps.Conditions[cond]
-		}
-	}
-	return nil
-}
-
-func (lps *LogParserStatus) HasCondition(condType string) bool {
-	return lps.GetCondition(condType) != nil
-}
-
-func (lps *LogParserStatus) SetCondition(cond metav1.Condition) {
-	currentCond := lps.GetCondition(cond.Type)
-	if currentCond != nil && currentCond.Reason == cond.Reason {
-		return
-	}
-	if currentCond != nil {
-		cond.LastTransitionTime = currentCond.LastTransitionTime
-	}
-	newConditions := lps.filterOutCondition(lps.Conditions, cond.Type)
-	lps.Conditions = append(newConditions, cond)
-}
-
-func (lps *LogParserStatus) filterOutCondition(conditions []metav1.Condition, condType string) []metav1.Condition {
-	var newConditions []metav1.Condition
-	for _, cond := range conditions {
-		if cond.Type == condType {
-			continue
-		}
-		newConditions = append(newConditions, cond)
-	}
-	return newConditions
-}
-
 //nolint:gochecknoinits // SchemeBuilder's registration is required.
 func init() {
 	SchemeBuilder.Register(&LogParser{}, &LogParserList{})

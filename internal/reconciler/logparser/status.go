@@ -11,6 +11,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,81 +30,53 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 		return nil
 	}
 
-	// If one of the conditions has an empty "Status", it means that the old LogParserCondition was used when this parser was created
-	// In this case, the required "Status" and "Message" fields need to be populated with proper values
-	if len(parser.Status.Conditions) > 0 && parser.Status.Conditions[0].Status == "" {
-		populateMissingConditionFields(ctx, r.Client, &parser)
-	}
-
 	fluentBitReady, err := r.prober.IsReady(ctx, r.config.DaemonSet)
 	if err != nil {
 		return err
 	}
 
 	if fluentBitReady {
-		if parser.Status.HasCondition(conditions.TypeRunning) {
-			return nil
+		existingPending := meta.FindStatusCondition(parser.Status.Conditions, conditions.TypePending)
+		if existingPending != nil {
+			newPending := conditions.New(
+				conditions.TypePending,
+				existingPending.Reason,
+				metav1.ConditionFalse,
+				parser.Generation,
+			)
+			meta.SetStatusCondition(&parser.Status.Conditions, newPending)
 		}
 
-		running := newCondition(
+		running := conditions.New(
 			conditions.TypeRunning,
 			conditions.ReasonFluentBitDSReady,
 			metav1.ConditionTrue,
 			parser.Generation,
 		)
-		return setCondition(ctx, r.Client, &parser, running)
+		meta.SetStatusCondition(&parser.Status.Conditions, running)
+
+		return updateStatus(ctx, r.Client, &parser)
 	}
 
-	pending := newCondition(
+	pending := conditions.New(
 		conditions.TypePending,
 		conditions.ReasonFluentBitDSNotReady,
 		metav1.ConditionTrue,
 		parser.Generation,
 	)
 
-	if parser.Status.HasCondition(conditions.TypeRunning) {
-		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", parser.Name, pending.Type))
-		parser.Status.Conditions = []metav1.Condition{}
+	if meta.FindStatusCondition(parser.Status.Conditions, conditions.TypeRunning) != nil {
+		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Removing the Running condition", parser.Name, pending.Type))
+		meta.RemoveStatusCondition(&parser.Status.Conditions, conditions.TypeRunning)
 	}
 
-	return setCondition(ctx, r.Client, &parser, pending)
+	meta.SetStatusCondition(&parser.Status.Conditions, pending)
+	return updateStatus(ctx, r.Client, &parser)
 }
 
-func populateMissingConditionFields(ctx context.Context, client client.Client, parser *telemetryv1alpha1.LogParser) error {
-	log := logf.FromContext(ctx)
-	log.V(1).Info(fmt.Sprintf("Populating missing fields in the Status conditions for %s", parser.Name))
-
-	for i := range parser.Status.Conditions {
-		parser.Status.Conditions[i].Status = metav1.ConditionTrue
-		parser.Status.Conditions[i].Message = conditions.CommonMessageFor(parser.Status.Conditions[i].Reason)
-	}
-
+func updateStatus(ctx context.Context, client client.Client, parser *telemetryv1alpha1.LogParser) error {
 	if err := client.Status().Update(ctx, parser); err != nil {
-		return fmt.Errorf("failed to update LogParser status when poplulating missing fields in conditions: %v", err)
-	}
-	return nil
-}
-
-func newCondition(condType, reason string, status metav1.ConditionStatus, generation int64) *metav1.Condition {
-	return &metav1.Condition{
-		LastTransitionTime: metav1.Now(),
-		Type:               condType,
-		Status:             status,
-		Reason:             reason,
-		Message:            conditions.CommonMessageFor(reason),
-		ObservedGeneration: generation,
-	}
-}
-
-func setCondition(ctx context.Context, client client.Client, parser *telemetryv1alpha1.LogParser, condition *metav1.Condition) error {
-	log := logf.FromContext(ctx)
-
-	log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s", parser.Name, condition.Type))
-
-	parser.Status.SetCondition(*condition)
-
-	if err := client.Status().Update(ctx, parser); err != nil {
-		return fmt.Errorf("failed to update LogParser status to %s: %v", condition.Type, err)
+		return fmt.Errorf("failed to update LogParser status: %w", err)
 	}
 	return nil
 }
