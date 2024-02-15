@@ -16,7 +16,7 @@ This document describes a reproducible test setup to determine the limits and KP
 
 All test scenarios use a single test script [run-load-test.sh](assets/run-load-test.sh), which provides following parameters: 
 
-- `-t` The test target type supported values are `traces, metrics, metricagent, fluentbit`, default is `traces`
+- `-t` The test target type supported values are `traces, metrics, metricagent, logs-fluentbit`, default is `traces`
 - `-n` Test name e.g. `0.92`
 - `-m` Enables multi pipeline scenarios, default is `false` 
 - `-b` Enables backpressure scenarios, default is `false`
@@ -222,7 +222,7 @@ Each test scenario has its own test scripts responsible for preparing test scena
 
 The tests are executed for 20 minutes, so that each test case has a stabilized output and reliable KPIs.
 The Log test deploys a passive log producer ([Flog](https://github.com/mingrammer/flog)) and the log are collected by Fluent-Bit from each producer instance.
-The test setup deploys 40 individual log producer Pods; each which produces ~100 MByte logs. 
+The test setup deploys 20 individual log producer Pods; each which produces ~10 MByte logs. 
 
 The following test cases are identified:
 
@@ -252,24 +252,24 @@ Each test scenario has its own test scripts responsible for preparing test scena
 1. To test the average throughput end-to-end, run:
 
 ```shell
-./run-load-test.sh -t fluentbit -n "2.2.1"
+./run-load-test.sh -t logs-fluentbit -n "2.2.1"
 ```
 2. To test the buffering and retry capabilities of LogPipeline with simulated backend outages, run:
 
 ```shell
-./run-load-test.sh -t fluentbit -n "2.2.1" -b true
+./run-load-test.sh -t logs-fluentbit -n "2.2.1" -b true
 ```
 
 3. To test the average throughput with 3 LogPipelines simultaneously end-to-end, run:
 
 ```shell
-./run-load-test.sh -t fluentbit -n "2.2.1" -m true
+./run-load-test.sh -t logs-fluentbit -n "2.2.1" -m true
 ```
 
 4. To test the buffering and retry capabilities of 3 LogPipelines with simulated backend outages, run:
 
 ```shell
-./run-load-test.sh -t fluentbit -n "2.2.1" -m true -b true
+./run-load-test.sh -t logs-fluentbit -n "2.2.1" -m true -b true
 ```
 
 #### Test Results
@@ -281,7 +281,7 @@ Each test scenario has its own test scripts responsible for preparing test scena
 | Version/Test |             Single Pipeline             |                                          |                                 |                      |               |             Multi Pipeline              |                                          |                                 |                      |               |      Single Pipeline Backpressure       |                                          |                                 |                      |               |       Multi Pipeline Backpressure       |                                          |                                 |                      |               |
 |-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|:---------------------------------------:|:----------------------------------------:|:-------------------------------:|:--------------------:|:-------------:|
 |              | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage | Input Bytes Processing Rate/sec (KByte) | Output Bytes Processing Rate/sec (KByte) | Filesystem Buffer Usage (KByte) | Pod Memory Usage(MB) | Pod CPU Usage |
-|        2.2.1 |                  7294                   |                   3847                   |              80553              |       185,181        |    0.8,0.9    |                  2484                   |                   1205                   |              94435              |       321,325        |    0.8,0.8    |                  7611                   |                   665                    |              36704              |       208,219        |    0.8,0.8    |                  2501                   |                   231                    |              97754              |       325,320        |    0.8,0.8    |
-|        2.2.2 |                  7193                   |                   3543                   |              59217              |       175,179        |    0.8,0.8    |                  2482                   |                   1631                   |              79641              |       329,323        |    0.8,0.8    |                  7513                   |                   709                    |              44238              |       205,195        |    0.8,0.8    |                  2462                   |                   348                    |              94187              |       321,315        |    0.8,0.8    |
+|        2.2.1 |                  5165                   |                   8541                   |              68518              |       172,190        |      1,1      |                  2009                   |                   2195                   |             102932              |       332,320        |    0.9,0.9    |                  5914                   |                   1498                   |              79247              |       184,176        |     0.9,1     |                  1979                   |                   489                    |              83442              |       310,322        |    0.9,0.9    |
+|        2.2.2 |                  5159                   |                   7811                   |              75545              |       171,170        |      1,1      |                  1910                   |                   2516                   |             103780              |       324,324        |    0.9,0.9    |                  5857                   |                   1513                   |              72494              |       189,200        |      1,1      |                  1860                   |                   421                    |              90852              |       314,322        |    0.9,0.9    |
 
 </div>

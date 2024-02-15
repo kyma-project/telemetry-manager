@@ -1,57 +1,7 @@
-apiVersion: telemetry.kyma-project.io/v1alpha1
-kind: LogPipeline
-metadata:
-  name: load-test-1
-spec:
-  output:
-    http:
-      dedot: false
-      format: json
-      host:
-        value: log-receiver.log-load-test
-      port: "9880"
-      tls:
-        disabled: true
-        skipCertificateValidation: true
-      uri: "/"
-
----
 apiVersion: v1
 kind: Namespace
 metadata:
   name: log-load-test
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: log-load-generator
-  namespace: log-load-test
-spec:
-  replicas: 40
-  selector:
-    matchLabels:
-      app: logs-load-generator
-  template:
-    metadata:
-      labels:
-        app: logs-load-generator
-    spec:
-      containers:
-        - args:
-            - -b=104857600
-            - -f=json
-            - -l
-          image: mingrammer/flog
-          imagePullPolicy: Always
-          name: flog
-          resources:
-            limits:
-              cpu: 50m
-              memory: 200Mi
-            requests:
-              cpu: 10m
-              memory: 50Mi
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -163,6 +113,37 @@ spec:
           name: fluentd-config
 
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-load-generator
+  namespace: log-load-test
+spec:
+  replicas: 20
+  selector:
+    matchLabels:
+      app: logs-load-generator
+  template:
+    metadata:
+      labels:
+        app: logs-load-generator
+    spec:
+      containers:
+        - args:
+            - -b=10485760
+            - -f=json
+            - -l
+          image: mingrammer/flog
+          imagePullPolicy: Always
+          name: flog
+          resources:
+            limits:
+              cpu: 50m
+              memory: 200Mi
+            requests:
+              cpu: 10m
+              memory: 50Mi
+---
 
 apiVersion: v1
 kind: Service
@@ -187,3 +168,23 @@ spec:
       targetPort: 4318
   selector:
     app: log-receiver
+
+---
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: load-test-1
+spec:
+  output:
+    http:
+      dedot: true
+      format: json
+      host:
+        value: log-receiver.log-load-test
+      port: "9880"
+      tls:
+        disabled: true
+        skipCertificateValidation: true
+      uri: "/"
+
+---

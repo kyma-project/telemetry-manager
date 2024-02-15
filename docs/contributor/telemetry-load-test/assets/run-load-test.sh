@@ -51,7 +51,7 @@ function setup() {
         setup_metric_agent
     fi
 
-   if [ "$TEST_TARGET" = "fluentbit" ];
+   if [ "$TEST_TARGET" = "logs-fluentbit" ];
     then
         setup_fluentbit
   fi
@@ -94,13 +94,13 @@ function setup_metric_agent() {
 
 function setup_fluentbit() {
     if "$MAX_PIPELINE"; then
-        kubectl apply -f log-fluentbit-max-pipeline.yaml
+        kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/log-fluentbit-max-pipeline.yaml
     fi
     # Deploy test setup
-    kubectl apply -f log-fluentbit-test-setup.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/log-fluentbit-test-setup.yaml
 
     if "$BACKPRESSURE_TEST"; then
-        kubectl apply -f log-fluentbit-backpressure-config.yaml
+        kubectl apply -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/log-fluentbit-backpressure-config.yaml
     fi
 }
 
@@ -124,7 +124,7 @@ function wait_for_resources() {
       wait_for_metric_agent_resources
   fi
 
-  if [ "$TEST_TARGET" = "fluentbit" ];
+  if [ "$TEST_TARGET" = "logs-fluentbit" ];
   then
       wait_for_fluentbit_resources
   fi
@@ -183,7 +183,7 @@ function cleanup() {
         get_result_and_cleanup_metricagent
     fi
 
-    if [ "$TEST_TARGET" = "fluentbit" ]; then
+    if [ "$TEST_TARGET" = "logs-fluentbit" ]; then
         get_result_and_cleanup_fluentbit
     fi
 
@@ -304,14 +304,14 @@ function get_result_and_cleanup_fluentbit() {
    restarts=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=fluent-bit -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
 
    if "$MAX_PIPELINE"; then
-       kubectl delete -f log-fluentbit-max-pipeline.yaml
+       kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/log-fluentbit-max-pipeline.yaml
    fi
 
    if "$BACKPRESSURE_TEST"; then
-       kubectl delete -f log-fluentbit-backpressure-config.yaml
+       kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/log-fluentbit-backpressure-config.yaml
    fi
 
-   kubectl delete -f log-fluentbit-test-setup.yaml
+   kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/log-fluentbit-test-setup.yaml
 
    echo "\nLogPipeline Pods got $restarts time restarted\n"
 

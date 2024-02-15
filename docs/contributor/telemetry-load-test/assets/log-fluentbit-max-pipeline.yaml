@@ -5,7 +5,7 @@ metadata:
 spec:
   output:
     http:
-      dedot: false
+      dedot: true
       format: json
       host:
         value: log-receiver.log-load-test
@@ -23,7 +23,7 @@ metadata:
 spec:
   output:
     http:
-      dedot: false
+      dedot: true
       format: json
       host:
         value: log-receiver.log-load-test
