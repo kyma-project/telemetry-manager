@@ -33,16 +33,31 @@ If application load increases and temporary allocation increase, the dynamic tar
 
 But now think back to our cache application example with a permanent 2GB live heap on 4GB machine. Event the forts doubling of the heap is highly problematic because the new target (4GB) would already reach the limit of the physical memory on the machine.
 
+Before GO 1.19 there was not to much we could do about this, GOGC was the only knob that we could turn. So we most likely picked a value such `GOGC=25. That means the heap could grow by 25% for GC kick-in. Our new target would be now 2.5GB, unless the load change drastically we should be safe from running OOM.
+
+This will work only at a single snapshot in time and pretended that we always start with 2GB live heap. But what if fewer items are in the cache and the live heaps is only 100MB. that would make our heaps goal just 125MB, in other words we would end-up with constant GC cycles and they would take up a lot of CPU time.
 
 
 ### Be less aggressive when enough memory available, be very aggressive when less memory available
 
+What we want reach is, a stuation where the GC is not very aggressive when a lot of memory is still available, at the same time the GC should become very aggressive when available free memory is tight.
+In the passt this was only possible with a workaround, the so called `memory ballast` method. At hte application startup, wou would allocate a ballast, mostly a byte array that would take up a vast amount of memory, so you can make GOGC quite aggressive.
+Back to our example above, if you allocate a 2GB ballast and set `GOGC=25`, the GC will not run until 2.5GB memory is allocated. 
 
 ## GOMEMLIMIT
 
+While of using virtual memory as ballast improve situation, it is still a workaround. With Go 1.19 we finally got a better solution, the GOMEMLIMIT allows specify a soft memory cap.
+It does not replace GOGC but works in combination. We can set GOGC with a scenario in which memory always available and the same time we can trust that GOMEMLIMIT automatically makes the GC more aggressive when necessary.
+
+When the live heap is log e.g. 100MB we can delay the next GC cylce until the heap has doubled, but when the heas has grown close to the limit, the GC runs more often to prevent us from running OOM. 
+
 ### Soft limit
 
+The GO docs explicitly write GOMEMLIMIT a `soft` limit, that means the GO runtime does not guarantee that memory usage will exceed the limit, instead it uses as a target.
+The goal s to fail fast in an impossible to solve situation, let assume we set te limit to a value just a few kilobytees larger than the live heap, the GC will have to run constantly.
+We would be in a situation where the regular and GC execution would compete for the same resources, the application would stall and since there is no way out other than running with more memory the GO runtime prefers an OOM situation.
 
+All the usable memory has been used up, and nothing can be freed anymore. That is a failure scenario, and fast failure is preferred. That makes the limit a `soft` limit.
 
 ## Without GOMEMLIMT
 
