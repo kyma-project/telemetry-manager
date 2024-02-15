@@ -32,23 +32,15 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 		return nil
 	}
 
-	// If one of the conditions has an empty "Status", it means that the old TracePipelineCondition was used when this pipeline was created
-	// In this case, the required "Status" and "Message" fields need to be populated with proper values
-	if len(pipeline.Status.Conditions) > 0 && pipeline.Status.Conditions[0].Status == "" {
-		log.V(1).Info(fmt.Sprintf("Populating missing fields in the Status conditions for %s", pipeline.Name))
-		populateMissingConditionFields(pipeline.Status.Conditions, pipeline.Generation)
-		updateStatus(ctx, r.Client, &pipeline)
-	}
-
 	if !withinPipelineCountLimit {
-		pending := newCondition(
+		pending := conditions.New(
 			conditions.TypePending,
 			conditions.ReasonMaxPipelinesExceeded,
 			metav1.ConditionTrue,
 			pipeline.Generation,
 		)
 
-		if meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning) {
+		if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeRunning) != nil {
 			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Removing the Running condition", pipeline.Name, pending.Type))
 			meta.RemoveStatusCondition(&pipeline.Status.Conditions, conditions.TypeRunning)
 		}
@@ -59,14 +51,14 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, &pipeline)
 	if referencesNonExistentSecret {
-		pending := newCondition(
+		pending := conditions.New(
 			conditions.TypePending,
 			conditions.ReasonReferencedSecretMissing,
 			metav1.ConditionTrue,
 			pipeline.Generation,
 		)
 
-		if meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning) {
+		if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeRunning) != nil {
 			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Removing the Running condition", pipeline.Name, pending.Type))
 			meta.RemoveStatusCondition(&pipeline.Status.Conditions, conditions.TypeRunning)
 		}
@@ -81,72 +73,42 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	}
 
 	if gatewayReady {
-		if meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning) {
-			return nil
+		existingPending := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypePending)
+		if existingPending != nil {
+			newPending := conditions.New(
+				conditions.TypePending,
+				existingPending.Reason,
+				metav1.ConditionFalse,
+				pipeline.Generation,
+			)
+			meta.SetStatusCondition(&pipeline.Status.Conditions, newPending)
 		}
 
-		pending := newCondition(
-			conditions.TypePending,
-			conditions.ReasonTraceGatewayDeploymentReady,
-			metav1.ConditionFalse,
-			pipeline.Generation,
-		)
-		running := newCondition(
+		running := conditions.New(
 			conditions.TypeRunning,
 			conditions.ReasonTraceGatewayDeploymentReady,
 			metav1.ConditionTrue,
 			pipeline.Generation,
 		)
-		meta.SetStatusCondition(&pipeline.Status.Conditions, pending)
 		meta.SetStatusCondition(&pipeline.Status.Conditions, running)
+
 		return updateStatus(ctx, r.Client, &pipeline)
 	}
 
-	pending := newCondition(
+	pending := conditions.New(
 		conditions.TypePending,
 		conditions.ReasonTraceGatewayDeploymentNotReady,
 		metav1.ConditionTrue,
 		pipeline.Generation,
 	)
 
-	if meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning) {
+	if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeRunning) != nil {
 		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Removing the Running condition", pipeline.Name, pending.Type))
 		meta.RemoveStatusCondition(&pipeline.Status.Conditions, conditions.TypeRunning)
 	}
+
 	meta.SetStatusCondition(&pipeline.Status.Conditions, pending)
 	return updateStatus(ctx, r.Client, &pipeline)
-}
-
-func populateMissingConditionFields(statusConditions []metav1.Condition, generation int64) {
-	if len(statusConditions) == 1 {
-		statusConditions[0].Status = metav1.ConditionTrue
-		statusConditions[0].Message = conditions.CommonMessageFor(statusConditions[0].Reason)
-		statusConditions[0].ObservedGeneration = generation
-		return
-	}
-
-	for i := range statusConditions {
-		if statusConditions[i].Type == conditions.TypePending {
-			statusConditions[i].Status = metav1.ConditionFalse
-			statusConditions[i].Reason = conditions.ReasonTraceGatewayDeploymentReady
-		}
-		if statusConditions[i].Type == conditions.TypeRunning {
-			statusConditions[i].Status = metav1.ConditionTrue
-
-		}
-		statusConditions[i].Message = conditions.CommonMessageFor(statusConditions[i].Reason)
-		statusConditions[i].ObservedGeneration = generation
-	}
-}
-
-func newCondition(condType, reason string, status metav1.ConditionStatus, generation int64) metav1.Condition {
-	return metav1.Condition{
-		Type:               condType,
-		Status:             status,
-		Reason:             reason,
-		Message:            conditions.CommonMessageFor(reason),
-		ObservedGeneration: generation,
-	}
 }
 
 func updateStatus(ctx context.Context, client client.Client, pipeline *telemetryv1alpha1.TracePipeline) error {
