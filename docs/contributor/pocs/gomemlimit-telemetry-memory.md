@@ -30,14 +30,12 @@ This will work only at a single snapshot in time and assume that we always start
 What we want to achieve is a situation where the GC is not very aggressive when a lot of memory is still available, but at the same time, the GC should become very aggressive when available free memory is tight. In the past, this was only possible with a workaround, the so-called "memory ballast" method. At the application startup, you would allocate a ballast, mostly a byte array that would take up a vast amount of memory, so you can make GOGC quite aggressive. Back to our example above, if you allocate a 2GB ballast and set GOGC=25, the GC will not run until 2.5GB memory is allocated.
 
 ## Introducing GOMEMLIMIT
-While using virtual memory as a ballast improves the situation, it is still a workaround. With Go 1.19, we finally got a better solution: the GOMEMLIMIT allows specifying a soft memory cap. It does not replace GOGC but works in combination. We can set GOGC with a scenario in which memory is always available, and at the same time, we can trust that GOMEMLIMIT automatically makes the GC more aggressive when necessary.
 
-When the live heap is low, e.g., 100MB, we can delay the next GC cycle until the heap has doubled, but when the heap has grown close to the limit, the GC runs more often to prevent us from encountering OOM.
+With Go 1.19, the GOMEMLIMIT feature provides a better solution by allowing the specification of a soft memory cap. It complements the existing GOGC setting, making the garbage collector more aggressive when necessary.
 
 ### Soft Limit
-The Go docs explicitly describe GOMEMLIMIT as a "soft" limit, which means the Go runtime does not guarantee that memory usage will exceed the limit; instead, it uses it as a target. The goal is to fail fast in an impossible-to-solve situation. Let's assume we set the limit to a value just a few kilobytes larger than the live heap; the GC will have to run constantly. We would be in a situation where the regular and GC execution would compete for the same resources, the application would stall, and since there is no way out other than running with more memory, the Go runtime prefers an OOM situation.
 
-All the usable memory has been used up, and nothing can be freed anymore. That is a failure scenario, and fast failure is preferred. That makes the limit a "soft" limit.
+GOMEMLIMIT is considered a "soft" limit, meaning that the Go runtime uses it as a target rather than a strict constraint. In situations where memory usage exceeds the limit, the runtime prefers fast failure to prevent resource contention and application stalls.
 
 ## Test with TracePipeline
 To illustrate the benefits of GOMEMLIMIT, we conducted tests with TracePipeline, a memory-intensive application. By comparing scenarios with and without GOMEMLIMIT, we observed differences in garbage collection behavior and memory usage.
