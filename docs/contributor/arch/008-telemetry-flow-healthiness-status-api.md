@@ -1,4 +1,4 @@
-# 7. Telemetry Flow Healthiness Status API
+# 8. Telemetry Flow Healthiness Status API
 
 Date: 2024-15-02
 
@@ -46,8 +46,32 @@ There is a community discussion about incorporating a rate-limiting mechanism di
 
 ## Decision
 
-type: FlowHealth
-reasons: FullDataLoss (exporter failed or overflow) | PartialDataLoss | HighBufferUtilization | Throttling
+We are choosing between two alternatives:
+
+* Using multiple condition types to represent various telemetry flow events (Throttling, Data Loss, High Buffer Utilization, etc.).
+* Using a single condition type (TelemetryFlowHealth) with a reason field to denote diverse telemetry flow events.
+
+After careful consideration, we have opted for the single condition type `TelemetryFlowHealth` as it minimizes cognitive load for the end user.
+Ultimately, the user's primary concern is understanding whether the telemetry flow is functioning correctly. In case of any issues, the user has the following actionable steps:
+
+* Troubleshoot the backend.
+* Investigate backend connectivity.
+* Reduce ingestion.
+* Manually scale out the gateway (as long as no autoscaling capability is provided).
+
+In this scenario, we can assign the reason field a value that holds utmost significance for the user:
+```
+FullDataLoss > PartialDataLoss > HighBufferUtilization > GatewayThrottling > Healthy
+```
+
+The reasons will then be based on the following alert rules (only the logic, the actual PromQL expressions have to be defined later):
+| Alert Rule | Expression |
+| --- | --- |
+| GatewayExporterDroppedMetrics  | `sum(rate(otelcol_exporter_send_failed_metric_points{service="telemetry-metric-gateway"}[5m])) > 0`    |
+| GatewayReceiverRefusedMetrics  | `sum(rate(otelcol_receiver_refused_metric_points{service="telemetry-metric-gateway"}[5m])) > 0`        |
+| GatewayExporterEnqueueFailed   | `sum(rate(otelcol_exporter_enqueue_failed_metric_points{service="telemetry-metric-gateway"}[5m])) > 0` |
+| GatewayExporterQueueAlmostFull | `otelcol_exporter_queue_size / otelcol_exporter_queue_capacity > 0.8`                                  |
+
 
 ## Consequences
 
