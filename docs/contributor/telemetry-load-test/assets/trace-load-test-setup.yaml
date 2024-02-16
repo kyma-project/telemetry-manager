@@ -189,7 +189,7 @@ spec:
       securityContext:
         fsGroup: 101
       containers:
-        - image: otel/opentelemetry-collector-contrib:0.91.0
+        - image: europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.94.0-fc04f979
           name: otel-collector
           resources:
             limits:
