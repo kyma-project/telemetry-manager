@@ -65,4 +65,5 @@ Our experiments demonstrate the effectiveness of GOMEMLIMIT in mitigating OOM er
 ## Is GOMEMLIMIT Safe to Avoid OOM?
 
 While setting a GOMEMLIMIT can help mitigate the risk of encountering out-of-memory (OOM) errors, it's important to note that it does not provide foolproof protection. Even with GOMEMLIMIT in place, a heavily utilized Go application must still prioritize efficient memory allocation strategies. As we've previously discussed, GOMEMLIMIT serves as a soft limit, meaning there's no absolute assurance that the application will consistently operate within its boundaries. The following memory snapshot exemplifies this scenario: despite configuring TracePipeline with a GOMEMLIMIT of 1.8GiB, the application experiences a significant increase in workload after surpassing this threshold. While the Go runtime endeavors to maintain compliance with the specified limits, if circumstances necessitate additional memory allocation, the application may ultimately encounter an OOM situation.
+
 ![TracePipeline with GOMEMLIMIT and OOM](./assets/with-gomemlimit-oom.jpg)
