@@ -27,7 +27,8 @@ func TestUpdateStatus(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
 				Output: telemetryv1alpha1.Output{
@@ -58,15 +59,20 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.LogPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.LogPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonReferencedSecretMissing)
+		require.Equal(t, conditions.TypePending, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonReferencedSecretMissing, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonReferencedSecretMissing), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 
 	t.Run("should add pending condition if referenced secret exists but fluent bit is not ready", func(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
 				Output: telemetryv1alpha1.Output{
@@ -108,15 +114,20 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.LogPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.LogPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonFluentBitDSNotReady)
+		require.Equal(t, conditions.TypePending, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonFluentBitDSNotReady, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonFluentBitDSNotReady), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 
 	t.Run("should add pending condition if Loki output is defined", func(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
 				Output: telemetryv1alpha1.Output{
@@ -144,15 +155,20 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.LogPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.LogPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonUnsupportedLokiOutput)
+		require.Equal(t, conditions.TypePending, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonUnsupportedLokiOutput, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonUnsupportedLokiOutput), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 
 	t.Run("should add running condition if referenced secret exists and fluent bit is ready", func(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
 				Output: telemetryv1alpha1.Output{
@@ -194,20 +210,37 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.LogPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.LogPipelineRunning)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonFluentBitDSReady)
+		require.Equal(t, conditions.TypeRunning, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonFluentBitDSReady, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonFluentBitDSReady), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 
-	t.Run("should reset conditions and add pending if fluent bit becomes not ready again", func(t *testing.T) {
+	t.Run("should remove running condition and set pending condition to true if fluent bit becomes not ready again", func(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Status: telemetryv1alpha1.LogPipelineStatus{
-				Conditions: []telemetryv1alpha1.LogPipelineCondition{
-					{Reason: conditions.ReasonFluentBitDSNotReady, Type: telemetryv1alpha1.LogPipelinePending},
-					{Reason: conditions.ReasonFluentBitDSReady, Type: telemetryv1alpha1.LogPipelineRunning},
+				Conditions: []metav1.Condition{
+					{
+						Type:               conditions.TypePending,
+						Status:             metav1.ConditionFalse,
+						Reason:             conditions.ReasonFluentBitDSNotReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonFluentBitDSNotReady),
+						LastTransitionTime: metav1.Now(),
+					},
+					{
+						Type:               conditions.TypeRunning,
+						Status:             metav1.ConditionTrue,
+						Reason:             conditions.ReasonFluentBitDSReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonFluentBitDSReady),
+						LastTransitionTime: metav1.Now(),
+					},
 				},
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
@@ -250,20 +283,37 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.LogPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.LogPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonFluentBitDSNotReady)
+		require.Equal(t, conditions.TypePending, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonFluentBitDSNotReady, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonFluentBitDSNotReady), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 
-	t.Run("should reset conditions and add pending if some referenced secret does not exist anymore", func(t *testing.T) {
+	t.Run("should remove running condition and set pending condition to true if some referenced secret does not exist anymore", func(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Status: telemetryv1alpha1.LogPipelineStatus{
-				Conditions: []telemetryv1alpha1.LogPipelineCondition{
-					{Reason: conditions.ReasonFluentBitDSNotReady, Type: telemetryv1alpha1.LogPipelinePending},
-					{Reason: conditions.ReasonFluentBitDSReady, Type: telemetryv1alpha1.LogPipelineRunning},
+				Conditions: []metav1.Condition{
+					{
+						Type:               conditions.TypePending,
+						Status:             metav1.ConditionFalse,
+						Reason:             conditions.ReasonFluentBitDSNotReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonFluentBitDSNotReady),
+						LastTransitionTime: metav1.Now(),
+					},
+					{
+						Type:               conditions.TypeRunning,
+						Status:             metav1.ConditionTrue,
+						Reason:             conditions.ReasonFluentBitDSReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonFluentBitDSReady),
+						LastTransitionTime: metav1.Now(),
+					},
 				},
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
@@ -295,20 +345,37 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.LogPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.LogPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonReferencedSecretMissing)
+		require.Equal(t, conditions.TypePending, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonReferencedSecretMissing, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonReferencedSecretMissing), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 
-	t.Run("should reset conditions and add pending condition if Loki output is defined", func(t *testing.T) {
+	t.Run("should remove running condition and set pending condition to true if Loki output is defined", func(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.LogPipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Status: telemetryv1alpha1.LogPipelineStatus{
-				Conditions: []telemetryv1alpha1.LogPipelineCondition{
-					{Reason: conditions.ReasonFluentBitDSNotReady, Type: telemetryv1alpha1.LogPipelinePending},
-					{Reason: conditions.ReasonFluentBitDSReady, Type: telemetryv1alpha1.LogPipelineRunning},
+				Conditions: []metav1.Condition{
+					{
+						Type:               conditions.TypePending,
+						Status:             metav1.ConditionFalse,
+						Reason:             conditions.ReasonFluentBitDSNotReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonFluentBitDSNotReady),
+						LastTransitionTime: metav1.Now(),
+					},
+					{
+						Type:               conditions.TypeRunning,
+						Status:             metav1.ConditionTrue,
+						Reason:             conditions.ReasonFluentBitDSReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonFluentBitDSReady),
+						LastTransitionTime: metav1.Now(),
+					},
 				},
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
@@ -337,8 +404,12 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.LogPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.LogPipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonUnsupportedLokiOutput)
+		require.Equal(t, conditions.TypePending, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonUnsupportedLokiOutput, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonUnsupportedLokiOutput), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 
 	t.Run("should set status UnsupportedMode true if contains custom plugin", func(t *testing.T) {
@@ -348,9 +419,6 @@ func TestUpdateStatus(t *testing.T) {
 				Name: pipelineName,
 			},
 			Status: telemetryv1alpha1.LogPipelineStatus{
-				Conditions: []telemetryv1alpha1.LogPipelineCondition{
-					{Reason: conditions.ReasonFluentBitDSReady, Type: telemetryv1alpha1.LogPipelineRunning},
-				},
 				UnsupportedMode: false,
 			},
 			Spec: telemetryv1alpha1.LogPipelineSpec{
@@ -382,9 +450,6 @@ func TestUpdateStatus(t *testing.T) {
 				Name: pipelineName,
 			},
 			Status: telemetryv1alpha1.LogPipelineStatus{
-				Conditions: []telemetryv1alpha1.LogPipelineCondition{
-					{Reason: conditions.ReasonFluentBitDSReady, Type: telemetryv1alpha1.LogPipelineRunning},
-				},
 				UnsupportedMode: true,
 			},
 		}

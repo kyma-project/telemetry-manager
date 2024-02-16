@@ -26,7 +26,8 @@ func TestUpdateStatus(t *testing.T) {
 		parserName := "parser"
 		parser := &telemetryv1alpha1.LogParser{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: parserName,
+				Name:       parserName,
+				Generation: 1,
 			},
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(parser).WithStatusSubresource(parser).Build()
@@ -49,19 +50,30 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedParser telemetryv1alpha1.LogParser
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: parserName}, &updatedParser)
 		require.Len(t, updatedParser.Status.Conditions, 1)
-		require.Equal(t, updatedParser.Status.Conditions[0].Type, telemetryv1alpha1.LogParserPending)
-		require.Equal(t, updatedParser.Status.Conditions[0].Reason, conditions.ReasonFluentBitDSNotReady)
+		require.Equal(t, conditions.TypePending, updatedParser.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedParser.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonFluentBitDSNotReady, updatedParser.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonFluentBitDSNotReady), updatedParser.Status.Conditions[0].Message)
+		require.Equal(t, updatedParser.Generation, updatedParser.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedParser.Status.Conditions[0].LastTransitionTime)
 	})
 
 	t.Run("should add running condition if fluent bit becomes ready", func(t *testing.T) {
 		parserName := "parser"
 		parser := &telemetryv1alpha1.LogParser{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: parserName,
+				Name:       parserName,
+				Generation: 1,
 			},
 			Status: telemetryv1alpha1.LogParserStatus{
-				Conditions: []telemetryv1alpha1.LogParserCondition{
-					{Reason: conditions.ReasonFluentBitDSNotReady, Type: telemetryv1alpha1.LogParserPending},
+				Conditions: []metav1.Condition{
+					{
+						Type:               conditions.TypePending,
+						Status:             metav1.ConditionTrue,
+						Reason:             conditions.ReasonFluentBitDSNotReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonFluentBitDSNotReady),
+						LastTransitionTime: metav1.Now(),
+					},
 				},
 			},
 		}
@@ -85,22 +97,45 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedParser telemetryv1alpha1.LogParser
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: parserName}, &updatedParser)
 		require.Len(t, updatedParser.Status.Conditions, 2)
-		require.Equal(t, updatedParser.Status.Conditions[0].Type, telemetryv1alpha1.LogParserPending)
-		require.Equal(t, updatedParser.Status.Conditions[0].Reason, conditions.ReasonFluentBitDSNotReady)
-		require.Equal(t, updatedParser.Status.Conditions[1].Type, telemetryv1alpha1.LogParserRunning)
-		require.Equal(t, updatedParser.Status.Conditions[1].Reason, conditions.ReasonFluentBitDSReady)
+
+		require.Equal(t, conditions.TypePending, updatedParser.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionFalse, updatedParser.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonFluentBitDSNotReady, updatedParser.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonFluentBitDSNotReady), updatedParser.Status.Conditions[0].Message)
+		require.Equal(t, updatedParser.Generation, updatedParser.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedParser.Status.Conditions[0].LastTransitionTime)
+
+		require.Equal(t, conditions.TypeRunning, updatedParser.Status.Conditions[1].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedParser.Status.Conditions[1].Status)
+		require.Equal(t, conditions.ReasonFluentBitDSReady, updatedParser.Status.Conditions[1].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonFluentBitDSReady), updatedParser.Status.Conditions[1].Message)
+		require.Equal(t, updatedParser.Generation, updatedParser.Status.Conditions[1].ObservedGeneration)
+		require.NotEmpty(t, updatedParser.Status.Conditions[1].LastTransitionTime)
 	})
 
-	t.Run("should reset conditions and add pending if fluent bit becomes not ready again", func(t *testing.T) {
+	t.Run("should remove running condition and set pending condition to true if fluent bit becomes not ready again", func(t *testing.T) {
 		parserName := "parser"
 		parser := &telemetryv1alpha1.LogParser{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: parserName,
+				Name:       parserName,
+				Generation: 1,
 			},
 			Status: telemetryv1alpha1.LogParserStatus{
-				Conditions: []telemetryv1alpha1.LogParserCondition{
-					{Reason: conditions.ReasonFluentBitDSNotReady, Type: telemetryv1alpha1.LogParserPending},
-					{Reason: conditions.ReasonFluentBitDSReady, Type: telemetryv1alpha1.LogParserRunning},
+				Conditions: []metav1.Condition{
+					{
+						Type:               conditions.TypePending,
+						Status:             metav1.ConditionFalse,
+						Reason:             conditions.ReasonFluentBitDSNotReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonFluentBitDSNotReady),
+						LastTransitionTime: metav1.Now(),
+					},
+					{
+						Type:               conditions.TypeRunning,
+						Status:             metav1.ConditionTrue,
+						Reason:             conditions.ReasonFluentBitDSReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonFluentBitDSReady),
+						LastTransitionTime: metav1.Now(),
+					},
 				},
 			},
 		}
@@ -124,7 +159,11 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedParser telemetryv1alpha1.LogParser
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: parserName}, &updatedParser)
 		require.Len(t, updatedParser.Status.Conditions, 1)
-		require.Equal(t, updatedParser.Status.Conditions[0].Type, telemetryv1alpha1.LogParserPending)
-		require.Equal(t, updatedParser.Status.Conditions[0].Reason, conditions.ReasonFluentBitDSNotReady)
+		require.Equal(t, conditions.TypePending, updatedParser.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedParser.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonFluentBitDSNotReady, updatedParser.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonFluentBitDSNotReady), updatedParser.Status.Conditions[0].Message)
+		require.Equal(t, updatedParser.Generation, updatedParser.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedParser.Status.Conditions[0].LastTransitionTime)
 	})
 }
