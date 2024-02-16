@@ -17,10 +17,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 var _ = Describe("Access Logs", Label("logs"), func() {
@@ -85,11 +87,11 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 		})
 
 		It("Should have the log pipeline running", func() {
-			Eventually(func(g Gomega) bool {
+			Eventually(func(g Gomega) {
 				var pipeline telemetryv1alpha1.LogPipeline
 				key := types.NamespacedName{Name: pipelineName}
 				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-				return pipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning)
+				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning)).To(BeTrue())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
 		})
 
