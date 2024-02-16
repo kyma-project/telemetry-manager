@@ -49,9 +49,9 @@ There is a community discussion about incorporating a rate-limiting mechanism di
 We are choosing between two alternatives:
 
 * Using multiple condition types to represent various telemetry flow events (Throttling, Data Loss, High Buffer Utilization, etc.).
-* Using a single condition type (TelemetryFlowHealth) with a reason field to denote diverse telemetry flow events.
+* Using a single condition type (TelemetryFlowHealthy) with a reason field to denote diverse telemetry flow events.
 
-After careful consideration, we have opted for the single condition type `TelemetryFlowHealth` as it minimizes cognitive load for the end user.
+After careful consideration, we have opted for the single condition type TelemetryFlowHealthy as it minimizes cognitive load for the end user.
 Ultimately, the user's primary concern is understanding whether the telemetry flow is functioning correctly. In case of any issues, the user has the following actionable steps:
 
 * Troubleshoot the backend.
@@ -83,8 +83,20 @@ We could then map the alert rules to the reasons as follows:
 | GatewayThrottling      | GatewayReceiverRefusedMetrics                                                                            |
 | Healthy                | **not** (GatewayExporterDroppedMetrics **or** GatewayExporterEnqueueFailed **or** HighBufferUtilization **or** GatewayReceiverRefusedMetrics) |
 
+### Gateway/Agent Communication
+
+The mentioned events are about the Gateway Collector. Some issues might happen with the Agent, like:
+* Gateway can't be reached (network problem).
+* Gateway won't accept data (gateway throttling).
+
+In both cases, the Agent might drop data after too many retries. But since users usually can't do much about these issues, we won't include them in the TelemetryFlowHealthy condition.
+If there's throttling, scaling horizontally might help, but it's not much different from dealing with a high OTLP ingestion rate.
+
+In the future, we might think about adding a TelemetryCollectionHealthy condition for the Agent. This would help track issues like scraping problems by Prometheus Receiver.
+
 ## Consequences
 
 The suggested API addresses possible obstacles in the telemetry flow. We can enhance the information in the message field and include a troubleshooting guide.
 
 Looking ahead, as the OTel Collector evolves, we may introduce additional reasons, as well as expose simplified custom metrics derived from OTel Collector metrics to the user.
+
