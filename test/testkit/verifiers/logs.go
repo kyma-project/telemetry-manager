@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 func LogsShouldBeDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix string, telemetryExportURL string) {

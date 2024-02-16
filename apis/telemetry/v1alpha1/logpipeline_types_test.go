@@ -1,8 +1,9 @@
 package v1alpha1
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestLogPipelineOutput(t *testing.T) {
