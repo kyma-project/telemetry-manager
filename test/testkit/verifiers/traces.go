@@ -27,7 +27,7 @@ func TracePipelineShouldBeRunning(ctx context.Context, k8sClient client.Client, 
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning)).To(BeTrue())
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
 func TracePipelineShouldNotBeRunning(ctx context.Context, k8sClient client.Client, pipelineName string) {
