@@ -13,6 +13,8 @@ let's actually define the Telemetry Healthiness Status API for Trace and Metric 
 
 In general, we want to reflect interesting events the telemetry flow as Status conditions. Such interesting events are depicted in the following diagram:
 
+![OTel Collector Data Flow](../assets/otel-collector-data-flow.svg "OTel Collector Data Flow")
+
 ### Gateway Backpressure / Throttling
 
 * Triggered by Memory Limiter or potential receiver issues (increase in `otelcol_receiver_refused_metric_points` and `otelcol_processor_refused_metric_points`).
@@ -39,6 +41,9 @@ In general, we want to reflect interesting events the telemetry flow as Status c
 * If data is sent successfully, `otelcol_exporter_sent_metric_points` is increased.
 
 ## Decision
+
+type: FlowHealth
+reasons: FullDataLoss (exporter failed or overflow) | PartialDataLoss | HighBufferUtilization | Throttling
 
 ## Consequences
 
