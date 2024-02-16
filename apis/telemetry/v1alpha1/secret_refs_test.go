@@ -229,8 +229,7 @@ func TestTracePipeline_GetSecretRefs(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Parallel()
-
+		test := test
 		t.Run(test.name, func(t *testing.T) {
 			sut := TracePipeline{ObjectMeta: metav1.ObjectMeta{Name: test.pipelineName}, Spec: TracePipelineSpec{Output: TracePipelineOutput{Otlp: &test.given}}}
 			actual := sut.GetSecretRefs()
