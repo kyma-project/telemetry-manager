@@ -4,7 +4,7 @@ provision-k3d: k3d
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-k3d.sh
 
 .PHONY: provision-k3d-e2e
-e2e-deploy-module: kyma kustomize provision-k3d ## Provision a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
+provision-k3d-e2e: kyma kustomize provision-k3d ## Provision a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/build-image.sh
 	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} ./hack/deploy-module.sh
 

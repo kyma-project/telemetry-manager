@@ -72,5 +72,5 @@ For development, use the following commands:
 
 - Deploy module with Lifecycle Manager on a k3d cluster
   ```bash
-  make e2e-deploy-module
+  make provision-k3d-e2e
   ```
