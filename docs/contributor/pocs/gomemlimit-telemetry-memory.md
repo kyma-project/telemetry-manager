@@ -56,6 +56,8 @@ To illustrate the benefits of GOMEMLIMIT, we conducted tests with TracePipeline,
 
 
 ## Conclusion
+Our experiments demonstrate the effectiveness of GOMEMLIMIT in mitigating OOM errors in heavily utilized Go applications. However, efficient memory allocation strategies remain crucial for optimal performance. While GOMEMLIMIT provides valuable guidance, careful consideration of application requirements and workload characteristics is imperative for robust memory management.
+
 - With our experiments, we can prove that our TracePipeline could crash on a 2GiB Pod with a load test, even when a constant load is less than 2GiB.
 - After using GOMEMLIMIT=1.8GiB, TracePipeline no longer crashed and could efficiently use the available memory.
 - Before Go 1.19, the Go runtime could only set relative GC targets. That would make it very hard to use the available memory efficiently.
