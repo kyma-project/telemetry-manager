@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# TODO: Find a way to centralise the variables used in both the scripts and makefiles
+readonly LOCALBIN=${LOCALBIN:-$(pwd)/bin}
+readonly KUSTOMIZE=${KUSTOMIZE:-$(LOCALBIN)/kustomize}
+readonly GORELEASER_VERSION="${GORELEASER_VERSION:-v1.23.0}"
+readonly IMG="${IMG:-europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main}"
+
 # standard bash error handling
 set -o nounset  # treat unset variables as an error and exit immediately.
 set -o errexit  # exit immediately when a command fails.

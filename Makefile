@@ -6,7 +6,6 @@ include ${MAKE_DEPS}/provision.mk
 # Image URL to use all building/pushing image targets
 IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
 # ENVTEST_K8S_VERSION refers to the version of Kubebuilder assets to be downloaded by envtest binary.
-
 ENVTEST_K8S_VERSION = 1.27.1
 GARDENER_K8S_VERSION ?= 1.27
 ISTIO_VERSION ?= 1.3.0
@@ -275,13 +274,6 @@ run-integration-test-istio: ginkgo test-matchers ## run integration tests with i
 	$(GINKGO) run --tags istio --junit-report=junit.xml ./test/integration/istio
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
-
-
-
-# TODO: To GHA
-.PHONY: release
-release: kustomize ## Prepare release artefacts and create a GitHub release
-	KUSTOMIZE=${KUSTOMIZE} IMG=${IMG} GORELEASER_VERSION=${GORELEASER_VERSION} ./hack/release.sh
 
 
 
