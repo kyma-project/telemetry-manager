@@ -64,14 +64,27 @@ In this scenario, we can assign the reason field a value that holds utmost signi
 FullDataLoss > PartialDataLoss > HighBufferUtilization > GatewayThrottling > Healthy
 ```
 
-The reasons will then be based on the following alert rules (only the logic, the actual PromQL expressions have to be defined later):
+The reasons will then be based on the following alert rules (an example for Metric Pipelines the actual PromQL expressions have to be defined later):
 | Alert Rule | Expression |
 | --- | --- |
-| GatewayExporterDroppedMetrics  | `sum(rate(otelcol_exporter_send_failed_metric_points{service="telemetry-metric-gateway"}[5m])) > 0`    |
-| GatewayReceiverRefusedMetrics  | `sum(rate(otelcol_receiver_refused_metric_points{service="telemetry-metric-gateway"}[5m])) > 0`        |
-| GatewayExporterEnqueueFailed   | `sum(rate(otelcol_exporter_enqueue_failed_metric_points{service="telemetry-metric-gateway"}[5m])) > 0` |
-| GatewayExporterQueueAlmostFull | `otelcol_exporter_queue_size / otelcol_exporter_queue_capacity > 0.8`                                  |
+| GatewayExporterSentMetrics    | `sum(rate(otelcol_exporter_sent_metric_points{...}[5m])) > 0`           |
+| GatewayExporterDroppedMetrics  | `sum(rate(otelcol_exporter_send_failed_metric_points{...}[5m])) > 0`    |
+| GatewayReceiverRefusedMetrics  | `sum(rate(otelcol_receiver_refused_metric_points{...}[5m])) > 0`        |
+| GatewayExporterEnqueueFailed   | `sum(rate(otelcol_exporter_enqueue_failed_metric_points{...}[5m])) > 0` |
+| GatewayExporterQueueAlmostFull | `otelcol_exporter_queue_size / otelcol_exporter_queue_capacity > 0.8`   |                               |
 
+We could then map the alert rules to the reasons as follows:
+
+| Reason | Alert Rules |
+| --- | --- |
+| FullDataLoss           | **not** GatewayExporterSentMetrics **and** (GatewayExporterDroppedMetrics **or** GatewayExporterEnqueueFailed) |
+| PartialDataLoss        | GatewayExporterSentMetrics **and** (GatewayExporterDroppedMetrics **or** GatewayExporterEnqueueFailed)       |
+| HighBufferUtilization  | GatewayExporterQueueAlmostFull                                                                           |
+| GatewayThrottling      | GatewayReceiverRefusedMetrics                                                                            |
+| Healthy                | **not** (GatewayExporterDroppedMetrics **or** GatewayExporterEnqueueFailed **or** HighBufferUtilization **or** GatewayReceiverRefusedMetrics) |
 
 ## Consequences
 
+The suggested API addresses possible obstacles in the telemetry flow. We can enhance the information in the message field and include a troubleshooting guide.
+
+Looking ahead, as the OTel Collector evolves, we may introduce additional reasons, as well as expose simplified custom metrics derived from OTel Collector metrics to the user.
