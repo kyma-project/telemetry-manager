@@ -25,7 +25,8 @@ Before Go 1.19, there was not much we could do about this; GOGC was the only kno
 
 This will work only at a single snapshot in time and assume that we always start with a 2GB live heap. But what if fewer items are in the cache, and the live heaps are only 100 MB? That would make our heap's goal just 125MB. In other words, we would end up with constant GC cycles, and they would take up a lot of CPU time.
 
-Be Less Aggressive When Enough Memory Is Available, Be Very Aggressive When Less Memory Is Available
+### Be Less Aggressive When Enough Memory Is Available, Be Very Aggressive When Less Memory Is Available
+
 What we want to achieve is a situation where the GC is not very aggressive when a lot of memory is still available, but at the same time, the GC should become very aggressive when available free memory is tight. In the past, this was only possible with a workaround, the so-called "memory ballast" method. At the application startup, you would allocate a ballast, mostly a byte array that would take up a vast amount of memory, so you can make GOGC quite aggressive. Back to our example above, if you allocate a 2GB ballast and set GOGC=25, the GC will not run until 2.5GB memory is allocated.
 
 ## GOMEMLIMIT
