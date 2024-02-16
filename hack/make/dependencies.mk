@@ -26,7 +26,7 @@ GOLANGCI-LINT_VERSION ?= latest
 GO_TEST_COVERAGE_VERSION ?= v2.8.2
 
 .PHONY: dependencies
-dependencies: kustomize tablegen controller-gen envtest golangci-lint ginkgo k3d kyma ## Install all build dependencies.
+dependencies: kustomize tablegen controller-gen envtest golangci-lint ginkgo k3d kyma ## Download and install all build dependencies.
 
 ## kustomize
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"

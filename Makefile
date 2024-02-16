@@ -1,6 +1,6 @@
 MAKE_DEPS ?= hack/make
-include ${MAKE_DEPS}/common.mk
-include ${MAKE_DEPS}/test.mk
+include ${MAKE_DEPS}/dependencies.mk
+include ${MAKE_DEPS}/provision.mk
 
 
 # Image URL to use all building/pushing image targets
@@ -34,8 +34,8 @@ SHELL = /usr/bin/env bash -o pipefail
 .PHONY: all
 all: build
 
-##@ General
 
+##@ General
 # The help target prints out all targets with their descriptions organized
 # beneath their categories. The categories are represented by '##@' and the
 # target descriptions by '##'. The awk commands is responsible for reading the
@@ -50,6 +50,7 @@ all: build
 .PHONY: help
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
 
 ##@ Development
 lint-autofix: golangci-lint ## Autofix all possible linting errors.
@@ -70,6 +71,41 @@ crd-docs-gen: tablegen ## Generates CRD spec into docs folder
 	${TABLE_GEN} --crd-filename ./config/crd/bases/telemetry.kyma-project.io_logparsers.yaml --md-filename ./docs/user/resources/03-logparser.md
 	${TABLE_GEN} --crd-filename ./config/crd/bases/telemetry.kyma-project.io_tracepipelines.yaml --md-filename ./docs/user/resources/04-tracepipeline.md
 	${TABLE_GEN} --crd-filename ./config/crd/bases/telemetry.kyma-project.io_metricpipelines.yaml --md-filename ./docs/user/resources/05-metricpipeline.md
+
+.PHONY: manifests
+manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	$(CONTROLLER_GEN) rbac:roleName=operator-manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(MAKE) crd-docs-gen
+
+.PHONY: generate
+generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+.PHONY: fmt
+fmt: ## Run go fmt against code.
+	go fmt ./...
+
+.PHONY: vet
+vet: ## Run go vet against code.
+	go vet --tags e2e,istio ./...
+
+.PHONY: tidy
+tidy: ## Check if there any dirty change for go mod tidy.
+	go mod tidy
+	git diff --exit-code go.mod
+	git diff --exit-code go.sum
+
+
+##@ Testing
+.PHONY: test
+test: manifests generate fmt vet tidy envtest ## Run tests.
+	$(GINKGO) run ./test/testkit/matchers/...
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+
+.PHONY: check-coverage
+check-coverage: go-test-coverage ## Check tests coverage.
+	go test ./... -short -coverprofile=cover.out -covermode=atomic -coverpkg=./...
+	$(GO_TEST_COVERAGE) --config=./.testcoverage.yml
 
 
 ##@ Build
@@ -100,6 +136,47 @@ docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
 
+##@ Deployment
+ifndef ignore-not-found
+  ignore-not-found = false
+endif
+
+.PHONY: install
+install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+
+.PHONY: uninstall
+uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+.PHONY: deploy
+deploy: manifests kustomize ## Deploy resources based on the release (default) variant to the K8s cluster specified in ~/.kube/config.
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+.PHONY: undeploy
+undeploy: ## Undeploy resources based on the release (default) variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+.PHONY: deploy-dev
+deploy-dev: manifests kustomize ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/development | kubectl apply -f -
+
+.PHONY: undeploy-dev
+undeploy-dev: ## Undeploy resources based on the development variant from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/development | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+
+
+
+
+
+
+
+
+
+
 
 
 ##@ TODO
@@ -110,10 +187,6 @@ docker-push: ## Push docker image with the manager.
 .PHONY: provision-test-env
 provision-test-env: provision-k3d
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/build-image.sh
-
-.PHONY: provision-k3d
-provision-k3d: k3d
-	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/provision-k3d.sh
 
 .PHONY: e2e-test-logs
 e2e-test-logs: provision-test-env ## Provision k3d cluster, deploy development variant and run end-to-end logs tests.
@@ -189,9 +262,7 @@ run-upgrade-test: ginkgo
 	mkdir -p ${ARTIFACTS}
 	mv junit.xml ${ARTIFACTS}
 
-.PHONY: e2e-deploy-module
-e2e-deploy-module: kyma kustomize provision-k3d provision-test-env ## Provision a k3d cluster and deploy module with the lifecycle manager. Manager image and module image are pushed to local k3d registry
-	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} ./hack/deploy-module.sh
+
 
 .PHONY: integration-test-istio
 integration-test-istio: ginkgo k3d | test-matchers provision-test-env ## Provision k3d cluster, deploy development variant and run integration tests with istio.
@@ -207,24 +278,10 @@ run-integration-test-istio: ginkgo test-matchers ## run integration tests with i
 
 
 
-
-
-
-
-
 # TODO: To GHA
 .PHONY: release
 release: kustomize ## Prepare release artefacts and create a GitHub release
 	KUSTOMIZE=${KUSTOMIZE} IMG=${IMG} GORELEASER_VERSION=${GORELEASER_VERSION} ./hack/release.sh
-
-
-
-
-
-
-
-
-
 
 
 
