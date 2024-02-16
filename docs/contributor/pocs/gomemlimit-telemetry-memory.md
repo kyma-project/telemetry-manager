@@ -1,8 +1,11 @@
 # GOMEMLIMIT for Telemetry Components
-The Go version 1.19 introduces a new feature called GOMEMLIMIT, which can help increase both GC-related performance and avoid out-of-memory (OOM) situations related to garbage collection.
+The Go version 1.19 introduces a new feature called GOMEMLIMIT, a powerful tool for improving garbage collection (GC) performance and preventing out-of-memory (OOM) errors.
 
-## Why Would You Run Out of Memory (OOM)?
+## Understanding Memory Management
+
 There are two ways to allocate memory: on the stack or on the heap. A stack allocation is short-lived and typically very cheap. No Garbage Collection (GC) is required for stack allocation since the end of the function marks the end of the variable's lifetime. On the other hand, a heap allocation is long-lived and considerably more expensive. When allocating on the heap, the runtime must find a contiguous piece of memory where the new variable fits. Additionally, it must be garbage-collected when the variable is no longer used. Both operations are orders of magnitude more expensive than a stack allocation.
+
+### Why Would You Run Out of Memory (OOM)?
 
 Short-lived allocations end on the stack, and long-lived allocations end up on the heap. In reality, it's not always this simple. Sometimes you will end up with unintentional heap allocations. It's important to know because those allocations will put pressure on the GC, which is required for preventing unexpected OOM situations.
 
@@ -33,11 +36,11 @@ What we want to achieve is a situation where the GC is not very aggressive when 
 
 With Go 1.19, the GOMEMLIMIT feature provides a better solution by allowing the specification of a soft memory cap. It complements the existing GOGC setting, making the garbage collector more aggressive when necessary.
 
-### Soft Limit
+### Understanding Soft Limits
 
 GOMEMLIMIT is considered a "soft" limit, meaning that the Go runtime uses it as a target rather than a strict constraint. In situations where memory usage exceeds the limit, the runtime prefers fast failure to prevent resource contention and application stalls.
 
-## Test with TracePipeline
+## Evaluating with TracePipeline
 To illustrate the benefits of GOMEMLIMIT, we conducted tests with TracePipeline, a memory-intensive application. By comparing scenarios with and without GOMEMLIMIT, we observed differences in garbage collection behavior and memory usage.
 
 ### Results
