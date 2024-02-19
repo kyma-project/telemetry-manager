@@ -19,7 +19,7 @@ type TracePipelineBuilder struct {
 	basicAuthUser     string
 	basicAuthPassword string
 
-	conditions []telemetryv1alpha1.TracePipelineCondition
+	conditions []metav1.Condition
 }
 
 func NewTracePipelineBuilder() *TracePipelineBuilder {
@@ -45,21 +45,25 @@ func (b *TracePipelineBuilder) WithBasicAuth(user, password string) *TracePipeli
 	return b
 }
 
-func TracePendingCondition(reason string) telemetryv1alpha1.TracePipelineCondition {
-	return telemetryv1alpha1.TracePipelineCondition{
-		Reason: reason,
-		Type:   telemetryv1alpha1.TracePipelinePending,
+func TracePendingCondition(reason string) metav1.Condition {
+	return metav1.Condition{
+		Type:    conditions.TypePending,
+		Status:  metav1.ConditionTrue,
+		Reason:  reason,
+		Message: conditions.CommonMessageFor(reason),
 	}
 }
 
-func TraceRunningCondition() telemetryv1alpha1.TracePipelineCondition {
-	return telemetryv1alpha1.TracePipelineCondition{
-		Reason: conditions.ReasonTraceGatewayDeploymentReady,
-		Type:   telemetryv1alpha1.TracePipelineRunning,
+func TraceRunningCondition() metav1.Condition {
+	return metav1.Condition{
+		Type:    conditions.TypeRunning,
+		Status:  metav1.ConditionTrue,
+		Reason:  conditions.ReasonTraceGatewayDeploymentReady,
+		Message: conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentReady),
 	}
 }
 
-func (b *TracePipelineBuilder) WithStatusConditions(conditions ...telemetryv1alpha1.TracePipelineCondition) *TracePipelineBuilder {
+func (b *TracePipelineBuilder) WithStatusConditions(conditions ...metav1.Condition) *TracePipelineBuilder {
 	b.conditions = conditions
 	return b
 }
@@ -72,7 +76,8 @@ func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
 
 	return telemetryv1alpha1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:       name,
+			Generation: 1,
 		},
 		Spec: telemetryv1alpha1.TracePipelineSpec{
 			Output: telemetryv1alpha1.TracePipelineOutput{

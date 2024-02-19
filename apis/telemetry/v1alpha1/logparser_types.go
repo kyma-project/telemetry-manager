@@ -55,71 +55,10 @@ type LogParserList struct {
 	Items           []LogParser `json:"items"`
 }
 
-type LogParserConditionType string
-
-// These are the valid statuses of LogParser.
-const (
-	LogParserPending LogParserConditionType = "Pending"
-	LogParserRunning LogParserConditionType = "Running"
-)
-
-type LogParserCondition struct {
-	// An array of conditions describing the status of the parser.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
-	// An array of conditions describing the status of the parser.
-	Reason string `json:"reason,omitempty"`
-	// The possible transition types are:<br>- `Running`: The parser is ready and usable.<br>- `Pending`: The parser is being activated.
-	Type LogParserConditionType `json:"type,omitempty"`
-}
-
 // LogParserStatus shows the observed state of the LogParser.
 type LogParserStatus struct {
 	// An array of conditions describing the status of the parser.
-	Conditions []LogParserCondition `json:"conditions,omitempty"`
-}
-
-func (lps *LogParserStatus) GetCondition(condType LogParserConditionType) *LogParserCondition {
-	for cond := range lps.Conditions {
-		if lps.Conditions[cond].Type == condType {
-			return &lps.Conditions[cond]
-		}
-	}
-	return nil
-}
-
-func (lps *LogParserStatus) HasCondition(condition LogParserConditionType) bool {
-	return lps.GetCondition(condition) != nil
-}
-
-func NewLogParserCondition(reason string, condType LogParserConditionType) *LogParserCondition {
-	return &LogParserCondition{
-		LastTransitionTime: metav1.Now(),
-		Reason:             reason,
-		Type:               condType,
-	}
-}
-
-func (lps *LogParserStatus) SetCondition(cond LogParserCondition) {
-	currentCond := lps.GetCondition(cond.Type)
-	if currentCond != nil && currentCond.Reason == cond.Reason {
-		return
-	}
-	if currentCond != nil {
-		cond.LastTransitionTime = currentCond.LastTransitionTime
-	}
-	newConditions := lps.filterOutCondition(lps.Conditions, cond.Type)
-	lps.Conditions = append(newConditions, cond)
-}
-
-func (lps *LogParserStatus) filterOutCondition(conditions []LogParserCondition, condType LogParserConditionType) []LogParserCondition {
-	var newConditions []LogParserCondition
-	for _, cond := range conditions {
-		if cond.Type == condType {
-			continue
-		}
-		newConditions = append(newConditions, cond)
-	}
-	return newConditions
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 //nolint:gochecknoinits // SchemeBuilder's registration is required.

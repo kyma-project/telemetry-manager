@@ -183,74 +183,12 @@ type VariableRef struct {
 	ValueFrom ValueFromSource `json:"valueFrom,omitempty"`
 }
 
-type LogPipelineConditionType string
-
-// These are the valid statuses of LogPipeline.
-const (
-	LogPipelinePending LogPipelineConditionType = "Pending"
-	LogPipelineRunning LogPipelineConditionType = "Running"
-)
-
-// LogPipelineCondition contains details for the current condition of this LogPipeline.
-type LogPipelineCondition struct {
-	// An array of conditions describing the status of the pipeline.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
-	// Reason of last transition.
-	Reason string `json:"reason,omitempty"`
-	// The possible transition types are:<br>- `Running`: The instance is ready and usable.<br>- `Pending`: The pipeline is being activated.
-	Type LogPipelineConditionType `json:"type,omitempty"`
-}
-
 // LogPipelineStatus shows the observed state of the LogPipeline
 type LogPipelineStatus struct {
 	// An array of conditions describing the status of the pipeline.
-	Conditions []LogPipelineCondition `json:"conditions,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 	// Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
 	UnsupportedMode bool `json:"unsupportedMode,omitempty"`
-}
-
-func NewLogPipelineCondition(reason string, condType LogPipelineConditionType) *LogPipelineCondition {
-	return &LogPipelineCondition{
-		LastTransitionTime: metav1.Now(),
-		Reason:             reason,
-		Type:               condType,
-	}
-}
-
-func (lps *LogPipelineStatus) GetCondition(condType LogPipelineConditionType) *LogPipelineCondition {
-	for cond := range lps.Conditions {
-		if lps.Conditions[cond].Type == condType {
-			return &lps.Conditions[cond]
-		}
-	}
-	return nil
-}
-
-func (lps *LogPipelineStatus) HasCondition(condition LogPipelineConditionType) bool {
-	return lps.GetCondition(condition) != nil
-}
-
-func (lps *LogPipelineStatus) SetCondition(cond LogPipelineCondition) {
-	currentCond := lps.GetCondition(cond.Type)
-	if currentCond != nil && currentCond.Reason == cond.Reason {
-		return
-	}
-	if currentCond != nil {
-		cond.LastTransitionTime = currentCond.LastTransitionTime
-	}
-	newConditions := filterOutCondition(lps.Conditions, cond.Type)
-	lps.Conditions = append(newConditions, cond)
-}
-
-func filterOutCondition(conditions []LogPipelineCondition, condType LogPipelineConditionType) []LogPipelineCondition {
-	var newConditions []LogPipelineCondition
-	for _, cond := range conditions {
-		if cond.Type == condType {
-			continue
-		}
-		newConditions = append(newConditions, cond)
-	}
-	return newConditions
 }
 
 // +kubebuilder:object:root=true

@@ -7,14 +7,12 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error {
-	log := logf.FromContext(ctx)
 	var parser telemetryv1alpha1.LogParser
 	if err := r.Get(ctx, types.NamespacedName{Name: parserName}, &parser); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -33,34 +31,19 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 		return err
 	}
 
-	if fluentBitReady {
-		if parser.Status.HasCondition(telemetryv1alpha1.LogParserRunning) {
-			return nil
-		}
+	if !fluentBitReady {
+		conditions.SetPendingCondition(ctx, &parser.Status.Conditions, parser.Generation, conditions.ReasonFluentBitDSNotReady, parser.Name)
+		return updateStatus(ctx, r.Client, &parser)
 
-		running := telemetryv1alpha1.NewLogParserCondition(conditions.ReasonFluentBitDSReady, telemetryv1alpha1.LogParserRunning)
-		return setCondition(ctx, r.Client, &parser, running)
 	}
 
-	pending := telemetryv1alpha1.NewLogParserCondition(conditions.ReasonFluentBitDSNotReady, telemetryv1alpha1.LogParserPending)
-
-	if parser.Status.HasCondition(telemetryv1alpha1.LogParserRunning) {
-		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Resetting previous conditions", parser.Name, pending.Type))
-		parser.Status.Conditions = []telemetryv1alpha1.LogParserCondition{}
-	}
-
-	return setCondition(ctx, r.Client, &parser, pending)
+	conditions.SetRunningCondition(ctx, &parser.Status.Conditions, parser.Generation, conditions.ReasonFluentBitDSReady, parser.Name)
+	return updateStatus(ctx, r.Client, &parser)
 }
 
-func setCondition(ctx context.Context, client client.Client, parser *telemetryv1alpha1.LogParser, condition *telemetryv1alpha1.LogParserCondition) error {
-	log := logf.FromContext(ctx)
-
-	log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s", parser.Name, condition.Type))
-
-	parser.Status.SetCondition(*condition)
-
+func updateStatus(ctx context.Context, client client.Client, parser *telemetryv1alpha1.LogParser) error {
 	if err := client.Status().Update(ctx, parser); err != nil {
-		return fmt.Errorf("failed to update LogParser status to %s: %v", condition.Type, err)
+		return fmt.Errorf("failed to update LogParser status: %w", err)
 	}
 	return nil
 }
