@@ -1,5 +1,6 @@
-# GOMEMLIMIT for Telemetry Components
-The Go version 1.19 introduces a new feature called GOMEMLIMIT, a powerful tool for improving garbage collection (GC) performance and preventing out-of-memory (OOM) errors.
+#  Memory Management with Telemetry Components 
+
+The OpenTelemetry project provides a comprehensive set of tools for monitoring and managing memory usage in applications. By leveraging OpenTelemetry's capabilities, such as memory limiter processor, enabling them to optimize application performance and reliability. As we experienced, the memory limiter processor can help mitigate the risk of encountering out-of-memory (OOM) errors, but it does not provide foolproof protection. Despite the benefits of memory limiter processor, it's important to note that memory management is a complex and multifaceted topic. To get our application to work efficiently, we need to understand the memory management and garbage collection behavior of the Go runtime. We also need to consider the impact of memory allocation strategies and the potential risks of OOM errors.
 
 ## Understanding Memory Management
 
