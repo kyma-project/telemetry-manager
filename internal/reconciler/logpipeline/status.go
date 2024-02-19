@@ -4,16 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
@@ -59,40 +55,14 @@ func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName st
 		return nil
 	}
 
-	log := logf.FromContext(ctx)
-
 	if pipeline.Spec.Output.IsLokiDefined() {
-		pending := conditions.New(
-			conditions.TypePending,
-			conditions.ReasonUnsupportedLokiOutput,
-			metav1.ConditionTrue,
-			pipeline.Generation,
-		)
-
-		if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeRunning) != nil {
-			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Removing the Running condition", pipeline.Name, pending.Type))
-			meta.RemoveStatusCondition(&pipeline.Status.Conditions, conditions.TypeRunning)
-		}
-
-		meta.SetStatusCondition(&pipeline.Status.Conditions, pending)
+		conditions.SetPendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonUnsupportedLokiOutput, pipeline.Name)
 		return updateStatus(ctx, r.Client, &pipeline)
 	}
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, &pipeline)
 	if referencesNonExistentSecret {
-		pending := conditions.New(
-			conditions.TypePending,
-			conditions.ReasonReferencedSecretMissing,
-			metav1.ConditionTrue,
-			pipeline.Generation,
-		)
-
-		if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeRunning) != nil {
-			log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Removing the Running condition", pipeline.Name, pending.Type))
-			meta.RemoveStatusCondition(&pipeline.Status.Conditions, conditions.TypeRunning)
-		}
-
-		meta.SetStatusCondition(&pipeline.Status.Conditions, pending)
+		conditions.SetPendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonReferencedSecretMissing, pipeline.Name)
 		return updateStatus(ctx, r.Client, &pipeline)
 	}
 
@@ -101,42 +71,12 @@ func (r *Reconciler) updateStatusConditions(ctx context.Context, pipelineName st
 		return err
 	}
 
-	if fluentBitReady {
-		existingPending := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypePending)
-		if existingPending != nil {
-			newPending := conditions.New(
-				conditions.TypePending,
-				existingPending.Reason,
-				metav1.ConditionFalse,
-				pipeline.Generation,
-			)
-			meta.SetStatusCondition(&pipeline.Status.Conditions, newPending)
-		}
-
-		running := conditions.New(
-			conditions.TypeRunning,
-			conditions.ReasonFluentBitDSReady,
-			metav1.ConditionTrue,
-			pipeline.Generation,
-		)
-		meta.SetStatusCondition(&pipeline.Status.Conditions, running)
-
+	if !fluentBitReady {
+		conditions.SetPendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonFluentBitDSNotReady, pipeline.Name)
 		return updateStatus(ctx, r.Client, &pipeline)
 	}
 
-	pending := conditions.New(
-		conditions.TypePending,
-		conditions.ReasonFluentBitDSNotReady,
-		metav1.ConditionTrue,
-		pipeline.Generation,
-	)
-
-	if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeRunning) != nil {
-		log.V(1).Info(fmt.Sprintf("Updating the status of %s to %s. Removing the Running condition", pipeline.Name, pending.Type))
-		meta.RemoveStatusCondition(&pipeline.Status.Conditions, conditions.TypeRunning)
-	}
-
-	meta.SetStatusCondition(&pipeline.Status.Conditions, pending)
+	conditions.SetRunningCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonFluentBitDSReady, pipeline.Name)
 	return updateStatus(ctx, r.Client, &pipeline)
 }
 

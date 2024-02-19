@@ -1,6 +1,12 @@
 package conditions
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	"context"
+	"fmt"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+)
 
 const (
 	TypeMetricGatewayHealthy   = "GatewayHealthy"
@@ -70,4 +76,49 @@ func CommonMessageFor(reason string) string {
 		return condMessage
 	}
 	return ""
+}
+
+func SetPendingCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string) {
+	log := logf.FromContext(ctx)
+
+	pending := New(
+		TypePending,
+		reason,
+		metav1.ConditionTrue,
+		generation,
+	)
+
+	if meta.FindStatusCondition(*conditions, TypeRunning) != nil {
+		log.V(1).Info(fmt.Sprintf("Updating the status of %s: Removing the Running condition", resourceName))
+		meta.RemoveStatusCondition(conditions, TypeRunning)
+	}
+
+	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Pending condition to True", resourceName))
+	meta.SetStatusCondition(conditions, pending)
+}
+
+func SetRunningCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string) {
+	log := logf.FromContext(ctx)
+
+	existingPending := meta.FindStatusCondition(*conditions, TypePending)
+	if existingPending != nil {
+		newPending := New(
+			TypePending,
+			existingPending.Reason,
+			metav1.ConditionFalse,
+			generation,
+		)
+		log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Pending condition to False", resourceName))
+		meta.SetStatusCondition(conditions, newPending)
+	}
+
+	running := New(
+		TypeRunning,
+		reason,
+		metav1.ConditionTrue,
+		generation,
+	)
+
+	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Running condition to True", resourceName))
+	meta.SetStatusCondition(conditions, running)
 }
