@@ -36,7 +36,7 @@ jobs:
         echo "Deploying Manager using image europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA}"
         IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
 
-    - name: Wait for manager readiness
+    - name: Wait for operator readiness
       shell: bash
       run: kubectl -n kyma-system rollout status deployment telemetry-operator --timeout=90s
 
