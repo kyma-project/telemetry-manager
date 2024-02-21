@@ -4,13 +4,13 @@
 
 You must pause reconciliations to be able to debug the pipelines or the Telemetry module. This is also useful to try out a different pipeline configuration or a different OTel configuration. To pause or unpause reconciliations, follow these steps:
 
-1. Create an overriding `telemetry-override-config` ConfigMap in the operator's namespace.
+1. Create an overriding `telemetry-override-config` ConfigMap in the manager's namespace.
 2. Perform debugging operations.
 3. Remove the created ConfigMap.
 4. To reset the debug actions, perform a restart of Telemetry Manager.
 
    ```bash
-   kubectl rollout restart deployment telemetry-operator
+   kubectl rollout restart deployment telemetry-manager
    ```
 
 Here is an example of such a ConfigMap:

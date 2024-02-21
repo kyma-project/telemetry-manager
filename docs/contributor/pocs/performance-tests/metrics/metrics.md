@@ -123,9 +123,9 @@ For the test environment, the following setup was used:
       labels:
         app.kubernetes.io/name: metricpipeline
         app.kubernetes.io/instance: metricpipeline-sample
-        app.kubernetes.io/part-of: telemetry-operator
+        app.kubernetes.io/part-of: telemetry-manager
         app.kubernetes.io/managed-by: kustomize
-        app.kubernetes.io/created-by: telemetry-operator
+        app.kubernetes.io/created-by: telemetry-manager
       name: metricpipeline-sample
     spec:
       input:

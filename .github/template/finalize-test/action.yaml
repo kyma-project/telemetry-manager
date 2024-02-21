@@ -15,13 +15,13 @@ runs:
       shell: bash
       if: ${{ inputs.failure }}
       run: |
-        kubectl -n kyma-system describe pod -l "app.kubernetes.io/instance=telemetry, app.kubernetes.io/name=operator"
+        kubectl -n kyma-system describe pod -l "app.kubernetes.io/instance=telemetry, app.kubernetes.io/name=manager"
 
     - name: Print manager logs
       shell: bash
       if: ${{ inputs.failure }}
       run: |
-        kubectl -n kyma-system logs -l "app.kubernetes.io/instance=telemetry, app.kubernetes.io/name=operator"
+        kubectl -n kyma-system logs -l "app.kubernetes.io/instance=telemetry, app.kubernetes.io/name=manager"
 
     - name: List Namespaces
       shell: bash

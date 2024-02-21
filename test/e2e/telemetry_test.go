@@ -38,7 +38,7 @@ var _ = Describe("Telemetry Module", Label("telemetry"), Ordered, func() {
 				logPipelineWebhook := validatingWebhookConfiguration.Webhooks[0]
 				g.Expect(logPipelineWebhook.Name).Should(Equal("validation.logpipelines.telemetry.kyma-project.io"))
 				g.Expect(logPipelineWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
-				g.Expect(logPipelineWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-operator-webhook"))
+				g.Expect(logPipelineWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-manager-webhook"))
 				g.Expect(logPipelineWebhook.ClientConfig.Service.Namespace).Should(Equal(kitkyma.SystemNamespaceName))
 				g.Expect(*logPipelineWebhook.ClientConfig.Service.Port).Should(Equal(int32(443)))
 				g.Expect(*logPipelineWebhook.ClientConfig.Service.Path).Should(Equal("/validate-logpipeline"))
@@ -50,7 +50,7 @@ var _ = Describe("Telemetry Module", Label("telemetry"), Ordered, func() {
 				logParserWebhook := validatingWebhookConfiguration.Webhooks[1]
 				g.Expect(logParserWebhook.Name).Should(Equal("validation.logparsers.telemetry.kyma-project.io"))
 				g.Expect(logParserWebhook.ClientConfig.CABundle).ShouldNot(BeEmpty())
-				g.Expect(logParserWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-operator-webhook"))
+				g.Expect(logParserWebhook.ClientConfig.Service.Name).Should(Equal("telemetry-manager-webhook"))
 				g.Expect(logParserWebhook.ClientConfig.Service.Namespace).Should(Equal(kitkyma.SystemNamespaceName))
 				g.Expect(*logParserWebhook.ClientConfig.Service.Port).Should(Equal(int32(443)))
 				g.Expect(*logParserWebhook.ClientConfig.Service.Path).Should(Equal("/validate-logparser"))
