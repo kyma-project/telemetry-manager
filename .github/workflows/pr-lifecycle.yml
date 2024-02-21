@@ -68,6 +68,7 @@ jobs:
     - name: Deploy with current version
       shell: bash
       run: |
+        kubectl -n kyma-system scale deployment telemetry-operator --replicas 0
         IMG=europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.number }} make deploy-dev
 
     - name: Wait for manager readiness
