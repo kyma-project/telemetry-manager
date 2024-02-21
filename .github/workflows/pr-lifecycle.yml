@@ -38,7 +38,7 @@ jobs:
 
     - name: Wait for manager readiness
       shell: bash
-      run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
+      run: kubectl -n kyma-system rollout status deployment telemetry-operator --timeout=90s
 
     - name: Run test on latest tag
       shell: bash
