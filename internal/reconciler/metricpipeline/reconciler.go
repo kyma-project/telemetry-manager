@@ -3,6 +3,7 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,6 +30,7 @@ type Config struct {
 	Gateway                otelcollector.GatewayConfig
 	OverridesConfigMapName types.NamespacedName
 	MaxPipelines           int
+	SelfMonitor            selfmonitor.PrometheusDeploymentConfig
 }
 
 //go:generate mockery --name DeploymentProber --filename deployment_prober.go
@@ -48,9 +50,10 @@ type Reconciler struct {
 	agentProber        DaemonSetProber
 	overridesHandler   *overrides.Handler
 	istioStatusChecker istiostatus.Checker
+	enableSelfMonitor  bool
 }
 
-func NewReconciler(client client.Client, config Config, gatewayProber DeploymentProber, agentProber DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
+func NewReconciler(client client.Client, config Config, gatewayProber DeploymentProber, agentProber DaemonSetProber, overridesHandler *overrides.Handler, enableSelfMonitor bool) *Reconciler {
 	return &Reconciler{
 		Client:             client,
 		config:             config,
@@ -58,6 +61,7 @@ func NewReconciler(client client.Client, config Config, gatewayProber Deployment
 		agentProber:        agentProber,
 		overridesHandler:   overridesHandler,
 		istioStatusChecker: istiostatus.NewChecker(client),
+		enableSelfMonitor:  enableSelfMonitor,
 	}
 }
 
@@ -129,6 +133,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		}
 	}
 
+	if r.enableSelfMonitor {
+		if err = r.reconcilePrometheus(ctx, pipeline); err != nil {
+			return fmt.Errorf("failed to reconcile selfmonitor: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -162,6 +172,22 @@ func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
 	isPrometheusInputEnabled := input.Prometheus != nil && input.Prometheus.Enabled
 	isIstioInputEnabled := input.Istio != nil && input.Istio.Enabled
 	return isRuntimeInputEnabled || isPrometheusInputEnabled || isIstioInputEnabled
+}
+
+func (r *Reconciler) reconcilePrometheus(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) error {
+	selfMonConfig := selfmonitor.MakeConfig()
+	selfMonitorConfigYaml, err := yaml.Marshal(selfMonConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
+	}
+
+	if err := selfmonitor.ApplyResources(ctx,
+		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
+		r.config.SelfMonitor.WithPrometheusConfig(string(selfMonitorConfigYaml)).WithAllowedPorts()); err != nil {
+		return fmt.Errorf("failed to apply selfmonitor resources: %w", err)
+	}
+
+	return nil
 }
 
 func (r *Reconciler) reconcileMetricGateway(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, allPipelines []telemetryv1alpha1.MetricPipeline) error {

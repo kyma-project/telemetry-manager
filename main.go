@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
 	"os"
 	"strings"
 	"time"
@@ -120,6 +121,14 @@ var (
 	metricGatewayDynamicCPURequest    string
 	metricGatewayMemoryRequest        string
 	metricGatewayDynamicMemoryRequest string
+
+	enableSelfMonitor        bool
+	selfMonitorImage         string
+	selfMonitorCPURequest    string
+	selfMonitorCPULimit      string
+	selfMonitorMemoryRequest string
+	selfMonitorMemoryLimit   string
+	selfMonitorPriorityClass string
 
 	enableWebhook bool
 )
@@ -248,6 +257,13 @@ func main() {
 	flag.StringVar(&fluentBitImageVersion, "fluent-bit-image", fluentBitImage, "Image for fluent-bit")
 	flag.StringVar(&fluentBitExporterVersion, "fluent-bit-exporter-image", fluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
 	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
+
+	flag.BoolVar(&enableSelfMonitor, "enable-self-monitor", true, "Enable selfmonitoring of the pipelines")
+	flag.StringVar(&selfMonitorImage, "self-monitor-image", "quay.io/prometheus/prometheus:v2.45.3", "Image for selfmonitor")
+	flag.StringVar(&selfMonitorCPULimit, "self-monitor-cpu-limit", "0.2", "CPU limit for self monitor")
+	flag.StringVar(&selfMonitorCPURequest, "self-monitor-cpu-request", "0.1", "CPU request for self monitor")
+	flag.StringVar(&selfMonitorMemoryLimit, "self-monitor-memory-limit", "90Mi", "Memory limit for self monitor")
+	flag.StringVar(&selfMonitorMemoryRequest, "self-monitor-memory-request", "42Mi", "Memory request for self monitor")
 
 	flag.StringVar(&deniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
 	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
@@ -562,11 +578,30 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		MaxPipelines:           maxMetricPipelines,
+		SelfMonitor:            createSelfMonitoringConfig(),
 	}
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,
-		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, overridesHandler))
+		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, overridesHandler, enableSelfMonitor))
+}
+
+func createSelfMonitoringConfig() selfmonitor.PrometheusDeploymentConfig {
+	return selfmonitor.PrometheusDeploymentConfig{
+		Config: selfmonitor.Config{
+			BaseName:  "telemetry-self-monitor",
+			Namespace: telemetryNamespace,
+		},
+		Deployment: selfmonitor.DeploymentConfig{
+			Image:             selfMonitorImage,
+			PriorityClassName: selfMonitorPriorityClass,
+			CPULimit:          resource.MustParse(selfMonitorCPULimit),
+			CPURequest:        resource.MustParse(selfMonitorCPURequest),
+			MemoryLimit:       resource.MustParse(selfMonitorMemoryLimit),
+			MemoryRequest:     resource.MustParse(selfMonitorMemoryRequest),
+		},
+		Replicas: int32(1),
+	}
 }
 
 func createDryRunConfig() dryrun.Config {

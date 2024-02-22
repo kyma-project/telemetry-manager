@@ -10,6 +10,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func CalculateWithConfigMaps(configMaps []corev1.ConfigMap) string {
+	h := sha256.New()
+	for _, cm := range sortConfigMaps(configMaps) {
+		addStringMap(h, cm.Data)
+	}
+
+	return fmt.Sprintf("%x", h.Sum(nil))
+
+}
+
 func Calculate(configMaps []corev1.ConfigMap, secrets []corev1.Secret) string {
 	h := sha256.New()
 
