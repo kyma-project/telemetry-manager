@@ -196,7 +196,7 @@ func (r *Reconciler) reconcileWebhook(ctx context.Context, telemetry *operatorv1
 
 func (r *Reconciler) cleanUpOldNetworkPolicies(ctx context.Context) error {
 	oldNetworkPoliciesNames := []string{
-		"telemetry-operator-pprof-deny-ingress",
+		"telemetry-manager-pprof-deny-ingress",
 		"telemetry-metric-gateway-pprof-deny-ingress",
 		"telemetry-metric-agent-pprof-deny-ingress",
 		"telemetry-trace-collector-pprof-deny-ingress",

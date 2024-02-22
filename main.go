@@ -132,7 +132,7 @@ const (
 	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240123-4f99d571"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
-	webhookServiceName = "telemetry-operator-webhook"
+	webhookServiceName = "telemetry-manager-webhook"
 
 	metricOTLPServiceName = "telemetry-otlp-metrics"
 

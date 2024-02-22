@@ -4,7 +4,7 @@
 
 [![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/telemetry-manager)](https://api.reuse.software/info/github.com/kyma-project/telemetry-manager)
 
-![GitHub tag checks state](https://img.shields.io/github/checks-status/kyma-project/telemetry-manager/main?label=telemetry-operator&link=https%3A%2F%2Fgithub.com%2Fkyma-project%2Ftelemetry-manager%2Fcommits%2Fmain)
+![GitHub tag checks state](https://img.shields.io/github/checks-status/kyma-project/telemetry-manager/main?label=telemetry-manager&link=https%3A%2F%2Fgithub.com%2Fkyma-project%2Ftelemetry-manager%2Fcommits%2Fmain)
 
 ## Overview
 
