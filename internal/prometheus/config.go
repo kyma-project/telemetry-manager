@@ -55,3 +55,19 @@ const (
 	Keep    RelabelAction = "keep"
 	Drop    RelabelAction = "drop"
 )
+
+type GlobalConfig struct {
+	ScraperInterval    time.Duration `yaml:"scrape_interval"`
+	EvaluationInterval time.Duration `yaml:"evaluation_interval"`
+}
+
+type AlertingConfig struct {
+	AlertManagers []AlertManagerConfig `yaml:"alertmanagers"`
+}
+
+type AlertManagerConfig struct {
+	StaticConfigs []StaticConfig `yaml:"static_configs"`
+}
+type StaticConfig struct {
+	Targets []string `yaml:"targets"`
+}

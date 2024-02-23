@@ -21,63 +21,56 @@ import (
 
 const (
 	prometheusUser         int64 = 10001
-	collectorContainerName       = "prometheus"
+	collectorContainerName       = "self-monitor"
+	replicas               int32 = 1
 )
 
 type podSpecOption = func(pod *corev1.PodSpec)
 
-type SelfMonitor struct {
-	client            client.Client
-	selfMonitorProber DeploymentProber
-}
-
-//go:generate mockery --name DeploymentProber --filename deployment_prober.go
-type DeploymentProber interface {
-	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
-}
-
-func NewSelfMonitor(client client.Client, selfMonitorProber DeploymentProber) *SelfMonitor {
-	return &SelfMonitor{
-		client:            client,
-		selfMonitorProber: selfMonitorProber,
-	}
-}
-
-func ApplyResources(ctx context.Context, c client.Client, config *PrometheusDeploymentConfig) error {
+func ApplyResources(ctx context.Context, c client.Client, config *Config) error {
 
 	name := types.NamespacedName{Namespace: config.Namespace, Name: config.BaseName}
 
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, commonresources.MakeServiceAccount(name)); err != nil {
-		return fmt.Errorf("failed to create service account: %w", err)
+		return fmt.Errorf("failed to create self-monitor service account: %w", err)
 	}
 
 	if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, makeClusterRole(name)); err != nil {
-		return fmt.Errorf("failed to create cluster role: %w", err)
+		return fmt.Errorf("failed to create self-monitor cluster role: %w", err)
 	}
 
 	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, commonresources.MakeClusterRoleBinding(name)); err != nil {
-		return fmt.Errorf("failed to create cluster role binding: %w", err)
+		return fmt.Errorf("failed to create self-monitor cluster role binding: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, makeNetworkPolicy(name, config.allowedPorts, defaultLabels(name.Name))); err != nil {
-		return fmt.Errorf("failed to create deny pprof network policy: %w", err)
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, makeNetworkPolicy(name, defaultLabels(name.Name))); err != nil {
+		return fmt.Errorf("failed to create self-monitor network policy: %w", err)
 	}
 
-	configMap := makeConfigMap(name, config.prometheusConfig)
+	configMap := makeConfigMap(name, config.monitoringConfig)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
-		return fmt.Errorf("failed to create configmap: %w", err)
+		return fmt.Errorf("failed to create self-monitor configmap: %w", err)
 	}
 
 	checksum := configchecksum.CalculateWithConfigMaps([]corev1.ConfigMap{*configMap})
 	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, makeSelfMonitorDeployment(config, checksum)); err != nil {
-		return fmt.Errorf("failed to create selmonitor deployment: %w", err)
+		return fmt.Errorf("failed to create sel-monitor deployment: %w", err)
 	}
 
 	return nil
 }
 
-func makeNetworkPolicy(name types.NamespacedName, allowedPorts []int32, labels map[string]string) *networkingv1.NetworkPolicy {
+func makeNetworkPolicy(name types.NamespacedName, labels map[string]string) *networkingv1.NetworkPolicy {
+	allowedPorts := []int32{int32(9090)}
+
+	telemetryPodSelector := map[string]string{
+		"app.kubernetes.io/instance": "telemetry",
+		"control-plane":              "telemetry-operator",
+	}
+	namespaceSelector := map[string]string{
+		"kubernetes.io/metadata.name": name.Namespace,
+	}
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -97,13 +90,10 @@ func makeNetworkPolicy(name types.NamespacedName, allowedPorts []int32, labels m
 					From: []networkingv1.NetworkPolicyPeer{
 						{
 							NamespaceSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{"kubernetes.io/metadata.name": name.Namespace},
+								MatchLabels: namespaceSelector,
 							},
 							PodSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									"app.kubernetes.io/instance": "telemetry",
-									"control-plane":              "telemetry-operator",
-								},
+								MatchLabels: telemetryPodSelector,
 							},
 						},
 					},
@@ -115,13 +105,10 @@ func makeNetworkPolicy(name types.NamespacedName, allowedPorts []int32, labels m
 					To: []networkingv1.NetworkPolicyPeer{
 						{
 							NamespaceSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{"kubernetes.io/metadata.name": name.Namespace},
+								MatchLabels: namespaceSelector,
 							},
 							PodSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									"app.kubernetes.io/instance": "telemetry",
-									"control-plane":              "telemetry-operator",
-								},
+								MatchLabels: telemetryPodSelector,
 							},
 						},
 					},
@@ -158,7 +145,7 @@ func makeConfigMap(name types.NamespacedName, selfmonitorConfig string) *corev1.
 		},
 	}
 }
-func makeSelfMonitorDeployment(cfg *PrometheusDeploymentConfig, configChecksum string) *appsv1.Deployment {
+func makeSelfMonitorDeployment(cfg *Config, configChecksum string) *appsv1.Deployment {
 	selectorLabels := defaultLabels(cfg.BaseName)
 	podLabels := maps.Clone(selectorLabels)
 
@@ -178,7 +165,7 @@ func makeSelfMonitorDeployment(cfg *PrometheusDeploymentConfig, configChecksum s
 			Labels:    selectorLabels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: ptr.To(cfg.Replicas),
+			Replicas: ptr.To(replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},
@@ -348,7 +335,7 @@ func withAffinity(affinity corev1.Affinity) podSpecOption {
 	}
 }
 
-func makeResourceRequirements(cfg *PrometheusDeploymentConfig) corev1.ResourceRequirements {
+func makeResourceRequirements(cfg *Config) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Limits: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    cfg.Deployment.CPULimit,

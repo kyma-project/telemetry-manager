@@ -586,12 +586,11 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, overridesHandler, enableSelfMonitor))
 }
 
-func createSelfMonitoringConfig() selfmonitor.PrometheusDeploymentConfig {
-	return selfmonitor.PrometheusDeploymentConfig{
-		Config: selfmonitor.Config{
-			BaseName:  "telemetry-self-monitor",
-			Namespace: telemetryNamespace,
-		},
+func createSelfMonitoringConfig() selfmonitor.Config {
+	return selfmonitor.Config{
+		BaseName:  "telemetry-self-monitor",
+		Namespace: telemetryNamespace,
+
 		Deployment: selfmonitor.DeploymentConfig{
 			Image:             selfMonitorImage,
 			PriorityClassName: selfMonitorPriorityClass,
@@ -600,7 +599,6 @@ func createSelfMonitoringConfig() selfmonitor.PrometheusDeploymentConfig {
 			MemoryLimit:       resource.MustParse(selfMonitorMemoryLimit),
 			MemoryRequest:     resource.MustParse(selfMonitorMemoryRequest),
 		},
-		Replicas: int32(1),
 	}
 }
 

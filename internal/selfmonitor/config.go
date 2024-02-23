@@ -1,13 +1,17 @@
 package selfmonitor
 
 import (
+	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 type Config struct {
 	BaseName         string
 	Namespace        string
-	prometheusConfig string
+	monitoringConfig string
+
+	Deployment   DeploymentConfig
+	allowedPorts []int32
 }
 
 type DeploymentConfig struct {
@@ -19,22 +23,15 @@ type DeploymentConfig struct {
 	MemoryRequest     resource.Quantity
 }
 
-type PrometheusDeploymentConfig struct {
-	Config
-
-	Deployment   DeploymentConfig
-	allowedPorts []int32
-	Replicas     int32
+type monitoringConfig struct {
+	GlobalConfig   prometheus.GlobalConfig   `yaml:"global"`
+	AlertingConfig prometheus.AlertingConfig `yaml:"alerting,omitempty"`
+	RuleFiles      []string                  `yaml:"rule_files,omitempty"`
+	ScrapeConfigs  []prometheus.ScrapeConfig `yaml:"scrape_configs,omitempty"`
 }
 
-func (promCfg *PrometheusDeploymentConfig) WithPrometheusConfig(prometheusCfgYAML string) *PrometheusDeploymentConfig {
+func (promCfg *Config) WithMonitoringConfig(monitoringCfgYAML string) *Config {
 	cfgCopy := *promCfg
-	cfgCopy.prometheusConfig = prometheusCfgYAML
-	return &cfgCopy
-}
-
-func (promCfg *PrometheusDeploymentConfig) WithAllowedPorts() *PrometheusDeploymentConfig {
-	cfgCopy := *promCfg
-	cfgCopy.allowedPorts = []int32{int32(9090)}
+	cfgCopy.monitoringConfig = monitoringCfgYAML
 	return &cfgCopy
 }
