@@ -8,6 +8,7 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,7 +60,7 @@ func ApplyResources(ctx context.Context, c client.Client, config *PrometheusDepl
 		return fmt.Errorf("failed to create cluster role binding: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, commonresources.MakeNetworkPolicy(name, config.allowedPorts, defaultLabels(name.Name))); err != nil {
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, makeNetworkPolicy(name, config.allowedPorts, defaultLabels(name.Name))); err != nil {
 		return fmt.Errorf("failed to create deny pprof network policy: %w", err)
 	}
 
@@ -76,6 +77,75 @@ func ApplyResources(ctx context.Context, c client.Client, config *PrometheusDepl
 	return nil
 }
 
+func makeNetworkPolicy(name types.NamespacedName, allowedPorts []int32, labels map[string]string) *networkingv1.NetworkPolicy {
+	return &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    labels,
+		},
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			PolicyTypes: []networkingv1.PolicyType{
+				networkingv1.PolicyTypeIngress,
+				networkingv1.PolicyTypeEgress,
+			},
+			Ingress: []networkingv1.NetworkPolicyIngressRule{
+				{
+					From: []networkingv1.NetworkPolicyPeer{
+						{
+							NamespaceSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{"kubernetes.io/metadata.name": name.Namespace},
+							},
+							PodSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									"app.kubernetes.io/instance": "telemetry",
+									"control-plane":              "telemetry-operator",
+								},
+							},
+						},
+					},
+					Ports: makeNetworkPolicyPorts(allowedPorts),
+				},
+			},
+			Egress: []networkingv1.NetworkPolicyEgressRule{
+				{
+					To: []networkingv1.NetworkPolicyPeer{
+						{
+							NamespaceSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{"kubernetes.io/metadata.name": name.Namespace},
+							},
+							PodSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									"app.kubernetes.io/instance": "telemetry",
+									"control-plane":              "telemetry-operator",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
+	var networkPolicyPorts []networkingv1.NetworkPolicyPort
+
+	tcpProtocol := corev1.ProtocolTCP
+
+	for idx := range ports {
+		port := intstr.FromInt32(ports[idx])
+		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
+			Protocol: &tcpProtocol,
+			Port:     &port,
+		})
+	}
+
+	return networkPolicyPorts
+}
 func makeConfigMap(name types.NamespacedName, selfmonitorConfig string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
