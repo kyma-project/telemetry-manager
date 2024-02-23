@@ -258,7 +258,7 @@ func main() {
 	flag.StringVar(&fluentBitExporterVersion, "fluent-bit-exporter-image", fluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
 	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
 
-	flag.BoolVar(&enableSelfMonitor, "enable-self-monitor", true, "Enable selfmonitoring of the pipelines")
+	flag.BoolVar(&enableSelfMonitor, "self-monitor-enabled", true, "Enable selfmonitoring of the pipelines")
 	flag.StringVar(&selfMonitorImage, "self-monitor-image", "quay.io/prometheus/prometheus:v2.45.3", "Image for selfmonitor")
 	flag.StringVar(&selfMonitorCPULimit, "self-monitor-cpu-limit", "0.2", "CPU limit for self monitor")
 	flag.StringVar(&selfMonitorCPURequest, "self-monitor-cpu-request", "0.1", "CPU request for self monitor")

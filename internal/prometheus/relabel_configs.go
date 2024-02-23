@@ -1,4 +1,4 @@
-package agent
+package prometheus
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ const (
 	AnnotatedService AnnotatedResource = "service"
 )
 
-func keepIfRunningOnSameNode(nodeAffiliated NodeAffiliatedResource) RelabelConfig {
+func KeepIfRunningOnSameNode(nodeAffiliated NodeAffiliatedResource) RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_node_name", nodeAffiliated)},
 		Regex:        fmt.Sprintf("$%s", config.EnvVarCurrentNodeName),
@@ -28,7 +28,7 @@ func keepIfRunningOnSameNode(nodeAffiliated NodeAffiliatedResource) RelabelConfi
 	}
 }
 
-func keepIfScrapingEnabled(annotated AnnotatedResource) RelabelConfig {
+func KeepIfScrapingEnabled(annotated AnnotatedResource) RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_scrape", annotated)},
 		Regex:        "true",
@@ -36,7 +36,7 @@ func keepIfScrapingEnabled(annotated AnnotatedResource) RelabelConfig {
 	}
 }
 
-func keepIfIstioProxy() RelabelConfig {
+func KeepIfIstioProxy() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
 		Action:       Keep,
@@ -44,7 +44,7 @@ func keepIfIstioProxy() RelabelConfig {
 	}
 }
 
-func keepIfContainerWithEnvoyPort() RelabelConfig {
+func KeepIfContainerWithEnvoyPort() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_port_name"},
 		Action:       Keep,
@@ -52,7 +52,7 @@ func keepIfContainerWithEnvoyPort() RelabelConfig {
 	}
 }
 
-// inferSchemeFromIstioInjectedLabel configures the default scraping scheme to HTTPS
+// InferSchemeFromIstioInjectedLabel configures the default scraping scheme to HTTPS
 // based on the presence of the security.istio.io/tlsMode label in a Pod. This label
 // is automatically added by Istio's MutatingWebhook when a sidecar is injected.
 //
@@ -60,7 +60,7 @@ func keepIfContainerWithEnvoyPort() RelabelConfig {
 //
 // Note: The HTTPS scheme can be manually overridden by setting the "prometheus.io/scheme"
 // annotation on the Pod or the Service.
-func inferSchemeFromIstioInjectedLabel() RelabelConfig {
+func InferSchemeFromIstioInjectedLabel() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_label_security_istio_io_tlsMode"},
 		Action:       Replace,
@@ -70,7 +70,7 @@ func inferSchemeFromIstioInjectedLabel() RelabelConfig {
 	}
 }
 
-func inferSchemeFromAnnotation(annotated AnnotatedResource) RelabelConfig {
+func InferSchemeFromAnnotation(annotated AnnotatedResource) RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_scheme", annotated)},
 		Action:       Replace,
@@ -79,7 +79,7 @@ func inferSchemeFromAnnotation(annotated AnnotatedResource) RelabelConfig {
 	}
 }
 
-func inferMetricsPathFromAnnotation(annotated AnnotatedResource) RelabelConfig {
+func InferMetricsPathFromAnnotation(annotated AnnotatedResource) RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_path", annotated)},
 		Action:       Replace,
@@ -88,7 +88,7 @@ func inferMetricsPathFromAnnotation(annotated AnnotatedResource) RelabelConfig {
 	}
 }
 
-func inferAddressFromAnnotation(annotated AnnotatedResource) RelabelConfig {
+func InferAddressFromAnnotation(annotated AnnotatedResource) RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__address__", fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_port", annotated)},
 		Action:       Replace,
@@ -98,7 +98,7 @@ func inferAddressFromAnnotation(annotated AnnotatedResource) RelabelConfig {
 	}
 }
 
-func inferServiceFromMetaLabel() RelabelConfig {
+func InferServiceFromMetaLabel() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_service_name"},
 		Action:       Replace,
@@ -106,7 +106,7 @@ func inferServiceFromMetaLabel() RelabelConfig {
 	}
 }
 
-func dropIfPodNotRunning() RelabelConfig {
+func DropIfPodNotRunning() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_phase"},
 		Action:       Drop,
@@ -114,7 +114,7 @@ func dropIfPodNotRunning() RelabelConfig {
 	}
 }
 
-func dropIfInitContainer() RelabelConfig {
+func DropIfInitContainer() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_init"},
 		Action:       Drop,
@@ -122,7 +122,7 @@ func dropIfInitContainer() RelabelConfig {
 	}
 }
 
-func dropIfIstioProxy() RelabelConfig {
+func DropIfIstioProxy() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
 		Action:       Drop,
@@ -130,7 +130,7 @@ func dropIfIstioProxy() RelabelConfig {
 	}
 }
 
-func dropIfSchemeHTTP() RelabelConfig {
+func DropIfSchemeHTTP() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__scheme__"},
 		Action:       Drop,
@@ -138,7 +138,7 @@ func dropIfSchemeHTTP() RelabelConfig {
 	}
 }
 
-func dropIfSchemeHTTPS() RelabelConfig {
+func DropIfSchemeHTTPS() RelabelConfig {
 	return RelabelConfig{
 		SourceLabels: []string{"__scheme__"},
 		Action:       Drop,

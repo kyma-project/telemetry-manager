@@ -154,10 +154,11 @@ var _ = BeforeSuite(func() {
 	err = tracepipelineReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
+	selfMonitorEnabled := false
 	metricPipelineReconciler := NewMetricPipelineReconciler(
 		client,
 		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client},
-			&k8sutils.DaemonSetProber{Client: client}, overridesHandler))
+			&k8sutils.DaemonSetProber{Client: client}, overridesHandler, selfMonitorEnabled))
 	err = metricPipelineReconciler.SetupWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
