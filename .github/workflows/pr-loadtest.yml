@@ -4,8 +4,7 @@ name: Manual Load Test
 # or API.
 on:
   pull_request:
-    branches:
-      - "main"
+
   workflow_dispatch:
     # Inputs the workflow accepts.
     inputs:
