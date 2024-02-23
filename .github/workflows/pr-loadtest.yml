@@ -1,4 +1,4 @@
-name: Manual load test workflow
+name: Manual Load Test
 
 # Controls when the action will run. Workflow runs when manually triggered using the UI
 # or API.
