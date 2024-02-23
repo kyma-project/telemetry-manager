@@ -2,9 +2,10 @@ package agent
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 	"path/filepath"
 	"time"
+
+	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )

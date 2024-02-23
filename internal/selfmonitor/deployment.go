@@ -3,9 +3,8 @@ package selfmonitor
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
-	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
+	"maps"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -15,8 +14,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
-	"maps"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
+	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 const (

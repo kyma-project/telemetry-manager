@@ -3,7 +3,7 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
+
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
@@ -21,6 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
 )
 
 const defaultReplicaCount int32 = 2

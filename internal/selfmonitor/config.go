@@ -1,8 +1,9 @@
 package selfmonitor
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 	"k8s.io/apimachinery/pkg/api/resource"
+
+	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 )
 
 type Config struct {
@@ -10,8 +11,7 @@ type Config struct {
 	Namespace        string
 	monitoringConfig string
 
-	Deployment   DeploymentConfig
-	allowedPorts []int32
+	Deployment DeploymentConfig
 }
 
 type DeploymentConfig struct {

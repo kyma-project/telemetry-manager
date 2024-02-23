@@ -1,8 +1,9 @@
 package selfmonitor
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 	"time"
+
+	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 )
 
 func MakeConfig() monitoringConfig {

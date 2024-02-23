@@ -20,10 +20,11 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
 
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"

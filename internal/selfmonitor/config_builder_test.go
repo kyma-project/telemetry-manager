@@ -1,11 +1,12 @@
 package selfmonitor
 
 import (
-	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 func TestMakeConfigMarshalling(t *testing.T) {
