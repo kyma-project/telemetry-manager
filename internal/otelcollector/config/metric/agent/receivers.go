@@ -5,9 +5,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/kyma-project/telemetry-manager/internal/prometheus"
-
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 )
 
 const scrapeInterval = 30 * time.Second
