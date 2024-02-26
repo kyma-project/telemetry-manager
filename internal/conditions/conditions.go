@@ -11,6 +11,7 @@ import (
 
 const (
 	TypeGatewayHealthy         = "GatewayHealthy"
+	TypeFluentBitHealthy       = "FluentBitHealthy"
 	TypeConfigurationGenerated = "ConfigurationGenerated"
 
 	TypeMetricAgentHealthy = "AgentHealthy"
