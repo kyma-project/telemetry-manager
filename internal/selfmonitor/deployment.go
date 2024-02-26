@@ -18,7 +18,6 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
-	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 const (
@@ -34,7 +33,7 @@ func ApplyResources(ctx context.Context, c client.Client, config *Config) error 
 	name := types.NamespacedName{Namespace: config.Namespace, Name: config.BaseName}
 
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
-	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, commonresources.MakeServiceAccount(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
 		return fmt.Errorf("failed to create self-monitor service account: %w", err)
 	}
 
@@ -42,7 +41,7 @@ func ApplyResources(ctx context.Context, c client.Client, config *Config) error 
 		return fmt.Errorf("failed to create self-monitor cluster role: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, commonresources.MakeClusterRoleBinding(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, makeClusterRoleBinding(name)); err != nil {
 		return fmt.Errorf("failed to create self-monitor cluster role binding: %w", err)
 	}
 
@@ -55,12 +54,40 @@ func ApplyResources(ctx context.Context, c client.Client, config *Config) error 
 		return fmt.Errorf("failed to create self-monitor configmap: %w", err)
 	}
 
-	checksum := configchecksum.CalculateWithConfigMaps([]corev1.ConfigMap{*configMap})
+	checksum := configchecksum.Calculate([]corev1.ConfigMap{*configMap}, nil)
 	if err := k8sutils.CreateOrUpdateDeployment(ctx, c, makeSelfMonitorDeployment(config, checksum)); err != nil {
 		return fmt.Errorf("failed to create sel-monitor deployment: %w", err)
 	}
 
 	return nil
+}
+
+func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
+	serviceAccount := corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
+		},
+	}
+	return &serviceAccount
+}
+
+func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBinding {
+	clusterRoleBinding := rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
+		},
+		Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     name.Name,
+		},
+	}
+	return &clusterRoleBinding
 }
 
 func makeNetworkPolicy(name types.NamespacedName, labels map[string]string) *networkingv1.NetworkPolicy {
@@ -150,6 +177,7 @@ func makeConfigMap(name types.NamespacedName, selfmonitorConfig string) *corev1.
 func makeSelfMonitorDeployment(cfg *Config, configChecksum string) *appsv1.Deployment {
 	selectorLabels := defaultLabels(cfg.BaseName)
 	podLabels := maps.Clone(selectorLabels)
+	podLabels["sidecar.istio.io/inject"] = "false"
 
 	annotations := map[string]string{"checksum/config": configChecksum}
 	resources := makeResourceRequirements(cfg)
