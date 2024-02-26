@@ -24,7 +24,7 @@ Follow these steps to set up the required environment:
       alertmanagers:
       - static_configs:
         - targets:
-          - telemetry-operator-alerts-webhook.kyma-system:9090
+          - telemetry-manager-alerts-webhook.kyma-system:9090
     
     serverFiles:
       alerting_rules.yml:
@@ -203,7 +203,7 @@ Follow these steps to set up the required environment:
     apiVersion: v1
     kind: Service
     metadata:
-      name: operator-alerts-webhook
+      name: manager-alerts-webhook
       namespace: system
     spec:
       ports:
@@ -211,24 +211,24 @@ Follow these steps to set up the required environment:
           port: 9090
           targetPort: 9090
       selector:
-        app.kubernetes.io/name: operator
+        app.kubernetes.io/name: manager
         app.kubernetes.io/instance: telemetry
         kyma-project.io/component: controller
-        control-plane: telemetry-operator
+        control-plane: telemetry-manager
    ```
-8. Whitelist the endpoint port (9090) in the operator network policy:
+8. Whitelist the endpoint port (9090) in the manager network policy:
    ```yaml
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
     metadata:
-      name: operator
+      name: manager
     spec:
       podSelector:
         matchLabels:
-          app.kubernetes.io/name: operator
+          app.kubernetes.io/name: manager
           app.kubernetes.io/instance: telemetry
           kyma-project.io/component: controller
-          control-plane: telemetry-operator
+          control-plane: telemetry-manager
       policyTypes:
         - Ingress
       ingress:

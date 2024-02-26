@@ -27,13 +27,17 @@ SAP Cloud Logging is an instance-based and environment-agnostic observability se
   - [Ship Metrics to SAP Cloud Logging](#ship-metrics-to-sap-cloud-logging)
   - [Kyma Dashboard Integration](#kyma-dashboard-integration)
   - [SAP Cloud Logging Alerts](#sap-cloud-logging-alerts)
+    - [Import](#import)
+    - [Recommended Alerts](#recommended-alerts)
+  - [SAP Cloud Logging Dashboards](#sap-cloud-logging-dashboards)
 
 ## Prerequisites
 
 - Kyma as the target deployment environment.
 - The [Telemetry module](../../README.md) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install).
 - An instance of SAP Cloud Logging with OpenTelemetry enabled to ingest distributed traces.
-  >**TIP:** It's recommended to create it with the SAP BTP service operator (see [Create an SAP Cloud Logging Instance through SAP BTP Service Operator](https://help.sap.com/docs/cloud-logging/cloud-logging/create-sap-cloud-logging-instance-through-sap-btp-service-operator?locale=en-US&version=Cloud)), because it takes care of creation and rotation of the required Secret. However, you can choose any other method of creating the instance and the Secret, as long as the parameter for OTLP ingestion is enabled in the instance. For details, see [Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters?locale=en-US&version=Cloud).
+  > [!TIP]
+  > It's recommended to create it with the SAP BTP service operator (see [Create an SAP Cloud Logging Instance through SAP BTP Service Operator](https://help.sap.com/docs/cloud-logging/cloud-logging/create-sap-cloud-logging-instance-through-sap-btp-service-operator?locale=en-US&version=Cloud)), because it takes care of creation and rotation of the required Secret. However, you can choose any other method of creating the instance and the Secret, as long as the parameter for OTLP ingestion is enabled in the instance. For details, see [Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters?locale=en-US&version=Cloud).
 - A Secret in the respective namespace in the Kyma cluster, holding the credentials and endpoints for the instance. In this guide, the Secret is named `sap-cloud-logging` and the namespace `sap-cloud-logging-integration` as illustrated in this [example](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/sap-cloud-logging/secret-example.yaml).
 <!-- markdown-link-check-disable -->
 - Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html)).
@@ -102,7 +106,8 @@ The Telemetry module supports the convenient shipment of applications and access
 1. By default, Istio access logs are disabled in Kyma. To enable Istio access logs selectively for your workload, follow [Enable Istio access logs](https://kyma-project.io/#/istio/user/operation-guides/02-30-enable-istio-access-logs).
    As a result, you can analyze access logs in the default SAP Cloud Logging dashboards shipped for SAP BTP, Kyma runtime.
 
-   >**CAUTION:** The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
+   > [!WARNING]
+   > The provided feature uses an Istio API in the alpha state, which may or may not be continued in future releases.
 
 2. Deploy the LogPipeline for Istio access logs and enable access logs in Kyma:
 
@@ -183,7 +188,8 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
 
     The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
 
-    > **CAUTION:** Be cautious when you configure the **randomSamplingPercentage**:
+    > [!WARNING]
+    > Be cautious when you configure the **randomSamplingPercentage**:
     > - Traces might consume a significant storage volume in Cloud Logging Service.
     > - The Kyma trace collector component does not scale automatically.
 

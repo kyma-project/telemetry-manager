@@ -13,7 +13,8 @@ Fundamentally, ["Observability"](https://opentelemetry.io/docs/concepts/observab
 
 Kyma's Telemetry module focuses exactly on the aspects of instrumentation, collection, and shipment that happen in the runtime and explicitly defocuses on backends.
 
-> **TIP:** An enterprise-grade setup demands a central solution outside the cluster, so we recommend in-cluster solutions only for testing purposes. If you want to install lightweight in-cluster backends for demo or development purposes, check the [Telemetry integration guides](#integration-guides).
+> [!TIP]
+> An enterprise-grade setup demands a central solution outside the cluster, so we recommend in-cluster solutions only for testing purposes. If you want to install lightweight in-cluster backends for demo or development purposes, check the [Telemetry integration guides](#integration-guides).
 
 ## Features
 

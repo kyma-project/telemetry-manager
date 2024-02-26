@@ -59,7 +59,7 @@ func (t *traceComponentsChecker) isPendingWithReason(p telemetryv1alpha1.TracePi
 	}
 
 	lastCondition := p.Status.Conditions[len(p.Status.Conditions)-1]
-	return lastCondition.Type == telemetryv1alpha1.TracePipelinePending && lastCondition.Reason == reason
+	return lastCondition.Type == conditions.TypePending && lastCondition.Reason == reason
 }
 
 func (t *traceComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.TracePipeline, reason string) string {

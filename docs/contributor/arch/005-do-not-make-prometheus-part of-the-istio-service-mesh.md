@@ -19,7 +19,7 @@ The Telemetry Manager, which queries metrics from Prometheus, is not part of the
 ## Problem
 When Prometheus is not part of the Istio service mesh, it will cause metrics data to be transported unencrypted. Thus, the metrics could be counterfeited. This would mean we get the wrong information about the possible issue with observability components. The side effects could be the following:
  - Customer gets wrongly notified because of false positives.
- - Telemetry operator gets the wrong decision about the scaling, like scaling down when scaling up is needed, thus causing data loss
+ - Telemetry Manager gets the wrong decision about the scaling, like scaling down when scaling up is needed, thus causing data loss
 
 ## Argument 
 - The network policy that enables Telemetry Manager to accept data from a desired IP address in the Kubernetes cluster reduces the attack vector. It also increases the attack complexity because the attacker would need access to the underlying node to perform the attack.

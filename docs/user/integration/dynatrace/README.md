@@ -8,7 +8,7 @@
 | Backend type | third-party remote |
 | OTLP-native | yes, but dynatrace agent in parallel |
 
-[Dynatrace](https://www.dynatrace.com) is an advanced Application Performance Management solution available as SaaS offering. It supports monitoring both the Kubernetes cluster itself and the workloads running on the cluster. To use all of its features, the proprietary agent technology of Dynatrace must be installed.
+[Dynatrace](https://www.dynatrace.com) is an advanced Application Performance Management solution available as SaaS offering. It supports monitoring both the Kubernetes cluster itself and the workloads running in the cluster. To use all of its features, the proprietary agent technology of Dynatrace must be installed.
 
 With the Kyma Telemetry module, you gain even more visibility by adding custom spans and Istio spans, as well as custom metrics. Get an introduction on how to set up Dynatrace and learn how to integrate the Kyma Telemetry module.
 
@@ -53,7 +53,8 @@ With the Kyma Telemetry module, you gain even more visibility by adding custom s
 There are different ways to deploy Dynatrace on Kubernetes. All [deployment options](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/deployment-options-k8s) are based on the [Dynatrace Operator](https://github.com/Dynatrace/dynatrace-operator).
 
 1. Install Dynatrace with the namespace you prepared earlier.
-   >**NOTE:** By default, Dynatrace uses the classic full-stack injection. However, for better stability, we recommend using the [cloud-native fullstack injection](https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/installation/cloud-native-fullstack).
+   > [!NOTE]
+   > By default, Dynatrace uses the classic full-stack injection. However, for better stability, we recommend using the [cloud-native fullstack injection](https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/installation/cloud-native-fullstack).
 
 2. In the DynaKube resource, configure the correct `apiurl` of your environment.
 
@@ -119,7 +120,8 @@ To start ingesting custom spans and Istio spans, you must enable the Istio traci
 
     The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
 
-    > **CAUTION:** Be cautious when you configure the **randomSamplingPercentage**:
+    > [!WARNING]
+    > Be cautious when you configure the **randomSamplingPercentage**:
     > - Could cause high volume of traces.
     > - The Kyma trace collector component does not scale automatically.
 

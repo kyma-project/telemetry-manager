@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: operator
+  name: manager
   namespace: system
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: operator
+      app.kubernetes.io/name: manager
       app.kubernetes.io/instance: telemetry
       kyma-project.io/component: controller
-      control-plane: telemetry-operator
+      control-plane: telemetry-manager
   replicas: 1
   template:
     metadata:
@@ -17,10 +17,10 @@ spec:
         sidecar.istio.io/inject: "false"
         kubectl.kubernetes.io/default-container: manager
       labels:
-        app.kubernetes.io/name: operator
+        app.kubernetes.io/name: manager
         app.kubernetes.io/instance: telemetry
         kyma-project.io/component: controller
-        control-plane: telemetry-operator
+        control-plane: telemetry-manager
     spec:
       priorityClassName: "telemetry-priority-class"
       securityContext:
@@ -71,5 +71,5 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-      serviceAccountName: operator
+      serviceAccountName: manager
       terminationGracePeriodSeconds: 10

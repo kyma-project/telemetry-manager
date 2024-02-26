@@ -1,0 +1,190 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: log-load-test
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-receiver
+  namespace: log-load-test
+data:
+  config.yaml: |-
+    receivers:
+      fluentforward:
+        endpoint: 0.0.0.0:8006
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    exporters:
+      debug:
+    service:
+      telemetry:
+        logs:
+          level: "info"
+      pipelines:
+        logs:
+          receivers:
+            - otlp
+            - fluentforward
+          exporters:
+            - debug
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-receiver-fluentd
+  namespace: log-load-test
+data:
+  fluent.conf: |-
+    <source>
+      @type http
+      port 9880
+      bind 0.0.0.0
+      body_size_limit 100m
+      add_http_headers true
+      <parse>
+        @type json
+      </parse>
+    </source>
+    <match **>
+      @type forward
+      send_timeout 60s
+      recover_wait 10s
+      hard_timeout 60s
+      flush_interval 1s
+
+      <server>
+        name otlp
+        host 127.0.0.1
+        port 8006
+        weight 60
+      </server>
+    </match>
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-receiver
+  namespace: log-load-test
+  labels:
+    app: log-receiver
+spec:
+  selector:
+    matchLabels:
+      app: log-receiver
+  template:
+    metadata:
+      labels:
+        app: log-receiver
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - args:
+            - --config=/etc/collector/config.yaml
+          image: europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.95.0-0eb4394f
+          imagePullPolicy: IfNotPresent
+          name: otel-collector
+          securityContext:
+            runAsUser: 101
+          volumeMounts:
+            - mountPath: /etc/collector
+              name: config
+        - image: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1
+          imagePullPolicy: IfNotPresent
+          name: fluentd
+          ports:
+            - containerPort: 9880
+              name: http-log
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /fluentd/etc/
+              name: fluentd-config
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: log-receiver
+          name: config
+        - configMap:
+            defaultMode: 420
+            name: log-receiver-fluentd
+          name: fluentd-config
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-load-generator
+  namespace: log-load-test
+spec:
+  replicas: 20
+  selector:
+    matchLabels:
+      app: logs-load-generator
+  template:
+    metadata:
+      labels:
+        app: logs-load-generator
+    spec:
+      containers:
+        - args:
+            - -b=10485760
+            - -f=json
+            - -l
+          image: mingrammer/flog
+          imagePullPolicy: Always
+          name: flog
+          resources:
+            limits:
+              cpu: 50m
+              memory: 200Mi
+            requests:
+              cpu: 10m
+              memory: 50Mi
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: log-receiver
+  name: log-receiver
+  namespace: log-load-test
+spec:
+  ports:
+    - name: http-log
+      port: 9880
+      protocol: TCP
+      targetPort: 9880
+    - name: grpc-otlp
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: http-otlp
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+  selector:
+    app: log-receiver
+
+---
+apiVersion: telemetry.kyma-project.io/v1alpha1
+kind: LogPipeline
+metadata:
+  name: load-test-1
+spec:
+  output:
+    http:
+      dedot: true
+      format: json
+      host:
+        value: log-receiver.log-load-test
+      port: "9880"
+      tls:
+        disabled: true
+        skipCertificateValidation: true
+      uri: "/"
+
+---

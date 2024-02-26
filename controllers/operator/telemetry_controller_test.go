@@ -5,6 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -74,10 +75,12 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 				Expect(k8sClient.Delete(ctx, telemetry)).Should(Succeed())
 			})
 			Expect(k8sClient.Create(ctx, &runningTracePipeline)).Should(Succeed())
-			runningTracePipeline.Status.SetCondition(telemetryv1alpha1.TracePipelineCondition{
-				Reason: conditions.ReasonTraceGatewayDeploymentReady,
-				Type:   telemetryv1alpha1.TracePipelineRunning,
-			})
+			meta.SetStatusCondition(&runningTracePipeline.Status.Conditions, conditions.New(
+				conditions.TypeRunning,
+				conditions.ReasonTraceGatewayDeploymentReady,
+				metav1.ConditionTrue,
+				runningTracePipeline.Generation,
+			))
 			Expect(k8sClient.Status().Update(ctx, &runningTracePipeline)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
 		})
@@ -130,10 +133,12 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 				Expect(k8sClient.Delete(ctx, telemetry)).Should(Succeed())
 			})
 			Expect(k8sClient.Create(ctx, &pendingTracePipeline)).Should(Succeed())
-			pendingTracePipeline.Status.SetCondition(telemetryv1alpha1.TracePipelineCondition{
-				Reason: conditions.ReasonTraceGatewayDeploymentNotReady,
-				Type:   telemetryv1alpha1.TracePipelinePending,
-			})
+			meta.SetStatusCondition(&pendingTracePipeline.Status.Conditions, conditions.New(
+				conditions.TypePending,
+				conditions.ReasonTraceGatewayDeploymentNotReady,
+				metav1.ConditionTrue,
+				pendingTracePipeline.Generation,
+			))
 			Expect(k8sClient.Status().Update(ctx, &pendingTracePipeline)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
 		})
@@ -170,7 +175,8 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 			}
 			logPipelineWithLokiOutput := &telemetryv1alpha1.LogPipeline{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: pipelineName,
+					Name:       pipelineName,
+					Generation: 1,
 				},
 				Spec: telemetryv1alpha1.LogPipelineSpec{
 					Output: telemetryv1alpha1.Output{
@@ -187,10 +193,12 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 				Expect(k8sClient.Delete(ctx, telemetry)).Should(Succeed())
 			})
 			Expect(k8sClient.Create(ctx, logPipelineWithLokiOutput)).Should(Succeed())
-			logPipelineWithLokiOutput.Status.SetCondition(telemetryv1alpha1.LogPipelineCondition{
-				Reason: conditions.ReasonUnsupportedLokiOutput,
-				Type:   telemetryv1alpha1.LogPipelinePending,
-			})
+			meta.SetStatusCondition(&logPipelineWithLokiOutput.Status.Conditions, conditions.New(
+				conditions.TypePending,
+				conditions.ReasonUnsupportedLokiOutput,
+				metav1.ConditionTrue,
+				logPipelineWithLokiOutput.Generation,
+			))
 			Expect(k8sClient.Status().Update(ctx, logPipelineWithLokiOutput)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
 		})

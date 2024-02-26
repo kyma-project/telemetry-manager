@@ -10,7 +10,7 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: telemetry-operator-webhook
+        name: telemetry-manager-webhook
         namespace: system
         path: /validate-logpipeline
         port: 443
@@ -37,7 +37,7 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: telemetry-operator-webhook
+        name: telemetry-manager-webhook
         namespace: system
         path: /validate-logparser
         port: 443

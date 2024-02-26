@@ -17,7 +17,7 @@ import (
 var (
 	telemetryNamespace = "telemetry-system"
 	webhookService     = types.NamespacedName{
-		Name:      "telemetry-operator-webhook",
+		Name:      "telemetry-manager-webhook",
 		Namespace: telemetryNamespace,
 	}
 	caBundleSecret = types.NamespacedName{
@@ -29,9 +29,9 @@ var (
 		Name: name,
 	}
 	labels = map[string]string{
-		"control-plane":              "telemetry-operator",
+		"control-plane":              "telemetry-manager",
 		"app.kubernetes.io/instance": "telemetry",
-		"app.kubernetes.io/name":     "operator",
+		"app.kubernetes.io/name":     "manager",
 		"kyma-project.io/component":  "controller",
 	}
 )

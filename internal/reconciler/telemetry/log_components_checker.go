@@ -71,7 +71,7 @@ func (l *logComponentsChecker) isPendingWithReason(p telemetryv1alpha1.LogPipeli
 	}
 
 	lastCondition := p.Status.Conditions[len(p.Status.Conditions)-1]
-	return lastCondition.Type == telemetryv1alpha1.LogPipelinePending && lastCondition.Reason == reason
+	return lastCondition.Type == conditions.TypePending && lastCondition.Reason == reason
 }
 
 func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, reason string) string {

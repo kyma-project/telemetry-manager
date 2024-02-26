@@ -154,7 +154,7 @@
                             <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
                                 <font style="font-size: 13px">
                                     <i>
-                                        telemetry-operator
+                                        telemetry-manager
                                     </i>
                                     <br/>
                                     Deployment
@@ -164,7 +164,7 @@
                     </div>
                 </foreignObject>
                 <text x="240" y="314" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
-                    telemetry-operator...
+                    telemetry-manager...
                 </text>
             </switch>
         </g>
