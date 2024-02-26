@@ -123,5 +123,4 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 	}
 
 	conditions.SetRunningCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonFluentBitDSReady, pipeline.Name, conditions.LogsMessage)
-	return
 }
