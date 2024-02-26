@@ -42,7 +42,7 @@ jobs:
 
     - name: Run test on latest tag
       shell: bash
-      run: make run-upgrade-test
+      run: hack/run-tests.sh upgrade operational
 
     - name: Wait for cleanup of test run
       shell: bash
@@ -81,7 +81,7 @@ jobs:
 
     - name: Run test on current version
       shell: bash
-      run: make run-upgrade-test
+      run: hack/run-tests.sh upgrade operational
 
     - name: Finalize test
       uses: "./.github/template/finalize-test"

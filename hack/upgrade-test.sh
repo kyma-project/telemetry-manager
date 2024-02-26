@@ -28,7 +28,7 @@ git restore .
 git checkout $CURRENT_COMMIT
 
 echo "run upgrade test"
-make run-upgrade-test
+./hack/run-tests.sh upgrade operational
 
 echo "wait for namespace termination"
 ./hack/wait-for-namespaces.sh
@@ -40,4 +40,4 @@ echo "deploy manager image for version $CURRENT_COMMIT"
 IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 
 echo "run upgrade test"
-make run-upgrade-test
+./hack/run-tests.sh upgrade operational
