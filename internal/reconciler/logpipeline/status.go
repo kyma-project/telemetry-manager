@@ -37,7 +37,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	// If the "FluentBitHealthy" type doesn't exist in the conditions,
 	// then we need to reset the conditions list to ensure that the "Pending" and "Running" conditions are appended to the end of the conditions list
 	// Check step 3 in https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
-	if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeFluentBitHealthy) == nil {
+	if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeAgentHealthy) == nil {
 		pipeline.Status.Conditions = []metav1.Condition{}
 	}
 
@@ -78,7 +78,7 @@ func (r *Reconciler) setFluentBitHealthyCondition(ctx context.Context, pipeline 
 		reason = conditions.ReasonDaemonSetReady
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeFluentBitHealthy, reason, status, pipeline.Generation, conditions.LogsMessage))
+	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeAgentHealthy, reason, status, pipeline.Generation, conditions.LogsMessage))
 }
 
 func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
