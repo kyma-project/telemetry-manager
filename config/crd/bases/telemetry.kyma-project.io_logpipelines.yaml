@@ -19,8 +19,8 @@ spec:
     - jsonPath: .status.conditions[?(@.type=="ConfigurationGenerated")].status
       name: Configuration Generated
       type: string
-    - jsonPath: .status.conditions[?(@.type=="FluentBitHealthy")].status
-      name: FluentBit Healthy
+    - jsonPath: .status.conditions[?(@.type=="AgentHealthy")].status
+      name: Agent Healthy
       type: string
     - jsonPath: .status.unsupportedMode
       name: Unsupported-Mode

@@ -16,8 +16,8 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.conditions[?(@.type=="FluentBitHealthy")].status
-      name: FluentBit Healthy
+    - jsonPath: .status.conditions[?(@.type=="AgentHealthy")].status
+      name: Agent Healthy
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
