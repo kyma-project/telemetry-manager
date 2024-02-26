@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
+source .env
 
-# TODO: Find a way to centralise the variables used in both the scripts and makefiles
 readonly LOCALBIN=${LOCALBIN:-$(pwd)/bin}
 readonly KUSTOMIZE=${KUSTOMIZE:-$(LOCALBIN)/kustomize}
-readonly GORELEASER_VERSION="${GORELEASER_VERSION:-v1.23.0}"
-readonly IMG="${IMG:-europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main}"
+readonly GORELEASER_VERSION="${GORELEASER_VERSION:-$ENV_GORELEASER_VERSION}"
+readonly IMG="${IMG:-$ENV_IMG}"
 
 # standard bash error handling
 set -o nounset  # treat unset variables as an error and exit immediately.
