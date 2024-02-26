@@ -19,10 +19,9 @@ package logpipeline
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
-	"gopkg.in/yaml.v3"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,6 +39,7 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
 )
 
 type Config struct {
@@ -154,6 +154,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
+	if r.enableSelfMonitor {
+		if err = r.reconcileSelfMonitor(ctx, pipeline); err != nil {
+			return fmt.Errorf("failed to reconcile self-monitor deployment: %w", err)
+		}
+	}
+
 	return err
 }
 
@@ -222,12 +228,6 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 	networkPolicy := commonresources.MakeNetworkPolicy(r.config.DaemonSet, allowedPorts, fluentbit.Labels())
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, ownerRefSetter, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
-	}
-
-	if r.enableSelfMonitor {
-		if err = r.reconcileSelfMonitor(ctx, pipeline); err != nil {
-			return fmt.Errorf("failed to reconcile self-monitor deployment: %w", err)
-		}
 	}
 
 	return nil
