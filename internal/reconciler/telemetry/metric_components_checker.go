@@ -21,7 +21,7 @@ func (m *metricComponentsChecker) Check(ctx context.Context, telemetryInDeletion
 	var metricPipelines telemetryv1alpha1.MetricPipelineList
 	err := m.client.List(ctx, &metricPipelines)
 	if err != nil {
-		return &metav1.Condition{}, fmt.Errorf("failed to get list metric pipelines: %w", err)
+		return &metav1.Condition{}, fmt.Errorf("failed to get list of MetricPipelines: %w", err)
 	}
 
 	reason := m.determineReason(metricPipelines.Items, telemetryInDeletion)
@@ -58,7 +58,7 @@ func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []telem
 	// condTypes order defines the priority of negative conditions
 	condTypes := []string{
 		conditions.TypeGatewayHealthy,
-		conditions.TypeMetricAgentHealthy,
+		conditions.TypeAgentHealthy,
 		conditions.TypeConfigurationGenerated,
 	}
 	for _, pipeline := range pipelines {

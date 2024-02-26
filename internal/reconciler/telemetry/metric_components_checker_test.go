@@ -17,7 +17,7 @@ import (
 
 func TestMetricComponentsCheck(t *testing.T) {
 	healthyGatewayCond := metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonDeploymentReady}
-	healthyAgentCond := metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonDaemonSetReady}
+	healthyAgentCond := metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonDaemonSetReady}
 	configGeneratedCond := metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonConfigurationGenerated}
 
 	tests := []struct {
@@ -112,7 +112,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 					Build(),
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(healthyGatewayCond).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
 					WithStatusCondition(configGeneratedCond).
 					Build(),
 			},
@@ -151,12 +151,12 @@ func TestMetricComponentsCheck(t *testing.T) {
 			pipelines: []telemetryv1alpha1.MetricPipeline{
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDeploymentNotReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
 					WithStatusCondition(configGeneratedCond).
 					Build(),
 				testutils.NewMetricPipelineBuilder().
 					WithStatusCondition(metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDeploymentNotReady}).
-					WithStatusCondition(metav1.Condition{Type: conditions.TypeMetricAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
 					WithStatusCondition(configGeneratedCond).
 					Build(),
 			},

@@ -11,10 +11,8 @@ import (
 
 const (
 	TypeGatewayHealthy         = "GatewayHealthy"
-	TypeFluentBitHealthy       = "FluentBitHealthy"
+	TypeAgentHealthy           = "AgentHealthy"
 	TypeConfigurationGenerated = "ConfigurationGenerated"
-
-	TypeMetricAgentHealthy = "AgentHealthy"
 
 	// NOTE: The "Running" and "Pending" types are deprecated
 	// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
@@ -42,6 +40,9 @@ const (
 	ReasonMetricComponentsRunning = "MetricComponentsRunning"
 
 	ReasonUnsupportedLokiOutput = "UnsupportedLokiOutput"
+	ReasonLogComponentsRunning  = "LogComponentsRunning"
+
+	ReasonTraceComponentsRunning = "TraceComponentsRunning"
 
 	// NOTE: The "FluentBitDaemonSetNotReady", "FluentBitDaemonSetReady", "TraceGatewayDeploymentNotReady" and "TraceGatewayDeploymentReady" reasons are deprecated.
 	// They will be removed when the "Running" and "Pending" types are removed
@@ -71,6 +72,7 @@ var TracesMessage = map[string]string{
 	ReasonDeploymentReady:                "Trace gateway Deployment is ready",
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
+	ReasonTraceComponentsRunning:         "All trace components are running",
 }
 
 var LogsMessage = map[string]string{
@@ -79,6 +81,7 @@ var LogsMessage = map[string]string{
 	ReasonFluentBitDSNotReady:   "Fluent Bit DaemonSet is not ready",
 	ReasonFluentBitDSReady:      "Fluent Bit DaemonSet is ready",
 	ReasonUnsupportedLokiOutput: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://github.com/kyma-project/examples/tree/main/loki",
+	ReasonLogComponentsRunning:  "All log components are running",
 }
 
 func New(condType, reason string, status metav1.ConditionStatus, generation int64, messageMap map[string]string) metav1.Condition {
