@@ -64,7 +64,7 @@ func (t *traceComponentsChecker) isPendingWithReason(p telemetryv1alpha1.TracePi
 
 func (t *traceComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.TracePipeline, reason string) string {
 	if reason != conditions.ReasonResourceBlocksDeletion {
-		return conditions.CommonMessageFor(reason)
+		return conditions.CommonMessageFor(reason, conditions.TracesMessage)
 
 	}
 

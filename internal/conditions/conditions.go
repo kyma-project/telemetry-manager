@@ -10,13 +10,20 @@ import (
 )
 
 const (
-	TypeMetricGatewayHealthy   = "GatewayHealthy"
-	TypeMetricAgentHealthy     = "AgentHealthy"
+	TypeGatewayHealthy         = "GatewayHealthy"
 	TypeConfigurationGenerated = "ConfigurationGenerated"
-	// NOTE: The "Running" and "Pending" types will be deprecated
+
+	TypeMetricAgentHealthy = "AgentHealthy"
+
+	// NOTE: The "Running" and "Pending" types are deprecated
 	// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
 	TypeRunning = "Running"
 	TypePending = "Pending"
+)
+
+const (
+	RunningTypeDeprecationMsg = "[NOTE: The \"Running\" type is deprecated] "
+	PendingTypeDeprecationMsg = "[NOTE: The \"Pending\" type is deprecated] "
 )
 
 const (
@@ -24,62 +31,78 @@ const (
 	ReasonReferencedSecretMissing = "ReferencedSecretMissing"
 	ReasonMaxPipelinesExceeded    = "MaxPipelinesExceeded"
 	ReasonResourceBlocksDeletion  = "ResourceBlocksDeletion"
+	ReasonConfigurationGenerated  = "ConfigurationGenerated"
+	ReasonDeploymentNotReady      = "DeploymentNotReady"
+	ReasonDeploymentReady         = "DeploymentReady"
+	ReasonDaemonSetNotReady       = "DaemonSetNotReady"
+	ReasonDaemonSetReady          = "DaemonSetReady"
 
-	ReasonFluentBitDSNotReady   = "FluentBitDaemonSetNotReady"
-	ReasonFluentBitDSReady      = "FluentBitDaemonSetReady"
+	ReasonMetricAgentNotRequired  = "AgentNotRequired"
+	ReasonMetricComponentsRunning = "MetricComponentsRunning"
+
 	ReasonUnsupportedLokiOutput = "UnsupportedLokiOutput"
 
-	ReasonMetricGatewayDeploymentNotReady = "DeploymentNotReady"
-	ReasonMetricGatewayDeploymentReady    = "DeploymentReady"
-	ReasonMetricAgentDaemonSetNotReady    = "DaemonSetNotReady"
-	ReasonMetricAgentDaemonSetReady       = "DaemonSetReady"
-	ReasonMetricAgentNotRequired          = "AgentNotRequired"
-	ReasonMetricConfigurationGenerated    = "ConfigurationGenerated"
-	ReasonMetricComponentsRunning         = "MetricComponentsRunning"
-
+	// NOTE: The "FluentBitDaemonSetNotReady", "FluentBitDaemonSetReady", "TraceGatewayDeploymentNotReady" and "TraceGatewayDeploymentReady" reasons are deprecated.
+	// They will be removed when the "Running" and "Pending" types are removed
+	// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
+	ReasonFluentBitDSNotReady            = "FluentBitDaemonSetNotReady"
+	ReasonFluentBitDSReady               = "FluentBitDaemonSetReady"
 	ReasonTraceGatewayDeploymentNotReady = "TraceGatewayDeploymentNotReady"
 	ReasonTraceGatewayDeploymentReady    = "TraceGatewayDeploymentReady"
 )
 
-var message = map[string]string{
+var commonMessage = map[string]string{
 	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
 	ReasonReferencedSecretMissing: "One or more referenced Secrets are missing",
 	ReasonMaxPipelinesExceeded:    "Maximum pipeline count limit exceeded",
+}
 
-	ReasonFluentBitDSNotReady:   "Fluent Bit DaemonSet is not ready",
-	ReasonFluentBitDSReady:      "Fluent Bit DaemonSet is ready",
-	ReasonUnsupportedLokiOutput: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://github.com/kyma-project/examples/tree/main/loki",
+var MetricsMessage = map[string]string{
+	ReasonDeploymentNotReady:      "Metric gateway Deployment is not ready",
+	ReasonDeploymentReady:         "Metric gateway Deployment is ready",
+	ReasonDaemonSetNotReady:       "Metric agent DaemonSet is not ready",
+	ReasonDaemonSetReady:          "Metric agent DaemonSet is ready",
+	ReasonMetricComponentsRunning: "All metric components are running",
+}
 
-	ReasonMetricGatewayDeploymentNotReady: "Metric gateway Deployment is not ready",
-	ReasonMetricGatewayDeploymentReady:    "Metric gateway Deployment is ready",
-	ReasonMetricAgentDaemonSetNotReady:    "Metric agent DaemonSet is not ready",
-	ReasonMetricAgentDaemonSetReady:       "Metric agent DaemonSet is ready",
-	ReasonMetricComponentsRunning:         "All metric components are running",
-
+var TracesMessage = map[string]string{
+	ReasonDeploymentNotReady:             "Trace gateway Deployment is not ready",
+	ReasonDeploymentReady:                "Trace gateway Deployment is ready",
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
 }
 
-func New(condType, reason string, status metav1.ConditionStatus, generation int64) metav1.Condition {
+var LogsMessage = map[string]string{
+	ReasonDaemonSetNotReady:     "Fluent Bit DaemonSet is not ready",
+	ReasonDaemonSetReady:        "Fluent Bit DaemonSet is ready",
+	ReasonFluentBitDSNotReady:   "Fluent Bit DaemonSet is not ready",
+	ReasonFluentBitDSReady:      "Fluent Bit DaemonSet is ready",
+	ReasonUnsupportedLokiOutput: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://github.com/kyma-project/examples/tree/main/loki",
+}
+
+func New(condType, reason string, status metav1.ConditionStatus, generation int64, messageMap map[string]string) metav1.Condition {
 	return metav1.Condition{
 		Type:               condType,
 		Status:             status,
 		Reason:             reason,
-		Message:            CommonMessageFor(reason),
+		Message:            CommonMessageFor(reason, messageMap),
 		ObservedGeneration: generation,
 	}
 }
 
 // CommonMessageFor returns a human-readable message corresponding to a given reason.
 // In more advanced scenarios, you may craft custom messages tailored to specific use cases.
-func CommonMessageFor(reason string) string {
-	if condMessage, found := message[reason]; found {
+func CommonMessageFor(reason string, messageMap map[string]string) string {
+	if condMessage, found := commonMessage[reason]; found {
+		return condMessage
+	}
+	if condMessage, found := messageMap[reason]; found {
 		return condMessage
 	}
 	return ""
 }
 
-func SetPendingCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string) {
+func SetPendingCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string, messageMap map[string]string) {
 	log := logf.FromContext(ctx)
 
 	pending := New(
@@ -87,7 +110,9 @@ func SetPendingCondition(ctx context.Context, conditions *[]metav1.Condition, ge
 		reason,
 		metav1.ConditionTrue,
 		generation,
+		messageMap,
 	)
+	pending.Message = PendingTypeDeprecationMsg + pending.Message
 
 	if meta.FindStatusCondition(*conditions, TypeRunning) != nil {
 		log.V(1).Info(fmt.Sprintf("Updating the status of %s: Removing the Running condition", resourceName))
@@ -98,7 +123,7 @@ func SetPendingCondition(ctx context.Context, conditions *[]metav1.Condition, ge
 	meta.SetStatusCondition(conditions, pending)
 }
 
-func SetRunningCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string) {
+func SetRunningCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string, messageMap map[string]string) {
 	log := logf.FromContext(ctx)
 
 	existingPending := meta.FindStatusCondition(*conditions, TypePending)
@@ -108,7 +133,9 @@ func SetRunningCondition(ctx context.Context, conditions *[]metav1.Condition, ge
 			existingPending.Reason,
 			metav1.ConditionFalse,
 			generation,
+			messageMap,
 		)
+		newPending.Message = PendingTypeDeprecationMsg + newPending.Message
 		log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Pending condition to False", resourceName))
 		meta.SetStatusCondition(conditions, newPending)
 	}
@@ -118,7 +145,9 @@ func SetRunningCondition(ctx context.Context, conditions *[]metav1.Condition, ge
 		reason,
 		metav1.ConditionTrue,
 		generation,
+		messageMap,
 	)
+	running.Message = RunningTypeDeprecationMsg + running.Message
 
 	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Running condition to True", resourceName))
 	meta.SetStatusCondition(conditions, running)

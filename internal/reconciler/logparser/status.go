@@ -32,12 +32,12 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 	}
 
 	if !fluentBitReady {
-		conditions.SetPendingCondition(ctx, &parser.Status.Conditions, parser.Generation, conditions.ReasonFluentBitDSNotReady, parser.Name)
+		conditions.SetPendingCondition(ctx, &parser.Status.Conditions, parser.Generation, conditions.ReasonFluentBitDSNotReady, parser.Name, conditions.LogsMessage)
 		return updateStatus(ctx, r.Client, &parser)
 
 	}
 
-	conditions.SetRunningCondition(ctx, &parser.Status.Conditions, parser.Generation, conditions.ReasonFluentBitDSReady, parser.Name)
+	conditions.SetRunningCondition(ctx, &parser.Status.Conditions, parser.Generation, conditions.ReasonFluentBitDSReady, parser.Name, conditions.LogsMessage)
 	return updateStatus(ctx, r.Client, &parser)
 }
 

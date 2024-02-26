@@ -57,7 +57,7 @@ func (m *metricComponentsChecker) determineReason(pipelines []telemetryv1alpha1.
 func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.MetricPipeline) string {
 	// condTypes order defines the priority of negative conditions
 	condTypes := []string{
-		conditions.TypeMetricGatewayHealthy,
+		conditions.TypeGatewayHealthy,
 		conditions.TypeMetricAgentHealthy,
 		conditions.TypeConfigurationGenerated,
 	}
@@ -81,7 +81,7 @@ func (m *metricComponentsChecker) determineConditionStatus(reason string) metav1
 
 func (m *metricComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.MetricPipeline, reason string) string {
 	if reason != conditions.ReasonResourceBlocksDeletion {
-		return conditions.CommonMessageFor(reason)
+		return conditions.CommonMessageFor(reason, conditions.MetricsMessage)
 	}
 
 	return generateDeletionBlockedMessage(blockingResources{
@@ -94,9 +94,9 @@ func (m *metricComponentsChecker) createMessageForReason(pipelines []telemetryv1
 
 func (m *metricComponentsChecker) addReasonPrefix(reason string) string {
 	switch {
-	case reason == conditions.ReasonMetricGatewayDeploymentReady || reason == conditions.ReasonMetricGatewayDeploymentNotReady:
+	case reason == conditions.ReasonDeploymentReady || reason == conditions.ReasonDeploymentNotReady:
 		return "MetricGateway" + reason
-	case reason == conditions.ReasonMetricAgentDaemonSetReady || reason == conditions.ReasonMetricAgentDaemonSetNotReady:
+	case reason == conditions.ReasonDaemonSetReady || reason == conditions.ReasonDaemonSetNotReady:
 		return "MetricAgent" + reason
 	case reason == conditions.ReasonReferencedSecretMissing:
 		return "MetricPipeline" + reason

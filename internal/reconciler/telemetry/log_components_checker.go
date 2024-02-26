@@ -76,7 +76,7 @@ func (l *logComponentsChecker) isPendingWithReason(p telemetryv1alpha1.LogPipeli
 
 func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, reason string) string {
 	if reason != conditions.ReasonResourceBlocksDeletion {
-		return conditions.CommonMessageFor(reason)
+		return conditions.CommonMessageFor(reason, conditions.LogsMessage)
 	}
 
 	return generateDeletionBlockedMessage(blockingResources{
