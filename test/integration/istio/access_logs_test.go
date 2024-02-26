@@ -9,7 +9,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
@@ -85,12 +84,7 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 		})
 
 		It("Should have the log pipeline running", func() {
-			Eventually(func(g Gomega) bool {
-				var pipeline telemetryv1alpha1.LogPipeline
-				key := types.NamespacedName{Name: pipelineName}
-				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-				return pipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning)
-			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {

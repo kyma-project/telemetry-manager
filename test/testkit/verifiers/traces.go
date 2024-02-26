@@ -9,10 +9,12 @@ import (
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
@@ -20,12 +22,12 @@ import (
 )
 
 func TracePipelineShouldBeRunning(ctx context.Context, k8sClient client.Client, pipelineName string) {
-	Eventually(func(g Gomega) bool {
+	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.TracePipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		return pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning)
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning)).To(BeTrue())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
 func TracePipelineShouldNotBeRunning(ctx context.Context, k8sClient client.Client, pipelineName string) {
@@ -33,7 +35,7 @@ func TracePipelineShouldNotBeRunning(ctx context.Context, k8sClient client.Clien
 		var pipeline telemetryv1alpha1.TracePipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		g.Expect(pipeline.Status.HasCondition(telemetryv1alpha1.TracePipelineRunning)).To(BeFalse())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning)).To(BeFalse())
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 

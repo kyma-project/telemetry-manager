@@ -16,7 +16,7 @@ type LogPipelineBuilder struct {
 
 	name string
 
-	conditions []telemetryv1alpha1.LogPipelineCondition
+	conditions []metav1.Condition
 }
 
 func NewLogPipelineBuilder() *LogPipelineBuilder {
@@ -30,21 +30,25 @@ func (b *LogPipelineBuilder) WithName(name string) *LogPipelineBuilder {
 	return b
 }
 
-func LogPendingCondition(reason string) telemetryv1alpha1.LogPipelineCondition {
-	return telemetryv1alpha1.LogPipelineCondition{
-		Reason: reason,
-		Type:   telemetryv1alpha1.LogPipelinePending,
+func LogPendingCondition(reason string) metav1.Condition {
+	return metav1.Condition{
+		Type:    conditions.TypePending,
+		Status:  metav1.ConditionTrue,
+		Reason:  reason,
+		Message: conditions.CommonMessageFor(reason),
 	}
 }
 
-func LogRunningCondition() telemetryv1alpha1.LogPipelineCondition {
-	return telemetryv1alpha1.LogPipelineCondition{
-		Reason: conditions.ReasonFluentBitDSReady,
-		Type:   telemetryv1alpha1.LogPipelinePending,
+func LogRunningCondition() metav1.Condition {
+	return metav1.Condition{
+		Type:    conditions.TypeRunning,
+		Status:  metav1.ConditionTrue,
+		Reason:  conditions.ReasonFluentBitDSReady,
+		Message: conditions.CommonMessageFor(conditions.ReasonFluentBitDSReady),
 	}
 }
 
-func (b *LogPipelineBuilder) WithStatusConditions(conditions ...telemetryv1alpha1.LogPipelineCondition) *LogPipelineBuilder {
+func (b *LogPipelineBuilder) WithStatusConditions(conditions ...metav1.Condition) *LogPipelineBuilder {
 	b.conditions = conditions
 	return b
 }

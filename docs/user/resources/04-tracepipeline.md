@@ -113,8 +113,11 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 | Parameter | Type | Description |
 | ---- | ----------- | ---- |
 | **conditions**  | \[\]object | An array of conditions describing the status of the pipeline. |
-| **conditions.&#x200b;lastTransitionTime**  | string | Point in time the condition transitioned into a different state. |
-| **conditions.&#x200b;reason**  | string | Reason of last transition. |
-| **conditions.&#x200b;type**  | string | The possible transition types are:<br>- `Running`: The instance is ready and usable.<br>- `Pending`: The pipeline is being activated. |
+| **conditions.&#x200b;lastTransitionTime** (required) | string | lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable. |
+| **conditions.&#x200b;message** (required) | string | message is a human readable message indicating details about the transition. This may be an empty string. |
+| **conditions.&#x200b;observedGeneration**  | integer | observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance. |
+| **conditions.&#x200b;reason** (required) | string | reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty. |
+| **conditions.&#x200b;status** (required) | string | status of the condition, one of True, False, Unknown. |
+| **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt) |
 
 <!-- TABLE-END -->

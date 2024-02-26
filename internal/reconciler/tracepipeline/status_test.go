@@ -28,7 +28,8 @@ func TestUpdateStatus(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.TracePipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Spec: telemetryv1alpha1.TracePipelineSpec{
 				Output: telemetryv1alpha1.TracePipelineOutput{
@@ -55,15 +56,20 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonTraceGatewayDeploymentNotReady)
+		require.Equal(t, conditions.TypePending, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonTraceGatewayDeploymentNotReady, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentNotReady), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 
 	t.Run("should add running condition if trace gateway deployment is ready", func(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.TracePipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Spec: telemetryv1alpha1.TracePipelineSpec{
 				Output: telemetryv1alpha1.TracePipelineOutput{
@@ -90,15 +96,20 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelineRunning)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonTraceGatewayDeploymentReady)
+		require.Equal(t, conditions.TypeRunning, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonTraceGatewayDeploymentReady, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentReady), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 
-	t.Run("should reset conditions and add pending condition if trace gateway deployment becomes not ready again", func(t *testing.T) {
+	t.Run("should remove running condition and set pending condition to true if trace gateway deployment becomes not ready again", func(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.TracePipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Spec: telemetryv1alpha1.TracePipelineSpec{
 				Output: telemetryv1alpha1.TracePipelineOutput{
@@ -107,9 +118,21 @@ func TestUpdateStatus(t *testing.T) {
 					},
 				}},
 			Status: telemetryv1alpha1.TracePipelineStatus{
-				Conditions: []telemetryv1alpha1.TracePipelineCondition{
-					{Reason: conditions.ReasonTraceGatewayDeploymentNotReady, Type: telemetryv1alpha1.TracePipelinePending},
-					{Reason: conditions.ReasonTraceGatewayDeploymentReady, Type: telemetryv1alpha1.TracePipelineRunning},
+				Conditions: []metav1.Condition{
+					{
+						Type:               conditions.TypePending,
+						Status:             metav1.ConditionFalse,
+						Reason:             conditions.ReasonTraceGatewayDeploymentNotReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentNotReady),
+						LastTransitionTime: metav1.Now(),
+					},
+					{
+						Type:               conditions.TypeRunning,
+						Status:             metav1.ConditionTrue,
+						Reason:             conditions.ReasonTraceGatewayDeploymentReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentReady),
+						LastTransitionTime: metav1.Now(),
+					},
 				},
 			},
 		}
@@ -131,20 +154,37 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonTraceGatewayDeploymentNotReady)
+		require.Equal(t, conditions.TypePending, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonTraceGatewayDeploymentNotReady, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentNotReady), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 
-	t.Run("should reset conditions and add pending condition if some referenced secret does not exist anymore", func(t *testing.T) {
+	t.Run("should remove running condition and set pending condition to true if some referenced secret does not exist anymore", func(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.TracePipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Status: telemetryv1alpha1.TracePipelineStatus{
-				Conditions: []telemetryv1alpha1.TracePipelineCondition{
-					{Reason: conditions.ReasonTraceGatewayDeploymentNotReady, Type: telemetryv1alpha1.TracePipelinePending},
-					{Reason: conditions.ReasonTraceGatewayDeploymentReady, Type: telemetryv1alpha1.TracePipelineRunning},
+				Conditions: []metav1.Condition{
+					{
+						Type:               conditions.TypePending,
+						Status:             metav1.ConditionFalse,
+						Reason:             conditions.ReasonTraceGatewayDeploymentNotReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentNotReady),
+						LastTransitionTime: metav1.Now(),
+					},
+					{
+						Type:               conditions.TypeRunning,
+						Status:             metav1.ConditionTrue,
+						Reason:             conditions.ReasonTraceGatewayDeploymentReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentReady),
+						LastTransitionTime: metav1.Now(),
+					},
 				},
 			},
 			Spec: telemetryv1alpha1.TracePipelineSpec{
@@ -181,15 +221,20 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonReferencedSecretMissing)
+		require.Equal(t, conditions.TypePending, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonReferencedSecretMissing, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonReferencedSecretMissing), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 
 	t.Run("should add running condition if referenced secret exists and trace gateway deployment is ready", func(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.TracePipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Spec: telemetryv1alpha1.TracePipelineSpec{
 				Output: telemetryv1alpha1.TracePipelineOutput{
@@ -233,15 +278,20 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelineRunning)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonTraceGatewayDeploymentReady)
+		require.Equal(t, conditions.TypeRunning, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonTraceGatewayDeploymentReady, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentReady), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 
 	t.Run("should add pending condition if waiting for lock", func(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.TracePipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Spec: telemetryv1alpha1.TracePipelineSpec{
 				Output: telemetryv1alpha1.TracePipelineOutput{
@@ -268,15 +318,20 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonMaxPipelinesExceeded)
+		require.Equal(t, conditions.TypePending, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonMaxPipelinesExceeded, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonMaxPipelinesExceeded), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 
 	t.Run("should add pending condition if acquired lock but trace gateway is not ready", func(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.TracePipeline{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: pipelineName,
+				Name:       pipelineName,
+				Generation: 1,
 			},
 			Spec: telemetryv1alpha1.TracePipelineSpec{
 				Output: telemetryv1alpha1.TracePipelineOutput{
@@ -305,7 +360,11 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.TracePipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
 		require.Len(t, updatedPipeline.Status.Conditions, 1)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Type, telemetryv1alpha1.TracePipelinePending)
-		require.Equal(t, updatedPipeline.Status.Conditions[0].Reason, conditions.ReasonTraceGatewayDeploymentNotReady)
+		require.Equal(t, conditions.TypePending, updatedPipeline.Status.Conditions[0].Type)
+		require.Equal(t, metav1.ConditionTrue, updatedPipeline.Status.Conditions[0].Status)
+		require.Equal(t, conditions.ReasonTraceGatewayDeploymentNotReady, updatedPipeline.Status.Conditions[0].Reason)
+		require.Equal(t, conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentNotReady), updatedPipeline.Status.Conditions[0].Message)
+		require.Equal(t, updatedPipeline.Generation, updatedPipeline.Status.Conditions[0].ObservedGeneration)
+		require.NotEmpty(t, updatedPipeline.Status.Conditions[0].LastTransitionTime)
 	})
 }

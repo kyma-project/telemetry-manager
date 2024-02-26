@@ -5,10 +5,12 @@ import (
 	"net/http"
 
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -27,10 +29,10 @@ func LogsShouldBeDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePr
 }
 
 func LogPipelineShouldBeRunning(ctx context.Context, k8sClient client.Client, pipelineName string) {
-	Eventually(func(g Gomega) bool {
+	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		return pipeline.Status.HasCondition(telemetryv1alpha1.LogPipelineRunning)
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(BeTrue())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning)).To(BeTrue())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

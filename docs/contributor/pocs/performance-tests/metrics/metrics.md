@@ -123,9 +123,9 @@ For the test environment, the following setup was used:
       labels:
         app.kubernetes.io/name: metricpipeline
         app.kubernetes.io/instance: metricpipeline-sample
-        app.kubernetes.io/part-of: telemetry-operator
+        app.kubernetes.io/part-of: telemetry-manager
         app.kubernetes.io/managed-by: kustomize
-        app.kubernetes.io/created-by: telemetry-operator
+        app.kubernetes.io/created-by: telemetry-manager
       name: metricpipeline-sample
     spec:
       input:
@@ -492,7 +492,7 @@ The following graph shows the metric agent memory utilization:
 The following graph shows the Kubernetes API server metrics:
 ![Metric agent exported metrics](./assets/max-pod-k8s-api.jpg)
 
-The test reached a max Pod count 1430 on the cluster. All metrics were successfully received and exported to the metric gateway; no critical memory, cpu or network utilization was observed.
+The test reached a max Pod count 1430 in the cluster. All metrics were successfully received and exported to the metric gateway; no critical memory, cpu or network utilization was observed.
 
 The Kubernetes API request duration reach for `GET` operations at peak was ~750ms, and for `LIST` operations ~900ms.
 

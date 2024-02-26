@@ -1,9 +1,22 @@
 package conditions
 
+import (
+	"context"
+	"fmt"
+
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+)
+
 const (
 	TypeMetricGatewayHealthy   = "GatewayHealthy"
 	TypeMetricAgentHealthy     = "AgentHealthy"
 	TypeConfigurationGenerated = "ConfigurationGenerated"
+	// NOTE: The "Running" and "Pending" types will be deprecated
+	// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
+	TypeRunning = "Running"
+	TypePending = "Pending"
 )
 
 const (
@@ -47,6 +60,16 @@ var message = map[string]string{
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
 }
 
+func New(condType, reason string, status metav1.ConditionStatus, generation int64) metav1.Condition {
+	return metav1.Condition{
+		Type:               condType,
+		Status:             status,
+		Reason:             reason,
+		Message:            CommonMessageFor(reason),
+		ObservedGeneration: generation,
+	}
+}
+
 // CommonMessageFor returns a human-readable message corresponding to a given reason.
 // In more advanced scenarios, you may craft custom messages tailored to specific use cases.
 func CommonMessageFor(reason string) string {
@@ -54,4 +77,49 @@ func CommonMessageFor(reason string) string {
 		return condMessage
 	}
 	return ""
+}
+
+func SetPendingCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string) {
+	log := logf.FromContext(ctx)
+
+	pending := New(
+		TypePending,
+		reason,
+		metav1.ConditionTrue,
+		generation,
+	)
+
+	if meta.FindStatusCondition(*conditions, TypeRunning) != nil {
+		log.V(1).Info(fmt.Sprintf("Updating the status of %s: Removing the Running condition", resourceName))
+		meta.RemoveStatusCondition(conditions, TypeRunning)
+	}
+
+	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Pending condition to True", resourceName))
+	meta.SetStatusCondition(conditions, pending)
+}
+
+func SetRunningCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string) {
+	log := logf.FromContext(ctx)
+
+	existingPending := meta.FindStatusCondition(*conditions, TypePending)
+	if existingPending != nil {
+		newPending := New(
+			TypePending,
+			existingPending.Reason,
+			metav1.ConditionFalse,
+			generation,
+		)
+		log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Pending condition to False", resourceName))
+		meta.SetStatusCondition(conditions, newPending)
+	}
+
+	running := New(
+		TypeRunning,
+		reason,
+		metav1.ConditionTrue,
+		generation,
+	)
+
+	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Running condition to True", resourceName))
+	meta.SetStatusCondition(conditions, running)
 }

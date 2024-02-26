@@ -62,7 +62,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 		}
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeMetricAgentHealthy, reason, status, pipeline.Generation))
+	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeMetricAgentHealthy, reason, status, pipeline.Generation))
 }
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
@@ -80,7 +80,7 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 		reason = conditions.ReasonMetricGatewayDeploymentReady
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeMetricGatewayHealthy, reason, status, pipeline.Generation))
+	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeMetricGatewayHealthy, reason, status, pipeline.Generation))
 }
 
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, withinPipelineCountLimit bool) {
@@ -97,15 +97,5 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 		reason = conditions.ReasonMaxPipelinesExceeded
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, newCondition(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation))
-}
-
-func newCondition(condType, reason string, status metav1.ConditionStatus, generation int64) metav1.Condition {
-	return metav1.Condition{
-		Type:               condType,
-		Status:             status,
-		Reason:             reason,
-		Message:            conditions.CommonMessageFor(reason),
-		ObservedGeneration: generation,
-	}
+	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation))
 }
