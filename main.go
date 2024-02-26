@@ -464,11 +464,12 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 			CPURequest:                  resource.MustParse(fluentBitCPURequest),
 			MemoryRequest:               resource.MustParse(fluentBitMemoryRequest),
 		},
+		SelfMonitor: createSelfMonitoringConfig(),
 	}
 
 	return telemetrycontrollers.NewLogPipelineReconciler(
 		client,
-		logpipeline.NewReconciler(client, config, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
+		logpipeline.NewReconciler(client, config, &k8sutils.DaemonSetProber{Client: client}, overridesHandler, enableSelfMonitor),
 		config)
 }
 
@@ -533,11 +534,12 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		MaxPipelines:           maxTracePipelines,
+		SelfMonitor:            createSelfMonitoringConfig(),
 	}
 
 	return telemetrycontrollers.NewTracePipelineReconciler(
 		client,
-		tracepipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, overridesHandler),
+		tracepipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, overridesHandler, enableSelfMonitor),
 	)
 }
 

@@ -19,6 +19,8 @@ package logpipeline
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
+	"gopkg.in/yaml.v3"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -52,6 +54,7 @@ type Config struct {
 	PipelineDefaults      builder.PipelineDefaults
 	Overrides             overrides.Config
 	DaemonSetConfig       fluentbit.DaemonSetConfig
+	SelfMonitor           selfmonitor.Config
 }
 
 //go:generate mockery --name DaemonSetProber --filename daemon_set_prober.go
@@ -73,9 +76,10 @@ type Reconciler struct {
 	syncer                  syncer
 	overridesHandler        *overrides.Handler
 	istioStatusChecker      istiostatus.Checker
+	enableSelfMonitor       bool
 }
 
-func NewReconciler(client client.Client, config Config, prober DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
+func NewReconciler(client client.Client, config Config, prober DaemonSetProber, overridesHandler *overrides.Handler, enableSelfMonitor bool) *Reconciler {
 	var r Reconciler
 	r.Client = client
 	r.config = config
@@ -86,6 +90,7 @@ func NewReconciler(client client.Client, config Config, prober DaemonSetProber, 
 	r.syncer = syncer{client, config}
 	r.overridesHandler = overridesHandler
 	r.istioStatusChecker = istiostatus.NewChecker(client)
+	r.enableSelfMonitor = enableSelfMonitor
 
 	return &r
 }
@@ -217,6 +222,28 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 	networkPolicy := commonresources.MakeNetworkPolicy(r.config.DaemonSet, allowedPorts, fluentbit.Labels())
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, ownerRefSetter, networkPolicy); err != nil {
 		return fmt.Errorf("failed to create fluent bit network policy: %w", err)
+	}
+
+	if r.enableSelfMonitor {
+		if err = r.reconcileSelfMonitor(ctx, pipeline); err != nil {
+			return fmt.Errorf("failed to reconcile self-monitor deployment: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+	selfMonConfig := selfmonitor.MakeConfig()
+	selfMonitorConfigYaml, err := yaml.Marshal(selfMonConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
+	}
+
+	if err := selfmonitor.ApplyResources(ctx,
+		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
+		r.config.SelfMonitor.WithMonitoringConfig(string(selfMonitorConfigYaml))); err != nil {
+		return fmt.Errorf("failed to apply self-monitor resources: %w", err)
 	}
 
 	return nil

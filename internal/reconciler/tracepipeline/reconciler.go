@@ -19,6 +19,7 @@ package tracepipeline
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,6 +44,7 @@ type Config struct {
 	Gateway                otelcollector.GatewayConfig
 	OverridesConfigMapName types.NamespacedName
 	MaxPipelines           int
+	SelfMonitor            selfmonitor.Config
 }
 
 //go:generate mockery --name DeploymentProber --filename deployment_prober.go
@@ -56,15 +58,17 @@ type Reconciler struct {
 	prober             DeploymentProber
 	overridesHandler   *overrides.Handler
 	istioStatusChecker istiostatus.Checker
+	enableSelfMonitor  bool
 }
 
-func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler *overrides.Handler) *Reconciler {
+func NewReconciler(client client.Client, config Config, prober DeploymentProber, overridesHandler *overrides.Handler, enableSelfMonitor bool) *Reconciler {
 	return &Reconciler{
 		Client:             client,
 		config:             config,
 		prober:             prober,
 		overridesHandler:   overridesHandler,
 		istioStatusChecker: istiostatus.NewChecker(client),
+		enableSelfMonitor:  enableSelfMonitor,
 	}
 }
 
@@ -127,6 +131,28 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 
 	if err = r.reconcileTraceGateway(ctx, pipeline, deployablePipelines); err != nil {
 		return fmt.Errorf("failed to reconcile trace gateway: %w", err)
+	}
+
+	if r.enableSelfMonitor {
+		if err = r.reconcileSelfMonitor(ctx, pipeline); err != nil {
+			return fmt.Errorf("failed to reconcile self-monitor deployment: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) error {
+	selfMonConfig := selfmonitor.MakeConfig()
+	selfMonitorConfigYaml, err := yaml.Marshal(selfMonConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
+	}
+
+	if err := selfmonitor.ApplyResources(ctx,
+		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
+		r.config.SelfMonitor.WithMonitoringConfig(string(selfMonitorConfigYaml))); err != nil {
+		return fmt.Errorf("failed to apply self-monitor resources: %w", err)
 	}
 
 	return nil
