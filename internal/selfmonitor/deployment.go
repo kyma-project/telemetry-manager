@@ -37,7 +37,7 @@ func ApplyResources(ctx context.Context, c client.Client, config *Config) error 
 		return fmt.Errorf("failed to create self-monitor service account: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, makeClusterRole(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateRole(ctx, c, makeRole(name)); err != nil {
 		return fmt.Errorf("failed to create self-monitor cluster role: %w", err)
 	}
 
@@ -243,8 +243,8 @@ func makePodAffinity(labels map[string]string) corev1.Affinity {
 	}
 }
 
-func makeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
-	clusterRole := rbacv1.ClusterRole{
+func makeRole(name types.NamespacedName) *rbacv1.Role {
+	role := rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
@@ -258,7 +258,7 @@ func makeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 			},
 		},
 	}
-	return &clusterRole
+	return &role
 }
 
 func defaultLabels(baseName string) map[string]string {
