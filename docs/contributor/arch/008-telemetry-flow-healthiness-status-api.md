@@ -82,7 +82,7 @@ Then, we map the alert rules to the reasons as follows:
 | GatewayThrottling                 | GatewayReceiverRefusedMetrics                                                                            |
 | Healthy                           | **not** (GatewayExporterDroppedMetrics **or** GatewayExporterEnqueueFailed **or** HighBufferUtilization **or** GatewayReceiverRefusedMetrics) |
 
->BufferFillingUp should not result in negative condition status. This reason would be aggregated as warning in telemetry module status
+> **NOTE:** `BufferFillingUp` should not result in a negative condition status. This reason would be aggregated as warning in the Telemetry module status.
 ### Gateway/Agent Communication
 
 The events mentioned above are about the Gateway Collector. Some other issues might happen with the Agent, like:
