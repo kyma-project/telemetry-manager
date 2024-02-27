@@ -155,7 +155,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	}
 
 	if r.enableSelfMonitor {
-		if err = r.reconcileSelfMonitor(ctx, pipeline); err != nil {
+		if err = r.reconcileSelfMonitor(ctx, pipeline, deployableLogPipelines); err != nil {
 			return fmt.Errorf("failed to reconcile self-monitor deployment: %w", err)
 		}
 	}
@@ -233,7 +233,10 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 	return nil
 }
 
-func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) error {
+func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, deployableLogPipelines []telemetryv1alpha1.LogPipeline) error {
+	if len(deployableLogPipelines) == 0 {
+		return nil
+	}
 	selfMonConfig := selfmonitor.MakeConfig()
 	selfMonitorConfigYaml, err := yaml.Marshal(selfMonConfig)
 	if err != nil {

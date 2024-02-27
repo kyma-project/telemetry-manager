@@ -38,11 +38,11 @@ func ApplyResources(ctx context.Context, c client.Client, config *Config) error 
 	}
 
 	if err := k8sutils.CreateOrUpdateRole(ctx, c, makeRole(name)); err != nil {
-		return fmt.Errorf("failed to create self-monitor cluster role: %w", err)
+		return fmt.Errorf("failed to create self-monitor role: %w", err)
 	}
 
 	if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, makeRoleBinding(name)); err != nil {
-		return fmt.Errorf("failed to create self-monitor cluster role binding: %w", err)
+		return fmt.Errorf("failed to create self-monitor role binding: %w", err)
 	}
 
 	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, makeNetworkPolicy(name, defaultLabels(name.Name))); err != nil {
