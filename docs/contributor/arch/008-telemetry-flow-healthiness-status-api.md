@@ -38,7 +38,7 @@ There is a community discussion about incorporating a rate-limiting mechanism di
 
 ### Exporter Retries
 
-* For non-retryable errors, data is dropped. See more about retryable and non-retryable errors.
+* For non-retryable errors, data is dropped.
 * Retryable errors trigger retries until success or retry limit is reached, then data is dropped.
 * For retryable and non-retryable errors: If data is dropped, `otelcol_exporter_send_failed_metric_points` is increased.
 * If data is sent successfully, `otelcol_exporter_sent_metric_points` is increased.
@@ -60,7 +60,7 @@ Ultimately, the user's primary concern is understanding whether the telemetry fl
 
 With a single condition type, the **reason** field can show a value that is most relevant for the user. We suggest the following values, ordered from most to least critical:
 ```
-FullDataLoss > PartialDataLoss > HighBufferUtilization > GatewayThrottling > Healthy
+AllTelemetryDataDropped > SomeTelemetryDataDropped > BufferFillingUp > GatewayThrottling > Healthy
 ```
 
 The reasons are based on the following alert rules (an example for Metric Pipelines; the actual PromQL expressions must be defined later):
@@ -76,12 +76,13 @@ Then, we map the alert rules to the reasons as follows:
 
 | Reason | Alert Rules |
 | --- | --- |
-| FullDataLoss           | **not** GatewayExporterSentMetrics **and** (GatewayExporterDroppedMetrics **or** GatewayExporterEnqueueFailed) |
-| PartialDataLoss        | GatewayExporterSentMetrics **and** (GatewayExporterDroppedMetrics **or** GatewayExporterEnqueueFailed)       |
-| HighBufferUtilization  | GatewayExporterQueueAlmostFull                                                                           |
-| GatewayThrottling      | GatewayReceiverRefusedMetrics                                                                            |
-| Healthy                | **not** (GatewayExporterDroppedMetrics **or** GatewayExporterEnqueueFailed **or** HighBufferUtilization **or** GatewayReceiverRefusedMetrics) |
+| AllTelemetryDataDropped           | **not** GatewayExporterSentMetrics **and** (GatewayExporterDroppedMetrics **or** GatewayExporterEnqueueFailed) |
+| SomeTelemetryDataDropped          | GatewayExporterSentMetrics **and** (GatewayExporterDroppedMetrics **or** GatewayExporterEnqueueFailed)       |
+| BufferFillingUp                   | GatewayExporterQueueAlmostFull                                                                           |
+| GatewayThrottling                 | GatewayReceiverRefusedMetrics                                                                            |
+| Healthy                           | **not** (GatewayExporterDroppedMetrics **or** GatewayExporterEnqueueFailed **or** HighBufferUtilization **or** GatewayReceiverRefusedMetrics) |
 
+>BufferFillingUp should not result in negative condition status. This reason would be aggregated as warning in telemetry module status
 ### Gateway/Agent Communication
 
 The events mentioned above are about the Gateway Collector. Some other issues might happen with the Agent, like:
