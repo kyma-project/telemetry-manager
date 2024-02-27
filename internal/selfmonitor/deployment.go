@@ -261,7 +261,6 @@ func makeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 	return &clusterRole
 }
 
-// move to commonresources
 func defaultLabels(baseName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name": baseName,
