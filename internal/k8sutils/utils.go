@@ -51,6 +51,23 @@ func CreateOrUpdateClusterRole(ctx context.Context, c client.Client, desired *rb
 	return c.Update(ctx, desired)
 }
 
+func CreateOrUpdateRoleBinding(ctx context.Context, c client.Client, desired *rbacv1.RoleBinding) error {
+	var existing rbacv1.RoleBinding
+	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+		return c.Create(ctx, desired)
+	}
+	mutated := existing.DeepCopy()
+	mergeMetadata(&desired.ObjectMeta, mutated.ObjectMeta)
+	if apiequality.Semantic.DeepEqual(mutated, desired) {
+		return nil
+	}
+	return c.Update(ctx, desired)
+}
+
 func CreateOrUpdateRole(ctx context.Context, c client.Client, desired *rbacv1.Role) error {
 	var existing rbacv1.Role
 	err := c.Get(ctx, types.NamespacedName{Name: desired.Name, Namespace: desired.Namespace}, &existing)

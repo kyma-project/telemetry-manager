@@ -108,12 +108,12 @@ func TestApplySelfMonitorResources(t *testing.T) {
 		require.True(t, *containerSecurityContext.ReadOnlyRootFilesystem, "must use readonly fs")
 	})
 
-	t.Run("should create clusterrole", func(t *testing.T) {
-		var crs rbacv1.ClusterRoleList
-		require.NoError(t, client.List(ctx, &crs))
-		require.Len(t, crs.Items, 1)
+	t.Run("should create role", func(t *testing.T) {
+		var rs rbacv1.RoleList
+		require.NoError(t, client.List(ctx, &rs))
+		require.Len(t, rs.Items, 1)
 
-		cr := crs.Items[0]
+		r := rs.Items[0]
 		expectedRules := []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
@@ -122,27 +122,27 @@ func TestApplySelfMonitorResources(t *testing.T) {
 			},
 		}
 
-		require.NotNil(t, cr)
-		require.Equal(t, cr.Name, name)
+		require.NotNil(t, r)
+		require.Equal(t, r.Name, name)
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
-		}, cr.Labels)
-		require.Equal(t, cr.Rules, expectedRules)
+		}, r.Labels)
+		require.Equal(t, r.Rules, expectedRules)
 	})
 
-	t.Run("should create clusterrolebinding", func(t *testing.T) {
-		var crbs rbacv1.ClusterRoleBindingList
-		require.NoError(t, client.List(ctx, &crbs))
-		require.Len(t, crbs.Items, 1)
+	t.Run("should create role binding", func(t *testing.T) {
+		var rbs rbacv1.RoleBindingList
+		require.NoError(t, client.List(ctx, &rbs))
+		require.Len(t, rbs.Items, 1)
 
-		crb := crbs.Items[0]
-		require.NotNil(t, crb)
-		require.Equal(t, name, crb.Name)
-		require.Equal(t, namespace, crb.Namespace)
+		rb := rbs.Items[0]
+		require.NotNil(t, rb)
+		require.Equal(t, name, rb.Name)
+		require.Equal(t, namespace, rb.Namespace)
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
-		}, crb.Labels)
-		require.Equal(t, name, crb.RoleRef.Name)
+		}, rb.Labels)
+		require.Equal(t, name, rb.RoleRef.Name)
 	})
 
 	t.Run("should create serviceaccount", func(t *testing.T) {

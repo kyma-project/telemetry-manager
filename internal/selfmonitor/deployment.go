@@ -41,7 +41,7 @@ func ApplyResources(ctx context.Context, c client.Client, config *Config) error 
 		return fmt.Errorf("failed to create self-monitor cluster role: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, makeClusterRoleBinding(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, makeRoleBinding(name)); err != nil {
 		return fmt.Errorf("failed to create self-monitor cluster role binding: %w", err)
 	}
 
@@ -73,8 +73,8 @@ func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 	return &serviceAccount
 }
 
-func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBinding {
-	clusterRoleBinding := rbacv1.ClusterRoleBinding{
+func makeRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
+	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
 			Namespace: name.Namespace,
@@ -83,11 +83,11 @@ func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 		Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
+			Kind:     "Role",
 			Name:     name.Name,
 		},
 	}
-	return &clusterRoleBinding
+	return &roleBinding
 }
 
 func makeNetworkPolicy(name types.NamespacedName, labels map[string]string) *networkingv1.NetworkPolicy {
