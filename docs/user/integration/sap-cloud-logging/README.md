@@ -103,7 +103,9 @@ The Telemetry module supports the convenient shipment of applications and access
 
 ### Set Up Access Logs
 
-By default, Istio sidecar injection and Istio access logs are disabled in Kyma. With the following steps, you can analyze access logs of your workload in the default SAP Cloud Logging dashboards shipped for SAP BTP, Kyma runtime.
+By default, Istio sidecar injection and Istio access logs are disabled in Kyma.
+
+To analyze access logs of your workload in the default SAP Cloud Logging dashboards shipped for SAP BTP, Kyma runtime, you must enable them:
 
 1. Enable Istio sidecar injection for your workload following [Enabling Istio Sidecar Injection](https://kyma-project.io/#/istio/user/operation-guides/02-20-enable-sidecar-injection)
 
