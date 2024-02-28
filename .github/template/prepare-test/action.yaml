@@ -17,6 +17,7 @@ runs:
       uses: "./.github/template/setup-golang"
 
     - name: Setup Ginkgo
+      shell: bash
       run: make ginkgo
 
     - name: Provision K3D
