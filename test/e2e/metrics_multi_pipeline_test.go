@@ -22,6 +22,7 @@ import (
 	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otel/metrics"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
@@ -131,7 +132,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 			}
 		})
 
-		It("Should have a pending pipeline", func() {
+		It("Should set ConfigurationGenerated condition to false", func() {
 			By("Creating an additional pipeline", func() {
 				pipeline := kitk8s.NewMetricPipeline("exceeding-pipeline")
 				pipelineCreatedLater = pipeline.K8sObject()
@@ -142,9 +143,10 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 					var fetched telemetryv1alpha1.MetricPipeline
 					key := types.NamespacedName{Name: pipeline.Name()}
 					g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
-					g.Expect(meta.IsStatusConditionFalse(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
-					actualReason := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated).Reason
-					g.Expect(actualReason).To(Equal(conditions.ReasonMaxPipelinesExceeded))
+					configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
+					g.Expect(configurationGeneratedCond).NotTo(BeNil())
+					g.Expect(configurationGeneratedCond.Status).Should(Equal(metav1.ConditionFalse))
+					g.Expect(configurationGeneratedCond.Reason).Should(Equal(conditions.ReasonMaxPipelinesExceeded))
 				}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 				verifiers.MetricGatewayConfigShouldNotContainPipeline(ctx, k8sClient, pipeline.Name())
 			})

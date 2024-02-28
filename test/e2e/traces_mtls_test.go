@@ -62,8 +62,8 @@ var _ = Describe("Traces mTLS", Label("traces"), func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
-			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a running trace gateway deployment", func() {
