@@ -3,6 +3,7 @@ package selfmonitor
 import (
 	"context"
 	"fmt"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"maps"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -21,6 +22,59 @@ import (
 )
 
 type podSpecOption = func(pod *corev1.PodSpec)
+
+func RemoveResources(ctx context.Context, c client.Client, config *Config) error {
+
+	objectMeta := metav1.ObjectMeta{
+		Name:      config.BaseName,
+		Namespace: config.Namespace,
+	}
+	// Delete Deployment
+	deployment := &appsv1.Deployment{ObjectMeta: objectMeta}
+	if err := c.Delete(ctx, deployment); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	// Delete Configmap
+	configMap := &corev1.ConfigMap{ObjectMeta: objectMeta}
+	if err := c.Delete(ctx, configMap); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	// Delete Network policy
+	networkPolicy := &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
+	if err := c.Delete(ctx, networkPolicy); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	// Delete RoleBinding
+	roleBinding := &rbacv1.RoleBinding{ObjectMeta: objectMeta}
+	if err := c.Delete(ctx, roleBinding); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	// Delete Role
+	role := &rbacv1.Role{ObjectMeta: objectMeta}
+	if err := c.Delete(ctx, role); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	// Delete service account
+	serviceAccount := &corev1.ServiceAccount{ObjectMeta: objectMeta}
+	if err := c.Delete(ctx, serviceAccount); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func ApplyResources(ctx context.Context, c client.Client, config *Config) error {
 

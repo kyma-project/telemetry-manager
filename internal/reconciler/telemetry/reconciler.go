@@ -137,18 +137,23 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 	if err != nil {
 		return err
 	}
-	if pipelinesPresent {
-		selfMonConfig := selfmonitor.MakeConfig()
-		selfMonitorConfigYaml, err := yaml.Marshal(selfMonConfig)
-		if err != nil {
-			return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
+	if !pipelinesPresent {
+		if err := selfmonitor.RemoveResources(ctx, r.Client, &r.config.SelfMonitor.Config); err != nil {
+			return fmt.Errorf("failed to delete self-monitor resources: %w", err)
 		}
+		return nil
+	}
 
-		if err := selfmonitor.ApplyResources(ctx,
-			k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),
-			r.config.SelfMonitor.Config.WithMonitoringConfig(string(selfMonitorConfigYaml))); err != nil {
-			return fmt.Errorf("failed to apply self-monitor resources: %w", err)
-		}
+	selfMonConfig := selfmonitor.MakeConfig()
+	selfMonitorConfigYaml, err := yaml.Marshal(selfMonConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
+	}
+
+	if err := selfmonitor.ApplyResources(ctx,
+		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),
+		r.config.SelfMonitor.Config.WithMonitoringConfig(string(selfMonitorConfigYaml))); err != nil {
+		return fmt.Errorf("failed to apply self-monitor resources: %w", err)
 	}
 
 	return nil
