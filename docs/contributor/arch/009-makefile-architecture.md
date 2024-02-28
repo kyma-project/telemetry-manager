@@ -23,7 +23,7 @@ After analyzing repositories that have similar configurations as Telemetry Manag
    - `provision.mk`: contains all targets that (de-)provision a certain environment (such as k3d or Gardener).
    - `dependencies.mk`: contains all targets that install build dependencies (such as Kyma or Ginkgo).
 2. Implement .env file that stores environment variables accessible from both makefiles and shell scripts:
-   - This decision was both necessary as well as desired, since it mitigates the use of hardcoded variables (s.a. dependencies versions), and makes these variables accessible from both makefiles and shell scripts.
+   - This decision was both necessary as well as desired, because it mitigates the use of hardcoded variables (such as dependencies versions), and makes these variables accessible from both makefiles and shell scripts.
 3. Remove redundant make targets (e.g. e2e, upgrade, integration running targets):
 
    - Running tests targets (e2e, integration, upgrade): replaced with direct calls of the ginkgo-cli. [The Development Documentation](../development.md) has also been updated accordingly. Junit xml reports have also been dropped in the process.
