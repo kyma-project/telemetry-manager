@@ -292,7 +292,7 @@ func TestUpdateStatus(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
 			Client:        fakeClient,

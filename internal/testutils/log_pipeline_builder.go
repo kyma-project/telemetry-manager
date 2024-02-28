@@ -35,7 +35,7 @@ func LogPendingCondition(reason string) metav1.Condition {
 		Type:    conditions.TypePending,
 		Status:  metav1.ConditionTrue,
 		Reason:  reason,
-		Message: conditions.CommonMessageFor(reason),
+		Message: conditions.CommonMessageFor(reason, conditions.LogsMessage),
 	}
 }
 
@@ -44,7 +44,7 @@ func LogRunningCondition() metav1.Condition {
 		Type:    conditions.TypeRunning,
 		Status:  metav1.ConditionTrue,
 		Reason:  conditions.ReasonFluentBitDSReady,
-		Message: conditions.CommonMessageFor(conditions.ReasonFluentBitDSReady),
+		Message: conditions.CommonMessageFor(conditions.ReasonFluentBitDSReady, conditions.LogsMessage),
 	}
 }
 

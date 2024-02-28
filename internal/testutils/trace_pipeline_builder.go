@@ -50,7 +50,7 @@ func TracePendingCondition(reason string) metav1.Condition {
 		Type:    conditions.TypePending,
 		Status:  metav1.ConditionTrue,
 		Reason:  reason,
-		Message: conditions.CommonMessageFor(reason),
+		Message: conditions.CommonMessageFor(reason, conditions.TracesMessage),
 	}
 }
 
@@ -59,7 +59,7 @@ func TraceRunningCondition() metav1.Condition {
 		Type:    conditions.TypeRunning,
 		Status:  metav1.ConditionTrue,
 		Reason:  conditions.ReasonTraceGatewayDeploymentReady,
-		Message: conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentReady),
+		Message: conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentReady, conditions.TracesMessage),
 	}
 }
 
