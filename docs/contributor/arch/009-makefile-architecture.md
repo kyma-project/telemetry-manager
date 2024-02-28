@@ -21,7 +21,7 @@ After analyzing repositories that have similar configurations as Telemetry Manag
 1. Split general Makefile into sub-makefiles:
    - `Makefile`: root makefile, containing targets related to the development, building, deployment, and testing flow of the codebase. Includes `provision.mk` and `dependencies.mk`
    - `provision.mk`: contains all targets that (de-)provision a certain environment (such as k3d or Gardener).
-   - `dependencies.mk`: contains all targets that install build dependencies (e.g. kyma, ginkgo, etc.).
+   - `dependencies.mk`: contains all targets that install build dependencies (such as Kyma or Ginkgo).
 2. Implement .env file, that stores environment variables accessible from both makefiles and shell scripts:
    - This decision was both necessary as well as desired, since it mitigates the use of hardcoded variables (s.a. dependencies versions), and makes these variables accessible from both makefiles and shell scripts.
 3. Remove redundant make targets (e.g. e2e, upgrade, integration running targets):
