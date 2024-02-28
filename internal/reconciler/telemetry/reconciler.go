@@ -66,10 +66,9 @@ type Reconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	*rest.Config
-	config            Config
-	healthCheckers    healthCheckers
-	overridesHandler  *overrides.Handler
-	enableSelfMonitor bool
+	config           Config
+	healthCheckers   healthCheckers
+	overridesHandler *overrides.Handler
 }
 
 func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler) *Reconciler {
@@ -121,10 +120,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
-	if r.enableSelfMonitor {
-		if err = r.reconcileSelfMonitor(ctx, telemetry); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to reconcile self-monitor deployment: %w", err)
-		}
+	if err = r.reconcileSelfMonitor(ctx, telemetry); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to reconcile self-monitor deployment: %w", err)
 	}
 
 	requeue := telemetry.Status.State == operatorv1alpha1.StateWarning
@@ -132,6 +129,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operatorv1alpha1.Telemetry) error {
+	if !r.config.SelfMonitor.Enabled {
+		return nil
+	}
+
 	pipelinesPresent, err := r.checkPipelineExist(ctx)
 	if err != nil {
 		return err
