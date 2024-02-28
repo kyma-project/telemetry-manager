@@ -8,7 +8,7 @@ Telemetry Manager has been bootstrapped with [Kubebuilder](https://github.com/ku
 - Install [Golang 1.20](https://golang.org/dl/) or newer (for development and local execution).
 - Install [Docker](https://www.docker.com/get-started).
 - Install [golangci-lint](https://golangci-lint.run).
-- Install [ginkgo CLI](https://pkg.go.dev/github.com/onsi/ginkgo/ginkgo) for running the E2E test commands straight from your terminal.
+- Install [ginkgo CLI](https://pkg.go.dev/github.com/onsi/ginkgo/ginkgo) to run the E2E test commands straight from your terminal.
 
 Other dependencies will be downloaded by the make targets to the `bin` sub-folder.
 
