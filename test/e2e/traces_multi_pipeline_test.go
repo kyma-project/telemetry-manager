@@ -8,6 +8,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -20,8 +22,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
