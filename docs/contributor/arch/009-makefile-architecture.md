@@ -27,7 +27,7 @@ After analyzing repositories that have similar configurations as Telemetry Manag
 3. Remove redundant make targets (for example, e2e, upgrade, integration running targets):
 
    - Running tests targets (e2e, integration, upgrade): replaced with direct calls of the ginkgo CLI. [The Development Documentation](../development.md) has also been updated accordingly. Junit xml reports have also been dropped in the process.
-   - Test matchers are now executed only before running the `make test` target for Unit Tests. Thus, `test-matchers` target has been removed, and it's logic moved directly in the `test` target. The matchers test has also been removed from other test jobs (due to redundancy).
+   - Test matchers are now executed only before running the `make test` target for unit tests. Thus, the `test-matchers` target has been removed, and its logic moved directly into the `test` target. The matchers test has also been removed from other test jobs (because it was redundant).
    - Gardener integration tests: a separate shell script has been created for it, encapsulating both `gardener-integration-test` and `run-tests-with-git-image` make targets.
    - The `release` target logic was moved directly to the `release.sh` script, because that's the only place where this logic is needed.
 
