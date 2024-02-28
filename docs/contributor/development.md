@@ -98,3 +98,13 @@ For testing, use the following commands:
     export IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
     ginkgo run --tags e2e --junit-report=./artifacts/junit.xml --label-filter="traces" ./test/e2e
     ```
+- Run tests using `hack/run-tests.sh`
+  ```bash
+  hack/run-tests.sh <type> <test suite>
+  ```
+  _Examples:_
+  - ```bash
+    hack/run-tests.sh e2e metrics
+    hack/run-tests.sh integration istio
+    hack/run-tests.sh upgrade operational
+    ```

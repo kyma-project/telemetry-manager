@@ -8,11 +8,12 @@ provision-k3d-e2e: kyma kustomize provision-k3d ## Provision a k3d cluster and d
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/build-image.sh
 	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} ./hack/deploy-module.sh
 
-# TODO: Check
+# TODO: Check if this is correct
 .PHONY: provision-k3d-istio
 provision-k3d-istio: provision-k3d
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/build-image.sh
 	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
+	./hack/deploy-istio.sh
 
 
 ##@ Gardener
@@ -22,6 +23,7 @@ provision-k3d-istio: provision-k3d
 # GARDENER_SECRET_NAME=
 GIT_COMMIT_SHA=$(shell git rev-parse --short=8 HEAD)
 HIBERNATION_HOUR=$(shell echo $$(( ( $(shell date +%H | sed s/^0//g) + 5 ) % 24 )))
+GARDENER_K8S_VERSION ?= $(ENV_GARDENER_K8S_VERSION)
 GARDENER_CLUSTER_NAME=$(shell echo "ci-${GIT_COMMIT_SHA}-${GARDENER_K8S_VERSION}" | sed 's/\.//g')
 ifneq (,$(GARDENER_SA_PATH))
 GARDENER_K8S_VERSION_FULL=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud gcp -o go-template='{{range .spec.kubernetes.versions}}{{if and (eq .classification "supported") (lt .version "${GARDENER_K8S_VERSION}.a") (gt .version "${GARDENER_K8S_VERSION}")}}{{.version}}{{end}}{{end}}')

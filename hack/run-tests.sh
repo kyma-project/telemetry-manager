@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
-readonly LOCALBIN=${LOCALBIN:-$(pwd)/bin}
-readonly ARTIFACTS=${ARTIFACTS:-$(pwd)/artifacts}
-readonly E2E_TESTS=${E2E_TESTS:-$(pwd)/test/e2e}
-readonly INTEGRATION_TESTS=${INTEGRATION_TESTS:-$(pwd)/test/integration}
-readonly GINKGO=${GINKGO:-$(LOCALBIN)/ginkgo}
-
 # standard bash error handling
 set -o nounset  # treat unset variables as an error and exit immediately.
 set -o errexit  # exit immediately when a command fails.
 set -E          # needs to be set if we want the ERR trap
 set -o pipefail # prevents errors in a pipeline from being masked
+
+readonly LOCALBIN=${LOCALBIN:-$(pwd)/bin}
+readonly ARTIFACTS=${ARTIFACTS:-$(pwd)/artifacts}
+readonly E2E_TESTS=${E2E_TESTS:-$(pwd)/test/e2e}
+readonly INTEGRATION_TESTS=${INTEGRATION_TESTS:-$(pwd)/test/integration}
+readonly GINKGO=${GINKGO:-$(LOCALBIN)/ginkgo}
 
 function test_matchers() {
     echo "Setting-up test matchers"

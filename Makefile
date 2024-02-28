@@ -1,11 +1,10 @@
 include .env
 export $(shell sed 's/=.*//' .env)
 
-# TODO: Chheck which env. variables are still needed
+# Environment Variables
 IMG ?= $(ENV_IMG)
 ENVTEST_K8S_VERSION ?= $(ENV_ENVTEST_K8S_VERSION)
-GARDENER_K8S_VERSION ?= $(ENV_GARDENER_K8S_VERSION)
-ISTIO_VERSION ?= $(ENV_ISTIO_VERSION)
+
 
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
@@ -30,8 +29,7 @@ SHELL = /usr/bin/env bash -o pipefail
 .PHONY: all
 all: build
 
-
-# sub-makefiles
+# Sub-makefiles
 MAKE_DEPS ?= hack/make
 include ${MAKE_DEPS}/dependencies.mk
 include ${MAKE_DEPS}/provision.mk
@@ -182,7 +180,6 @@ undeploy-dev: ## Undeploy resources based on the development variant from the K8
 
 
 ##@ TODO
-# TODO: To be removed (unnecessary)
 # test-matchers: ginkgo
 # 	$(GINKGO) run ./test/testkit/matchers/...
 
@@ -280,21 +277,20 @@ undeploy-dev: ## Undeploy resources based on the development variant from the K8
 
 
 
-# TODO: Use the ginkgo cli directly
-GIT_COMMIT_DATE=$(shell git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_COMMIT_SHA})
+# GIT_COMMIT_DATE=$(shell git show -s --format=%cd --date=format:'v%Y%m%d' ${GIT_COMMIT_SHA})
 
-# log tests are excluded for now as they are too flaky
-.PHONY: run-tests-with-git-image
-run-tests-with-git-image: ## Run e2e tests on existing cluster using image related to git commit sha
-	kubectl create namespace kyma-system
-	IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
-	hack/build-image.sh integration istio
+# # log tests are excluded for now as they are too flaky
+# .PHONY: run-tests-with-git-image
+# run-tests-with-git-image: ## Run e2e tests on existing cluster using image related to git commit sha
+# 	kubectl create namespace kyma-system
+# 	IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE}-${GIT_COMMIT_SHA} make deploy-dev
+# 	hack/run-tests.sh integration istio
 
-.PHONY: gardener-integration-test
-gardener-integration-test: ## Provision gardener cluster and run integration test on it.
-	make provision-gardener \
-		run-tests-with-git-image \
-		deprovision-gardener || \
-		(make deprovision-gardener && false)
+# .PHONY: gardener-integration-test
+# gardener-integration-test: ## Provision gardener cluster and run integration test on it.
+# 	make provision-gardener \
+# 		run-tests-with-git-image \
+# 		deprovision-gardener || \
+# 		(make deprovision-gardener && false)
 
 
