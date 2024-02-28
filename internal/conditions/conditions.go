@@ -64,7 +64,6 @@ var MetricsMessage = map[string]string{
 	ReasonDeploymentReady:         "Metric gateway Deployment is ready",
 	ReasonDaemonSetNotReady:       "Metric agent DaemonSet is not ready",
 	ReasonDaemonSetReady:          "Metric agent DaemonSet is ready",
-	ReasonConfigurationGenerated:  "MetricPipeline configuration is applied to OTEL collector",
 	ReasonMetricComponentsRunning: "All metric components are running",
 }
 
@@ -73,18 +72,16 @@ var TracesMessage = map[string]string{
 	ReasonDeploymentReady:                "Trace gateway Deployment is ready",
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
-	ReasonConfigurationGenerated:         "TracePipeline configuration is applied to OTEL collector",
 	ReasonTraceComponentsRunning:         "All trace components are running",
 }
 
 var LogsMessage = map[string]string{
-	ReasonDaemonSetNotReady:      "Fluent Bit DaemonSet is not ready",
-	ReasonDaemonSetReady:         "Fluent Bit DaemonSet is ready",
-	ReasonFluentBitDSNotReady:    "Fluent Bit DaemonSet is not ready",
-	ReasonFluentBitDSReady:       "Fluent Bit DaemonSet is ready",
-	ReasonUnsupportedLokiOutput:  "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://github.com/kyma-project/examples/tree/main/loki",
-	ReasonConfigurationGenerated: "LogPipeline configuration is applied to Fluent Bit",
-	ReasonLogComponentsRunning:   "All log components are running",
+	ReasonDaemonSetNotReady:     "Fluent Bit DaemonSet is not ready",
+	ReasonDaemonSetReady:        "Fluent Bit DaemonSet is ready",
+	ReasonFluentBitDSNotReady:   "Fluent Bit DaemonSet is not ready",
+	ReasonFluentBitDSReady:      "Fluent Bit DaemonSet is ready",
+	ReasonUnsupportedLokiOutput: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://github.com/kyma-project/examples/tree/main/loki",
+	ReasonLogComponentsRunning:  "All log components are running",
 }
 
 func New(condType, reason string, status metav1.ConditionStatus, generation int64, messageMap map[string]string) metav1.Condition {
