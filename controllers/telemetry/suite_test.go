@@ -118,7 +118,6 @@ var _ = BeforeSuite(func() {
 	client := mgr.GetClient()
 	var handlerConfig overrides.HandlerConfig
 	overridesHandler := overrides.New(client, atomicLogLevel, handlerConfig)
-	selfMonitorEnabled := false
 
 	kymaSystemNamespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -129,7 +128,7 @@ var _ = BeforeSuite(func() {
 
 	logpipelineController := NewLogPipelineReconciler(
 		client,
-		logpipeline.NewReconciler(client, testLogPipelineConfig, &k8sutils.DaemonSetProber{Client: client}, overridesHandler, selfMonitorEnabled),
+		logpipeline.NewReconciler(client, testLogPipelineConfig, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
 		testLogPipelineConfig)
 	err = logpipelineController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
@@ -150,7 +149,7 @@ var _ = BeforeSuite(func() {
 
 	tracepipelineReconciler := NewTracePipelineReconciler(
 		client,
-		tracepipeline.NewReconciler(client, testTracePipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, overridesHandler, selfMonitorEnabled),
+		tracepipeline.NewReconciler(client, testTracePipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, overridesHandler),
 	)
 	err = tracepipelineReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
@@ -158,7 +157,7 @@ var _ = BeforeSuite(func() {
 	metricPipelineReconciler := NewMetricPipelineReconciler(
 		client,
 		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client},
-			&k8sutils.DaemonSetProber{Client: client}, overridesHandler, selfMonitorEnabled))
+			&k8sutils.DaemonSetProber{Client: client}, overridesHandler))
 	err = metricPipelineReconciler.SetupWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 

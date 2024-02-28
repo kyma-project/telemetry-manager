@@ -65,6 +65,7 @@ func RemoveResources(ctx context.Context, c client.Client, config *Config) error
 			return err
 		}
 	}
+
 	// Delete service account
 	serviceAccount := &corev1.ServiceAccount{ObjectMeta: objectMeta}
 	if err := c.Delete(ctx, serviceAccount); err != nil {
