@@ -8,11 +8,9 @@ provision-k3d-e2e: kyma kustomize provision-k3d ## Provision a k3d cluster and d
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/build-image.sh
 	KYMA=${KYMA} KUSTOMIZE=${KUSTOMIZE} ./hack/deploy-module.sh
 
-# TODO: Check if this is correct
 .PHONY: provision-k3d-istio
 provision-k3d-istio: provision-k3d
 	K8S_VERSION=$(ENVTEST_K8S_VERSION) hack/build-image.sh
-	IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 	./hack/deploy-istio.sh
 
 

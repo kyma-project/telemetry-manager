@@ -86,25 +86,9 @@ For testing, use the following commands:
 
 - Run e2e tests
   ```bash
-  export IMG=<my container repo> make <make deploy target>
-  ginkgo run --tags e2e --junit-report=<report output location> --label-filter="<e2e filter>" ./test/e2e
+  ginkgo run --tags e2e --label-filter="<e2e test suite label>" test/e2e
   ```
-  _Examples:_
-  - ```bash
-    export IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
-    ginkgo run --tags e2e --junit-report=./artifacts/junit.xml --label-filter="logs" ./test/e2e
-    ```
-  - ```bash
-    export IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy
-    ginkgo run --tags e2e --junit-report=./artifacts/junit.xml --label-filter="traces" ./test/e2e
-    ```
-- Run tests using `hack/run-tests.sh`
+  _Example:_
   ```bash
-  hack/run-tests.sh <type> <test suite>
+  ginkgo run --tags e2e --label-filter="logs" test/e2e
   ```
-  _Examples:_
-  - ```bash
-    hack/run-tests.sh e2e metrics
-    hack/run-tests.sh integration istio
-    hack/run-tests.sh upgrade operational
-    ```

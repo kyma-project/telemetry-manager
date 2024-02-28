@@ -27,7 +27,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: hack/run-tests.sh e2e metrics
+        run: bin/ginkgo run --tags e2e --label-filter="metrics" test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -47,7 +47,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: hack/run-tests.sh e2e metrics
+        run: bin/ginkgo run --tags e2e --label-filter="metrics" test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -68,7 +68,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: hack/run-tests.sh e2e traces
+        run: bin/ginkgo run --tags e2e --label-filter="traces" test/e2e
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
@@ -88,7 +88,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: hack/run-tests.sh e2e traces
+        run: bin/ginkgo run --tags e2e --label-filter="traces" test/e2e
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
@@ -109,7 +109,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: hack/run-tests.sh e2e logs
+        run: bin/ginkgo run --tags e2e --label-filter="logs" test/e2e
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
@@ -129,7 +129,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: hack/run-tests.sh e2e logs
+        run: bin/ginkgo run --tags e2e --label-filter="logs" test/e2e
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
@@ -150,7 +150,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: hack/run-tests.sh e2e telemetry
+        run: bin/ginkgo run --tags e2e --label-filter="telemetry" test/e2e
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
@@ -170,7 +170,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: hack/run-tests.sh e2e telemetry
+        run: bin/ginkgo run --tags e2e --label-filter="telemetry" test/e2e
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
@@ -190,7 +190,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: ./hack/run-tests.sh integration istio
+        run: |
+          hack/deploy-istio.sh
+          bin/ginkgo run --tags istio test/integration/istio
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"

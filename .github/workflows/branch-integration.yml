@@ -47,7 +47,7 @@ jobs:
 
     # provision cluster and run tests
     - name: Run test
-      run: make gardener-integration-test
+      run: hack/gardener-integration-test.sh
       env:
         GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
         GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
