@@ -105,7 +105,7 @@ func (r *Reconciler) traceEndpoints(ctx context.Context, config Config, telemetr
 	if err != nil {
 		return nil, fmt.Errorf("failed to check trace components: %w", err)
 	}
-	if cond.Status != metav1.ConditionTrue || cond.Reason != conditions.ReasonTraceGatewayDeploymentReady {
+	if cond.Status != metav1.ConditionTrue || cond.Reason != conditions.ReasonTraceComponentsRunning {
 		return nil, nil //nolint:nilnil //it is ok in this context, even if it is not go idiomatic
 	}
 
