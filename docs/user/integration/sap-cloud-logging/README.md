@@ -27,17 +27,18 @@ SAP Cloud Logging is an instance-based and environment-agnostic observability se
   - [Ship Metrics to SAP Cloud Logging](#ship-metrics-to-sap-cloud-logging)
   - [Kyma Dashboard Integration](#kyma-dashboard-integration)
   - [SAP Cloud Logging Alerts](#sap-cloud-logging-alerts)
-    - [Import](#import)
+    - [Import Alerts](#import-alerts)
     - [Recommended Alerts](#recommended-alerts)
   - [SAP Cloud Logging Dashboards](#sap-cloud-logging-dashboards)
 
 ## Prerequisites
 
 - Kyma as the target deployment environment.
-- The [Telemetry module](../../README.md) is [enabled](https://kyma-project.io/#/02-get-started/01-quick-install).
+- The [Telemetry module](../../README.md) is [added](https://kyma-project.io/#/02-get-started/01-quick-install).
+- If you want to use Istio access logs, make sure that the [Istio module](https://kyma-project.io/#/istio/user/README) is added.
 - An instance of SAP Cloud Logging with OpenTelemetry enabled to ingest distributed traces.
   > [!TIP]
-  > It's recommended to create it with the SAP BTP service operator (see [Create an SAP Cloud Logging Instance through SAP BTP Service Operator](https://help.sap.com/docs/cloud-logging/cloud-logging/create-sap-cloud-logging-instance-through-sap-btp-service-operator?locale=en-US&version=Cloud)), because it takes care of creation and rotation of the required Secret. However, you can choose any other method of creating the instance and the Secret, as long as the parameter for OTLP ingestion is enabled in the instance. For details, see [Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters?locale=en-US&version=Cloud).
+  > It's recommended to create the instance with the SAP BTP service operator (see [Create an SAP Cloud Logging Instance through SAP BTP Service Operator](https://help.sap.com/docs/cloud-logging/cloud-logging/create-sap-cloud-logging-instance-through-sap-btp-service-operator?locale=en-US&version=Cloud)), because it takes care of creation and rotation of the required Secret. However, you can choose any other method of creating the instance and the Secret, as long as the parameter for OTLP ingestion is enabled in the instance. For details, see [Configuration Parameters](https://help.sap.com/docs/cloud-logging/cloud-logging/configuration-parameters?locale=en-US&version=Cloud).
 - A Secret in the respective namespace in the Kyma cluster, holding the credentials and endpoints for the instance. In this guide, the Secret is named `sap-cloud-logging` and the namespace `sap-cloud-logging-integration` as illustrated in this [example](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/integration/sap-cloud-logging/secret-example.yaml).
 <!-- markdown-link-check-disable -->
 - Kubernetes CLI (kubectl) (see [Install the Kubernetes Command Line Tool](https://developers.sap.com/tutorials/cp-kyma-download-cli.html)).
@@ -191,12 +192,12 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
      </details>
    </div>
 
-    The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
+   The default configuration has the **randomSamplingPercentage** property set to `1.0`, meaning it samples 1% of all requests. To change the sampling rate, adjust the property to the desired value, up to 100 percent.
 
-    > [!WARNING]
-    > Be cautious when you configure the **randomSamplingPercentage**:
-    > - Traces might consume a significant storage volume in Cloud Logging Service.
-    > - The Kyma trace collector component does not scale automatically.
+   > [!WARNING]
+   > Be cautious when you configure the **randomSamplingPercentage**:
+   > - Traces might consume a significant storage volume in Cloud Logging Service.
+   > - The Kyma trace collector component does not scale automatically.
 
 1. Deploy the TracePipeline:
 
@@ -335,17 +336,19 @@ For easier access, add a navigation node to the Observability section as well as
 
 ## SAP Cloud Logging Alerts
 
-SAP Cloud Logging provides an alerting mechanism based on the OpenSearch Dashboards [alerting plugin](https://opensearch.org/docs/1.3/observing-your-data/alerting/index/). In the following it is described how to define and import recommended alerts.
+SAP Cloud Logging provides an alerting mechanism based on the OpenSearch Dashboard's [alerting plugin](https://opensearch.org/docs/1.3/observing-your-data/alerting/index/). Learn how to define and import recommended alerts:
 
-### Import
+### Import Alerts
 
-The alerts defined in the subsequent chapters are based on JSON documents defining a `Monitor` for the alerting plugin. Such monitor work instantly after import, however the configured notification action is missing a `destination` which needs to be added manually afterwards. Also, adjust the intervals and thresholds to your needs as a general guidance cannot be given.
+The following alerts are based on JSON documents defining a `Monitor` for the alerting plugin, which works instantly after import. However, you must manually add a `destination` to the configured notification action. Also, adjust the intervals and thresholds to your specific needs.
 
-To import a monitor, go to `Management > Dev Tools` in the Cloud Logging Dashboard and execute `POST _plugins/_alerting/monitors` followed by the contents of the respective JSON content. Afterwards, you will find the new monitor definition at `OpenSearch Plugins > Alerting`.
+1. To import a monitor, go to `Management > Dev Tools` in the Cloud Logging Dashboard.
+2. Execute `POST _plugins/_alerting/monitors`, followed by the contents of the respective JSON content.
+3. Verify that the new monitor definition is listed at `OpenSearch Plugins > Alerting`.
 
 ### Recommended Alerts
 
-Depending on the pipelines you are using, enable the some or all of the following alerts: 
+Depending on the pipelines you are using, enable the some or all of the following alerts:
 
 | Category | File | Description |
 | -- | -- | -- |
