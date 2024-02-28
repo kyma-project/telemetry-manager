@@ -74,8 +74,8 @@ func (l *logComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetr
 		conditions.TypeAgentHealthy,
 		conditions.TypeConfigurationGenerated,
 	}
-	for _, pipeline := range pipelines {
-		for _, condType := range condTypes {
+	for _, condType := range condTypes {
+		for _, pipeline := range pipelines {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if cond != nil && cond.Status == metav1.ConditionFalse {
 				return cond.Reason
