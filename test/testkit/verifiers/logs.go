@@ -28,6 +28,7 @@ func LogsShouldBeDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePr
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
+//nolint:dupl //LogPipelineShouldBeHealthy and MetricPipelineShouldBeHealthy have similarities, but they are not the same
 func LogPipelineShouldBeHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
