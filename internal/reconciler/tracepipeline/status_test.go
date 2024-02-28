@@ -131,70 +131,6 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotEmpty(t, runningCond.LastTransitionTime)
 	})
 
-	t.Run("should remove running condition and set pending condition to true if trace gateway deployment becomes not ready again", func(t *testing.T) {
-		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.TracePipeline{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       pipelineName,
-				Generation: 1,
-			},
-			Spec: telemetryv1alpha1.TracePipelineSpec{
-				Output: telemetryv1alpha1.TracePipelineOutput{
-					Otlp: &telemetryv1alpha1.OtlpOutput{
-						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
-					},
-				}},
-			Status: telemetryv1alpha1.TracePipelineStatus{
-				Conditions: []metav1.Condition{
-					{
-						Type:               conditions.TypePending,
-						Status:             metav1.ConditionFalse,
-						Reason:             conditions.ReasonTraceGatewayDeploymentNotReady,
-						Message:            conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentNotReady, conditions.TracesMessage),
-						LastTransitionTime: metav1.Now(),
-					},
-					{
-						Type:               conditions.TypeRunning,
-						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonTraceGatewayDeploymentReady,
-						Message:            conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentReady, conditions.TracesMessage),
-						LastTransitionTime: metav1.Now(),
-					},
-				},
-			},
-		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
-
-		proberStub := &mocks.DeploymentProber{}
-		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
-
-		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{Gateway: otelcollector.GatewayConfig{
-				Config: otelcollector.Config{BaseName: "trace-gateway"},
-			}},
-			prober: proberStub,
-		}
-		err := sut.updateStatus(context.Background(), pipeline.Name, true)
-		require.NoError(t, err)
-
-		var updatedPipeline telemetryv1alpha1.TracePipeline
-		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
-
-		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
-		require.Nil(t, runningCond)
-
-		conditionsSize := len(updatedPipeline.Status.Conditions)
-		pendingCond := updatedPipeline.Status.Conditions[conditionsSize-1]
-		require.Equal(t, conditions.TypePending, pendingCond.Type)
-		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
-		require.Equal(t, conditions.ReasonTraceGatewayDeploymentNotReady, pendingCond.Reason)
-		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentNotReady, conditions.TracesMessage)
-		require.Equal(t, pendingCondMsg, pendingCond.Message)
-		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
-		require.NotEmpty(t, pendingCond.LastTransitionTime)
-	})
-
 	t.Run("referenced secret missing", func(t *testing.T) {
 		pipelineName := "pipeline"
 		pipeline := &telemetryv1alpha1.TracePipeline{
@@ -393,6 +329,70 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, conditions.ReasonMaxPipelinesExceeded, pendingCond.Reason)
 		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.CommonMessageFor(conditions.ReasonMaxPipelinesExceeded, conditions.TracesMessage)
+		require.Equal(t, pendingCondMsg, pendingCond.Message)
+		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
+		require.NotEmpty(t, pendingCond.LastTransitionTime)
+	})
+
+	t.Run("should remove running condition and set pending condition to true if trace gateway deployment becomes not ready again", func(t *testing.T) {
+		pipelineName := "pipeline"
+		pipeline := &telemetryv1alpha1.TracePipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       pipelineName,
+				Generation: 1,
+			},
+			Spec: telemetryv1alpha1.TracePipelineSpec{
+				Output: telemetryv1alpha1.TracePipelineOutput{
+					Otlp: &telemetryv1alpha1.OtlpOutput{
+						Endpoint: telemetryv1alpha1.ValueType{Value: "localhost"},
+					},
+				}},
+			Status: telemetryv1alpha1.TracePipelineStatus{
+				Conditions: []metav1.Condition{
+					{
+						Type:               conditions.TypePending,
+						Status:             metav1.ConditionFalse,
+						Reason:             conditions.ReasonTraceGatewayDeploymentNotReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentNotReady, conditions.TracesMessage),
+						LastTransitionTime: metav1.Now(),
+					},
+					{
+						Type:               conditions.TypeRunning,
+						Status:             metav1.ConditionTrue,
+						Reason:             conditions.ReasonTraceGatewayDeploymentReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentReady, conditions.TracesMessage),
+						LastTransitionTime: metav1.Now(),
+					},
+				},
+			},
+		}
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
+
+		proberStub := &mocks.DeploymentProber{}
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+
+		sut := Reconciler{
+			Client: fakeClient,
+			config: Config{Gateway: otelcollector.GatewayConfig{
+				Config: otelcollector.Config{BaseName: "trace-gateway"},
+			}},
+			prober: proberStub,
+		}
+		err := sut.updateStatus(context.Background(), pipeline.Name, true)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.TracePipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+
+		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
+		require.Nil(t, runningCond)
+
+		conditionsSize := len(updatedPipeline.Status.Conditions)
+		pendingCond := updatedPipeline.Status.Conditions[conditionsSize-1]
+		require.Equal(t, conditions.TypePending, pendingCond.Type)
+		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
+		require.Equal(t, conditions.ReasonTraceGatewayDeploymentNotReady, pendingCond.Reason)
+		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentNotReady, conditions.TracesMessage)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
