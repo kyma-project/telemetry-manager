@@ -93,7 +93,7 @@ define os_error
 $(error Error: unsupported platform OS_TYPE:$1, OS_ARCH:$2; to mitigate this problem set variable KYMA with absolute path to kyma-cli binary compatible with your operating system and architecture)
 endef
 
-KYMA_FILENAME ?=  $(shell ./hack/get-kyma-filename.sh ${OS_TYPE} ${OS_ARCH})
+KYMA_FILENAME ?=  $(shell hack/get-kyma-filename.sh ${OS_TYPE} ${OS_ARCH})
 KYMA_STABILITY ?= unstable
 
 .PHONY: kyma
