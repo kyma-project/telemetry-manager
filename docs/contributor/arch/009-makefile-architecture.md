@@ -14,7 +14,7 @@ Makefile targets are currently cluttered, unorganized, and redundant (see the de
 
 ## Decision
 
-After analyzing repositories that have similar configurations as telemetry-manager (e.g. Kubebuilder default configuration, Kyma modules repositories, other Go repositories), the following decisions have been made (see image bellow):
+After analyzing repositories that have similar configurations as Telemetry Manager (such as Kubebuilder default configuration, Kyma modules repositories, and other Go repositories), the following decisions have been made:
 
 ![Makefile Archtiecture](../assets/makefile-architecture.jpg)
 
