@@ -350,8 +350,9 @@ func main() {
 	enableMetricsController(mgr)
 
 	webhookConfig := createWebhookConfig()
+	selfMonitorConfig := createSelfMonitoringConfig()
 
-	enableTelemetryModuleController(mgr, webhookConfig)
+	enableTelemetryModuleController(mgr, webhookConfig, selfMonitorConfig)
 
 	//+kubebuilder:scaffold:builder
 
@@ -374,10 +375,10 @@ func main() {
 	}
 }
 
-func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig) {
+func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) {
 	setupLog.Info("Starting with telemetry manager controller")
 
-	if err := createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), webhookConfig).SetupWithManager(mgr); err != nil {
+	if err := createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), webhookConfig, selfMonitorConfig).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
 		os.Exit(1)
 	}
@@ -467,12 +468,11 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 			CPURequest:                  resource.MustParse(fluentBitCPURequest),
 			MemoryRequest:               resource.MustParse(fluentBitMemoryRequest),
 		},
-		SelfMonitor: createSelfMonitoringConfig(),
 	}
 
 	return telemetrycontrollers.NewLogPipelineReconciler(
 		client,
-		logpipeline.NewReconciler(client, config, &k8sutils.DaemonSetProber{Client: client}, overridesHandler, enableSelfMonitor),
+		logpipeline.NewReconciler(client, config, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
 		config)
 }
 
@@ -537,12 +537,11 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		MaxPipelines:           maxTracePipelines,
-		SelfMonitor:            createSelfMonitoringConfig(),
 	}
 
 	return telemetrycontrollers.NewTracePipelineReconciler(
 		client,
-		tracepipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, overridesHandler, enableSelfMonitor),
+		tracepipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, overridesHandler),
 	)
 }
 
@@ -583,26 +582,28 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 		},
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		MaxPipelines:           maxMetricPipelines,
-		SelfMonitor:            createSelfMonitoringConfig(),
 	}
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,
-		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, overridesHandler, enableSelfMonitor))
+		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, overridesHandler))
 }
 
-func createSelfMonitoringConfig() selfmonitor.Config {
-	return selfmonitor.Config{
-		BaseName:  "telemetry-self-monitor",
-		Namespace: telemetryNamespace,
+func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
+	return telemetry.SelfMonitorConfig{
+		Enabled: enableSelfMonitor,
+		Config: selfmonitor.Config{
+			BaseName:  "telemetry-self-monitor",
+			Namespace: telemetryNamespace,
 
-		Deployment: selfmonitor.DeploymentConfig{
-			Image:             selfMonitorImage,
-			PriorityClassName: selfMonitorPriorityClass,
-			CPULimit:          resource.MustParse(selfMonitorCPULimit),
-			CPURequest:        resource.MustParse(selfMonitorCPURequest),
-			MemoryLimit:       resource.MustParse(selfMonitorMemoryLimit),
-			MemoryRequest:     resource.MustParse(selfMonitorMemoryRequest),
+			Deployment: selfmonitor.DeploymentConfig{
+				Image:             selfMonitorImage,
+				PriorityClassName: selfMonitorPriorityClass,
+				CPULimit:          resource.MustParse(selfMonitorCPULimit),
+				CPURequest:        resource.MustParse(selfMonitorCPURequest),
+				MemoryLimit:       resource.MustParse(selfMonitorMemoryLimit),
+				MemoryRequest:     resource.MustParse(selfMonitorMemoryRequest),
+			},
 		},
 	}
 }
@@ -627,7 +628,7 @@ func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
 }
 
-func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, webhookConfig telemetry.WebhookConfig) *operator.TelemetryReconciler {
+func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) *operator.TelemetryReconciler {
 	config := telemetry.Config{
 		Traces: telemetry.TracesConfig{
 			OTLPServiceName: traceOTLPServiceName,
@@ -639,6 +640,7 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, web
 		},
 		Webhook:                webhookConfig,
 		OverridesConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
+		SelfMonitor:            selfMonitorConfig,
 	}
 
 	return operator.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config, overridesHandler), config)

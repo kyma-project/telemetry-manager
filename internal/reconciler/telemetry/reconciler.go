@@ -3,6 +3,9 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
+	"gopkg.in/yaml.v3"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,6 +35,7 @@ type Config struct {
 	Metrics                MetricsConfig
 	Webhook                WebhookConfig
 	OverridesConfigMapName types.NamespacedName
+	SelfMonitor            SelfMonitorConfig
 }
 
 type TracesConfig struct {
@@ -49,6 +53,11 @@ type WebhookConfig struct {
 	CertConfig webhookcert.Config
 }
 
+type SelfMonitorConfig struct {
+	Enabled bool
+	Config  selfmonitor.Config
+}
+
 type healthCheckers struct {
 	logs, metrics, traces ComponentHealthChecker
 }
@@ -57,9 +66,10 @@ type Reconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	*rest.Config
-	config           Config
-	healthCheckers   healthCheckers
-	overridesHandler *overrides.Handler
+	config            Config
+	healthCheckers    healthCheckers
+	overridesHandler  *overrides.Handler
+	enableSelfMonitor bool
 }
 
 func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler) *Reconciler {
@@ -111,8 +121,64 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile webhook: %w", err)
 	}
 
+	if r.enableSelfMonitor {
+		if err = r.reconcileSelfMonitor(ctx, telemetry); err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to reconcile self-monitor deployment: %w", err)
+		}
+	}
+
 	requeue := telemetry.Status.State == operatorv1alpha1.StateWarning
 	return ctrl.Result{Requeue: requeue}, nil
+}
+
+func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operatorv1alpha1.Telemetry) error {
+	pipelinesPresent, err := r.checkPipelineExist(ctx)
+	if err != nil {
+		return err
+	}
+	if pipelinesPresent {
+		selfMonConfig := selfmonitor.MakeConfig()
+		selfMonitorConfigYaml, err := yaml.Marshal(selfMonConfig)
+		if err != nil {
+			return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
+		}
+
+		if err := selfmonitor.ApplyResources(ctx,
+			k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),
+			r.config.SelfMonitor.Config.WithMonitoringConfig(string(selfMonitorConfigYaml))); err != nil {
+			return fmt.Errorf("failed to apply self-monitor resources: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) checkPipelineExist(ctx context.Context) (bool, error) {
+	var allLogPipelines telemetryv1alpha1.LogPipelineList
+	if err := r.List(ctx, &allLogPipelines); err != nil {
+		return false, fmt.Errorf("failed to get all log pipelines: %w", err)
+	}
+	if len(allLogPipelines.Items) > 0 {
+		return true, nil
+	}
+
+	var allTracePipelines telemetryv1alpha1.TracePipelineList
+	if err := r.List(ctx, &allTracePipelines); err != nil {
+		return false, fmt.Errorf("failed to get all trace pipelines: %w", err)
+	}
+	if len(allTracePipelines.Items) > 0 {
+		return true, nil
+	}
+
+	var allMetricPipelines telemetryv1alpha1.MetricPipelineList
+	if err := r.List(ctx, &allMetricPipelines); err != nil {
+		return false, fmt.Errorf("failed to get all metric pipelines: %w", err)
+	}
+	if len(allMetricPipelines.Items) > 0 {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func (r *Reconciler) handleFinalizer(ctx context.Context, telemetry *operatorv1alpha1.Telemetry) error {

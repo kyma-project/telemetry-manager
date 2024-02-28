@@ -21,9 +21,9 @@ import (
 )
 
 const (
-	prometheusUser         int64 = 10001
-	collectorContainerName       = "self-monitor"
-	replicas               int32 = 1
+	prometheusUser int64 = 10001
+	containerName        = "self-monitor"
+	replicas       int32 = 1
 )
 
 type podSpecOption = func(pod *corev1.PodSpec)
@@ -94,8 +94,10 @@ func makeNetworkPolicy(name types.NamespacedName, labels map[string]string) *net
 	allowedPorts := []int32{int32(9090)}
 
 	telemetryPodSelector := map[string]string{
+		"app.kubernetes.io/name":     "manager",
+		"kyma-project.io/component":  "controller",
 		"app.kubernetes.io/instance": "telemetry",
-		"control-plane":              "telemetry-operator",
+		"control-plane":              "telemetry-manager",
 	}
 	namespaceSelector := map[string]string{
 		"kubernetes.io/metadata.name": name.Namespace,
@@ -135,9 +137,6 @@ func makeNetworkPolicy(name types.NamespacedName, labels map[string]string) *net
 						{
 							NamespaceSelector: &metav1.LabelSelector{
 								MatchLabels: namespaceSelector,
-							},
-							PodSelector: &metav1.LabelSelector{
-								MatchLabels: telemetryPodSelector,
 							},
 						},
 					},
@@ -273,7 +272,7 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 	pod := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:  collectorContainerName,
+				Name:  containerName,
 				Image: image,
 				Args:  []string{"--storage.tsdb.retention.time=6h", "--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus/", "--web.enable-lifecycle"},
 				EnvFrom: []corev1.EnvFromSource{
