@@ -8,21 +8,21 @@ import (
 
 func MakeConfig() monitoringConfig {
 	promConfig := monitoringConfig{}
-	promConfig.GlobalConfig = globalConfigBuilder()
-	promConfig.AlertingConfig = alertConfigBuilder()
+	promConfig.GlobalConfig = makeGlobalConfig()
+	promConfig.AlertingConfig = makeAlertConfig()
 	promConfig.RuleFiles = []string{"/etc/prometheus/prometheus.rules"}
-	promConfig.ScrapeConfigs = scrapeConfigBuilder()
+	promConfig.ScrapeConfigs = makeScrapeConfig()
 	return promConfig
 }
 
-func globalConfigBuilder() prometheus.GlobalConfig {
+func makeGlobalConfig() prometheus.GlobalConfig {
 	return prometheus.GlobalConfig{
 		ScraperInterval:    10 * time.Second,
 		EvaluationInterval: 10 * time.Second,
 	}
 }
 
-func alertConfigBuilder() prometheus.AlertingConfig {
+func makeAlertConfig() prometheus.AlertingConfig {
 	return prometheus.AlertingConfig{
 		AlertManagers: []prometheus.AlertManagerConfig{{
 			StaticConfigs: []prometheus.StaticConfig{{
@@ -32,11 +32,15 @@ func alertConfigBuilder() prometheus.AlertingConfig {
 	}
 }
 
-func scrapeConfigBuilder() []prometheus.ScrapeConfig {
+func makeScrapeConfig() []prometheus.ScrapeConfig {
 	return []prometheus.ScrapeConfig{
 		{
-			JobName:                    "kubernetes-service-endpoints",
-			RelabelConfigs:             []prometheus.RelabelConfig{prometheus.KeepServiceAnnotations()},
+			JobName: "kubernetes-service-endpoints",
+			RelabelConfigs: []prometheus.RelabelConfig{{
+				SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scrape"},
+				Regex:        "true",
+				Action:       prometheus.Keep,
+			}},
 			KubernetesDiscoveryConfigs: []prometheus.KubernetesDiscoveryConfig{{Role: prometheus.RoleEndpoints}},
 		},
 	}

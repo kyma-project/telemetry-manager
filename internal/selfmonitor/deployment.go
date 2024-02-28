@@ -20,12 +20,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 )
 
-const (
-	prometheusUser int64 = 10001
-	containerName        = "self-monitor"
-	replicas       int32 = 1
-)
-
 type podSpecOption = func(pod *corev1.PodSpec)
 
 func ApplyResources(ctx context.Context, c client.Client, config *Config) error {
@@ -174,6 +168,7 @@ func makeConfigMap(name types.NamespacedName, selfmonitorConfig string) *corev1.
 	}
 }
 func makeSelfMonitorDeployment(cfg *Config, configChecksum string) *appsv1.Deployment {
+	var replicas int32 = 1
 	selectorLabels := defaultLabels(cfg.BaseName)
 	podLabels := maps.Clone(selectorLabels)
 	podLabels["sidecar.istio.io/inject"] = "false"
@@ -269,6 +264,8 @@ func defaultLabels(baseName string) map[string]string {
 func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 	var defaultMode int32 = 420
 	var storageVolumeSize = resource.MustParse("500Mi")
+	var prometheusUser int64 = 10001
+	var containerName = "self-monitor"
 	pod := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{

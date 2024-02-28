@@ -1,7 +1,8 @@
-package prometheus
+package agent
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
@@ -20,43 +21,35 @@ const (
 	AnnotatedService AnnotatedResource = "service"
 )
 
-func KeepIfRunningOnSameNode(nodeAffiliated NodeAffiliatedResource) RelabelConfig {
-	return RelabelConfig{
+func KeepIfRunningOnSameNode(nodeAffiliated NodeAffiliatedResource) prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_node_name", nodeAffiliated)},
 		Regex:        fmt.Sprintf("$%s", config.EnvVarCurrentNodeName),
-		Action:       Keep,
+		Action:       prometheus.Keep,
 	}
 }
 
-func KeepIfScrapingEnabled(annotated AnnotatedResource) RelabelConfig {
-	return RelabelConfig{
+func KeepIfScrapingEnabled(annotated AnnotatedResource) prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_scrape", annotated)},
 		Regex:        "true",
-		Action:       Keep,
+		Action:       prometheus.Keep,
 	}
 }
 
-func KeepIfIstioProxy() RelabelConfig {
-	return RelabelConfig{
+func KeepIfIstioProxy() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
-		Action:       Keep,
+		Action:       prometheus.Keep,
 		Regex:        "istio-proxy",
 	}
 }
 
-func KeepIfContainerWithEnvoyPort() RelabelConfig {
-	return RelabelConfig{
+func KeepIfContainerWithEnvoyPort() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_port_name"},
-		Action:       Keep,
+		Action:       prometheus.Keep,
 		Regex:        "http-envoy-prom",
-	}
-}
-
-func KeepServiceAnnotations() RelabelConfig {
-	return RelabelConfig{
-		SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scrape"},
-		Regex:        "true",
-		Action:       "keep",
 	}
 }
 
@@ -68,88 +61,88 @@ func KeepServiceAnnotations() RelabelConfig {
 //
 // Note: The HTTPS scheme can be manually overridden by setting the "prometheus.io/scheme"
 // annotation on the Pod or the Service.
-func InferSchemeFromIstioInjectedLabel() RelabelConfig {
-	return RelabelConfig{
+func InferSchemeFromIstioInjectedLabel() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_label_security_istio_io_tlsMode"},
-		Action:       Replace,
+		Action:       prometheus.Replace,
 		TargetLabel:  "__scheme__",
 		Regex:        "(istio)",
 		Replacement:  "https",
 	}
 }
 
-func InferSchemeFromAnnotation(annotated AnnotatedResource) RelabelConfig {
-	return RelabelConfig{
+func InferSchemeFromAnnotation(annotated AnnotatedResource) prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_scheme", annotated)},
-		Action:       Replace,
+		Action:       prometheus.Replace,
 		Regex:        "(https?)",
 		TargetLabel:  "__scheme__",
 	}
 }
 
-func InferMetricsPathFromAnnotation(annotated AnnotatedResource) RelabelConfig {
-	return RelabelConfig{
+func InferMetricsPathFromAnnotation(annotated AnnotatedResource) prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_path", annotated)},
-		Action:       Replace,
+		Action:       prometheus.Replace,
 		Regex:        "(.+)",
 		TargetLabel:  "__metrics_path__",
 	}
 }
 
-func InferAddressFromAnnotation(annotated AnnotatedResource) RelabelConfig {
-	return RelabelConfig{
+func InferAddressFromAnnotation(annotated AnnotatedResource) prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__address__", fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_port", annotated)},
-		Action:       Replace,
+		Action:       prometheus.Replace,
 		Regex:        "([^:]+)(?::\\d+)?;(\\d+)",
 		Replacement:  "$$1:$$2",
 		TargetLabel:  "__address__",
 	}
 }
 
-func InferServiceFromMetaLabel() RelabelConfig {
-	return RelabelConfig{
+func InferServiceFromMetaLabel() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_service_name"},
-		Action:       Replace,
+		Action:       prometheus.Replace,
 		TargetLabel:  "service",
 	}
 }
 
-func DropIfPodNotRunning() RelabelConfig {
-	return RelabelConfig{
+func DropIfPodNotRunning() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_phase"},
-		Action:       Drop,
+		Action:       prometheus.Drop,
 		Regex:        "Pending|Succeeded|Failed",
 	}
 }
 
-func DropIfInitContainer() RelabelConfig {
-	return RelabelConfig{
+func DropIfInitContainer() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_init"},
-		Action:       Drop,
+		Action:       prometheus.Drop,
 		Regex:        "(true)",
 	}
 }
 
-func DropIfIstioProxy() RelabelConfig {
-	return RelabelConfig{
+func DropIfIstioProxy() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
-		Action:       Drop,
+		Action:       prometheus.Drop,
 		Regex:        "(istio-proxy)",
 	}
 }
 
-func DropIfSchemeHTTP() RelabelConfig {
-	return RelabelConfig{
+func DropIfSchemeHTTP() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__scheme__"},
-		Action:       Drop,
+		Action:       prometheus.Drop,
 		Regex:        "(http)",
 	}
 }
 
-func DropIfSchemeHTTPS() RelabelConfig {
-	return RelabelConfig{
+func DropIfSchemeHTTPS() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__scheme__"},
-		Action:       Drop,
+		Action:       prometheus.Drop,
 		Regex:        "(https)",
 	}
 }
