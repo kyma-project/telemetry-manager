@@ -8,7 +8,7 @@ Proposed
 
 ## Context: Cluttered Makefile Targets
 
-Makefile targets are currently cluttered, unorganized, and redundant (see the dependency graph bellow). Targets are not parametrized, thus resulting in multiple make targets serving the same scope (e.g. running e2e tests). Targets are also used simultaneously by developers/contributors, as well as within GitHub actions and shell scripts, which makes dependencies even more intertwined. These factors result in a complex environment that is becoming hard to manage by the developers.
+Makefile targets are currently cluttered, unorganized, and redundant (see the dependency graph below). Targets are not parametrized, thus multiple make targets serve the same scope (for example, running e2e tests). Targets are also used simultaneously by developers and contributors, as well as within GitHub actions and shell scripts, which makes dependencies even more intertwined. These factors result in a complex environment that is becoming hard to manage by the developers.
 
 ![Makefile Dependency Graph (After)](../assets/makefile-graph-before.png)
 
