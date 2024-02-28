@@ -20,10 +20,6 @@ jobs:
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
-      - name: Setup Ginkgo
-        shell: bash
-        run: make ginkgo
-
       - name: Provision K3D
         shell: bash
         run: make provision-k3d
@@ -46,7 +42,9 @@ jobs:
 
       - name: Run test on latest tag
         shell: bash
-        run: bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
+        run: |
+          make ginkgo
+          bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
 
       - name: Wait for cleanup of test run
         shell: bash
@@ -80,7 +78,9 @@ jobs:
 
       - name: Run test on current version
         shell: bash
-        run: bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
+        run: |
+          make ginkgo
+          bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"

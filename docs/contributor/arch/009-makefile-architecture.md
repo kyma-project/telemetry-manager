@@ -1,4 +1,4 @@
-# 8. Telemetry Flow Health Status API
+# 9. Makefile: Simplified Architecture
 
 Date: 2024-28-02
 
@@ -6,7 +6,7 @@ Date: 2024-28-02
 
 Proposed
 
-## Context: Makefile, GitHub actions, and shell scripts architecture
+## Context: Cluttered Makefile Targets
 
 Makefile targets are currently cluttered, unorganized, and redundant (see the dependency graph bellow). Targets are not parametrized, thus resulting in multiple make targets serving the same scope (e.g. running e2e tests). Targets are also used simultaneously by developers/contributors, as well as within GitHub actions and shell scripts, which makes dependencies even more intertwined. These factors result in a complex environment that is becoming hard to manage by the developers.
 
@@ -35,6 +35,6 @@ After analyzing repositories that have similar configurations as telemetry-manag
 
 ## Consequences
 
-These decisions result in the improvement of the dependency graph (see image bellow) as well as further separation of concerns and mailability of the codebase.
+These decisions result in a less cluttered dependency graph (see image bellow) as well as further separation of concerns and maintainability of the commands and operational flows.
 
 ![Makefile Dependency Graph (After)](../assets/makefile-graph-after.jpg)
