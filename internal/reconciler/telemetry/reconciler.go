@@ -5,9 +5,6 @@ import (
 	"fmt"
 
 	"gopkg.in/yaml.v3"
-
-
-	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
