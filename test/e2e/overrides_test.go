@@ -85,7 +85,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
 					ContainLd(ContainLogRecord(SatisfyAll(
-						WithPodName(ContainSubstring("telemetry-operator")),
+						WithPodName(ContainSubstring("telemetry-manager")),
 						WithLevel(Equal("INFO")),
 					))),
 				))
@@ -99,7 +99,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
 					Not(ContainLd(ContainLogRecord(SatisfyAll(
-						WithPodName(ContainSubstring("telemetry-operator")),
+						WithPodName(ContainSubstring("telemetry-manager")),
 						WithLevel(Equal("DEBUG")),
 						WithTimestamp(BeTemporally(">=", now)),
 					)))),
@@ -135,7 +135,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
 					ContainLd(ContainLogRecord(SatisfyAll(
-						WithPodName(ContainSubstring("telemetry-operator")),
+						WithPodName(ContainSubstring("telemetry-manager")),
 						WithLevel(Equal("DEBUG")),
 						WithTimestamp(BeTemporally(">=", now)),
 					))),

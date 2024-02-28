@@ -32,7 +32,7 @@ var _ = Describe("Telemetry Manager", func() {
 		It("Should have a running manager deployment", Label("telemetry"), func() {
 			var deployment appsv1.Deployment
 			key := types.NamespacedName{
-				Name:      "telemetry-operator",
+				Name:      "telemetry-manager",
 				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &deployment)
@@ -61,7 +61,7 @@ var _ = Describe("Telemetry Manager", func() {
 		It("Should have a webhook service", Label("telemetry"), func() {
 			var service corev1.Service
 			key := types.NamespacedName{
-				Name:      "telemetry-operator-webhook",
+				Name:      "telemetry-manager-webhook",
 				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &service)
@@ -79,7 +79,7 @@ var _ = Describe("Telemetry Manager", func() {
 		It("Should have a metrics service", Label("telemetry"), func() {
 			var service corev1.Service
 			key := types.NamespacedName{
-				Name:      "telemetry-operator-metrics",
+				Name:      "telemetry-manager-metrics",
 				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &service)
@@ -189,7 +189,7 @@ var _ = Describe("Telemetry Manager", func() {
 		It("Should have a NetworkPolicy", Label("telemetry"), func() {
 			var networkPolicy networkingv1.NetworkPolicy
 			key := types.NamespacedName{
-				Name:      "telemetry-operator",
+				Name:      "telemetry-manager",
 				Namespace: kitkyma.SystemNamespaceName,
 			}
 			err := k8sClient.Get(ctx, key, &networkPolicy)

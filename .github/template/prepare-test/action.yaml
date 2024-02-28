@@ -3,7 +3,7 @@ description: Prepares everything for integration test execution
 
 inputs:
   release:
-    description: Deploy operator in release mode
+    description: Deploy manager in release mode
     required: false
   github-token:
     description: Github token to use for github access
@@ -45,9 +45,9 @@ runs:
       shell: bash
       run: make deploy-dev
 
-    - name: Wait for operator readiness
+    - name: Wait for manager readiness
       shell: bash
-      run: kubectl -n kyma-system rollout status deployment telemetry-operator --timeout=90s
+      run: kubectl -n kyma-system rollout status deployment telemetry-manager --timeout=90s
 
     - name: Print cluster info
       shell: bash
