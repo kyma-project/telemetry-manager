@@ -35,6 +35,6 @@ After analyzing repositories that have similar configurations as Telemetry Manag
 
 ## Consequences
 
-These decisions result in a less cluttered dependency graph (see image bellow) as well as further separation of concerns and maintainability of the commands and operational flows.
+These decisions result in a simpler dependency graph (see the following image), as well as further separation of concerns and maintainability of the commands and operational flows.
 
 ![Makefile Dependency Graph (After)](../assets/makefile-graph-after.jpg)
