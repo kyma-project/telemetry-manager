@@ -15,6 +15,7 @@ apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: TracePipeline
 metadata:
   name: jaeger
+  generation: 1
 spec:
   output:
     otlp:

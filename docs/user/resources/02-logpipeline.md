@@ -15,6 +15,7 @@ apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: LogPipeline
 metadata:
   name: custom-fluentd
+  generation: 2
 spec:
   input:
     application:
