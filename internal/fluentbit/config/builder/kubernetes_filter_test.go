@@ -14,6 +14,7 @@ func TestCreateKubernetesFilterKeepAll(t *testing.T) {
     name                kubernetes
     match               test-logpipeline.*
     annotations         on
+    buffer_size         1MB
     k8s-logging.exclude off
     k8s-logging.parser  on
     kube_tag_prefix     test-logpipeline.var.log.containers.
@@ -38,6 +39,7 @@ func TestCreateKubernetesFilterDropAll(t *testing.T) {
     name                kubernetes
     match               test-logpipeline.*
     annotations         off
+    buffer_size         1MB
     k8s-logging.exclude off
     k8s-logging.parser  on
     kube_tag_prefix     test-logpipeline.var.log.containers.
