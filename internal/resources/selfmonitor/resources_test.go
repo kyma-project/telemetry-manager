@@ -231,7 +231,7 @@ func verifyServiceAccountIsPresent(ctx context.Context, t *testing.T, client cli
 
 func verifyNetworkPolicy(ctx context.Context, t *testing.T, client client.Client) {
 	expectedTelemetryPodSelector := map[string]string{
-		"self-monitor/scrape": "true",
+		"self-monitor/access": "true",
 	}
 	expectedNamespaceSelector := map[string]string{
 		"kubernetes.io/metadata.name": namespace,
@@ -271,7 +271,6 @@ func verifyNetworkPolicy(ctx context.Context, t *testing.T, client client.Client
 }
 
 func makeSelfMonitorConfig() *config.SelfMonitor {
-
 	selfMonConfig := &config.SelfMonitor{
 		BaseName:         name,
 		Namespace:        namespace,

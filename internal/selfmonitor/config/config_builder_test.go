@@ -10,7 +10,6 @@ import (
 )
 
 func TestMakeConfigMarshalling(t *testing.T) {
-
 	config := MakeConfig()
 	monitorConfigYaml, err := yaml.Marshal(config)
 	require.NoError(t, err)

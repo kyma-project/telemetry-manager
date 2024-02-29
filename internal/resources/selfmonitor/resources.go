@@ -3,6 +3,7 @@ package selfmonitor
 import (
 	"context"
 	"fmt"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"maps"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -26,7 +27,6 @@ import (
 type podSpecOption = func(pod *corev1.PodSpec)
 
 func RemoveResources(ctx context.Context, c client.Client, config *config.SelfMonitor) error {
-
 	objectMeta := metav1.ObjectMeta{
 		Name:      config.BaseName,
 		Namespace: config.Namespace,
@@ -80,7 +80,6 @@ func RemoveResources(ctx context.Context, c client.Client, config *config.SelfMo
 }
 
 func ApplyResources(ctx context.Context, c client.Client, config *config.SelfMonitor) error {
-
 	name := types.NamespacedName{Namespace: config.Namespace, Name: config.BaseName}
 
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
@@ -96,7 +95,7 @@ func ApplyResources(ctx context.Context, c client.Client, config *config.SelfMon
 		return fmt.Errorf("failed to create self-monitor role binding: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, makeNetworkPolicy(name, defaultLabels(name.Name))); err != nil {
+	if err := k8sutils.CreateOrUpdateNetworkPolicy(ctx, c, makeNetworkPolicyIngressPorts(name, defaultLabels(name.Name))); err != nil {
 		return fmt.Errorf("failed to create self-monitor network policy: %w", err)
 	}
 
@@ -141,11 +140,11 @@ func makeRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
 	return &roleBinding
 }
 
-func makeNetworkPolicy(name types.NamespacedName, labels map[string]string) *networkingv1.NetworkPolicy {
+func makeNetworkPolicyIngressPorts(name types.NamespacedName, labels map[string]string) *networkingv1.NetworkPolicy {
 	allowedPorts := []int32{int32(ports.PrometheusPort)}
 
 	telemetryPodSelector := map[string]string{
-		"self-monitor/scrape": "true",
+		"self-monitor/access": "true",
 	}
 	namespaceSelector := map[string]string{
 		"kubernetes.io/metadata.name": name.Namespace,
@@ -209,6 +208,7 @@ func makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
 
 	return networkPolicyPorts
 }
+
 func makeConfigMap(name types.NamespacedName, selfmonitorConfig string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -229,11 +229,9 @@ func makeSelfMonitorDeployment(cfg *config.SelfMonitor, configChecksum string) *
 
 	annotations := map[string]string{"checksum/config": configChecksum}
 	resources := makeResourceRequirements(cfg)
-	affinity := makePodAffinity(selectorLabels)
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
-		withPriorityClass(cfg.Deployment.PriorityClassName),
-		withResources(resources),
-		withAffinity(affinity),
+		commonresources.WithPriorityClass(cfg.Deployment.PriorityClassName),
+		commonresources.WithResources(resources),
 	)
 
 	return &appsv1.Deployment{
@@ -253,39 +251,6 @@ func makeSelfMonitorDeployment(cfg *config.SelfMonitor, configChecksum string) *
 					Annotations: annotations,
 				},
 				Spec: podSpec,
-			},
-		},
-	}
-}
-
-func withPriorityClass(priorityClassName string) podSpecOption {
-	return func(pod *corev1.PodSpec) {
-		pod.PriorityClassName = priorityClassName
-	}
-}
-
-func makePodAffinity(labels map[string]string) corev1.Affinity {
-	return corev1.Affinity{
-		PodAntiAffinity: &corev1.PodAntiAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-				{
-					Weight: 100,
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						TopologyKey: "kubernetes.io/hostname",
-						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: labels,
-						},
-					},
-				},
-				{
-					Weight: 100,
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						TopologyKey: "topology.kubernetes.io/zone",
-						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: labels,
-						},
-					},
-				},
 			},
 		},
 	}
@@ -398,20 +363,6 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 	}
 
 	return pod
-}
-
-func withResources(resources corev1.ResourceRequirements) podSpecOption {
-	return func(pod *corev1.PodSpec) {
-		for i := range pod.Containers {
-			pod.Containers[i].Resources = resources
-		}
-	}
-}
-
-func withAffinity(affinity corev1.Affinity) podSpecOption {
-	return func(pod *corev1.PodSpec) {
-		pod.Affinity = &affinity
-	}
 }
 
 func makeResourceRequirements(cfg *config.SelfMonitor) corev1.ResourceRequirements {

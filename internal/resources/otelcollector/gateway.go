@@ -3,6 +3,7 @@ package otelcollector
 import (
 	"context"
 	"fmt"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"maps"
 
 	istiosecurityv1beta "istio.io/api/security/v1beta1"
@@ -104,8 +105,8 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioConfi
 	resources := makeGatewayResourceRequirements(cfg)
 	affinity := makePodAffinity(selectorLabels)
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
-		withPriorityClass(cfg.Deployment.PriorityClassName),
-		withResources(resources),
+		commonresources.WithPriorityClass(cfg.Deployment.PriorityClassName),
+		commonresources.WithResources(resources),
 		withAffinity(affinity),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),

@@ -29,8 +29,3 @@ type monitoringConfig struct {
 	RuleFiles      []string                  `yaml:"rule_files,omitempty"`
 	ScrapeConfigs  []prometheus.ScrapeConfig `yaml:"scrape_configs,omitempty"`
 }
-
-func (cfg *SelfMonitor) WithMonitoringConfig(monitoringCfgYAML string) *SelfMonitor {
-	cfg.MonitoringConfig = monitoringCfgYAML
-	return cfg
-}

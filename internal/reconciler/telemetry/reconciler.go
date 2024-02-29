@@ -150,10 +150,11 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 	if err != nil {
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
 	}
+	r.config.SelfMonitor.Config.MonitoringConfig = string(selfMonitorConfigYaml)
 
 	if err := selfmonitor.ApplyResources(ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),
-		r.config.SelfMonitor.Config.WithMonitoringConfig(string(selfMonitorConfigYaml))); err != nil {
+		&r.config.SelfMonitor.Config); err != nil {
 		return fmt.Errorf("failed to apply self-monitor resources: %w", err)
 	}
 
