@@ -2,10 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/prometheus"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
 
 func MakeConfig() monitoringConfig {
