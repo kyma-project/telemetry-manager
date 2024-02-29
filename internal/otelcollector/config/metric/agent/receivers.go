@@ -85,47 +85,47 @@ func makePrometheusConfig(isIstioActive bool, jobNamePrefix string, role prometh
 
 func makePrometheusPodsRelabelConfigs(keepSecure bool) []prometheus.RelabelConfig {
 	relabelConfigs := []prometheus.RelabelConfig{
-		KeepIfRunningOnSameNode(NodeAffiliatedPod),
-		KeepIfScrapingEnabled(AnnotatedPod),
-		DropIfPodNotRunning(),
-		DropIfInitContainer(),
+		keepIfRunningOnSameNode(NodeAffiliatedPod),
+		keepIfScrapingEnabled(AnnotatedPod),
+		dropIfPodNotRunning(),
+		dropIfInitContainer(),
 		DropIfIstioProxy(),
-		InferSchemeFromIstioInjectedLabel(),
-		InferSchemeFromAnnotation(AnnotatedPod),
+		inferSchemeFromIstioInjectedLabel(),
+		inferSchemeFromAnnotation(AnnotatedPod),
 	}
 
 	if keepSecure {
-		relabelConfigs = append(relabelConfigs, DropIfSchemeHTTP())
+		relabelConfigs = append(relabelConfigs, dropIfSchemeHTTP())
 	} else {
-		relabelConfigs = append(relabelConfigs, DropIfSchemeHTTPS())
+		relabelConfigs = append(relabelConfigs, dropIfSchemeHTTPS())
 	}
 
 	return append(relabelConfigs,
-		InferMetricsPathFromAnnotation(AnnotatedPod),
-		InferAddressFromAnnotation(AnnotatedPod))
+		inferMetricsPathFromAnnotation(AnnotatedPod),
+		inferAddressFromAnnotation(AnnotatedPod))
 }
 
 func makePrometheusServicesRelabelConfigs(keepSecure bool) []prometheus.RelabelConfig {
 	relabelConfigs := []prometheus.RelabelConfig{
-		KeepIfRunningOnSameNode(NodeAffiliatedEndpoint),
-		KeepIfScrapingEnabled(AnnotatedService),
-		DropIfPodNotRunning(),
-		DropIfInitContainer(),
+		keepIfRunningOnSameNode(NodeAffiliatedEndpoint),
+		keepIfScrapingEnabled(AnnotatedService),
+		dropIfPodNotRunning(),
+		dropIfInitContainer(),
 		DropIfIstioProxy(),
-		InferSchemeFromIstioInjectedLabel(),
-		InferSchemeFromAnnotation(AnnotatedService),
+		inferSchemeFromIstioInjectedLabel(),
+		inferSchemeFromAnnotation(AnnotatedService),
 	}
 
 	if keepSecure {
-		relabelConfigs = append(relabelConfigs, DropIfSchemeHTTP())
+		relabelConfigs = append(relabelConfigs, dropIfSchemeHTTP())
 	} else {
-		relabelConfigs = append(relabelConfigs, DropIfSchemeHTTPS())
+		relabelConfigs = append(relabelConfigs, dropIfSchemeHTTPS())
 	}
 
 	return append(relabelConfigs,
-		InferMetricsPathFromAnnotation(AnnotatedService),
-		InferAddressFromAnnotation(AnnotatedService),
-		InferServiceFromMetaLabel())
+		inferMetricsPathFromAnnotation(AnnotatedService),
+		inferAddressFromAnnotation(AnnotatedService),
+		inferServiceFromMetaLabel())
 }
 
 func makeTLSConfig() *prometheus.TLSConfig {
@@ -148,10 +148,10 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 					ScrapeInterval:             scrapeInterval,
 					KubernetesDiscoveryConfigs: []prometheus.KubernetesDiscoveryConfig{{Role: prometheus.RolePod}},
 					RelabelConfigs: []prometheus.RelabelConfig{
-						KeepIfRunningOnSameNode(NodeAffiliatedPod),
-						KeepIfIstioProxy(),
+						keepIfRunningOnSameNode(NodeAffiliatedPod),
+						keepIfIstioProxy(),
 						KeepIfContainerWithEnvoyPort(),
-						DropIfPodNotRunning(),
+						dropIfPodNotRunning(),
 					},
 					MetricRelabelConfigs: []prometheus.RelabelConfig{
 						{

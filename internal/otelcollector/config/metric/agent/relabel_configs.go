@@ -21,7 +21,7 @@ const (
 	AnnotatedService AnnotatedResource = "service"
 )
 
-func KeepIfRunningOnSameNode(nodeAffiliated NodeAffiliatedResource) prometheus.RelabelConfig {
+func keepIfRunningOnSameNode(nodeAffiliated NodeAffiliatedResource) prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_node_name", nodeAffiliated)},
 		Regex:        fmt.Sprintf("$%s", config.EnvVarCurrentNodeName),
@@ -29,7 +29,7 @@ func KeepIfRunningOnSameNode(nodeAffiliated NodeAffiliatedResource) prometheus.R
 	}
 }
 
-func KeepIfScrapingEnabled(annotated AnnotatedResource) prometheus.RelabelConfig {
+func keepIfScrapingEnabled(annotated AnnotatedResource) prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_scrape", annotated)},
 		Regex:        "true",
@@ -37,7 +37,7 @@ func KeepIfScrapingEnabled(annotated AnnotatedResource) prometheus.RelabelConfig
 	}
 }
 
-func KeepIfIstioProxy() prometheus.RelabelConfig {
+func keepIfIstioProxy() prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
 		Action:       prometheus.Keep,
@@ -61,7 +61,7 @@ func KeepIfContainerWithEnvoyPort() prometheus.RelabelConfig {
 //
 // Note: The HTTPS scheme can be manually overridden by setting the "prometheus.io/scheme"
 // annotation on the Pod or the Service.
-func InferSchemeFromIstioInjectedLabel() prometheus.RelabelConfig {
+func inferSchemeFromIstioInjectedLabel() prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_label_security_istio_io_tlsMode"},
 		Action:       prometheus.Replace,
@@ -71,7 +71,7 @@ func InferSchemeFromIstioInjectedLabel() prometheus.RelabelConfig {
 	}
 }
 
-func InferSchemeFromAnnotation(annotated AnnotatedResource) prometheus.RelabelConfig {
+func inferSchemeFromAnnotation(annotated AnnotatedResource) prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_scheme", annotated)},
 		Action:       prometheus.Replace,
@@ -80,7 +80,7 @@ func InferSchemeFromAnnotation(annotated AnnotatedResource) prometheus.RelabelCo
 	}
 }
 
-func InferMetricsPathFromAnnotation(annotated AnnotatedResource) prometheus.RelabelConfig {
+func inferMetricsPathFromAnnotation(annotated AnnotatedResource) prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_path", annotated)},
 		Action:       prometheus.Replace,
@@ -89,7 +89,7 @@ func InferMetricsPathFromAnnotation(annotated AnnotatedResource) prometheus.Rela
 	}
 }
 
-func InferAddressFromAnnotation(annotated AnnotatedResource) prometheus.RelabelConfig {
+func inferAddressFromAnnotation(annotated AnnotatedResource) prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__address__", fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_port", annotated)},
 		Action:       prometheus.Replace,
@@ -99,7 +99,7 @@ func InferAddressFromAnnotation(annotated AnnotatedResource) prometheus.RelabelC
 	}
 }
 
-func InferServiceFromMetaLabel() prometheus.RelabelConfig {
+func inferServiceFromMetaLabel() prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_service_name"},
 		Action:       prometheus.Replace,
@@ -107,7 +107,7 @@ func InferServiceFromMetaLabel() prometheus.RelabelConfig {
 	}
 }
 
-func DropIfPodNotRunning() prometheus.RelabelConfig {
+func dropIfPodNotRunning() prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_phase"},
 		Action:       prometheus.Drop,
@@ -115,7 +115,7 @@ func DropIfPodNotRunning() prometheus.RelabelConfig {
 	}
 }
 
-func DropIfInitContainer() prometheus.RelabelConfig {
+func dropIfInitContainer() prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_init"},
 		Action:       prometheus.Drop,
@@ -131,7 +131,7 @@ func DropIfIstioProxy() prometheus.RelabelConfig {
 	}
 }
 
-func DropIfSchemeHTTP() prometheus.RelabelConfig {
+func dropIfSchemeHTTP() prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__scheme__"},
 		Action:       prometheus.Drop,
@@ -139,7 +139,7 @@ func DropIfSchemeHTTP() prometheus.RelabelConfig {
 	}
 }
 
-func DropIfSchemeHTTPS() prometheus.RelabelConfig {
+func dropIfSchemeHTTPS() prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__scheme__"},
 		Action:       prometheus.Drop,
