@@ -85,6 +85,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
     name                kubernetes
     match               log-pipeline.*
     annotations         off
+    buffer_size         1MB
     k8s-logging.exclude off
     k8s-logging.parser  on
     kube_tag_prefix     log-pipeline.var.log.containers.
