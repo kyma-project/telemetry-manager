@@ -163,19 +163,17 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt) |
 
 <!-- TABLE-END -->
+### MetricPipeline Status
 
-### Metric Pipeline State
+The status of the MetricPipeline is determined by the condition types `GatewayHealthy`, `AgentHealthy` and `ConfigurationGenerated`:
 
-The state of the metric components is determined by the status condition of type `MetricComponentsHealthy`:
-
-| Condition status | Condition reason        | Message                                              |
-|------------------|-------------------------|------------------------------------------------------| 
-| True             | DeploymentReady         | Metric gateway Deployment is ready                   |
-| True             | DaemonSetReady          | Metric agent DaemonSet is ready                      |
-| True             | ConfigurationGenerated  | Metric pipeline configuration successfully generated |
-| False            | DeploymentNotReady      | Metric gateway Deployment is not ready               |
-| False            | DaemonSetNotReady       | Metric agent DaemonSet is not ready                  |
-| False            | MaxPipelinesExceeded    | Maximum pipeline count exceeded                      |
-| False            | ReferencedSecretMissing | One or more referenced Secrets are missing           |
-
-
+| Condition Type         | Condition Status | Condition Reason        | Condition Message                          |
+|------------------------|------------------|-------------------------|--------------------------------------------|
+| GatewayHealthy         | True             | DeploymentReady         | Metric gateway Deployment is ready         |
+| GatewayHealthy         | False            | DeploymentNotReady      | Metric gateway Deployment is not ready     |
+| AgentHealthy           | True             | AgentNotRequired        |                                            |
+| AgentHealthy           | True             | DaemonSetReady          | Metric agent DaemonSet is ready            |
+| AgentHealthy           | False            | DaemonSetNotReady       | Metric agent DaemonSet is not ready        |
+| ConfigurationGenerated | True             | ConfigurationGenerated  |                                            |
+| ConfigurationGenerated | False            | ReferencedSecretMissing | One or more referenced Secrets are missing |
+| ConfigurationGenerated | False            | MaxPipelinesExceeded    | Maximum pipeline count limit exceeded      |
