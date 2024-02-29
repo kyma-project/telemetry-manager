@@ -145,10 +145,7 @@ func makeNetworkPolicy(name types.NamespacedName, labels map[string]string) *net
 	allowedPorts := []int32{int32(ports.PrometheusPort)}
 
 	telemetryPodSelector := map[string]string{
-		"app.kubernetes.io/name":     "manager",
-		"kyma-project.io/component":  "controller",
-		"app.kubernetes.io/instance": "telemetry",
-		"control-plane":              "telemetry-manager",
+		"self-monitor/scrape": "true",
 	}
 	namespaceSelector := map[string]string{
 		"kubernetes.io/metadata.name": name.Namespace,

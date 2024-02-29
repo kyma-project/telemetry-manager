@@ -230,10 +230,7 @@ func verifyServiceAccountIsPresent(ctx context.Context, t *testing.T, client cli
 
 func verifyNetworkPolicy(ctx context.Context, t *testing.T, client client.Client) {
 	expectedTelemetryPodSelector := map[string]string{
-		"app.kubernetes.io/instance": "telemetry",
-		"app.kubernetes.io/name":     "manager",
-		"control-plane":              "telemetry-manager",
-		"kyma-project.io/component":  "controller",
+		"self-monitor/scrape": "true",
 	}
 	expectedNamespaceSelector := map[string]string{
 		"kubernetes.io/metadata.name": namespace,
