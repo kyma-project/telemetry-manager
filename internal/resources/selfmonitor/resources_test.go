@@ -2,6 +2,7 @@ package selfmonitor
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -271,13 +272,13 @@ func verifyNetworkPolicy(ctx context.Context, t *testing.T, client client.Client
 	require.Equal(t, expectedNamespaceSelector, np.Spec.Egress[0].To[0].NamespaceSelector.MatchLabels)
 }
 
-func makeSelfMonitorConfig() *Config {
+func makeSelfMonitorConfig() *config.SelfMonitor {
 
-	selfMonConfig := &Config{
+	selfMonConfig := &config.SelfMonitor{
 		BaseName:         name,
 		Namespace:        namespace,
-		monitoringConfig: cfg,
-		Deployment: DeploymentConfig{
+		MonitoringConfig: cfg,
+		Deployment: config.DeploymentConfig{
 			Image:         "foo.bar",
 			CPULimit:      baseCPULimit,
 			CPURequest:    baseCPURequest,

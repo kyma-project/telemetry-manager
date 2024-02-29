@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	"os"
 	"strings"
 	"time"
@@ -61,7 +62,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
@@ -592,11 +592,11 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 	return telemetry.SelfMonitorConfig{
 		Enabled: enableSelfMonitor,
-		Config: selfmonitor.Config{
+		Config: config.SelfMonitor{
 			BaseName:  "telemetry-self-monitor",
 			Namespace: telemetryNamespace,
 
-			Deployment: selfmonitor.DeploymentConfig{
+			Deployment: config.DeploymentConfig{
 				Image:             selfMonitorImage,
 				PriorityClassName: selfMonitorPriorityClass,
 				CPULimit:          resource.MustParse(selfMonitorCPULimit),

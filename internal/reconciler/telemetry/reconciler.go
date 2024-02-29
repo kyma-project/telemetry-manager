@@ -3,6 +3,8 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	selfmonitor2 "github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 
 	"gopkg.in/yaml.v3"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -22,7 +24,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
 
@@ -55,7 +56,7 @@ type WebhookConfig struct {
 
 type SelfMonitorConfig struct {
 	Enabled bool
-	Config  selfmonitor.Config
+	Config  config.SelfMonitor
 }
 
 type healthCheckers struct {
@@ -138,19 +139,19 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 		return err
 	}
 	if !pipelinesPresent {
-		if err := selfmonitor.RemoveResources(ctx, r.Client, &r.config.SelfMonitor.Config); err != nil {
+		if err := selfmonitor2.RemoveResources(ctx, r.Client, &r.config.SelfMonitor.Config); err != nil {
 			return fmt.Errorf("failed to delete self-monitor resources: %w", err)
 		}
 		return nil
 	}
 
-	selfMonConfig := selfmonitor.MakeConfig()
+	selfMonConfig := config.MakeConfig()
 	selfMonitorConfigYaml, err := yaml.Marshal(selfMonConfig)
 	if err != nil {
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
 	}
 
-	if err := selfmonitor.ApplyResources(ctx,
+	if err := selfmonitor2.ApplyResources(ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),
 		r.config.SelfMonitor.Config.WithMonitoringConfig(string(selfMonitorConfigYaml))); err != nil {
 		return fmt.Errorf("failed to apply self-monitor resources: %w", err)

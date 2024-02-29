@@ -1,4 +1,4 @@
-package selfmonitor
+package config
 
 import (
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -6,10 +6,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 )
 
-type Config struct {
+type SelfMonitor struct {
 	BaseName         string
 	Namespace        string
-	monitoringConfig string
+	MonitoringConfig string
 
 	Deployment DeploymentConfig
 }
@@ -30,8 +30,7 @@ type monitoringConfig struct {
 	ScrapeConfigs  []prometheus.ScrapeConfig `yaml:"scrape_configs,omitempty"`
 }
 
-func (promCfg *Config) WithMonitoringConfig(monitoringCfgYAML string) *Config {
-	cfgCopy := *promCfg
-	cfgCopy.monitoringConfig = monitoringCfgYAML
-	return &cfgCopy
+func (cfg *SelfMonitor) WithMonitoringConfig(monitoringCfgYAML string) *SelfMonitor {
+	cfg.MonitoringConfig = monitoringCfgYAML
+	return cfg
 }

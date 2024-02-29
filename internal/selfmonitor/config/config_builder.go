@@ -1,6 +1,8 @@
-package selfmonitor
+package config
 
 import (
+	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/prometheus"
@@ -26,7 +28,7 @@ func makeAlertConfig() prometheus.AlertingConfig {
 	return prometheus.AlertingConfig{
 		AlertManagers: []prometheus.AlertManagerConfig{{
 			StaticConfigs: []prometheus.StaticConfig{{
-				Targets: []string{"localhost:9093"},
+				Targets: []string{fmt.Sprintf("localhost:%d", ports.AlertingPort)},
 			}},
 		}},
 	}

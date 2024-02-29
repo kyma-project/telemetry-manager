@@ -1,4 +1,4 @@
-package selfmonitor
+package config
 
 import (
 	"os"

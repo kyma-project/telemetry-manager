@@ -1,4 +1,4 @@
-package selfmonitor
+package config
 
 import (
 	"testing"
@@ -7,11 +7,11 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	config := Config{
+	config := SelfMonitor{
 		BaseName:  "telemetry",
 		Namespace: "kyma",
 	}
 	monitoringConfgYaml := "foo-bar"
 	selfMonitorConfig := config.WithMonitoringConfig(monitoringConfgYaml)
-	require.Equal(t, selfMonitorConfig.monitoringConfig, monitoringConfgYaml)
+	require.Equal(t, selfMonitorConfig.MonitoringConfig, monitoringConfgYaml)
 }

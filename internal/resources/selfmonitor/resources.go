@@ -3,6 +3,7 @@ package selfmonitor
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	"maps"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -19,11 +20,12 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
 
 type podSpecOption = func(pod *corev1.PodSpec)
 
-func RemoveResources(ctx context.Context, c client.Client, config *Config) error {
+func RemoveResources(ctx context.Context, c client.Client, config *config.SelfMonitor) error {
 
 	objectMeta := metav1.ObjectMeta{
 		Name:      config.BaseName,
@@ -77,7 +79,7 @@ func RemoveResources(ctx context.Context, c client.Client, config *Config) error
 	return nil
 }
 
-func ApplyResources(ctx context.Context, c client.Client, config *Config) error {
+func ApplyResources(ctx context.Context, c client.Client, config *config.SelfMonitor) error {
 
 	name := types.NamespacedName{Namespace: config.Namespace, Name: config.BaseName}
 
@@ -98,7 +100,7 @@ func ApplyResources(ctx context.Context, c client.Client, config *Config) error 
 		return fmt.Errorf("failed to create self-monitor network policy: %w", err)
 	}
 
-	configMap := makeConfigMap(name, config.monitoringConfig)
+	configMap := makeConfigMap(name, config.MonitoringConfig)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create self-monitor configmap: %w", err)
 	}
@@ -140,7 +142,7 @@ func makeRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
 }
 
 func makeNetworkPolicy(name types.NamespacedName, labels map[string]string) *networkingv1.NetworkPolicy {
-	allowedPorts := []int32{int32(9090)}
+	allowedPorts := []int32{int32(ports.PrometheusPort)}
 
 	telemetryPodSelector := map[string]string{
 		"app.kubernetes.io/name":     "manager",
@@ -222,7 +224,7 @@ func makeConfigMap(name types.NamespacedName, selfmonitorConfig string) *corev1.
 		},
 	}
 }
-func makeSelfMonitorDeployment(cfg *Config, configChecksum string) *appsv1.Deployment {
+func makeSelfMonitorDeployment(cfg *config.SelfMonitor, configChecksum string) *appsv1.Deployment {
 	var replicas int32 = 1
 	selectorLabels := defaultLabels(cfg.BaseName)
 	podLabels := maps.Clone(selectorLabels)
@@ -353,12 +355,12 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 				VolumeMounts: []corev1.VolumeMount{{Name: "prometheus-config-volume", MountPath: "/etc/prometheus/"}, {Name: "prometheus-storage-volume", MountPath: "/prometheus/"}},
 				LivenessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{Path: "/-/ready", Port: intstr.IntOrString{IntVal: 9090}},
+						HTTPGet: &corev1.HTTPGetAction{Path: "/-/ready", Port: intstr.IntOrString{IntVal: ports.PrometheusPort}},
 					},
 				},
 				ReadinessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{Path: "/-/ready", Port: intstr.IntOrString{IntVal: 9090}},
+						HTTPGet: &corev1.HTTPGetAction{Path: "/-/ready", Port: intstr.IntOrString{IntVal: ports.PrometheusPort}},
 					},
 				},
 			},
@@ -415,7 +417,7 @@ func withAffinity(affinity corev1.Affinity) podSpecOption {
 	}
 }
 
-func makeResourceRequirements(cfg *Config) corev1.ResourceRequirements {
+func makeResourceRequirements(cfg *config.SelfMonitor) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Limits: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    cfg.Deployment.CPULimit,
