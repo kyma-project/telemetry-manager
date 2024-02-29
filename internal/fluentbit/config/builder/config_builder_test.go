@@ -98,6 +98,7 @@ func TestMergeSectionsConfig(t *testing.T) {
     name                kubernetes
     match               foo.*
     annotations         on
+    buffer_size         1MB
     k8s-logging.exclude off
     k8s-logging.parser  on
     kube_tag_prefix     foo.var.log.containers.
@@ -197,6 +198,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     name                kubernetes
     match               foo.*
     annotations         on
+    buffer_size         1MB
     k8s-logging.exclude off
     k8s-logging.parser  on
     kube_tag_prefix     foo.var.log.containers.
