@@ -21,6 +21,7 @@ spec:
         app.kubernetes.io/instance: telemetry
         kyma-project.io/component: controller
         control-plane: telemetry-manager
+        self-monitor/access: "true" # this label is used for network-policy for self-monitor
     spec:
       priorityClassName: "telemetry-priority-class"
       securityContext:

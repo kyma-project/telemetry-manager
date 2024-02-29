@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 )
 
 type NodeAffiliatedResource string
@@ -20,39 +21,39 @@ const (
 	AnnotatedService AnnotatedResource = "service"
 )
 
-func keepIfRunningOnSameNode(nodeAffiliated NodeAffiliatedResource) RelabelConfig {
-	return RelabelConfig{
+func keepIfRunningOnSameNode(nodeAffiliated NodeAffiliatedResource) prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_node_name", nodeAffiliated)},
 		Regex:        fmt.Sprintf("$%s", config.EnvVarCurrentNodeName),
-		Action:       Keep,
+		Action:       prometheus.Keep,
 	}
 }
 
-func keepIfScrapingEnabled(annotated AnnotatedResource) RelabelConfig {
-	return RelabelConfig{
+func keepIfScrapingEnabled(annotated AnnotatedResource) prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_scrape", annotated)},
 		Regex:        "true",
-		Action:       Keep,
+		Action:       prometheus.Keep,
 	}
 }
 
-func keepIfIstioProxy() RelabelConfig {
-	return RelabelConfig{
+func keepIfIstioProxy() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
-		Action:       Keep,
+		Action:       prometheus.Keep,
 		Regex:        "istio-proxy",
 	}
 }
 
-func keepIfContainerWithEnvoyPort() RelabelConfig {
-	return RelabelConfig{
+func keepIfContainerWithEnvoyPort() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_port_name"},
-		Action:       Keep,
+		Action:       prometheus.Keep,
 		Regex:        "http-envoy-prom",
 	}
 }
 
-// inferSchemeFromIstioInjectedLabel configures the default scraping scheme to HTTPS
+// InferSchemeFromIstioInjectedLabel configures the default scraping scheme to HTTPS
 // based on the presence of the security.istio.io/tlsMode label in a Pod. This label
 // is automatically added by Istio's MutatingWebhook when a sidecar is injected.
 //
@@ -60,88 +61,88 @@ func keepIfContainerWithEnvoyPort() RelabelConfig {
 //
 // Note: The HTTPS scheme can be manually overridden by setting the "prometheus.io/scheme"
 // annotation on the Pod or the Service.
-func inferSchemeFromIstioInjectedLabel() RelabelConfig {
-	return RelabelConfig{
+func inferSchemeFromIstioInjectedLabel() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_label_security_istio_io_tlsMode"},
-		Action:       Replace,
+		Action:       prometheus.Replace,
 		TargetLabel:  "__scheme__",
 		Regex:        "(istio)",
 		Replacement:  "https",
 	}
 }
 
-func inferSchemeFromAnnotation(annotated AnnotatedResource) RelabelConfig {
-	return RelabelConfig{
+func inferSchemeFromAnnotation(annotated AnnotatedResource) prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_scheme", annotated)},
-		Action:       Replace,
+		Action:       prometheus.Replace,
 		Regex:        "(https?)",
 		TargetLabel:  "__scheme__",
 	}
 }
 
-func inferMetricsPathFromAnnotation(annotated AnnotatedResource) RelabelConfig {
-	return RelabelConfig{
+func inferMetricsPathFromAnnotation(annotated AnnotatedResource) prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_path", annotated)},
-		Action:       Replace,
+		Action:       prometheus.Replace,
 		Regex:        "(.+)",
 		TargetLabel:  "__metrics_path__",
 	}
 }
 
-func inferAddressFromAnnotation(annotated AnnotatedResource) RelabelConfig {
-	return RelabelConfig{
+func inferAddressFromAnnotation(annotated AnnotatedResource) prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__address__", fmt.Sprintf("__meta_kubernetes_%s_annotation_prometheus_io_port", annotated)},
-		Action:       Replace,
+		Action:       prometheus.Replace,
 		Regex:        "([^:]+)(?::\\d+)?;(\\d+)",
 		Replacement:  "$$1:$$2",
 		TargetLabel:  "__address__",
 	}
 }
 
-func inferServiceFromMetaLabel() RelabelConfig {
-	return RelabelConfig{
+func inferServiceFromMetaLabel() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_service_name"},
-		Action:       Replace,
+		Action:       prometheus.Replace,
 		TargetLabel:  "service",
 	}
 }
 
-func dropIfPodNotRunning() RelabelConfig {
-	return RelabelConfig{
+func dropIfPodNotRunning() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_phase"},
-		Action:       Drop,
+		Action:       prometheus.Drop,
 		Regex:        "Pending|Succeeded|Failed",
 	}
 }
 
-func dropIfInitContainer() RelabelConfig {
-	return RelabelConfig{
+func dropIfInitContainer() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_init"},
-		Action:       Drop,
+		Action:       prometheus.Drop,
 		Regex:        "(true)",
 	}
 }
 
-func dropIfIstioProxy() RelabelConfig {
-	return RelabelConfig{
+func dropIfIstioProxy() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
-		Action:       Drop,
+		Action:       prometheus.Drop,
 		Regex:        "(istio-proxy)",
 	}
 }
 
-func dropIfSchemeHTTP() RelabelConfig {
-	return RelabelConfig{
+func dropIfSchemeHTTP() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__scheme__"},
-		Action:       Drop,
+		Action:       prometheus.Drop,
 		Regex:        "(http)",
 	}
 }
 
-func dropIfSchemeHTTPS() RelabelConfig {
-	return RelabelConfig{
+func dropIfSchemeHTTPS() prometheus.RelabelConfig {
+	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__scheme__"},
-		Action:       Drop,
+		Action:       prometheus.Drop,
 		Regex:        "(https)",
 	}
 }
