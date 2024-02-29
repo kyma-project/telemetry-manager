@@ -138,7 +138,7 @@ const (
 	overridesConfigMapName = "telemetry-override-config"
 	overridesConfigMapKey  = "override-config"
 	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.2.2-b5220c17"
-	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240123-4f99d571"
+	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240228-d652f6a3"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-manager-webhook"
