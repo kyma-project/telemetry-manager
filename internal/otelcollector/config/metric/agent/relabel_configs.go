@@ -45,7 +45,7 @@ func keepIfIstioProxy() prometheus.RelabelConfig {
 	}
 }
 
-func KeepIfContainerWithEnvoyPort() prometheus.RelabelConfig {
+func keepIfContainerWithEnvoyPort() prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_port_name"},
 		Action:       prometheus.Keep,
@@ -123,7 +123,7 @@ func dropIfInitContainer() prometheus.RelabelConfig {
 	}
 }
 
-func DropIfIstioProxy() prometheus.RelabelConfig {
+func dropIfIstioProxy() prometheus.RelabelConfig {
 	return prometheus.RelabelConfig{
 		SourceLabels: []string{"__meta_kubernetes_pod_container_name"},
 		Action:       prometheus.Drop,

@@ -89,7 +89,7 @@ func makePrometheusPodsRelabelConfigs(keepSecure bool) []prometheus.RelabelConfi
 		keepIfScrapingEnabled(AnnotatedPod),
 		dropIfPodNotRunning(),
 		dropIfInitContainer(),
-		DropIfIstioProxy(),
+		dropIfIstioProxy(),
 		inferSchemeFromIstioInjectedLabel(),
 		inferSchemeFromAnnotation(AnnotatedPod),
 	}
@@ -111,7 +111,7 @@ func makePrometheusServicesRelabelConfigs(keepSecure bool) []prometheus.RelabelC
 		keepIfScrapingEnabled(AnnotatedService),
 		dropIfPodNotRunning(),
 		dropIfInitContainer(),
-		DropIfIstioProxy(),
+		dropIfIstioProxy(),
 		inferSchemeFromIstioInjectedLabel(),
 		inferSchemeFromAnnotation(AnnotatedService),
 	}
@@ -150,7 +150,7 @@ func makePrometheusIstioConfig() *PrometheusReceiver {
 					RelabelConfigs: []prometheus.RelabelConfig{
 						keepIfRunningOnSameNode(NodeAffiliatedPod),
 						keepIfIstioProxy(),
-						KeepIfContainerWithEnvoyPort(),
+						keepIfContainerWithEnvoyPort(),
 						dropIfPodNotRunning(),
 					},
 					MetricRelabelConfigs: []prometheus.RelabelConfig{
