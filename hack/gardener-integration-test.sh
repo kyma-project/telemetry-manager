@@ -20,9 +20,10 @@ function run-tests-with-git-image () {
 }
 
 function main() {
-    make provision-gardener
-    run-tests-with-git-image
-    make deprovision-gardener || (make deprovision-gardener && false)
+    (make provision-gardener && \
+    run-tests-with-git-image && \
+    make deprovision-gardener) || \
+    (make deprovision-gardener && false)
 }
 
 main
