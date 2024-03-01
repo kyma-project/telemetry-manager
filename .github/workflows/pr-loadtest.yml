@@ -21,6 +21,7 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
+        k8s_version: [ 1.27, 1.28 ]
         argument: ["-t traces", "-t traces -m true", "-t traces -b true", "-t metrics", "-t metrics -m true", "-t metrics -b true"]
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
