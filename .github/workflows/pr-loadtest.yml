@@ -1,5 +1,8 @@
 name: Manual Load Test
 
+env:
+  IMG: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.number }}
+
 # Controls when the action will run. Workflow runs when manually triggered using the UI
 # or API.
 on:
@@ -15,11 +18,40 @@ on:
 jobs:
   # This workflow contains a single job called "greet"
   load-test:
+    strategy:
+      fail-fast: false # if one version is not working, continue tests on other versions
+      matrix:
+        k8s_version: [ 1.27, 1.28]
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Runs a single command using the runners shell
-      - name: Send greeting
-        run: echo "Hello ${{ inputs.name }}"
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
+
+      # save gardener kubeconfig to a temp file in order to pass it to the command
+      - name: Save serviceaccount to file
+        shell: bash
+        run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
+        env:
+          GARDENER_SA: ${{ secrets.GARDENER_SA }}
+
+      # provision cluster and run tests
+      - name: Provision Gardener
+        run: make provision-gardener
+        env:
+          GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
+          GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
+          GARDENER_SA_PATH: /tmp/gardener-sa.yaml
+          GARDENER_K8S_VERSION: ${{ matrix.k8s_version }}
+
+      # Run the load test for traces
+      - name: Run Load test
+        working_directory: docs/contributor/telemetry-load-test
+        matrix:
+          script: ./assets/run-load-test.sh
+          argument: ["-t traces", "-t traces -m true", "-t traces -b true", "-t metrics", "-t metrics -m true", "-t metrics -b true"]
