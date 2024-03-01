@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	configmetricagent "github.com/kyma-project/telemetry-manager/internal/otelcollector/config/metric/agent"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 const istioCertVolumeName = "istio-certs"
@@ -75,8 +76,8 @@ func makeAgentDaemonSet(cfg *AgentConfig, configChecksum string) *appsv1.DaemonS
 
 	resources := makeAgentResourceRequirements(cfg)
 	podSpec := makePodSpec(cfg.BaseName, cfg.DaemonSet.Image,
-		withPriorityClass(cfg.DaemonSet.PriorityClassName),
-		withResources(resources),
+		commonresources.WithPriorityClass(cfg.DaemonSet.PriorityClassName),
+		commonresources.WithResources(resources),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
 		withVolume(corev1.Volume{Name: istioCertVolumeName, VolumeSource: corev1.VolumeSource{

@@ -4,7 +4,8 @@ IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
 
 ENVTEST_K8S_VERSION = 1.27.1
 GARDENER_K8S_VERSION ?= 1.27
-ISTIO_VERSION ?= 1.3.1
+GARDENER_OS_VERSION ?= Not Defined
+ISTIO_VERSION ?= 1.3.2
 
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
@@ -376,6 +377,7 @@ GARDENER_CLUSTER_NAME=$(shell echo "ci-${GIT_COMMIT_SHA}-${GARDENER_K8S_VERSION}
 
 ifneq (,$(GARDENER_SA_PATH))
 GARDENER_K8S_VERSION_FULL=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud gcp -o go-template='{{range .spec.kubernetes.versions}}{{if and (eq .classification "supported") (lt .version "${GARDENER_K8S_VERSION}.a") (gt .version "${GARDENER_K8S_VERSION}")}}{{.version}}{{end}}{{end}}')
+GARDENER_OS_VERSION=$(shell kubectl --kubeconfig=${GARDENER_SA_PATH} get cloudprofiles.core.gardener.cloud gcp -o go-template='{{range .spec.machineImages}}{{if eq .name "gardenlinux"}}{{range .versions}}{{if eq .classification "supported"}}{{.version}}{{end}}{{end}}{{end}}{{end}}')
 endif
 
 # log tests are excluded for now as they are too flaky
@@ -394,7 +396,7 @@ gardener-integration-test: ## Provision gardener cluster and run integration tes
 
 .PHONY: provision-gardener
 provision-gardener: kyma ## Provision gardener cluster with latest k8s version
-	${KYMA} provision gardener gcp -c ${GARDENER_SA_PATH} -n ${GARDENER_CLUSTER_NAME} -p ${GARDENER_PROJECT} -s ${GARDENER_SECRET_NAME} -k ${GARDENER_K8S_VERSION_FULL} --hibernation-start="00 ${HIBERNATION_HOUR} * * ?"
+	${KYMA} provision gardener gcp --credentials ${GARDENER_SA_PATH} --name ${GARDENER_CLUSTER_NAME} --project ${GARDENER_PROJECT} --secret ${GARDENER_SECRET_NAME} --kube-version ${GARDENER_K8S_VERSION_FULL} --gardenlinux-version ${GARDENER_OS_VERSION} --hibernation-start="00 ${HIBERNATION_HOUR} * * ?"
 
 .PHONY: deprovision-gardener
 deprovision-gardener: kyma ## Deprovision gardener cluster

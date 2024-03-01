@@ -415,6 +415,7 @@ A TracePipeline creates a Deployment running OTel Collector instances in your cl
 To avoid and detect these scenarios, you must monitor the instances by collecting relevant metrics. For that, a service `telemetry-trace-collector-metrics` is located in the `kyma-system` namespace. For easier discovery, they have the `prometheus.io` annotation.
 
 The relevant metrics are:
+
 | Name | Threshold | Description |
 |---|---|---|
 | otelcol_exporter_enqueue_failed_spans | total[5m] > 0 | Indicates that new or retried items could not be added to the exporter buffer because the buffer is exhausted. Typically, that happens when the configured backend cannot handle the load on time and is causing back pressure. |

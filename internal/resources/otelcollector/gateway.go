@@ -22,6 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
+	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 )
 
 func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayConfig) error {
@@ -104,8 +105,8 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioConfi
 	resources := makeGatewayResourceRequirements(cfg)
 	affinity := makePodAffinity(selectorLabels)
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
-		withPriorityClass(cfg.Deployment.PriorityClassName),
-		withResources(resources),
+		commonresources.WithPriorityClass(cfg.Deployment.PriorityClassName),
+		commonresources.WithResources(resources),
 		withAffinity(affinity),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),

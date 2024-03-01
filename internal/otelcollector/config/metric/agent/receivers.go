@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 )
 
 const scrapeInterval = 30 * time.Second
@@ -50,20 +51,20 @@ func makeKubeletStatsConfig() *KubeletStatsReceiver {
 }
 
 func makePrometheusConfigForPods(isIstioActive bool) *PrometheusReceiver {
-	return makePrometheusConfig(isIstioActive, "app-pods", RolePod, makePrometheusPodsRelabelConfigs)
+	return makePrometheusConfig(isIstioActive, "app-pods", prometheus.RolePod, makePrometheusPodsRelabelConfigs)
 }
 
 func makePrometheusConfigForServices(isIstioActive bool) *PrometheusReceiver {
-	return makePrometheusConfig(isIstioActive, "app-services", RoleEndpoints, makePrometheusServicesRelabelConfigs)
+	return makePrometheusConfig(isIstioActive, "app-services", prometheus.RoleEndpoints, makePrometheusServicesRelabelConfigs)
 }
 
-func makePrometheusConfig(isIstioActive bool, jobNamePrefix string, role Role, relabelConfigFn func(keepSecure bool) []RelabelConfig) *PrometheusReceiver {
+func makePrometheusConfig(isIstioActive bool, jobNamePrefix string, role prometheus.Role, relabelConfigFn func(keepSecure bool) []prometheus.RelabelConfig) *PrometheusReceiver {
 	var config PrometheusReceiver
 
-	baseScrapeConfig := ScrapeConfig{
+	baseScrapeConfig := prometheus.ScrapeConfig{
 		ScrapeInterval:             scrapeInterval,
 		SampleLimit:                sampleLimit,
-		KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: role}},
+		KubernetesDiscoveryConfigs: []prometheus.KubernetesDiscoveryConfig{{Role: role}},
 	}
 
 	httpScrapeConfig := baseScrapeConfig
@@ -82,8 +83,8 @@ func makePrometheusConfig(isIstioActive bool, jobNamePrefix string, role Role, r
 	return &config
 }
 
-func makePrometheusPodsRelabelConfigs(keepSecure bool) []RelabelConfig {
-	relabelConfigs := []RelabelConfig{
+func makePrometheusPodsRelabelConfigs(keepSecure bool) []prometheus.RelabelConfig {
+	relabelConfigs := []prometheus.RelabelConfig{
 		keepIfRunningOnSameNode(NodeAffiliatedPod),
 		keepIfScrapingEnabled(AnnotatedPod),
 		dropIfPodNotRunning(),
@@ -104,8 +105,8 @@ func makePrometheusPodsRelabelConfigs(keepSecure bool) []RelabelConfig {
 		inferAddressFromAnnotation(AnnotatedPod))
 }
 
-func makePrometheusServicesRelabelConfigs(keepSecure bool) []RelabelConfig {
-	relabelConfigs := []RelabelConfig{
+func makePrometheusServicesRelabelConfigs(keepSecure bool) []prometheus.RelabelConfig {
+	relabelConfigs := []prometheus.RelabelConfig{
 		keepIfRunningOnSameNode(NodeAffiliatedEndpoint),
 		keepIfScrapingEnabled(AnnotatedService),
 		dropIfPodNotRunning(),
@@ -127,8 +128,8 @@ func makePrometheusServicesRelabelConfigs(keepSecure bool) []RelabelConfig {
 		inferServiceFromMetaLabel())
 }
 
-func makeTLSConfig() *TLSConfig {
-	return &TLSConfig{
+func makeTLSConfig() *prometheus.TLSConfig {
+	return &prometheus.TLSConfig{
 		CAFile:             istioCAFile,
 		CertFile:           istioCertFile,
 		KeyFile:            istioKeyFile,
@@ -139,24 +140,24 @@ func makeTLSConfig() *TLSConfig {
 func makePrometheusIstioConfig() *PrometheusReceiver {
 	return &PrometheusReceiver{
 		Config: PrometheusConfig{
-			ScrapeConfigs: []ScrapeConfig{
+			ScrapeConfigs: []prometheus.ScrapeConfig{
 				{
 					JobName:                    "istio-proxy",
 					SampleLimit:                sampleLimit,
 					MetricsPath:                "/stats/prometheus",
 					ScrapeInterval:             scrapeInterval,
-					KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RolePod}},
-					RelabelConfigs: []RelabelConfig{
+					KubernetesDiscoveryConfigs: []prometheus.KubernetesDiscoveryConfig{{Role: prometheus.RolePod}},
+					RelabelConfigs: []prometheus.RelabelConfig{
 						keepIfRunningOnSameNode(NodeAffiliatedPod),
 						keepIfIstioProxy(),
 						keepIfContainerWithEnvoyPort(),
 						dropIfPodNotRunning(),
 					},
-					MetricRelabelConfigs: []RelabelConfig{
+					MetricRelabelConfigs: []prometheus.RelabelConfig{
 						{
 							SourceLabels: []string{"__name__"},
 							Regex:        "istio_.*",
-							Action:       Keep,
+							Action:       prometheus.Keep,
 						},
 					},
 				},
