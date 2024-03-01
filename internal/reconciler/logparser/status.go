@@ -28,14 +28,14 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 		return nil
 	}
 
-	// If the "FluentBitHealthy" type doesn't exist in the conditions,
+	// If the "AgentHealthy" type doesn't exist in the conditions,
 	// then we need to reset the conditions list to ensure that the "Pending" and "Running" conditions are appended to the end of the conditions list
 	// Check step 3 in https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
 	if meta.FindStatusCondition(parser.Status.Conditions, conditions.TypeAgentHealthy) == nil {
 		parser.Status.Conditions = []metav1.Condition{}
 	}
 
-	r.setFluentBitHealthyCondition(ctx, &parser)
+	r.setAgentHealthyCondition(ctx, &parser)
 	r.setPendingAndRunningConditions(ctx, &parser)
 
 	if err := r.Status().Update(ctx, &parser); err != nil {
@@ -45,7 +45,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 
 }
 
-func (r *Reconciler) setFluentBitHealthyCondition(ctx context.Context, parser *telemetryv1alpha1.LogParser) {
+func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, parser *telemetryv1alpha1.LogParser) {
 	healthy, err := r.prober.IsReady(ctx, r.config.DaemonSet)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe fluent bit daemonset - set condition as not healthy")
