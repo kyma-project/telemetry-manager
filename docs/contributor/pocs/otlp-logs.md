@@ -153,11 +153,11 @@ To evaluate the buffering and backpressure capabilities of the described OpenTel
 
 * **Broken connectivity between the agent and the gateway**
 
-  Log records cannot be exported by the agent to the gateway using the OTLP protocol. The exporter queue on the agent will up to its maximum size and then start rejecting new records. This enqueue error is propagated to the filelog receiver, which eventually stops reading new logs. Log loss is avoided until the log retention of the kubelet removes old logs.
+  Log records cannot be exported by the agent to the gateway using the OTLP protocol. The exporter queue on the agent will buffer up to its maximum size and then start rejecting new records. This enqueue error is propagated to the filelog receiver, which eventually stops reading new logs. Log loss is avoided until the log retention of the kubelet removes old logs.
 
 ### Conclusions
 
-The evaluation of the two failure scenarios showed that the OpenTelemetry Collector can similar guarantees about the prevention of log loss as the current Fluent Bit setup. When using a batch processer, using a persistent output queue and with that increasing the queue capacity, helps to prevent data loss. Splitting that processing pipeline to agent and gateway allows to use a PVC for the exporter queue and with that give it a large capacity without the risk that the node file-system fills up.
+The evaluation of the two failure scenarios showed that the OpenTelemetry Collector can have similar guarantees about the prevention of log loss as the current Fluent Bit setup. When using a batch processor, using a persistent output queue and with that increasing the queue capacity, helps to prevent data loss. Splitting that processing pipeline to agent and gateway allows to use a PVC for the exporter queue and with that give it a large capacity without the risk that the node file-system fills up.
 
 During the evaluation, the following potential problems and risks have been identified:
 
