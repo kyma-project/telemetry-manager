@@ -49,7 +49,7 @@ jobs:
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
           GARDENER_K8S_VERSION: ${{ matrix.k8s_version }}
 
-      # Run the load test for traces
+      # Run the load test
       - name: Run Load test
         working_directory: docs/contributor/telemetry-load-test
         matrix:
