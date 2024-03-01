@@ -80,7 +80,7 @@ var LogsMessage = map[string]string{
 	ReasonDaemonSetReady:        "Fluent Bit DaemonSet is ready",
 	ReasonFluentBitDSNotReady:   "Fluent Bit DaemonSet is not ready",
 	ReasonFluentBitDSReady:      "Fluent Bit DaemonSet is ready",
-	ReasonUnsupportedLokiOutput: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://github.com/kyma-project/examples/tree/main/loki",
+	ReasonUnsupportedLokiOutput: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
 	ReasonLogComponentsRunning:  "All log components are running",
 }
 

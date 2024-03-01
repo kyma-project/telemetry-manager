@@ -139,7 +139,8 @@ spec:
                   grafana-loki:
                     description: The grafana-loki output is not supported anymore.
                       For integration with a custom Loki installation, use the `custom`
-                      output and follow [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).
+                      output and follow [Installing a custom Loki stack in Kyma](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README
+                      ).
                     properties:
                       labels:
                         additionalProperties:
