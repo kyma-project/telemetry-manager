@@ -349,6 +349,20 @@ func TestUpdateStatus(t *testing.T) {
 			Status: telemetryv1alpha1.TracePipelineStatus{
 				Conditions: []metav1.Condition{
 					{
+						Type:               conditions.TypeGatewayHealthy,
+						Status:             metav1.ConditionTrue,
+						Reason:             conditions.ReasonDeploymentReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonDeploymentReady, conditions.TracesMessage),
+						LastTransitionTime: metav1.Now(),
+					},
+					{
+						Type:               conditions.TypeConfigurationGenerated,
+						Status:             metav1.ConditionTrue,
+						Reason:             conditions.TypeConfigurationGenerated,
+						Message:            conditions.CommonMessageFor(conditions.TypeConfigurationGenerated, conditions.TracesMessage),
+						LastTransitionTime: metav1.Now(),
+					},
+					{
 						Type:               conditions.TypePending,
 						Status:             metav1.ConditionFalse,
 						Reason:             conditions.ReasonTraceGatewayDeploymentNotReady,

@@ -141,6 +141,20 @@ func TestUpdateStatus(t *testing.T) {
 			Status: telemetryv1alpha1.LogParserStatus{
 				Conditions: []metav1.Condition{
 					{
+						Type:               conditions.TypeAgentHealthy,
+						Status:             metav1.ConditionTrue,
+						Reason:             conditions.ReasonDaemonSetReady,
+						Message:            conditions.CommonMessageFor(conditions.ReasonDaemonSetReady, conditions.LogsMessage),
+						LastTransitionTime: metav1.Now(),
+					},
+					{
+						Type:               conditions.TypeConfigurationGenerated,
+						Status:             metav1.ConditionTrue,
+						Reason:             conditions.ReasonConfigurationGenerated,
+						Message:            conditions.CommonMessageFor(conditions.ReasonConfigurationGenerated, conditions.LogsMessage),
+						LastTransitionTime: metav1.Now(),
+					},
+					{
 						Type:               conditions.TypePending,
 						Status:             metav1.ConditionFalse,
 						Reason:             conditions.ReasonFluentBitDSNotReady,
