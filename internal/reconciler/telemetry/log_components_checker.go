@@ -113,7 +113,7 @@ func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alp
 
 func (l *logComponentsChecker) addReasonPrefix(reason string) string {
 	switch {
-	case reason == conditions.ReasonDaemonSetReady || reason == conditions.ReasonDaemonSetNotReady:
+	case reason == conditions.ReasonDaemonSetNotReady:
 		return "FluentBit" + reason
 	case reason == conditions.ReasonReferencedSecretMissing:
 		return "LogPipeline" + reason

@@ -94,9 +94,9 @@ func (m *metricComponentsChecker) createMessageForReason(pipelines []telemetryv1
 
 func (m *metricComponentsChecker) addReasonPrefix(reason string) string {
 	switch {
-	case reason == conditions.ReasonDeploymentReady || reason == conditions.ReasonDeploymentNotReady:
+	case reason == conditions.ReasonDeploymentNotReady:
 		return "MetricGateway" + reason
-	case reason == conditions.ReasonDaemonSetReady || reason == conditions.ReasonDaemonSetNotReady:
+	case reason == conditions.ReasonDaemonSetNotReady:
 		return "MetricAgent" + reason
 	case reason == conditions.ReasonReferencedSecretMissing:
 		return "MetricPipeline" + reason

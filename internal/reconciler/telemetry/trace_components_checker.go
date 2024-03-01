@@ -104,7 +104,7 @@ func (t *traceComponentsChecker) createMessageForReason(pipelines []telemetryv1a
 
 func (t *traceComponentsChecker) addReasonPrefix(reason string) string {
 	switch {
-	case reason == conditions.ReasonDeploymentReady || reason == conditions.ReasonDeploymentNotReady:
+	case reason == conditions.ReasonDeploymentNotReady:
 		return "TraceGateway" + reason
 	case reason == conditions.ReasonReferencedSecretMissing:
 		return "TracePipeline" + reason
