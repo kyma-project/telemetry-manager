@@ -4,7 +4,7 @@ IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
 
 ENVTEST_K8S_VERSION = 1.27.1
 GARDENER_K8S_VERSION ?= 1.27
-ISTIO_VERSION ?= 1.3.1
+ISTIO_VERSION ?= 1.3.2
 
 # Operating system architecture
 OS_ARCH ?= $(shell uname -m)
