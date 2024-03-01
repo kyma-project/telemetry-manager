@@ -61,8 +61,7 @@ status:
     status: "True"
     type: ConfigurationGenerated
   - lastTransitionTime: "2024-02-28T22:48:24Z"
-    message: '[NOTE: The "Pending" type is deprecated] Fluent Bit DaemonSet is not
-      ready'
+    message: '[NOTE: The "Pending" type is deprecated] Fluent Bit DaemonSet is not ready'
     observedGeneration: 2
     reason: FluentBitDaemonSetNotReady
     status: "False"

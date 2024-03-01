@@ -36,15 +36,13 @@ status:
     status: "True"
     type: ConfigurationGenerated
   - lastTransitionTime: "2024-02-29T01:18:28Z"
-    message: '[NOTE: The "Pending" type is deprecated] Trace gateway Deployment is
-      not ready'
+    message: '[NOTE: The "Pending" type is deprecated] Trace gateway Deployment is not ready'
     observedGeneration: 1
     reason: TraceGatewayDeploymentNotReady
     status: "False"
     type: Pending
   - lastTransitionTime: "2024-02-29T01:18:28Z"
-    message: '[NOTE: The "Running" type is deprecated] Trace gateway Deployment is
-      ready'
+    message: '[NOTE: The "Running" type is deprecated] Trace gateway Deployment is ready'
     observedGeneration: 1
     reason: TraceGatewayDeploymentReady
     status: "True"
