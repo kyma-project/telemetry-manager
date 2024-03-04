@@ -40,6 +40,10 @@ jobs:
 
       - name: Deploy k3d
         run: make provision-test-env deploy
+        
+      - name: Run Load test
+        working-directory: docs/contributor/telemetry-load-test
+        run: ./assets/run-load-test.sh ${{ matrix.argument }}
 
 #      # save gardener kubeconfig to a temp file in order to pass it to the command
 #      - name: Save serviceaccount to file
