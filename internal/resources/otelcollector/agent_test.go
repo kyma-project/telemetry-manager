@@ -76,7 +76,7 @@ func TestApplyAgentResources(t *testing.T) {
 		require.Equal(t, "", podAnnotations["traffic.sidecar.istio.io/includeInboundPorts"])
 		require.Equal(t, "4317", podAnnotations["traffic.sidecar.istio.io/includeOutboundPorts"])
 		require.Equal(t, "8888", podAnnotations["traffic.sidecar.istio.io/excludeInboundPorts"])
-		require.Equal(t, "15090", podAnnotations["traffic.sidecar.istio.io/excludeOutboundPorts"])
+		require.Equal(t, "", podAnnotations["traffic.sidecar.istio.io/includeOutboundIPRanges"])
 
 		//collector container
 		require.Len(t, ds.Spec.Template.Spec.Containers, 1)
