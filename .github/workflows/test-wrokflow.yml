@@ -37,13 +37,21 @@ jobs:
 
       - name: Show changes
         run: cat sec-scanners-config.yaml
+      - name: run jq commamds
+        run: jq
+      - name: run curl command
+        run: curl
+      - name: run helm command
+        run: helm
+      - name: run kubectl command
+        run: kubectl
 
-      - name: Deploy k3d
-        run: make provision-test-env deploy
+      # - name: Deploy k3d
+      #   run: make provision-test-env deploy
         
-      - name: Run Load test
-        working-directory: docs/contributor/telemetry-load-test
-        run: ./assets/run-load-test.sh ${{ matrix.argument }}
+      # - name: Run Load test
+      #   working-directory: docs/contributor/telemetry-load-test
+      #   run: ./assets/run-load-test.sh ${{ matrix.argument }}
 
 #      # save gardener kubeconfig to a temp file in order to pass it to the command
 #      - name: Save serviceaccount to file
