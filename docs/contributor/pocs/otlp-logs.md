@@ -12,7 +12,7 @@ OpenTelemtry Collector should move JSON attributes to the **attributes** map of 
 
 This PoC does not cover logs ingested by the application using the OTLP protocol. We assume that the application already fills the log record fields with the intended values.
 
-## Setup
+## Setup for Log Record Parsing
 
 We created a Helm values file for the `open-telemetry/opentelemetry-collector` chart that parses and transforms container logs in the described way. We use an SAP Cloud Logging instance as the OTLP compliant logging backend. To deploy the setup, follow these steps:
 
