@@ -84,7 +84,7 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 		})
 
 		It("Should have the log pipeline running", func() {
-			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {

@@ -55,14 +55,14 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 		}
 
 		status = metav1.ConditionFalse
-		reason = conditions.ReasonMetricAgentDaemonSetNotReady
+		reason = conditions.ReasonDaemonSetNotReady
 		if healthy {
 			status = metav1.ConditionTrue
-			reason = conditions.ReasonMetricAgentDaemonSetReady
+			reason = conditions.ReasonDaemonSetReady
 		}
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeMetricAgentHealthy, reason, status, pipeline.Generation))
+	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeAgentHealthy, reason, status, pipeline.Generation, conditions.MetricsMessage))
 }
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
@@ -74,18 +74,18 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 	}
 
 	status := metav1.ConditionFalse
-	reason := conditions.ReasonMetricGatewayDeploymentNotReady
+	reason := conditions.ReasonDeploymentNotReady
 	if healthy {
 		status = metav1.ConditionTrue
-		reason = conditions.ReasonMetricGatewayDeploymentReady
+		reason = conditions.ReasonDeploymentReady
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeMetricGatewayHealthy, reason, status, pipeline.Generation))
+	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeGatewayHealthy, reason, status, pipeline.Generation, conditions.MetricsMessage))
 }
 
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, withinPipelineCountLimit bool) {
 	status := metav1.ConditionTrue
-	reason := conditions.ReasonMetricConfigurationGenerated
+	reason := conditions.ReasonConfigurationGenerated
 
 	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
 		status = metav1.ConditionFalse
@@ -97,5 +97,5 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 		reason = conditions.ReasonMaxPipelinesExceeded
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation))
+	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation, conditions.MetricsMessage))
 }

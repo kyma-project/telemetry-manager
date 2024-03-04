@@ -16,6 +16,10 @@ import (
 )
 
 func TestTraceComponentsCheck(t *testing.T) {
+	healthyGatewayCond := metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonDeploymentReady}
+	configGeneratedCond := metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonConfigurationGenerated}
+	runningCondition := metav1.Condition{Type: conditions.TypeRunning, Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady}
+
 	tests := []struct {
 		name                string
 		pipelines           []telemetryv1alpha1.TracePipeline
@@ -35,42 +39,64 @@ func TestTraceComponentsCheck(t *testing.T) {
 		{
 			name: "should be healthy if all pipelines running",
 			pipelines: []telemetryv1alpha1.TracePipeline{
-				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
-				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonTraceGatewayDeploymentNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonTraceGatewayDeploymentNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "True",
-				Reason:  "TraceGatewayDeploymentReady",
-				Message: "Trace gateway Deployment is ready",
+				Reason:  "TraceComponentsRunning",
+				Message: "All trace components are running",
 			},
 		},
 		{
 			name: "should not be healthy if one pipeline refs missing secret",
 			pipelines: []telemetryv1alpha1.TracePipeline{
-				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
-				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(conditions.ReasonReferencedSecretMissing)).Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonTraceGatewayDeploymentNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonReferencedSecretMissing}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonReferencedSecretMissing}).
+					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
 				Status:  "False",
-				Reason:  "ReferencedSecretMissing",
+				Reason:  "TracePipelineReferencedSecretMissing",
 				Message: "One or more referenced Secrets are missing",
 			},
 		},
 		{
 			name: "should not be healthy if one pipeline waiting for gateway",
 			pipelines: []telemetryv1alpha1.TracePipeline{
-				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
-				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady)).Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonTraceGatewayDeploymentNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDeploymentNotReady}).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentNotReady}).
+					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
@@ -81,28 +107,41 @@ func TestTraceComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should ignore pipelines waiting for lock",
+			name: "should not be healthy if max pipelines exceeded",
 			pipelines: []telemetryv1alpha1.TracePipeline{
-				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady), testutils.TraceRunningCondition()).Build(),
-				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(conditions.ReasonMaxPipelinesExceeded)).Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonTraceGatewayDeploymentNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonMaxPipelinesExceeded}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonMaxPipelinesExceeded}).
+					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "TraceComponentsHealthy",
-				Status:  "True",
-				Reason:  "TraceGatewayDeploymentReady",
-				Message: "Trace gateway Deployment is ready",
+				Status:  "False",
+				Reason:  "MaxPipelinesExceeded",
+				Message: "Maximum pipeline count limit exceeded",
 			},
 		},
 		{
 			name: "should prioritize unready gateway reason over missing secret",
 			pipelines: []telemetryv1alpha1.TracePipeline{
-				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(conditions.ReasonTraceGatewayDeploymentNotReady)).Build(),
-				testutils.NewTracePipelineBuilder().WithStatusConditions(
-					testutils.TracePendingCondition(conditions.ReasonReferencedSecretMissing)).Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDeploymentNotReady}).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentNotReady}).
+					Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonReferencedSecretMissing}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonReferencedSecretMissing}).
+					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{

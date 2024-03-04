@@ -15,10 +15,32 @@ apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: LogParser
 metadata:
   name: my-regex-parser
+  generation: 1
 spec:
   parser: |
     Format regex
     Regex ^(?<INT>[^ ]+) (?<FLOAT>[^ ]+) (?<BOOL>[^ ]+) (?<STRING>.+)$
+status:
+  conditions:
+  - lastTransitionTime: "2024-02-29T01:27:08Z"
+    message: Fluent Bit DaemonSet is ready
+    observedGeneration: 1
+    reason: DaemonSetReady
+    status: "True"
+    type: AgentHealthy
+  - lastTransitionTime: "2024-02-29T01:27:08Z"
+    message: '[NOTE: The "Pending" type is deprecated] Fluent Bit DaemonSet is not
+      ready'
+    observedGeneration: 1
+    reason: FluentBitDaemonSetNotReady
+    status: "False"
+    type: Pending
+  - lastTransitionTime: "2024-02-29T01:27:08Z"
+    message: '[NOTE: The "Running" type is deprecated] Fluent Bit DaemonSet is ready'
+    observedGeneration: 1
+    reason: FluentBitDaemonSetReady
+    status: "True"
+    type: Running
 ```
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
@@ -55,3 +77,14 @@ For details, see the [LogParser specification file](https://github.com/kyma-proj
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt) |
 
 <!-- TABLE-END -->
+
+### LogParser Status
+
+The status of the LogParser is determined by the condition type `AgentHealthy`:
+
+> **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
+
+| Condition Type | Condition Status | Condition Reason  | Condition Message                 |
+|----------------|------------------|-------------------|-----------------------------------|
+| AgentHealthy   | True             | DaemonSetReady    | Fluent Bit DaemonSet is ready     |
+| AgentHealthy   | False            | DaemonSetNotReady | Fluent Bit DaemonSet is not ready |

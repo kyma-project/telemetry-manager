@@ -115,8 +115,8 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		})
 
 		It("Should have the trace pipelines running", func() {
-			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
-			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, istiofiedPipelineName)
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, istiofiedPipelineName)
 		})
 
 		It("Trace collector with should answer requests", func() {

@@ -162,7 +162,7 @@ var _ = Describe("Traces Basic", Label("traces"), func() {
 		})
 
 		It("Should have a running pipeline", Label(operationalTest), func() {
-			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should verify end-to-end trace delivery", Label(operationalTest), func() {
