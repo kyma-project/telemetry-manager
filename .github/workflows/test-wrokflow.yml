@@ -38,6 +38,9 @@ jobs:
       - name: Show changes
         run: cat sec-scanners-config.yaml
 
+      - name: Deploy k3d
+        run: make provision-test-env deploy
+
 #      # save gardener kubeconfig to a temp file in order to pass it to the command
 #      - name: Save serviceaccount to file
 #        shell: bash
