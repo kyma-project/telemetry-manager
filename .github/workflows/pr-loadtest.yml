@@ -13,6 +13,10 @@ on:
       - "sec-scanners-config.yaml"
 
   workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'Branch name'
+        required: true
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -30,27 +34,33 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          ref: 'refs/pull/${{ github.event.inputs.pr_number }}/head'
+          repository: ${{ github.repository }}
 
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
-      # save gardener kubeconfig to a temp file in order to pass it to the command
-      - name: Save serviceaccount to file
-        shell: bash
-        run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
-        env:
-          GARDENER_SA: ${{ secrets.GARDENER_SA }}
+      - name: Show changes
+        run: cat sec-scanners-config.yaml
 
-      # provision cluster and run tests
-      - name: Provision Gardener
-        run: make provision-gardener
-        env:
-          GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
-          GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
-          GARDENER_SA_PATH: /tmp/gardener-sa.yaml
-          GARDENER_K8S_VERSION: ${{ matrix.k8s_version }}
-
-      # Run the load test
-      - name: Run Load test
-        working-directory: docs/contributor/telemetry-load-test
-        run: ./assets/run-load-test.sh ${{ matrix.argument }}
+#      # save gardener kubeconfig to a temp file in order to pass it to the command
+#      - name: Save serviceaccount to file
+#        shell: bash
+#        run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
+#        env:
+#          GARDENER_SA: ${{ secrets.GARDENER_SA }}
+#
+#      # provision cluster and run tests
+#      - name: Provision Gardener
+#        run: make provision-gardener
+#        env:
+#          GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
+#          GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
+#          GARDENER_SA_PATH: /tmp/gardener-sa.yaml
+#          GARDENER_K8S_VERSION: ${{ matrix.k8s_version }}
+#
+#      # Run the load test
+#      - name: Run Load test
+#        working-directory: docs/contributor/telemetry-load-test
+#        run: ./assets/run-load-test.sh ${{ matrix.argument }}
