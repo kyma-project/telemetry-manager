@@ -1,4 +1,3 @@
-# Dummy Comment to trigger github action
 module-name: telemetry
 protecode:
   - europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
