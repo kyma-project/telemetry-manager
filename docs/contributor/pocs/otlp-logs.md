@@ -14,7 +14,7 @@ This PoC does not cover logs ingested by the application using the OTLP protocol
 
 ## Setup for Log Record Parsing
 
-We created a Helm values file for the `open-telemetry/opentelemetry-collector` chart that parses and transforms container logs in the described way. We use an SAP Cloud Logging instance as the OTLP compliant logging backend. To deploy the setup, follow these steps:
+We created a Helm values file for the `open-telemetry/opentelemetry-collector` chart that parses and transforms container logs in the described way. We use an SAP Cloud Logging instance as the OTLP-compliant logging backend. To deploy the setup, follow these steps:
 
 1. Create an SAP Cloud Logging instance. Store the endpoint, client certificate, and key under the keys `ingest-otlp-endpoint`, `ingest-otlp-cert`, and `ingest-otlp-key` respectively, in a Kubernetes Secret within the `otel-logging` namespace.
 
