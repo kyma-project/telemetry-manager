@@ -1,7 +1,6 @@
 name: Manual Load Test
 
-env:
-  IMG: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.number }}
+
 
 # Controls when the action will run. Workflow runs when manually triggered using the UI
 # or API.
@@ -11,7 +10,9 @@ on:
       pr_number:
         description: 'Pull Request Number'
         required: true
-
+env:
+  IMG: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.inputs.pr_number }}
+  
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "greet"
