@@ -41,6 +41,9 @@ jobs:
 
       - name: Deploy k3d
         run: make provision-test-env deploy
+
+      - name: Deploy Istio Module
+        run: ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
         
       - name: Run Load test
         working-directory: docs/contributor/telemetry-load-test
