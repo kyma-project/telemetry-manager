@@ -270,8 +270,9 @@ func verifyNetworkPolicy(ctx context.Context, t *testing.T, client client.Client
 
 func makeSelfMonitorConfig() *Config {
 	return &Config{
-		BaseName:  name,
-		Namespace: namespace,
+		BaseName:          name,
+		Namespace:         namespace,
+		SelfMonitorConfig: cfg,
 		Deployment: DeploymentConfig{
 			Image:         "foo.bar",
 			CPULimit:      baseCPULimit,
