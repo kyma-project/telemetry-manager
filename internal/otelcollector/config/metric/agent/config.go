@@ -1,8 +1,9 @@
 package agent
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	"time"
+
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 type Config struct {
