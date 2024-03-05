@@ -38,14 +38,6 @@ jobs:
 
       - name: Show changes
         run: cat sec-scanners-config.yaml
-      - name: run jq commamds
-        run: jq -V
-      - name: run curl command
-        run: curl --version
-      - name: run helm command
-        run: helm version
-      - name: run kubectl command
-        run: kubectl version
 
       - name: Deploy k3d
         run: make provision-test-env deploy
