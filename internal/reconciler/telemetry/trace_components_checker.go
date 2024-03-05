@@ -24,8 +24,6 @@ func (t *traceComponentsChecker) Check(ctx context.Context, telemetryInDeletion 
 		return &metav1.Condition{}, fmt.Errorf("failed to get list of TracePipelines: %w", err)
 	}
 
-	// Remove "Running" and "Pending" conditions, since the Telemetry status shouldn't depend on these deprecated conditions
-	t.removePendingAndRunningConditions(tracePipelines.Items)
 	reason := t.determineReason(tracePipelines.Items, telemetryInDeletion)
 	status := t.determineConditionStatus(reason)
 	message := t.createMessageForReason(tracePipelines.Items, reason)
@@ -39,13 +37,6 @@ func (t *traceComponentsChecker) Check(ctx context.Context, telemetryInDeletion 
 		Message: message,
 	}, nil
 
-}
-
-func (t *traceComponentsChecker) removePendingAndRunningConditions(pipelines []telemetryv1alpha1.TracePipeline) {
-	for i := range pipelines {
-		meta.RemoveStatusCondition(&pipelines[i].Status.Conditions, conditions.TypePending)
-		meta.RemoveStatusCondition(&pipelines[i].Status.Conditions, conditions.TypeRunning)
-	}
 }
 
 func (t *traceComponentsChecker) determineReason(pipelines []telemetryv1alpha1.TracePipeline, telemetryInDeletion bool) string {
@@ -90,7 +81,7 @@ func (t *traceComponentsChecker) determineConditionStatus(reason string) metav1.
 
 func (t *traceComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.TracePipeline, reason string) string {
 	if reason != conditions.ReasonResourceBlocksDeletion {
-		return conditions.CommonMessageFor(reason, conditions.TracesMessage)
+		return conditions.MessageFor(reason, conditions.TracesMessage)
 
 	}
 

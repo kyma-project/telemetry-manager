@@ -30,8 +30,6 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 		return &metav1.Condition{}, fmt.Errorf("failed to get list of LogParsers: %w", err)
 	}
 
-	// Remove "Running" and "Pending" conditions, since the Telemetry status shouldn't depend on these deprecated conditions
-	l.removePendingAndRunningConditions(logPipelines.Items)
 	reason := l.determineReason(logPipelines.Items, logParsers.Items, telemetryInDeletion)
 	status := l.determineConditionStatus(reason)
 	message := l.createMessageForReason(logPipelines.Items, logParsers.Items, reason)
@@ -44,13 +42,6 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 		Reason:  reasonWithPrefix,
 		Message: message,
 	}, nil
-}
-
-func (l *logComponentsChecker) removePendingAndRunningConditions(pipelines []telemetryv1alpha1.LogPipeline) {
-	for i := range pipelines {
-		meta.RemoveStatusCondition(&pipelines[i].Status.Conditions, conditions.TypePending)
-		meta.RemoveStatusCondition(&pipelines[i].Status.Conditions, conditions.TypeRunning)
-	}
 }
 
 func (l *logComponentsChecker) determineReason(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, telemetryInDeletion bool) string {
@@ -95,7 +86,7 @@ func (l *logComponentsChecker) determineConditionStatus(reason string) metav1.Co
 
 func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, reason string) string {
 	if reason != conditions.ReasonResourceBlocksDeletion {
-		return conditions.CommonMessageFor(reason, conditions.LogsMessage)
+		return conditions.MessageFor(reason, conditions.LogsMessage)
 	}
 
 	return generateDeletionBlockedMessage(blockingResources{

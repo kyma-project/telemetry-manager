@@ -89,14 +89,14 @@ func New(condType, reason string, status metav1.ConditionStatus, generation int6
 		Type:               condType,
 		Status:             status,
 		Reason:             reason,
-		Message:            CommonMessageFor(reason, messageMap),
+		Message:            MessageFor(reason, messageMap),
 		ObservedGeneration: generation,
 	}
 }
 
-// CommonMessageFor returns a human-readable message corresponding to a given reason.
+// MessageFor returns a human-readable message corresponding to a given reason.
 // In more advanced scenarios, you may craft custom messages tailored to specific use cases.
-func CommonMessageFor(reason string, messageMap map[string]string) string {
+func MessageFor(reason string, messageMap map[string]string) string {
 	if condMessage, found := commonMessage[reason]; found {
 		return condMessage
 	}
