@@ -11,6 +11,23 @@ type Config struct {
 	ScrapeConfigs  []ScrapeConfig `yaml:"scrape_configs,omitempty"`
 }
 
+type GlobalConfig struct {
+	ScraperInterval    time.Duration `yaml:"scrape_interval"`
+	EvaluationInterval time.Duration `yaml:"evaluation_interval"`
+}
+
+type AlertingConfig struct {
+	AlertManagers []AlertManagerConfig `yaml:"alertmanagers"`
+}
+
+type AlertManagerConfig struct {
+	StaticConfigs []AlertManagerStaticConfig `yaml:"static_configs"`
+}
+
+type AlertManagerStaticConfig struct {
+	Targets []string `yaml:"targets"`
+}
+
 type ScrapeConfig struct {
 	JobName              string          `yaml:"job_name"`
 	SampleLimit          int             `yaml:"sample_limit,omitempty"`
@@ -47,20 +64,3 @@ type RelabelAction string
 const (
 	Keep RelabelAction = "keep"
 )
-
-type GlobalConfig struct {
-	ScraperInterval    time.Duration `yaml:"scrape_interval"`
-	EvaluationInterval time.Duration `yaml:"evaluation_interval"`
-}
-
-type AlertingConfig struct {
-	AlertManagers []AlertManagerConfig `yaml:"alertmanagers"`
-}
-
-type AlertManagerConfig struct {
-	StaticConfigs []AlertManagerStaticConfig `yaml:"static_configs"`
-}
-
-type AlertManagerStaticConfig struct {
-	Targets []string `yaml:"targets"`
-}
