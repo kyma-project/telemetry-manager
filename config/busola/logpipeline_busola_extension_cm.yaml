@@ -27,7 +27,7 @@ data:
           negative:
             - 'true'
     body:
-      - source: status.conditions
+      - source: $filter(status.conditions, function ($v) { $v.type != "Pending" and $v.type != "Running" })
         widget: Table
         name: Reconciliation Conditions
         children:
@@ -434,7 +434,7 @@ data:
         negative:
           - 'true'
     - name: Status
-      source: status.conditions
+      source: $filter(status.conditions, function ($v) { $v.type != "Pending" and $v.type != "Running" })
       widget: Columns
       children:
         - name: Type
