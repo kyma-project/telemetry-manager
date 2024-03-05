@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-project/telemetry-manager/internal/prometheus"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
 
@@ -17,33 +16,33 @@ func MakeConfig() monitoringConfig {
 	return promConfig
 }
 
-func makeGlobalConfig() prometheus.GlobalConfig {
-	return prometheus.GlobalConfig{
+func makeGlobalConfig() GlobalConfig {
+	return GlobalConfig{
 		ScraperInterval:    10 * time.Second,
 		EvaluationInterval: 10 * time.Second,
 	}
 }
 
-func makeAlertConfig() prometheus.AlertingConfig {
-	return prometheus.AlertingConfig{
-		AlertManagers: []prometheus.AlertManagerConfig{{
-			StaticConfigs: []prometheus.StaticConfig{{
+func makeAlertConfig() AlertingConfig {
+	return AlertingConfig{
+		AlertManagers: []AlertManagerConfig{{
+			StaticConfigs: []AlertManagerStaticConfig{{
 				Targets: []string{fmt.Sprintf("localhost:%d", ports.AlertingPort)},
 			}},
 		}},
 	}
 }
 
-func makeScrapeConfig() []prometheus.ScrapeConfig {
-	return []prometheus.ScrapeConfig{
+func makeScrapeConfig() []ScrapeConfig {
+	return []ScrapeConfig{
 		{
 			JobName: "kubernetes-service-endpoints",
-			RelabelConfigs: []prometheus.RelabelConfig{{
+			RelabelConfigs: []RelabelConfig{{
 				SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scrape"},
 				Regex:        "true",
-				Action:       prometheus.Keep,
+				Action:       Keep,
 			}},
-			KubernetesDiscoveryConfigs: []prometheus.KubernetesDiscoveryConfig{{Role: prometheus.RoleEndpoints}},
+			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RoleEndpoints}},
 		},
 	}
 }

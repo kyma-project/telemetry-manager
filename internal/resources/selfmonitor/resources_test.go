@@ -13,8 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 )
 
 const (
@@ -270,12 +268,11 @@ func verifyNetworkPolicy(ctx context.Context, t *testing.T, client client.Client
 	require.Equal(t, expectedNamespaceSelector, np.Spec.Egress[0].To[0].NamespaceSelector.MatchLabels)
 }
 
-func makeSelfMonitorConfig() *config.SelfMonitor {
-	selfMonConfig := &config.SelfMonitor{
-		BaseName:         name,
-		Namespace:        namespace,
-		MonitoringConfig: cfg,
-		Deployment: config.DeploymentConfig{
+func makeSelfMonitorConfig() *Config {
+	return &Config{
+		BaseName:  name,
+		Namespace: namespace,
+		Deployment: DeploymentConfig{
 			Image:         "foo.bar",
 			CPULimit:      baseCPULimit,
 			CPURequest:    baseCPURequest,
@@ -283,5 +280,4 @@ func makeSelfMonitorConfig() *config.SelfMonitor {
 			MemoryRequest: baseMemoryRequest,
 		},
 	}
-	return selfMonConfig
 }

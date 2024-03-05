@@ -61,7 +61,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
@@ -73,6 +72,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	//nolint:gosec // pprof package is required for performance analysis.
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
+	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 )
 
 var (
@@ -592,11 +592,11 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 	return telemetry.SelfMonitorConfig{
 		Enabled: enableSelfMonitor,
-		Config: config.SelfMonitor{
+		Config: selfmonitor.Config{
 			BaseName:  "telemetry-self-monitor",
 			Namespace: telemetryNamespace,
 
-			Deployment: config.DeploymentConfig{
+			Deployment: selfmonitor.DeploymentConfig{
 				Image:             selfMonitorImage,
 				PriorityClassName: selfMonitorPriorityClass,
 				CPULimit:          resource.MustParse(selfMonitorCPULimit),
