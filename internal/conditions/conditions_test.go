@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestCommonMessageFor(t *testing.T) {
+func TestMessageFor(t *testing.T) {
 	t.Run("should return correct message which is common to all pipelines", func(t *testing.T) {
 		message := MessageFor(ReasonReferencedSecretMissing, LogsMessage)
 		require.Equal(t, commonMessage[ReasonReferencedSecretMissing], message)
