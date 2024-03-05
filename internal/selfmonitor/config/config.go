@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type monitoringConfig struct {
+type Config struct {
 	GlobalConfig   GlobalConfig   `yaml:"global"`
 	AlertingConfig AlertingConfig `yaml:"alerting,omitempty"`
 	RuleFiles      []string       `yaml:"rule_files,omitempty"`

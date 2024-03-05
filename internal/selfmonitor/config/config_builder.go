@@ -7,8 +7,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
 
-func MakeConfig() monitoringConfig {
-	promConfig := monitoringConfig{}
+func MakeConfig() Config {
+	promConfig := Config{}
 	promConfig.GlobalConfig = makeGlobalConfig()
 	promConfig.AlertingConfig = makeAlertConfig()
 	promConfig.RuleFiles = []string{"/etc/prometheus/prometheus.rules"}
