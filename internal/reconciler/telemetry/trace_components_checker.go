@@ -90,7 +90,7 @@ func (t *traceComponentsChecker) determineConditionStatus(reason string) metav1.
 
 func (t *traceComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.TracePipeline, reason string) string {
 	if reason != conditions.ReasonResourceBlocksDeletion {
-		return conditions.CommonMessageFor(reason, conditions.TracesMessage)
+		return conditions.MessageFor(reason, conditions.TracesMessage)
 
 	}
 

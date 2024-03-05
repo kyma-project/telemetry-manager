@@ -11,23 +11,23 @@ import (
 
 func TestCommonMessageFor(t *testing.T) {
 	t.Run("should return correct message which is common to all pipelines", func(t *testing.T) {
-		message := CommonMessageFor(ReasonReferencedSecretMissing, LogsMessage)
+		message := MessageFor(ReasonReferencedSecretMissing, LogsMessage)
 		require.Equal(t, commonMessage[ReasonReferencedSecretMissing], message)
 	})
 
 	t.Run("should return correct message which is unique to each pipeline", func(t *testing.T) {
-		logsDaemonSetNotReadyMessage := CommonMessageFor(ReasonDaemonSetNotReady, LogsMessage)
+		logsDaemonSetNotReadyMessage := MessageFor(ReasonDaemonSetNotReady, LogsMessage)
 		require.Equal(t, LogsMessage[ReasonDaemonSetNotReady], logsDaemonSetNotReadyMessage)
 
-		tracesDeploymentNotReadyMessage := CommonMessageFor(ReasonDeploymentNotReady, TracesMessage)
+		tracesDeploymentNotReadyMessage := MessageFor(ReasonDeploymentNotReady, TracesMessage)
 		require.Equal(t, TracesMessage[ReasonDeploymentNotReady], tracesDeploymentNotReadyMessage)
 
-		metricsDeploymentNotReadyMessage := CommonMessageFor(ReasonDeploymentNotReady, MetricsMessage)
+		metricsDeploymentNotReadyMessage := MessageFor(ReasonDeploymentNotReady, MetricsMessage)
 		require.Equal(t, MetricsMessage[ReasonDeploymentNotReady], metricsDeploymentNotReadyMessage)
 	})
 
 	t.Run("should return empty message for reasons which do not have a dedicated message", func(t *testing.T) {
-		metricsAgentNotRequiredMessage := CommonMessageFor(ReasonMetricAgentNotRequired, MetricsMessage)
+		metricsAgentNotRequiredMessage := MessageFor(ReasonMetricAgentNotRequired, MetricsMessage)
 		require.Equal(t, "", metricsAgentNotRequiredMessage)
 	})
 }
@@ -44,7 +44,7 @@ func TestSetPendingCondition(t *testing.T) {
 		require.Equal(t, TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, reason, pendingCond.Reason)
-		pendingCondMsg := PendingTypeDeprecationMsg + CommonMessageFor(reason, LogsMessage)
+		pendingCondMsg := PendingTypeDeprecationMsg + MessageFor(reason, LogsMessage)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
@@ -56,14 +56,14 @@ func TestSetPendingCondition(t *testing.T) {
 				Type:               TypePending,
 				Status:             metav1.ConditionFalse,
 				Reason:             ReasonFluentBitDSNotReady,
-				Message:            PendingTypeDeprecationMsg + CommonMessageFor(ReasonFluentBitDSNotReady, LogsMessage),
+				Message:            PendingTypeDeprecationMsg + MessageFor(ReasonFluentBitDSNotReady, LogsMessage),
 				LastTransitionTime: metav1.Now(),
 			},
 			{
 				Type:               TypeRunning,
 				Status:             metav1.ConditionTrue,
 				Reason:             ReasonFluentBitDSReady,
-				Message:            RunningTypeDeprecationMsg + CommonMessageFor(ReasonFluentBitDSReady, LogsMessage),
+				Message:            RunningTypeDeprecationMsg + MessageFor(ReasonFluentBitDSReady, LogsMessage),
 				LastTransitionTime: metav1.Now(),
 			},
 		}
@@ -80,7 +80,7 @@ func TestSetPendingCondition(t *testing.T) {
 		require.Equal(t, TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, reason, pendingCond.Reason)
-		pendingCondMsg := PendingTypeDeprecationMsg + CommonMessageFor(reason, LogsMessage)
+		pendingCondMsg := PendingTypeDeprecationMsg + MessageFor(reason, LogsMessage)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
@@ -94,7 +94,7 @@ func TestSetRunningCondition(t *testing.T) {
 				Type:               TypePending,
 				Status:             metav1.ConditionTrue,
 				Reason:             ReasonFluentBitDSNotReady,
-				Message:            PendingTypeDeprecationMsg + CommonMessageFor(ReasonFluentBitDSNotReady, LogsMessage),
+				Message:            PendingTypeDeprecationMsg + MessageFor(ReasonFluentBitDSNotReady, LogsMessage),
 				LastTransitionTime: metav1.Now(),
 			},
 		}
@@ -108,7 +108,7 @@ func TestSetRunningCondition(t *testing.T) {
 		require.Equal(t, TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionFalse, pendingCond.Status)
 		require.Equal(t, ReasonFluentBitDSNotReady, pendingCond.Reason)
-		pendingCondMsg := PendingTypeDeprecationMsg + CommonMessageFor(ReasonFluentBitDSNotReady, LogsMessage)
+		pendingCondMsg := PendingTypeDeprecationMsg + MessageFor(ReasonFluentBitDSNotReady, LogsMessage)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
@@ -118,7 +118,7 @@ func TestSetRunningCondition(t *testing.T) {
 		require.Equal(t, TypeRunning, runningCond.Type)
 		require.Equal(t, metav1.ConditionTrue, runningCond.Status)
 		require.Equal(t, reason, runningCond.Reason)
-		runningCondMsg := RunningTypeDeprecationMsg + CommonMessageFor(reason, LogsMessage)
+		runningCondMsg := RunningTypeDeprecationMsg + MessageFor(reason, LogsMessage)
 		require.Equal(t, runningCondMsg, runningCond.Message)
 		require.Equal(t, generation, runningCond.ObservedGeneration)
 		require.NotEmpty(t, runningCond.LastTransitionTime)

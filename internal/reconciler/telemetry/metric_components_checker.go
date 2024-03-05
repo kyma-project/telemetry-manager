@@ -81,7 +81,7 @@ func (m *metricComponentsChecker) determineConditionStatus(reason string) metav1
 
 func (m *metricComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.MetricPipeline, reason string) string {
 	if reason != conditions.ReasonResourceBlocksDeletion {
-		return conditions.CommonMessageFor(reason, conditions.MetricsMessage)
+		return conditions.MessageFor(reason, conditions.MetricsMessage)
 	}
 
 	return generateDeletionBlockedMessage(blockingResources{
