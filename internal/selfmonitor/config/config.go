@@ -62,5 +62,7 @@ type RelabelConfig struct {
 type RelabelAction string
 
 const (
-	Keep RelabelAction = "keep"
+	Keep    RelabelAction = "keep"
+	Drop    RelabelAction = "drop"
+	Replace RelabelAction = "replace"
 )
