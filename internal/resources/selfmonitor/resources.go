@@ -232,8 +232,8 @@ func makeConfigMap(name types.NamespacedName, config *Config) *corev1.ConfigMap 
 			Labels:    defaultLabels(name.Name),
 		},
 		Data: map[string]string{
-			"prometheus.yml":       config.SelfMonitorConfig,
-			"prometheus.rules.yml": config.AlertRules,
+			"prometheus.yml":     config.SelfMonitorConfig,
+			"alerting_rules.yml": config.AlertRules,
 		},
 	}
 }

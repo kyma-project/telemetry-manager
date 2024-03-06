@@ -11,7 +11,7 @@ func MakeConfig() Config {
 	promConfig := Config{}
 	promConfig.GlobalConfig = makeGlobalConfig()
 	promConfig.AlertingConfig = makeAlertConfig()
-	promConfig.RuleFiles = []string{"/etc/prometheus/prometheus.rules"}
+	promConfig.RuleFiles = []string{"/etc/prometheus/alerting_rules.yml"}
 	promConfig.ScrapeConfigs = makeScrapeConfig()
 	return promConfig
 }
