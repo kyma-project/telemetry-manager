@@ -41,20 +41,6 @@ func withEnvVarFromSource(envVarName, fieldPath string) podSpecOption {
 	}
 }
 
-func withPriorityClass(priorityClassName string) podSpecOption {
-	return func(pod *corev1.PodSpec) {
-		pod.PriorityClassName = priorityClassName
-	}
-}
-
-func withResources(resources corev1.ResourceRequirements) podSpecOption {
-	return func(pod *corev1.PodSpec) {
-		for i := range pod.Containers {
-			pod.Containers[i].Resources = resources
-		}
-	}
-}
-
 func withVolumeMount(volumeMount corev1.VolumeMount) podSpecOption {
 	return func(pod *corev1.PodSpec) {
 		for i := range pod.Containers {

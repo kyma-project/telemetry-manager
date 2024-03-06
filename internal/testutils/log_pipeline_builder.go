@@ -8,15 +8,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
 )
 
 type LogPipelineBuilder struct {
 	randSource rand.Source
 
-	name string
-
-	conditions []metav1.Condition
+	name             string
+	statusConditions []metav1.Condition
 }
 
 func NewLogPipelineBuilder() *LogPipelineBuilder {
@@ -30,26 +28,8 @@ func (b *LogPipelineBuilder) WithName(name string) *LogPipelineBuilder {
 	return b
 }
 
-func LogPendingCondition(reason string) metav1.Condition {
-	return metav1.Condition{
-		Type:    conditions.TypePending,
-		Status:  metav1.ConditionTrue,
-		Reason:  reason,
-		Message: conditions.CommonMessageFor(reason),
-	}
-}
-
-func LogRunningCondition() metav1.Condition {
-	return metav1.Condition{
-		Type:    conditions.TypeRunning,
-		Status:  metav1.ConditionTrue,
-		Reason:  conditions.ReasonFluentBitDSReady,
-		Message: conditions.CommonMessageFor(conditions.ReasonFluentBitDSReady),
-	}
-}
-
-func (b *LogPipelineBuilder) WithStatusConditions(conditions ...metav1.Condition) *LogPipelineBuilder {
-	b.conditions = conditions
+func (b *LogPipelineBuilder) WithStatusCondition(cond metav1.Condition) *LogPipelineBuilder {
+	b.statusConditions = append(b.statusConditions, cond)
 	return b
 }
 
@@ -64,7 +44,7 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{},
 		Status: telemetryv1alpha1.LogPipelineStatus{
-			Conditions: b.conditions,
+			Conditions: b.statusConditions,
 		},
 	}
 }

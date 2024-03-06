@@ -52,7 +52,7 @@ func keepIfContainerWithEnvoyPort() RelabelConfig {
 	}
 }
 
-// inferSchemeFromIstioInjectedLabel configures the default scraping scheme to HTTPS
+// InferSchemeFromIstioInjectedLabel configures the default scraping scheme to HTTPS
 // based on the presence of the security.istio.io/tlsMode label in a Pod. This label
 // is automatically added by Istio's MutatingWebhook when a sidecar is injected.
 //

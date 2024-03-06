@@ -26,8 +26,8 @@ func MetricPipelineShouldBeHealthy(ctx context.Context, k8sClient client.Client,
 		var pipeline telemetryv1alpha1.MetricPipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeMetricGatewayHealthy)).To(BeTrue())
-		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeMetricAgentHealthy)).To(BeTrue())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)).To(BeTrue())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeAgentHealthy)).To(BeTrue())
 		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

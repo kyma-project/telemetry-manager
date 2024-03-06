@@ -32,7 +32,7 @@ type LogParserSpec struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:resource:scope=Cluster
 //+kubebuilder:subresource:status
-//+kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.conditions[-1].type`
+//+kubebuilder:printcolumn:name="Agent Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="AgentHealthy")].status`
 //+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:deprecatedversion:warning="The LogParser API is deprecated. Instead, log in JSON format and use the JSON parsing feature of the LogPipeline"
 

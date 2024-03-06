@@ -51,10 +51,10 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricGatewayHealthy)
-		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricGatewayHealthy)
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
-		require.Equal(t, conditions.ReasonMetricGatewayDeploymentNotReady, cond.Reason)
+		require.Equal(t, conditions.ReasonDeploymentNotReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, gatewayProberMock)
 	})
@@ -83,10 +83,10 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricGatewayHealthy)
-		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricGatewayHealthy)
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
-		require.Equal(t, conditions.ReasonMetricGatewayDeploymentNotReady, cond.Reason)
+		require.Equal(t, conditions.ReasonDeploymentNotReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, gatewayProberMock)
 	})
@@ -115,10 +115,10 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricGatewayHealthy)
-		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricGatewayHealthy)
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeGatewayHealthy)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionTrue, cond.Status)
-		require.Equal(t, conditions.ReasonMetricGatewayDeploymentReady, cond.Reason)
+		require.Equal(t, conditions.ReasonDeploymentReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, gatewayProberMock)
 	})
@@ -150,10 +150,10 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricAgentHealthy)
-		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricAgentHealthy)
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
-		require.Equal(t, conditions.ReasonMetricAgentDaemonSetNotReady, cond.Reason)
+		require.Equal(t, conditions.ReasonDaemonSetNotReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, agentProberMock)
 	})
@@ -185,10 +185,10 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricAgentHealthy)
-		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricAgentHealthy)
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
-		require.Equal(t, conditions.ReasonMetricAgentDaemonSetNotReady, cond.Reason)
+		require.Equal(t, conditions.ReasonDaemonSetNotReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, agentProberMock)
 	})
@@ -220,10 +220,10 @@ func TestUpdateStatus(t *testing.T) {
 		var updatedPipeline telemetryv1alpha1.MetricPipeline
 		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
-		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeMetricAgentHealthy)
-		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeMetricAgentHealthy)
+		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeAgentHealthy)
+		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeAgentHealthy)
 		require.Equal(t, metav1.ConditionTrue, cond.Status)
-		require.Equal(t, conditions.ReasonMetricAgentDaemonSetReady, cond.Reason)
+		require.Equal(t, conditions.ReasonDaemonSetReady, cond.Reason)
 
 		mock.AssertExpectationsForObjects(t, agentProberMock)
 	})
@@ -258,7 +258,7 @@ func TestUpdateStatus(t *testing.T) {
 		cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
 		require.Equal(t, metav1.ConditionTrue, cond.Status)
-		require.Equal(t, conditions.ReasonMetricConfigurationGenerated, cond.Reason)
+		require.Equal(t, conditions.ReasonConfigurationGenerated, cond.Reason)
 	})
 
 	t.Run("referenced secret missing", func(t *testing.T) {
@@ -292,7 +292,7 @@ func TestUpdateStatus(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
-		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
+		gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
 			Client:        fakeClient,

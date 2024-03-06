@@ -9,6 +9,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+type podSpecOption = func(pod *corev1.PodSpec)
+
 func MakeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 	serviceAccount := corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
@@ -76,6 +78,20 @@ func MakeNetworkPolicy(name types.NamespacedName, allowedPorts []int32, labels m
 				},
 			},
 		},
+	}
+}
+
+func WithPriorityClass(priorityClassName string) podSpecOption {
+	return func(pod *corev1.PodSpec) {
+		pod.PriorityClassName = priorityClassName
+	}
+}
+
+func WithResources(resources corev1.ResourceRequirements) podSpecOption {
+	return func(pod *corev1.PodSpec) {
+		for i := range pod.Containers {
+			pod.Containers[i].Resources = resources
+		}
 	}
 }
 

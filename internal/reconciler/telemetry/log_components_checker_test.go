@@ -16,6 +16,10 @@ import (
 )
 
 func TestLogComponentsCheck(t *testing.T) {
+	healthyAgentCond := metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonDaemonSetReady}
+	configGeneratedCond := metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonConfigurationGenerated}
+	runningCondition := metav1.Condition{Type: conditions.TypeRunning, Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady}
+
 	tests := []struct {
 		name                string
 		pipelines           []telemetryv1alpha1.LogPipeline
@@ -36,42 +40,64 @@ func TestLogComponentsCheck(t *testing.T) {
 		{
 			name: "should be healthy if all pipelines running",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
-				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "True",
-				Reason:  "FluentBitDaemonSetReady",
-				Message: "Fluent Bit DaemonSet is ready",
+				Reason:  "LogComponentsRunning",
+				Message: "All log components are running",
 			},
 		},
 		{
 			name: "should not be healthy if one pipeline refs missing secret",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
-				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonReferencedSecretMissing)).Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonReferencedSecretMissing}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonReferencedSecretMissing}).
+					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
-				Reason:  "ReferencedSecretMissing",
+				Reason:  "LogPipelineReferencedSecretMissing",
 				Message: "One or more referenced Secrets are missing",
 			},
 		},
 		{
-			name: "should not be healthy if one pipeline waiting for gateway",
+			name: "should not be healthy if one pipeline waiting for fluent bit",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
-				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady)).Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSNotReady}).
+					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
@@ -84,42 +110,39 @@ func TestLogComponentsCheck(t *testing.T) {
 		{
 			name: "should not be healthy if one pipeline has Loki output defined",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
-				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonUnsupportedLokiOutput)).Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonUnsupportedLokiOutput}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonUnsupportedLokiOutput}).
+					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
 				Reason:  "UnsupportedLokiOutput",
-				Message: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://github.com/kyma-project/examples/tree/main/loki",
+				Message: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
 			},
 		},
 		{
-			name: "should ignore pipelines waiting for lock",
+			name: "should prioritize unready fluent bit reason over missing secret",
 			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady), testutils.LogRunningCondition()).Build(),
-				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonMaxPipelinesExceeded)).Build(),
-			},
-			telemetryInDeletion: false,
-			expectedCondition: &metav1.Condition{
-				Type:    "LogComponentsHealthy",
-				Status:  "True",
-				Reason:  "FluentBitDaemonSetReady",
-				Message: "Fluent Bit DaemonSet is ready",
-			},
-		},
-		{
-			name: "should prioritize unready gateway reason over missing secret",
-			pipelines: []telemetryv1alpha1.LogPipeline{
-				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonFluentBitDSNotReady)).Build(),
-				testutils.NewLogPipelineBuilder().WithStatusConditions(
-					testutils.LogPendingCondition(conditions.ReasonReferencedSecretMissing)).Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSNotReady}).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonReferencedSecretMissing}).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonReferencedSecretMissing}).
+					Build(),
 			},
 			telemetryInDeletion: false,
 			expectedCondition: &metav1.Condition{

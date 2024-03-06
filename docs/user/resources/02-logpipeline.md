@@ -15,6 +15,7 @@ apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: LogPipeline
 metadata:
   name: custom-fluentd
+  generation: 2
 spec:
   input:
     application:
@@ -47,11 +48,29 @@ spec:
             namespace: default
 status:
   conditions:
-  - lastTransitionTime: "2022-11-25T12:38:36Z"
-    reason: FluentBitDaemonSetRestarted
+  - lastTransitionTime: "2024-02-28T22:48:24Z"
+    message: Fluent Bit DaemonSet is ready
+    observedGeneration: 2
+    reason: DaemonSetReady
+    status: "True"
+    type: AgentHealthy
+  - lastTransitionTime: "2024-02-28T22:48:11Z"
+    message: ""
+    observedGeneration: 2
+    reason: ConfigurationGenerated
+    status: "True"
+    type: ConfigurationGenerated
+  - lastTransitionTime: "2024-02-28T22:48:24Z"
+    message: '[NOTE: The "Pending" type is deprecated] Fluent Bit DaemonSet is not ready'
+    observedGeneration: 2
+    reason: FluentBitDaemonSetNotReady
+    status: "False"
     type: Pending
-  - lastTransitionTime: "2022-11-25T12:39:26Z"
-    reason: FluentBitDaemonSetRestartCompleted
+  - lastTransitionTime: "2024-02-28T22:48:24Z"
+    message: '[NOTE: The "Running" type is deprecated] Fluent Bit DaemonSet is ready'
+    observedGeneration: 2
+    reason: FluentBitDaemonSetReady
+    status: "True"
     type: Running
 ```
 
@@ -90,7 +109,7 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **input.&#x200b;application.&#x200b;namespaces.&#x200b;system**  | boolean | Set to `true` if collecting from all Namespaces must also include the system Namespaces like kube-system, istio-system, and kyma-system. |
 | **output**  | object | [Fluent Bit output](https://docs.fluentbit.io/manual/pipeline/outputs) where you want to push the logs. Only one output can be specified. |
 | **output.&#x200b;custom**  | string | Defines a custom output in the Fluent Bit syntax. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode. |
-| **output.&#x200b;grafana-loki**  | object | The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki). |
+| **output.&#x200b;grafana-loki**  | object | The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README ). |
 | **output.&#x200b;grafana-loki.&#x200b;labels**  | map\[string\]string | Labels to set for each log record. |
 | **output.&#x200b;grafana-loki.&#x200b;removeKeys**  | \[\]string | Attributes to be removed from a log record. |
 | **output.&#x200b;grafana-loki.&#x200b;url**  | object | Grafana Loki URL. |
@@ -173,3 +192,20 @@ For details, see the [LogPipeline specification file](https://github.com/kyma-pr
 | **unsupportedMode**  | boolean | Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode). |
 
 <!-- TABLE-END -->
+
+### LogPipeline Status
+
+The status of the LogPipeline is determined by the condition types `AgentHealthy` and `ConfigurationGenerated`:
+
+> **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
+
+| Condition Type         | Condition Status | Condition Reason        | Condition Message                                                                                                                                                                                          |
+|------------------------|------------------|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| AgentHealthy           | True             | DaemonSetReady          | Fluent Bit DaemonSet is ready                                                                                                                                                                              |
+| AgentHealthy           | False            | DaemonSetNotReady       | Fluent Bit DaemonSet is not ready                                                                                                                                                                          |
+| ConfigurationGenerated | True             | ConfigurationGenerated  |                                                                                                                                                                                                            |
+| ConfigurationGenerated | False            | ReferencedSecretMissing | One or more referenced Secrets are missing                                                                                                                                                                 |
+| ConfigurationGenerated | False            | UnsupportedLokiOutput   | grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README |
+
+
+

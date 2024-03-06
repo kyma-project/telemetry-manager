@@ -29,6 +29,8 @@ override:
     path: ^internal/resources/otelcollector$
   - threshold: 86
     path: ^internal/webhookcert$
+  - threshold: 75
+    path: ^internal/resources/selfmonitor$
 
 # Holds regexp rules which will exclude matched files or packages from coverage statistics
 exclude:

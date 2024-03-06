@@ -8,10 +8,13 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -64,8 +67,8 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelines.First())
-			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelines.Second())
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelines.First())
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelines.Second())
 		})
 		It("Should have a trace backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName1, Namespace: mockNs})
@@ -115,20 +118,37 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 
 		It("Should have only running pipelines", func() {
 			for _, pipeline := range pipelines.All() {
-				verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipeline)
+				verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipeline)
 				verifiers.TraceCollectorConfigShouldContainPipeline(ctx, k8sClient, pipeline)
 			}
 		})
 
-		It("Should have a pending pipeline", func() {
+		It("Should set ConfigurationGenerated condition to false and Pending condition to true", func() {
 			By("Creating an additional pipeline", func() {
 				pipeline := kitk8s.NewTracePipeline("exceeding-pipeline")
 				pipelineCreatedLater = pipeline.K8sObject()
 				pipelines.Append(pipeline.Name())
 
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, pipeline.K8sObject())).Should(Succeed())
-				verifiers.TracePipelineShouldNotBeRunning(ctx, k8sClient, pipeline.Name())
+
 				verifiers.TraceCollectorConfigShouldNotContainPipeline(ctx, k8sClient, pipeline.Name())
+
+				var fetched telemetryv1alpha1.TracePipeline
+				key := types.NamespacedName{Name: pipeline.Name()}
+				Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
+
+				configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
+				Expect(configurationGeneratedCond).NotTo(BeNil())
+				Expect(configurationGeneratedCond.Status).Should(Equal(metav1.ConditionFalse))
+				Expect(configurationGeneratedCond.Reason).Should(Equal(conditions.ReasonMaxPipelinesExceeded))
+
+				pendingCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypePending)
+				Expect(pendingCond).NotTo(BeNil())
+				Expect(pendingCond.Status).Should(Equal(metav1.ConditionTrue))
+				Expect(pendingCond.Reason).Should(Equal(conditions.ReasonMaxPipelinesExceeded))
+
+				runningCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeRunning)
+				Expect(runningCond).To(BeNil())
 			})
 		})
 
@@ -137,7 +157,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, pipelineCreatedFirst)).Should(Succeed())
 
 				for _, pipeline := range pipelines.All()[1:] {
-					verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipeline)
+					verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipeline)
 				}
 			})
 		})
@@ -189,8 +209,8 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, healthyPipelineName)
-			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, brokenPipelineName)
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, healthyPipelineName)
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, brokenPipelineName)
 		})
 
 		It("Should have a running trace gateway deployment", func() {
