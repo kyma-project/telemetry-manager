@@ -35,6 +35,7 @@ type LogParserSpec struct {
 //+kubebuilder:printcolumn:name="Agent Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="AgentHealthy")].status`
 //+kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:deprecatedversion:warning="The LogParser API is deprecated. Instead, log in JSON format and use the JSON parsing feature of the LogPipeline"
+// +kubebuilder:storageversion
 
 // LogParser is the Schema for the logparsers API.
 type LogParser struct {

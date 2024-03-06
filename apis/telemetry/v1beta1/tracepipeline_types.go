@@ -44,6 +44,8 @@ type TracePipelineStatus struct {
 // +kubebuilder:printcolumn:name="Configuration Generated",type=string,JSONPath=`.status.conditions[?(@.type=="ConfigurationGenerated")].status`
 // +kubebuilder:printcolumn:name="Gateway Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="GatewayHealthy")].status`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:storageversion
+
 // TracePipeline is the Schema for the tracepipelines API
 type TracePipeline struct {
 	metav1.TypeMeta   `json:",inline"`
