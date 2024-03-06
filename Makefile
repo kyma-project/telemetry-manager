@@ -1,5 +1,4 @@
 include .env
-export $(shell sed 's/=.*//' .env)
 
 # Environment Variables
 IMG ?= $(ENV_IMG)
