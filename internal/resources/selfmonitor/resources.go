@@ -20,13 +20,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
 
 type podSpecOption = func(pod *corev1.PodSpec)
 
-func RemoveResources(ctx context.Context, c client.Client, config *config.SelfMonitor) error {
+func RemoveResources(ctx context.Context, c client.Client, config *Config) error {
 	objectMeta := metav1.ObjectMeta{
 		Name:      config.BaseName,
 		Namespace: config.Namespace,
@@ -79,7 +78,7 @@ func RemoveResources(ctx context.Context, c client.Client, config *config.SelfMo
 	return nil
 }
 
-func ApplyResources(ctx context.Context, c client.Client, config *config.SelfMonitor) error {
+func ApplyResources(ctx context.Context, c client.Client, config *Config) error {
 	name := types.NamespacedName{Namespace: config.Namespace, Name: config.BaseName}
 
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
@@ -99,7 +98,7 @@ func ApplyResources(ctx context.Context, c client.Client, config *config.SelfMon
 		return fmt.Errorf("failed to create self-monitor network policy: %w", err)
 	}
 
-	configMap := makeConfigMap(name, config.MonitoringConfig)
+	configMap := makeConfigMap(name, config.SelfMonitorConfig)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create self-monitor configmap: %w", err)
 	}
@@ -221,7 +220,7 @@ func makeConfigMap(name types.NamespacedName, selfmonitorConfig string) *corev1.
 		},
 	}
 }
-func makeSelfMonitorDeployment(cfg *config.SelfMonitor, configChecksum string) *appsv1.Deployment {
+func makeSelfMonitorDeployment(cfg *Config, configChecksum string) *appsv1.Deployment {
 	var replicas int32 = 1
 	selectorLabels := defaultLabels(cfg.BaseName)
 	podLabels := maps.Clone(selectorLabels)
@@ -365,7 +364,7 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 	return pod
 }
 
-func makeResourceRequirements(cfg *config.SelfMonitor) corev1.ResourceRequirements {
+func makeResourceRequirements(cfg *Config) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Limits: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    cfg.Deployment.CPULimit,
