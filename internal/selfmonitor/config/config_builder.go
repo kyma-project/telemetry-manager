@@ -37,12 +37,16 @@ func makeScrapeConfig() []ScrapeConfig {
 	return []ScrapeConfig{
 		{
 			JobName: "kubernetes-service-endpoints",
+
 			RelabelConfigs: []RelabelConfig{{
 				SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scrape"},
 				Regex:        "true",
 				Action:       Keep,
 			}},
-			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RoleEndpoints}},
+			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{
+				Role:       RoleEndpoints,
+				Namespaces: Names{Name: []string{"kyma-system"}},
+			}},
 		},
 	}
 }
