@@ -1,6 +1,7 @@
 package alerts
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -28,9 +29,91 @@ func MakeRules() RuleGroups {
 	return RuleGroups{
 		Groups: []RuleGroup{
 			{
-				Name:  "example",
-				Rules: []Rule{{Alert: "ExampleAlert", Expr: "up == 0"}},
+				Name: "default",
+				Rules: []Rule{
+					makeGatewayExporterSentTelemetry(signalTypeMetricPoints),
+					makeGatewayExporterSentTelemetry(signalTypeSpans),
+					makeGatewayExporterFailedTelemetry(signalTypeMetricPoints),
+					makeGatewayExporterFailedTelemetry(signalTypeSpans),
+					makeGatewayExporterQueueAlmostFull(),
+					makeGatewayReceiverRefusedMetrics(signalTypeMetricPoints),
+					makeGatewayReceiverRefusedMetrics(signalTypeSpans),
+					makeGatewayExporterEnqueueFailed(signalTypeMetricPoints),
+					makeGatewayExporterEnqueueFailed(signalTypeSpans),
+				},
 			},
 		},
+	}
+}
+
+type signalType string
+
+const (
+	signalTypeMetricPoints signalType = "metric_points"
+	signalTypeSpans        signalType = "spans"
+)
+
+func makeGatewayExporterSentTelemetry(s signalType) Rule {
+	metric := fmt.Sprintf("otelcol_exporter_sent_%s", s)
+	return Rule{
+		Alert: "GatewayExporterSent" + alertNameSuffix(s),
+		Expr:  fmt.Sprintf("sum by (exporter) (rate(%s{service=\"%s\"}[1m])) > 0", metric, gatewayName(s)),
+		For:   5 * time.Minute,
+	}
+}
+
+func makeGatewayExporterFailedTelemetry(s signalType) Rule {
+	metric := fmt.Sprintf("otelcol_exporter_send_failed_%s", s)
+	return Rule{
+		Alert: "GatewayExporterDropped" + alertNameSuffix(s),
+		Expr:  fmt.Sprintf("sum by (exporter) (rate(%s{service=\"%s\"}[1m])) > 0", metric, gatewayName(s)),
+		For:   5 * time.Minute,
+	}
+}
+
+func makeGatewayExporterQueueAlmostFull() Rule {
+	return Rule{
+		Alert: "GatewayExporterQueueAlmostFull",
+		Expr:  "otelcol_exporter_queue_size / otelcol_exporter_queue_capacity > 0.8",
+	}
+}
+
+func makeGatewayReceiverRefusedMetrics(s signalType) Rule {
+	metric := fmt.Sprintf("otelcol_receiver_refused_%s", s)
+	return Rule{
+		Alert: "GatewayReceiverRefused" + alertNameSuffix(s),
+		Expr:  fmt.Sprintf("sum by (receiver) (rate(%s{service=\"%s\"}[1m])) > 0", metric, gatewayName(s)),
+		For:   5 * time.Minute,
+	}
+}
+
+func makeGatewayExporterEnqueueFailed(s signalType) Rule {
+	metric := fmt.Sprintf("otelcol_exporter_enqueue_failed_%s", s)
+	return Rule{
+		Alert: "GatewayExporterEnqueueFailed" + alertNameSuffix(s),
+		Expr:  fmt.Sprintf("sum by (exporter) (rate(%s{service=\"%s\"}[1m])) > 0", metric, gatewayName(s)),
+		For:   5 * time.Minute,
+	}
+}
+
+func alertNameSuffix(s signalType) string {
+	switch s {
+	case signalTypeMetricPoints:
+		return "MetricPoints"
+	case signalTypeSpans:
+		return "Spans"
+	default:
+		return "Telemetry"
+	}
+}
+
+func gatewayName(s signalType) string {
+	switch s {
+	case signalTypeMetricPoints:
+		return "telemetry-metric-gateway-metrics"
+	case signalTypeSpans:
+		return "telemetry-trace-gateway-metrics"
+	default:
+		return ""
 	}
 }
