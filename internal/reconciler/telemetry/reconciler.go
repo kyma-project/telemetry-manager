@@ -23,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alerts"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
@@ -145,15 +146,22 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 		return nil
 	}
 
-	selfMonConfig := config.MakeConfig()
-	selfMonitorConfigYaml, err := yaml.Marshal(selfMonConfig)
+	selfMonitorConfig := config.MakeConfig()
+	selfMonitorConfigYAML, err := yaml.Marshal(selfMonitorConfig)
 	if err != nil {
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
 	}
-	r.config.SelfMonitor.Config.SelfMonitorConfig = string(selfMonitorConfigYaml)
+	r.config.SelfMonitor.Config.SelfMonitorConfig = string(selfMonitorConfigYAML)
+
+	alertRules := alerts.MakeRules()
+	alertRulesYAML, err := yaml.Marshal(alertRules)
+	if err != nil {
+		return fmt.Errorf("failed to marshal selfmonitor alert rules: %w", err)
+	}
+	r.config.SelfMonitor.Config.AlertRules = string(alertRulesYAML)
 
 	if err := selfmonitor.ApplyResources(ctx,
-		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),
+		r.Client,
 		&r.config.SelfMonitor.Config); err != nil {
 		return fmt.Errorf("failed to apply self-monitor resources: %w", err)
 	}

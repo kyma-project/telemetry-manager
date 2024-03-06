@@ -86,11 +86,11 @@ func ApplyResources(ctx context.Context, c client.Client, config *Config) error 
 		return fmt.Errorf("failed to create self-monitor service account: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateRole(ctx, c, makeRole(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, makeClusterRole(name)); err != nil {
 		return fmt.Errorf("failed to create self-monitor role: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, makeRoleBinding(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, makeClusterRoleBinding(name)); err != nil {
 		return fmt.Errorf("failed to create self-monitor role binding: %w", err)
 	}
 
@@ -98,7 +98,7 @@ func ApplyResources(ctx context.Context, c client.Client, config *Config) error 
 		return fmt.Errorf("failed to create self-monitor network policy: %w", err)
 	}
 
-	configMap := makeConfigMap(name, config.SelfMonitorConfig)
+	configMap := makeConfigMap(name, config)
 	if err := k8sutils.CreateOrUpdateConfigMap(ctx, c, configMap); err != nil {
 		return fmt.Errorf("failed to create self-monitor configmap: %w", err)
 	}
@@ -122,21 +122,37 @@ func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 	return &serviceAccount
 }
 
-func makeRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
-	roleBinding := rbacv1.RoleBinding{
+func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBinding {
+	roleBinding := rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
+			Name:   name.Name,
+			Labels: defaultLabels(name.Name),
 		},
 		Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
+			Kind:     "ClusterRole",
 			Name:     name.Name,
 		},
 	}
 	return &roleBinding
+}
+
+func makeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
+	role := rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name.Name,
+			Labels: defaultLabels(name.Name),
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"services", "endpoints", "pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+		},
+	}
+	return &role
 }
 
 func makeNetworkPolicyIngressPorts(name types.NamespacedName, labels map[string]string) *networkingv1.NetworkPolicy {
@@ -208,7 +224,7 @@ func makeNetworkPolicyPorts(ports []int32) []networkingv1.NetworkPolicyPort {
 	return networkPolicyPorts
 }
 
-func makeConfigMap(name types.NamespacedName, selfmonitorConfig string) *corev1.ConfigMap {
+func makeConfigMap(name types.NamespacedName, config *Config) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -216,7 +232,8 @@ func makeConfigMap(name types.NamespacedName, selfmonitorConfig string) *corev1.
 			Labels:    defaultLabels(name.Name),
 		},
 		Data: map[string]string{
-			"prometheus.yml": selfmonitorConfig,
+			"prometheus.yml":       config.SelfMonitorConfig,
+			"prometheus.rules.yml": config.AlertRules,
 		},
 	}
 }
@@ -253,24 +270,6 @@ func makeSelfMonitorDeployment(cfg *Config, configChecksum string) *appsv1.Deplo
 			},
 		},
 	}
-}
-
-func makeRole(name types.NamespacedName) *rbacv1.Role {
-	role := rbacv1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"services", "endpoints", "pods"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		},
-	}
-	return &role
 }
 
 func defaultLabels(baseName string) map[string]string {
