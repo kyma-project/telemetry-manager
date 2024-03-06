@@ -26,6 +26,20 @@ type KubeletStatsReceiver struct {
 	Endpoint           string            `yaml:"endpoint"`
 	InsecureSkipVerify bool              `yaml:"insecure_skip_verify"`
 	MetricGroups       []MetricGroupType `yaml:"metric_groups"`
+	Metrics            MetricsConfig     `yaml:"metrics"`
+}
+
+type MetricConfig struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type MetricsConfig struct {
+	ContainerCPUUsage       MetricConfig `yaml:"container.cpu.usage"`
+	ContainerCPUUtilization MetricConfig `yaml:"container.cpu.utilization"`
+	K8sNodeCPUUsage         MetricConfig `yaml:"k8s.node.cpu.usage"`
+	K8sNodeCPUUtilization   MetricConfig `yaml:"k8s.node.cpu.utilization"`
+	K8sPodCPUUsage          MetricConfig `yaml:"k8s.pod.cpu.usage"`
+	K8sPodCPUUtilization    MetricConfig `yaml:"k8s.pod.cpu.utilization"`
 }
 
 type MetricGroupType string
