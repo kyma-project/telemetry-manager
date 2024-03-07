@@ -9,8 +9,8 @@ on:
       - "main"
       - "release-*"
     paths-ignore:
-      - 'docs/**'
-      - '**.md'
+      - "docs/**"
+      - "**.md"
   workflow_dispatch:
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: make run-e2e-test-metrics
+        run: bin/ginkgo run --tags e2e --label-filter="metrics" test/e2e
 
       - name: Finalize test
         uses: "./.github/template/finalize-test"
@@ -38,104 +38,104 @@ jobs:
   e2e-metrics:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Prepare test
-      uses: "./.github/template/prepare-test"
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare test
+        uses: "./.github/template/prepare-test"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Run tests
-      run: make run-e2e-test-metrics
+      - name: Run tests
+        run: bin/ginkgo run --tags e2e --label-filter="metrics" test/e2e
 
-    - name: Finalize test
-      uses: "./.github/template/finalize-test"
-      if: success() || failure()
-      with:
-        failure: failure()
+      - name: Finalize test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
 
   e2e-traces-release:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Prepare Test
-      uses: "./.github/template/prepare-test"
-      with:
-        release: true
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          release: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Run tests
-      run: make run-e2e-test-traces
+      - name: Run tests
+        run: bin/ginkgo run --tags e2e --label-filter="traces" test/e2e
 
-    - name: Finalize Test
-      uses: "./.github/template/finalize-test"
-      if: success() || failure()
-      with:
-        failure: failure()
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
 
   e2e-traces:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Prepare Test
-      uses: "./.github/template/prepare-test"
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Run tests
-      run: make run-e2e-test-traces
+      - name: Run tests
+        run: bin/ginkgo run --tags e2e --label-filter="traces" test/e2e
 
-    - name: Finalize Test
-      uses: "./.github/template/finalize-test"
-      if: success() || failure()
-      with:
-        failure: failure()
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
 
   e2e-logs-release:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Prepare Test
-      uses: "./.github/template/prepare-test"
-      with:
-        release: true
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          release: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Run tests
-      run: make run-e2e-test-logs
+      - name: Run tests
+        run: bin/ginkgo run --tags e2e --label-filter="logs" test/e2e
 
-    - name: Finalize Test
-      uses: "./.github/template/finalize-test"
-      if: success() || failure()
-      with:
-        failure: failure()
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
 
   e2e-logs:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Prepare Test
-      uses: "./.github/template/prepare-test"
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Run tests
-      run: make run-e2e-test-logs
+      - name: Run tests
+        run: bin/ginkgo run --tags e2e --label-filter="logs" test/e2e
 
-    - name: Finalize Test
-      uses: "./.github/template/finalize-test"
-      if: success() || failure()
-      with:
-        failure: failure()
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
 
   e2e-telemetry-release:
     runs-on: ubuntu-latest
@@ -150,7 +150,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: make run-e2e-test-telemetry
+        run: bin/ginkgo run --tags e2e --label-filter="telemetry" test/e2e
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
@@ -170,7 +170,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run: make run-e2e-test-telemetry
+        run: bin/ginkgo run --tags e2e --label-filter="telemetry" test/e2e
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
@@ -181,19 +181,21 @@ jobs:
   e2e-integration-istio:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Prepare Test
-      uses: "./.github/template/prepare-test"
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Run tests
-      run: make run-integration-test-istio
+      - name: Run tests
+        run: |
+          hack/deploy-istio.sh
+          bin/ginkgo run --tags istio test/integration/istio
 
-    - name: Finalize Test
-      uses: "./.github/template/finalize-test"
-      if: success() || failure()
-      with:
-        failure: failure()
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()

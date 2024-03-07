@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+source .env
+
+readonly ISTIO_VERSION=${ISTIO_VERSION:-$ENV_ISTIO_VERSION}
 
 function apply_istio_telemetry() {
   kubectl apply -f - <<EOF
