@@ -157,13 +157,6 @@ func makeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
 
 func makeNetworkPolicyIngressPorts(name types.NamespacedName, labels map[string]string) *networkingv1.NetworkPolicy {
 	allowedPorts := []int32{int32(ports.PrometheusPort)}
-
-	telemetryPodSelector := map[string]string{
-		"self-monitor/access": "true",
-	}
-	namespaceSelector := map[string]string{
-		"kubernetes.io/metadata.name": name.Namespace,
-	}
 	return &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.Name,
@@ -182,12 +175,10 @@ func makeNetworkPolicyIngressPorts(name types.NamespacedName, labels map[string]
 				{
 					From: []networkingv1.NetworkPolicyPeer{
 						{
-							NamespaceSelector: &metav1.LabelSelector{
-								MatchLabels: namespaceSelector,
-							},
-							PodSelector: &metav1.LabelSelector{
-								MatchLabels: telemetryPodSelector,
-							},
+							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
+						},
+						{
+							IPBlock: &networkingv1.IPBlock{CIDR: "::/0"},
 						},
 					},
 					Ports: makeNetworkPolicyPorts(allowedPorts),
@@ -197,9 +188,10 @@ func makeNetworkPolicyIngressPorts(name types.NamespacedName, labels map[string]
 				{
 					To: []networkingv1.NetworkPolicyPeer{
 						{
-							NamespaceSelector: &metav1.LabelSelector{
-								MatchLabels: namespaceSelector,
-							},
+							IPBlock: &networkingv1.IPBlock{CIDR: "0.0.0.0/0"},
+						},
+						{
+							IPBlock: &networkingv1.IPBlock{CIDR: "::/0"},
 						},
 					},
 				},
