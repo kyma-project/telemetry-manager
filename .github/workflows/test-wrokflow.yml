@@ -39,11 +39,15 @@ jobs:
       - name: Show changes
         run: cat sec-scanners-config.yaml
 
-      - name: Deploy k3d
-        run: make provision-test-env deploy
+      - name: Provision k3d
+        shell: bash
+        run: make provision-k3d
 
       - name: Deploy Istio Module
-        run: ISTIO_VERSION=$(ISTIO_VERSION) hack/deploy-istio.sh
+        run: hack/deploy-istio.sh
+
+      - name: Deploy Telemetry
+        run: make deploy
         
       - name: Run Load test
         working-directory: docs/contributor/telemetry-load-test
