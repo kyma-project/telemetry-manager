@@ -1,8 +1,5 @@
 name: Manual Load Test
 
-env:
-  IMG: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.number }}
-
 # Controls when the action will run. Workflow runs when manually triggered using the UI
 # or API.
 on:
@@ -11,6 +8,9 @@ on:
       pr_number:
         description: 'Pull Request Number'
         required: true
+
+env:
+  IMG: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.inputs.pr_number }}
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -35,11 +35,9 @@ jobs:
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
-      - name: Show changes
-        run: cat sec-scanners-config.yaml
 
       # save gardener kubeconfig to a temp file in order to pass it to the command
-      - name: Save serviceaccount to file
+      - name: Save service account to file
         shell: bash
         run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
         env:
@@ -53,6 +51,12 @@ jobs:
           GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
           GARDENER_K8S_VERSION: ${{ matrix.k8s_version }}
+
+      - name: Deploy Istio Module
+        run: hack/deploy-istio.sh
+
+      - name: Deploy Telemetry
+        run: make deploy
 
       # Run the load test
       - name: Run Load test
