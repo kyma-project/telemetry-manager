@@ -37,27 +37,27 @@ jobs:
         uses: "./.github/template/setup-golang"
 
       - name: Show changes
-        run: cat sec-scanners-config.yaml
+        run: make test-gardener-cluster-name
 
-      - name: Provision k3d
-        shell: bash
-        run: make provision-k3d
+      # - name: Provision k3d
+      #   shell: bash
+      #   run: make provision-k3d
 
-      - name: Deploy Istio Module
-        run: hack/deploy-istio.sh
+      # - name: Deploy Istio Module
+      #   run: hack/deploy-istio.sh
 
-      - name: Deploy Telemetry
-        run: make deploy
+      # - name: Deploy Telemetry
+      #   run: make deploy
 
-      - name: check pods before
-        run: kubectl get pods -n kyma-system
+      # - name: check pods before
+      #   run: kubectl get pods -n kyma-system
         
-      - name: Run Load test
-        working-directory: docs/contributor/telemetry-load-test
-        run: ./assets/run-load-test.sh ${{ matrix.argument }}
+      # - name: Run Load test
+      #   working-directory: docs/contributor/telemetry-load-test
+      #   run: ./assets/run-load-test.sh ${{ matrix.argument }}
 
-      - name: check pods after
-        run: kubectl get pods -n kyma-system
+      # - name: check pods after
+      #   run: kubectl get pods -n kyma-system
 
 #      # save gardener kubeconfig to a temp file in order to pass it to the command
 #      - name: Save serviceaccount to file
