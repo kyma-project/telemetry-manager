@@ -30,46 +30,38 @@ func RemoveResources(ctx context.Context, c client.Client, config *Config) error
 		Name:      config.BaseName,
 		Namespace: config.Namespace,
 	}
-	// Delete Deployment
-	deployment := &appsv1.Deployment{ObjectMeta: objectMeta}
-	if err := c.Delete(ctx, deployment); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-	// Delete Configmap
-	configMap := &corev1.ConfigMap{ObjectMeta: objectMeta}
-	if err := c.Delete(ctx, configMap); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-	// Delete Network policy
-	networkPolicy := &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}
-	if err := c.Delete(ctx, networkPolicy); err != nil {
+
+	if err := c.Delete(ctx, &appsv1.Deployment{ObjectMeta: objectMeta}); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
 	}
 
-	// Delete RoleBinding
-	roleBinding := &rbacv1.RoleBinding{ObjectMeta: objectMeta}
-	if err := c.Delete(ctx, roleBinding); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-	// Delete Role
-	role := &rbacv1.Role{ObjectMeta: objectMeta}
-	if err := c.Delete(ctx, role); err != nil {
+	if err := c.Delete(ctx, &corev1.ConfigMap{ObjectMeta: objectMeta}); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
 	}
 
-	// Delete service account
-	serviceAccount := &corev1.ServiceAccount{ObjectMeta: objectMeta}
-	if err := c.Delete(ctx, serviceAccount); err != nil {
+	if err := c.Delete(ctx, &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	if err := c.Delete(ctx, &rbacv1.RoleBinding{ObjectMeta: objectMeta}); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	if err := c.Delete(ctx, &rbacv1.Role{ObjectMeta: objectMeta}); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	if err := c.Delete(ctx, &corev1.ServiceAccount{ObjectMeta: objectMeta}); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
@@ -108,6 +100,10 @@ func ApplyResources(ctx context.Context, c client.Client, config *Config) error 
 		return fmt.Errorf("failed to create sel-monitor deployment: %w", err)
 	}
 
+	if err := k8sutils.CreateOrUpdateService(ctx, c, makeService(name, ports.PrometheusPort)); err != nil {
+		return fmt.Errorf("failed to create self-monitor service: %w", err)
+	}
+
 	return nil
 }
 
@@ -125,8 +121,9 @@ func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 func makeRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
 	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name.Name,
-			Labels: defaultLabels(name.Name),
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
 		},
 		Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
@@ -141,8 +138,9 @@ func makeRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
 func makeRole(name types.NamespacedName) *rbacv1.Role {
 	role := rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name.Name,
-			Labels: defaultLabels(name.Name),
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -364,6 +362,27 @@ func makeResourceRequirements(cfg *Config) corev1.ResourceRequirements {
 		Requests: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    cfg.Deployment.CPURequest,
 			corev1.ResourceMemory: cfg.Deployment.MemoryRequest,
+		},
+	}
+}
+
+func makeService(name types.NamespacedName, port int) *corev1.Service {
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "http",
+					Protocol: corev1.ProtocolTCP,
+					Port:     int32(port),
+				},
+			},
+			Selector: defaultLabels(name.Name),
+			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }
