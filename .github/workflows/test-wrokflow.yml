@@ -11,7 +11,7 @@ on:
         description: 'Pull Request Number'
         required: true
 env:
-  IMG: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:mainn
+  IMG: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
   
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
