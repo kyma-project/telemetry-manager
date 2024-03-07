@@ -114,10 +114,10 @@ The tests are executed for 20 minutes, so that each test case has a stabilized o
 
 The following test cases are identified:
 
-1. Test average throughput end-to-end.
-2. Test queuing and retry capabilities of Metric Gateway with simulated backend outages.
-3. Test average throughput with 3 MetricPipelines simultaneously end-to-end.
-4. Test queuing and retry capabilities of 3 MetricPipeline with simulated backend outages.
+- Test average throughput end-to-end.
+- Test queuing and retry capabilities of Metric Gateway with simulated backend outages.
+- Test average throughput with 3 MetricPipelines simultaneously end-to-end.
+- Test queuing and retry capabilities of 3 MetricPipeline with simulated backend outages.
 
 Backend outages are simulated with Istio Fault Injection: 70% of the traffic to the test backend will return `HTTP 503` to simulate service outages.
 
@@ -130,8 +130,8 @@ The test setup deploys 20 individual metric producer Pods; each which produces 1
 
 The following test cases are identified:
 
-1. Test average throughput end-to-end.
-2. Test queuing and retry capabilities of Metric Agent with simulated backend outages.
+- Test average throughput end-to-end.
+- Test queuing and retry capabilities of Metric Agent with simulated backend outages.
 
 Backend outages simulated with Istio Fault Injection, 70% of traffic to the Test Backend will return `HTTP 503` to simulate service outages
 
@@ -233,10 +233,10 @@ The test setup deploys 20 individual log producer Pods; each of which produces ~
 
 The following test cases are identified:
 
-1. Test average throughput end-to-end.
-2. Test buffering and retry capabilities of LogPipeline with simulated backend outages.
-3. Test average throughput with 3 LogPipelines simultaneously end-to-end.
-4. Test buffering and retry capabilities of 3 LogPipeline with simulated backend outages.
+- Test average throughput end-to-end.
+- Test buffering and retry capabilities of LogPipeline with simulated backend outages.
+- Test average throughput with 3 LogPipelines simultaneously end-to-end.
+- Test buffering and retry capabilities of 3 LogPipeline with simulated backend outages.
 
 Backend outages are simulated with Istio Fault Injection, 70% of traffic to the test backend will return `HTTP 503` to simulate service outages.
 
