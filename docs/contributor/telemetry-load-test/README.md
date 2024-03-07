@@ -14,15 +14,15 @@ This document describes a reproducible test setup to determine the limits and KP
 
 ## Test Script
 
-All test scenarios use a single test script [run-load-test.sh](assets/run-load-test.sh), which provides following parameters: 
+All test scenarios use a single test script [run-load-test.sh](assets/run-load-test.sh), which provides following parameters:
 
 - `-t` The test target type supported values are `traces, metrics, metricagent, logs-fluentbit`, default is `traces`
 - `-n` Test name e.g. `0.92`
-- `-m` Enables multi pipeline scenarios, default is `false` 
+- `-m` Enables multi pipeline scenarios, default is `false`
 - `-b` Enables backpressure scenarios, default is `false`
-- `-d` The test duration in second, default is `1200` seconds 
+- `-d` The test duration in second, default is `1200` seconds
 
-## Traces Test 
+## Traces Test
 
 ### Assumptions
 
@@ -30,16 +30,16 @@ The tests are executed for 20 minutes, so that each test case has a stabilized o
 
 The following test cases are identified:
 
- - Test average throughput end-to-end. 
- - Test queuing and retry capabilities of TracePipeline with simulated backend outages.
- - Test average throughput with 3 TracePipelines simultaneously end-to-end.
- - Test queuing and retry capabilities of 3 TracePipeline with simulated backend outages.
+- Test average throughput end-to-end.
+- Test queuing and retry capabilities of TracePipeline with simulated backend outages.
+- Test average throughput with 3 TracePipelines simultaneously end-to-end.
+- Test queuing and retry capabilities of 3 TracePipeline with simulated backend outages.
 
 Backend outages simulated with Istio Fault Injection, 70% of traffic to the Test Backend will return `HTTP 503` to simulate service outages.
 
 ### Setup
 
-The following diagram shows the test setup used for all test cases. 
+The following diagram shows the test setup used for all test cases.
 
 ![Trace Gateway Test Setup](./assets/trace_perf_test_setup.drawio.svg)
 
@@ -65,6 +65,7 @@ A typical test result output looks like the following example:
 ```shell
 ./run-load-test.sh -t traces -n "0.92"
 ```
+
 2. To test the queuing and retry capabilities of TracePipeline with simulated backend outages, run:
 
 ```shell
@@ -85,8 +86,6 @@ A typical test result output looks like the following example:
 
 ### Test Results
 
-
-
 <div class="table-wrapper" markdown="block">
 
 | Version/Test |       Single Pipeline       |                             |                     |                      |               |       Multi Pipeline        |                             |                     |                      |               | Single Pipeline Backpressure |                             |                     |                      |               | Multi Pipeline Backpressure |                             |                     |                      |               |
@@ -98,10 +97,7 @@ A typical test result output looks like the following example:
 |         0.94 |            19933            |            19934            |          0          |       110, 76        |     1, 1      |            13083            |            39248            |          0          |       94, 152        |   1.2, 1.4    |             299              |             299             |         214         |      1003, 808       |    0.1, 0     |            8644             |             916             |         169         |      1578, 1706      |   0.5, 0.5    |
 |         0.95 |            20652            |            20652            |          0          |       133, 76        |    1, 0.8     |            13449            |            40350            |          0          |       150, 111       |   1.3, 1.4    |             330              |             328             |         239         |      931, 1112       |     0, 0      |            8259             |             929             |         170         |      1693, 1611      |   0.7, 0.6    |
 
-
-
 </div>
-
 
 ## Metrics Test
 
@@ -110,7 +106,6 @@ The metrics test consists of two main test scenarios. The first scenario tests t
 ### Metric Gateway Test and Assumptions
 
 The tests are executed for 20 minutes, so that each test case has a stabilized output and reliable KPIs. Generated metrics contain 10 attributes to simulate an average metric size; the test simulates 2000 individual metrics producers, and each one pushes metrics every 30 second to the Metric Gateway.
-
 
 The following test cases are identified:
 
@@ -123,10 +118,9 @@ Backend outages are simulated with Istio Fault Injection: 70% of the traffic to 
 
 ### Metric Agent Test and Assumptions
 
-The tests are executed for 20 minutes, so that each test case has a stabilized output and reliable KPIs. 
+The tests are executed for 20 minutes, so that each test case has a stabilized output and reliable KPIs.
 In contrast to the Metric Gateway test, the Metric Agent test deploys a passive metric producer ([Avalanche Prometheus metric load generator](https://blog.freshtracks.io/load-testing-prometheus-metric-ingestion-5b878711711c)) and the metrics are scraped by Metric Agent from the producer.
 The test setup deploys 20 individual metric producer Pods; each which produces 1000 metrics with 10 metric series. To test both Metric Agent receiver configurations, Metric Agent collects metrics with Pod scraping as well as Service scraping.
-
 
 The following test cases are identified:
 
@@ -141,8 +135,7 @@ The following diagram shows the test setup used for all Metric test cases.
 
 ![Metric Test Setup](./assets/metric_perf_test_setup.drawio.svg)
 
-
-In all test scenarios, a preconfigured trace load generator is deployed on the test cluster. To ensure all Metric Gateway instances are loaded with test data, the trace load generator feeds the test MetricPipeline over a pipeline service instance, in Metric Agent test, test data scraped from test data producer and pushed to the Metric Gateway. 
+In all test scenarios, a preconfigured trace load generator is deployed on the test cluster. To ensure all Metric Gateway instances are loaded with test data, the trace load generator feeds the test MetricPipeline over a pipeline service instance, in Metric Agent test, test data scraped from test data producer and pushed to the Metric Gateway.
 
 A Prometheus instance is deployed on the test cluster to collect relevant metrics from Metric Gateway and Metric Agent instances and to fetch the metrics at the end of the test as test scenario result.
 
@@ -159,6 +152,7 @@ Each test scenario has its own test scripts responsible for preparing test scena
 ```shell
 ./run-load-test.sh -t metrics -n "0.92"
 ```
+
 2. To test the queuing and retry capabilities of Metric Gateway with simulated backend outages, run:
 
 ```shell
@@ -179,8 +173,6 @@ Each test scenario has its own test scripts responsible for preparing test scena
 
 #### Test Results
 
-
-
 <div class="table-wrapper" markdown="block">
 
 | Version/Test |       Single Pipeline        |                              |                     |                      |               |        Multi Pipeline        |                              |                     |                      |               | Single Pipeline Backpressure |                              |                     |                      |               | Multi Pipeline Backpressure  |                              |                     |                      |               |
@@ -200,6 +192,7 @@ Each test scenario has its own test scripts responsible for preparing test scena
 ```shell
 ./run-load-test.sh -t metricagent -n "0.92"
 ```
+
 2. To test the queuing and retry capabilities of Metric Agent with simulated backend outages, run:
 
 ```shell
@@ -207,8 +200,6 @@ Each test scenario has its own test scripts responsible for preparing test scena
 ```
 
 #### Test Results
-
-
 
 <div class="table-wrapper" markdown="block">
 
@@ -222,14 +213,13 @@ Each test scenario has its own test scripts responsible for preparing test scena
 
 </div>
 
-
 ## Log Test (Fluent-Bit)
 
 ### Assumptions
 
 The tests are executed for 20 minutes, so that each test case has a stabilized output and reliable KPIs.
 The Log test deploys a passive log producer ([Flog](https://github.com/mingrammer/flog)), and the logs are collected by Fluent Bit from each producer instance.
-The test setup deploys 20 individual log producer Pods; each of which produces ~10 MByte logs. 
+The test setup deploys 20 individual log producer Pods; each of which produces ~10 MByte logs.
 
 The following test cases are identified:
 
@@ -261,6 +251,7 @@ Each test scenario has its own test scripts responsible for preparing the test s
 ```shell
 ./run-load-test.sh -t logs-fluentbit -n "2.2.1"
 ```
+
 2. To test the buffering and retry capabilities of LogPipeline with simulated backend outages, run:
 
 ```shell
@@ -280,8 +271,6 @@ Each test scenario has its own test scripts responsible for preparing the test s
 ```
 
 #### Test Results
-
-
 
 <div class="table-wrapper" markdown="block">
 
