@@ -21,8 +21,8 @@ This release process covers the steps to release new major and minor versions fo
 
 5. Bump the `telemetry-manager/{RELEASE_BRANCH}` branch with the new versions for the dependent images.
    Create a PR to `telemetry-manager/{RELEASE_BRANCH}` with the following changes:
-   - `Makefile`:
-      - For the `IMG` variable, update the tag of the `telemetry-manager` image with the new module version following the `x.y.z` pattern. For example, `IMG ?= europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.0.0`.
+   - `.env`:
+      - For the `ENV_IMG` variable, update the tag of the `telemetry-manager` image with the new module version following the `x.y.z` pattern. For example, `ENV_IMG=europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:1.0.0`.
    - `config/manager/kustomization.yaml`:
       - Update the `newTag` field for the `telemetry-manager` image with the new module version following the `x.y.z` pattern, such as `1.0.0`.
    - `sec-scanners-config.yaml`:
