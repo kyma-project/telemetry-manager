@@ -28,7 +28,7 @@ jobs:
           GITHUB_REPO: "telemetry-manager"
 
       - name: Release
-        run: make release
+        run: hack/release.sh
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           GORELEASER_CURRENT_TAG: "${{ github.ref_name }}" # Explicitly set release tag to do not use -dev tag

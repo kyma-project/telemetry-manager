@@ -27,17 +27,20 @@ echo "rollback to current git ref already to have make target and script changes
 git restore .
 git checkout $CURRENT_COMMIT
 
+echo "setup ginkgo"
+make ginkgo
+
 echo "run upgrade test"
-make run-upgrade-test
+bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e
 
 echo "wait for namespace termination"
-./hack/wait-for-namespaces.sh
+hack/wait-for-namespaces.sh
 
 echo "build manager image for version $CURRENT_COMMIT"
-./hack/build-image.sh
+hack/build-image.sh
 
 echo "deploy manager image for version $CURRENT_COMMIT"
 IMG=k3d-kyma-registry:5000/telemetry-manager:latest make deploy-dev
 
 echo "run upgrade test"
-make run-upgrade-test
+bin/ginkgo run --tags e2e --flake-attempts=5 --label-filter="operational" -v test/e2e

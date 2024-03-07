@@ -39,8 +39,13 @@ type ScrapeConfig struct {
 	KubernetesDiscoveryConfigs []KubernetesDiscoveryConfig `yaml:"kubernetes_sd_configs,omitempty"`
 }
 
+type Names struct {
+	Name []string `yaml:"names"`
+}
+
 type KubernetesDiscoveryConfig struct {
-	Role Role `yaml:"role"`
+	Role       Role  `yaml:"role"`
+	Namespaces Names `yaml:"namespaces"`
 }
 
 type Role string

@@ -228,12 +228,6 @@ func verifyServiceAccountIsPresent(ctx context.Context, t *testing.T, client cli
 }
 
 func verifyNetworkPolicy(ctx context.Context, t *testing.T, client client.Client) {
-	expectedTelemetryPodSelector := map[string]string{
-		"self-monitor/access": "true",
-	}
-	expectedNamespaceSelector := map[string]string{
-		"kubernetes.io/metadata.name": namespace,
-	}
 
 	var nps networkingv1.NetworkPolicyList
 	require.NoError(t, client.List(ctx, &nps))
@@ -251,9 +245,9 @@ func verifyNetworkPolicy(ctx context.Context, t *testing.T, client client.Client
 	}, np.Spec.PodSelector.MatchLabels)
 	require.Equal(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress}, np.Spec.PolicyTypes)
 	require.Len(t, np.Spec.Ingress, 1)
-	require.Len(t, np.Spec.Ingress[0].From, 1)
-	require.Equal(t, expectedNamespaceSelector, np.Spec.Ingress[0].From[0].NamespaceSelector.MatchLabels)
-	require.Equal(t, expectedTelemetryPodSelector, np.Spec.Ingress[0].From[0].PodSelector.MatchLabels)
+	require.Len(t, np.Spec.Ingress[0].From, 2)
+	require.Equal(t, "0.0.0.0/0", np.Spec.Ingress[0].From[0].IPBlock.CIDR)
+	require.Equal(t, "::/0", np.Spec.Ingress[0].From[1].IPBlock.CIDR)
 	require.Len(t, np.Spec.Ingress[0].Ports, 1)
 	tcpProtocol := corev1.ProtocolTCP
 	port9090 := intstr.FromInt32(9090)
@@ -264,8 +258,9 @@ func verifyNetworkPolicy(ctx context.Context, t *testing.T, client client.Client
 		},
 	}, np.Spec.Ingress[0].Ports)
 	require.Len(t, np.Spec.Egress, 1)
-	require.Len(t, np.Spec.Egress[0].To, 1)
-	require.Equal(t, expectedNamespaceSelector, np.Spec.Egress[0].To[0].NamespaceSelector.MatchLabels)
+	require.Len(t, np.Spec.Egress[0].To, 2)
+	require.Equal(t, "0.0.0.0/0", np.Spec.Egress[0].To[0].IPBlock.CIDR)
+	require.Equal(t, "::/0", np.Spec.Egress[0].To[1].IPBlock.CIDR)
 }
 
 func makeSelfMonitorConfig() *Config {
