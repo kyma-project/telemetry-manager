@@ -21,7 +21,7 @@ func (m *metricComponentsChecker) Check(ctx context.Context, telemetryInDeletion
 	var metricPipelines telemetryv1alpha1.MetricPipelineList
 	err := m.client.List(ctx, &metricPipelines)
 	if err != nil {
-		return &metav1.Condition{}, fmt.Errorf("failed to get list metric pipelines: %w", err)
+		return &metav1.Condition{}, fmt.Errorf("failed to get list of MetricPipelines: %w", err)
 	}
 
 	reason := m.determineReason(metricPipelines.Items, telemetryInDeletion)
@@ -57,12 +57,12 @@ func (m *metricComponentsChecker) determineReason(pipelines []telemetryv1alpha1.
 func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.MetricPipeline) string {
 	// condTypes order defines the priority of negative conditions
 	condTypes := []string{
-		conditions.TypeMetricGatewayHealthy,
-		conditions.TypeMetricAgentHealthy,
+		conditions.TypeGatewayHealthy,
+		conditions.TypeAgentHealthy,
 		conditions.TypeConfigurationGenerated,
 	}
-	for _, pipeline := range pipelines {
-		for _, condType := range condTypes {
+	for _, condType := range condTypes {
+		for _, pipeline := range pipelines {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
 			if cond != nil && cond.Status == metav1.ConditionFalse {
 				return cond.Reason
@@ -81,7 +81,7 @@ func (m *metricComponentsChecker) determineConditionStatus(reason string) metav1
 
 func (m *metricComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.MetricPipeline, reason string) string {
 	if reason != conditions.ReasonResourceBlocksDeletion {
-		return conditions.CommonMessageFor(reason)
+		return conditions.MessageFor(reason, conditions.MetricsMessage)
 	}
 
 	return generateDeletionBlockedMessage(blockingResources{
@@ -94,9 +94,9 @@ func (m *metricComponentsChecker) createMessageForReason(pipelines []telemetryv1
 
 func (m *metricComponentsChecker) addReasonPrefix(reason string) string {
 	switch {
-	case reason == conditions.ReasonMetricGatewayDeploymentReady || reason == conditions.ReasonMetricGatewayDeploymentNotReady:
+	case reason == conditions.ReasonDeploymentNotReady:
 		return "MetricGateway" + reason
-	case reason == conditions.ReasonMetricAgentDaemonSetReady || reason == conditions.ReasonMetricAgentDaemonSetNotReady:
+	case reason == conditions.ReasonDaemonSetNotReady:
 		return "MetricAgent" + reason
 	case reason == conditions.ReasonReferencedSecretMissing:
 		return "MetricPipeline" + reason

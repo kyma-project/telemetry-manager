@@ -85,10 +85,10 @@ func TestApplyGatewayResources(t *testing.T) {
 		//labels
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
-		}, dep.Labels, "must have expected daemonset labels")
+		}, dep.Labels, "must have expected deployment labels")
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name": name,
-		}, dep.Spec.Selector.MatchLabels, "must have expected daemonset selector labels")
+		}, dep.Spec.Selector.MatchLabels, "must have expected deployment selector labels")
 		require.Equal(t, map[string]string{
 			"app.kubernetes.io/name":  name,
 			"sidecar.istio.io/inject": "false",

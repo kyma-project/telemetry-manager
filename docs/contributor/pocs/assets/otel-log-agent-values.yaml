@@ -1,0 +1,150 @@
+mode: daemonset
+
+presets:
+  logsCollection:
+    enabled: true
+    storeCheckpoints: true
+  kubernetesAttributes:
+    enabled: false
+    extractAllPodLabels: false
+
+config:
+  receivers:
+    filelog:
+      include: [ /var/log/pods/*/*/*.log ]
+      exclude: []
+      # Exclude collector container's logs. The file format is /var/log/pods/<namespace_name>_<pod_name>_<pod_uid>/<container_name>/<run_id>.log
+      start_at: beginning
+      retry_on_failure:
+          enabled: true
+      include_file_path: true
+      include_file_name: false
+      operators:
+        # Find out which format is used by kubernetes
+        - type: router
+          id: get-format
+          routes:
+            - output: parser-docker
+              expr: 'body matches "^\\{"'
+            - output: parser-crio
+              expr: 'body matches "^[^ Z]+ "'
+            - output: parser-containerd
+              expr: 'body matches "^[^ Z]+Z"'
+        # Parse CRI-O format
+        - type: regex_parser
+          id: parser-crio
+          regex: '^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$'
+          timestamp:
+            parse_from: attributes.time
+            layout_type: gotime
+            layout: '2006-01-02T15:04:05.999999999Z07:00'
+        - type: recombine
+          id: crio-recombine
+          output: extract_metadata_from_filepath
+          combine_field: attributes.log
+          source_identifier: attributes["log.file.path"]
+          is_last_entry: "attributes.logtag == 'F'"
+          combine_with: ""
+        # Parse CRI-Containerd format
+        - type: regex_parser
+          id: parser-containerd
+          regex: '^(?P<time>[^ ^Z]+Z) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$'
+          timestamp:
+            parse_from: attributes.time
+            layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+        - type: recombine
+          id: containerd-recombine
+          output: extract_metadata_from_filepath
+          combine_field: attributes.log
+          source_identifier: attributes["log.file.path"]
+          is_last_entry: "attributes.logtag == 'F'"
+          combine_with: ""
+        # Parse Docker format
+        - type: json_parser
+          id: parser-docker
+          output: extract_metadata_from_filepath
+          timestamp:
+            parse_from: attributes.time
+            layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+        # Extract metadata from file path
+        - type: regex_parser
+          id: extract_metadata_from_filepath
+          regex: '^.*\/(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[a-f0-9\-]+)\/(?P<container_name>[^\._]+)\/(?P<restart_count>\d+)\.log$'
+          parse_from: attributes["log.file.path"]
+        # Rename attributes
+        - type: move
+          from: attributes.stream
+          to: attributes["log.iostream"]
+        - type: move
+          from: attributes.container_name
+          to: resource["k8s.container.name"]
+        - type: move
+          from: attributes.namespace
+          to: resource["k8s.namespace.name"]
+        - type: move
+          from: attributes.pod_name
+          to: resource["k8s.pod.name"]
+        - type: move
+          from: attributes.restart_count
+          to: resource["k8s.container.restart_count"]
+        - type: move
+          from: attributes.uid
+          to: resource["k8s.pod.uid"]
+        # Clean up log body
+        - type: move
+          from: attributes.log
+          to: body
+        # Extract JSON attributes
+        - type: json_parser
+          if: 'body matches "^{.*}$"'
+          parse_from: body
+          parse_to: attributes
+        - type: copy
+          from: body
+          to: attributes.original
+        - type: move
+          from: attributes.message
+          to: body
+          if: 'attributes.message != nil'
+        - type: move
+          from: attributes.msg
+          to: body
+          if: 'attributes.msg != nil'
+        - type: severity_parser
+          parse_from: attributes.level
+          if: 'attributes.level != nil'
+
+  exporters:
+    otlp:
+      endpoint: log-gateway-opentelemetry-collector:4317
+      tls:
+        insecure: true
+  service:
+    telemetry:
+      metrics:
+        address: ${env:MY_POD_IP}:8888
+    pipelines:
+      logs:
+        processors: {}
+        exporters:
+          - otlp
+
+service:
+  # Enable the creation of a Service.
+  # By default, it's enabled on mode != daemonset.
+  # However, to enable it on mode = daemonset, its creation must be explicitly enabled
+  enabled: true
+
+ports:
+  metrics:
+    # The metrics port is disabled by default. However you need to enable the port
+    # in order to use the ServiceMonitor (serviceMonitor.enabled) or PodMonitor (podMonitor.enabled).
+    enabled: true
+
+serviceMonitor:
+  enabled: true
+  metricsEndpoints:
+    - port: metrics
+
+image:
+  pullPolicy: Always

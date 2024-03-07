@@ -21,22 +21,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func TracePipelineShouldBeRunning(ctx context.Context, k8sClient client.Client, pipelineName string) {
+func TracePipelineShouldBeHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.TracePipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning)).To(BeTrue())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)).To(BeTrue())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
-}
-
-func TracePipelineShouldNotBeRunning(ctx context.Context, k8sClient client.Client, pipelineName string) {
-	Consistently(func(g Gomega) {
-		var pipeline telemetryv1alpha1.TracePipeline
-		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning)).To(BeFalse())
-	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
 func TraceCollectorConfigShouldContainPipeline(ctx context.Context, k8sClient client.Client, pipelineName string) {

@@ -128,7 +128,7 @@ type Output struct {
 	Custom string `json:"custom,omitempty"`
 	// Configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
 	HTTP *HTTPOutput `json:"http,omitempty"`
-	// The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://github.com/kyma-project/examples/tree/main/loki).
+	// The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README ).
 	Loki *LokiOutput `json:"grafana-loki,omitempty"`
 }
 
@@ -194,7 +194,8 @@ type LogPipelineStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.conditions[-1].type`
+// +kubebuilder:printcolumn:name="Configuration Generated",type=string,JSONPath=`.status.conditions[?(@.type=="ConfigurationGenerated")].status`
+// +kubebuilder:printcolumn:name="Agent Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="AgentHealthy")].status`
 // +kubebuilder:printcolumn:name="Unsupported-Mode",type=boolean,JSONPath=`.status.unsupportedMode`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // LogPipeline is the Schema for the logpipelines API

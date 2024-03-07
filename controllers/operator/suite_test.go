@@ -108,6 +108,9 @@ var _ = BeforeSuite(func() {
 		Expect(deleteErr).ToNot(HaveOccurred())
 	}(certDir)
 
+	selfMonitorConfig := telemetry.SelfMonitorConfig{
+		Enabled: false,
+	}
 	webhookConfig := telemetry.WebhookConfig{
 		Enabled: false,
 	}
@@ -122,6 +125,7 @@ var _ = BeforeSuite(func() {
 		},
 		Webhook:                webhookConfig,
 		OverridesConfigMapName: types.NamespacedName{Name: "telemetry-override-config", Namespace: "kyma-system"},
+		SelfMonitor:            selfMonitorConfig,
 	}
 	client := mgr.GetClient()
 

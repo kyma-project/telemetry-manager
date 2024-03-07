@@ -1,0 +1,83 @@
+mode: deployment
+
+presets:
+  logsCollection:
+    enabled: false
+  kubernetesAttributes:
+    enabled: true
+    extractAllPodLabels: true
+
+config:
+  processors:
+    batch:
+      send_batch_size: 512
+      timeout: 10s
+      send_batch_max_size: 512
+  receivers:
+    otlp: {}
+  extensions:
+    health_check:
+      endpoint: ${env:MY_POD_IP}:13133
+    file_storage/queue:
+  exporters:
+    otlp:
+      endpoint: ${ingest-otlp-endpoint}
+      sending_queue:
+        storage: file_storage/queue
+      tls:
+        insecure: false
+        cert_pem: ${ingest-otlp-cert}
+        key_pem: ${ingest-otlp-key}
+  service:
+    telemetry:
+      metrics:
+        address: ${env:MY_POD_IP}:8888
+    extensions:
+      - file_storage/queue
+      - health_check
+    pipelines:
+      logs:
+        processors:
+          - batch
+        receivers:
+          - otlp
+        exporters:
+          - otlp
+
+ports:
+  metrics:
+    # The metrics port is disabled by default. However you need to enable the port
+    # in order to use the ServiceMonitor (serviceMonitor.enabled) or PodMonitor (podMonitor.enabled).
+    enabled: true
+
+extraEnvsFrom:
+  - secretRef:
+      name: sap-cloud-logging
+
+extraVolumes:
+- name: persistent-queue
+  persistentVolumeClaim:
+    claimName: otel-queue
+
+extraVolumeMounts:
+- name: persistent-queue
+  mountPath: /var/lib/otelcol/file_storage
+
+serviceMonitor:
+  enabled: true
+  metricsEndpoints:
+    - port: metrics
+
+securityContext:
+  runAsUser: 0
+
+image:
+  pullPolicy: Always
+
+rollout:
+  rollingUpdate: {}
+  # When 'mode: daemonset', maxSurge cannot be used when hostPort is set for any of the ports
+  # maxSurge: 25%
+  # maxUnavailable: 0
+  strategy: Recreate
+

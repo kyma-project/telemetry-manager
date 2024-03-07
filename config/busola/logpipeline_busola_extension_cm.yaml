@@ -26,10 +26,28 @@ data:
             - 'false'
           negative:
             - 'true'
-      - source: status.conditions[-1].type
-        name: Status
-        widget: Badge
     body:
+      - source: $filter(status.conditions, function ($v) { $v.type != "Pending" and $v.type != "Running" })
+        widget: Table
+        name: Reconciliation Conditions
+        children:
+          - source: type
+            name: Type
+          - source: status
+            name: Status
+            widget: Badge
+            highlights:
+              success:
+                - 'True'
+              error:
+                - 'False'
+          - source: reason
+            name: Reason
+          - source: message
+            name: Message
+          - source: '$readableTimestamp(lastTransitionTime)'
+            name: Last transition
+            sort: true
       - widget: Panel
         name: Applications
         children:
@@ -415,6 +433,18 @@ data:
           - 'false'
         negative:
           - 'true'
-    - source: status.conditions[-1].type
-      name: Status
-      widget: Badge
+    - name: Status
+      source: $filter(status.conditions, function ($v) { $v.type != "Pending" and $v.type != "Running" })
+      widget: Columns
+      children:
+        - name: Type
+          source: type
+          widget: Badge
+        - name: Status
+          source: status
+          widget: Badge
+          highlights:
+            success:
+              - 'True'
+            error:
+              - 'False'
