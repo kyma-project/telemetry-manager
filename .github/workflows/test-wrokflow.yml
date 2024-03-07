@@ -48,10 +48,16 @@ jobs:
 
       - name: Deploy Telemetry
         run: make deploy
+
+      - name: check pods before
+        run: kubectl get pods -n kyma-system
         
       - name: Run Load test
         working-directory: docs/contributor/telemetry-load-test
         run: ./assets/run-load-test.sh ${{ matrix.argument }}
+
+      - name: check pods after
+        run: kubectl get pods -n kyma-system
 
 #      # save gardener kubeconfig to a temp file in order to pass it to the command
 #      - name: Save serviceaccount to file
