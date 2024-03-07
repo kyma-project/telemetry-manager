@@ -162,7 +162,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 	r.config.SelfMonitor.Config.AlertRules = string(alertRulesYAML)
 
 	if err := selfmonitor.ApplyResources(ctx,
-		r.Client,
+		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),
 		&r.config.SelfMonitor.Config); err != nil {
 		return fmt.Errorf("failed to apply self-monitor resources: %w", err)
 	}

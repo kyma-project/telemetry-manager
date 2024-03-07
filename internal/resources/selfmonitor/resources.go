@@ -86,11 +86,11 @@ func ApplyResources(ctx context.Context, c client.Client, config *Config) error 
 		return fmt.Errorf("failed to create self-monitor service account: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateClusterRole(ctx, c, makeClusterRole(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateRole(ctx, c, makeRole(name)); err != nil {
 		return fmt.Errorf("failed to create self-monitor role: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateClusterRoleBinding(ctx, c, makeClusterRoleBinding(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateRoleBinding(ctx, c, makeRoleBinding(name)); err != nil {
 		return fmt.Errorf("failed to create self-monitor role binding: %w", err)
 	}
 
@@ -122,8 +122,8 @@ func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 	return &serviceAccount
 }
 
-func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBinding {
-	roleBinding := rbacv1.ClusterRoleBinding{
+func makeRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
+	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name.Name,
 			Labels: defaultLabels(name.Name),
@@ -131,15 +131,15 @@ func makeClusterRoleBinding(name types.NamespacedName) *rbacv1.ClusterRoleBindin
 		Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
+			Kind:     "Role",
 			Name:     name.Name,
 		},
 	}
 	return &roleBinding
 }
 
-func makeClusterRole(name types.NamespacedName) *rbacv1.ClusterRole {
-	role := rbacv1.ClusterRole{
+func makeRole(name types.NamespacedName) *rbacv1.Role {
+	role := rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name.Name,
 			Labels: defaultLabels(name.Name),
