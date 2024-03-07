@@ -1,4 +1,4 @@
-package alerts
+package flowhealth
 
 import (
 	"fmt"
@@ -58,7 +58,6 @@ func makeGatewayExporterSentTelemetry(s signalType) Rule {
 	return Rule{
 		Alert: "GatewayExporterSent" + alertNameSuffix(s),
 		Expr:  fmt.Sprintf("sum by (exporter) (rate(%s{service=\"%s\"}[1m])) > 0", metric, gatewayName(s)),
-		For:   5 * time.Minute,
 	}
 }
 
@@ -67,7 +66,6 @@ func makeGatewayExporterFailedTelemetry(s signalType) Rule {
 	return Rule{
 		Alert: "GatewayExporterDropped" + alertNameSuffix(s),
 		Expr:  fmt.Sprintf("sum by (exporter) (rate(%s{service=\"%s\"}[1m])) > 0", metric, gatewayName(s)),
-		For:   5 * time.Minute,
 	}
 }
 
@@ -83,7 +81,6 @@ func makeGatewayReceiverRefusedMetrics(s signalType) Rule {
 	return Rule{
 		Alert: "GatewayReceiverRefused" + alertNameSuffix(s),
 		Expr:  fmt.Sprintf("sum by (receiver) (rate(%s{service=\"%s\"}[1m])) > 0", metric, gatewayName(s)),
-		For:   5 * time.Minute,
 	}
 }
 
@@ -92,7 +89,6 @@ func makeGatewayExporterEnqueueFailed(s signalType) Rule {
 	return Rule{
 		Alert: "GatewayExporterEnqueueFailed" + alertNameSuffix(s),
 		Expr:  fmt.Sprintf("sum by (exporter) (rate(%s{service=\"%s\"}[1m])) > 0", metric, gatewayName(s)),
-		For:   5 * time.Minute,
 	}
 }
 

@@ -1,4 +1,4 @@
-package alerts
+package flowhealth
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	selfMonitorAPIURL = "http://telemetry-self-monitor.kyma-system:80"
+	selfMonitorAPIURL = "http://telemetry-self-monitor.kyma-system:9090"
 	clientTimeout     = 10 * time.Second
 )
 

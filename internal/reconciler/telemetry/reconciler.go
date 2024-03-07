@@ -23,8 +23,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alerts"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
 
@@ -154,7 +154,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 	}
 	r.config.SelfMonitor.Config.SelfMonitorConfig = string(selfMonitorConfigYAML)
 
-	alertRules := alerts.MakeRules()
+	alertRules := flowhealth.MakeRules()
 	alertRulesYAML, err := yaml.Marshal(alertRules)
 	if err != nil {
 		return fmt.Errorf("failed to marshal selfmonitor alert rules: %w", err)
