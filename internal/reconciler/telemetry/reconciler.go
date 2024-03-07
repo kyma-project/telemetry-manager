@@ -145,7 +145,8 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 		return nil
 	}
 
-	selfMonConfig := config.MakeConfig()
+	scrapeNamespace := r.config.SelfMonitor.Config.Namespace
+	selfMonConfig := config.MakeConfig(scrapeNamespace)
 	selfMonitorConfigYaml, err := yaml.Marshal(selfMonConfig)
 	if err != nil {
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
