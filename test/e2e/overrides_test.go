@@ -71,7 +71,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 
 	Context("When a logpipeline with HTTP output exists", Ordered, func() {
 		It("Should have a running logpipeline", func() {
-			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a log backend running", func() {

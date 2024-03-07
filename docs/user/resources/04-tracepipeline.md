@@ -15,6 +15,7 @@ apiVersion: telemetry.kyma-project.io/v1alpha1
 kind: TracePipeline
 metadata:
   name: jaeger
+  generation: 1
 spec:
   output:
     otlp:
@@ -22,11 +23,29 @@ spec:
         value: http://jaeger-collector.jaeger.svc.cluster.local:4317
 status:
   conditions:
-  - lastTransitionTime: "2022-12-13T14:33:27Z"
-    reason: OpenTelemetryDeploymentNotReady
+  - lastTransitionTime: "2024-02-29T01:18:28Z"
+    message: Trace gateway Deployment is ready
+    observedGeneration: 1
+    reason: DeploymentReady
+    status: "True"
+    type: GatewayHealthy
+  - lastTransitionTime: "2024-02-29T01:18:27Z"
+    message: ""
+    observedGeneration: 1
+    reason: ConfigurationGenerated
+    status: "True"
+    type: ConfigurationGenerated
+  - lastTransitionTime: "2024-02-29T01:18:28Z"
+    message: '[NOTE: The "Pending" type is deprecated] Trace gateway Deployment is not ready'
+    observedGeneration: 1
+    reason: TraceGatewayDeploymentNotReady
+    status: "False"
     type: Pending
-  - lastTransitionTime: "2022-12-13T14:33:28Z"
-    reason: OpenTelemetryDeploymentReady
+  - lastTransitionTime: "2024-02-29T01:18:28Z"
+    message: '[NOTE: The "Running" type is deprecated] Trace gateway Deployment is ready'
+    observedGeneration: 1
+    reason: TraceGatewayDeploymentReady
+    status: "True"
     type: Running
 ```
 
@@ -121,3 +140,17 @@ For details, see the [TracePipeline specification file](https://github.com/kyma-
 | **conditions.&#x200b;type** (required) | string | type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt) |
 
 <!-- TABLE-END -->
+
+### TracePipeline Status
+
+The status of the TracePipeline is determined by the condition types `GatewayHealthy` and `ConfigurationGenerated`:
+
+> **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
+
+| Condition Type         | Condition Status | Condition Reason        | Condition Message                          |
+|------------------------|------------------|-------------------------|--------------------------------------------|
+| GatewayHealthy         | True             | DeploymentReady         | Trace gateway Deployment is ready          |
+| GatewayHealthy         | False            | DeploymentNotReady      | Trace gateway Deployment is not ready      |
+| ConfigurationGenerated | True             | ConfigurationGenerated  |                                            |
+| ConfigurationGenerated | False            | ReferencedSecretMissing | One or more referenced Secrets are missing |
+| ConfigurationGenerated | False            | MaxPipelinesExceeded    | Maximum pipeline count limit exceeded      |

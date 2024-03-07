@@ -8,7 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
 )
 
 type TracePipelineBuilder struct {
@@ -18,8 +17,7 @@ type TracePipelineBuilder struct {
 	endpoint          string
 	basicAuthUser     string
 	basicAuthPassword string
-
-	conditions []metav1.Condition
+	statusConditions  []metav1.Condition
 }
 
 func NewTracePipelineBuilder() *TracePipelineBuilder {
@@ -45,26 +43,8 @@ func (b *TracePipelineBuilder) WithBasicAuth(user, password string) *TracePipeli
 	return b
 }
 
-func TracePendingCondition(reason string) metav1.Condition {
-	return metav1.Condition{
-		Type:    conditions.TypePending,
-		Status:  metav1.ConditionTrue,
-		Reason:  reason,
-		Message: conditions.CommonMessageFor(reason),
-	}
-}
-
-func TraceRunningCondition() metav1.Condition {
-	return metav1.Condition{
-		Type:    conditions.TypeRunning,
-		Status:  metav1.ConditionTrue,
-		Reason:  conditions.ReasonTraceGatewayDeploymentReady,
-		Message: conditions.CommonMessageFor(conditions.ReasonTraceGatewayDeploymentReady),
-	}
-}
-
-func (b *TracePipelineBuilder) WithStatusConditions(conditions ...metav1.Condition) *TracePipelineBuilder {
-	b.conditions = conditions
+func (b *TracePipelineBuilder) WithStatusCondition(cond metav1.Condition) *TracePipelineBuilder {
+	b.statusConditions = append(b.statusConditions, cond)
 	return b
 }
 
@@ -99,7 +79,7 @@ func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
 			},
 		},
 		Status: telemetryv1alpha1.TracePipelineStatus{
-			Conditions: b.conditions,
+			Conditions: b.statusConditions,
 		},
 	}
 }

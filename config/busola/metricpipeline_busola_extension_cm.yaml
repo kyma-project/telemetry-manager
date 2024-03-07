@@ -18,13 +18,6 @@ data:
         isSelected: true
         widget: Text
     body:
-      - name: Status
-        widget: Panel
-        children:
-        - source: status.endpoints.traces.grpc
-          name: OTLP GRPC Trace Endpoint
-        - source: status.endpoints.traces.http
-          name: OTLP HTTP Trace Endpoint
       - source: status.conditions
         widget: Table
         name: Reconciliation Conditions
@@ -558,4 +551,3 @@ data:
               - 'True'
             error:
               - 'False'
-

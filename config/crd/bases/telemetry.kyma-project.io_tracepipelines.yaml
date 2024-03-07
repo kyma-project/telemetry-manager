@@ -16,8 +16,11 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.conditions[-1].type
-      name: Status
+    - jsonPath: .status.conditions[?(@.type=="ConfigurationGenerated")].status
+      name: Configuration Generated
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="GatewayHealthy")].status
+      name: Gateway Healthy
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age

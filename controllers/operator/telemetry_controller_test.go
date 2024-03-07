@@ -68,21 +68,20 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 					Namespace: telemetryNamespace,
 				},
 			}
-			runningTracePipeline := testutils.NewTracePipelineBuilder().Build()
+			tracePipeline := testutils.NewTracePipelineBuilder().Build()
 
 			DeferCleanup(func() {
-				Expect(k8sClient.Delete(ctx, &runningTracePipeline)).Should(Succeed())
+				Expect(k8sClient.Delete(ctx, &tracePipeline)).Should(Succeed())
 				Expect(k8sClient.Delete(ctx, telemetry)).Should(Succeed())
 			})
-			Expect(k8sClient.Create(ctx, &runningTracePipeline)).Should(Succeed())
-			meta.SetStatusCondition(&runningTracePipeline.Status.Conditions, conditions.New(
-				conditions.TypeRunning,
-				conditions.ReasonTraceGatewayDeploymentReady,
-				metav1.ConditionTrue,
-				runningTracePipeline.Generation,
-			))
-			Expect(k8sClient.Status().Update(ctx, &runningTracePipeline)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, &tracePipeline)).Should(Succeed())
+
+			meta.SetStatusCondition(&tracePipeline.Status.Conditions, metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonDeploymentReady})
+			meta.SetStatusCondition(&tracePipeline.Status.Conditions, metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonConfigurationGenerated})
+			meta.SetStatusCondition(&tracePipeline.Status.Conditions, metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonTraceGatewayDeploymentNotReady})
+			meta.SetStatusCondition(&tracePipeline.Status.Conditions, metav1.Condition{Type: conditions.TypeRunning, Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady})
+			Expect(k8sClient.Status().Update(ctx, &tracePipeline)).Should(Succeed())
 		})
 
 		It("Should have Telemetry with ready state", func() {
@@ -126,21 +125,19 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 					Namespace: telemetryNamespace,
 				},
 			}
-			pendingTracePipeline := testutils.NewTracePipelineBuilder().Build()
+			tracePipeline := testutils.NewTracePipelineBuilder().Build()
 
 			DeferCleanup(func() {
-				Expect(k8sClient.Delete(ctx, &pendingTracePipeline)).Should(Succeed())
+				Expect(k8sClient.Delete(ctx, &tracePipeline)).Should(Succeed())
 				Expect(k8sClient.Delete(ctx, telemetry)).Should(Succeed())
 			})
-			Expect(k8sClient.Create(ctx, &pendingTracePipeline)).Should(Succeed())
-			meta.SetStatusCondition(&pendingTracePipeline.Status.Conditions, conditions.New(
-				conditions.TypePending,
-				conditions.ReasonTraceGatewayDeploymentNotReady,
-				metav1.ConditionTrue,
-				pendingTracePipeline.Generation,
-			))
-			Expect(k8sClient.Status().Update(ctx, &pendingTracePipeline)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, &tracePipeline)).Should(Succeed())
+
+			meta.SetStatusCondition(&tracePipeline.Status.Conditions, metav1.Condition{Type: conditions.TypeGatewayHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDeploymentNotReady})
+			meta.SetStatusCondition(&tracePipeline.Status.Conditions, metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonConfigurationGenerated})
+			meta.SetStatusCondition(&tracePipeline.Status.Conditions, metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentNotReady})
+			Expect(k8sClient.Status().Update(ctx, &tracePipeline)).Should(Succeed())
 		})
 
 		It("Should have Telemetry with warning state", func() {
@@ -154,7 +151,6 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 				if err != nil {
 					return "", err
 				}
-
 				return telemetry.Status.State, nil
 			}, timeout, interval).Should(Equal(operatorv1alpha1.StateWarning))
 		})
@@ -192,15 +188,14 @@ var _ = Describe("Deploying a Telemetry", Ordered, func() {
 				Expect(k8sClient.Delete(ctx, logPipelineWithLokiOutput)).Should(Succeed())
 				Expect(k8sClient.Delete(ctx, telemetry)).Should(Succeed())
 			})
-			Expect(k8sClient.Create(ctx, logPipelineWithLokiOutput)).Should(Succeed())
-			meta.SetStatusCondition(&logPipelineWithLokiOutput.Status.Conditions, conditions.New(
-				conditions.TypePending,
-				conditions.ReasonUnsupportedLokiOutput,
-				metav1.ConditionTrue,
-				logPipelineWithLokiOutput.Generation,
-			))
-			Expect(k8sClient.Status().Update(ctx, logPipelineWithLokiOutput)).Should(Succeed())
 			Expect(k8sClient.Create(ctx, telemetry)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, logPipelineWithLokiOutput)).Should(Succeed())
+
+			meta.SetStatusCondition(&logPipelineWithLokiOutput.Status.Conditions, metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonDaemonSetReady})
+			meta.SetStatusCondition(&logPipelineWithLokiOutput.Status.Conditions, metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonUnsupportedLokiOutput})
+			meta.SetStatusCondition(&logPipelineWithLokiOutput.Status.Conditions, metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionTrue, Reason: conditions.ReasonUnsupportedLokiOutput})
+			Expect(k8sClient.Status().Update(ctx, logPipelineWithLokiOutput)).Should(Succeed())
+
 		})
 
 		It("Should have Telemetry with warning state", func() {

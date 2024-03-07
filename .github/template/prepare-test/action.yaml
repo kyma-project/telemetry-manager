@@ -13,9 +13,12 @@ runs:
   using: "composite"
 
   steps:
-
     - name: Setup Golang
       uses: "./.github/template/setup-golang"
+
+    - name: Setup Ginkgo
+      shell: bash
+      run: make ginkgo
 
     - name: Provision K3D
       shell: bash
@@ -51,6 +54,6 @@ runs:
 
     - name: Print cluster info
       shell: bash
-      run: | 
+      run: |
         kubectl cluster-info
         kubectl -n kyma-system get po

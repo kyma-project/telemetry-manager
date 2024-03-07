@@ -8,6 +8,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -32,14 +33,15 @@ var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 			})
 		})
 
-		It("Should have pending metricpipeline", func() {
+		It("Should set ConfigurationGenerated condition to false", func() {
 			Eventually(func(g Gomega) {
 				var fetched telemetryv1alpha1.MetricPipeline
 				key := types.NamespacedName{Name: metricPipeline.Name()}
 				g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
-				g.Expect(meta.IsStatusConditionFalse(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
-				actualReason := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated).Reason
-				g.Expect(actualReason).To(Equal(conditions.ReasonReferencedSecretMissing))
+				configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
+				g.Expect(configurationGeneratedCond).NotTo(BeNil())
+				g.Expect(configurationGeneratedCond.Status).Should(Equal(metav1.ConditionFalse))
+				g.Expect(configurationGeneratedCond.Reason).Should(Equal(conditions.ReasonReferencedSecretMissing))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 

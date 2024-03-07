@@ -64,7 +64,7 @@ var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a trace backend running", func() {

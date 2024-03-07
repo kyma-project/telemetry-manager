@@ -7,7 +7,12 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
@@ -27,8 +32,25 @@ var _ = Describe("Traces Secret Rotation", Label("traces"), func() {
 			})
 		})
 
-		It("Should have pending tracepipeline", func() {
-			verifiers.TracePipelineShouldNotBeRunning(ctx, k8sClient, tracePipeline.Name())
+		It("Should set ConfigurationGenerated condition to false and Pending condition to true", func() {
+			Eventually(func(g Gomega) {
+				var fetched telemetryv1alpha1.TracePipeline
+				key := types.NamespacedName{Name: tracePipeline.Name()}
+				g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
+
+				configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
+				g.Expect(configurationGeneratedCond).NotTo(BeNil())
+				g.Expect(configurationGeneratedCond.Status).Should(Equal(metav1.ConditionFalse))
+				g.Expect(configurationGeneratedCond.Reason).Should(Equal(conditions.ReasonReferencedSecretMissing))
+
+				pendingCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypePending)
+				g.Expect(pendingCond).NotTo(BeNil())
+				g.Expect(pendingCond.Status).Should(Equal(metav1.ConditionTrue))
+				g.Expect(pendingCond.Reason).Should(Equal(conditions.ReasonReferencedSecretMissing))
+
+				runningCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeRunning)
+				g.Expect(runningCond).To(BeNil())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 
 		It("Should not have trace gateway deployment", func() {
@@ -44,7 +66,7 @@ var _ = Describe("Traces Secret Rotation", Label("traces"), func() {
 				Expect(kitk8s.CreateObjects(ctx, k8sClient, hostSecret.K8sObject())).Should(Succeed())
 			})
 
-			verifiers.TracePipelineShouldBeRunning(ctx, k8sClient, tracePipeline.Name())
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, tracePipeline.Name())
 		})
 	})
 

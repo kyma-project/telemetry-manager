@@ -56,7 +56,7 @@ type WebhookConfig struct {
 
 type SelfMonitorConfig struct {
 	Enabled bool
-	Config  config.SelfMonitor
+	Config  selfmonitor.Config
 }
 
 type healthCheckers struct {
@@ -150,7 +150,7 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 	if err != nil {
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
 	}
-	r.config.SelfMonitor.Config.MonitoringConfig = string(selfMonitorConfigYaml)
+	r.config.SelfMonitor.Config.SelfMonitorConfig = string(selfMonitorConfigYaml)
 
 	if err := selfmonitor.ApplyResources(ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),

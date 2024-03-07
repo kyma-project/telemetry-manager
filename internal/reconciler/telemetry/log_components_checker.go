@@ -3,8 +3,8 @@ package telemetry
 import (
 	"context"
 	"fmt"
-	"slices"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -21,18 +21,27 @@ func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bo
 	var logPipelines telemetryv1alpha1.LogPipelineList
 	err := l.client.List(ctx, &logPipelines)
 	if err != nil {
-		return &metav1.Condition{}, fmt.Errorf("failed to list log pipelines: %w", err)
+		return &metav1.Condition{}, fmt.Errorf("failed to get list of LogPipelines: %w", err)
 	}
 
 	var logParsers telemetryv1alpha1.LogParserList
 	err = l.client.List(ctx, &logParsers)
 	if err != nil {
-		return &metav1.Condition{}, fmt.Errorf("failed to list log parsers: %w", err)
+		return &metav1.Condition{}, fmt.Errorf("failed to get list of LogParsers: %w", err)
 	}
 
 	reason := l.determineReason(logPipelines.Items, logParsers.Items, telemetryInDeletion)
+	status := l.determineConditionStatus(reason)
 	message := l.createMessageForReason(logPipelines.Items, logParsers.Items, reason)
-	return l.createConditionFromReason(reason, message), nil
+	reasonWithPrefix := l.addReasonPrefix(reason)
+
+	conditionType := "LogComponentsHealthy"
+	return &metav1.Condition{
+		Type:    conditionType,
+		Status:  status,
+		Reason:  reasonWithPrefix,
+		Message: message,
+	}, nil
 }
 
 func (l *logComponentsChecker) determineReason(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, telemetryInDeletion bool) string {
@@ -44,39 +53,40 @@ func (l *logComponentsChecker) determineReason(pipelines []telemetryv1alpha1.Log
 		return conditions.ReasonNoPipelineDeployed
 	}
 
-	if found := slices.ContainsFunc(pipelines, func(p telemetryv1alpha1.LogPipeline) bool {
-		return l.isPendingWithReason(p, conditions.ReasonFluentBitDSNotReady)
-	}); found {
-		return conditions.ReasonFluentBitDSNotReady
+	if reason := l.firstUnhealthyPipelineReason(pipelines); reason != "" {
+		return reason
 	}
 
-	if found := slices.ContainsFunc(pipelines, func(p telemetryv1alpha1.LogPipeline) bool {
-		return l.isPendingWithReason(p, conditions.ReasonUnsupportedLokiOutput)
-	}); found {
-		return conditions.ReasonUnsupportedLokiOutput
-	}
-
-	if found := slices.ContainsFunc(pipelines, func(p telemetryv1alpha1.LogPipeline) bool {
-		return l.isPendingWithReason(p, conditions.ReasonReferencedSecretMissing)
-	}); found {
-		return conditions.ReasonReferencedSecretMissing
-	}
-
-	return conditions.ReasonFluentBitDSReady
+	return conditions.ReasonLogComponentsRunning
 }
 
-func (l *logComponentsChecker) isPendingWithReason(p telemetryv1alpha1.LogPipeline, reason string) bool {
-	if len(p.Status.Conditions) == 0 {
-		return false
+func (l *logComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.LogPipeline) string {
+	// condTypes order defines the priority of negative conditions
+	condTypes := []string{
+		conditions.TypeAgentHealthy,
+		conditions.TypeConfigurationGenerated,
 	}
+	for _, condType := range condTypes {
+		for _, pipeline := range pipelines {
+			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
+			if cond != nil && cond.Status == metav1.ConditionFalse {
+				return cond.Reason
+			}
+		}
+	}
+	return ""
+}
 
-	lastCondition := p.Status.Conditions[len(p.Status.Conditions)-1]
-	return lastCondition.Type == conditions.TypePending && lastCondition.Reason == reason
+func (l *logComponentsChecker) determineConditionStatus(reason string) metav1.ConditionStatus {
+	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonLogComponentsRunning {
+		return metav1.ConditionTrue
+	}
+	return metav1.ConditionFalse
 }
 
 func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, reason string) string {
 	if reason != conditions.ReasonResourceBlocksDeletion {
-		return conditions.CommonMessageFor(reason)
+		return conditions.MessageFor(reason, conditions.LogsMessage)
 	}
 
 	return generateDeletionBlockedMessage(blockingResources{
@@ -92,20 +102,12 @@ func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alp
 	})
 }
 
-func (l *logComponentsChecker) createConditionFromReason(reason, message string) *metav1.Condition {
-	conditionType := "LogComponentsHealthy"
-	if reason == conditions.ReasonFluentBitDSReady || reason == conditions.ReasonNoPipelineDeployed {
-		return &metav1.Condition{
-			Type:    conditionType,
-			Status:  metav1.ConditionTrue,
-			Reason:  reason,
-			Message: message,
-		}
+func (l *logComponentsChecker) addReasonPrefix(reason string) string {
+	switch {
+	case reason == conditions.ReasonDaemonSetNotReady:
+		return "FluentBit" + reason
+	case reason == conditions.ReasonReferencedSecretMissing:
+		return "LogPipeline" + reason
 	}
-	return &metav1.Condition{
-		Type:    conditionType,
-		Status:  metav1.ConditionFalse,
-		Reason:  reason,
-		Message: message,
-	}
+	return reason
 }

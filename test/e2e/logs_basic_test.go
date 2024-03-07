@@ -58,7 +58,7 @@ var _ = Describe("Logs Basic", Label("logs"), Ordered, func() {
 		})
 
 		It("Should have a running logpipeline", Label(operationalTest), func() {
-			verifiers.LogPipelineShouldBeRunning(ctx, k8sClient, pipelineName)
+			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a log backend running", Label(operationalTest), func() {
