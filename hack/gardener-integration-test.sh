@@ -15,6 +15,7 @@ IMG="europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:${GIT_COMMIT_DATE
 function run-tests-with-git-image () {
     kubectl create namespace kyma-system
     make ginkgo
+    make deploy
     hack/deploy-istio.sh
     ${GINKGO} run --tags istio test/integration/istio
 }
