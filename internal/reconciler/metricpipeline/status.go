@@ -110,5 +110,7 @@ func (r *Reconciler) setFlowHealthConditions(ctx context.Context, pipeline *tele
 		logf.FromContext(ctx).Error(err, "Failed to retrieve alerts")
 		return
 	}
+
+	//TODO: Reflect probe result in the status of the MetricPipeline
 	logf.FromContext(ctx).Info("Probe finished", "probe", probeResult)
 }
