@@ -54,10 +54,14 @@ jobs:
       - name: Setup Clustername
         run:  echo "GARDENER_CLUSTER_NAME=$(echo '${{ matrix.argument }}' | awk '{print $2}')" >> $GITHUB_ENV
 
-      - name: test
+      - name: Declare variables
         run: |
           echo "GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)" >> $GITHUB_ENV
           echo "K8s_VERSION=$(echo ${{ matrix.k8s_version }} | sed 's/\.//g')" >> $GITHUB_ENV
+        
+
+      - name: test
+        run: |
           echo "GARDENER_CLUSTER_NAME=$(echo 'ci-${{ env.GIT_COMMIT_SHA }}-${{ env.K8s_VERSION }}')" >> $GITHUB_ENV
 
       - name: Show changes
