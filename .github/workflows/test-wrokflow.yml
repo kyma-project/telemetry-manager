@@ -37,10 +37,9 @@ jobs:
         uses: "./.github/template/setup-golang"
 
       - name: Setup Clustername
-        run: bash|
-             clustername=$(echo ${{ matrix.argument }} | awk '{print $2}')
+        run:  echo ${{ matrix.argument }} | awk '{print $2}' > /tmp/cluster_name
         env:
-           GARDENER_CLUSTER_NAME: ${{ clustername }}
+           GARDENER_CLUSTER_NAME: 'cat /tmp/cluster_name'
 
       - name: Show changes
         run: make test-gardener-cluster-name
