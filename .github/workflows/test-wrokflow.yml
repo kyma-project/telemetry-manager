@@ -63,6 +63,7 @@ jobs:
       - name: test
         run: |
           echo "GARDENER_CLUSTER_NAME=$(echo 'ci-${{ env.GIT_COMMIT_SHA }}-${{ env.K8s_VERSION }}')" >> $GITHUB_ENV
+          make test-gardener-cluster-name
 
       - name: Show changes
         run: echo $GARDENER_CLUSTER_NAME
