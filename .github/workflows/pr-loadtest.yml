@@ -10,7 +10,6 @@ on:
 
 env:
   IMG: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.inputs.pr_number }}
-  K8S_VERSION: "1.27"
 
 jobs:
   load-test:
@@ -62,7 +61,6 @@ jobs:
           GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
           GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
-          GARDENER_K8S_VERSION: ${{ K8S_VERSION }}
 
       - name: Deploy Istio Module
         run: hack/deploy-istio.sh
@@ -77,3 +75,4 @@ jobs:
 
       - name: Deprovision Gardener
         run: make deprovision-gardener
+        if: success() || failure()
