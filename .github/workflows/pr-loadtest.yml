@@ -1,7 +1,6 @@
 name: PR Load Test
 
-# Controls when the action will run. Workflow runs when manually triggered using the UI
-# or API.
+# Trigger the test Manually additionally provide PR number.
 on:
   workflow_dispatch:
     inputs:
@@ -13,17 +12,14 @@ env:
   IMG: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.inputs.pr_number }}
   K8S_VERSION: "1.27"
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   load-test:
     strategy:
       max-parallel: 3
       matrix:
         argument: ["-n pr-lt-traces -t traces", "-n pr-lt-traces-m -t traces -m true", "-n pr-lt-traces-b -t traces -b true", "-n pr-lt-metrics -t metrics", "-n pr-lt-metrics-m -t metrics -m true", "-n pr-lt-metrics-b -t metrics -b true"]
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -34,7 +30,7 @@ jobs:
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
-      # Generate the cluster name to be used for cluster creation
+      # Generate the cluster name to be used for cluster creation. The cluster-name should be `pr-lt-traces`
       - name: Setup gardener cluster name
         run:  echo "GARDENER_CLUSTER_NAME=$(echo '${{ matrix.argument }}' | awk '{print $2}')" >> $GITHUB_ENV
 
@@ -45,7 +41,7 @@ jobs:
         env:
           GARDENER_SA: ${{ secrets.GARDENER_SA }}
 
-      # provision cluster and run tests
+      # provision cluster
       - name: Provision Gardener
         run: make provision-gardener
         env:
