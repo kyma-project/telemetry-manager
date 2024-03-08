@@ -54,7 +54,7 @@ type DeploymentProber interface {
 type Reconciler struct {
 	client.Client
 	config                   Config
-	gatewayProber            DeploymentProber
+	prober                   DeploymentProber
 	flowHealthProbingEnabled bool
 	flowHealthProber         *flowhealth.Prober
 	overridesHandler         *overrides.Handler
@@ -63,14 +63,14 @@ type Reconciler struct {
 
 func NewReconciler(client client.Client,
 	config Config,
-	gatewayProber DeploymentProber,
+	prober DeploymentProber,
 	flowHealthProbingEnabled bool,
 	flowHealthProber *flowhealth.Prober,
 	overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
 		Client:                   client,
 		config:                   config,
-		gatewayProber:            gatewayProber,
+		prober:                   prober,
 		flowHealthProbingEnabled: flowHealthProbingEnabled,
 		flowHealthProber:         flowHealthProber,
 		overridesHandler:         overridesHandler,
