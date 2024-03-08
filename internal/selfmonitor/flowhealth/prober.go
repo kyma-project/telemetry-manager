@@ -16,8 +16,13 @@ const (
 	clientTimeout     = 10 * time.Second
 )
 
+//go:generate mockery --name alertGetter --filename=alert_getter.go --exported
+type alertGetter interface {
+	Alerts(ctx context.Context) (promv1.AlertsResult, error)
+}
+
 type Prober struct {
-	promAPI       promv1.API
+	getter        alertGetter
 	clientTimeout time.Duration
 }
 
@@ -30,17 +35,17 @@ func NewProber() (*Prober, error) {
 	}
 
 	return &Prober{
-		promAPI:       promv1.NewAPI(client),
+		getter:        promv1.NewAPI(client),
 		clientTimeout: clientTimeout,
 	}, nil
 }
 
 type ProbeResult struct {
-	AllDataDropped           bool
-	SomeTelemetryDataDropped bool
-	BufferFillingUp          bool
-	GatewayThrottling        bool
-	Healthy                  bool
+	AllDataDropped    bool
+	SomeDataDropped   bool
+	BufferFillingUp   bool
+	GatewayThrottling bool
+	Healthy           bool
 }
 
 func (p *Prober) Probe(ctx context.Context, pipelineName string) (ProbeResult, error) {
@@ -71,7 +76,7 @@ func (p *Prober) retrieveAlerts(ctx context.Context) ([]promv1.Alert, error) {
 	childCtx, cancel := context.WithTimeout(ctx, p.clientTimeout)
 	defer cancel()
 
-	result, err := p.promAPI.Alerts(childCtx)
+	result, err := p.getter.Alerts(childCtx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Prometheus alerts: %w", err)
 	}
