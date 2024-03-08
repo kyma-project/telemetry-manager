@@ -35,6 +35,25 @@ func NewProber() (*Prober, error) {
 	}, nil
 }
 
+type ProbeResult struct {
+	AllDataDropped           bool
+	SomeTelemetryDataDropped bool
+	BufferFillingUp          bool
+	GatewayThrottling        bool
+	Healthy                  bool
+}
+
+func (p *Prober) Probe(ctx context.Context, pipelineName string) (ProbeResult, error) {
+	allDataDropped, err := p.AllDataDropped(ctx, pipelineName)
+	if err != nil {
+		return ProbeResult{}, fmt.Errorf("failed to probe all data dropped: %w", err)
+	}
+
+	return ProbeResult{
+		AllDataDropped: allDataDropped,
+	}, nil
+}
+
 func (p *Prober) AllDataDropped(ctx context.Context, pipelineName string) (bool, error) {
 	alerts, err := p.retrieveAlerts(ctx)
 	if err != nil {

@@ -20,6 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
 )
 
 const defaultReplicaCount int32 = 2
@@ -43,21 +44,31 @@ type DaemonSetProber interface {
 
 type Reconciler struct {
 	client.Client
-	config             Config
-	gatewayProber      DeploymentProber
-	agentProber        DaemonSetProber
-	overridesHandler   *overrides.Handler
-	istioStatusChecker istiostatus.Checker
+	config                   Config
+	gatewayProber            DeploymentProber
+	agentProber              DaemonSetProber
+	flowHealthProbingEnabled bool
+	flowHealthProber         *flowhealth.Prober
+	overridesHandler         *overrides.Handler
+	istioStatusChecker       istiostatus.Checker
 }
 
-func NewReconciler(client client.Client, config Config, gatewayProber DeploymentProber, agentProber DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
+func NewReconciler(
+	client client.Client, config Config,
+	gatewayProber DeploymentProber,
+	agentProber DaemonSetProber,
+	flowHealthProbingEnabled bool,
+	flowHealthProber *flowhealth.Prober,
+	overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
-		Client:             client,
-		config:             config,
-		gatewayProber:      gatewayProber,
-		agentProber:        agentProber,
-		overridesHandler:   overridesHandler,
-		istioStatusChecker: istiostatus.NewChecker(client),
+		Client:                   client,
+		config:                   config,
+		gatewayProber:            gatewayProber,
+		agentProber:              agentProber,
+		flowHealthProbingEnabled: flowHealthProbingEnabled,
+		flowHealthProber:         flowHealthProber,
+		overridesHandler:         overridesHandler,
+		istioStatusChecker:       istiostatus.NewChecker(client),
 	}
 }
 

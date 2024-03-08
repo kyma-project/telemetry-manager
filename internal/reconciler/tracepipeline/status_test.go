@@ -49,7 +49,7 @@ func TestUpdateStatus(t *testing.T) {
 			config: Config{Gateway: otelcollector.GatewayConfig{
 				Config: otelcollector.Config{BaseName: "trace-gateway"},
 			}},
-			prober: proberStub,
+			gatewayProber: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)
@@ -103,7 +103,7 @@ func TestUpdateStatus(t *testing.T) {
 			config: Config{Gateway: otelcollector.GatewayConfig{
 				Config: otelcollector.Config{BaseName: "trace-gateway"},
 			}},
-			prober: proberStub,
+			gatewayProber: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)
@@ -180,7 +180,7 @@ func TestUpdateStatus(t *testing.T) {
 			config: Config{Gateway: otelcollector.GatewayConfig{
 				Config: otelcollector.Config{BaseName: "trace-gateway"},
 			}},
-			prober: proberStub,
+			gatewayProber: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
@@ -251,7 +251,7 @@ func TestUpdateStatus(t *testing.T) {
 			config: Config{Gateway: otelcollector.GatewayConfig{
 				Config: otelcollector.Config{BaseName: "trace-gateway"},
 			}},
-			prober: proberStub,
+			gatewayProber: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
@@ -303,7 +303,7 @@ func TestUpdateStatus(t *testing.T) {
 			config: Config{Gateway: otelcollector.GatewayConfig{
 				Config: otelcollector.Config{BaseName: "trace-gateway"},
 			}},
-			prober: proberStub,
+			gatewayProber: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, false)
 		require.NoError(t, err)
@@ -389,7 +389,7 @@ func TestUpdateStatus(t *testing.T) {
 			config: Config{Gateway: otelcollector.GatewayConfig{
 				Config: otelcollector.Config{BaseName: "trace-gateway"},
 			}},
-			prober: proberStub,
+			gatewayProber: proberStub,
 		}
 		err := sut.updateStatus(context.Background(), pipeline.Name, true)
 		require.NoError(t, err)

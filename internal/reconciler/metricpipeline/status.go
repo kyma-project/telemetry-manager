@@ -13,7 +13,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool) error {
@@ -35,7 +34,10 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
-	r.setPipelineFlowHealthConditions(ctx, &pipeline)
+
+	if r.flowHealthProbingEnabled {
+		r.setFlowHealthConditions(ctx, &pipeline)
+	}
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update MetricPipeline status: %w", err)
@@ -102,16 +104,11 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation, conditions.MetricsMessage))
 }
 
-func (r *Reconciler) setPipelineFlowHealthConditions(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
-	alertClient, err := flowhealth.NewProber()
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Failed to create alert client")
-		return
-	}
-	allDataDropped, err := alertClient.AllDataDropped(ctx, pipeline.Name)
+func (r *Reconciler) setFlowHealthConditions(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
+	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Failed to retrieve alerts")
 		return
 	}
-	logf.FromContext(ctx).Info("All data dropped", "value", allDataDropped)
+	logf.FromContext(ctx).Info("Probe finished", "probe", probeResult)
 }
