@@ -103,7 +103,7 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 }
 
 func (r *Reconciler) setPipelineFlowHealthConditions(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
-	alertClient, err := flowhealth.NewClient()
+	alertClient, err := flowhealth.NewProber()
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Failed to create alert client")
 		return

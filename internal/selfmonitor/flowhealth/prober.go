@@ -16,12 +16,12 @@ const (
 	clientTimeout     = 10 * time.Second
 )
 
-type Client struct {
+type Prober struct {
 	promAPI       promv1.API
 	clientTimeout time.Duration
 }
 
-func NewClient() (*Client, error) {
+func NewProber() (*Prober, error) {
 	client, err := api.NewClient(api.Config{
 		Address: selfMonitorAPIURL,
 	})
@@ -29,14 +29,14 @@ func NewClient() (*Client, error) {
 		return nil, fmt.Errorf("failed to create Prometheus client: %w", err)
 	}
 
-	return &Client{
+	return &Prober{
 		promAPI:       promv1.NewAPI(client),
 		clientTimeout: clientTimeout,
 	}, nil
 }
 
-func (c *Client) AllDataDropped(ctx context.Context, pipelineName string) (bool, error) {
-	alerts, err := c.retrieveAlerts(ctx)
+func (p *Prober) AllDataDropped(ctx context.Context, pipelineName string) (bool, error) {
+	alerts, err := p.retrieveAlerts(ctx)
 	if err != nil {
 		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
@@ -48,11 +48,11 @@ func (c *Client) AllDataDropped(ctx context.Context, pipelineName string) (bool,
 	return !exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring), nil
 }
 
-func (c *Client) retrieveAlerts(ctx context.Context) ([]promv1.Alert, error) {
-	childCtx, cancel := context.WithTimeout(ctx, c.clientTimeout)
+func (p *Prober) retrieveAlerts(ctx context.Context) ([]promv1.Alert, error) {
+	childCtx, cancel := context.WithTimeout(ctx, p.clientTimeout)
 	defer cancel()
 
-	result, err := c.promAPI.Alerts(childCtx)
+	result, err := p.promAPI.Alerts(childCtx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Prometheus alerts: %w", err)
 	}
