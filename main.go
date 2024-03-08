@@ -336,15 +336,15 @@ func main() {
 		},
 	})
 
-	overridesHandler = overrides.New(mgr.GetClient(), atomicLevel, overrides.HandlerConfig{
-		ConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
-		ConfigMapKey:  overridesConfigMapKey,
-	})
-
 	if err != nil {
 		setupLog.Error(err, "Failed to start manager")
 		os.Exit(1)
 	}
+
+	overridesHandler = overrides.New(mgr.GetClient(), atomicLevel, overrides.HandlerConfig{
+		ConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
+		ConfigMapKey:  overridesConfigMapKey,
+	})
 
 	enableLoggingController(mgr)
 	enableTracingController(mgr)

@@ -52,6 +52,19 @@ receivers:
         metric_groups:
             - container
             - pod
+        metrics:
+            container.cpu.usage:
+                enabled: true
+            container.cpu.utilization:
+                enabled: false
+            k8s.node.cpu.usage:
+                enabled: true
+            k8s.node.cpu.utilization:
+                enabled: false
+            k8s.pod.cpu.usage:
+                enabled: true
+            k8s.pod.cpu.utilization:
+                enabled: false
     prometheus/app-pods:
         config:
             scrape_configs:
