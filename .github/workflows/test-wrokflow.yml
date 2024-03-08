@@ -58,7 +58,7 @@ jobs:
         run: |
           echo "GIT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)" >> $GITHUB_ENV
           echo "k8sVersion=$(echo ${{ matrix.k8s_version }} | 's/\.//g') >> $GITHUB_ENV
-          echo "GARDENER_CLUSTER_NAME=$(echo 'ci-${{ env.GIT_COMMIT_SHA }}-${{ matrix.k8s_version }}' | sed 's/\.//g')" >> $GITHUB_ENV
+          echo "GARDENER_CLUSTER_NAME=$(echo 'ci-${{ env.GIT_COMMIT_SHA }}-${{ env.k8sVersion }}')" >> $GITHUB_ENV
 
       - name: Show changes
         run: echo $GARDENER_CLUSTER_NAME
