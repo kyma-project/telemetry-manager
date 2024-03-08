@@ -51,13 +51,20 @@ type signalType string
 const (
 	signalTypeMetricPoints signalType = "metric_points"
 	signalTypeSpans        signalType = "spans"
+
+	serviceLabelKey  = "service"
+	exporterLabelKey = "exporter"
+	receiverLabelKey = "receiver"
 )
 
 func makeGatewayExporterSentTelemetry(s signalType) Rule {
 	metric := fmt.Sprintf("otelcol_exporter_sent_%s", s)
 	return Rule{
 		Alert: "GatewayExporterSent" + alertNameSuffix(s),
-		Expr:  fmt.Sprintf("sum by (exporter) (rate(%s{service=\"%s\"}[1m])) > 0", metric, gatewayName(s)),
+		Expr: rate(metric, selectLabel(serviceLabelKey, gatewayServiceName(s))).
+			sumBy(exporterLabelKey).
+			greaterThan(0).
+			build(),
 	}
 }
 
@@ -65,14 +72,19 @@ func makeGatewayExporterFailedTelemetry(s signalType) Rule {
 	metric := fmt.Sprintf("otelcol_exporter_send_failed_%s", s)
 	return Rule{
 		Alert: "GatewayExporterDropped" + alertNameSuffix(s),
-		Expr:  fmt.Sprintf("sum by (exporter) (rate(%s{service=\"%s\"}[1m])) > 0", metric, gatewayName(s)),
+		Expr: rate(metric, selectLabel(serviceLabelKey, gatewayServiceName(s))).
+			sumBy(exporterLabelKey).
+			greaterThan(0).
+			build(),
 	}
 }
 
 func makeGatewayExporterQueueAlmostFull() Rule {
 	return Rule{
 		Alert: "GatewayExporterQueueAlmostFull",
-		Expr:  "otelcol_exporter_queue_size / otelcol_exporter_queue_capacity > 0.8",
+		Expr: div("otelcol_exporter_queue_size", "otelcol_exporter_queue_capacity").
+			greaterThan(0.8).
+			build(),
 	}
 }
 
@@ -80,7 +92,10 @@ func makeGatewayReceiverRefusedMetrics(s signalType) Rule {
 	metric := fmt.Sprintf("otelcol_receiver_refused_%s", s)
 	return Rule{
 		Alert: "GatewayReceiverRefused" + alertNameSuffix(s),
-		Expr:  fmt.Sprintf("sum by (receiver) (rate(%s{service=\"%s\"}[1m])) > 0", metric, gatewayName(s)),
+		Expr: rate(metric, selectLabel(serviceLabelKey, gatewayServiceName(s))).
+			sumBy(receiverLabelKey).
+			greaterThan(0).
+			build(),
 	}
 }
 
@@ -88,7 +103,10 @@ func makeGatewayExporterEnqueueFailed(s signalType) Rule {
 	metric := fmt.Sprintf("otelcol_exporter_enqueue_failed_%s", s)
 	return Rule{
 		Alert: "GatewayExporterEnqueueFailed" + alertNameSuffix(s),
-		Expr:  fmt.Sprintf("sum by (exporter) (rate(%s{service=\"%s\"}[1m])) > 0", metric, gatewayName(s)),
+		Expr: rate(metric, selectLabel(serviceLabelKey, gatewayServiceName(s))).
+			sumBy(exporterLabelKey).
+			greaterThan(0).
+			build(),
 	}
 }
 
@@ -103,7 +121,7 @@ func alertNameSuffix(s signalType) string {
 	}
 }
 
-func gatewayName(s signalType) string {
+func gatewayServiceName(s signalType) string {
 	switch s {
 	case signalTypeMetricPoints:
 		return "telemetry-metric-gateway-metrics"
