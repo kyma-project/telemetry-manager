@@ -22,11 +22,25 @@ type Receivers struct {
 }
 
 type KubeletStatsReceiver struct {
-	CollectionInterval string            `yaml:"collection_interval"`
-	AuthType           string            `yaml:"auth_type"`
-	Endpoint           string            `yaml:"endpoint"`
-	InsecureSkipVerify bool              `yaml:"insecure_skip_verify"`
-	MetricGroups       []MetricGroupType `yaml:"metric_groups"`
+	CollectionInterval string               `yaml:"collection_interval"`
+	AuthType           string               `yaml:"auth_type"`
+	Endpoint           string               `yaml:"endpoint"`
+	InsecureSkipVerify bool                 `yaml:"insecure_skip_verify"`
+	MetricGroups       []MetricGroupType    `yaml:"metric_groups"`
+	Metrics            KubeletMetricsConfig `yaml:"metrics"`
+}
+
+type KubeletMetricConfig struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+type KubeletMetricsConfig struct {
+	ContainerCPUUsage       KubeletMetricConfig `yaml:"container.cpu.usage"`
+	ContainerCPUUtilization KubeletMetricConfig `yaml:"container.cpu.utilization"`
+	K8sNodeCPUUsage         KubeletMetricConfig `yaml:"k8s.node.cpu.usage"`
+	K8sNodeCPUUtilization   KubeletMetricConfig `yaml:"k8s.node.cpu.utilization"`
+	K8sPodCPUUsage          KubeletMetricConfig `yaml:"k8s.pod.cpu.usage"`
+	K8sPodCPUUtilization    KubeletMetricConfig `yaml:"k8s.pod.cpu.utilization"`
 }
 
 type MetricGroupType string

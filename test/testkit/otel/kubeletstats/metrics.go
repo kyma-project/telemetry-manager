@@ -3,7 +3,7 @@ package kubeletstats
 var (
 	MetricNames = []string{
 		"container.cpu.time",
-		"container.cpu.utilization",
+		"container.cpu.usage",
 		"container.filesystem.available",
 		"container.filesystem.capacity",
 		"container.filesystem.usage",
@@ -14,7 +14,7 @@ var (
 		"container.memory.usage",
 		"container.memory.working_set",
 		"k8s.pod.cpu.time",
-		"k8s.pod.cpu.utilization",
+		"k8s.pod.cpu.usage",
 		"k8s.pod.filesystem.available",
 		"k8s.pod.filesystem.capacity",
 		"k8s.pod.filesystem.usage",
