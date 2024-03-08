@@ -21,8 +21,21 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        argument: ["-n pr-lt-traces -t traces", "-n pr-lt-traces-m -t traces -m true", "-n pr-lt-traces-b -t traces -b true", "-n pr-lt-metrics -t metrics", "-n pr-lt-metrics-m -t metrics -m true", "-n pr-lt-metrics-b -t metrics -b true"]
-
+        argument:
+          - "-n ci-traces -t traces"
+          - "-n ci-traces-m -t traces -m true"
+          - "-n ci-traces-b -t traces -b true"
+          - "-n ci-traces-mb -t traces -m true -b true"
+          - "-n ci-metrics -t metrics"
+          - "-n ci-metrics-m -t metrics -m true"
+          - "-n ci-metrics-b -t metrics -b true"
+          - "-n ci-metrics-mb -t metrics -m true -b true"
+          - "-n ci-metric-ag -t metricagent"
+          - "-n ci-metric-ag-b -t metricagent -b true"
+          - "-n ci-fluent -t logs-fluentbit"
+          - "-n ci-fluent-m -t logs-fluentbit -m true"
+          - "-n ci-fluent-b -t logs-fluentbit -b true"
+          - "-n ci-fluent-mb -t logs-fluentbit -m true -b true"
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
