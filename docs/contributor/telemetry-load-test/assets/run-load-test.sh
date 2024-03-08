@@ -57,9 +57,6 @@ function setup() {
   fi
 }
 
-
-
-
 # shellcheck disable=SC2112
 function setup_trace() {
     if "$MAX_PIPELINE"; then
@@ -333,7 +330,6 @@ echo "$TEST_NAME Load Test for $TEST_TARGET, Multi Pipeline $MAX_PIPELINE, Backp
 echo "--------------------------------------------"
 
 trap cleanup EXIT
-check_telemetry_manager_is_ready
 setup
 wait_for_resources
 # wait 20 minutes until test finished
