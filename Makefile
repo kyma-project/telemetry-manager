@@ -163,7 +163,7 @@ undeploy: ## Undeploy resources based on the release (default) variant from the 
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-dev
-deploy-dev: manifests kustomize ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
+deploy-dev: manifests-dev kustomize ## Deploy resources based on the development variant to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/development | kubectl apply -f -
 
