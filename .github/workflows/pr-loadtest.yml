@@ -15,12 +15,11 @@ env:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "greet"
   load-test:
     strategy:
-      max-parallel: 1
+      max-parallel: 3
       matrix:
-        argument: ["-t traces", "-t traces -m true", "-t traces -b true", "-t metrics", "-t metrics -m true", "-t metrics -b true"]
+        argument: ["-n test-0 -t traces", "-n test-1 -t traces -m true", "-n test-2 -t traces -b true", "-n test-3 -t metrics", "-n test-4 -t metrics -m true", "-n test-5 -t metrics -b true"]
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
@@ -35,6 +34,9 @@ jobs:
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
+      # Generate the cluster name to be used for cluster creation
+      - name: Setup gardener cluster name
+        run:  echo "GARDENER_CLUSTER_NAME=$(echo '${{ matrix.argument }}' | awk '{print $2}')" >> $GITHUB_ENV
 
       # save gardener kubeconfig to a temp file in order to pass it to the command
       - name: Save service account to file
@@ -56,9 +58,12 @@ jobs:
         run: hack/deploy-istio.sh
 
       - name: Deploy Telemetry
-        run: make deploy
+        run: hack/deploy-telemetry.sh
 
       # Run the load test
       - name: Run Load test
         working-directory: docs/contributor/telemetry-load-test
         run: ./assets/run-load-test.sh ${{ matrix.argument }}
+
+      - name: Deprovision Gardener
+        run: make deprovision-gardener
