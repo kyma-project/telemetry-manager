@@ -49,24 +49,32 @@ type ProbeResult struct {
 }
 
 func (p *Prober) Probe(ctx context.Context, pipelineName string) (ProbeResult, error) {
-	allDataDropped, err := p.allDataDropped(ctx, pipelineName)
+	var err error
+	var allDataDropped, someDataDropped, queueAlmostFull, throttling, healthy bool
+
+	allDataDropped, err = p.allDataDropped(ctx, pipelineName)
 	if err != nil {
 		return ProbeResult{}, fmt.Errorf("failed to probe all data dropped: %w", err)
 	}
 
-	someDataDropped, err := p.someDataDropped(ctx, pipelineName)
+	someDataDropped, err = p.someDataDropped(ctx, pipelineName)
 	if err != nil {
 		return ProbeResult{}, fmt.Errorf("failed to probe some data dropped: %w", err)
 	}
 
-	queueAlmostFull, err := p.queueAlmostFull(ctx, pipelineName)
+	queueAlmostFull, err = p.queueAlmostFull(ctx, pipelineName)
 	if err != nil {
 		return ProbeResult{}, fmt.Errorf("failed to probe buffer filling up: %w", err)
 	}
 
-	throttling, err := p.throttling(ctx, pipelineName)
+	throttling, err = p.throttling(ctx, pipelineName)
 	if err != nil {
 		return ProbeResult{}, fmt.Errorf("failed to probe throttling: %w", err)
+	}
+
+	healthy, err = p.healthy(ctx, pipelineName)
+	if err != nil {
+		return ProbeResult{}, fmt.Errorf("failed to probe healthy: %w", err)
 	}
 
 	return ProbeResult{
@@ -74,6 +82,7 @@ func (p *Prober) Probe(ctx context.Context, pipelineName string) (ProbeResult, e
 		SomeDataDropped: someDataDropped,
 		QueueAlmostFull: queueAlmostFull,
 		Throttling:      throttling,
+		Healthy:         healthy,
 	}, nil
 }
 
@@ -119,6 +128,18 @@ func (p *Prober) throttling(ctx context.Context, pipelineName string) (bool, err
 	}
 
 	return hasFiringAlert(alerts, alertNameReceiverRefusedData), nil
+}
+
+func (p *Prober) healthy(ctx context.Context, pipelineName string) (bool, error) {
+	alerts, err := p.retrieveAlerts(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
+	}
+
+	return !(hasFiringExporterAlert(alerts, alertNameExporterDroppedData, pipelineName) ||
+		hasFiringExporterAlert(alerts, alertNameExporterQueueAlmostFull, pipelineName) ||
+		hasFiringExporterAlert(alerts, alertNameExporterEnqueueFailed, pipelineName) ||
+		hasFiringAlert(alerts, alertNameReceiverRefusedData)), nil
 }
 
 func (p *Prober) retrieveAlerts(ctx context.Context) ([]promv1.Alert, error) {

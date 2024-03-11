@@ -33,7 +33,7 @@ func TestProber(t *testing.T) {
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{},
 			},
-			expected: ProbeResult{},
+			expected: ProbeResult{Healthy: true},
 		},
 		{
 			name:         "unknown alert firing",
@@ -49,7 +49,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{},
+			expected: ProbeResult{Healthy: true},
 		},
 		{
 			name:         "alert missing exporter label",
@@ -64,7 +64,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{},
+			expected: ProbeResult{Healthy: true},
 		},
 		{
 			name:         "exporter label mismatch",
@@ -80,7 +80,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{},
+			expected: ProbeResult{Healthy: true},
 		},
 		{
 			name:         "exporter dropped data firing",
@@ -205,6 +205,21 @@ func TestProber(t *testing.T) {
 			},
 			expected: ProbeResult{Throttling: true},
 		},
+		{
+			name:         "healthy",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "TraceGatewayExporterSentData",
+							"exporter":  "otlp/cls",
+						},
+					},
+				},
+			},
+			expected: ProbeResult{Healthy: true},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -221,8 +236,7 @@ func TestProber(t *testing.T) {
 				getter: alertGetterMock,
 			}
 
-			ctx := context.TODO()
-			result, err := sut.Probe(ctx, tc.pipelineName)
+			result, err := sut.Probe(context.Background(), tc.pipelineName)
 
 			if tc.expectErr {
 				require.Error(t, err)
