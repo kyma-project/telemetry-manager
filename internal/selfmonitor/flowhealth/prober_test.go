@@ -174,6 +174,22 @@ func TestProber(t *testing.T) {
 			},
 			expected: ProbeResult{SomeDataDropped: true},
 		},
+		{
+			name:         "queue almost full firing",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "TraceGatewayExporterQueueAlmostFull",
+							"exporter":  "otlp/cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: ProbeResult{QueueAlmostFull: true},
+		},
 	}
 
 	for _, tc := range testCases {

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const defaultRateDuration = "1m"
+const defaultRateDuration = "5m"
 
 type exprBuilder struct {
 	expr string
