@@ -8,16 +8,6 @@ set -o pipefail # prevents errors in a pipeline from being masked
 TELEMETRY_MANAGER_DEPLOYMENT_NAME="telemetry-manager"
 TELEMETRY_MANAGER_NAMESPACE="kyma-system"
 
-while getopts m:b:n:t:d: flag; do
-    case "$flag" in
-        m) MAX_PIPELINE="${OPTARG}" ;;
-        b) BACKPRESSURE_TEST="${OPTARG}" ;;
-        n) TEST_NAME="${OPTARG}" ;;
-        t) TEST_TARGET="${OPTARG}" ;;
-        d) TEST_DURATION=${OPTARG} ;;
-    esac
-done
-
 # shellcheck disable=SC2112
 function check_deployment_ready() {
     DESIRED=$(kubectl get deployment "$TELEMETRY_MANAGER_DEPLOYMENT_NAME" -n "$TELEMETRY_MANAGER_NAMESPACE" -o jsonpath='{.spec.replicas}')
