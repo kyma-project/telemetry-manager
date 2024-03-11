@@ -65,9 +65,9 @@ func (p *Prober) AllDataDropped(ctx context.Context, pipelineName string) (bool,
 		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
-	exporterSentFiring := hasFiringAlert(alerts, "GatewayExporterSent", pipelineName)
-	exporterDroppedFiring := hasFiringAlert(alerts, "GatewayExporterDropped", pipelineName)
-	exporterEnqueueFailedFiring := hasFiringAlert(alerts, "GatewayExporterEnqueueFailed", pipelineName)
+	exporterSentFiring := hasFiringAlert(alerts, alertNameExporterSentData, pipelineName)
+	exporterDroppedFiring := hasFiringAlert(alerts, alertNameExporterDroppedData, pipelineName)
+	exporterEnqueueFailedFiring := hasFiringAlert(alerts, alertNameExporterEnqueueFailed, pipelineName)
 
 	return !exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring), nil
 }
@@ -84,10 +84,10 @@ func (p *Prober) retrieveAlerts(ctx context.Context) ([]promv1.Alert, error) {
 	return result.Alerts, nil
 }
 
-func hasFiringAlert(alerts []promv1.Alert, alertNamePrefix, pipelineName string) bool {
+func hasFiringAlert(alerts []promv1.Alert, alertName, pipelineName string) bool {
 	for _, alert := range alerts {
 		isFiring := alert.State == promv1.AlertStateFiring
-		hasMatchingName := hasMatchingLabelValue(alert, "alertname", alertNamePrefix)
+		hasMatchingName := hasMatchingLabelValue(alert, "alertname", alertName)
 		hasMatchingExporter := hasMatchingLabelValue(alert, "exporter", pipelineName)
 
 		if isFiring && hasMatchingName && hasMatchingExporter {

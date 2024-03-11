@@ -26,108 +26,125 @@ type Rule struct {
 }
 
 func MakeRules() RuleGroups {
+	metricRuleBuilder := newRuleBuilder(signalTypeMetricPoints)
+	traceRuleBuilder := newRuleBuilder(signalTypeSpans)
+
+	ruleBuilders := []ruleBuilder{metricRuleBuilder, traceRuleBuilder}
+	var rules []Rule
+	for _, rb := range ruleBuilders {
+		rules = append(rules, rb.rules()...)
+	}
+
 	return RuleGroups{
 		Groups: []RuleGroup{
 			{
-				Name: "default",
-				Rules: []Rule{
-					makeGatewayExporterSentTelemetry(signalTypeMetricPoints),
-					makeGatewayExporterSentTelemetry(signalTypeSpans),
-					makeGatewayExporterFailedTelemetry(signalTypeMetricPoints),
-					makeGatewayExporterFailedTelemetry(signalTypeSpans),
-					makeGatewayExporterQueueAlmostFull(),
-					makeGatewayReceiverRefusedMetrics(signalTypeMetricPoints),
-					makeGatewayReceiverRefusedMetrics(signalTypeSpans),
-					makeGatewayExporterEnqueueFailed(signalTypeMetricPoints),
-					makeGatewayExporterEnqueueFailed(signalTypeSpans),
-				},
+				Name:  "default",
+				Rules: rules,
 			},
 		},
 	}
 }
 
-type signalType string
+type telemetryDataType string
 
 const (
-	signalTypeMetricPoints signalType = "metric_points"
-	signalTypeSpans        signalType = "spans"
+	signalTypeMetricPoints telemetryDataType = "metric_points"
+	signalTypeSpans        telemetryDataType = "spans"
+)
 
+const (
 	serviceLabelKey  = "service"
 	exporterLabelKey = "exporter"
 	receiverLabelKey = "receiver"
+
+	alertNameExporterSentData        = "ExporterSentData"
+	alertNameExporterDroppedData     = "ExporterDroppedData"
+	alertNameExporterQueueAlmostFull = "ExporterQueueAlmostFull"
+	alertNameExporterEnqueueFailed   = "ExporterEnqueueFailed"
+	alertNameReceiverRefusedData     = "ReceiverRefusedData"
 )
 
-func makeGatewayExporterSentTelemetry(s signalType) Rule {
-	metric := fmt.Sprintf("otelcol_exporter_sent_%s", s)
+type ruleBuilder struct {
+	alertNamePrefix string
+	serviceName     string
+	dataType        telemetryDataType
+}
+
+func newRuleBuilder(dataType telemetryDataType) ruleBuilder {
+	alertNamePrefix := "MetricGateway"
+	serviceName := "telemetry-metric-gateway-metrics"
+
+	if dataType == signalTypeSpans {
+		alertNamePrefix = "TraceGateway"
+		serviceName = "telemetry-trace-gateway-metrics"
+	}
+
+	return ruleBuilder{
+		alertNamePrefix: alertNamePrefix,
+		dataType:        dataType,
+		serviceName:     serviceName,
+	}
+}
+
+func (rb ruleBuilder) rules() []Rule {
+	return []Rule{
+		rb.exporterSentRule(),
+		rb.exporterDroppedRule(),
+		rb.exporterQueueAlmostFullRule(),
+		rb.exporterEnqueueFailedRule(),
+		rb.receiverRefusedRule(),
+	}
+}
+
+func (rb ruleBuilder) exporterSentRule() Rule {
+	metric := fmt.Sprintf("otelcol_exporter_sent_%s", rb.dataType)
 	return Rule{
-		Alert: "GatewayExporterSent" + alertNameSuffix(s),
-		Expr: rate(metric, selectLabel(serviceLabelKey, gatewayServiceName(s))).
+		Alert: rb.alertNamePrefix + alertNameExporterSentData,
+		Expr: rate(metric, selectLabel(serviceLabelKey, rb.serviceName)).
 			sumBy(exporterLabelKey).
 			greaterThan(0).
 			build(),
 	}
 }
 
-func makeGatewayExporterFailedTelemetry(s signalType) Rule {
-	metric := fmt.Sprintf("otelcol_exporter_send_failed_%s", s)
+func (rb ruleBuilder) exporterDroppedRule() Rule {
+	metric := fmt.Sprintf("otelcol_exporter_send_failed_%s", rb.dataType)
 	return Rule{
-		Alert: "GatewayExporterDropped" + alertNameSuffix(s),
-		Expr: rate(metric, selectLabel(serviceLabelKey, gatewayServiceName(s))).
+		Alert: rb.alertNamePrefix + alertNameExporterDroppedData,
+		Expr: rate(metric, selectLabel(serviceLabelKey, rb.serviceName)).
 			sumBy(exporterLabelKey).
 			greaterThan(0).
 			build(),
 	}
 }
 
-func makeGatewayExporterQueueAlmostFull() Rule {
+func (rb ruleBuilder) exporterQueueAlmostFullRule() Rule {
 	return Rule{
-		Alert: "GatewayExporterQueueAlmostFull",
-		Expr: div("otelcol_exporter_queue_size", "otelcol_exporter_queue_capacity").
+		Alert: rb.alertNamePrefix + alertNameExporterQueueAlmostFull,
+		Expr: div("otelcol_exporter_queue_size", "otelcol_exporter_queue_capacity", selectLabel(serviceLabelKey, rb.serviceName)).
 			greaterThan(0.8).
 			build(),
 	}
 }
 
-func makeGatewayReceiverRefusedMetrics(s signalType) Rule {
-	metric := fmt.Sprintf("otelcol_receiver_refused_%s", s)
+func (rb ruleBuilder) exporterEnqueueFailedRule() Rule {
+	metric := fmt.Sprintf("otelcol_exporter_enqueue_failed_%s", rb.dataType)
 	return Rule{
-		Alert: "GatewayReceiverRefused" + alertNameSuffix(s),
-		Expr: rate(metric, selectLabel(serviceLabelKey, gatewayServiceName(s))).
-			sumBy(receiverLabelKey).
-			greaterThan(0).
-			build(),
-	}
-}
-
-func makeGatewayExporterEnqueueFailed(s signalType) Rule {
-	metric := fmt.Sprintf("otelcol_exporter_enqueue_failed_%s", s)
-	return Rule{
-		Alert: "GatewayExporterEnqueueFailed" + alertNameSuffix(s),
-		Expr: rate(metric, selectLabel(serviceLabelKey, gatewayServiceName(s))).
+		Alert: rb.alertNamePrefix + alertNameExporterEnqueueFailed,
+		Expr: rate(metric, selectLabel(serviceLabelKey, rb.serviceName)).
 			sumBy(exporterLabelKey).
 			greaterThan(0).
 			build(),
 	}
 }
 
-func alertNameSuffix(s signalType) string {
-	switch s {
-	case signalTypeMetricPoints:
-		return "MetricPoints"
-	case signalTypeSpans:
-		return "Spans"
-	default:
-		return "Telemetry"
-	}
-}
-
-func gatewayServiceName(s signalType) string {
-	switch s {
-	case signalTypeMetricPoints:
-		return "telemetry-metric-gateway-metrics"
-	case signalTypeSpans:
-		return "telemetry-trace-gateway-metrics"
-	default:
-		return ""
+func (rb ruleBuilder) receiverRefusedRule() Rule {
+	metric := fmt.Sprintf("otelcol_receiver_refused_%s", rb.dataType)
+	return Rule{
+		Alert: rb.alertNamePrefix + alertNameReceiverRefusedData,
+		Expr: rate(metric, selectLabel(serviceLabelKey, rb.serviceName)).
+			sumBy(receiverLabelKey).
+			greaterThan(0).
+			build(),
 	}
 }

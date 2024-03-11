@@ -52,13 +52,13 @@ func TestProber(t *testing.T) {
 			expected: ProbeResult{},
 		},
 		{
-			name:         "GatewayExporterDroppedMetricPoints firing",
+			name:         "TraceGatewayExporterDroppedData firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "GatewayExporterDroppedMetricPoints",
+							"alertname": "TraceGatewayExporterDroppedData",
 							"exporter":  "otlp/cls",
 						},
 						State: promv1.AlertStateFiring,
@@ -68,13 +68,13 @@ func TestProber(t *testing.T) {
 			expected: ProbeResult{AllDataDropped: true},
 		},
 		{
-			name:         "GatewayExporterDroppedMetricPoints firing with missing exporter label",
+			name:         "TraceGatewayExporterDroppedData firing with missing exporter label",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "GatewayExporterDroppedMetricPoints",
+							"alertname": "TraceGatewayExporterDroppedData",
 						},
 						State: promv1.AlertStateFiring,
 					},
@@ -83,13 +83,13 @@ func TestProber(t *testing.T) {
 			expected: ProbeResult{},
 		},
 		{
-			name:         "GatewayExporterDroppedMetricPoints firing with different exporter",
+			name:         "TraceGatewayExporterDroppedData firing with different exporter",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "GatewayExporterDroppedMetricPoints",
+							"alertname": "TraceGatewayExporterDroppedData",
 							"exporter":  "otlp/dynatrace",
 						},
 						State: promv1.AlertStateFiring,
