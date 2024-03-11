@@ -13,51 +13,51 @@ on:
 jobs:
   gardener-integration-test:
     strategy:
-      fail-fast: false # if one version is not working, continue tests on other versions
-      matrix:
-        k8s_version: [1.27, 1.28]
+        fail-fast: false # if one version is not working, continue tests on other versions
+        matrix:
+          k8s_version: [1.27, 1.28]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
-      - name: Setup Golang
-        uses: "./.github/template/setup-golang"
+    - name: Setup Golang
+      uses: "./.github/template/setup-golang"
 
-      # wait for the build to succeed so that the manager image is available
-      - name: Wait for the 'post-telemetry-manager-build' job to succeed
-        uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
-        with:
-          context: "post-telemetry-manager-build"
-          commit_ref: "${{ github.sha }}"
-          timeout: 600000 # 10 minutes in milliseconds
-          # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
-          check_interval: 60000 # 1 minute in milliseconds
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          GITHUB_OWNER: "${{ github.repository_owner }}"
-          GITHUB_REPO: "telemetry-manager"
+    # wait for the build to succeed so that the manager image is available
+    - name: Wait for the 'post-telemetry-manager-build' job to succeed
+      uses: kyma-project/wait-for-commit-status-action@2b3ffe09af8b6f40e1213d5fb7f91a7bd41ffb20
+      with:
+        context: "post-telemetry-manager-build"
+        commit_ref: "${{ github.sha }}"
+        timeout: 600000 # 10 minutes in milliseconds
+        # The check interval is kept long otherwise it will exhaust the GitHub rate limit (More info: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting)
+        check_interval: 60000 # 1 minute in milliseconds
+      env:
+        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        GITHUB_OWNER: "${{ github.repository_owner }}"
+        GITHUB_REPO: "telemetry-manager"
 
-      # save gardener kubeconfig to a temp file in order to pass it to the command
-      - name: Save serviceaccount to file
-        shell: bash
-        run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
-        env:
-          GARDENER_SA: ${{ secrets.GARDENER_SA }}
+    # save gardener kubeconfig to a temp file in order to pass it to the command
+    - name: Save serviceaccount to file
+      shell: bash
+      run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
+      env:
+        GARDENER_SA: ${{ secrets.GARDENER_SA }}
 
-      # provision cluster and run tests
-      - name: Run test
-        run: hack/gardener-integration-test.sh
-        env:
-          GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
-          GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
-          GARDENER_SA_PATH: /tmp/gardener-sa.yaml
-          GARDENER_K8S_VERSION: ${{ matrix.k8s_version }}
+    # provision cluster and run tests
+    - name: Run test
+      run: hack/gardener-integration-test.sh
+      env:
+        GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
+        GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
+        GARDENER_SA_PATH: /tmp/gardener-sa.yaml
+        GARDENER_K8S_VERSION: ${{ matrix.k8s_version }}
 
-      - name: Send slack message on failure
-        uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117
-        if: failure()
-        with:
-          payload-file-path: ".github/workflows/slack-message.json"
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    - name: Send slack message on failure
+      uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117
+      if: failure()
+      with:
+        payload-file-path: ".github/workflows/slack-message.json"
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
