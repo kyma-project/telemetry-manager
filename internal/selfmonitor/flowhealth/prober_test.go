@@ -52,7 +52,38 @@ func TestProber(t *testing.T) {
 			expected: ProbeResult{},
 		},
 		{
-			name:         "TraceGatewayExporterDroppedData firing",
+			name:         "alert missing exporter label",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "TraceGatewayExporterDroppedData",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: ProbeResult{},
+		},
+		{
+			name:         "exporter label mismatch",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "TraceGatewayExporterDroppedData",
+							"exporter":  "otlp/dynatrace",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: ProbeResult{},
+		},
+		{
+			name:         "exporter dropped data firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
@@ -68,35 +99,80 @@ func TestProber(t *testing.T) {
 			expected: ProbeResult{AllDataDropped: true},
 		},
 		{
-			name:         "TraceGatewayExporterDroppedData firing with missing exporter label",
+			name:         "exporter sent data and exporter dropped data firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
 							"alertname": "TraceGatewayExporterDroppedData",
+							"exporter":  "otlp/cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+					{
+						Labels: model.LabelSet{
+							"alertname": "TraceGatewayExporterSentData",
+							"exporter":  "otlp/cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
 				},
 			},
-			expected: ProbeResult{},
+			expected: ProbeResult{SomeDataDropped: true},
 		},
 		{
-			name:         "TraceGatewayExporterDroppedData firing with different exporter",
+			name:         "exporter sent data and exporter enqueue failed firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "TraceGatewayExporterDroppedData",
-							"exporter":  "otlp/dynatrace",
+							"alertname": "TraceGatewayExporterEnqueueFailed",
+							"exporter":  "otlp/cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+					{
+						Labels: model.LabelSet{
+							"alertname": "TraceGatewayExporterSentData",
+							"exporter":  "otlp/cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
 				},
 			},
-			expected: ProbeResult{},
+			expected: ProbeResult{SomeDataDropped: true},
+		},
+		{
+			name:         "exporter sent data and exporter dropped data and exporter enqueue failed firing",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "TraceGatewayExporterEnqueueFailed",
+							"exporter":  "otlp/cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+					{
+						Labels: model.LabelSet{
+							"alertname": "TraceGatewayExporterDroppedData",
+							"exporter":  "otlp/cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+					{
+						Labels: model.LabelSet{
+							"alertname": "TraceGatewayExporterSentData",
+							"exporter":  "otlp/cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: ProbeResult{SomeDataDropped: true},
 		},
 	}
 

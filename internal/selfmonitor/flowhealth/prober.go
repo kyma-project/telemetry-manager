@@ -49,17 +49,23 @@ type ProbeResult struct {
 }
 
 func (p *Prober) Probe(ctx context.Context, pipelineName string) (ProbeResult, error) {
-	allDataDropped, err := p.AllDataDropped(ctx, pipelineName)
+	allDataDropped, err := p.allDataDropped(ctx, pipelineName)
 	if err != nil {
 		return ProbeResult{}, fmt.Errorf("failed to probe all data dropped: %w", err)
 	}
 
+	someDataDropped, err := p.someDataDropped(ctx, pipelineName)
+	if err != nil {
+		return ProbeResult{}, fmt.Errorf("failed to probe some data dropped: %w", err)
+	}
+
 	return ProbeResult{
-		AllDataDropped: allDataDropped,
+		AllDataDropped:  allDataDropped,
+		SomeDataDropped: someDataDropped,
 	}, nil
 }
 
-func (p *Prober) AllDataDropped(ctx context.Context, pipelineName string) (bool, error) {
+func (p *Prober) allDataDropped(ctx context.Context, pipelineName string) (bool, error) {
 	alerts, err := p.retrieveAlerts(ctx)
 	if err != nil {
 		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
@@ -70,6 +76,19 @@ func (p *Prober) AllDataDropped(ctx context.Context, pipelineName string) (bool,
 	exporterEnqueueFailedFiring := hasFiringAlert(alerts, alertNameExporterEnqueueFailed, pipelineName)
 
 	return !exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring), nil
+}
+
+func (p *Prober) someDataDropped(ctx context.Context, pipelineName string) (bool, error) {
+	alerts, err := p.retrieveAlerts(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
+	}
+
+	exporterSentFiring := hasFiringAlert(alerts, alertNameExporterSentData, pipelineName)
+	exporterDroppedFiring := hasFiringAlert(alerts, alertNameExporterDroppedData, pipelineName)
+	exporterEnqueueFailedFiring := hasFiringAlert(alerts, alertNameExporterEnqueueFailed, pipelineName)
+
+	return exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring), nil
 }
 
 func (p *Prober) retrieveAlerts(ctx context.Context) ([]promv1.Alert, error) {
