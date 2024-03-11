@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go mod tidy && go build -a -o manager 
 FROM europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.2.1-8adfb683
 
 WORKDIR /
-COPY --from=builder /workspace/manager .
+COPY --from=builder /telemetry-manager-workspace/manager .
 
 USER 65532:65532
 
