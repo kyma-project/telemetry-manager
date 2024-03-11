@@ -41,11 +41,11 @@ func NewProber() (*Prober, error) {
 }
 
 type ProbeResult struct {
-	AllDataDropped    bool
-	SomeDataDropped   bool
-	QueueAlmostFull   bool
-	GatewayThrottling bool
-	Healthy           bool
+	AllDataDropped  bool
+	SomeDataDropped bool
+	QueueAlmostFull bool
+	Throttling      bool
+	Healthy         bool
 }
 
 func (p *Prober) Probe(ctx context.Context, pipelineName string) (ProbeResult, error) {
@@ -64,10 +64,16 @@ func (p *Prober) Probe(ctx context.Context, pipelineName string) (ProbeResult, e
 		return ProbeResult{}, fmt.Errorf("failed to probe buffer filling up: %w", err)
 	}
 
+	throttling, err := p.throttling(ctx, pipelineName)
+	if err != nil {
+		return ProbeResult{}, fmt.Errorf("failed to probe throttling: %w", err)
+	}
+
 	return ProbeResult{
 		AllDataDropped:  allDataDropped,
 		SomeDataDropped: someDataDropped,
 		QueueAlmostFull: queueAlmostFull,
+		Throttling:      throttling,
 	}, nil
 }
 
@@ -77,9 +83,9 @@ func (p *Prober) allDataDropped(ctx context.Context, pipelineName string) (bool,
 		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
-	exporterSentFiring := hasFiringAlert(alerts, alertNameExporterSentData, pipelineName)
-	exporterDroppedFiring := hasFiringAlert(alerts, alertNameExporterDroppedData, pipelineName)
-	exporterEnqueueFailedFiring := hasFiringAlert(alerts, alertNameExporterEnqueueFailed, pipelineName)
+	exporterSentFiring := hasFiringExporterAlert(alerts, alertNameExporterSentData, pipelineName)
+	exporterDroppedFiring := hasFiringExporterAlert(alerts, alertNameExporterDroppedData, pipelineName)
+	exporterEnqueueFailedFiring := hasFiringExporterAlert(alerts, alertNameExporterEnqueueFailed, pipelineName)
 
 	return !exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring), nil
 }
@@ -90,9 +96,9 @@ func (p *Prober) someDataDropped(ctx context.Context, pipelineName string) (bool
 		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
-	exporterSentFiring := hasFiringAlert(alerts, alertNameExporterSentData, pipelineName)
-	exporterDroppedFiring := hasFiringAlert(alerts, alertNameExporterDroppedData, pipelineName)
-	exporterEnqueueFailedFiring := hasFiringAlert(alerts, alertNameExporterEnqueueFailed, pipelineName)
+	exporterSentFiring := hasFiringExporterAlert(alerts, alertNameExporterSentData, pipelineName)
+	exporterDroppedFiring := hasFiringExporterAlert(alerts, alertNameExporterDroppedData, pipelineName)
+	exporterEnqueueFailedFiring := hasFiringExporterAlert(alerts, alertNameExporterEnqueueFailed, pipelineName)
 
 	return exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring), nil
 }
@@ -103,7 +109,16 @@ func (p *Prober) queueAlmostFull(ctx context.Context, pipelineName string) (bool
 		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
-	return hasFiringAlert(alerts, alertNameExporterQueueAlmostFull, pipelineName), nil
+	return hasFiringExporterAlert(alerts, alertNameExporterQueueAlmostFull, pipelineName), nil
+}
+
+func (p *Prober) throttling(ctx context.Context, pipelineName string) (bool, error) {
+	alerts, err := p.retrieveAlerts(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
+	}
+
+	return hasFiringAlert(alerts, alertNameReceiverRefusedData), nil
 }
 
 func (p *Prober) retrieveAlerts(ctx context.Context) ([]promv1.Alert, error) {
@@ -118,17 +133,24 @@ func (p *Prober) retrieveAlerts(ctx context.Context) ([]promv1.Alert, error) {
 	return result.Alerts, nil
 }
 
-func hasFiringAlert(alerts []promv1.Alert, alertName, pipelineName string) bool {
+func hasFiringAlert(alerts []promv1.Alert, alertName string) bool {
 	for _, alert := range alerts {
-		isFiring := alert.State == promv1.AlertStateFiring
-		hasMatchingName := hasMatchingLabelValue(alert, "alertname", alertName)
-		hasMatchingExporter := hasMatchingLabelValue(alert, "exporter", pipelineName)
-
-		if isFiring && hasMatchingName && hasMatchingExporter {
+		if alert.State == promv1.AlertStateFiring &&
+			hasMatchingLabelValue(alert, "alertname", alertName) {
 			return true
 		}
 	}
+	return false
+}
 
+func hasFiringExporterAlert(alerts []promv1.Alert, alertName, pipelineName string) bool {
+	for _, alert := range alerts {
+		if alert.State == promv1.AlertStateFiring &&
+			hasMatchingLabelValue(alert, "alertname", alertName) &&
+			hasMatchingLabelValue(alert, "exporter", pipelineName) {
+			return true
+		}
+	}
 	return false
 }
 

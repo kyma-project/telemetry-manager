@@ -190,6 +190,21 @@ func TestProber(t *testing.T) {
 			},
 			expected: ProbeResult{QueueAlmostFull: true},
 		},
+		{
+			name:         "receiver refused firing",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "TraceGatewayReceiverRefusedData",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: ProbeResult{Throttling: true},
+		},
 	}
 
 	for _, tc := range testCases {
