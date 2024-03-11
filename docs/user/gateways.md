@@ -22,11 +22,11 @@ The downside is that only a limited set of features is available. If you want to
 The gateways automatically enrich your data by adding the following attributes:
 
 - `service.name`: The logical name of the service that emits the telemetry data. If not provided by the user or if its value follows the `unknown_service:<process.executable.name>` pattern as described in the [specification](https://opentelemetry.io/docs/specs/semconv/resource/#service), then it is populated from Kubernetes metadata, based on the following hierarchy of labels and names:
-  - `app.kubernetes.io/name` Pod label value.
-  - `app` Pod label value.
-  - Deployment/DaemonSet/StatefulSet/Job name.
-  - Pod name.
-  - If none of the above is available, the value is `unknown_service`.
+  1. `app.kubernetes.io/name` Pod label value.
+  2. `app` Pod label value.
+  3. Deployment/DaemonSet/StatefulSet/Job name.
+  4. Pod name.
+  5. If none of the above is available, the value is `unknown_service`.
 - `k8s.*` attributes: These attributes encapsulate various pieces of Kubernetes metadata associated with the Pod, including but not limited to:
   - Pod name.
   - Deployment/DaemonSet/StatefulSet/Job name.
