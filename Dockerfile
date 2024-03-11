@@ -1,7 +1,7 @@
 # Build the manager binary
 FROM golang:1.22.1-bullseye as builder
 
-WORKDIR /workspace
+WORKDIR /telemetry-manager-workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
