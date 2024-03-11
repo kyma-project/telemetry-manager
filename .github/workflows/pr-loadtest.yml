@@ -71,7 +71,7 @@ jobs:
       # Run the load test
       - name: Run Load test
         working-directory: docs/contributor/telemetry-load-test
-        run: ./assets/run-load-test.sh ${{ matrix.argument }}
+        run: hack/load-tests/run-load-test.sh ${{ matrix.argument }}
 
       - name: Deprovision Gardener
         run: make deprovision-gardener
