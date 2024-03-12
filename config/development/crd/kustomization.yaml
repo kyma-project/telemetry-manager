@@ -1,6 +1,5 @@
 resources:
   - bases/telemetry.kyma-project.io_logpipelines.yaml
-  - bases/telemetry.kyma-project.io_logparsers.yaml
   - bases/telemetry.kyma-project.io_tracepipelines.yaml
   - bases/operator.kyma-project.io_telemetries.yaml
   - bases/telemetry.kyma-project.io_metricpipelines.yaml
