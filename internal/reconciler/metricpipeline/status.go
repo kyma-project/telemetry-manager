@@ -105,12 +105,11 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 }
 
 func (r *Reconciler) setFlowHealthConditions(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
-	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	_, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Failed to retrieve alerts")
 		return
 	}
 
 	//TODO: Reflect probe result in the status of the MetricPipeline
-	logf.FromContext(ctx).Info("Probe finished", "probe", probeResult)
 }

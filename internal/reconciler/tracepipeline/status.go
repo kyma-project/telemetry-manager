@@ -114,12 +114,11 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 }
 
 func (r *Reconciler) setFlowHealthConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
-	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	_, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Failed to retrieve alerts")
 		return
 	}
 
 	//TODO: Reflect probe result in the status of the TracePipeline
-	logf.FromContext(ctx).Info("Probe finished", "probe", probeResult)
 }
