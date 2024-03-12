@@ -31,48 +31,43 @@ func RemoveResources(ctx context.Context, c client.Client, config *Config) error
 		Namespace: config.Namespace,
 	}
 
-	if err := c.Delete(ctx, &appsv1.Deployment{ObjectMeta: objectMeta}); err != nil {
+	if err := deleteObj(ctx, c, &appsv1.Deployment{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &corev1.ConfigMap{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &rbacv1.RoleBinding{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &rbacv1.Role{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &corev1.ServiceAccount{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &corev1.Service{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func deleteObj(ctx context.Context, c client.Client, object client.Object) error {
+	if err := c.Delete(ctx, object); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
 	}
-
-	if err := c.Delete(ctx, &corev1.ConfigMap{ObjectMeta: objectMeta}); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-
-	if err := c.Delete(ctx, &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-
-	if err := c.Delete(ctx, &rbacv1.RoleBinding{ObjectMeta: objectMeta}); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-
-	if err := c.Delete(ctx, &rbacv1.Role{ObjectMeta: objectMeta}); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-
-	if err := c.Delete(ctx, &corev1.ServiceAccount{ObjectMeta: objectMeta}); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-
-	if err := c.Delete(ctx, &corev1.Service{ObjectMeta: objectMeta}); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -382,9 +377,10 @@ func makeService(name types.NamespacedName, port int) *corev1.Service {
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
 				{
-					Name:     "http",
-					Protocol: corev1.ProtocolTCP,
-					Port:     int32(port),
+					Name:       "http",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       int32(port),
+					TargetPort: intstr.FromInt32(int32(port)),
 				},
 			},
 			Selector: defaultLabels(name.Name),
