@@ -67,7 +67,7 @@ func (p *Prober) Probe(ctx context.Context, pipelineName string) (ProbeResult, e
 		return ProbeResult{}, fmt.Errorf("failed to probe buffer filling up: %w", err)
 	}
 
-	throttling, err = p.throttling(ctx, pipelineName)
+	throttling, err = p.throttling(ctx)
 	if err != nil {
 		return ProbeResult{}, fmt.Errorf("failed to probe throttling: %w", err)
 	}
@@ -121,7 +121,7 @@ func (p *Prober) queueAlmostFull(ctx context.Context, pipelineName string) (bool
 	return hasFiringExporterAlert(alerts, alertNameExporterQueueAlmostFull, pipelineName), nil
 }
 
-func (p *Prober) throttling(ctx context.Context, pipelineName string) (bool, error) {
+func (p *Prober) throttling(ctx context.Context) (bool, error) {
 	alerts, err := p.retrieveAlerts(ctx)
 	if err != nil {
 		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
