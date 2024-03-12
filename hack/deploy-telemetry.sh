@@ -45,6 +45,8 @@ function check_telemetry_manager_is_ready() {
 
 
 function main() {
+  kubectl create namespace "$TELEMETRY_MANAGER_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+
   (make deploy && \
       check_telemetry_manager_is_ready)
 }

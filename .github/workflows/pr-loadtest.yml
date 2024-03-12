@@ -62,11 +62,11 @@ jobs:
           GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
           GARDENER_SA_PATH: /tmp/gardener-sa.yaml
 
-      - name: Deploy Istio Module
-        run: hack/deploy-istio.sh
-
       - name: Deploy Telemetry
         run: hack/deploy-telemetry.sh
+
+      - name: Deploy Istio Module
+        run: hack/deploy-istio.sh
 
       # Run the load test
       - name: Run Load test
