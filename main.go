@@ -134,7 +134,7 @@ var (
 )
 
 const (
-	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.95.0-0eb4394f"
+	otelImage              = "europe-docker.pkg.dev/kyma-project/dev/tpi/otel-collector:PR-420"
 	overridesConfigMapName = "telemetry-override-config"
 	overridesConfigMapKey  = "override-config"
 	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.2.2-b5220c17"
