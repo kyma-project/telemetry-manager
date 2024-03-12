@@ -72,6 +72,8 @@ linters-settings:
         alias: logpipelinewebhook
       - pkg: github.com/kyma-project/telemetry-manager/webhook/logpipeline/validation/mocks
         alias: logpipelinevalidationmocks
+      - pkg: github.com/prometheus/client_golang/api/prometheus/v1
+        alias: promv1
       - pkg: go.opentelemetry.io/otel/sdk/trace
         alias: tracesdk
       - pkg: istio.io/api/security/v1beta1

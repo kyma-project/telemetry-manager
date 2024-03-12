@@ -4,12 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth/mocks"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth/mocks"
 )
 
 func TestProber(t *testing.T) {

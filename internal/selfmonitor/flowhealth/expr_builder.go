@@ -14,9 +14,9 @@ type exprBuilder struct {
 
 type labelSelector func(string) string
 
-func selectLabel(label, value string) labelSelector {
+func selectService(serviceName string) labelSelector {
 	return func(metric string) string {
-		return fmt.Sprintf("%s{%s=\"%s\"}", metric, label, value)
+		return fmt.Sprintf("%s{%s=\"%s\"}", serviceLabelKey, metric, serviceName)
 	}
 }
 

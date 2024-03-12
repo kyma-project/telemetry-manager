@@ -1,8 +1,9 @@
 package flowhealth
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestMakeRules(t *testing.T) {

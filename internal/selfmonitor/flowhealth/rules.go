@@ -100,7 +100,7 @@ func (rb ruleBuilder) exporterSentRule() Rule {
 	metric := fmt.Sprintf("otelcol_exporter_sent_%s", rb.dataType)
 	return Rule{
 		Alert: rb.alertNamePrefix + alertNameExporterSentData,
-		Expr: rate(metric, selectLabel(serviceLabelKey, rb.serviceName)).
+		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(exporterLabelKey).
 			greaterThan(0).
 			build(),
@@ -111,7 +111,7 @@ func (rb ruleBuilder) exporterDroppedRule() Rule {
 	metric := fmt.Sprintf("otelcol_exporter_send_failed_%s", rb.dataType)
 	return Rule{
 		Alert: rb.alertNamePrefix + alertNameExporterDroppedData,
-		Expr: rate(metric, selectLabel(serviceLabelKey, rb.serviceName)).
+		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(exporterLabelKey).
 			greaterThan(0).
 			build(),
@@ -121,7 +121,7 @@ func (rb ruleBuilder) exporterDroppedRule() Rule {
 func (rb ruleBuilder) exporterQueueAlmostFullRule() Rule {
 	return Rule{
 		Alert: rb.alertNamePrefix + alertNameExporterQueueAlmostFull,
-		Expr: div("otelcol_exporter_queue_size", "otelcol_exporter_queue_capacity", selectLabel(serviceLabelKey, rb.serviceName)).
+		Expr: div("otelcol_exporter_queue_size", "otelcol_exporter_queue_capacity", selectService(rb.serviceName)).
 			greaterThan(0.8).
 			build(),
 	}
@@ -131,7 +131,7 @@ func (rb ruleBuilder) exporterEnqueueFailedRule() Rule {
 	metric := fmt.Sprintf("otelcol_exporter_enqueue_failed_%s", rb.dataType)
 	return Rule{
 		Alert: rb.alertNamePrefix + alertNameExporterEnqueueFailed,
-		Expr: rate(metric, selectLabel(serviceLabelKey, rb.serviceName)).
+		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(exporterLabelKey).
 			greaterThan(0).
 			build(),
@@ -142,7 +142,7 @@ func (rb ruleBuilder) receiverRefusedRule() Rule {
 	metric := fmt.Sprintf("otelcol_receiver_refused_%s", rb.dataType)
 	return Rule{
 		Alert: rb.alertNamePrefix + alertNameReceiverRefusedData,
-		Expr: rate(metric, selectLabel(serviceLabelKey, rb.serviceName)).
+		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(receiverLabelKey).
 			greaterThan(0).
 			build(),
