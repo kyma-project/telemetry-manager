@@ -7,12 +7,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
 
-func MakeConfig() Config {
+func MakeConfig(scrapeNamespace string) Config {
 	promConfig := Config{}
 	promConfig.GlobalConfig = makeGlobalConfig()
 	promConfig.AlertingConfig = makeAlertConfig()
 	promConfig.RuleFiles = []string{"/etc/prometheus/prometheus.rules"}
-	promConfig.ScrapeConfigs = makeScrapeConfig()
+	promConfig.ScrapeConfigs = makeScrapeConfig(scrapeNamespace)
 	return promConfig
 }
 
@@ -33,16 +33,20 @@ func makeAlertConfig() AlertingConfig {
 	}
 }
 
-func makeScrapeConfig() []ScrapeConfig {
+func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 	return []ScrapeConfig{
 		{
 			JobName: "kubernetes-service-endpoints",
+
 			RelabelConfigs: []RelabelConfig{{
 				SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scrape"},
 				Regex:        "true",
 				Action:       Keep,
 			}},
-			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{Role: RoleEndpoints}},
+			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{
+				Role:       RoleEndpoints,
+				Namespaces: Names{Name: []string{scrapeNamespace}},
+			}},
 		},
 	}
 }

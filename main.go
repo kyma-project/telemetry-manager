@@ -267,6 +267,7 @@ func main() {
 	flag.StringVar(&selfMonitorCPURequest, "self-monitor-cpu-request", "0.1", "CPU request for self-monitor")
 	flag.StringVar(&selfMonitorMemoryLimit, "self-monitor-memory-limit", "90Mi", "Memory limit for self-monitor")
 	flag.StringVar(&selfMonitorMemoryRequest, "self-monitor-memory-request", "42Mi", "Memory request for self-monitor")
+	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "telemetry-priority-class", "Priority class name for self-monitor")
 
 	flag.StringVar(&deniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
 	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
@@ -335,15 +336,15 @@ func main() {
 		},
 	})
 
-	overridesHandler = overrides.New(mgr.GetClient(), atomicLevel, overrides.HandlerConfig{
-		ConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
-		ConfigMapKey:  overridesConfigMapKey,
-	})
-
 	if err != nil {
 		setupLog.Error(err, "Failed to start manager")
 		os.Exit(1)
 	}
+
+	overridesHandler = overrides.New(mgr.GetClient(), atomicLevel, overrides.HandlerConfig{
+		ConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
+		ConfigMapKey:  overridesConfigMapKey,
+	})
 
 	enableLoggingController(mgr)
 	enableTracingController(mgr)

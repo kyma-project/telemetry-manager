@@ -16,3 +16,6 @@ scrape_configs:
           action: keep
       kubernetes_sd_configs:
         - role: endpoints
+          namespaces:
+            names:
+                - kyma-system

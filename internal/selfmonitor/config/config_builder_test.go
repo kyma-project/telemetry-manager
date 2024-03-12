@@ -10,7 +10,7 @@ import (
 )
 
 func TestMakeConfigMarshalling(t *testing.T) {
-	config := MakeConfig()
+	config := MakeConfig("kyma-system")
 	monitorConfigYaml, err := yaml.Marshal(config)
 	require.NoError(t, err)
 
