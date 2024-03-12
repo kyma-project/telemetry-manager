@@ -1,0 +1,77 @@
+name: PR Load Test
+
+# Trigger the test Manually additionally provide PR number.
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Pull Request Number'
+        required: true
+
+env:
+  IMG: europe-docker.pkg.dev/kyma-project/dev/telemetry-manager:PR-${{ github.event.inputs.pr_number }}
+
+jobs:
+  load-test:
+    strategy:
+      max-parallel: 3
+      matrix:
+        argument:
+          - "-n ci-traces -t traces"
+          - "-n ci-traces-m -t traces -m true"
+          - "-n ci-traces-b -t traces -b true"
+          - "-n ci-traces-mb -t traces -m true -b true"
+          - "-n ci-metrics -t metrics"
+          - "-n ci-metrics-m -t metrics -m true"
+          - "-n ci-metrics-b -t metrics -b true"
+          - "-n ci-metrics-mb -t metrics -m true -b true"
+          - "-n ci-metric-ag -t metricagent"
+          - "-n ci-metric-ag-b -t metricagent -b true"
+          - "-n ci-logs -t logs-fluentbit"
+          - "-n ci-logs-m -t logs-fluentbit -m true"
+          - "-n ci-logs-b -t logs-fluentbit -b true"
+          - "-n ci-logs-mb -t logs-fluentbit -m true -b true"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: 'refs/pull/${{ github.event.inputs.pr_number }}/head'
+          repository: ${{ github.repository }}
+
+      - name: Setup Golang
+        uses: "./.github/template/setup-golang"
+
+      # Generate the cluster name to be used for cluster creation. The cluster-name should be `pr-lt-traces`
+      - name: Setup gardener cluster name
+        run:  echo "GARDENER_CLUSTER_NAME=$(echo '${{ matrix.argument }}' | awk '{print $2}')" >> $GITHUB_ENV
+
+      # save gardener kubeconfig to a temp file in order to pass it to the command
+      - name: Save service account to file
+        shell: bash
+        run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
+        env:
+          GARDENER_SA: ${{ secrets.GARDENER_SA }}
+
+      # provision cluster
+      - name: Provision Gardener
+        run: make provision-gardener
+        env:
+          GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
+          GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
+          GARDENER_SA_PATH: /tmp/gardener-sa.yaml
+
+      - name: Deploy Istio Module
+        run: hack/deploy-istio.sh
+
+      - name: Deploy Telemetry
+        run: hack/deploy-telemetry.sh
+
+      # Run the load test
+      - name: Run Load test
+        run: hack/load-tests/run-load-test.sh ${{ matrix.argument }}
+
+      - name: Deprovision Gardener
+        run: make deprovision-gardener
+        if: success() || failure()
