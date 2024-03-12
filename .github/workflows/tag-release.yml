@@ -27,6 +27,9 @@ jobs:
           GITHUB_OWNER: "${{ github.repository_owner }}"
           GITHUB_REPO: "telemetry-manager"
 
+      - name: Install kustomize
+        run: make kustomize
+
       - name: Release
         run: hack/release.sh
         env:
