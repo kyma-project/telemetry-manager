@@ -74,4 +74,5 @@ jobs:
 
       - name: Deprovision Gardener
         run: make deprovision-gardener
-        if: success() || failure()
+        # Delete the cluster in case one of the steps is cancelled/failed/success.
+        if: always()
