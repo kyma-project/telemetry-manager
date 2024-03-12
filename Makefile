@@ -52,15 +52,15 @@ help: ## Display this help.
 
 ##@ Development
 lint-autofix: golangci-lint ## Autofix all possible linting errors.
-	${GOLANGCI-LINT} run --fix
+	${GOLANGCI_LINT} run --fix
 
 lint-manifests:
 	hack/lint-manifests.sh
 
 lint: golangci-lint lint-manifests
 	go version
-	${GOLANGCI-LINT} version
-	GO111MODULE=on ${GOLANGCI-LINT} run
+	${GOLANGCI_LINT} version
+	GO111MODULE=on ${GOLANGCI_LINT} run
 
 .PHONY: crd-docs-gen
 crd-docs-gen: tablegen ## Generates CRD spec into docs folder
