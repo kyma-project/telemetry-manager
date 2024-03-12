@@ -8,7 +8,7 @@ set -E          # needs to be set if we want the ERR trap
 set -o pipefail # prevents errors in a pipeline from being masked
 
 readonly LOCALBIN=${LOCALBIN:-$(pwd)/bin}
-readonly KUSTOMIZE=${KUSTOMIZE:-$(LOCALBIN)/kustomize}
+readonly KUSTOMIZE=${KUSTOMIZE:-$LOCALBIN/kustomize}
 readonly GORELEASER_VERSION="${GORELEASER_VERSION:-$ENV_GORELEASER_VERSION}"
 readonly IMG="${IMG:-$ENV_IMG}"
 
