@@ -14,7 +14,7 @@ This document describes a reproducible test setup to determine the limits and KP
 
 ## Test Script
 
-All test scenarios use a single test script [run-load-test.sh](assets/run-load-test.sh), which provides following parameters:
+All test scenarios use a single test script [run-load-test.sh](../../../hack/load-tests/run-load-test.sh), which provides following parameters:
 
 - `-t` The test target type supported values are `traces, metrics, metricagent, logs-fluentbit`, default is `traces`
 - `-n` Test name e.g. `0.92`
