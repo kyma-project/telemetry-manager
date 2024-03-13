@@ -27,8 +27,8 @@ get_previous_release_version() {
     TAG_LIST=($(git tag --sort=-creatordate | egrep "^[0-9]+.[0-9]+.[0-9]$"))
     if [[ "${TAG_LIST[0]}" =~ ^[0-9]+.[0-9]+.[1-9]$ ]]
     then
-          # do nothing
-          echo "Skip patch previous release"
+          TAG_LIST_WITH_PATCH=($(git tag --sort=-creatordate | egrep "^[0-9]+.[0-9]+.[0-9]$"))
+          export GORELEASER_PREVIOUS_TAG=${TAG_LIST_WITH_PATCH[1]}
     else
           # get the list of tags in a reverse chronological order excluding patch tags
           TAG_LIST_WITHOUT_PATCH=($(git tag --sort=-creatordate | egrep "^[0-9]+.[0-9]+.[0]$"))
