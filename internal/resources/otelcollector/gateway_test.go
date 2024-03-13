@@ -371,8 +371,7 @@ func TestApplyGatewayResourcesWithSelfMonEnabled(t *testing.T) {
 			"telemetry.kyma-project.io/self-monitor": "enabled",
 		}, svc.Labels)
 		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name":                 name,
-			"telemetry.kyma-project.io/self-monitor": "enabled",
+			"app.kubernetes.io/name": name,
 		}, svc.Spec.Selector)
 		require.Equal(t, map[string]string{
 			"prometheus.io/port":   "8888",

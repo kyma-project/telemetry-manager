@@ -3,6 +3,7 @@ package otelcollector
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
@@ -103,6 +104,8 @@ func makeSecret(name types.NamespacedName, secretData map[string][]byte) *corev1
 
 func makeMetricsService(name types.NamespacedName, addSelfMonLabel bool) *corev1.Service {
 	labels := defaultLabels(name.Name)
+	selectorLabels := make(map[string]string)
+	maps.Copy(selectorLabels, labels)
 
 	if addSelfMonLabel {
 		labels["telemetry.kyma-project.io/self-monitor"] = "enabled"
@@ -128,7 +131,7 @@ func makeMetricsService(name types.NamespacedName, addSelfMonLabel bool) *corev1
 					TargetPort: intstr.FromInt32(ports.Metrics),
 				},
 			},
-			Selector: labels,
+			Selector: selectorLabels,
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}

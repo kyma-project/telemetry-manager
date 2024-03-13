@@ -17,8 +17,8 @@ scrape_configs:
         - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
           regex: "true"
           action: keep
-        - source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_name]
-          regex: telemetry-.+
+        - source_labels: [__meta_kubernetes_endpoints_label_telemetry_kyma_project_io_self_monitor]
+          regex: enabled
           action: keep
         - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
           regex: "true"
