@@ -34,7 +34,7 @@ function setup() {
     # Deploy prometheus
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
     helm repo update
-    helm upgrade --install -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/docs/contributor/telemetry-load-test/assets/values.yaml --set grafana.adminPassword=myPwd
+    helm upgrade --install -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f ./hack/load-tests/values.yaml --set grafana.adminPassword=myPwd
 
     if [ "$TEST_TARGET" = "traces" ];
     then
