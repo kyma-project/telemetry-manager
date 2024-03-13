@@ -12,6 +12,7 @@ on:
         required: true
 env:
   IMG: europe-docker.pkg.dev/kyma-project/prod/telemetry-manager:main
+  MY_SA: foo
   # GARDENER_CLUSTER_NAME: "foo-BAR"
   
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -66,7 +67,7 @@ jobs:
           echo "GARDENER_CLUSTER_NAME=$(echo 'ci-${{ env.GIT_COMMIT_SHA }}-${{ env.K8s_VERSION }}')" >> $GITHUB_ENV
           echo "MY_TEST=/tmp/foo.yaml" >> $GITHUB_ENV
           make test-gardener-cluster-name
-          'echo "$MY_SA" > /tmp/my-sa.yaml'
+          'echo "$GARDENER_SA" > /tmp/my-sa.yaml'
           echo "MY_SA_PATH=/tmp/my-sa.yaml" >> $GITHUB_ENV
         env:
           GARDENER_SA: ${{ env.MY_SA }}
