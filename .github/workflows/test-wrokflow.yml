@@ -65,6 +65,10 @@ jobs:
           echo "GARDENER_CLUSTER_NAME=$(echo 'ci-${{ env.GIT_COMMIT_SHA }}-${{ env.K8s_VERSION }}')" >> $GITHUB_ENV
           echo "MY_TEST=/tmp/foo.yaml" >> $GITHUB_ENV
           make test-gardener-cluster-name
+          'echo "$MY_SA" > /tmp/my-sa.yaml'
+          echo "MY_SA_PATH=/tmp/my-sa.yaml" >> $GITHUB_ENV
+        env:
+          GARDENER_SA: ${{ env.MY_SA }}
 
       - name: Show changes
         run: echo $GARDENER_CLUSTER_NAME
