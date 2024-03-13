@@ -181,6 +181,7 @@ To collect custom metrics, you usually use the [Dynatrace annotation approach](h
                 path: v2/otlp/v1/metrics
                 headers:
                     - name: Authorization
+                      prefix: Api-Token
                       valueFrom:
                           secretKeyRef:
                               name: dynakube
