@@ -43,7 +43,7 @@ jobs:
       - name: Setup Golang
         uses: "./.github/template/setup-golang"
 
-      # Generate the cluster name to be used for cluster creation. The cluster-name should be `pr-lt-traces`
+      # Generate the cluster name to be used for cluster creation. The cluster-name should be `ci-traces`
       - name: Setup gardener cluster name
         run:  echo "GARDENER_CLUSTER_NAME=$(echo '${{ matrix.argument }}' | awk '{print $2}')" >> $GITHUB_ENV
 
@@ -76,3 +76,5 @@ jobs:
         run: make deprovision-gardener
         # Delete the cluster in case one of the steps is cancelled/failed/success.
         if: always()
+        env:
+          GARDENER_SA_PATH: /tmp/gardener-sa.yaml
