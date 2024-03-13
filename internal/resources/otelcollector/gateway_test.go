@@ -39,7 +39,7 @@ func TestApplyGatewayResources(t *testing.T) {
 	ctx := context.Background()
 	client := fake.NewClientBuilder().Build()
 
-	err := ApplyGatewayResources(ctx, client, createGatewayConfig(false))
+	err := ApplyGatewayResources(ctx, client, createGatewayConfig(false, false))
 	require.NoError(t, err)
 
 	t.Run("should create collector config configmap", func(t *testing.T) {
@@ -316,7 +316,7 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	err := ApplyGatewayResources(ctx, client, createGatewayConfig(true))
+	err := ApplyGatewayResources(ctx, client, createGatewayConfig(true, false))
 	require.NoError(t, err)
 
 	t.Run("It should have permissive peer authentication created", func(t *testing.T) {
@@ -349,13 +349,55 @@ func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	})
 }
 
-func createGatewayConfig(istioEnabled bool) *GatewayConfig {
+func TestApplyGatewayResourcesWithSelfMonEnabled(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	require.NoError(t, istiosecurityclientv1beta.AddToScheme(scheme))
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	client := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	err := ApplyGatewayResources(ctx, client, createGatewayConfig(false, true))
+	require.NoError(t, err)
+
+	t.Run("should create metrics service", func(t *testing.T) {
+		var svc corev1.Service
+		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name + "-metrics"}, &svc))
+
+		require.NotNil(t, svc)
+		require.Equal(t, name+"-metrics", svc.Name)
+		require.Equal(t, namespace, svc.Namespace)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name":                 name,
+			"telemetry.kyma-project.io/self-monitor": "enabled",
+		}, svc.Labels)
+		require.Equal(t, map[string]string{
+			"app.kubernetes.io/name":                 name,
+			"telemetry.kyma-project.io/self-monitor": "enabled",
+		}, svc.Spec.Selector)
+		require.Equal(t, map[string]string{
+			"prometheus.io/port":   "8888",
+			"prometheus.io/scheme": "http",
+			"prometheus.io/scrape": "true",
+		}, svc.Annotations)
+		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
+		require.Len(t, svc.Spec.Ports, 1)
+		require.Equal(t, corev1.ServicePort{
+			Name:       "http-metrics",
+			Protocol:   corev1.ProtocolTCP,
+			Port:       8888,
+			TargetPort: intstr.FromInt32(8888),
+		}, svc.Spec.Ports[0])
+	})
+}
+
+func createGatewayConfig(istioEnabled, selfMonEnabled bool) *GatewayConfig {
 	return &GatewayConfig{
 		Config: Config{
 			BaseName:         name,
 			Namespace:        namespace,
 			CollectorConfig:  cfg,
 			CollectorEnvVars: envVars,
+			SelfMonitorLabel: selfMonEnabled,
 		},
 		OTLPServiceName:      otlpServiceName,
 		CanReceiveOpenCensus: true,

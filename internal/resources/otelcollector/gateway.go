@@ -28,7 +28,7 @@ import (
 func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayConfig) error {
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
-	if err := applyCommonResources(ctx, c, name, makeGatewayClusterRole(name), cfg.allowedPorts); err != nil {
+	if err := applyCommonResources(ctx, c, name, makeGatewayClusterRole(name), cfg.allowedPorts, cfg.SelfMonitorLabel); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 

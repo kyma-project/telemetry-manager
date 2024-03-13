@@ -50,9 +50,9 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 					Regex:        "true",
 				},
 				{
-					SourceLabels: []string{"__meta_kubernetes_service_label_app_kubernetes_io_name"},
+					SourceLabels: []string{"__meta_kubernetes_service_label_telemetry_kyma_project_io_self_monitor"},
 					Action:       Keep,
-					Regex:        "telemetry-.+",
+					Regex:        "enabled",
 				},
 				{
 					SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_path"},

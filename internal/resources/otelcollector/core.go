@@ -18,7 +18,7 @@ import (
 )
 
 // applyCommonResources applies resources to gateway and agent deployment node
-func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, clusterRole *rbacv1.ClusterRole, allowedPorts []int32) error {
+func applyCommonResources(ctx context.Context, c client.Client, name types.NamespacedName, clusterRole *rbacv1.ClusterRole, allowedPorts []int32, addSelfMonLabel bool) error {
 	// Create RBAC resources in the following order: service account, cluster role, cluster role binding.
 	if err := k8sutils.CreateOrUpdateServiceAccount(ctx, c, makeServiceAccount(name)); err != nil {
 		return fmt.Errorf("failed to create service account: %w", err)
@@ -32,7 +32,7 @@ func applyCommonResources(ctx context.Context, c client.Client, name types.Names
 		return fmt.Errorf("failed to create cluster role binding: %w", err)
 	}
 
-	if err := k8sutils.CreateOrUpdateService(ctx, c, makeMetricsService(name)); err != nil {
+	if err := k8sutils.CreateOrUpdateService(ctx, c, makeMetricsService(name, addSelfMonLabel)); err != nil {
 		return fmt.Errorf("failed to create metrics service: %w", err)
 	}
 
@@ -101,8 +101,12 @@ func makeSecret(name types.NamespacedName, secretData map[string][]byte) *corev1
 	}
 }
 
-func makeMetricsService(name types.NamespacedName) *corev1.Service {
+func makeMetricsService(name types.NamespacedName, addSelfMonLabel bool) *corev1.Service {
 	labels := defaultLabels(name.Name)
+
+	if addSelfMonLabel {
+		labels["telemetry.kyma-project.io/self-monitor"] = "enabled"
+	}
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
