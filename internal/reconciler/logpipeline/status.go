@@ -38,13 +38,16 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	// If the "AgentHealthy" type doesn't exist in the conditions,
 	// then we need to reset the conditions list to ensure that the "Pending" and "Running" conditions are appended to the end of the conditions list
 	// Check step 3 in https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
+	// At the same time, we need to store the "Pending" condition to preserve the pending reason
+	var preUpgradePendingCondition *metav1.Condition
 	if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeAgentHealthy) == nil {
+		preUpgradePendingCondition = meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypePending)
 		pipeline.Status.Conditions = []metav1.Condition{}
 	}
 
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
-	r.setPendingAndRunningConditions(ctx, &pipeline)
+	r.setPendingAndRunningConditions(ctx, &pipeline, preUpgradePendingCondition)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update LogPipeline status: %w", err)
@@ -99,7 +102,7 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation, conditions.LogsMessage))
 }
 
-func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, preUpgradePendingCondition *metav1.Condition) {
 
 	if pipeline.Spec.Output.IsLokiDefined() {
 		conditions.SetPendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonUnsupportedLokiOutput, pipeline.Name, conditions.LogsMessage)
@@ -123,5 +126,14 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 		return
 	}
 
-	conditions.SetRunningCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonFluentBitDSReady, pipeline.Name, conditions.LogsMessage)
+	conditions.SetRunningCondition(
+		ctx,
+		&pipeline.Status.Conditions,
+		pipeline.Generation,
+		conditions.ReasonFluentBitDSReady,
+		pipeline.Name,
+		conditions.LogsMessage,
+		preUpgradePendingCondition,
+		conditions.ReasonFluentBitDSNotReady,
+	)
 }
