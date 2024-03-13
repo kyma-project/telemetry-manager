@@ -23,7 +23,7 @@ Fluent Bit can be configured in different ways to read container logs and ingest
 - **Dedicated log streams**: Each pipeline has its own `tail` input plugin, a list of filters, and an output plugin. This setup isolates the log processing between different pipelines. In the case of a problem, the streams can be paused individually. This setup has medium complexity.
 - **Dedicated Fluent Bit instances**: Each pipeline gets its own Fluent Bit DaemonSet. This setup isolates also the CPU and memory resources per pipeline with the cost of a larger overhead. This setup has medium complexity.
 
-Currently, Telemetry Manager uses option 2. 
+Currently, Telemetry Manager uses option 2.
 Option 1 does not fulfill our requirement to apply individual filters per pipeline. Option 4 causes an unacceptable resource overhead for our typical setup of two pipelines (application logs and access logs). Option 2 and 3 allow log filter settings per pipeline.
 
 We consider option 3 to be the best Fluent Bit configuration for our requirements because of its lower complexity. The throughput of option 3 has shown to be better than option 2 without changing Fluent Bit's CPU and memory limits.
