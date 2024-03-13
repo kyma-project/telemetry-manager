@@ -61,6 +61,7 @@ jobs:
         
 
       - name: test
+        shell: bash
         run: |
           echo "GARDENER_CLUSTER_NAME=$(echo 'ci-${{ env.GIT_COMMIT_SHA }}-${{ env.K8s_VERSION }}')" >> $GITHUB_ENV
           echo "MY_TEST=/tmp/foo.yaml" >> $GITHUB_ENV
