@@ -24,10 +24,10 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Basic", Label("metrics"), func() {
+var _ = Describe("Metrics Basic v1alpha1", Label("metrics"), func() {
 	const (
 		mockBackendName = "metric-receiver"
-		mockNs          = "metric-mocks"
+		mockNs          = "logs-basic-v1alpha1-test"
 	)
 
 	var (
