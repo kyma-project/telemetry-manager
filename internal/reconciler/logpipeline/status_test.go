@@ -121,6 +121,16 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotEmpty(t, agentHealthyCond.LastTransitionTime)
 
 		conditionsSize := len(updatedPipeline.Status.Conditions)
+
+		pendingCond := updatedPipeline.Status.Conditions[conditionsSize-2]
+		require.Equal(t, conditions.TypePending, pendingCond.Type)
+		require.Equal(t, metav1.ConditionFalse, pendingCond.Status)
+		require.Equal(t, conditions.ReasonFluentBitDSNotReady, pendingCond.Reason)
+		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageFor(conditions.ReasonFluentBitDSNotReady, conditions.LogsMessage)
+		require.Equal(t, pendingCondMsg, pendingCond.Message)
+		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
+		require.NotEmpty(t, pendingCond.LastTransitionTime)
+
 		runningCond := updatedPipeline.Status.Conditions[conditionsSize-1]
 		require.Equal(t, conditions.TypeRunning, runningCond.Type)
 		require.Equal(t, metav1.ConditionTrue, runningCond.Status)

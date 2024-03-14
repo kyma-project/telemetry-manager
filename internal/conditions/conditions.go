@@ -106,7 +106,7 @@ func MessageFor(reason string, messageMap map[string]string) string {
 	return ""
 }
 
-func SetPendingCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string, messageMap map[string]string) {
+func HandlePendingCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string, messageMap map[string]string) {
 	log := logf.FromContext(ctx)
 
 	pending := New(
@@ -127,32 +127,30 @@ func SetPendingCondition(ctx context.Context, conditions *[]metav1.Condition, ge
 	meta.SetStatusCondition(conditions, pending)
 }
 
-func SetRunningCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string, messageMap map[string]string) {
+func HandleRunningCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, runningReason, pendingReason, resourceName string, messageMap map[string]string) {
 	log := logf.FromContext(ctx)
 
-	existingPending := meta.FindStatusCondition(*conditions, TypePending)
-	if existingPending != nil {
-		newPending := New(
-			TypePending,
-			existingPending.Reason,
-			metav1.ConditionFalse,
-			generation,
-			messageMap,
-		)
-		newPending.Message = PendingTypeDeprecationMsg + newPending.Message
-		log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Pending condition to False", resourceName))
-		meta.SetStatusCondition(conditions, newPending)
-	}
+	// Set Pending condition to False
+	pending := New(
+		TypePending,
+		pendingReason,
+		metav1.ConditionFalse,
+		generation,
+		messageMap,
+	)
+	pending.Message = PendingTypeDeprecationMsg + pending.Message
+	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Pending condition to False", resourceName))
+	meta.SetStatusCondition(conditions, pending)
 
+	// Set Running condition to True
 	running := New(
 		TypeRunning,
-		reason,
+		runningReason,
 		metav1.ConditionTrue,
 		generation,
 		messageMap,
 	)
 	running.Message = RunningTypeDeprecationMsg + running.Message
-
 	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Running condition to True", resourceName))
 	meta.SetStatusCondition(conditions, running)
 }
