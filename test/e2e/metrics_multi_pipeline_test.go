@@ -48,7 +48,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 					mockNs, mockBackend.Name(), backend.TelemetryDataFilename, backend.HTTPWebPort),
 				)
 
-				metricPipeline := kitk8s.NewMetricPipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
+				metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
 				pipelines.Append(metricPipeline.Name())
 				objs = append(objs, metricPipeline.K8sObject())
 			}
@@ -101,7 +101,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 		makeResources := func() []client.Object {
 			var objs []client.Object
 			for i := 0; i < maxNumberOfMetricPipelines; i++ {
-				pipeline := kitk8s.NewMetricPipeline(fmt.Sprintf("pipeline-%d", i))
+				pipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("pipeline-%d", i))
 				pipelines.Append(pipeline.Name())
 				objs = append(objs, pipeline.K8sObject())
 
@@ -134,7 +134,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 
 		It("Should set ConfigurationGenerated condition to false", func() {
 			By("Creating an additional pipeline", func() {
-				pipeline := kitk8s.NewMetricPipeline("exceeding-pipeline")
+				pipeline := kitk8s.NewMetricPipelineV1Alpha1("exceeding-pipeline")
 				pipelineCreatedLater = pipeline.K8sObject()
 				pipelines.Append(pipeline.Name())
 
@@ -182,13 +182,13 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 			objs = append(objs, mockBackend.K8sObjects()...)
 			urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-			healthyPipeline := kitk8s.NewMetricPipeline("healthy").WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
+			healthyPipeline := kitk8s.NewMetricPipelineV1Alpha1("healthy").WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
 			healthyPipelineName = healthyPipeline.Name()
 			objs = append(objs, healthyPipeline.K8sObject())
 
 			unreachableHostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-broken", kitkyma.DefaultNamespaceName,
 				kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
-			brokenPipeline := kitk8s.NewMetricPipeline("broken").WithOutputEndpointFromSecret(unreachableHostSecret.SecretKeyRefV1Alpha1("metric-host"))
+			brokenPipeline := kitk8s.NewMetricPipelineV1Alpha1("broken").WithOutputEndpointFromSecret(unreachableHostSecret.SecretKeyRefV1Alpha1("metric-host"))
 			brokenPipelineName = brokenPipeline.Name()
 			objs = append(objs, brokenPipeline.K8sObject(), unreachableHostSecret.K8sObject())
 

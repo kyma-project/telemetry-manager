@@ -115,7 +115,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipeline("pipeline-with-istio-input-enabled").
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-istio-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
 			OtlpInput(false).
 			IstioInput(true, kitk8s.IncludeNamespaces(app1Ns))

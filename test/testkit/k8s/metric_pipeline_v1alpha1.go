@@ -28,7 +28,7 @@ type metricPipelineV1Alpha1 struct {
 	endpointPath    string
 }
 
-func NewMetricPipeline(name string) *metricPipelineV1Alpha1 {
+func NewMetricPipelineV1Alpha1(name string) *metricPipelineV1Alpha1 {
 	return &metricPipelineV1Alpha1{
 		id:           uuid.New().String(),
 		name:         name,

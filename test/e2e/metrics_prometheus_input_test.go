@@ -46,7 +46,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		// Default namespace objects.
-		metricPipeline := kitk8s.NewMetricPipeline("pipeline-with-prometheus-input-enabled").
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-prometheus-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
 			PrometheusInput(true, kitk8s.IncludeNamespaces(mockNs))
 		pipelineName = metricPipeline.Name()
