@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Basic v1beta1", Label("test"), Ordered, func() {
+var _ = Describe("Logs Basic v1beta1", Label("logs", "v1beta1"), Ordered, func() {
 	const (
 		mockBackendName = "log-receiver"
 		mockNs          = "log-http-output"
