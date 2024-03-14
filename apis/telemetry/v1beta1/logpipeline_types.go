@@ -20,6 +20,26 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Configuration Generated",type=string,JSONPath=`.status.conditions[?(@.type=="ConfigurationGenerated")].status`
+// +kubebuilder:printcolumn:name="Agent Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="AgentHealthy")].status`
+// +kubebuilder:printcolumn:name="Unsupported-Mode",type=boolean,JSONPath=`.status.unsupportedMode`
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:storageversion
+
+// LogPipeline is the Schema for the logpipelines API
+type LogPipeline struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// Defines the desired state of LogPipeline
+	Spec LogPipelineSpec `json:"spec,omitempty"`
+	// Shows the observed state of the LogPipeline
+	Status LogPipelineStatus `json:"status,omitempty"`
+}
+
 // LogPipelineSpec defines the desired state of LogPipeline
 type LogPipelineSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -77,14 +97,14 @@ type Filter struct {
 	Custom string `json:"custom,omitempty"`
 }
 
-// LokiOutput configures an output to the Kyma-internal Loki instance.
-type LokiOutput struct {
-	// Grafana Loki URL.
-	URL ValueType `json:"url,omitempty"`
-	// Labels to set for each log record.
-	Labels map[string]string `json:"labels,omitempty"`
-	// Attributes to be removed from a log record.
-	RemoveKeys []string `json:"removeKeys,omitempty"`
+// Output describes a Fluent Bit output configuration section.
+type Output struct {
+	// Defines a custom output in the Fluent Bit syntax. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode.
+	Custom string `json:"custom,omitempty"`
+	// Configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
+	HTTP *HTTPOutput `json:"http,omitempty"`
+	// The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README ).
+	Loki *LokiOutput `json:"grafana-loki,omitempty"`
 }
 
 // HTTPOutput configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
@@ -109,6 +129,16 @@ type HTTPOutput struct {
 	Dedot bool `json:"dedot,omitempty"`
 }
 
+// LokiOutput configures an output to the Kyma-internal Loki instance.
+type LokiOutput struct {
+	// Grafana Loki URL.
+	URL ValueType `json:"url,omitempty"`
+	// Labels to set for each log record.
+	Labels map[string]string `json:"labels,omitempty"`
+	// Attributes to be removed from a log record.
+	RemoveKeys []string `json:"removeKeys,omitempty"`
+}
+
 type TLSConfig struct {
 	// Indicates if TLS is disabled or enabled. Default is `false`.
 	Disabled bool `json:"disabled,omitempty"`
@@ -122,14 +152,38 @@ type TLSConfig struct {
 	Key *ValueType `json:"key,omitempty"`
 }
 
-// Output describes a Fluent Bit output configuration section.
-type Output struct {
-	// Defines a custom output in the Fluent Bit syntax. Note: If you use a `custom` output, you put the LogPipeline in unsupported mode.
-	Custom string `json:"custom,omitempty"`
-	// Configures an HTTP-based output compatible with the Fluent Bit HTTP output plugin.
-	HTTP *HTTPOutput `json:"http,omitempty"`
-	// The grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow [Installing a custom Loki stack in Kyma](https://kyma-project.io/#/telemetry-manager/user/integration/loki/README ).
-	Loki *LokiOutput `json:"grafana-loki,omitempty"`
+// Provides file content to be consumed by a LogPipeline configuration
+type FileMount struct {
+	Name    string `json:"name,omitempty"`
+	Content string `json:"content,omitempty"`
+}
+
+// References a Kubernetes secret that should be provided as environment variable to Fluent Bit
+type VariableRef struct {
+	// Name of the variable to map.
+	Name      string          `json:"name,omitempty"`
+	ValueFrom ValueFromSource `json:"valueFrom,omitempty"`
+}
+
+// LogPipelineStatus shows the observed state of the LogPipeline
+type LogPipelineStatus struct {
+	// An array of conditions describing the status of the pipeline.
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	// Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
+	UnsupportedMode bool `json:"unsupportedMode,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+// LogPipelineList contains a list of LogPipeline
+type LogPipelineList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []LogPipeline `json:"items"`
+}
+
+//nolint:gochecknoinits // SchemeBuilder's registration is required.
+func init() {
+	SchemeBuilder.Register(&LogPipeline{}, &LogPipelineList{})
 }
 
 func (i *Input) IsDefined() bool {
@@ -170,47 +224,6 @@ func (o *Output) pluginCount() int {
 	return plugins
 }
 
-// Provides file content to be consumed by a LogPipeline configuration
-type FileMount struct {
-	Name    string `json:"name,omitempty"`
-	Content string `json:"content,omitempty"`
-}
-
-// References a Kubernetes secret that should be provided as environment variable to Fluent Bit
-type VariableRef struct {
-	// Name of the variable to map.
-	Name      string          `json:"name,omitempty"`
-	ValueFrom ValueFromSource `json:"valueFrom,omitempty"`
-}
-
-// LogPipelineStatus shows the observed state of the LogPipeline
-type LogPipelineStatus struct {
-	// An array of conditions describing the status of the pipeline.
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-	// Is active when the LogPipeline uses a `custom` output or filter; see [unsupported mode](https://github.com/kyma-project/telemetry-manager/blob/main/docs/user/02-logs.md#unsupported-mode).
-	UnsupportedMode bool `json:"unsupportedMode,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster
-// +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Configuration Generated",type=string,JSONPath=`.status.conditions[?(@.type=="ConfigurationGenerated")].status`
-// +kubebuilder:printcolumn:name="Agent Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="AgentHealthy")].status`
-// +kubebuilder:printcolumn:name="Unsupported-Mode",type=boolean,JSONPath=`.status.unsupportedMode`
-// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-// +kubebuilder:storageversion
-
-// LogPipeline is the Schema for the logpipelines API
-type LogPipeline struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	// Defines the desired state of LogPipeline
-	Spec LogPipelineSpec `json:"spec,omitempty"`
-	// Shows the observed state of the LogPipeline
-	Status LogPipelineStatus `json:"status,omitempty"`
-}
-
 // ContainsCustomPlugin returns true if the pipeline contains any custom filters or outputs
 func (lp *LogPipeline) ContainsCustomPlugin() bool {
 	for _, filter := range lp.Spec.Filters {
@@ -219,17 +232,4 @@ func (lp *LogPipeline) ContainsCustomPlugin() bool {
 		}
 	}
 	return lp.Spec.Output.IsCustomDefined()
-}
-
-// +kubebuilder:object:root=true
-// LogPipelineList contains a list of LogPipeline
-type LogPipelineList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []LogPipeline `json:"items"`
-}
-
-//nolint:gochecknoinits // SchemeBuilder's registration is required.
-func init() {
-	SchemeBuilder.Register(&LogPipeline{}, &LogPipelineList{})
 }

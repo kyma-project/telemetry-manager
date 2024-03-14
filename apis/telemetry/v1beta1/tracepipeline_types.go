@@ -20,24 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// TracePipelineSpec defines the desired state of TracePipeline
-type TracePipelineSpec struct {
-	// Defines a destination for shipping trace data. Only one can be defined per pipeline.
-	Output TracePipelineOutput `json:"output"`
-}
-
-// TracePipelineOutput defines the output configuration section.
-type TracePipelineOutput struct {
-	// Configures the underlying Otel Collector with an [OTLP exporter](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md). If you switch `protocol`to `http`, an [OTLP HTTP exporter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter) is used.
-	Otlp *OtlpOutput `json:"otlp"`
-}
-
-// Defines the observed state of TracePipeline.
-type TracePipelineStatus struct {
-	// An array of conditions describing the status of the pipeline.
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
@@ -55,6 +37,24 @@ type TracePipeline struct {
 	Spec TracePipelineSpec `json:"spec,omitempty"`
 	// Shows the observed state of the TracePipeline
 	Status TracePipelineStatus `json:"status,omitempty"`
+}
+
+// TracePipelineSpec defines the desired state of TracePipeline
+type TracePipelineSpec struct {
+	// Defines a destination for shipping trace data. Only one can be defined per pipeline.
+	Output TracePipelineOutput `json:"output"`
+}
+
+// TracePipelineOutput defines the output configuration section.
+type TracePipelineOutput struct {
+	// Configures the underlying Otel Collector with an [OTLP exporter](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md). If you switch `protocol`to `http`, an [OTLP HTTP exporter](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter) is used.
+	Otlp *OtlpOutput `json:"otlp"`
+}
+
+// Defines the observed state of TracePipeline.
+type TracePipelineStatus struct {
+	// An array of conditions describing the status of the pipeline.
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
