@@ -53,36 +53,36 @@ func (lp *LogPipeline) GetTLSSecretRefs() []SecretKeyRef {
 }
 
 func (tp *TracePipeline) GetSecretRefs() []SecretKeyRef {
-	return getRefsInOtlpOutput(tp.Spec.Output.Otlp)
+	return getRefsInOTLPOutput(tp.Spec.Output.OTLP)
 }
 
 func (mp *MetricPipeline) GetSecretRefs() []SecretKeyRef {
-	return getRefsInOtlpOutput(mp.Spec.Output.Otlp)
+	return getRefsInOTLPOutput(mp.Spec.Output.OTLP)
 }
 
-func getRefsInOtlpOutput(otlpOut *OtlpOutput) []SecretKeyRef {
+func getRefsInOTLPOutput(OTLPOut *OTLPOutput) []SecretKeyRef {
 	var refs []SecretKeyRef
 
-	refs = appendIfSecretRef(refs, otlpOut.Endpoint)
+	refs = appendIfSecretRef(refs, OTLPOut.Endpoint)
 
-	if otlpOut.Authentication != nil && otlpOut.Authentication.Basic.IsDefined() {
-		refs = appendIfSecretRef(refs, otlpOut.Authentication.Basic.User)
-		refs = appendIfSecretRef(refs, otlpOut.Authentication.Basic.Password)
+	if OTLPOut.Authentication != nil && OTLPOut.Authentication.Basic.IsDefined() {
+		refs = appendIfSecretRef(refs, OTLPOut.Authentication.Basic.User)
+		refs = appendIfSecretRef(refs, OTLPOut.Authentication.Basic.Password)
 	}
 
-	for _, header := range otlpOut.Headers {
+	for _, header := range OTLPOut.Headers {
 		refs = appendIfSecretRef(refs, header.ValueType)
 	}
 
-	if otlpOut.TLS != nil && !otlpOut.TLS.Insecure {
-		if otlpOut.TLS.CA != nil {
-			refs = appendIfSecretRef(refs, *otlpOut.TLS.CA)
+	if OTLPOut.TLS != nil && !OTLPOut.TLS.Insecure {
+		if OTLPOut.TLS.CA != nil {
+			refs = appendIfSecretRef(refs, *OTLPOut.TLS.CA)
 		}
-		if otlpOut.TLS.Cert != nil {
-			refs = appendIfSecretRef(refs, *otlpOut.TLS.Cert)
+		if OTLPOut.TLS.Cert != nil {
+			refs = appendIfSecretRef(refs, *OTLPOut.TLS.Cert)
 		}
-		if otlpOut.TLS.Key != nil {
-			refs = appendIfSecretRef(refs, *otlpOut.TLS.Key)
+		if OTLPOut.TLS.Key != nil {
+			refs = appendIfSecretRef(refs, *OTLPOut.TLS.Key)
 		}
 	}
 
