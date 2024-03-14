@@ -123,7 +123,7 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 		return
 	}
 
-	conditions.SetRunningCondition(
+	conditions.HandleRunningCondition(
 		ctx,
 		&pipeline.Status.Conditions,
 		pipeline.Generation,

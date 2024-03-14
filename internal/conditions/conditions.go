@@ -127,7 +127,7 @@ func HandlePendingCondition(ctx context.Context, conditions *[]metav1.Condition,
 	meta.SetStatusCondition(conditions, pending)
 }
 
-func SetRunningCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, runningReason, pendingReason, resourceName string, messageMap map[string]string) {
+func HandleRunningCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, runningReason, pendingReason, resourceName string, messageMap map[string]string) {
 	log := logf.FromContext(ctx)
 
 	// Set Pending condition to False

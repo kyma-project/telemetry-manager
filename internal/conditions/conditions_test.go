@@ -101,7 +101,7 @@ func TestSetRunningCondition(t *testing.T) {
 		generation := int64(1)
 		reason := ReasonFluentBitDSReady
 
-		SetRunningCondition(context.Background(), &conditions, generation, reason, "pipeline", LogsMessage)
+		HandleRunningCondition(context.Background(), &conditions, generation, reason, "pipeline", LogsMessage)
 
 		pendingCond := meta.FindStatusCondition(conditions, TypePending)
 		require.NotNil(t, pendingCond)

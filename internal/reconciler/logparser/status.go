@@ -75,7 +75,7 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, parser 
 
 	}
 
-	conditions.SetRunningCondition(
+	conditions.HandleRunningCondition(
 		ctx,
 		&parser.Status.Conditions,
 		parser.Generation,
