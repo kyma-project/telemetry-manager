@@ -20,7 +20,7 @@ labels:
     app.kubernetes.io/managed-by: kustomize
 
 resources:
-- ../crd
+- crd
 - ../rbac
 - ../manager
 - ../webhook
