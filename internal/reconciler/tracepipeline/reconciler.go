@@ -51,12 +51,17 @@ type DeploymentProber interface {
 	IsReady(ctx context.Context, name types.NamespacedName) (bool, error)
 }
 
+//go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
+type FlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (flowhealth.ProbeResult, error)
+}
+
 type Reconciler struct {
 	client.Client
 	config                   Config
 	prober                   DeploymentProber
 	flowHealthProbingEnabled bool
-	flowHealthProber         *flowhealth.Prober
+	flowHealthProber         FlowHealthProber
 	overridesHandler         *overrides.Handler
 	istioStatusChecker       istiostatus.Checker
 }
@@ -65,7 +70,7 @@ func NewReconciler(client client.Client,
 	config Config,
 	prober DeploymentProber,
 	flowHealthProbingEnabled bool,
-	flowHealthProber *flowhealth.Prober,
+	flowHealthProber FlowHealthProber,
 	overridesHandler *overrides.Handler) *Reconciler {
 	return &Reconciler{
 		Client:                   client,

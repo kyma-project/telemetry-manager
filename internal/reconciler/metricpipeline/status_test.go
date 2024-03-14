@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
@@ -308,5 +309,112 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
 		require.Equal(t, conditions.ReasonMaxPipelinesExceeded, cond.Reason)
+	})
+
+	t.Run("flow healthy", func(t *testing.T) {
+		tests := []struct {
+			name           string
+			probe          flowhealth.ProbeResult
+			expectedStatus metav1.ConditionStatus
+			expectedReason string
+		}{
+			{
+				name: "healthy",
+				probe: flowhealth.ProbeResult{
+					Healthy: true,
+				},
+				expectedStatus: metav1.ConditionTrue,
+				expectedReason: conditions.ReasonTelemetryFlowHealthy,
+			},
+			{
+				name: "throttling",
+				probe: flowhealth.ProbeResult{
+					Throttling: true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonGatewayThrottling,
+			},
+			{
+				name: "buffer filling up",
+				probe: flowhealth.ProbeResult{
+					QueueAlmostFull: true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonBufferFillingUp,
+			},
+			{
+				name: "buffer filling up shadows other problems",
+				probe: flowhealth.ProbeResult{
+					QueueAlmostFull: true,
+					Throttling:      true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonBufferFillingUp,
+			},
+			{
+				name: "some data dropped",
+				probe: flowhealth.ProbeResult{
+					SomeDataDropped: true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonSomeTelemetryDataDropped,
+			},
+			{
+				name: "some data dropped shadows other problems",
+				probe: flowhealth.ProbeResult{
+					SomeDataDropped: true,
+					Throttling:      true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonSomeTelemetryDataDropped,
+			},
+			{
+				name: "all data dropped",
+				probe: flowhealth.ProbeResult{
+					AllDataDropped: true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonAllTelemetryDataDropped,
+			},
+			{
+				name: "all data dropped shadows other problems",
+				probe: flowhealth.ProbeResult{
+					AllDataDropped: true,
+					Throttling:     true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonAllTelemetryDataDropped,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewMetricPipelineBuilder().Build()
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				gatewayProberStub := &mocks.DeploymentProber{}
+				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+				flowHealthProberStub := &mocks.FlowHealthProber{}
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, nil)
+
+				sut := Reconciler{
+					Client:                   fakeClient,
+					gatewayProber:            gatewayProberStub,
+					flowHealthProbingEnabled: true,
+					flowHealthProber:         flowHealthProberStub,
+				}
+				err := sut.updateStatus(context.Background(), pipeline.Name, false)
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.MetricPipeline
+				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeFlowHealthy)
+				require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeFlowHealthy)
+				require.Equal(t, tt.expectedStatus, cond.Status)
+				require.Equal(t, tt.expectedReason, cond.Reason)
+			})
+		}
 	})
 }
