@@ -339,15 +339,15 @@ func main() {
 		},
 	})
 
-	overridesHandler = overrides.New(mgr.GetClient(), atomicLevel, overrides.HandlerConfig{
-		ConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
-		ConfigMapKey:  overridesConfigMapKey,
-	})
-
 	if err != nil {
 		setupLog.Error(err, "Failed to start manager")
 		os.Exit(1)
 	}
+
+	overridesHandler = overrides.New(mgr.GetClient(), atomicLevel, overrides.HandlerConfig{
+		ConfigMapName: types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
+		ConfigMapKey:  overridesConfigMapKey,
+	})
 
 	enableLoggingController(mgr)
 	enableTracingController(mgr)
@@ -535,8 +535,9 @@ func createTracePipelineReconciler(client client.Client, flowHealthProber *flowh
 	config := tracepipeline.Config{
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
-				Namespace: telemetryNamespace,
-				BaseName:  "telemetry-trace-collector",
+				Namespace:        telemetryNamespace,
+				BaseName:         "telemetry-trace-collector",
+				SelfMonitorLabel: enableSelfMonitor,
 			},
 			Deployment: otelcollector.DeploymentConfig{
 				Image:                traceGatewayImage,
@@ -573,8 +574,9 @@ func createMetricPipelineReconciler(client client.Client, flowHealthProber *flow
 	config := metricpipeline.Config{
 		Agent: otelcollector.AgentConfig{
 			Config: otelcollector.Config{
-				Namespace: telemetryNamespace,
-				BaseName:  "telemetry-metric-agent",
+				Namespace:        telemetryNamespace,
+				BaseName:         "telemetry-metric-agent",
+				SelfMonitorLabel: enableSelfMonitor,
 			},
 			DaemonSet: otelcollector.DaemonSetConfig{
 				Image:             metricGatewayImage,
@@ -587,8 +589,9 @@ func createMetricPipelineReconciler(client client.Client, flowHealthProber *flow
 		},
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
-				Namespace: telemetryNamespace,
-				BaseName:  "telemetry-metric-gateway",
+				Namespace:        telemetryNamespace,
+				BaseName:         "telemetry-metric-gateway",
+				SelfMonitorLabel: enableSelfMonitor,
 			},
 			Deployment: otelcollector.DeploymentConfig{
 				Image:                metricGatewayImage,

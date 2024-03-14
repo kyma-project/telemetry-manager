@@ -9,6 +9,7 @@ type Config struct {
 	Namespace        string
 	CollectorConfig  string
 	CollectorEnvVars map[string][]byte
+	SelfMonitorLabel bool
 }
 
 type GatewayConfig struct {

@@ -31,42 +31,43 @@ func RemoveResources(ctx context.Context, c client.Client, config *Config) error
 		Namespace: config.Namespace,
 	}
 
-	if err := c.Delete(ctx, &appsv1.Deployment{ObjectMeta: objectMeta}); err != nil {
+	if err := deleteObj(ctx, c, &appsv1.Deployment{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &corev1.ConfigMap{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &rbacv1.RoleBinding{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &rbacv1.Role{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &corev1.ServiceAccount{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	if err := deleteObj(ctx, c, &corev1.Service{ObjectMeta: objectMeta}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func deleteObj(ctx context.Context, c client.Client, object client.Object) error {
+	if err := c.Delete(ctx, object); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
 	}
-
-	if err := c.Delete(ctx, &corev1.ConfigMap{ObjectMeta: objectMeta}); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-
-	if err := c.Delete(ctx, &networkingv1.NetworkPolicy{ObjectMeta: objectMeta}); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-
-	if err := c.Delete(ctx, &rbacv1.RoleBinding{ObjectMeta: objectMeta}); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-
-	if err := c.Delete(ctx, &rbacv1.Role{ObjectMeta: objectMeta}); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-
-	if err := c.Delete(ctx, &corev1.ServiceAccount{ObjectMeta: objectMeta}); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -118,23 +119,6 @@ func makeServiceAccount(name types.NamespacedName) *corev1.ServiceAccount {
 	return &serviceAccount
 }
 
-func makeRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
-	roleBinding := rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-			Labels:    defaultLabels(name.Name),
-		},
-		Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
-			Name:     name.Name,
-		},
-	}
-	return &roleBinding
-}
-
 func makeRole(name types.NamespacedName) *rbacv1.Role {
 	role := rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
@@ -151,6 +135,23 @@ func makeRole(name types.NamespacedName) *rbacv1.Role {
 		},
 	}
 	return &role
+}
+
+func makeRoleBinding(name types.NamespacedName) *rbacv1.RoleBinding {
+	roleBinding := rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+			Labels:    defaultLabels(name.Name),
+		},
+		Subjects: []rbacv1.Subject{{Name: name.Name, Namespace: name.Namespace, Kind: rbacv1.ServiceAccountKind}},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     name.Name,
+		},
+	}
+	return &roleBinding
 }
 
 func makeNetworkPolicyIngressPorts(name types.NamespacedName, labels map[string]string) *networkingv1.NetworkPolicy {
@@ -376,9 +377,10 @@ func makeService(name types.NamespacedName, port int) *corev1.Service {
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
 				{
-					Name:     "http",
-					Protocol: corev1.ProtocolTCP,
-					Port:     int32(port),
+					Name:       "http",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       int32(port),
+					TargetPort: intstr.FromInt32(int32(port)),
 				},
 			},
 			Selector: defaultLabels(name.Name),
