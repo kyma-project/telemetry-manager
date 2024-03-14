@@ -38,7 +38,7 @@ func TestSetPendingCondition(t *testing.T) {
 		generation := int64(1)
 		reason := ReasonFluentBitDSNotReady
 
-		SetPendingCondition(context.Background(), &conditions, generation, reason, "pipeline", LogsMessage)
+		HandlePendingCondition(context.Background(), &conditions, generation, reason, "pipeline", LogsMessage)
 
 		pendingCond := meta.FindStatusCondition(conditions, TypePending)
 		require.Equal(t, TypePending, pendingCond.Type)
@@ -70,7 +70,7 @@ func TestSetPendingCondition(t *testing.T) {
 		generation := int64(1)
 		reason := ReasonFluentBitDSNotReady
 
-		SetPendingCondition(context.Background(), &conditions, generation, reason, "pipeline", LogsMessage)
+		HandlePendingCondition(context.Background(), &conditions, generation, reason, "pipeline", LogsMessage)
 
 		runningCond := meta.FindStatusCondition(conditions, TypeRunning)
 		require.Nil(t, runningCond)

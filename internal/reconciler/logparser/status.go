@@ -70,7 +70,7 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, parser 
 	}
 
 	if !fluentBitReady {
-		conditions.SetPendingCondition(ctx, &parser.Status.Conditions, parser.Generation, conditions.ReasonFluentBitDSNotReady, parser.Name, conditions.LogsMessage)
+		conditions.HandlePendingCondition(ctx, &parser.Status.Conditions, parser.Generation, conditions.ReasonFluentBitDSNotReady, parser.Name, conditions.LogsMessage)
 		return
 
 	}

@@ -106,7 +106,7 @@ func MessageFor(reason string, messageMap map[string]string) string {
 	return ""
 }
 
-func SetPendingCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string, messageMap map[string]string) {
+func HandlePendingCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string, messageMap map[string]string) {
 	log := logf.FromContext(ctx)
 
 	pending := New(
