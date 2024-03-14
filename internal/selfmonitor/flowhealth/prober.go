@@ -49,97 +49,49 @@ type ProbeResult struct {
 }
 
 func (p *Prober) Probe(ctx context.Context, pipelineName string) (ProbeResult, error) {
-	var err error
-	var allDataDropped, someDataDropped, queueAlmostFull, throttling, healthy bool
-
-	allDataDropped, err = p.allDataDropped(ctx, pipelineName)
+	alerts, err := p.retrieveAlerts(ctx)
 	if err != nil {
-		return ProbeResult{}, fmt.Errorf("failed to probe all data dropped: %w", err)
-	}
-
-	someDataDropped, err = p.someDataDropped(ctx, pipelineName)
-	if err != nil {
-		return ProbeResult{}, fmt.Errorf("failed to probe some data dropped: %w", err)
-	}
-
-	queueAlmostFull, err = p.queueAlmostFull(ctx, pipelineName)
-	if err != nil {
-		return ProbeResult{}, fmt.Errorf("failed to probe buffer filling up: %w", err)
-	}
-
-	throttling, err = p.throttling(ctx)
-	if err != nil {
-		return ProbeResult{}, fmt.Errorf("failed to probe throttling: %w", err)
-	}
-
-	healthy, err = p.healthy(ctx, pipelineName)
-	if err != nil {
-		return ProbeResult{}, fmt.Errorf("failed to probe healthy: %w", err)
+		return ProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
 	return ProbeResult{
-		AllDataDropped:  allDataDropped,
-		SomeDataDropped: someDataDropped,
-		QueueAlmostFull: queueAlmostFull,
-		Throttling:      throttling,
-		Healthy:         healthy,
+		AllDataDropped:  allDataDropped(alerts, pipelineName),
+		SomeDataDropped: someDataDropped(alerts, pipelineName),
+		QueueAlmostFull: queueAlmostFull(alerts, pipelineName),
+		Throttling:      throttling(alerts),
+		Healthy:         healthy(alerts, pipelineName),
 	}, nil
 }
 
-func (p *Prober) allDataDropped(ctx context.Context, pipelineName string) (bool, error) {
-	alerts, err := p.retrieveAlerts(ctx)
-	if err != nil {
-		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
-	}
-
+func allDataDropped(alerts []promv1.Alert, pipelineName string) bool {
 	exporterSentFiring := hasFiringExporterAlert(alerts, alertNameExporterSentData, pipelineName)
 	exporterDroppedFiring := hasFiringExporterAlert(alerts, alertNameExporterDroppedData, pipelineName)
 	exporterEnqueueFailedFiring := hasFiringExporterAlert(alerts, alertNameExporterEnqueueFailed, pipelineName)
 
-	return !exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring), nil
+	return !exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring)
 }
 
-func (p *Prober) someDataDropped(ctx context.Context, pipelineName string) (bool, error) {
-	alerts, err := p.retrieveAlerts(ctx)
-	if err != nil {
-		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
-	}
-
+func someDataDropped(alerts []promv1.Alert, pipelineName string) bool {
 	exporterSentFiring := hasFiringExporterAlert(alerts, alertNameExporterSentData, pipelineName)
 	exporterDroppedFiring := hasFiringExporterAlert(alerts, alertNameExporterDroppedData, pipelineName)
 	exporterEnqueueFailedFiring := hasFiringExporterAlert(alerts, alertNameExporterEnqueueFailed, pipelineName)
 
-	return exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring), nil
+	return exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring)
 }
 
-func (p *Prober) queueAlmostFull(ctx context.Context, pipelineName string) (bool, error) {
-	alerts, err := p.retrieveAlerts(ctx)
-	if err != nil {
-		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
-	}
-
-	return hasFiringExporterAlert(alerts, alertNameExporterQueueAlmostFull, pipelineName), nil
+func queueAlmostFull(alerts []promv1.Alert, pipelineName string) bool {
+	return hasFiringExporterAlert(alerts, alertNameExporterQueueAlmostFull, pipelineName)
 }
 
-func (p *Prober) throttling(ctx context.Context) (bool, error) {
-	alerts, err := p.retrieveAlerts(ctx)
-	if err != nil {
-		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
-	}
-
-	return hasFiringAlert(alerts, alertNameReceiverRefusedData), nil
+func throttling(alerts []promv1.Alert) bool {
+	return hasFiringAlert(alerts, alertNameReceiverRefusedData)
 }
 
-func (p *Prober) healthy(ctx context.Context, pipelineName string) (bool, error) {
-	alerts, err := p.retrieveAlerts(ctx)
-	if err != nil {
-		return false, fmt.Errorf("failed to retrieve alerts: %w", err)
-	}
-
+func healthy(alerts []promv1.Alert, pipelineName string) bool {
 	return !(hasFiringExporterAlert(alerts, alertNameExporterDroppedData, pipelineName) ||
 		hasFiringExporterAlert(alerts, alertNameExporterQueueAlmostFull, pipelineName) ||
 		hasFiringExporterAlert(alerts, alertNameExporterEnqueueFailed, pipelineName) ||
-		hasFiringAlert(alerts, alertNameReceiverRefusedData)), nil
+		hasFiringAlert(alerts, alertNameReceiverRefusedData))
 }
 
 func (p *Prober) retrieveAlerts(ctx context.Context) ([]promv1.Alert, error) {
