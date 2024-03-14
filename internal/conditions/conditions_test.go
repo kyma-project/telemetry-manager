@@ -32,15 +32,31 @@ func TestMessageFor(t *testing.T) {
 	})
 }
 
-func TestSetPendingCondition(t *testing.T) {
-	t.Run("should just add pending condition if the conditions list is empty", func(t *testing.T) {
-		var conditions []metav1.Condition
+func TestHandlePendingCondition(t *testing.T) {
+	t.Run("should just set pending condition to true if running condition is not in the conditions list", func(t *testing.T) {
+		conditions := []metav1.Condition{
+			{
+				Type:               TypeAgentHealthy,
+				Status:             metav1.ConditionFalse,
+				Reason:             ReasonDaemonSetNotReady,
+				Message:            MessageFor(ReasonDaemonSetNotReady, LogsMessage),
+				LastTransitionTime: metav1.Now(),
+			},
+			{
+				Type:               TypeConfigurationGenerated,
+				Status:             metav1.ConditionTrue,
+				Reason:             ReasonConfigurationGenerated,
+				Message:            MessageFor(ReasonConfigurationGenerated, LogsMessage),
+				LastTransitionTime: metav1.Now(),
+			},
+		}
 		generation := int64(1)
 		reason := ReasonFluentBitDSNotReady
 
 		HandlePendingCondition(context.Background(), &conditions, generation, reason, "pipeline", LogsMessage)
 
-		pendingCond := meta.FindStatusCondition(conditions, TypePending)
+		conditionsSize := len(conditions)
+		pendingCond := conditions[conditionsSize-1]
 		require.Equal(t, TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, reason, pendingCond.Reason)
@@ -52,6 +68,20 @@ func TestSetPendingCondition(t *testing.T) {
 
 	t.Run("should remove running condition and set pending condition to true", func(t *testing.T) {
 		conditions := []metav1.Condition{
+			{
+				Type:               TypeAgentHealthy,
+				Status:             metav1.ConditionFalse,
+				Reason:             ReasonDaemonSetNotReady,
+				Message:            MessageFor(ReasonDaemonSetNotReady, LogsMessage),
+				LastTransitionTime: metav1.Now(),
+			},
+			{
+				Type:               TypeConfigurationGenerated,
+				Status:             metav1.ConditionTrue,
+				Reason:             ReasonConfigurationGenerated,
+				Message:            MessageFor(ReasonConfigurationGenerated, LogsMessage),
+				LastTransitionTime: metav1.Now(),
+			},
 			{
 				Type:               TypePending,
 				Status:             metav1.ConditionFalse,
@@ -75,8 +105,8 @@ func TestSetPendingCondition(t *testing.T) {
 		runningCond := meta.FindStatusCondition(conditions, TypeRunning)
 		require.Nil(t, runningCond)
 
-		pendingCond := meta.FindStatusCondition(conditions, TypePending)
-		require.NotNil(t, pendingCond)
+		conditionsSize := len(conditions)
+		pendingCond := conditions[conditionsSize-1]
 		require.Equal(t, TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, reason, pendingCond.Reason)
@@ -87,38 +117,46 @@ func TestSetPendingCondition(t *testing.T) {
 	})
 }
 
-func TestSetRunningCondition(t *testing.T) {
-	t.Run("should set pending condition to false and add running condition", func(t *testing.T) {
+func TestHandleRunningCondition(t *testing.T) {
+	t.Run("should set pending condition to false and set running condition to true", func(t *testing.T) {
 		conditions := []metav1.Condition{
 			{
-				Type:               TypePending,
+				Type:               TypeAgentHealthy,
 				Status:             metav1.ConditionTrue,
-				Reason:             ReasonFluentBitDSNotReady,
-				Message:            PendingTypeDeprecationMsg + MessageFor(ReasonFluentBitDSNotReady, LogsMessage),
+				Reason:             ReasonDaemonSetReady,
+				Message:            MessageFor(ReasonDaemonSetReady, LogsMessage),
+				LastTransitionTime: metav1.Now(),
+			},
+			{
+				Type:               TypeConfigurationGenerated,
+				Status:             metav1.ConditionTrue,
+				Reason:             ReasonConfigurationGenerated,
+				Message:            MessageFor(ReasonConfigurationGenerated, LogsMessage),
 				LastTransitionTime: metav1.Now(),
 			},
 		}
 		generation := int64(1)
-		reason := ReasonFluentBitDSReady
+		runningReason := ReasonFluentBitDSReady
+		pendingReason := ReasonFluentBitDSNotReady
 
-		HandleRunningCondition(context.Background(), &conditions, generation, reason, "pipeline", LogsMessage)
+		HandleRunningCondition(context.Background(), &conditions, generation, runningReason, pendingReason, "pipeline", LogsMessage)
 
-		pendingCond := meta.FindStatusCondition(conditions, TypePending)
-		require.NotNil(t, pendingCond)
+		conditionsSize := len(conditions)
+
+		pendingCond := conditions[conditionsSize-2]
 		require.Equal(t, TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionFalse, pendingCond.Status)
-		require.Equal(t, ReasonFluentBitDSNotReady, pendingCond.Reason)
-		pendingCondMsg := PendingTypeDeprecationMsg + MessageFor(ReasonFluentBitDSNotReady, LogsMessage)
+		require.Equal(t, pendingReason, pendingCond.Reason)
+		pendingCondMsg := PendingTypeDeprecationMsg + MessageFor(pendingReason, LogsMessage)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
 
-		runningCond := meta.FindStatusCondition(conditions, TypeRunning)
-		require.NotNil(t, runningCond)
+		runningCond := conditions[conditionsSize-1]
 		require.Equal(t, TypeRunning, runningCond.Type)
 		require.Equal(t, metav1.ConditionTrue, runningCond.Status)
-		require.Equal(t, reason, runningCond.Reason)
-		runningCondMsg := RunningTypeDeprecationMsg + MessageFor(reason, LogsMessage)
+		require.Equal(t, runningReason, runningCond.Reason)
+		runningCondMsg := RunningTypeDeprecationMsg + MessageFor(runningReason, LogsMessage)
 		require.Equal(t, runningCondMsg, runningCond.Message)
 		require.Equal(t, generation, runningCond.ObservedGeneration)
 		require.NotEmpty(t, runningCond.LastTransitionTime)
