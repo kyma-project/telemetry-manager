@@ -37,8 +37,12 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 	return []ScrapeConfig{
 		{
 			JobName: "kubernetes-service-endpoints",
-
 			RelabelConfigs: []RelabelConfig{
+				{
+					SourceLabels: []string{"__meta_kubernetes_namespace"},
+					Action:       Keep,
+					Regex:        scrapeNamespace,
+				},
 				{
 					SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_scrape"},
 					Action:       Keep,

@@ -16,7 +16,7 @@ type labelSelector func(string) string
 
 func selectService(serviceName string) labelSelector {
 	return func(metric string) string {
-		return fmt.Sprintf("%s{%s=\"%s\"}", serviceLabelKey, metric, serviceName)
+		return fmt.Sprintf("%s{%s=\"%s\"}", metric, serviceLabelKey, serviceName)
 	}
 }
 
