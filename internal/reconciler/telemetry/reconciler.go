@@ -146,12 +146,12 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 	}
 
 	scrapeNamespace := r.config.SelfMonitor.Config.Namespace
-	selfMonConfig := config.MakeConfig(scrapeNamespace)
-	selfMonitorConfigYaml, err := yaml.Marshal(selfMonConfig)
+	selfMonitorConfig := config.MakeConfig(scrapeNamespace)
+	selfMonitorConfigYAML, err := yaml.Marshal(selfMonitorConfig)
 	if err != nil {
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
 	}
-	r.config.SelfMonitor.Config.SelfMonitorConfig = string(selfMonitorConfigYaml)
+	r.config.SelfMonitor.Config.SelfMonitorConfig = string(selfMonitorConfigYAML)
 
 	if err := selfmonitor.ApplyResources(ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),

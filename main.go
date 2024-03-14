@@ -518,8 +518,9 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 	config := tracepipeline.Config{
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
-				Namespace: telemetryNamespace,
-				BaseName:  "telemetry-trace-collector",
+				Namespace:        telemetryNamespace,
+				BaseName:         "telemetry-trace-collector",
+				SelfMonitorLabel: enableSelfMonitor,
 			},
 			Deployment: otelcollector.DeploymentConfig{
 				Image:                traceGatewayImage,
@@ -550,8 +551,9 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 	config := metricpipeline.Config{
 		Agent: otelcollector.AgentConfig{
 			Config: otelcollector.Config{
-				Namespace: telemetryNamespace,
-				BaseName:  "telemetry-metric-agent",
+				Namespace:        telemetryNamespace,
+				BaseName:         "telemetry-metric-agent",
+				SelfMonitorLabel: enableSelfMonitor,
 			},
 			DaemonSet: otelcollector.DaemonSetConfig{
 				Image:             metricGatewayImage,
@@ -564,8 +566,9 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 		},
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
-				Namespace: telemetryNamespace,
-				BaseName:  "telemetry-metric-gateway",
+				Namespace:        telemetryNamespace,
+				BaseName:         "telemetry-metric-gateway",
+				SelfMonitorLabel: enableSelfMonitor,
 			},
 			Deployment: otelcollector.DeploymentConfig{
 				Image:                metricGatewayImage,
