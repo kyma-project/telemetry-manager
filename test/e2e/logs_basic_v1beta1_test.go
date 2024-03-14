@@ -17,7 +17,7 @@ import (
 var _ = Describe("Logs Basic v1beta1", Label("logs", "v1beta1"), Ordered, func() {
 	const (
 		mockBackendName = "log-receiver"
-		mockNs          = "log-http-output"
+		mockNs          = "logs-basic-v1beta1-test"
 		logProducerName = "log-producer-http-output" //#nosec G101 -- This is a false positive
 		pipelineName    = "http-output-pipeline"
 	)
