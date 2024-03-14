@@ -8,6 +8,7 @@ type Config struct {
 	BaseName          string
 	Namespace         string
 	SelfMonitorConfig string
+	AlertRules        string
 
 	Deployment DeploymentConfig
 }
