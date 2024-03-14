@@ -118,7 +118,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-istio-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
 			OtlpInput(false).
-			IstioInput(true, kitk8s.IncludeNamespaces(app1Ns))
+			IstioInput(true, kitk8s.IncludeNamespacesV1Alpha1(app1Ns))
 		objs = append(objs, metricPipeline.K8sObject())
 
 		source1 := kitk8s.NewPod("source", app1Ns).WithPodSpec(sourcePodSpec())

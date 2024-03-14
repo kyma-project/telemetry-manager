@@ -44,7 +44,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 
 		runtimeInputPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-service-name-test").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
-			RuntimeInput(true, kitk8s.IncludeNamespaces(kitkyma.SystemNamespaceName))
+			RuntimeInput(true, kitk8s.IncludeNamespacesV1Alpha1(kitkyma.SystemNamespaceName))
 		runtimeInputPipelineName = runtimeInputPipeline.Name()
 		objs = append(objs, runtimeInputPipeline.K8sObject())
 

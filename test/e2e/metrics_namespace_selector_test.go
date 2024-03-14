@@ -42,9 +42,9 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 
 		pipelineIncludeApp1Ns := kitk8s.NewMetricPipelineV1Alpha1("include-"+app1Ns).
 			WithOutputEndpointFromSecret(backend1.HostSecretRefV1Alpha1()).
-			PrometheusInput(true, kitk8s.IncludeNamespaces(app1Ns)).
-			RuntimeInput(true, kitk8s.IncludeNamespaces(app1Ns)).
-			OtlpInput(true, kitk8s.IncludeNamespaces(app1Ns))
+			PrometheusInput(true, kitk8s.IncludeNamespacesV1Alpha1(app1Ns)).
+			RuntimeInput(true, kitk8s.IncludeNamespacesV1Alpha1(app1Ns)).
+			OtlpInput(true, kitk8s.IncludeNamespacesV1Alpha1(app1Ns))
 		objs = append(objs, pipelineIncludeApp1Ns.K8sObject())
 
 		backend2 := backend.New(backend2Name, backendNs, backend.SignalTypeMetrics)
@@ -53,9 +53,9 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 
 		pipelineExcludeApp1Ns := kitk8s.NewMetricPipelineV1Alpha1("exclude-"+app1Ns).
 			WithOutputEndpointFromSecret(backend2.HostSecretRefV1Alpha1()).
-			PrometheusInput(true, kitk8s.ExcludeNamespaces(app1Ns)).
-			RuntimeInput(true, kitk8s.ExcludeNamespaces(app1Ns)).
-			OtlpInput(true, kitk8s.ExcludeNamespaces(app1Ns))
+			PrometheusInput(true, kitk8s.ExcludeNamespacesV1Alpha1(app1Ns)).
+			RuntimeInput(true, kitk8s.ExcludeNamespacesV1Alpha1(app1Ns)).
+			OtlpInput(true, kitk8s.ExcludeNamespacesV1Alpha1(app1Ns))
 		objs = append(objs, pipelineExcludeApp1Ns.K8sObject())
 
 		objs = append(objs,

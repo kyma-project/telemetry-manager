@@ -1,3 +1,4 @@
+//nolint:dupl //There is duplication between metricPipelineV1Beta1 and metricPipelineV1Alpha1, but we need them as separate builders because they are using different API versions
 package k8s
 
 import (
@@ -9,8 +10,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
-
-const version = "1.0.0"
 
 type metricPipelineV1Alpha1 struct {
 	persistent bool
@@ -58,21 +57,21 @@ func (p *metricPipelineV1Alpha1) Persistent(persistent bool) *metricPipelineV1Al
 	return p
 }
 
-type InputOptions func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector)
+type InputOptionsV1Alpha1 func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector)
 
-func IncludeNamespaces(namespaces ...string) InputOptions {
+func IncludeNamespacesV1Alpha1(namespaces ...string) InputOptionsV1Alpha1 {
 	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
 		selector.Include = namespaces
 	}
 }
 
-func ExcludeNamespaces(namespaces ...string) InputOptions {
+func ExcludeNamespacesV1Alpha1(namespaces ...string) InputOptionsV1Alpha1 {
 	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
 		selector.Exclude = namespaces
 	}
 }
 
-func (p *metricPipelineV1Alpha1) OtlpInput(enable bool, opts ...InputOptions) *metricPipelineV1Alpha1 {
+func (p *metricPipelineV1Alpha1) OtlpInput(enable bool, opts ...InputOptionsV1Alpha1) *metricPipelineV1Alpha1 {
 	p.otlp = &telemetryv1alpha1.MetricPipelineOtlpInput{
 		Disabled: !enable,
 	}
@@ -88,7 +87,7 @@ func (p *metricPipelineV1Alpha1) OtlpInput(enable bool, opts ...InputOptions) *m
 	return p
 }
 
-func (p *metricPipelineV1Alpha1) RuntimeInput(enable bool, opts ...InputOptions) *metricPipelineV1Alpha1 {
+func (p *metricPipelineV1Alpha1) RuntimeInput(enable bool, opts ...InputOptionsV1Alpha1) *metricPipelineV1Alpha1 {
 	p.runtime = &telemetryv1alpha1.MetricPipelineRuntimeInput{
 		Enabled: enable,
 	}
@@ -104,7 +103,7 @@ func (p *metricPipelineV1Alpha1) RuntimeInput(enable bool, opts ...InputOptions)
 	return p
 }
 
-func (p *metricPipelineV1Alpha1) PrometheusInput(enable bool, opts ...InputOptions) *metricPipelineV1Alpha1 {
+func (p *metricPipelineV1Alpha1) PrometheusInput(enable bool, opts ...InputOptionsV1Alpha1) *metricPipelineV1Alpha1 {
 	p.prometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{
 		Enabled: enable,
 	}
@@ -120,7 +119,7 @@ func (p *metricPipelineV1Alpha1) PrometheusInput(enable bool, opts ...InputOptio
 	return p
 }
 
-func (p *metricPipelineV1Alpha1) IstioInput(enable bool, opts ...InputOptions) *metricPipelineV1Alpha1 {
+func (p *metricPipelineV1Alpha1) IstioInput(enable bool, opts ...InputOptionsV1Alpha1) *metricPipelineV1Alpha1 {
 	p.istio = &telemetryv1alpha1.MetricPipelineIstioInput{
 		Enabled: enable,
 	}
