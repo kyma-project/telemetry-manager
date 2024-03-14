@@ -26,7 +26,7 @@ type logPipelineV1Beta1 struct {
 	filters           []telemetryv1beta1.Filter
 }
 
-func NewLogPipelinev1beta1(name string) *logPipelineV1Beta1 {
+func NewLogPipelineV1Beta1(name string) *logPipelineV1Beta1 {
 	return &logPipelineV1Beta1{
 		name: name,
 	}
