@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
-type logPipelinev1alpha1 struct {
+type logPipelineV1Alpha1 struct {
 	persistent bool
 
 	name              string
@@ -26,64 +26,64 @@ type logPipelinev1alpha1 struct {
 	filters           []telemetryv1alpha1.Filter
 }
 
-func NewLogPipelinev1alpha1(name string) *logPipelinev1alpha1 {
-	return &logPipelinev1alpha1{
+func NewLogPipelinev1alpha1(name string) *logPipelineV1Alpha1 {
+	return &logPipelineV1Alpha1{
 		name: name,
 	}
 }
 
-func (p *logPipelinev1alpha1) Name() string {
+func (p *logPipelineV1Alpha1) Name() string {
 	return p.name
 }
 
-func (p *logPipelinev1alpha1) WithSecretKeyRef(secretKeyRef *telemetryv1alpha1.SecretKeyRef) *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) WithSecretKeyRef(secretKeyRef *telemetryv1alpha1.SecretKeyRef) *logPipelineV1Alpha1 {
 	p.secretKeyRef = secretKeyRef
 	return p
 }
 
-func (p *logPipelinev1alpha1) WithSystemNamespaces(enable bool) *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) WithSystemNamespaces(enable bool) *logPipelineV1Alpha1 {
 	p.systemNamespaces = enable
 	return p
 }
 
-func (p *logPipelinev1alpha1) WithIncludeNamespaces(namespaces []string) *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) WithIncludeNamespaces(namespaces []string) *logPipelineV1Alpha1 {
 	p.includeNamespaces = namespaces
 	return p
 }
 
-func (p *logPipelinev1alpha1) WithExcludeNamespaces(namespaces []string) *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) WithExcludeNamespaces(namespaces []string) *logPipelineV1Alpha1 {
 	p.excludeNamespaces = namespaces
 	return p
 }
 
-func (p *logPipelinev1alpha1) WithIncludeContainers(names []string) *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) WithIncludeContainers(names []string) *logPipelineV1Alpha1 {
 	p.includeContainers = names
 	return p
 }
 
-func (p *logPipelinev1alpha1) WithExcludeContainers(names []string) *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) WithExcludeContainers(names []string) *logPipelineV1Alpha1 {
 	p.excludeContainers = names
 	return p
 }
 
-func (p *logPipelinev1alpha1) KeepAnnotations(enable bool) *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) KeepAnnotations(enable bool) *logPipelineV1Alpha1 {
 	p.keepAnnotations = enable
 	return p
 }
 
-func (p *logPipelinev1alpha1) DropLabels(enable bool) *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) DropLabels(enable bool) *logPipelineV1Alpha1 {
 	p.dropLabels = enable
 	return p
 }
 
-func (p *logPipelinev1alpha1) WithStdout() *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) WithStdout() *logPipelineV1Alpha1 {
 	p.output = telemetryv1alpha1.Output{
 		Custom: "Name stdout",
 	}
 	return p
 }
 
-func (p *logPipelinev1alpha1) WithHTTPOutput() *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) WithHTTPOutput() *logPipelineV1Alpha1 {
 	p.output = telemetryv1alpha1.Output{
 		HTTP: &telemetryv1alpha1.HTTPOutput{
 			Dedot: true,
@@ -104,7 +104,7 @@ func (p *logPipelinev1alpha1) WithHTTPOutput() *logPipelinev1alpha1 {
 	return p
 }
 
-func (p *logPipelinev1alpha1) WithTLS(certs tls.Certs) *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) WithTLS(certs tls.Certs) *logPipelineV1Alpha1 {
 	if !p.output.IsHTTPDefined() {
 		return p
 	}
@@ -126,7 +126,7 @@ func (p *logPipelinev1alpha1) WithTLS(certs tls.Certs) *logPipelinev1alpha1 {
 	return p
 }
 
-func (p *logPipelinev1alpha1) WithCustomOutput(host string) *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) WithCustomOutput(host string) *logPipelineV1Alpha1 {
 	const customOutputTemplate = `
 	name   http
 	port   9880
@@ -139,20 +139,20 @@ func (p *logPipelinev1alpha1) WithCustomOutput(host string) *logPipelinev1alpha1
 	return p
 }
 
-func (p *logPipelinev1alpha1) WithFilter(filter string) *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) WithFilter(filter string) *logPipelineV1Alpha1 {
 	p.filters = append(p.filters, telemetryv1alpha1.Filter{
 		Custom: filter,
 	})
 	return p
 }
 
-func (p *logPipelinev1alpha1) Persistent(persistent bool) *logPipelinev1alpha1 {
+func (p *logPipelineV1Alpha1) Persistent(persistent bool) *logPipelineV1Alpha1 {
 	p.persistent = persistent
 
 	return p
 }
 
-func (p *logPipelinev1alpha1) K8sObject() *telemetryv1alpha1.LogPipeline {
+func (p *logPipelineV1Alpha1) K8sObject() *telemetryv1alpha1.LogPipeline {
 	var labels Labels
 	if p.persistent {
 		labels = PersistentLabel
