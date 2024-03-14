@@ -113,7 +113,7 @@ func (b *Backend) HostSecretRefV1Alpha1() *telemetryv1alpha1.SecretKeyRef {
 	return b.HostSecret.SecretKeyRefV1Alpha1("host")
 }
 
-func (b *Backend) HostSecretRefv1beta1() *telemetryv1beta1.SecretKeyRef {
+func (b *Backend) HostSecretRefV1Beta1() *telemetryv1beta1.SecretKeyRef {
 	return b.HostSecret.SecretKeyRefV1Beta1("host")
 }
 
