@@ -26,9 +26,10 @@ func TracePipelineShouldBeHealthy(ctx context.Context, k8sClient client.Client, 
 		var pipeline telemetryv1alpha1.TracePipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning)).To(BeTrue())
 		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeGatewayHealthy)).To(BeTrue())
 		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeRunning)).To(BeTrue())
+		g.Expect(meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypePending)).To(BeTrue())
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
