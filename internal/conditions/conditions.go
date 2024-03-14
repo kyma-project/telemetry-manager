@@ -127,34 +127,25 @@ func SetPendingCondition(ctx context.Context, conditions *[]metav1.Condition, ge
 	meta.SetStatusCondition(conditions, pending)
 }
 
-func SetRunningCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string, messageMap map[string]string, preUpgradePendingCondition *metav1.Condition, pendingFallbackReason string) {
+func SetRunningCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, runningReason, pendingReason, resourceName string, messageMap map[string]string) {
 	log := logf.FromContext(ctx)
 
 	// Set Pending condition to False
-	var pendingReason string
-	existingPendingCondition := meta.FindStatusCondition(*conditions, TypePending)
-	if existingPendingCondition != nil {
-		pendingReason = existingPendingCondition.Reason
-	} else if preUpgradePendingCondition != nil {
-		pendingReason = preUpgradePendingCondition.Reason
-	} else {
-		pendingReason = pendingFallbackReason
-	}
-	newPending := New(
+	pending := New(
 		TypePending,
 		pendingReason,
 		metav1.ConditionFalse,
 		generation,
 		messageMap,
 	)
-	newPending.Message = PendingTypeDeprecationMsg + newPending.Message
+	pending.Message = PendingTypeDeprecationMsg + pending.Message
 	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Pending condition to False", resourceName))
-	meta.SetStatusCondition(conditions, newPending)
+	meta.SetStatusCondition(conditions, pending)
 
 	// Set Running condition to True
 	running := New(
 		TypeRunning,
-		reason,
+		runningReason,
 		metav1.ConditionTrue,
 		generation,
 		messageMap,

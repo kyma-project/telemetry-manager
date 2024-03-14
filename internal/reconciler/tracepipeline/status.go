@@ -34,16 +34,13 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	// If the "GatewayHealthy" type doesn't exist in the conditions
 	// then we need to reset the conditions list to ensure that the "Pending" and "Running" conditions are appended to the end of the conditions list
 	// Check step 3 in https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
-	// At the same time, we need to store the "Pending" condition to preserve the pending reason
-	var preUpgradePendingCondition *metav1.Condition
 	if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeGatewayHealthy) == nil {
-		preUpgradePendingCondition = meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypePending)
 		pipeline.Status.Conditions = []metav1.Condition{}
 	}
 
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
-	r.setPendingAndRunningConditions(ctx, &pipeline, withinPipelineCountLimit, preUpgradePendingCondition)
+	r.setPendingAndRunningConditions(ctx, &pipeline, withinPipelineCountLimit)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update TracePipeline status: %w", err)
@@ -86,7 +83,7 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation, conditions.TracesMessage))
 }
 
-func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool, preUpgradePendingCondition *metav1.Condition) {
+func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
 	if !withinPipelineCountLimit {
 		conditions.SetPendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonMaxPipelinesExceeded, pipeline.Name, conditions.TracesMessage)
 		return
@@ -114,9 +111,8 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 		&pipeline.Status.Conditions,
 		pipeline.Generation,
 		conditions.ReasonTraceGatewayDeploymentReady,
+		conditions.ReasonTraceGatewayDeploymentNotReady,
 		pipeline.Name,
 		conditions.TracesMessage,
-		preUpgradePendingCondition,
-		conditions.ReasonTraceGatewayDeploymentNotReady,
 	)
 }
