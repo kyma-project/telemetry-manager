@@ -64,7 +64,7 @@ function setup_trace() {
         kubectl apply -f hack/load-tests/trace-max-pipeline.yaml
     fi
     # Deploy test setup
-    envsubst < hack/load-tests/trace-load-test-setup.yaml | kubectl apply -f -
+    cat hack/load-tests/trace-load-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" | kubectl apply -f -
 
     if "$BACKPRESSURE_TEST"; then
         kubectl apply -f hack/load-tests/trace-backpressure-config.yaml
@@ -77,7 +77,7 @@ function setup_metric() {
     fi
 
     # Deploy test setup
-   envsubst < hack/load-tests/metric-load-test-setup.yaml | kubectl apply -f -
+   cat hack/load-tests/metric-load-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" | kubectl apply -f -
 
     if "$BACKPRESSURE_TEST"; then
         kubectl apply -f hack/load-tests/metric-backpressure-config.yaml
@@ -98,7 +98,7 @@ function setup_fluentbit() {
         kubectl apply -f hack/load-tests/log-fluentbit-max-pipeline.yaml
     fi
     # Deploy test setup
-    envsubst < hack/load-tests/log-fluentbit-test-setup.yaml | kubectl apply -f -
+    cat hack/load-tests/log-fluentbit-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
 
     if "$BACKPRESSURE_TEST"; then
         kubectl apply -f hack/load-tests/log-fluentbit-backpressure-config.yaml

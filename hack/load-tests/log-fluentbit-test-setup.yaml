@@ -84,7 +84,7 @@ spec:
       containers:
         - args:
             - --config=/etc/collector/config.yaml
-          image: ${OTEL_IMAGE}
+          image: OTEL_IMAGE
           imagePullPolicy: IfNotPresent
           name: otel-collector
           securityContext:
