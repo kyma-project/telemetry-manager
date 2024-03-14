@@ -68,5 +68,6 @@ type RelabelAction string
 
 const (
 	Keep    RelabelAction = "keep"
+	Drop    RelabelAction = "drop"
 	Replace RelabelAction = "replace"
 )

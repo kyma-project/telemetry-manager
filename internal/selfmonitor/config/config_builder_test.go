@@ -18,5 +18,4 @@ func TestMakeConfigMarshalling(t *testing.T) {
 	goldenMonitoringFile, err := os.ReadFile(goldenMonitoringConfigPath)
 	require.NoError(t, err, "failed to load golden monitoring file")
 	require.Equal(t, string(goldenMonitoringFile), string(monitorConfigYaml))
-
 }

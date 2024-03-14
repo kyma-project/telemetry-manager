@@ -42,6 +42,10 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
 	r.setPendingAndRunningConditions(ctx, &pipeline, withinPipelineCountLimit)
 
+	if r.flowHealthProbingEnabled {
+		r.setFlowHealthConditions(ctx, &pipeline)
+	}
+
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update TracePipeline status: %w", err)
 	}
@@ -115,4 +119,14 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 		pipeline.Name,
 		conditions.TracesMessage,
 	)
+}
+
+func (r *Reconciler) setFlowHealthConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
+	_, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to retrieve alerts")
+		return
+	}
+
+	//TODO: Reflect probe result in the status of the TracePipeline
 }

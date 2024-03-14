@@ -5,8 +5,9 @@ import (
 )
 
 type Config struct {
-	BaseName          string
-	Namespace         string
+	BaseName  string
+	Namespace string
+
 	SelfMonitorConfig string
 	AlertRules        string
 

@@ -37,7 +37,6 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 	return []ScrapeConfig{
 		{
 			JobName: "kubernetes-service-endpoints",
-
 			RelabelConfigs: []RelabelConfig{
 				{
 					SourceLabels: []string{"__meta_kubernetes_namespace"},

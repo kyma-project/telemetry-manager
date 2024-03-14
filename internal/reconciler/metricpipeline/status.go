@@ -35,6 +35,10 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
 
+	if r.flowHealthProbingEnabled {
+		r.setFlowHealthConditions(ctx, &pipeline)
+	}
+
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update MetricPipeline status: %w", err)
 	}
@@ -98,4 +102,14 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation, conditions.MetricsMessage))
+}
+
+func (r *Reconciler) setFlowHealthConditions(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
+	_, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to retrieve alerts")
+		return
+	}
+
+	//TODO: Reflect probe result in the status of the MetricPipeline
 }

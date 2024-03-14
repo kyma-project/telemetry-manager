@@ -62,6 +62,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
@@ -404,7 +405,14 @@ func enableLoggingController(mgr manager.Manager) {
 
 func enableTracingController(mgr manager.Manager) {
 	setupLog.Info("Starting with tracing controller")
-	if err := createTracePipelineReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+	var err error
+	var flowHealthProber *flowhealth.Prober
+	if flowHealthProber, err = flowhealth.NewProber(); err != nil {
+		setupLog.Error(err, "Failed to create flow health prober")
+		os.Exit(1)
+	}
+
+	if err := createTracePipelineReconciler(mgr.GetClient(), flowHealthProber).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "TracePipeline")
 		os.Exit(1)
 	}
@@ -412,7 +420,14 @@ func enableTracingController(mgr manager.Manager) {
 
 func enableMetricsController(mgr manager.Manager) {
 	setupLog.Info("Starting with metrics controller")
-	if err := createMetricPipelineReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+	var err error
+	var flowHealthProber *flowhealth.Prober
+	if flowHealthProber, err = flowhealth.NewProber(); err != nil {
+		setupLog.Error(err, "Failed to create flow health prober")
+		os.Exit(1)
+	}
+
+	if err := createMetricPipelineReconciler(mgr.GetClient(), flowHealthProber).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "MetricPipeline")
 		os.Exit(1)
 	}
@@ -514,7 +529,7 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 		admission.NewDecoder(scheme))
 }
 
-func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.TracePipelineReconciler {
+func createTracePipelineReconciler(client client.Client, flowHealthProber *flowhealth.Prober) *telemetrycontrollers.TracePipelineReconciler {
 	config := tracepipeline.Config{
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
@@ -543,11 +558,17 @@ func createTracePipelineReconciler(client client.Client) *telemetrycontrollers.T
 
 	return telemetrycontrollers.NewTracePipelineReconciler(
 		client,
-		tracepipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, overridesHandler),
+		tracepipeline.NewReconciler(
+			client,
+			config,
+			&k8sutils.DeploymentProber{Client: client},
+			enableSelfMonitor,
+			flowHealthProber,
+			overridesHandler),
 	)
 }
 
-func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.MetricPipelineReconciler {
+func createMetricPipelineReconciler(client client.Client, flowHealthProber *flowhealth.Prober) *telemetrycontrollers.MetricPipelineReconciler {
 	config := metricpipeline.Config{
 		Agent: otelcollector.AgentConfig{
 			Config: otelcollector.Config{
@@ -590,7 +611,14 @@ func createMetricPipelineReconciler(client client.Client) *telemetrycontrollers.
 
 	return telemetrycontrollers.NewMetricPipelineReconciler(
 		client,
-		metricpipeline.NewReconciler(client, config, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, overridesHandler))
+		metricpipeline.NewReconciler(
+			client,
+			config,
+			&k8sutils.DeploymentProber{Client: client},
+			&k8sutils.DaemonSetProber{Client: client},
+			enableSelfMonitor,
+			flowHealthProber,
+			overridesHandler))
 }
 
 func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
