@@ -188,7 +188,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 
 			unreachableHostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-broken", kitkyma.DefaultNamespaceName,
 				kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
-			brokenPipeline := kitk8s.NewMetricPipeline("broken").WithOutputEndpointFromSecret(unreachableHostSecret.SecretKeyRefv1alpha1("metric-host"))
+			brokenPipeline := kitk8s.NewMetricPipeline("broken").WithOutputEndpointFromSecret(unreachableHostSecret.SecretKeyRefV1Alpha1("metric-host"))
 			brokenPipelineName = brokenPipeline.Name()
 			objs = append(objs, brokenPipeline.K8sObject(), unreachableHostSecret.K8sObject())
 

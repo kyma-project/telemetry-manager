@@ -23,7 +23,7 @@ var _ = Describe("Metrics Secret Rotation", Label("metrics"), func() {
 	Context("When a metricpipeline with missing secret reference exists", Ordered, func() {
 		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", kitkyma.DefaultNamespaceName,
 			kitk8s.WithStringData("metric-host", "http://localhost:4317"))
-		metricPipeline := kitk8s.NewMetricPipeline("without-secret").WithOutputEndpointFromSecret(hostSecret.SecretKeyRefv1alpha1("metric-host"))
+		metricPipeline := kitk8s.NewMetricPipeline("without-secret").WithOutputEndpointFromSecret(hostSecret.SecretKeyRefV1Alpha1("metric-host"))
 
 		BeforeAll(func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, metricPipeline.K8sObject())).Should(Succeed())

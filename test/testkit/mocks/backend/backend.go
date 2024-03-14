@@ -110,7 +110,7 @@ func (b *Backend) Name() string {
 }
 
 func (b *Backend) HostSecretRefv1alpha1() *telemetryv1alpha1.SecretKeyRef {
-	return b.HostSecret.SecretKeyRefv1alpha1("host")
+	return b.HostSecret.SecretKeyRefV1Alpha1("host")
 }
 
 func (b *Backend) HostSecretRefv1beta1() *telemetryv1beta1.SecretKeyRef {

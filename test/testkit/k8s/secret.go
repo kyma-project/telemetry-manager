@@ -46,7 +46,7 @@ func (s *Secret) K8sObject() *corev1.Secret {
 	}
 }
 
-func (s *Secret) SecretKeyRefv1alpha1(key string) *telemetryv1alpha1.SecretKeyRef {
+func (s *Secret) SecretKeyRefV1Alpha1(key string) *telemetryv1alpha1.SecretKeyRef {
 	return &telemetryv1alpha1.SecretKeyRef{
 		Name:      s.name,
 		Namespace: s.namespace,
