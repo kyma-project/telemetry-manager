@@ -216,7 +216,7 @@ func testWebhookReconciliation() {
 }
 
 func makeTestPipelineK8sObjects() []client.Object {
-	logPipeline := kitk8s.NewLogPipelinev1alpha1(telemetryTestK8SObjectName).WithStdout()
+	logPipeline := kitk8s.NewLogPipelineV1Alpha1(telemetryTestK8SObjectName).WithStdout()
 	return []client.Object{
 		logPipeline.K8sObject(),
 	}

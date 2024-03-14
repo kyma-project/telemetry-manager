@@ -43,7 +43,7 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-		istioAccessLogsPipeline := kitk8s.NewLogPipelinev1alpha1("pipeline-istio-access-logs").
+		istioAccessLogsPipeline := kitk8s.NewLogPipelineV1Alpha1("pipeline-istio-access-logs").
 			WithSecretKeyRef(mockBackend.HostSecretRefv1alpha1()).
 			WithIncludeContainers([]string{"istio-proxy"}).
 			WithHTTPOutput()
