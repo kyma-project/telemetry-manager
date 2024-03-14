@@ -45,7 +45,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 				objs = append(objs, mockBackend.K8sObjects()...)
 				urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-				pipeline := kitk8s.NewTracePipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+				pipeline := kitk8s.NewTracePipeline(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).WithOutputEndpointFromSecret(mockBackend.HostSecretRefv1alpha1())
 				pipelines.Append(pipeline.Name())
 				objs = append(objs, pipeline.K8sObject())
 			}
@@ -182,7 +182,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 			objs = append(objs, mockBackend.K8sObjects()...)
 			urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
-			healthyPipeline := kitk8s.NewTracePipeline("healthy").WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+			healthyPipeline := kitk8s.NewTracePipeline("healthy").WithOutputEndpointFromSecret(mockBackend.HostSecretRefv1alpha1())
 			healthyPipelineName = healthyPipeline.Name()
 			objs = append(objs, healthyPipeline.K8sObject())
 

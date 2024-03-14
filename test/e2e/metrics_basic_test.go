@@ -45,7 +45,7 @@ var _ = Describe("Metrics Basic", Label("metrics"), func() {
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		metricPipeline := kitk8s.NewMetricPipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRefv1alpha1()).
 			Persistent(isOperational())
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())

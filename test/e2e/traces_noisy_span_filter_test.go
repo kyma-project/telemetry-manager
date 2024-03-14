@@ -41,7 +41,7 @@ var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
 		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 
 		pipeline := kitk8s.NewTracePipeline(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRef())
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRefv1alpha1())
 		pipelineName = pipeline.Name()
 		objs = append(objs, pipeline.K8sObject())
 

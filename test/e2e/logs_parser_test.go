@@ -40,7 +40,7 @@ var _ = Describe("Logs Parser", Label("logs"), Ordered, func() {
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		logHTTPPipeline := kitk8s.NewLogPipelinev1alpha1(pipelineName).
-			WithSecretKeyRef(mockBackend.HostSecretRef()).
+			WithSecretKeyRef(mockBackend.HostSecretRefv1alpha1()).
 			WithHTTPOutput()
 
 		parser := `Format regex

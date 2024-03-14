@@ -46,7 +46,7 @@ var _ = Describe("Metrics Prometheus Input Diagnostic Metrics", Label("metrics")
 
 		// Default namespace objects.
 		metricPipeline := kitk8s.NewMetricPipeline("pipeline-with-prometheus-input-diagnostic-enabled").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRefv1alpha1()).
 			PrometheusInput(true).PrometheusInputDiagnosticMetrics(true)
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
