@@ -43,12 +43,12 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		telemetryIstiofiedExportURL = mockIstiofiedBackend.TelemetryExportURL(proxyClient)
 
 		metricPipeline := kitk8s.NewMetricPipeline("pipeline-with-otlp-input-enabled").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefv1alpha1()).
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
 			OtlpInput(true)
 		objs = append(objs, metricPipeline.K8sObject())
 
 		metricPipelineIstiofiedBackend := kitk8s.NewMetricPipeline("pipeline-with-otlp-input-enabled-with-istiofied-backend").
-			WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRefv1alpha1()).
+			WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRefV1Alpha1()).
 			OtlpInput(true)
 
 		objs = append(objs, metricPipelineIstiofiedBackend.K8sObject())

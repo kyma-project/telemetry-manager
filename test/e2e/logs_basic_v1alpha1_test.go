@@ -34,7 +34,7 @@ var _ = Describe("Logs Basic v1alpha1", Label("logs"), Ordered, func() {
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(mockBackend.HostSecretRefv1alpha1()).
+			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
 			Persistent(isOperational())
 		objs = append(objs, logPipeline.K8sObject())

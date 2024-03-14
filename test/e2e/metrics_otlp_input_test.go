@@ -32,7 +32,7 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 
 		pipelineWithoutOTLP := kitk8s.NewMetricPipeline("pipeline-without-otlp-input-enabled").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefv1alpha1()).
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
 			OtlpInput(false)
 		objs = append(objs, pipelineWithoutOTLP.K8sObject())
 

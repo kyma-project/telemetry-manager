@@ -59,11 +59,11 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
 		telemetryIstiofiedExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		istioTracePipeline := kitk8s.NewTracePipeline("istiofied-app-traces").WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRefv1alpha1())
+		istioTracePipeline := kitk8s.NewTracePipeline("istiofied-app-traces").WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRefV1Alpha1())
 		istiofiedPipelineName = istioTracePipeline.Name()
 		objs = append(objs, istioTracePipeline.K8sObject())
 
-		tracePipeline := kitk8s.NewTracePipeline("app-traces").WithOutputEndpointFromSecret(mockBackend.HostSecretRefv1alpha1())
+		tracePipeline := kitk8s.NewTracePipeline("app-traces").WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
 		pipelineName = tracePipeline.Name()
 		objs = append(objs, tracePipeline.K8sObject())
 

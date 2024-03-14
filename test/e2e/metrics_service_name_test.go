@@ -43,7 +43,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		runtimeInputPipeline := kitk8s.NewMetricPipeline("pipeline-service-name-test").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefv1alpha1()).
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
 			RuntimeInput(true, kitk8s.IncludeNamespaces(kitkyma.SystemNamespaceName))
 		runtimeInputPipelineName = runtimeInputPipeline.Name()
 		objs = append(objs, runtimeInputPipeline.K8sObject())

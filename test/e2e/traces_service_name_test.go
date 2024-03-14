@@ -43,7 +43,7 @@ var _ = Describe("Traces Service Name", Label("traces"), func() {
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		tracePipeline := kitk8s.NewTracePipeline("pipeline-service-name-test").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefv1alpha1())
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
 		pipelineName = tracePipeline.Name()
 		objs = append(objs, tracePipeline.K8sObject())
 
