@@ -22,7 +22,7 @@ type tracePipelineV1Alpha1 struct {
 	endpointPath    string
 }
 
-func NewTracePipeline(name string) *tracePipelineV1Alpha1 {
+func NewTracePipelineV1Alpha1(name string) *tracePipelineV1Alpha1 {
 	return &tracePipelineV1Alpha1{
 		id:           uuid.New().String(),
 		name:         name,
