@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -13,6 +14,7 @@ const (
 	TypeGatewayHealthy         = "GatewayHealthy"
 	TypeAgentHealthy           = "AgentHealthy"
 	TypeConfigurationGenerated = "ConfigurationGenerated"
+	TypeFlowHealthy            = "TelemetryFlowHealthy"
 
 	// NOTE: The "Running" and "Pending" types are deprecated
 	// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
@@ -26,15 +28,20 @@ const (
 )
 
 const (
-	ReasonNoPipelineDeployed      = "NoPipelineDeployed"
-	ReasonReferencedSecretMissing = "ReferencedSecretMissing"
-	ReasonMaxPipelinesExceeded    = "MaxPipelinesExceeded"
-	ReasonResourceBlocksDeletion  = "ResourceBlocksDeletion"
-	ReasonConfigurationGenerated  = "ConfigurationGenerated"
-	ReasonDeploymentNotReady      = "DeploymentNotReady"
-	ReasonDeploymentReady         = "DeploymentReady"
-	ReasonDaemonSetNotReady       = "DaemonSetNotReady"
-	ReasonDaemonSetReady          = "DaemonSetReady"
+	ReasonNoPipelineDeployed       = "NoPipelineDeployed"
+	ReasonReferencedSecretMissing  = "ReferencedSecretMissing"
+	ReasonMaxPipelinesExceeded     = "MaxPipelinesExceeded"
+	ReasonResourceBlocksDeletion   = "ResourceBlocksDeletion"
+	ReasonConfigurationGenerated   = "ConfigurationGenerated"
+	ReasonDeploymentNotReady       = "DeploymentNotReady"
+	ReasonDeploymentReady          = "DeploymentReady"
+	ReasonDaemonSetNotReady        = "DaemonSetNotReady"
+	ReasonDaemonSetReady           = "DaemonSetReady"
+	ReasonAllTelemetryDataDropped  = "AllTelemetryDataDropped"
+	ReasonSomeTelemetryDataDropped = "SomeTelemetryDataDropped"
+	ReasonBufferFillingUp          = "BufferFillingUp"
+	ReasonGatewayThrottling        = "GatewayThrottling"
+	ReasonTelemetryFlowHealthy     = "Healthy"
 
 	ReasonMetricAgentNotRequired  = "AgentNotRequired"
 	ReasonMetricComponentsRunning = "MetricComponentsRunning"
@@ -104,6 +111,22 @@ func MessageFor(reason string, messageMap map[string]string) string {
 		return condMessage
 	}
 	return ""
+}
+
+func FlowHealthReasonFor(probeResult flowhealth.ProbeResult) string {
+	if probeResult.AllDataDropped {
+		return ReasonAllTelemetryDataDropped
+	}
+	if probeResult.SomeDataDropped {
+		return ReasonSomeTelemetryDataDropped
+	}
+	if probeResult.QueueAlmostFull {
+		return ReasonBufferFillingUp
+	}
+	if probeResult.Throttling {
+		return ReasonGatewayThrottling
+	}
+	return ReasonTelemetryFlowHealthy
 }
 
 func HandlePendingCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string, messageMap map[string]string) {
