@@ -37,7 +37,7 @@ var _ = Describe("Logs Exclude Container", Label("logs"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-exclude-container")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipeline(pipelineName).
+		logPipeline := kitk8s.NewLogPipelinev1alpha1(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
 			WithExcludeContainers([]string{logProducerName})

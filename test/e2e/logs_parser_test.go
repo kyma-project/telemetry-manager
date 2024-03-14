@@ -39,7 +39,7 @@ var _ = Describe("Logs Parser", Label("logs"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "regex-parser-testing-service")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logHTTPPipeline := kitk8s.NewLogPipeline(pipelineName).
+		logHTTPPipeline := kitk8s.NewLogPipelinev1alpha1(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput()
 

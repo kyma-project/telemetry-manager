@@ -38,7 +38,7 @@ var _ = Describe("Logs Include Namespaces", Label("logs"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-include-namespaces")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipeline(pipelineName).
+		logPipeline := kitk8s.NewLogPipelinev1alpha1(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRef()).
 			WithHTTPOutput().
 			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName, mockNs})

@@ -30,12 +30,12 @@ var _ = Describe("Logs Validating Webhook", Label("logs"), Ordered, func() {
 		})
 
 		It("Should reject a logpipeline with unknown custom filter", func() {
-			logPipeline := kitk8s.NewLogPipeline("unknown-custom-filter-pipeline").WithStdout().WithFilter("Name unknown")
+			logPipeline := kitk8s.NewLogPipelinev1alpha1("unknown-custom-filter-pipeline").WithStdout().WithFilter("Name unknown")
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipeline.K8sObject())).ShouldNot(Succeed())
 		})
 
 		It("Should reject a logpipeline with denied custom filter", func() {
-			logPipeline := kitk8s.NewLogPipeline("denied-custom-filter-pipeline").WithStdout().WithFilter("Name kubernetes")
+			logPipeline := kitk8s.NewLogPipelinev1alpha1("denied-custom-filter-pipeline").WithStdout().WithFilter("Name kubernetes")
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, logPipeline.K8sObject())).ShouldNot(Succeed())
 		})
 
