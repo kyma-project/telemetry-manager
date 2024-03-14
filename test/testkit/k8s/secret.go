@@ -54,7 +54,7 @@ func (s *Secret) SecretKeyRefV1Alpha1(key string) *telemetryv1alpha1.SecretKeyRe
 	}
 }
 
-func (s *Secret) SecretKeyRefv1beta1(key string) *telemetryv1beta1.SecretKeyRef {
+func (s *Secret) SecretKeyRefV1Beta1(key string) *telemetryv1beta1.SecretKeyRef {
 	return &telemetryv1beta1.SecretKeyRef{
 		Name:      s.name,
 		Namespace: s.namespace,

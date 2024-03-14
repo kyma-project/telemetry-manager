@@ -114,7 +114,7 @@ func (b *Backend) HostSecretRefv1alpha1() *telemetryv1alpha1.SecretKeyRef {
 }
 
 func (b *Backend) HostSecretRefv1beta1() *telemetryv1beta1.SecretKeyRef {
-	return b.HostSecret.SecretKeyRefv1beta1("host")
+	return b.HostSecret.SecretKeyRefV1Beta1("host")
 }
 
 func (b *Backend) TelemetryExportURL(proxyClient *apiserverproxy.Client) string {
