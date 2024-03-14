@@ -40,11 +40,10 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
-	r.setPendingAndRunningConditions(ctx, &pipeline, withinPipelineCountLimit)
-
 	if r.flowHealthProbingEnabled {
-		r.setFlowHealthConditions(ctx, &pipeline)
+		r.setFlowHealthCondition(ctx, &pipeline)
 	}
+	r.setPendingAndRunningConditions(ctx, &pipeline, withinPipelineCountLimit)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update TracePipeline status: %w", err)
@@ -87,6 +86,28 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation, conditions.TracesMessage))
 }
 
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
+	var reason string
+	var status metav1.ConditionStatus
+
+	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	if err == nil {
+		reason = conditions.FlowHealthReasonFor(probeResult)
+		if probeResult.Healthy {
+			status = metav1.ConditionTrue
+		} else {
+			status = metav1.ConditionFalse
+		}
+	} else {
+		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
+
+		reason = conditions.ReasonTelemetryFlowHealthy
+		status = metav1.ConditionUnknown
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeFlowHealthy, reason, status, pipeline.Generation, conditions.TracesMessage))
+}
+
 func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
 	if !withinPipelineCountLimit {
 		conditions.HandlePendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonMaxPipelinesExceeded, pipeline.Name, conditions.TracesMessage)
@@ -119,22 +140,4 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 		pipeline.Name,
 		conditions.TracesMessage,
 	)
-}
-
-func (r *Reconciler) setFlowHealthConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
-	var reason string
-	var status metav1.ConditionStatus
-
-	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
-	if err == nil {
-		reason = conditions.FlowHealthReasonFor(probeResult)
-		status = metav1.ConditionTrue
-	} else {
-		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
-
-		reason = conditions.ReasonTelemetryFlowHealthy
-		status = metav1.ConditionUnknown
-	}
-
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeFlowHealthy, reason, status, pipeline.Generation, conditions.TracesMessage))
 }
