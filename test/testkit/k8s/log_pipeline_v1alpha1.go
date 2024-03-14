@@ -9,7 +9,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
-type LogPipeline struct {
+type logPipelinev1alpha1 struct {
 	persistent bool
 
 	name              string
@@ -25,64 +25,64 @@ type LogPipeline struct {
 	filters           []telemetryv1alpha1.Filter
 }
 
-func NewLogPipelinev1alpha1(name string) *LogPipeline {
-	return &LogPipeline{
+func NewLogPipelinev1alpha1(name string) *logPipelinev1alpha1 {
+	return &logPipelinev1alpha1{
 		name: name,
 	}
 }
 
-func (p *LogPipeline) Name() string {
+func (p *logPipelinev1alpha1) Name() string {
 	return p.name
 }
 
-func (p *LogPipeline) WithSecretKeyRef(secretKeyRef *telemetryv1alpha1.SecretKeyRef) *LogPipeline {
+func (p *logPipelinev1alpha1) WithSecretKeyRef(secretKeyRef *telemetryv1alpha1.SecretKeyRef) *logPipelinev1alpha1 {
 	p.secretKeyRef = secretKeyRef
 	return p
 }
 
-func (p *LogPipeline) WithSystemNamespaces(enable bool) *LogPipeline {
+func (p *logPipelinev1alpha1) WithSystemNamespaces(enable bool) *logPipelinev1alpha1 {
 	p.systemNamespaces = enable
 	return p
 }
 
-func (p *LogPipeline) WithIncludeNamespaces(namespaces []string) *LogPipeline {
+func (p *logPipelinev1alpha1) WithIncludeNamespaces(namespaces []string) *logPipelinev1alpha1 {
 	p.includeNamespaces = namespaces
 	return p
 }
 
-func (p *LogPipeline) WithExcludeNamespaces(namespaces []string) *LogPipeline {
+func (p *logPipelinev1alpha1) WithExcludeNamespaces(namespaces []string) *logPipelinev1alpha1 {
 	p.excludeNamespaces = namespaces
 	return p
 }
 
-func (p *LogPipeline) WithIncludeContainers(names []string) *LogPipeline {
+func (p *logPipelinev1alpha1) WithIncludeContainers(names []string) *logPipelinev1alpha1 {
 	p.includeContainers = names
 	return p
 }
 
-func (p *LogPipeline) WithExcludeContainers(names []string) *LogPipeline {
+func (p *logPipelinev1alpha1) WithExcludeContainers(names []string) *logPipelinev1alpha1 {
 	p.excludeContainers = names
 	return p
 }
 
-func (p *LogPipeline) KeepAnnotations(enable bool) *LogPipeline {
+func (p *logPipelinev1alpha1) KeepAnnotations(enable bool) *logPipelinev1alpha1 {
 	p.keepAnnotations = enable
 	return p
 }
 
-func (p *LogPipeline) DropLabels(enable bool) *LogPipeline {
+func (p *logPipelinev1alpha1) DropLabels(enable bool) *logPipelinev1alpha1 {
 	p.dropLabels = enable
 	return p
 }
 
-func (p *LogPipeline) WithStdout() *LogPipeline {
+func (p *logPipelinev1alpha1) WithStdout() *logPipelinev1alpha1 {
 	p.output = telemetryv1alpha1.Output{
 		Custom: "Name stdout",
 	}
 	return p
 }
 
-func (p *LogPipeline) WithHTTPOutput() *LogPipeline {
+func (p *logPipelinev1alpha1) WithHTTPOutput() *logPipelinev1alpha1 {
 	p.output = telemetryv1alpha1.Output{
 		HTTP: &telemetryv1alpha1.HTTPOutput{
 			Dedot: true,
@@ -103,7 +103,7 @@ func (p *LogPipeline) WithHTTPOutput() *LogPipeline {
 	return p
 }
 
-func (p *LogPipeline) WithTLS(certs tls.Certs) *LogPipeline {
+func (p *logPipelinev1alpha1) WithTLS(certs tls.Certs) *logPipelinev1alpha1 {
 	if !p.output.IsHTTPDefined() {
 		return p
 	}
@@ -125,7 +125,7 @@ func (p *LogPipeline) WithTLS(certs tls.Certs) *LogPipeline {
 	return p
 }
 
-func (p *LogPipeline) WithCustomOutput(host string) *LogPipeline {
+func (p *logPipelinev1alpha1) WithCustomOutput(host string) *logPipelinev1alpha1 {
 	const customOutputTemplate = `
 	name   http
 	port   9880
@@ -138,20 +138,20 @@ func (p *LogPipeline) WithCustomOutput(host string) *LogPipeline {
 	return p
 }
 
-func (p *LogPipeline) WithFilter(filter string) *LogPipeline {
+func (p *logPipelinev1alpha1) WithFilter(filter string) *logPipelinev1alpha1 {
 	p.filters = append(p.filters, telemetryv1alpha1.Filter{
 		Custom: filter,
 	})
 	return p
 }
 
-func (p *LogPipeline) Persistent(persistent bool) *LogPipeline {
+func (p *logPipelinev1alpha1) Persistent(persistent bool) *logPipelinev1alpha1 {
 	p.persistent = persistent
 
 	return p
 }
 
-func (p *LogPipeline) K8sObject() *telemetryv1alpha1.LogPipeline {
+func (p *logPipelinev1alpha1) K8sObject() *telemetryv1alpha1.LogPipeline {
 	var labels Labels
 	if p.persistent {
 		labels = PersistentLabel
