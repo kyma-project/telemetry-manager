@@ -1,3 +1,4 @@
+//nolint:dupl //There is duplication between logPipelineV1Beta1 and logPipelineV1Alpha1, but we need them as separate builders because they are using different API versions
 package k8s
 
 import (
@@ -9,7 +10,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
-//nolint:dupl //There is duplication between logPipelineV1Beta1 and logPipelineV1Alpha1, but we need them as separate builders because they are using different API versions
 type logPipelinev1beta1 struct {
 	persistent bool
 
