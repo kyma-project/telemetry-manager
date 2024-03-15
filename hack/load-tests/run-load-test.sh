@@ -35,7 +35,7 @@ function setup() {
     # Deploy prometheus
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
     helm repo update
-    helm upgrade --install -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/hack/load-tests/values.yaml --set grafana.adminPassword=myPwd
+    helm upgrade --install -n ${PROMETHEUS_NAMESPACE} ${HELM_PROM_RELEASE} prometheus-community/kube-prometheus-stack -f hack/load-tests/values.yaml --set grafana.adminPassword=myPwd
 
     if [ "$TEST_TARGET" = "traces" ];
     then
@@ -276,7 +276,7 @@ function get_result_and_cleanup_metricagent() {
    restartsAgent=$(kubectl -n kyma-system get pod -l app.kubernetes.io/name=telemetry-metric-agent -ojsonpath='{.items[0].status.containerStatuses[*].restartCount}' | jq | awk '{sum += $1} END {print sum}')
 
    if "$BACKPRESSURE_TEST"; then
-       kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/hack/load-tests/metric-agent-backpressure-config.yaml
+       kubectl delete -f hack/load-tests/metric-agent-backpressure-config.yaml
    fi
 
    cat hack/load-tests/metric-agent-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
