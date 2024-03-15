@@ -320,7 +320,7 @@ Adding the `logFormat` from the extension provider shown above will result in th
 
 The configured labels from the extension provider configuration result in log attributes of the OpenTelemetry log records. The log gateway enriches the log records with resource attributes to fulfill the semantic conventions. The source pod is identified by the k8sattributes processor using the client IP address.
 
-The OpenTelemetry log specification contains fields for a trceId and spanId. The extension provider does not allow to fill these fields but assign them to a log attribute. This limitation can be corrected by a transform processor in the log gateway. An [issue](https://github.com/istio/istio/issues/49911) has been created for the Istio project.
+The OpenTelemetry log specification contains fields for a traceId and spanId. The extension provider does not allow to fill these fields but assign them to a log attribute. This limitation can be corrected by a transform processor in the log gateway. An [issue](https://github.com/istio/istio/issues/49911) has been created for the Istio project.
 
 The OpenTelemetry [Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/) do not explicitly cover access logs yet. The shown example pick up attribute names from related areas like HTTP and URL where it made sense.
 
