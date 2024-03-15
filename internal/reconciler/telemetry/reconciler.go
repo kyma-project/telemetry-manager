@@ -24,6 +24,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 )
 
@@ -72,15 +73,15 @@ type Reconciler struct {
 	overridesHandler *overrides.Handler
 }
 
-func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler) *Reconciler {
+func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler, flowHealthProbingEnabled bool) *Reconciler {
 	return &Reconciler{
 		Client: client,
 		Scheme: scheme,
 		config: config,
 		healthCheckers: healthCheckers{
 			logs:    &logComponentsChecker{client: client},
-			traces:  &traceComponentsChecker{client: client},
-			metrics: &metricComponentsChecker{client: client},
+			traces:  &traceComponentsChecker{client: client, flowHealthProbingEnabled: flowHealthProbingEnabled},
+			metrics: &metricComponentsChecker{client: client, flowHealthProbingEnabled: flowHealthProbingEnabled},
 		},
 		overridesHandler: overridesHandler,
 	}
@@ -151,7 +152,15 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 	if err != nil {
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)
 	}
+
+	rules := flowhealth.MakeRules()
+	rulesYAML, err := yaml.Marshal(rules)
+	if err != nil {
+		return fmt.Errorf("failed to marshal rules: %w", err)
+	}
+
 	r.config.SelfMonitor.Config.SelfMonitorConfig = string(selfMonitorConfigYAML)
+	r.config.SelfMonitor.Config.AlertRules = string(rulesYAML)
 
 	if err := selfmonitor.ApplyResources(ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, &telemetry),

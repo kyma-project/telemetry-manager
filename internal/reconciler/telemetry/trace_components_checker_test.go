@@ -21,10 +21,11 @@ func TestTraceComponentsCheck(t *testing.T) {
 	runningCondition := metav1.Condition{Type: conditions.TypeRunning, Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceGatewayDeploymentReady}
 
 	tests := []struct {
-		name                string
-		pipelines           []telemetryv1alpha1.TracePipeline
-		telemetryInDeletion bool
-		expectedCondition   *metav1.Condition
+		name                     string
+		pipelines                []telemetryv1alpha1.TracePipeline
+		telemetryInDeletion      bool
+		flowHealthProbingEnabled bool
+		expectedCondition        *metav1.Condition
 	}{
 		{
 			name:                "should be healthy if no pipelines deployed",
@@ -165,6 +166,38 @@ func TestTraceComponentsCheck(t *testing.T) {
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: TracePipelines (bar,foo)",
 			},
 		},
+		{
+			name: "should be healthy if telemetry flow probing enabled and healthy",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonFlowHealthy}).
+					Build(),
+			},
+			flowHealthProbingEnabled: true,
+			expectedCondition: &metav1.Condition{
+				Type:    "TraceComponentsHealthy",
+				Status:  "True",
+				Reason:  "TraceComponentsRunning",
+				Message: "All trace components are running",
+			},
+		},
+		{
+			name: "should not be healthy if telemetry flow probing enabled and not healthy",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonGatewayThrottling}).
+					Build(),
+			},
+			flowHealthProbingEnabled: true,
+			expectedCondition: &metav1.Condition{
+				Type:    "TraceComponentsHealthy",
+				Status:  "False",
+				Reason:  "GatewayThrottling",
+				Message: "",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -180,7 +213,8 @@ func TestTraceComponentsCheck(t *testing.T) {
 			fakeClient := b.Build()
 
 			m := &traceComponentsChecker{
-				client: fakeClient,
+				client:                   fakeClient,
+				flowHealthProbingEnabled: test.flowHealthProbingEnabled,
 			}
 
 			condition, err := m.Check(context.Background(), test.telemetryInDeletion)

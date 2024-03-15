@@ -134,7 +134,7 @@ var _ = BeforeSuite(func() {
 	overridesHandler := overrides.New(client, atomicLogLevel, handlerConfig)
 
 	telemetryReconciler := NewTelemetryReconciler(client,
-		telemetry.NewReconciler(client, mgr.GetScheme(), config, overridesHandler),
+		telemetry.NewReconciler(client, mgr.GetScheme(), config, overridesHandler, false),
 		config)
 	err = telemetryReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())

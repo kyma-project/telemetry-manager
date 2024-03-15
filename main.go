@@ -147,6 +147,8 @@ const (
 	metricOTLPServiceName = "telemetry-otlp-metrics"
 
 	traceOTLPServiceName = "telemetry-otlp-traces"
+
+	selfMonitorName = "telemetry-self-monitor"
 )
 
 //nolint:gochecknoinits // Runtime's scheme addition is required.
@@ -407,7 +409,8 @@ func enableTracingController(mgr manager.Manager) {
 	setupLog.Info("Starting with tracing controller")
 	var err error
 	var flowHealthProber *flowhealth.Prober
-	if flowHealthProber, err = flowhealth.NewProber(); err != nil {
+	if flowHealthProber, err = flowhealth.NewProber(flowhealth.FlowTypeTraces,
+		types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
 		setupLog.Error(err, "Failed to create flow health prober")
 		os.Exit(1)
 	}
@@ -422,7 +425,8 @@ func enableMetricsController(mgr manager.Manager) {
 	setupLog.Info("Starting with metrics controller")
 	var err error
 	var flowHealthProber *flowhealth.Prober
-	if flowHealthProber, err = flowhealth.NewProber(); err != nil {
+	if flowHealthProber, err = flowhealth.NewProber(flowhealth.FlowTypeMetrics,
+		types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
 		setupLog.Error(err, "Failed to create flow health prober")
 		os.Exit(1)
 	}
@@ -625,7 +629,7 @@ func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 	return telemetry.SelfMonitorConfig{
 		Enabled: enableSelfMonitor,
 		Config: selfmonitor.Config{
-			BaseName:  "telemetry-self-monitor",
+			BaseName:  selfMonitorName,
 			Namespace: telemetryNamespace,
 
 			Deployment: selfmonitor.DeploymentConfig{
@@ -675,7 +679,7 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, web
 		SelfMonitor:            selfMonitorConfig,
 	}
 
-	return operator.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config, overridesHandler), config)
+	return operator.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config, overridesHandler, enableSelfMonitor), config)
 }
 
 func createWebhookConfig() telemetry.WebhookConfig {

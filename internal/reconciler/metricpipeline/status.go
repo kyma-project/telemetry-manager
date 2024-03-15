@@ -13,6 +13,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool) error {
@@ -36,7 +37,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
 
 	if r.flowHealthProbingEnabled {
-		r.setFlowHealthConditions(ctx, &pipeline)
+		r.setFlowHealthCondition(ctx, &pipeline)
 	}
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
@@ -104,12 +105,40 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation, conditions.MetricsMessage))
 }
 
-func (r *Reconciler) setFlowHealthConditions(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
-	_, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Failed to retrieve alerts")
-		return
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
+	var reason string
+	var status metav1.ConditionStatus
+
+	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	if err == nil {
+		reason = flowHealthReasonFor(probeResult)
+		if probeResult.Healthy {
+			status = metav1.ConditionTrue
+		} else {
+			status = metav1.ConditionFalse
+		}
+	} else {
+		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
+
+		reason = conditions.ReasonFlowHealthy
+		status = metav1.ConditionUnknown
 	}
 
-	//TODO: Reflect probe result in the status of the MetricPipeline
+	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeFlowHealthy, reason, status, pipeline.Generation, conditions.MetricsMessage))
+}
+
+func flowHealthReasonFor(probeResult flowhealth.ProbeResult) string {
+	if probeResult.AllDataDropped {
+		return conditions.ReasonAllDataDropped
+	}
+	if probeResult.SomeDataDropped {
+		return conditions.ReasonSomeDataDropped
+	}
+	if probeResult.QueueAlmostFull {
+		return conditions.ReasonBufferFillingUp
+	}
+	if probeResult.Throttling {
+		return conditions.ReasonGatewayThrottling
+	}
+	return conditions.ReasonFlowHealthy
 }

@@ -13,6 +13,7 @@ const (
 	TypeGatewayHealthy         = "GatewayHealthy"
 	TypeAgentHealthy           = "AgentHealthy"
 	TypeConfigurationGenerated = "ConfigurationGenerated"
+	TypeFlowHealthy            = "TelemetryFlowHealthy"
 
 	// NOTE: The "Running" and "Pending" types are deprecated
 	// Check https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
@@ -35,6 +36,11 @@ const (
 	ReasonDeploymentReady         = "DeploymentReady"
 	ReasonDaemonSetNotReady       = "DaemonSetNotReady"
 	ReasonDaemonSetReady          = "DaemonSetReady"
+	ReasonAllDataDropped          = "AllTelemetryDataDropped"
+	ReasonSomeDataDropped         = "SomeTelemetryDataDropped"
+	ReasonBufferFillingUp         = "BufferFillingUp"
+	ReasonGatewayThrottling       = "GatewayThrottling"
+	ReasonFlowHealthy             = "Healthy"
 
 	ReasonMetricAgentNotRequired  = "AgentNotRequired"
 	ReasonMetricComponentsRunning = "MetricComponentsRunning"

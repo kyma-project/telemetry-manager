@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -18,6 +19,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 func TestUpdateStatus(t *testing.T) {
@@ -341,6 +344,120 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
+	})
+
+	t.Run("flow healthy", func(t *testing.T) {
+		tests := []struct {
+			name           string
+			probe          flowhealth.ProbeResult
+			probeErr       error
+			expectedStatus metav1.ConditionStatus
+			expectedReason string
+		}{
+			{
+				name:           "prober fails",
+				probeErr:       assert.AnError,
+				expectedStatus: metav1.ConditionUnknown,
+				expectedReason: conditions.ReasonFlowHealthy,
+			},
+			{
+				name: "healthy",
+				probe: flowhealth.ProbeResult{
+					Healthy: true,
+				},
+				expectedStatus: metav1.ConditionTrue,
+				expectedReason: conditions.ReasonFlowHealthy,
+			},
+			{
+				name: "throttling",
+				probe: flowhealth.ProbeResult{
+					Throttling: true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonGatewayThrottling,
+			},
+			{
+				name: "buffer filling up",
+				probe: flowhealth.ProbeResult{
+					QueueAlmostFull: true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonBufferFillingUp,
+			},
+			{
+				name: "buffer filling up shadows other problems",
+				probe: flowhealth.ProbeResult{
+					QueueAlmostFull: true,
+					Throttling:      true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonBufferFillingUp,
+			},
+			{
+				name: "some data dropped",
+				probe: flowhealth.ProbeResult{
+					SomeDataDropped: true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonSomeDataDropped,
+			},
+			{
+				name: "some data dropped shadows other problems",
+				probe: flowhealth.ProbeResult{
+					SomeDataDropped: true,
+					Throttling:      true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonSomeDataDropped,
+			},
+			{
+				name: "all data dropped",
+				probe: flowhealth.ProbeResult{
+					AllDataDropped: true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonAllDataDropped,
+			},
+			{
+				name: "all data dropped shadows other problems",
+				probe: flowhealth.ProbeResult{
+					AllDataDropped: true,
+					Throttling:     true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonAllDataDropped,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewTracePipelineBuilder().Build()
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				gatewayProberStub := &mocks.DeploymentProber{}
+				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+				flowHealthProberStub := &mocks.FlowHealthProber{}
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+
+				sut := Reconciler{
+					Client:                   fakeClient,
+					prober:                   gatewayProberStub,
+					flowHealthProbingEnabled: true,
+					flowHealthProber:         flowHealthProberStub,
+				}
+				err := sut.updateStatus(context.Background(), pipeline.Name, false)
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.TracePipeline
+				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeFlowHealthy)
+				require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeFlowHealthy)
+				require.Equal(t, tt.expectedStatus, cond.Status)
+				require.Equal(t, tt.expectedReason, cond.Reason)
+			})
+		}
 	})
 
 	t.Run("should remove running condition and set pending condition to true if trace gateway deployment becomes not ready again", func(t *testing.T) {

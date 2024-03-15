@@ -84,6 +84,22 @@ func TestProber(t *testing.T) {
 			expected: ProbeResult{Healthy: true},
 		},
 		{
+			name:         "flow type mismatch",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "MetricGatewayExporterDroppedData",
+							"exporter":  "otlp/cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: ProbeResult{Healthy: true},
+		},
+		{
 			name:         "exporter dropped data firing",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
@@ -234,7 +250,8 @@ func TestProber(t *testing.T) {
 			}
 
 			sut := Prober{
-				getter: alertGetterMock,
+				getter:        alertGetterMock,
+				nameDecorator: traceRuleNameDecorator,
 			}
 
 			result, err := sut.Probe(context.Background(), tc.pipelineName)
