@@ -38,8 +38,8 @@ var _ = Describe("Logs Drop Labels", Label("logs"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-label-test")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipeline(pipelineName).
-			WithSecretKeyRef(mockBackend.HostSecretRef()).
+		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
+			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
 			KeepAnnotations(false).
 			DropLabels(false)

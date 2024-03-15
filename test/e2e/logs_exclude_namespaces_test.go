@@ -38,8 +38,8 @@ var _ = Describe("Logs Exclude Namespace", Label("logs"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-exclude-namespace")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipeline(pipelineName).
-			WithSecretKeyRef(mockBackend.HostSecretRef()).
+		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
+			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
 			WithExcludeNamespaces([]string{kitkyma.SystemNamespaceName})
 		objs = append(objs, logPipeline.K8sObject())

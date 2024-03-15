@@ -8,6 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/fluentd"
@@ -108,8 +109,12 @@ func (b *Backend) Name() string {
 	return b.name
 }
 
-func (b *Backend) HostSecretRef() *telemetryv1alpha1.SecretKeyRef {
-	return b.HostSecret.SecretKeyRef("host")
+func (b *Backend) HostSecretRefV1Alpha1() *telemetryv1alpha1.SecretKeyRef {
+	return b.HostSecret.SecretKeyRefV1Alpha1("host")
+}
+
+func (b *Backend) HostSecretRefV1Beta1() *telemetryv1beta1.SecretKeyRef {
+	return b.HostSecret.SecretKeyRefV1Beta1("host")
 }
 
 func (b *Backend) TelemetryExportURL(proxyClient *apiserverproxy.Client) string {

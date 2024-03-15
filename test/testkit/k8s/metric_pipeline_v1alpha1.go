@@ -1,3 +1,4 @@
+//nolint:dupl //There is duplication between metricPipelineV1Beta1 and metricPipelineV1Alpha1, but we need them as separate builders because they are using different API versions
 package k8s
 
 import (
@@ -10,9 +11,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 )
 
-const version = "1.0.0"
-
-type MetricPipeline struct {
+type metricPipelineV1Alpha1 struct {
 	persistent bool
 
 	id              string
@@ -28,51 +27,51 @@ type MetricPipeline struct {
 	endpointPath    string
 }
 
-func NewMetricPipeline(name string) *MetricPipeline {
-	return &MetricPipeline{
+func NewMetricPipelineV1Alpha1(name string) *metricPipelineV1Alpha1 {
+	return &metricPipelineV1Alpha1{
 		id:           uuid.New().String(),
 		name:         name,
 		otlpEndpoint: "http://unreachable:4317",
 	}
 }
 
-func (p *MetricPipeline) WithOutputEndpoint(otlpEndpoint string) *MetricPipeline {
+func (p *metricPipelineV1Alpha1) WithOutputEndpoint(otlpEndpoint string) *metricPipelineV1Alpha1 {
 	p.otlpEndpoint = otlpEndpoint
 	return p
 }
 
-func (p *MetricPipeline) WithOutputEndpointFromSecret(otlpEndpointRef *telemetryv1alpha1.SecretKeyRef) *MetricPipeline {
+func (p *metricPipelineV1Alpha1) WithOutputEndpointFromSecret(otlpEndpointRef *telemetryv1alpha1.SecretKeyRef) *metricPipelineV1Alpha1 {
 	p.otlpEndpointRef = otlpEndpointRef
 	return p
 }
 
-func (p *MetricPipeline) Name() string {
+func (p *metricPipelineV1Alpha1) Name() string {
 	if p.persistent {
 		return p.name
 	}
 	return fmt.Sprintf("%s-%s", p.name, p.id)
 }
 
-func (p *MetricPipeline) Persistent(persistent bool) *MetricPipeline {
+func (p *metricPipelineV1Alpha1) Persistent(persistent bool) *metricPipelineV1Alpha1 {
 	p.persistent = persistent
 	return p
 }
 
-type InputOptions func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector)
+type InputOptionsV1Alpha1 func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector)
 
-func IncludeNamespaces(namespaces ...string) InputOptions {
+func IncludeNamespacesV1Alpha1(namespaces ...string) InputOptionsV1Alpha1 {
 	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
 		selector.Include = namespaces
 	}
 }
 
-func ExcludeNamespaces(namespaces ...string) InputOptions {
+func ExcludeNamespacesV1Alpha1(namespaces ...string) InputOptionsV1Alpha1 {
 	return func(selector *telemetryv1alpha1.MetricPipelineInputNamespaceSelector) {
 		selector.Exclude = namespaces
 	}
 }
 
-func (p *MetricPipeline) OtlpInput(enable bool, opts ...InputOptions) *MetricPipeline {
+func (p *metricPipelineV1Alpha1) OtlpInput(enable bool, opts ...InputOptionsV1Alpha1) *metricPipelineV1Alpha1 {
 	p.otlp = &telemetryv1alpha1.MetricPipelineOtlpInput{
 		Disabled: !enable,
 	}
@@ -88,7 +87,7 @@ func (p *MetricPipeline) OtlpInput(enable bool, opts ...InputOptions) *MetricPip
 	return p
 }
 
-func (p *MetricPipeline) RuntimeInput(enable bool, opts ...InputOptions) *MetricPipeline {
+func (p *metricPipelineV1Alpha1) RuntimeInput(enable bool, opts ...InputOptionsV1Alpha1) *metricPipelineV1Alpha1 {
 	p.runtime = &telemetryv1alpha1.MetricPipelineRuntimeInput{
 		Enabled: enable,
 	}
@@ -104,7 +103,7 @@ func (p *MetricPipeline) RuntimeInput(enable bool, opts ...InputOptions) *Metric
 	return p
 }
 
-func (p *MetricPipeline) PrometheusInput(enable bool, opts ...InputOptions) *MetricPipeline {
+func (p *metricPipelineV1Alpha1) PrometheusInput(enable bool, opts ...InputOptionsV1Alpha1) *metricPipelineV1Alpha1 {
 	p.prometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{
 		Enabled: enable,
 	}
@@ -120,7 +119,7 @@ func (p *MetricPipeline) PrometheusInput(enable bool, opts ...InputOptions) *Met
 	return p
 }
 
-func (p *MetricPipeline) IstioInput(enable bool, opts ...InputOptions) *MetricPipeline {
+func (p *metricPipelineV1Alpha1) IstioInput(enable bool, opts ...InputOptionsV1Alpha1) *metricPipelineV1Alpha1 {
 	p.istio = &telemetryv1alpha1.MetricPipelineIstioInput{
 		Enabled: enable,
 	}
@@ -136,21 +135,21 @@ func (p *MetricPipeline) IstioInput(enable bool, opts ...InputOptions) *MetricPi
 	return p
 }
 
-func (p *MetricPipeline) PrometheusInputDiagnosticMetrics(enable bool) *MetricPipeline {
+func (p *metricPipelineV1Alpha1) PrometheusInputDiagnosticMetrics(enable bool) *metricPipelineV1Alpha1 {
 	p.prometheus.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{
 		Enabled: enable,
 	}
 	return p
 }
 
-func (p *MetricPipeline) IstioInputDiagnosticMetrics(enable bool) *MetricPipeline {
+func (p *metricPipelineV1Alpha1) IstioInputDiagnosticMetrics(enable bool) *metricPipelineV1Alpha1 {
 	p.istio.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{
 		Enabled: enable,
 	}
 	return p
 }
 
-func (p *MetricPipeline) WithTLS(certs tls.Certs) *MetricPipeline {
+func (p *metricPipelineV1Alpha1) WithTLS(certs tls.Certs) *metricPipelineV1Alpha1 {
 	p.tls = &telemetryv1alpha1.OtlpTLS{
 		Insecure:           false,
 		InsecureSkipVerify: false,
@@ -168,17 +167,17 @@ func (p *MetricPipeline) WithTLS(certs tls.Certs) *MetricPipeline {
 	return p
 }
 
-func (p *MetricPipeline) WithProtocol(protocol string) *MetricPipeline {
+func (p *metricPipelineV1Alpha1) WithProtocol(protocol string) *metricPipelineV1Alpha1 {
 	p.protocol = protocol
 	return p
 }
 
-func (p *MetricPipeline) WithEndpointPath(path string) *MetricPipeline {
+func (p *metricPipelineV1Alpha1) WithEndpointPath(path string) *metricPipelineV1Alpha1 {
 	p.endpointPath = path
 	return p
 }
 
-func (p *MetricPipeline) K8sObject() *telemetryv1alpha1.MetricPipeline {
+func (p *metricPipelineV1Alpha1) K8sObject() *telemetryv1alpha1.MetricPipeline {
 	var labels Labels
 	if p.persistent {
 		labels = PersistentLabel

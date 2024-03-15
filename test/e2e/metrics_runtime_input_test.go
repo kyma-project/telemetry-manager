@@ -41,8 +41,8 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipeline("pipeline-with-runtime-input-enabled").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRef()).
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-runtime-input-enabled").
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
 			RuntimeInput(true)
 		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
