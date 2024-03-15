@@ -675,7 +675,7 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, web
 		SelfMonitor:            selfMonitorConfig,
 	}
 
-	return operator.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config, overridesHandler), config)
+	return operator.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config, overridesHandler, enableSelfMonitor), config)
 }
 
 func createWebhookConfig() telemetry.WebhookConfig {

@@ -73,15 +73,15 @@ type Reconciler struct {
 	overridesHandler *overrides.Handler
 }
 
-func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler) *Reconciler {
+func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, overridesHandler *overrides.Handler, flowHealthProbingEnabled bool) *Reconciler {
 	return &Reconciler{
 		Client: client,
 		Scheme: scheme,
 		config: config,
 		healthCheckers: healthCheckers{
 			logs:    &logComponentsChecker{client: client},
-			traces:  &traceComponentsChecker{client: client},
-			metrics: &metricComponentsChecker{client: client},
+			traces:  &traceComponentsChecker{client: client, flowHealthProbingEnabled: flowHealthProbingEnabled},
+			metrics: &metricComponentsChecker{client: client, flowHealthProbingEnabled: flowHealthProbingEnabled},
 		},
 		overridesHandler: overridesHandler,
 	}
