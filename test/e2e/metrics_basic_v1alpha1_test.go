@@ -26,8 +26,8 @@ import (
 
 var _ = Describe("Metrics Basic v1alpha1", Label("metrics"), func() {
 	const (
-		mockBackendName = "metrics-receiver"
-		mockNs          = "metrics-basic-v1alpha1-test"
+		mockBackendName = "metric-receiver"
+		mockNs          = "metric-mocks"
 	)
 
 	var (
