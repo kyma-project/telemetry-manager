@@ -20,6 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUpdateStatus(t *testing.T) {
@@ -349,9 +350,16 @@ func TestUpdateStatus(t *testing.T) {
 		tests := []struct {
 			name           string
 			probe          flowhealth.ProbeResult
+			probeErr       error
 			expectedStatus metav1.ConditionStatus
 			expectedReason string
 		}{
+			{
+				name:           "prober fails",
+				probeErr:       assert.AnError,
+				expectedStatus: metav1.ConditionUnknown,
+				expectedReason: conditions.ReasonFlowHealthy,
+			},
 			{
 				name: "healthy",
 				probe: flowhealth.ProbeResult{
@@ -430,7 +438,7 @@ func TestUpdateStatus(t *testing.T) {
 				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 				flowHealthProberStub := &mocks.FlowHealthProber{}
-				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, nil)
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
 
 				sut := Reconciler{
 					Client:                   fakeClient,
