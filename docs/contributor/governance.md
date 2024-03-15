@@ -125,7 +125,7 @@ issues:
 
 ### Dev Environment Configuration
 
-Read [golangci-lint integrations](https://golangci-lint.run/usage/integrations/) for information on configuring file-watchers for your IDE or code editor.
+Read [golangci-lint integrations](https://golangci-lint.run/welcome/integrations/) for information on configuring file-watchers for your IDE or code editor.
 
 ### Autofix
 
