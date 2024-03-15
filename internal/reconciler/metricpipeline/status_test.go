@@ -357,7 +357,7 @@ func TestUpdateStatus(t *testing.T) {
 					SomeDataDropped: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSomeTelemetryDataDropped,
+				expectedReason: conditions.ReasonSomeDataDropped,
 			},
 			{
 				name: "some data dropped shadows other problems",
@@ -366,7 +366,7 @@ func TestUpdateStatus(t *testing.T) {
 					Throttling:      true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonSomeTelemetryDataDropped,
+				expectedReason: conditions.ReasonSomeDataDropped,
 			},
 			{
 				name: "all data dropped",
@@ -374,7 +374,7 @@ func TestUpdateStatus(t *testing.T) {
 					AllDataDropped: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonAllTelemetryDataDropped,
+				expectedReason: conditions.ReasonAllDataDropped,
 			},
 			{
 				name: "all data dropped shadows other problems",
@@ -383,7 +383,7 @@ func TestUpdateStatus(t *testing.T) {
 					Throttling:     true,
 				},
 				expectedStatus: metav1.ConditionFalse,
-				expectedReason: conditions.ReasonAllTelemetryDataDropped,
+				expectedReason: conditions.ReasonAllDataDropped,
 			},
 		}
 

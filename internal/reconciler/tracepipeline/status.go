@@ -13,6 +13,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool) error {
@@ -92,7 +93,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 
 	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
 	if err == nil {
-		reason = conditions.FlowHealthReasonFor(probeResult)
+		reason = flowHealthReasonFor(probeResult)
 		if probeResult.Healthy {
 			status = metav1.ConditionTrue
 		} else {
@@ -106,6 +107,22 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeFlowHealthy, reason, status, pipeline.Generation, conditions.TracesMessage))
+}
+
+func flowHealthReasonFor(probeResult flowhealth.ProbeResult) string {
+	if probeResult.AllDataDropped {
+		return conditions.ReasonAllDataDropped
+	}
+	if probeResult.SomeDataDropped {
+		return conditions.ReasonSomeDataDropped
+	}
+	if probeResult.QueueAlmostFull {
+		return conditions.ReasonBufferFillingUp
+	}
+	if probeResult.Throttling {
+		return conditions.ReasonGatewayThrottling
+	}
+	return conditions.ReasonFlowHealthy
 }
 
 func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {

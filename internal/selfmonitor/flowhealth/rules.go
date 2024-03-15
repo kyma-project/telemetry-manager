@@ -76,7 +76,7 @@ func newRuleBuilder(dataType telemetryDataType) ruleBuilder {
 
 	if dataType == signalTypeSpans {
 		alertNamePrefix = "TraceGateway"
-		serviceName = "telemetry-trace-gateway-metrics"
+		serviceName = "telemetry-trace-collector-metrics"
 	}
 
 	return ruleBuilder{
