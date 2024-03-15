@@ -62,6 +62,11 @@ func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []telem
 		conditions.TypeAgentHealthy,
 		conditions.TypeConfigurationGenerated,
 	}
+
+	if m.flowHealthProbingEnabled {
+		condTypes = append(condTypes, conditions.TypeFlowHealthy)
+	}
+
 	for _, condType := range condTypes {
 		for _, pipeline := range pipelines {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)

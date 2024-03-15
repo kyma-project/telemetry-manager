@@ -41,7 +41,7 @@ const (
 	ReasonSomeTelemetryDataDropped = "SomeTelemetryDataDropped"
 	ReasonBufferFillingUp          = "BufferFillingUp"
 	ReasonGatewayThrottling        = "GatewayThrottling"
-	ReasonTelemetryFlowHealthy     = "Healthy"
+	ReasonFlowHealthy              = "Healthy"
 
 	ReasonMetricAgentNotRequired  = "AgentNotRequired"
 	ReasonMetricComponentsRunning = "MetricComponentsRunning"
@@ -126,7 +126,7 @@ func FlowHealthReasonFor(probeResult flowhealth.ProbeResult) string {
 	if probeResult.Throttling {
 		return ReasonGatewayThrottling
 	}
-	return ReasonTelemetryFlowHealthy
+	return ReasonFlowHealthy
 }
 
 func HandlePendingCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string, messageMap map[string]string) {

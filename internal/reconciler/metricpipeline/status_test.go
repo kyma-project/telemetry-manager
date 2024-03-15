@@ -324,7 +324,7 @@ func TestUpdateStatus(t *testing.T) {
 					Healthy: true,
 				},
 				expectedStatus: metav1.ConditionTrue,
-				expectedReason: conditions.ReasonTelemetryFlowHealthy,
+				expectedReason: conditions.ReasonFlowHealthy,
 			},
 			{
 				name: "throttling",
