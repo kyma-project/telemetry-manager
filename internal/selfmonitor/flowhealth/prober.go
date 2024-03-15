@@ -6,11 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 	"github.com/prometheus/client_golang/api"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
 
 const (
