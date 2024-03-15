@@ -84,6 +84,22 @@ func TestProber(t *testing.T) {
 			expected: ProbeResult{Healthy: true},
 		},
 		{
+			name:         "overlapping pipeline names",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "TraceGatewayExporterDroppedData",
+							"exporter":  "otlp/cls-2",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: ProbeResult{Healthy: true},
+		},
+		{
 			name:         "flow type mismatch",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
@@ -107,7 +123,7 @@ func TestProber(t *testing.T) {
 					{
 						Labels: model.LabelSet{
 							"alertname": "TraceGatewayExporterDroppedData",
-							"exporter":  "otlp/cls",
+							"exporter":  "otlphttp/cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
