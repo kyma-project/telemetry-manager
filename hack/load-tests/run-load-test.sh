@@ -86,7 +86,7 @@ function setup_metric() {
 
 function setup_metric_agent() {
     # Deploy test setup
-    kubectl apply -f hack/load-tests/metric-agent-test-setup.yaml
+    cat hack/load-tests/metric-agent-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" | kubectl apply -f -
 
     if "$BACKPRESSURE_TEST"; then
         kubectl apply -f hack/load-tests/metric-agent-backpressure-config.yaml
@@ -218,7 +218,7 @@ function get_result_and_cleanup_trace() {
         kubectl delete -f hack/load-tests/trace-backpressure-config.yaml
     fi
 
-    kubectl delete -f hack/load-tests/trace-load-test-setup.yaml
+    cat hack/load-tests/trace-load-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
 
     echo "\nTrace Gateway got $restarts time restarted\n"
 
@@ -250,7 +250,7 @@ function get_result_and_cleanup_metric() {
         kubectl delete -f hack/load-tests/metric-backpressure-config.yaml
     fi
 
-    kubectl delete -f hack/load-tests/metric-load-test-setup.yaml
+    cat hack/load-tests/metric-load-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
 
     echo "\nMetric Gateway got $restarts time restarted\n"
 
@@ -279,7 +279,7 @@ function get_result_and_cleanup_metricagent() {
        kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/hack/load-tests/metric-agent-backpressure-config.yaml
    fi
 
-   kubectl delete -f https://raw.githubusercontent.com/kyma-project/telemetry-manager/main/hack/load-tests/metric-agent-test-setup.yaml
+   cat hack/load-tests/metric-agent-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
 
    echo "\nTest run for $TEST_DURATION seconds\n"
    echo "\nMetric Gateway got $restartsGateway time restarted\n"
@@ -312,7 +312,7 @@ function get_result_and_cleanup_fluentbit() {
        kubectl delete -f hack/load-tests/log-fluentbit-backpressure-config.yaml
    fi
 
-   kubectl delete -f hack/load-tests/log-fluentbit-test-setup.yaml
+   cat hack/load-tests/log-fluentbit-test-setup.yaml | sed -e  "s|OTEL_IMAGE|$OTEL_IMAGE|g" |  kubectl apply -f -
 
    echo "\nLogPipeline Pods got $restarts time restarted\n"
 
