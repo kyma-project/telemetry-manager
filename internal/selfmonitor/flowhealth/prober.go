@@ -6,14 +6,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 	"github.com/prometheus/client_golang/api"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
-	selfMonitorAPIURL = "http://telemetry-self-monitor.kyma-system:9090"
-	clientTimeout     = 10 * time.Second
+	clientTimeout = 10 * time.Second
 )
 
 //go:generate mockery --name alertGetter --filename=alert_getter.go --exported
@@ -22,13 +23,13 @@ type alertGetter interface {
 }
 
 type Prober struct {
-	getter        alertGetter
 	clientTimeout time.Duration
+	getter        alertGetter
 }
 
-func NewProber() (*Prober, error) {
+func NewProber(selfMonitorName types.NamespacedName) (*Prober, error) {
 	client, err := api.NewClient(api.Config{
-		Address: selfMonitorAPIURL,
+		Address: fmt.Sprintf("http://%s.%s:%d", selfMonitorName.Name, selfMonitorName.Namespace, ports.PrometheusPort),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Prometheus client: %w", err)
