@@ -62,6 +62,11 @@ var metricPipelineMessages = map[string]string{
 	ReasonDaemonSetNotReady:       "Metric agent DaemonSet is not ready",
 	ReasonDaemonSetReady:          "Metric agent DaemonSet is ready",
 	ReasonMetricComponentsRunning: "All metric components are running",
+	ReasonAllDataDropped:          "All metrics dropped: backend unreachable or rejecting",
+	ReasonSomeDataDropped:         "Some metrics dropped: backend unreachable or rejecting",
+	ReasonBufferFillingUp:         "Buffer nearing capacity: incoming metric rate exceeds export rate",
+	ReasonGatewayThrottling:       "Metric gateway experiencing high influx: Unable to receive metrics at current rate",
+	ReasonFlowHealthy:             "Metrics are flowing normally to backend",
 }
 
 var tracePipelineMessages = map[string]string{
@@ -70,6 +75,11 @@ var tracePipelineMessages = map[string]string{
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
 	ReasonTraceGatewayDeploymentReady:    "Trace gateway Deployment is ready",
 	ReasonTraceComponentsRunning:         "All trace components are running",
+	ReasonAllDataDropped:                 "All traces dropped: backend unreachable or rejecting",
+	ReasonSomeDataDropped:                "Some traces dropped: backend unreachable or rejecting",
+	ReasonBufferFillingUp:                "Buffer nearing capacity: incoming trace rate exceeds export rate",
+	ReasonGatewayThrottling:              "Trace collector experiencing high influx: Unable to receive metrics at current rate",
+	ReasonFlowHealthy:                    "Traces are flowing normally to backend",
 }
 
 var LogsMessage = map[string]string{
