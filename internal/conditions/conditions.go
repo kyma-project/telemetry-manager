@@ -82,7 +82,7 @@ var tracePipelineMessages = map[string]string{
 	ReasonFlowHealthy:                    "Traces are flowing normally to backend",
 }
 
-var LogsMessage = map[string]string{
+var logPipelineMessages = map[string]string{
 	ReasonDaemonSetNotReady:     "Fluent Bit DaemonSet is not ready",
 	ReasonDaemonSetReady:        "Fluent Bit DaemonSet is ready",
 	ReasonFluentBitDSNotReady:   "Fluent Bit DaemonSet is not ready",
@@ -91,20 +91,8 @@ var LogsMessage = map[string]string{
 	ReasonLogComponentsRunning:  "All log components are running",
 }
 
-// MessageFor returns a human-readable message corresponding to a given reason.
-// In more advanced scenarios, you may craft custom messages tailored to specific use cases.
-func MessageFor(reason string, messageMap map[string]string) string {
-	if condMessage, found := commonMessages[reason]; found {
-		return condMessage
-	}
-	if condMessage, found := messageMap[reason]; found {
-		return condMessage
-	}
-	return ""
-}
-
 func MessageForLogPipeline(reason string) string {
-	return message(reason, commonMessages, LogsMessage)
+	return message(reason, commonMessages, logPipelineMessages)
 }
 
 func MessageForTracePipeline(reason string) string {

@@ -10,23 +10,23 @@ import (
 
 func TestMessageFor(t *testing.T) {
 	t.Run("should return correct message which is common to all pipelines", func(t *testing.T) {
-		message := MessageFor(ReasonReferencedSecretMissing, LogsMessage)
+		message := MessageForLogPipeline(ReasonReferencedSecretMissing)
 		require.Equal(t, commonMessages[ReasonReferencedSecretMissing], message)
 	})
 
 	t.Run("should return correct message which is unique to each pipeline", func(t *testing.T) {
-		logsDaemonSetNotReadyMessage := MessageFor(ReasonDaemonSetNotReady, LogsMessage)
-		require.Equal(t, LogsMessage[ReasonDaemonSetNotReady], logsDaemonSetNotReadyMessage)
+		logsDaemonSetNotReadyMessage := MessageForLogPipeline(ReasonDaemonSetNotReady)
+		require.Equal(t, logPipelineMessages[ReasonDaemonSetNotReady], logsDaemonSetNotReadyMessage)
 
-		tracesDeploymentNotReadyMessage := MessageFor(ReasonDeploymentNotReady, tracePipelineMessages)
+		tracesDeploymentNotReadyMessage := MessageForTracePipeline(ReasonDeploymentNotReady)
 		require.Equal(t, tracePipelineMessages[ReasonDeploymentNotReady], tracesDeploymentNotReadyMessage)
 
-		metricsDeploymentNotReadyMessage := MessageFor(ReasonDeploymentNotReady, metricPipelineMessages)
+		metricsDeploymentNotReadyMessage := MessageForMetricPipeline(ReasonDeploymentNotReady)
 		require.Equal(t, metricPipelineMessages[ReasonDeploymentNotReady], metricsDeploymentNotReadyMessage)
 	})
 
-	t.Run("should return empty message for reasons which do not have a dedicated message", func(t *testing.T) {
-		metricsAgentNotRequiredMessage := MessageFor(ReasonMetricAgentNotRequired, metricPipelineMessages)
+	t.Run("should return empty message for reasons which do not have a specialized message", func(t *testing.T) {
+		metricsAgentNotRequiredMessage := MessageForMetricPipeline(ReasonMetricAgentNotRequired)
 		require.Equal(t, "", metricsAgentNotRequiredMessage)
 	})
 }
@@ -38,14 +38,14 @@ func TestHandlePendingCondition(t *testing.T) {
 				Type:               TypeAgentHealthy,
 				Status:             metav1.ConditionFalse,
 				Reason:             ReasonDaemonSetNotReady,
-				Message:            MessageFor(ReasonDaemonSetNotReady, LogsMessage),
+				Message:            MessageForLogPipeline(ReasonDaemonSetNotReady),
 				LastTransitionTime: metav1.Now(),
 			},
 			{
 				Type:               TypeConfigurationGenerated,
 				Status:             metav1.ConditionTrue,
 				Reason:             ReasonConfigurationGenerated,
-				Message:            MessageFor(ReasonConfigurationGenerated, LogsMessage),
+				Message:            MessageForLogPipeline(ReasonConfigurationGenerated),
 				LastTransitionTime: metav1.Now(),
 			},
 		}
@@ -59,7 +59,7 @@ func TestHandlePendingCondition(t *testing.T) {
 		require.Equal(t, TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, reason, pendingCond.Reason)
-		pendingCondMsg := PendingTypeDeprecationMsg + MessageFor(reason, LogsMessage)
+		pendingCondMsg := PendingTypeDeprecationMsg + MessageForTracePipeline(reason)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
@@ -71,28 +71,28 @@ func TestHandlePendingCondition(t *testing.T) {
 				Type:               TypeAgentHealthy,
 				Status:             metav1.ConditionFalse,
 				Reason:             ReasonDaemonSetNotReady,
-				Message:            MessageFor(ReasonDaemonSetNotReady, LogsMessage),
+				Message:            MessageForLogPipeline(ReasonDaemonSetNotReady),
 				LastTransitionTime: metav1.Now(),
 			},
 			{
 				Type:               TypeConfigurationGenerated,
 				Status:             metav1.ConditionTrue,
 				Reason:             ReasonConfigurationGenerated,
-				Message:            MessageFor(ReasonConfigurationGenerated, LogsMessage),
+				Message:            MessageForLogPipeline(ReasonConfigurationGenerated),
 				LastTransitionTime: metav1.Now(),
 			},
 			{
 				Type:               TypePending,
 				Status:             metav1.ConditionFalse,
 				Reason:             ReasonFluentBitDSNotReady,
-				Message:            PendingTypeDeprecationMsg + MessageFor(ReasonFluentBitDSNotReady, LogsMessage),
+				Message:            PendingTypeDeprecationMsg + MessageForLogPipeline(ReasonFluentBitDSNotReady),
 				LastTransitionTime: metav1.Now(),
 			},
 			{
 				Type:               TypeRunning,
 				Status:             metav1.ConditionTrue,
 				Reason:             ReasonFluentBitDSReady,
-				Message:            RunningTypeDeprecationMsg + MessageFor(ReasonFluentBitDSReady, LogsMessage),
+				Message:            RunningTypeDeprecationMsg + MessageForLogPipeline(ReasonFluentBitDSReady),
 				LastTransitionTime: metav1.Now(),
 			},
 		}
@@ -109,7 +109,7 @@ func TestHandlePendingCondition(t *testing.T) {
 		require.Equal(t, TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, reason, pendingCond.Reason)
-		pendingCondMsg := PendingTypeDeprecationMsg + MessageFor(reason, LogsMessage)
+		pendingCondMsg := PendingTypeDeprecationMsg + MessageForLogPipeline(reason)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
@@ -123,14 +123,14 @@ func TestHandleRunningCondition(t *testing.T) {
 				Type:               TypeAgentHealthy,
 				Status:             metav1.ConditionTrue,
 				Reason:             ReasonDaemonSetReady,
-				Message:            MessageFor(ReasonDaemonSetReady, LogsMessage),
+				Message:            MessageForLogPipeline(ReasonDaemonSetReady),
 				LastTransitionTime: metav1.Now(),
 			},
 			{
 				Type:               TypeConfigurationGenerated,
 				Status:             metav1.ConditionTrue,
 				Reason:             ReasonConfigurationGenerated,
-				Message:            MessageFor(ReasonConfigurationGenerated, LogsMessage),
+				Message:            MessageForLogPipeline(ReasonConfigurationGenerated),
 				LastTransitionTime: metav1.Now(),
 			},
 		}
@@ -146,7 +146,7 @@ func TestHandleRunningCondition(t *testing.T) {
 		require.Equal(t, TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionFalse, pendingCond.Status)
 		require.Equal(t, pendingReason, pendingCond.Reason)
-		pendingCondMsg := PendingTypeDeprecationMsg + MessageFor(pendingReason, LogsMessage)
+		pendingCondMsg := PendingTypeDeprecationMsg + MessageForLogPipeline(pendingReason)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
@@ -155,7 +155,7 @@ func TestHandleRunningCondition(t *testing.T) {
 		require.Equal(t, TypeRunning, runningCond.Type)
 		require.Equal(t, metav1.ConditionTrue, runningCond.Status)
 		require.Equal(t, runningReason, runningCond.Reason)
-		runningCondMsg := RunningTypeDeprecationMsg + MessageFor(runningReason, LogsMessage)
+		runningCondMsg := RunningTypeDeprecationMsg + MessageForLogPipeline(runningReason)
 		require.Equal(t, runningCondMsg, runningCond.Message)
 		require.Equal(t, generation, runningCond.ObservedGeneration)
 		require.NotEmpty(t, runningCond.LastTransitionTime)
