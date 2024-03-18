@@ -1,7 +1,6 @@
 package conditions
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,7 +11,7 @@ import (
 func TestMessageFor(t *testing.T) {
 	t.Run("should return correct message which is common to all pipelines", func(t *testing.T) {
 		message := MessageFor(ReasonReferencedSecretMissing, LogsMessage)
-		require.Equal(t, commonMessage[ReasonReferencedSecretMissing], message)
+		require.Equal(t, commonMessages[ReasonReferencedSecretMissing], message)
 	})
 
 	t.Run("should return correct message which is unique to each pipeline", func(t *testing.T) {
@@ -22,12 +21,12 @@ func TestMessageFor(t *testing.T) {
 		tracesDeploymentNotReadyMessage := MessageFor(ReasonDeploymentNotReady, TracesMessage)
 		require.Equal(t, TracesMessage[ReasonDeploymentNotReady], tracesDeploymentNotReadyMessage)
 
-		metricsDeploymentNotReadyMessage := MessageFor(ReasonDeploymentNotReady, MetricsMessage)
-		require.Equal(t, MetricsMessage[ReasonDeploymentNotReady], metricsDeploymentNotReadyMessage)
+		metricsDeploymentNotReadyMessage := MessageFor(ReasonDeploymentNotReady, metricPipelineMessages)
+		require.Equal(t, metricPipelineMessages[ReasonDeploymentNotReady], metricsDeploymentNotReadyMessage)
 	})
 
 	t.Run("should return empty message for reasons which do not have a dedicated message", func(t *testing.T) {
-		metricsAgentNotRequiredMessage := MessageFor(ReasonMetricAgentNotRequired, MetricsMessage)
+		metricsAgentNotRequiredMessage := MessageFor(ReasonMetricAgentNotRequired, metricPipelineMessages)
 		require.Equal(t, "", metricsAgentNotRequiredMessage)
 	})
 }
@@ -53,7 +52,7 @@ func TestHandlePendingCondition(t *testing.T) {
 		generation := int64(1)
 		reason := ReasonFluentBitDSNotReady
 
-		HandlePendingCondition(context.Background(), &conditions, generation, reason, "pipeline", LogsMessage)
+		HandlePendingCondition(&conditions, generation, reason, LogsMessage)
 
 		conditionsSize := len(conditions)
 		pendingCond := conditions[conditionsSize-1]
@@ -100,7 +99,7 @@ func TestHandlePendingCondition(t *testing.T) {
 		generation := int64(1)
 		reason := ReasonFluentBitDSNotReady
 
-		HandlePendingCondition(context.Background(), &conditions, generation, reason, "pipeline", LogsMessage)
+		HandlePendingCondition(&conditions, generation, reason, LogsMessage)
 
 		runningCond := meta.FindStatusCondition(conditions, TypeRunning)
 		require.Nil(t, runningCond)
@@ -139,7 +138,7 @@ func TestHandleRunningCondition(t *testing.T) {
 		runningReason := ReasonFluentBitDSReady
 		pendingReason := ReasonFluentBitDSNotReady
 
-		HandleRunningCondition(context.Background(), &conditions, generation, runningReason, pendingReason, "pipeline", LogsMessage)
+		HandleRunningCondition(&conditions, generation, runningReason, pendingReason, LogsMessage)
 
 		conditionsSize := len(conditions)
 

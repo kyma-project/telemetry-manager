@@ -50,13 +50,13 @@ const (
 	ReasonTraceGatewayDeploymentReady    = "TraceGatewayDeploymentReady"
 )
 
-var commonMessage = map[string]string{
+var commonMessages = map[string]string{
 	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
 	ReasonReferencedSecretMissing: "One or more referenced Secrets are missing",
 	ReasonMaxPipelinesExceeded:    "Maximum pipeline count limit exceeded",
 }
 
-var MetricsMessage = map[string]string{
+var metricPipelineMessages = map[string]string{
 	ReasonDeploymentNotReady:      "Metric gateway Deployment is not ready",
 	ReasonDeploymentReady:         "Metric gateway Deployment is ready",
 	ReasonDaemonSetNotReady:       "Metric agent DaemonSet is not ready",
@@ -84,7 +84,7 @@ var LogsMessage = map[string]string{
 // MessageFor returns a human-readable message corresponding to a given reason.
 // In more advanced scenarios, you may craft custom messages tailored to specific use cases.
 func MessageFor(reason string, messageMap map[string]string) string {
-	if condMessage, found := commonMessage[reason]; found {
+	if condMessage, found := commonMessages[reason]; found {
 		return condMessage
 	}
 	if condMessage, found := messageMap[reason]; found {
@@ -94,15 +94,15 @@ func MessageFor(reason string, messageMap map[string]string) string {
 }
 
 func MessageForLogPipeline(reason string) string {
-	return message(reason, commonMessage, LogsMessage)
+	return message(reason, commonMessages, LogsMessage)
 }
 
 func MessageForTracePipeline(reason string) string {
-	return message(reason, commonMessage, TracesMessage)
+	return message(reason, commonMessages, TracesMessage)
 }
 
 func MessageForMetricPipeline(reason string) string {
-	return message(reason, commonMessage, MetricsMessage)
+	return message(reason, commonMessages, metricPipelineMessages)
 }
 
 func message(reason string, commonMessages, specializedMessages map[string]string) string {

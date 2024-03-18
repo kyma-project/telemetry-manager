@@ -151,13 +151,13 @@ func flowHealthReasonFor(probeResult flowhealth.ProbeResult) string {
 
 func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
 	if !withinPipelineCountLimit {
-		conditions.HandlePendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonMaxPipelinesExceeded, pipeline.Name, conditions.TracesMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonMaxPipelinesExceeded, conditions.TracesMessage)
 		return
 	}
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline)
 	if referencesNonExistentSecret {
-		conditions.HandlePendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonReferencedSecretMissing, pipeline.Name, conditions.TracesMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonReferencedSecretMissing, conditions.TracesMessage)
 		return
 	}
 
@@ -168,17 +168,9 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 	}
 
 	if !gatewayReady {
-		conditions.HandlePendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonTraceGatewayDeploymentNotReady, pipeline.Name, conditions.TracesMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonTraceGatewayDeploymentNotReady, conditions.TracesMessage)
 		return
 	}
 
-	conditions.HandleRunningCondition(
-		ctx,
-		&pipeline.Status.Conditions,
-		pipeline.Generation,
-		conditions.ReasonTraceGatewayDeploymentReady,
-		conditions.ReasonTraceGatewayDeploymentNotReady,
-		pipeline.Name,
-		conditions.TracesMessage,
-	)
+	conditions.HandleRunningCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonTraceGatewayDeploymentReady, conditions.ReasonTraceGatewayDeploymentNotReady, conditions.TracesMessage)
 }

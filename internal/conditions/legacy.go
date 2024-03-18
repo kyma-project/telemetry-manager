@@ -1,17 +1,11 @@
 package conditions
 
 import (
-	"context"
-	"fmt"
-
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func HandlePendingCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string, messageMap map[string]string) {
-	log := logf.FromContext(ctx)
-
+func HandlePendingCondition(conditions *[]metav1.Condition, generation int64, reason string, messageMap map[string]string) {
 	pending := metav1.Condition{
 		Type:               TypePending,
 		Status:             metav1.ConditionTrue,
@@ -22,17 +16,13 @@ func HandlePendingCondition(ctx context.Context, conditions *[]metav1.Condition,
 	pending.Message = PendingTypeDeprecationMsg + pending.Message
 
 	if meta.FindStatusCondition(*conditions, TypeRunning) != nil {
-		log.V(1).Info(fmt.Sprintf("Updating the status of %s: Removing the Running condition", resourceName))
 		meta.RemoveStatusCondition(conditions, TypeRunning)
 	}
 
-	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Pending condition to True", resourceName))
 	meta.SetStatusCondition(conditions, pending)
 }
 
-func HandleRunningCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, runningReason, pendingReason, resourceName string, messageMap map[string]string) {
-	log := logf.FromContext(ctx)
-
+func HandleRunningCondition(conditions *[]metav1.Condition, generation int64, runningReason, pendingReason string, messageMap map[string]string) {
 	// Set Pending condition to False
 	pending := metav1.Condition{
 		Type:               TypePending,
@@ -43,7 +33,6 @@ func HandleRunningCondition(ctx context.Context, conditions *[]metav1.Condition,
 	}
 
 	pending.Message = PendingTypeDeprecationMsg + pending.Message
-	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Pending condition to False", resourceName))
 	meta.SetStatusCondition(conditions, pending)
 
 	// Set Running condition to True
@@ -56,6 +45,5 @@ func HandleRunningCondition(ctx context.Context, conditions *[]metav1.Condition,
 	}
 
 	running.Message = RunningTypeDeprecationMsg + running.Message
-	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Running condition to True", resourceName))
 	meta.SetStatusCondition(conditions, running)
 }

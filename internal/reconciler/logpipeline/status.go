@@ -118,13 +118,13 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
 
 	if pipeline.Spec.Output.IsLokiDefined() {
-		conditions.HandlePendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonUnsupportedLokiOutput, pipeline.Name, conditions.LogsMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonUnsupportedLokiOutput, conditions.LogsMessage)
 		return
 	}
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline)
 	if referencesNonExistentSecret {
-		conditions.HandlePendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonReferencedSecretMissing, pipeline.Name, conditions.LogsMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonReferencedSecretMissing, conditions.LogsMessage)
 		return
 	}
 
@@ -135,17 +135,9 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 	}
 
 	if !fluentBitReady {
-		conditions.HandlePendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonFluentBitDSNotReady, pipeline.Name, conditions.LogsMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonFluentBitDSNotReady, conditions.LogsMessage)
 		return
 	}
 
-	conditions.HandleRunningCondition(
-		ctx,
-		&pipeline.Status.Conditions,
-		pipeline.Generation,
-		conditions.ReasonFluentBitDSReady,
-		conditions.ReasonFluentBitDSNotReady,
-		pipeline.Name,
-		conditions.LogsMessage,
-	)
+	conditions.HandleRunningCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonFluentBitDSReady, conditions.ReasonFluentBitDSNotReady, conditions.LogsMessage)
 }
