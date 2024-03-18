@@ -181,6 +181,6 @@ func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetr
 	conditions.HandleRunningCondition(&pipeline.Status.Conditions, pipeline.Generation,
 		conditions.ReasonTraceGatewayDeploymentReady,
 		conditions.ReasonTraceGatewayDeploymentNotReady,
-		conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing),
+		conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady),
 		conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady))
 }
