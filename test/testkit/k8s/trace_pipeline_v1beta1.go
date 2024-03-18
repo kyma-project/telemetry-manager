@@ -19,7 +19,7 @@ type tracePipelineV1Beta1 struct {
 	otlpEndpointRef *telemetryv1beta1.SecretKeyRef
 	otlpEndpoint    string
 	tls             *telemetryv1beta1.OTLPTLS
-	protocol        string
+	protocol        telemetryv1beta1.OTLPProtocol
 	endpointPath    string
 }
 
@@ -73,7 +73,7 @@ func (p *tracePipelineV1Beta1) Persistent(persistent bool) *tracePipelineV1Beta1
 	return p
 }
 
-func (p *tracePipelineV1Beta1) WithProtocol(protocol string) *tracePipelineV1Beta1 {
+func (p *tracePipelineV1Beta1) WithProtocol(protocol telemetryv1beta1.OTLPProtocol) *tracePipelineV1Beta1 {
 	p.protocol = protocol
 	return p
 }
