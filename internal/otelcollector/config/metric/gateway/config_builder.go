@@ -156,7 +156,7 @@ func declareOTLPExporter(ctx context.Context, otlpExporterBuilder *otlpexporter.
 
 	maps.Copy(envVars, otlpExporterEnvVars)
 
-	exporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
+	exporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp.Protocol, pipeline.Name)
 	cfg.Exporters[exporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	return nil
@@ -224,7 +224,7 @@ func makeNamespaceFilterID(pipelineName string, inputSourceType metric.InputSour
 }
 
 func makeOTLPExporterID(pipeline *telemetryv1alpha1.MetricPipeline) string {
-	return otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
+	return otlpexporter.ExporterID(pipeline.Spec.Output.Otlp.Protocol, pipeline.Name)
 }
 
 func isPrometheusInputEnabled(input telemetryv1alpha1.MetricPipelineInput) bool {

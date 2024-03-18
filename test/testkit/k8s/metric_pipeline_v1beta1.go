@@ -25,7 +25,7 @@ type metricPipelineV1Beta1 struct {
 	istio           *telemetryv1beta1.MetricPipelineIstioInput
 	otlp            *telemetryv1beta1.MetricPipelineOTLPInput
 	tls             *telemetryv1beta1.OTLPTLS
-	protocol        string
+	protocol        telemetryv1beta1.OTLPProtocol
 	endpointPath    string
 }
 
@@ -169,7 +169,7 @@ func (p *metricPipelineV1Beta1) WithTLS(certs tls.Certs) *metricPipelineV1Beta1 
 	return p
 }
 
-func (p *metricPipelineV1Beta1) WithProtocol(protocol string) *metricPipelineV1Beta1 {
+func (p *metricPipelineV1Beta1) WithProtocol(protocol telemetryv1beta1.OTLPProtocol) *metricPipelineV1Beta1 {
 	p.protocol = protocol
 	return p
 }

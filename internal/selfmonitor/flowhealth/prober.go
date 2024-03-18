@@ -3,7 +3,6 @@ package flowhealth
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/api"
@@ -11,6 +10,8 @@ import (
 	"github.com/prometheus/common/model"
 	"k8s.io/apimachinery/pkg/types"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
 
@@ -80,23 +81,23 @@ func (p *Prober) Probe(ctx context.Context, pipelineName string) (ProbeResult, e
 }
 
 func (p *Prober) allDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	exporterSentFiring := p.hasFiringExporterAlert(alerts, alertNameExporterSentData, pipelineName)
-	exporterDroppedFiring := p.hasFiringExporterAlert(alerts, alertNameExporterDroppedData, pipelineName)
-	exporterEnqueueFailedFiring := p.hasFiringExporterAlert(alerts, alertNameExporterEnqueueFailed, pipelineName)
+	exporterSentFiring := p.hasFiringAlertForPipeline(alerts, alertNameExporterSentData, pipelineName)
+	exporterDroppedFiring := p.hasFiringAlertForPipeline(alerts, alertNameExporterDroppedData, pipelineName)
+	exporterEnqueueFailedFiring := p.hasFiringAlertForPipeline(alerts, alertNameExporterEnqueueFailed, pipelineName)
 
 	return !exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring)
 }
 
 func (p *Prober) someDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	exporterSentFiring := p.hasFiringExporterAlert(alerts, alertNameExporterSentData, pipelineName)
-	exporterDroppedFiring := p.hasFiringExporterAlert(alerts, alertNameExporterDroppedData, pipelineName)
-	exporterEnqueueFailedFiring := p.hasFiringExporterAlert(alerts, alertNameExporterEnqueueFailed, pipelineName)
+	exporterSentFiring := p.hasFiringAlertForPipeline(alerts, alertNameExporterSentData, pipelineName)
+	exporterDroppedFiring := p.hasFiringAlertForPipeline(alerts, alertNameExporterDroppedData, pipelineName)
+	exporterEnqueueFailedFiring := p.hasFiringAlertForPipeline(alerts, alertNameExporterEnqueueFailed, pipelineName)
 
 	return exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring)
 }
 
 func (p *Prober) queueAlmostFull(alerts []promv1.Alert, pipelineName string) bool {
-	return p.hasFiringExporterAlert(alerts, alertNameExporterQueueAlmostFull, pipelineName)
+	return p.hasFiringAlertForPipeline(alerts, alertNameExporterQueueAlmostFull, pipelineName)
 }
 
 func (p *Prober) throttling(alerts []promv1.Alert) bool {
@@ -104,9 +105,9 @@ func (p *Prober) throttling(alerts []promv1.Alert) bool {
 }
 
 func (p *Prober) healthy(alerts []promv1.Alert, pipelineName string) bool {
-	return !(p.hasFiringExporterAlert(alerts, alertNameExporterDroppedData, pipelineName) ||
-		p.hasFiringExporterAlert(alerts, alertNameExporterQueueAlmostFull, pipelineName) ||
-		p.hasFiringExporterAlert(alerts, alertNameExporterEnqueueFailed, pipelineName) ||
+	return !(p.hasFiringAlertForPipeline(alerts, alertNameExporterDroppedData, pipelineName) ||
+		p.hasFiringAlertForPipeline(alerts, alertNameExporterQueueAlmostFull, pipelineName) ||
+		p.hasFiringAlertForPipeline(alerts, alertNameExporterEnqueueFailed, pipelineName) ||
 		p.hasFiringAlert(alerts, alertNameReceiverRefusedData))
 }
 
@@ -125,29 +126,35 @@ func (p *Prober) retrieveAlerts(ctx context.Context) ([]promv1.Alert, error) {
 func (p *Prober) hasFiringAlert(alerts []promv1.Alert, alertName string) bool {
 	for _, alert := range alerts {
 		if alert.State == promv1.AlertStateFiring &&
-			p.hasMatchingAlertName(alert, alertName) {
+			p.matchesAlertName(alert, alertName) {
 			return true
 		}
 	}
 	return false
 }
 
-func (p *Prober) hasFiringExporterAlert(alerts []promv1.Alert, alertName, pipelineName string) bool {
+func (p *Prober) hasFiringAlertForPipeline(alerts []promv1.Alert, alertName, pipelineName string) bool {
 	for _, alert := range alerts {
 		if alert.State == promv1.AlertStateFiring &&
-			p.hasMatchingAlertName(alert, alertName) &&
-			hasMatchingLabelValue(alert, "exporter", pipelineName) {
+			p.matchesAlertName(alert, alertName) &&
+			matchesPipeline(alert, pipelineName) {
 			return true
 		}
 	}
 	return false
 }
 
-func (p *Prober) hasMatchingAlertName(alert promv1.Alert, alertName string) bool {
-	return hasMatchingLabelValue(alert, model.AlertNameLabel, p.nameDecorator(alertName))
+func (p *Prober) matchesAlertName(alert promv1.Alert, alertName string) bool {
+	v, ok := alert.Labels[model.AlertNameLabel]
+	return ok && string(v) == p.nameDecorator(alertName)
 }
 
-func hasMatchingLabelValue(alert promv1.Alert, labelName, labelValue string) bool {
-	v, ok := alert.Labels[model.LabelName(labelName)]
-	return ok && strings.Contains(string(v), labelValue)
+func matchesPipeline(alert promv1.Alert, pipelineName string) bool {
+	labelValue, ok := alert.Labels[model.LabelName("exporter")]
+	if !ok {
+		return false
+	}
+
+	exportedID := string(labelValue)
+	return otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolHTTP, pipelineName) == exportedID || otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolGRPC, pipelineName) == exportedID
 }
