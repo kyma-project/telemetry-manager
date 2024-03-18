@@ -195,7 +195,7 @@ func TestTraceComponentsCheck(t *testing.T) {
 				Type:    "TraceComponentsHealthy",
 				Status:  "False",
 				Reason:  "GatewayThrottling",
-				Message: "",
+				Message: "Trace collector experiencing high influx: Unable to receive metrics at current rate",
 			},
 		},
 	}
