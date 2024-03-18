@@ -172,7 +172,7 @@ During the evaluation, the following potential problems and risks have been iden
 
 ### Scope and Goals
 
-Istio comes with extension providers to configure its telemetry. The [EnvoyOpenTelemetryLogProvider](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider-EnvoyOpenTelemetryLogProvider) allows to send access logs to an OTLP service. This part of the PoC should compare this extension provider in combination with the OpenTelemetry Collector to the [EnvoyFileAccessLogProvider](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider-EnvoyFileAccessLogProvider), which is currently used by Kyma's [Istio module](https://github.com/kyma-project/istio).
+Istio comes with extension providers to configure its telemetry. The [EnvoyOpenTelemetryLogProvider](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider-EnvoyOpenTelemetryLogProvider) supports sending access logs to an OTLP service. This part of the PoC compares the EnvoyOpenTelemetryLogProvider (in combination with the OpenTelemetry Collector) to the [EnvoyFileAccessLogProvider](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider-EnvoyFileAccessLogProvider), which is currently used by Kyma's [Istio module](https://github.com/kyma-project/istio).
 
 ### Setup for Istio Access Logs
 
@@ -180,7 +180,7 @@ To enable OpenTelemetry based access logs in Istio, execute the following steps:
 
 1. Deploy log-gateway as described above.
 
-2. Add the following envoyOtelAls extension provider to the extensionProviders list of the service mesh config by editing the `istio` ConfigMap in the `istio-system` namespace:
+2. In the `istio-system` namespace, edit the `istio` ConfigMap and add the following envoyOtelAls extension provider to the extensionProviders list of the service mesh config:
 
    ```yaml
    - envoyOtelAls:
@@ -217,7 +217,7 @@ To enable OpenTelemetry based access logs in Istio, execute the following steps:
      name: otlp
    ```
 
-3. Activate extension provider using Telemetry API:
+3. Using the Telemetry API, activate the extension provider:
 
    ```yaml
    apiVersion: telemetry.istio.io/v1alpha1
@@ -233,13 +233,12 @@ To enable OpenTelemetry based access logs in Istio, execute the following steps:
 
 ### Results
 
-The extension provider generates without any `logFormat` configuration access log records having only a log body. For example, this record
+Without any `logFormat` configuration, the extension provider generates access log records that have only a log body. For example, see the following record from the product catalog service of the OpenTelemetry demo application:
 
 ```
 [2024-03-14T14:43:03.130Z] \"POST /oteldemo.CurrencyService/Convert HTTP/2\" 200 - via_upstream - \"-\" 26 19 7 6 \"-\" \"grpc-go/1.46.2\" \"422dff1b-2f95-9d22-87da-b8f2fa491c10\" \"otel-currencyservice:8080\" \"100.64.0.41:8080\" outbound|8080||otel-currencyservice.demo.svc.cluster.local 100.64.0.57:49312 100.106.93.100:8080 100.64.0.57:34402 - default
 ```
 
-from the product catalog service of the OpenTelemetry demo application.
 
 Adding the `logFormat` from the extension provider shown above will result in the following access logs as the following in SAP Cloud Logging:
 
@@ -318,10 +317,10 @@ Adding the `logFormat` from the extension provider shown above will result in th
 }
 ```
 
-The configured labels from the extension provider configuration result in log attributes of the OpenTelemetry log records. The log gateway enriches the log records with resource attributes to fulfill the semantic conventions. The source pod is identified by the k8sattributes processor using the client IP address.
+The configured labels from the extension provider configuration result in log attributes of the OpenTelemetry log records. The log gateway enriches the log records with resource attributes to fulfill the semantic conventions. The source pod is identified by the `k8sattributes` processor using the client IP address.
 
-The OpenTelemetry log specification contains fields for a traceId and spanId. The extension provider does not allow to fill these fields but assign them to a log attribute. This limitation can be corrected by a transform processor in the log gateway. An [issue](https://github.com/istio/istio/issues/49911) has been created for the Istio project.
+The OpenTelemetry log specification contains fields for a traceId and spanId. The extension provider does not allow to fill these fields but assigns them to a log attribute. To mitigate this limitation, we need a transform processor in the log gateway. An [issue](https://github.com/istio/istio/issues/49911) has been created for the Istio project.
 
-The OpenTelemetry [Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/) do not explicitly cover access logs yet. The shown example pick up attribute names from related areas like HTTP and URL where it made sense.
+The OpenTelemetry [Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/) do not explicitly cover access logs yet. The shown example picks up attribute names from related areas like HTTP and URL where it made sense.
 
-We can conclude that the EnvoyOpenTelemetryLogProvider allows to emit access logs to an OTLP endpoint with similar properties that the currently used JSON based format in combination with Fluent Bit provides. Emitting access logs using the OTLP protocol has the advantage that regular Istio sidecar logs can be collected in the same way as regular application logs and are more easily available for troubleshooting if necessary.
+We conclude that the EnvoyOpenTelemetryLogProvider supports emitting access logs to an OTLP endpoint with similar properties that the currently used JSON-based format provides in combination with Fluent Bit. Emitting access logs using the OTLP protocol has the advantage that regular Istio sidecar logs can be collected in the same way as regular application logs and are more easily available for troubleshooting if necessary.
