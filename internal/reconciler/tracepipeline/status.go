@@ -44,7 +44,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	if r.flowHealthProbingEnabled {
 		r.setFlowHealthCondition(ctx, &pipeline)
 	}
-	r.setPendingAndRunningConditions(ctx, &pipeline, withinPipelineCountLimit)
+	r.setLegacyConditions(ctx, &pipeline, withinPipelineCountLimit)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update TracePipeline status: %w", err)
@@ -149,7 +149,7 @@ func flowHealthReasonFor(probeResult flowhealth.ProbeResult) string {
 	return conditions.ReasonFlowHealthy
 }
 
-func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
+func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
 	if !withinPipelineCountLimit {
 		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
 			conditions.ReasonMaxPipelinesExceeded,

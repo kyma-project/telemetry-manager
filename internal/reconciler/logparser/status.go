@@ -36,7 +36,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 	}
 
 	r.setAgentHealthyCondition(ctx, &parser)
-	r.setPendingAndRunningConditions(ctx, &parser)
+	r.setLegacyConditions(ctx, &parser)
 
 	if err := r.Status().Update(ctx, &parser); err != nil {
 		return fmt.Errorf("failed to update LogParser status: %w", err)
@@ -70,7 +70,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, parser *telem
 	meta.SetStatusCondition(&parser.Status.Conditions, condition)
 }
 
-func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, parser *telemetryv1alpha1.LogParser) {
+func (r *Reconciler) setLegacyConditions(ctx context.Context, parser *telemetryv1alpha1.LogParser) {
 	fluentBitReady, err := r.prober.IsReady(ctx, r.config.DaemonSet)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe fluent bit daemonset")

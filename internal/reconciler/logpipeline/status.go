@@ -44,7 +44,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
-	r.setPendingAndRunningConditions(ctx, &pipeline)
+	r.setLegacyConditions(ctx, &pipeline)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update LogPipeline status: %w", err)
@@ -115,7 +115,7 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
 	if pipeline.Spec.Output.IsLokiDefined() {
 		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
 			conditions.ReasonUnsupportedLokiOutput,
