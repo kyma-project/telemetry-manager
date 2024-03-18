@@ -59,7 +59,15 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, parser *telem
 		reason = conditions.ReasonDaemonSetReady
 	}
 
-	meta.SetStatusCondition(&parser.Status.Conditions, conditions.New(conditions.TypeAgentHealthy, reason, status, parser.Generation, conditions.LogsMessage))
+	condition := metav1.Condition{
+		Type:               conditions.TypeAgentHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForLogPipeline(reason),
+		ObservedGeneration: parser.Generation,
+	}
+
+	meta.SetStatusCondition(&parser.Status.Conditions, condition)
 }
 
 func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, parser *telemetryv1alpha1.LogParser) {
