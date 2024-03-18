@@ -116,15 +116,18 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 }
 
 func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-
 	if pipeline.Spec.Output.IsLokiDefined() {
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonUnsupportedLokiOutput, conditions.LogsMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonUnsupportedLokiOutput,
+			conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput))
 		return
 	}
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline)
 	if referencesNonExistentSecret {
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonReferencedSecretMissing, conditions.LogsMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonReferencedSecretMissing,
+			conditions.MessageForLogPipeline(conditions.ReasonReferencedSecretMissing))
 		return
 	}
 
@@ -135,9 +138,15 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 	}
 
 	if !fluentBitReady {
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonFluentBitDSNotReady, conditions.LogsMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonFluentBitDSNotReady,
+			conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady))
 		return
 	}
 
-	conditions.HandleRunningCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonFluentBitDSReady, conditions.ReasonFluentBitDSNotReady, conditions.LogsMessage)
+	conditions.HandleRunningCondition(&pipeline.Status.Conditions, pipeline.Generation,
+		conditions.ReasonFluentBitDSReady,
+		conditions.ReasonFluentBitDSNotReady,
+		conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSReady),
+		conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady))
 }

@@ -64,7 +64,7 @@ var metricPipelineMessages = map[string]string{
 	ReasonMetricComponentsRunning: "All metric components are running",
 }
 
-var TracesMessage = map[string]string{
+var tracePipelineMessages = map[string]string{
 	ReasonDeploymentNotReady:             "Trace gateway Deployment is not ready",
 	ReasonDeploymentReady:                "Trace gateway Deployment is ready",
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
@@ -98,7 +98,7 @@ func MessageForLogPipeline(reason string) string {
 }
 
 func MessageForTracePipeline(reason string) string {
-	return message(reason, commonMessages, TracesMessage)
+	return message(reason, commonMessages, tracePipelineMessages)
 }
 
 func MessageForMetricPipeline(reason string) string {

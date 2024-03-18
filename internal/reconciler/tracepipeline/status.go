@@ -151,13 +151,17 @@ func flowHealthReasonFor(probeResult flowhealth.ProbeResult) string {
 
 func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
 	if !withinPipelineCountLimit {
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonMaxPipelinesExceeded, conditions.TracesMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonMaxPipelinesExceeded,
+			conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded))
 		return
 	}
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline)
 	if referencesNonExistentSecret {
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonReferencedSecretMissing, conditions.TracesMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonReferencedSecretMissing,
+			conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing))
 		return
 	}
 
@@ -168,9 +172,15 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 	}
 
 	if !gatewayReady {
-		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonTraceGatewayDeploymentNotReady, conditions.TracesMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonTraceGatewayDeploymentNotReady,
+			conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady))
 		return
 	}
 
-	conditions.HandleRunningCondition(&pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonTraceGatewayDeploymentReady, conditions.ReasonTraceGatewayDeploymentNotReady, conditions.TracesMessage)
+	conditions.HandleRunningCondition(&pipeline.Status.Conditions, pipeline.Generation,
+		conditions.ReasonTraceGatewayDeploymentReady,
+		conditions.ReasonTraceGatewayDeploymentNotReady,
+		conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing),
+		conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady))
 }

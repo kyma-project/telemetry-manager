@@ -18,8 +18,8 @@ func TestMessageFor(t *testing.T) {
 		logsDaemonSetNotReadyMessage := MessageFor(ReasonDaemonSetNotReady, LogsMessage)
 		require.Equal(t, LogsMessage[ReasonDaemonSetNotReady], logsDaemonSetNotReadyMessage)
 
-		tracesDeploymentNotReadyMessage := MessageFor(ReasonDeploymentNotReady, TracesMessage)
-		require.Equal(t, TracesMessage[ReasonDeploymentNotReady], tracesDeploymentNotReadyMessage)
+		tracesDeploymentNotReadyMessage := MessageFor(ReasonDeploymentNotReady, tracePipelineMessages)
+		require.Equal(t, tracePipelineMessages[ReasonDeploymentNotReady], tracesDeploymentNotReadyMessage)
 
 		metricsDeploymentNotReadyMessage := MessageFor(ReasonDeploymentNotReady, metricPipelineMessages)
 		require.Equal(t, metricPipelineMessages[ReasonDeploymentNotReady], metricsDeploymentNotReadyMessage)
@@ -52,7 +52,7 @@ func TestHandlePendingCondition(t *testing.T) {
 		generation := int64(1)
 		reason := ReasonFluentBitDSNotReady
 
-		HandlePendingCondition(&conditions, generation, reason, LogsMessage)
+		HandlePendingCondition(&conditions, generation, reason, MessageForTracePipeline(reason))
 
 		conditionsSize := len(conditions)
 		pendingCond := conditions[conditionsSize-1]
@@ -99,7 +99,7 @@ func TestHandlePendingCondition(t *testing.T) {
 		generation := int64(1)
 		reason := ReasonFluentBitDSNotReady
 
-		HandlePendingCondition(&conditions, generation, reason, LogsMessage)
+		HandlePendingCondition(&conditions, generation, reason, MessageForLogPipeline(reason))
 
 		runningCond := meta.FindStatusCondition(conditions, TypeRunning)
 		require.Nil(t, runningCond)
@@ -138,7 +138,7 @@ func TestHandleRunningCondition(t *testing.T) {
 		runningReason := ReasonFluentBitDSReady
 		pendingReason := ReasonFluentBitDSNotReady
 
-		HandleRunningCondition(&conditions, generation, runningReason, pendingReason, LogsMessage)
+		HandleRunningCondition(&conditions, generation, runningReason, pendingReason, MessageForLogPipeline(runningReason), MessageForLogPipeline(pendingReason))
 
 		conditionsSize := len(conditions)
 
