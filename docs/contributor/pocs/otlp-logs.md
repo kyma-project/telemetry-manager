@@ -1,6 +1,9 @@
 # OpenTelemetry Logs PoC
 
-This PoC researches three main aspects of OpenTelemetry logs: [Log Record Parsing](#log-record-parsing), [Buffering and Backpressure](#buffering-and-backpressure), and integrating with Istio to process [Istio Access Logs](#istio-access-logs).
+This PoC researches the following main aspects of OpenTelemetry logs:
+- [Log Record Parsing](#log-record-parsing)
+- [Buffering and Backpressure](#buffering-and-backpressure)
+- Integrating with Istio to process [Istio Access Logs](#istio-access-logs)
 
 ## Log Record Parsing
 
