@@ -44,7 +44,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
-	r.setPendingAndRunningConditions(ctx, &pipeline)
+	r.setLegacyConditions(ctx, &pipeline)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update LogPipeline status: %w", err)
@@ -79,7 +79,15 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 		reason = conditions.ReasonDaemonSetReady
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeAgentHealthy, reason, status, pipeline.Generation, conditions.LogsMessage))
+	condition := metav1.Condition{
+		Type:               conditions.TypeAgentHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForLogPipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
 func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
@@ -96,19 +104,30 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 		reason = conditions.ReasonUnsupportedLokiOutput
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation, conditions.LogsMessage))
+	condition := metav1.Condition{
+		Type:               conditions.TypeConfigurationGenerated,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForLogPipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-
+func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
 	if pipeline.Spec.Output.IsLokiDefined() {
-		conditions.HandlePendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonUnsupportedLokiOutput, pipeline.Name, conditions.LogsMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonUnsupportedLokiOutput,
+			conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput))
 		return
 	}
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline)
 	if referencesNonExistentSecret {
-		conditions.HandlePendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonReferencedSecretMissing, pipeline.Name, conditions.LogsMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonReferencedSecretMissing,
+			conditions.MessageForLogPipeline(conditions.ReasonReferencedSecretMissing))
 		return
 	}
 
@@ -119,17 +138,15 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 	}
 
 	if !fluentBitReady {
-		conditions.HandlePendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonFluentBitDSNotReady, pipeline.Name, conditions.LogsMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonFluentBitDSNotReady,
+			conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady))
 		return
 	}
 
-	conditions.HandleRunningCondition(
-		ctx,
-		&pipeline.Status.Conditions,
-		pipeline.Generation,
+	conditions.HandleRunningCondition(&pipeline.Status.Conditions, pipeline.Generation,
 		conditions.ReasonFluentBitDSReady,
 		conditions.ReasonFluentBitDSNotReady,
-		pipeline.Name,
-		conditions.LogsMessage,
-	)
+		conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSReady),
+		conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady))
 }

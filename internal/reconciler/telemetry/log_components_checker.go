@@ -86,7 +86,7 @@ func (l *logComponentsChecker) determineConditionStatus(reason string) metav1.Co
 
 func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, reason string) string {
 	if reason != conditions.ReasonResourceBlocksDeletion {
-		return conditions.MessageFor(reason, conditions.LogsMessage)
+		return conditions.MessageForLogPipeline(reason)
 	}
 
 	return generateDeletionBlockedMessage(blockingResources{
