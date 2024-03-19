@@ -56,8 +56,10 @@ type WebhookConfig struct {
 }
 
 type SelfMonitorConfig struct {
-	Enabled bool
-	Config  selfmonitor.Config
+	Enabled       bool
+	Config        selfmonitor.Config
+	WebhookURL    string
+	WebhookScheme string
 }
 
 type healthCheckers struct {
@@ -146,8 +148,11 @@ func (r *Reconciler) reconcileSelfMonitor(ctx context.Context, telemetry operato
 		return nil
 	}
 
-	scrapeNamespace := r.config.SelfMonitor.Config.Namespace
-	selfMonitorConfig := config.MakeConfig(scrapeNamespace)
+	selfMonitorConfig := config.MakeConfig(config.BuilderConfig{
+		ScrapeNamespace: r.config.SelfMonitor.Config.Namespace,
+		WebhookURL:      r.config.SelfMonitor.WebhookURL,
+		WebhookScheme:   r.config.SelfMonitor.WebhookScheme,
+	})
 	selfMonitorConfigYAML, err := yaml.Marshal(selfMonitorConfig)
 	if err != nil {
 		return fmt.Errorf("failed to marshal selfmonitor config: %w", err)

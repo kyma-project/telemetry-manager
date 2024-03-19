@@ -36,6 +36,7 @@ spec:
         - --metric-gateway-priority-class=telemetry-priority-class
         - --trace-collector-priority-class=telemetry-priority-class
         - --validating-webhook-enabled=true
+        - --self-monitor-enabled=true
         image: controller:latest
         name: manager
         securityContext:
