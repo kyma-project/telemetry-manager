@@ -52,14 +52,14 @@ func TestHandlePendingCondition(t *testing.T) {
 		generation := int64(1)
 		reason := ReasonFluentBitDSNotReady
 
-		HandlePendingCondition(&conditions, generation, reason, MessageForTracePipeline(reason))
+		HandlePendingCondition(&conditions, generation, reason, MessageForLogPipeline(reason))
 
 		conditionsSize := len(conditions)
 		pendingCond := conditions[conditionsSize-1]
 		require.Equal(t, TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, reason, pendingCond.Reason)
-		pendingCondMsg := PendingTypeDeprecationMsg + MessageForTracePipeline(reason)
+		pendingCondMsg := PendingTypeDeprecationMsg + MessageForLogPipeline(reason)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
