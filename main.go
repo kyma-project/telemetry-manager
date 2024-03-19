@@ -373,6 +373,10 @@ func main() {
 		enableWebhookServer(mgr, webhookConfig)
 	}
 
+	if enableWebhook && enableSelfMonitor {
+		mgr.GetWebhookServer().Register("/self-monitor-alerts")
+	}
+
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
