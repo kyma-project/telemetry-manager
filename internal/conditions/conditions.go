@@ -92,18 +92,18 @@ var logPipelineMessages = map[string]string{
 }
 
 func MessageForLogPipeline(reason string) string {
-	return message(reason, commonMessages, logPipelineMessages)
+	return message(reason, logPipelineMessages)
 }
 
 func MessageForTracePipeline(reason string) string {
-	return message(reason, commonMessages, tracePipelineMessages)
+	return message(reason, tracePipelineMessages)
 }
 
 func MessageForMetricPipeline(reason string) string {
-	return message(reason, commonMessages, metricPipelineMessages)
+	return message(reason, metricPipelineMessages)
 }
 
-func message(reason string, commonMessages, specializedMessages map[string]string) string {
+func message(reason string, specializedMessages map[string]string) string {
 	if condMessage, found := commonMessages[reason]; found {
 		return condMessage
 	}
