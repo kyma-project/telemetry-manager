@@ -3,6 +3,7 @@ package logpipeline
 import (
 	"context"
 	"fmt"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -14,6 +15,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
+
+const twoWeeks = 2 * 7 * 24 * time.Hour
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
 	var pipeline telemetryv1alpha1.LogPipeline
@@ -97,6 +100,10 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation, conditions.LogsMessage))
+}
+
+func (r *Reconciler) setCertificateAboutExpireCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+
 }
 
 func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
