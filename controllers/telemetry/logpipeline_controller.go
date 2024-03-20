@@ -32,28 +32,27 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline"
 )
 
-// LogPipelineReconciler reconciles a LogPipeline object
-type LogPipelineReconciler struct {
+// LogPipelineController reconciles a LogPipeline object
+type LogPipelineController struct {
 	client.Client
 
 	reconciler *logpipeline.Reconciler
-
-	config logpipeline.Config
+	config     logpipeline.Config
 }
 
-func NewLogPipelineReconciler(client client.Client, reconciler *logpipeline.Reconciler, config logpipeline.Config) *LogPipelineReconciler {
-	return &LogPipelineReconciler{
+func NewLogPipelineController(client client.Client, reconciler *logpipeline.Reconciler, config logpipeline.Config) *LogPipelineController {
+	return &LogPipelineController{
 		Client:     client,
 		reconciler: reconciler,
 		config:     config,
 	}
 }
 
-func (r *LogPipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *LogPipelineController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	return r.reconciler.Reconcile(ctx, req)
 }
 
-func (r *LogPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *LogPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1alpha1.LogPipeline{})
 
 	ownedResourceTypesToWatch := []client.Object{

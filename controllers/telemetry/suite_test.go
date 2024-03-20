@@ -126,14 +126,14 @@ var _ = BeforeSuite(func() {
 	}
 	Expect(k8sClient.Create(ctx, kymaSystemNamespace)).Should(Succeed())
 
-	logpipelineController := NewLogPipelineReconciler(
+	logpipelineController := NewLogPipelineController(
 		client,
 		logpipeline.NewReconciler(client, testLogPipelineConfig, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
 		testLogPipelineConfig)
 	err = logpipelineController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
-	logparserReconciler := NewLogParserReconciler(
+	logparserReconciler := NewLogParserController(
 		client,
 		logparser.NewReconciler(
 			client,
@@ -154,7 +154,7 @@ var _ = BeforeSuite(func() {
 	err = tracepipelineReconciler.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
-	metricPipelineReconciler := NewMetricPipelineReconciler(
+	metricPipelineReconciler := NewMetricPipelineController(
 		client,
 		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, false, nil, overridesHandler))
 	err = metricPipelineReconciler.SetupWithManager(mgr)
