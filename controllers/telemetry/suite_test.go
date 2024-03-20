@@ -149,6 +149,7 @@ var _ = BeforeSuite(func() {
 
 	tracepipelineReconciler := NewTracePipelineReconciler(
 		client,
+		nil,
 		tracepipeline.NewReconciler(client, testTracePipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, false, nil, overridesHandler),
 	)
 	err = tracepipelineReconciler.SetupWithManager(mgr)
@@ -156,6 +157,7 @@ var _ = BeforeSuite(func() {
 
 	metricPipelineReconciler := NewMetricPipelineReconciler(
 		client,
+		nil,
 		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, false, nil, overridesHandler))
 	err = metricPipelineReconciler.SetupWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())

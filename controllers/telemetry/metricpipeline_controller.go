@@ -38,6 +38,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // MetricPipelineReconciler reconciles a MetricPipeline object
@@ -62,6 +63,11 @@ func (r *MetricPipelineReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 // SetupWithManager sets up the controller with the Manager.
 func (r *MetricPipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1alpha1.MetricPipeline{})
+
+	b.WatchesRawSource(
+		&source.Channel{Source: r.reconcileTriggerChan},
+		handler.EnqueueRequestsFromMapFunc(r.mapReconcileTriggerEvent),
+	)
 
 	ownedResourceTypesToWatch := []client.Object{
 		&appsv1.Deployment{},
@@ -118,6 +124,14 @@ func (r *MetricPipelineReconciler) mapTelemetryChanges(ctx context.Context, obje
 		return nil
 	}
 
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+	return requests
+}
+
+func (r *MetricPipelineReconciler) mapReconcileTriggerEvent(ctx context.Context, _ client.Object) []reconcile.Request {
 	requests, err := r.createRequestsForAllPipelines(ctx)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
