@@ -560,7 +560,7 @@ func createTracePipelineController(client client.Client, flowHealthProber *flowh
 		MaxPipelines:           maxTracePipelines,
 	}
 
-	return telemetrycontrollers.NewTracePipelineReconciler(
+	return telemetrycontrollers.NewTracePipelineController(
 		client,
 		tracepipeline.NewReconciler(
 			client,

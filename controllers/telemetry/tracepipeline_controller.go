@@ -45,7 +45,7 @@ type TracePipelineController struct {
 	reconciler *tracepipeline.Reconciler
 }
 
-func NewTracePipelineReconciler(client client.Client, reconciler *tracepipeline.Reconciler) *TracePipelineController {
+func NewTracePipelineController(client client.Client, reconciler *tracepipeline.Reconciler) *TracePipelineController {
 	return &TracePipelineController{
 		Client:     client,
 		reconciler: reconciler,
