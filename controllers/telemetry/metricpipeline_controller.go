@@ -37,19 +37,21 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/predicate"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
 // MetricPipelineReconciler reconciles a MetricPipeline object
 type MetricPipelineReconciler struct {
 	client.Client
-
-	reconciler *metricpipeline.Reconciler
+	reconcileTriggerChan <-chan event.GenericEvent
+	reconciler           *metricpipeline.Reconciler
 }
 
-func NewMetricPipelineReconciler(client client.Client, reconciler *metricpipeline.Reconciler) *MetricPipelineReconciler {
+func NewMetricPipelineReconciler(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, reconciler *metricpipeline.Reconciler) *MetricPipelineReconciler {
 	return &MetricPipelineReconciler{
-		Client:     client,
-		reconciler: reconciler,
+		Client:               client,
+		reconcileTriggerChan: reconcileTriggerChan,
+		reconciler:           reconciler,
 	}
 }
 

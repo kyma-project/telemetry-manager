@@ -76,6 +76,7 @@ import (
 	//nolint:gosec // pprof package is required for performance analysis.
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
 var (
@@ -539,7 +540,7 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 		admission.NewDecoder(scheme))
 }
 
-func createTracePipelineReconciler(client client.Client, flowHealthProber *flowhealth.Prober) *telemetrycontrollers.TracePipelineReconciler {
+func createTracePipelineReconciler(client client.Client, flowHealthProber *flowhealth.Prober, reconcileTriggerChan <-chan event.GenericEvent) *telemetrycontrollers.TracePipelineReconciler {
 	config := tracepipeline.Config{
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
@@ -578,7 +579,7 @@ func createTracePipelineReconciler(client client.Client, flowHealthProber *flowh
 	)
 }
 
-func createMetricPipelineReconciler(client client.Client, flowHealthProber *flowhealth.Prober) *telemetrycontrollers.MetricPipelineReconciler {
+func createMetricPipelineReconciler(client client.Client, flowHealthProber *flowhealth.Prober, reconcileTriggerChan <-chan event.GenericEvent) *telemetrycontrollers.MetricPipelineReconciler {
 	config := metricpipeline.Config{
 		Agent: otelcollector.AgentConfig{
 			Config: otelcollector.Config{
