@@ -122,7 +122,9 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 		reason = conditions.ReasonExpiredTLSCert
 	}
 
-	if time.Until(certValidationResult.Validity) <= twoWeeks {
+	//ensure not expired and about to expire
+	validUntil := time.Until(certValidationResult.Validity)
+	if validUntil > 0 && validUntil <= twoWeeks {
 		status = metav1.ConditionTrue
 		reason = conditions.ReasonTLSCertAboutToExpire
 	}
