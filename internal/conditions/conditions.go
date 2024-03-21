@@ -32,6 +32,10 @@ const (
 	ReasonBufferFillingUp         = "BufferFillingUp"
 	ReasonGatewayThrottling       = "GatewayThrottling"
 	ReasonFlowHealthy             = "Healthy"
+	ReasonInvalidTLSCert          = "InvalidTLSCert"
+	ReasonInvalidTLSKey           = "InvalidTLSKey"
+	ReasonExpiredTLSCert          = "ExpiredTLSCert"
+	ReasonTLSCertAboutToExpire    = "TLSCertAboutToExpire"
 
 	ReasonMetricAgentNotRequired  = "AgentNotRequired"
 	ReasonMetricComponentsRunning = "MetricComponentsRunning"
@@ -89,6 +93,10 @@ var logPipelineMessages = map[string]string{
 	ReasonFluentBitDSReady:      "Fluent Bit DaemonSet is ready",
 	ReasonUnsupportedLokiOutput: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
 	ReasonLogComponentsRunning:  "All log components are running",
+	ReasonInvalidTLSCert:        "Invalid TLS certificate",
+	ReasonInvalidTLSKey:         "Invalid TLS key",
+	ReasonExpiredTLSCert:        "Expired TLS certificate",
+	ReasonTLSCertAboutToExpire:  "TLS certificate is about to expire",
 }
 
 func MessageForLogPipeline(reason string) string {

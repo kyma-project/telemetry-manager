@@ -3,6 +3,7 @@ package logpipeline
 import (
 	"context"
 	"fmt"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -14,6 +15,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
+
+const twoWeeks = time.Hour * 24 * 7 * 2
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
 	var pipeline telemetryv1alpha1.LogPipeline
@@ -93,7 +96,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonConfigurationGenerated
-
+	certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator, r.Client)
 	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonReferencedSecretMissing
@@ -102,6 +105,26 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	if pipeline.Spec.Output.IsLokiDefined() {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonUnsupportedLokiOutput
+	}
+
+	if !certValidationResult.CertValid {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonInvalidTLSCert
+	}
+
+	if !certValidationResult.PrivateKeyValid {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonInvalidTLSKey
+	}
+
+	if time.Now().After(certValidationResult.Validity) {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonExpiredTLSCert
+	}
+
+	if certValidationResult.Validity.Sub(time.Now()) <= twoWeeks {
+		status = metav1.ConditionTrue
+		reason = conditions.ReasonTLSCertAboutToExpire
 	}
 
 	condition := metav1.Condition{
