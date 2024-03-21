@@ -19,7 +19,8 @@ package logpipeline
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/tls/cert"
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
-	"time"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -39,6 +39,7 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/tls/cert"
 )
 
 type Config struct {
@@ -65,6 +66,7 @@ type DaemonSetAnnotator interface {
 	SetAnnotation(ctx context.Context, name types.NamespacedName, key, value string) error
 }
 
+//go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
 	ValidateCertificate(certPEM []byte, keyPEM []byte) cert.TLSCertValidationResult
 }
@@ -341,8 +343,21 @@ func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1
 	certValue := pipeline.Spec.Output.HTTP.TLSConfig.Cert
 	keyValue := pipeline.Spec.Output.HTTP.TLSConfig.Key
 
-	certData, _ := resolveValue(ctx, client, *certValue)
-	keyData, _ := resolveValue(ctx, client, *keyValue)
+	certData, err := resolveValue(ctx, client, *certValue)
+
+	if err != nil {
+		return cert.TLSCertValidationResult{
+			CertValid: false,
+		}
+	}
+
+	keyData, err := resolveValue(ctx, client, *keyValue)
+
+	if err != nil {
+		return cert.TLSCertValidationResult{
+			PrivateKeyValid: false,
+		}
+	}
 
 	return validator.ValidateCertificate(certData, keyData)
 

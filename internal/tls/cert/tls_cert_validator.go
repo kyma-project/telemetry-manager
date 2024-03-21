@@ -1,10 +1,12 @@
 package cert
 
 import (
-	_ "crypto"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"time"
+
+	_ "crypto"
 )
 
 type TLSCertValidator struct {
@@ -24,23 +26,13 @@ func (tcv *TLSCertValidator) ValidateCertificate(certPEM []byte, keyPEM []byte) 
 	}
 
 	// Parse the certificate
-	block, _ := pem.Decode(certPEM)
-	if block == nil {
-		result.CertValid = false
-	}
-	cert, err := x509.ParseCertificate(block.Bytes)
+	cert, err := parseCertificate(certPEM)
 	if err != nil {
 		result.CertValid = false
 	}
 
 	// Parse the private key
-	keyBlock, _ := pem.Decode(keyPEM)
-	if keyBlock == nil {
-		result.PrivateKeyValid = false
-	}
-
-	_, err = x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
-	if err != nil {
+	if _, err := parsePrivateKey(keyPEM); err != nil {
 		result.PrivateKeyValid = false
 	}
 
@@ -49,4 +41,20 @@ func (tcv *TLSCertValidator) ValidateCertificate(certPEM []byte, keyPEM []byte) 
 	}
 
 	return result
+}
+
+func parseCertificate(certPEM []byte) (*x509.Certificate, error) {
+	block, _ := pem.Decode(certPEM)
+	if block == nil {
+		return nil, fmt.Errorf("failed to decode PEM block containing certificate")
+	}
+	return x509.ParseCertificate(block.Bytes)
+}
+
+func parsePrivateKey(keyPEM []byte) (interface{}, error) {
+	block, _ := pem.Decode(keyPEM)
+	if block == nil {
+		return nil, fmt.Errorf("failed to decode PEM block containing private key")
+	}
+	return x509.ParsePKCS8PrivateKey(block.Bytes)
 }

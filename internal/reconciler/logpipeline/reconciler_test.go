@@ -3,7 +3,9 @@ package logpipeline
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,6 +15,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/tls/cert"
 )
 
 func TestGetDeployableLogPipelines(t *testing.T) {
@@ -116,7 +120,13 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 			_ = telemetryv1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-			deployablePipelines := getDeployableLogPipelines(ctx, test.pipelines, fakeClient)
+			validatorStub := &mocks.TLSCertValidator{}
+			validatorStub.On("ValidateCertificate", mock.Anything, mock.Anything).Return(cert.TLSCertValidationResult{
+				CertValid:       true,
+				PrivateKeyValid: true,
+				Validity:        time.Now().Add(time.Hour * 24 * 365),
+			})
+			deployablePipelines := getDeployableLogPipelines(ctx, test.pipelines, fakeClient, validatorStub)
 			for _, pipeline := range test.pipelines {
 				if test.deployablePipelines == true {
 					require.Contains(t, deployablePipelines, pipeline)
