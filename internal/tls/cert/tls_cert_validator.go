@@ -56,5 +56,12 @@ func parsePrivateKey(keyPEM []byte) (interface{}, error) {
 	if block == nil {
 		return nil, fmt.Errorf("failed to decode PEM block containing private key")
 	}
-	return x509.ParsePKCS8PrivateKey(block.Bytes)
+	privateKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+
+	// try to parse as PKCS1 / RSA private key
+	if err != nil {
+		return x509.ParsePKCS1PrivateKey(block.Bytes)
+	}
+
+	return privateKey, nil
 }

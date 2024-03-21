@@ -336,8 +336,12 @@ func getFluentBitPorts() []int32 {
 }
 
 func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, validator TLSCertValidator, client client.Client) cert.TLSCertValidationResult {
-	if pipeline.Spec.Output.HTTP.TLSConfig.Cert == nil && pipeline.Spec.Output.HTTP.TLSConfig.Key == nil {
-		return cert.TLSCertValidationResult{}
+	if pipeline.Spec.Output.HTTP == nil || (pipeline.Spec.Output.HTTP.TLSConfig.Cert == nil && pipeline.Spec.Output.HTTP.TLSConfig.Key == nil) {
+		return cert.TLSCertValidationResult{
+			CertValid:       true,
+			PrivateKeyValid: true,
+			Validity:        time.Now().AddDate(1, 0, 0),
+		}
 	}
 
 	certValue := pipeline.Spec.Output.HTTP.TLSConfig.Cert
