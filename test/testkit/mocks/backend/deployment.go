@@ -90,6 +90,17 @@ func (d *Deployment) containers() []corev1.Container {
 				{Name: "config", MountPath: "/etc/collector"},
 				{Name: "data", MountPath: d.dataPath},
 			},
+			Env: []corev1.EnvVar{
+				{
+					Name: "MY_POD_IP",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "status.podIP",
+						},
+					},
+				},
+			},
 		},
 		{
 			Name:  "web",

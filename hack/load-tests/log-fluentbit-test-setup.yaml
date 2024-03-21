@@ -12,11 +12,13 @@ data:
   config.yaml: |-
     receivers:
       fluentforward:
-        endpoint: localhost:8006
+        endpoint: ${MY_POD_IP}:8006
       otlp:
         protocols:
-          grpc: {}
-          http: {}
+          grpc:
+            endpoint: ${MY_POD_IP}:4317
+          http:
+            endpoint: ${MY_POD_IP}:4318
     exporters:
       debug:
     service:
@@ -92,6 +94,12 @@ spec:
           volumeMounts:
             - mountPath: /etc/collector
               name: config
+          env:
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
         - image: europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1
           imagePullPolicy: IfNotPresent
           name: fluentd
