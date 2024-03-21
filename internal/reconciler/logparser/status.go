@@ -36,7 +36,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 	}
 
 	r.setAgentHealthyCondition(ctx, &parser)
-	r.setPendingAndRunningConditions(ctx, &parser)
+	r.setLegacyConditions(ctx, &parser)
 
 	if err := r.Status().Update(ctx, &parser); err != nil {
 		return fmt.Errorf("failed to update LogParser status: %w", err)
@@ -59,10 +59,18 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, parser *telem
 		reason = conditions.ReasonDaemonSetReady
 	}
 
-	meta.SetStatusCondition(&parser.Status.Conditions, conditions.New(conditions.TypeAgentHealthy, reason, status, parser.Generation, conditions.LogsMessage))
+	condition := metav1.Condition{
+		Type:               conditions.TypeAgentHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForLogPipeline(reason),
+		ObservedGeneration: parser.Generation,
+	}
+
+	meta.SetStatusCondition(&parser.Status.Conditions, condition)
 }
 
-func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, parser *telemetryv1alpha1.LogParser) {
+func (r *Reconciler) setLegacyConditions(ctx context.Context, parser *telemetryv1alpha1.LogParser) {
 	fluentBitReady, err := r.prober.IsReady(ctx, r.config.DaemonSet)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe fluent bit daemonset")
@@ -70,18 +78,15 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, parser 
 	}
 
 	if !fluentBitReady {
-		conditions.HandlePendingCondition(ctx, &parser.Status.Conditions, parser.Generation, conditions.ReasonFluentBitDSNotReady, parser.Name, conditions.LogsMessage)
+		conditions.HandlePendingCondition(&parser.Status.Conditions, parser.Generation,
+			conditions.ReasonFluentBitDSNotReady,
+			conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady))
 		return
-
 	}
 
-	conditions.HandleRunningCondition(
-		ctx,
-		&parser.Status.Conditions,
-		parser.Generation,
+	conditions.HandleRunningCondition(&parser.Status.Conditions, parser.Generation,
 		conditions.ReasonFluentBitDSReady,
 		conditions.ReasonFluentBitDSNotReady,
-		parser.Name,
-		conditions.LogsMessage,
-	)
+		conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSReady),
+		conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady))
 }
