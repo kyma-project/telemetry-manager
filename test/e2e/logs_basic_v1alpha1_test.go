@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Basic", Label("logs"), Ordered, func() {
+var _ = Describe("Logs Basic v1alpha1", Label("logs"), Ordered, func() {
 	const (
 		mockBackendName = "log-receiver"
 		mockNs          = "log-http-output"
@@ -33,8 +33,8 @@ var _ = Describe("Logs Basic", Label("logs"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipeline(pipelineName).
-			WithSecretKeyRef(mockBackend.HostSecretRef()).
+		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
+			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
 			Persistent(isOperational())
 		objs = append(objs, logPipeline.K8sObject())

@@ -13,6 +13,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool) error {
@@ -40,11 +41,10 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 
 	r.setGatewayHealthyCondition(ctx, &pipeline)
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
-	r.setPendingAndRunningConditions(ctx, &pipeline, withinPipelineCountLimit)
-
 	if r.flowHealthProbingEnabled {
-		r.setFlowHealthConditions(ctx, &pipeline)
+		r.setFlowHealthCondition(ctx, &pipeline)
 	}
+	r.setLegacyConditions(ctx, &pipeline, withinPipelineCountLimit)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
 		return fmt.Errorf("failed to update TracePipeline status: %w", err)
@@ -67,7 +67,15 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 		reason = conditions.ReasonDeploymentReady
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeGatewayHealthy, reason, status, pipeline.Generation, conditions.TracesMessage))
+	condition := metav1.Condition{
+		Type:               conditions.TypeGatewayHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForTracePipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
@@ -84,18 +92,76 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 		reason = conditions.ReasonMaxPipelinesExceeded
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation, conditions.TracesMessage))
+	condition := metav1.Condition{
+		Type:               conditions.TypeConfigurationGenerated,
+		Status:             status,
+		ObservedGeneration: pipeline.Generation,
+		Reason:             reason,
+		Message:            conditions.MessageForTracePipeline(reason),
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
+	var reason string
+	var status metav1.ConditionStatus
+
+	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	if err == nil {
+		reason = flowHealthReasonFor(probeResult)
+		if probeResult.Healthy {
+			status = metav1.ConditionTrue
+		} else {
+			status = metav1.ConditionFalse
+		}
+	} else {
+		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
+
+		reason = conditions.ReasonFlowHealthy
+		status = metav1.ConditionUnknown
+	}
+
+	condition := metav1.Condition{
+		Type:               conditions.TypeFlowHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForTracePipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+}
+
+func flowHealthReasonFor(probeResult flowhealth.ProbeResult) string {
+	if probeResult.AllDataDropped {
+		return conditions.ReasonAllDataDropped
+	}
+	if probeResult.SomeDataDropped {
+		return conditions.ReasonSomeDataDropped
+	}
+	if probeResult.QueueAlmostFull {
+		return conditions.ReasonBufferFillingUp
+	}
+	if probeResult.Throttling {
+		return conditions.ReasonGatewayThrottling
+	}
+	return conditions.ReasonFlowHealthy
+}
+
+func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
 	if !withinPipelineCountLimit {
-		conditions.HandlePendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonMaxPipelinesExceeded, pipeline.Name, conditions.TracesMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonMaxPipelinesExceeded,
+			conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded))
 		return
 	}
 
 	referencesNonExistentSecret := secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline)
 	if referencesNonExistentSecret {
-		conditions.HandlePendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonReferencedSecretMissing, pipeline.Name, conditions.TracesMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonReferencedSecretMissing,
+			conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing))
 		return
 	}
 
@@ -106,27 +172,15 @@ func (r *Reconciler) setPendingAndRunningConditions(ctx context.Context, pipelin
 	}
 
 	if !gatewayReady {
-		conditions.HandlePendingCondition(ctx, &pipeline.Status.Conditions, pipeline.Generation, conditions.ReasonTraceGatewayDeploymentNotReady, pipeline.Name, conditions.TracesMessage)
+		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
+			conditions.ReasonTraceGatewayDeploymentNotReady,
+			conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady))
 		return
 	}
 
-	conditions.HandleRunningCondition(
-		ctx,
-		&pipeline.Status.Conditions,
-		pipeline.Generation,
+	conditions.HandleRunningCondition(&pipeline.Status.Conditions, pipeline.Generation,
 		conditions.ReasonTraceGatewayDeploymentReady,
 		conditions.ReasonTraceGatewayDeploymentNotReady,
-		pipeline.Name,
-		conditions.TracesMessage,
-	)
-}
-
-func (r *Reconciler) setFlowHealthConditions(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
-	_, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Failed to retrieve alerts")
-		return
-	}
-
-	//TODO: Reflect probe result in the status of the TracePipeline
+		conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady),
+		conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady))
 }

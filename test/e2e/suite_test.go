@@ -19,6 +19,7 @@ import (
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -64,6 +65,7 @@ var _ = BeforeSuite(func() {
 
 	scheme := clientgoscheme.Scheme
 	Expect(telemetryv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(telemetryv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(operatorv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	k8sClient, err = client.New(testEnv.Config, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())

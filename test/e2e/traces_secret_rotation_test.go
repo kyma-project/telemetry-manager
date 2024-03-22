@@ -22,7 +22,7 @@ import (
 var _ = Describe("Traces Secret Rotation", Label("traces"), func() {
 	Context("When tracepipeline with missing secret reference exists", Ordered, func() {
 		hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", kitkyma.DefaultNamespaceName, kitk8s.WithStringData("trace-host", "http://localhost:4317"))
-		tracePipeline := kitk8s.NewTracePipeline("without-secret").WithOutputEndpointFromSecret(hostSecret.SecretKeyRef("trace-host"))
+		tracePipeline := kitk8s.NewTracePipelineV1Alpha1("without-secret").WithOutputEndpointFromSecret(hostSecret.SecretKeyRefV1Alpha1("trace-host"))
 
 		BeforeAll(func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, tracePipeline.K8sObject())).Should(Succeed())

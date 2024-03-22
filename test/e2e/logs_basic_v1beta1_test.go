@@ -14,12 +14,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Custom Output", Label("logs"), Ordered, func() {
+var _ = Describe("Logs Basic v1beta1", Label("logs", "v1beta1"), Ordered, func() {
 	const (
 		mockBackendName = "log-receiver"
-		mockNs          = "log-custom-output"
-		logProducerName = "log-producer-custom-output" //#nosec G101 -- This is a false positive
-		pipelineName    = "custom-output-pipeline"
+		mockNs          = "logs-basic-v1beta1-test"
+		logProducerName = "log-producer-http-output" //#nosec G101 -- This is a false positive
+		pipelineName    = "http-output-pipeline"
 	)
 	var telemetryExportURL string
 
@@ -33,7 +33,9 @@ var _ = Describe("Logs Custom Output", Label("logs"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).WithCustomOutput(mockBackend.ExternalService.Host())
+		logPipeline := kitk8s.NewLogPipelineV1Beta1(pipelineName).
+			WithSecretKeyRef(mockBackend.HostSecretRefV1Beta1()).
+			WithHTTPOutput()
 		objs = append(objs, logPipeline.K8sObject())
 
 		return objs
@@ -45,7 +47,7 @@ var _ = Describe("Logs Custom Output", Label("logs"), Ordered, func() {
 		})
 	})
 
-	Context("When a logpipeline with custom output exists", Ordered, func() {
+	Context("When a logpipeline with HTTP output exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
@@ -66,7 +68,7 @@ var _ = Describe("Logs Custom Output", Label("logs"), Ordered, func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
 		})
 
-		It("Should have log-producer logs in the backend", func() {
+		It("Should have produced logs in the backend", func() {
 			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
 		})
 	})

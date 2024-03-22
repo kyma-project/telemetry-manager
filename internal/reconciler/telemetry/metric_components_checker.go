@@ -14,7 +14,8 @@ import (
 )
 
 type metricComponentsChecker struct {
-	client client.Client
+	client                   client.Client
+	flowHealthProbingEnabled bool
 }
 
 func (m *metricComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
@@ -61,6 +62,11 @@ func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []telem
 		conditions.TypeAgentHealthy,
 		conditions.TypeConfigurationGenerated,
 	}
+
+	if m.flowHealthProbingEnabled {
+		condTypes = append(condTypes, conditions.TypeFlowHealthy)
+	}
+
 	for _, condType := range condTypes {
 		for _, pipeline := range pipelines {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
@@ -81,7 +87,7 @@ func (m *metricComponentsChecker) determineConditionStatus(reason string) metav1
 
 func (m *metricComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.MetricPipeline, reason string) string {
 	if reason != conditions.ReasonResourceBlocksDeletion {
-		return conditions.MessageFor(reason, conditions.MetricsMessage)
+		return conditions.MessageForMetricPipeline(reason)
 	}
 
 	return generateDeletionBlockedMessage(blockingResources{

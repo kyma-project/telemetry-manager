@@ -33,8 +33,8 @@ var _ = Describe("Logs mTLS", Label("logs"), Ordered, func() {
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-mtls-test")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		pipeline := kitk8s.NewLogPipeline(pipelineName).
-			WithSecretKeyRef(mockBackend.HostSecretRef()).
+		pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
+			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
 			WithTLS(mockBackend.TLSCerts)
 

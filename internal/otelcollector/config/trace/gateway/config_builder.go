@@ -97,7 +97,7 @@ func addComponentsForTracePipeline(ctx context.Context, otlpExporterBuilder *otl
 
 	maps.Copy(envVars, otlpExporterEnvVars)
 
-	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp, pipeline.Name)
+	otlpExporterID := otlpexporter.ExporterID(pipeline.Spec.Output.Otlp.Protocol, pipeline.Name)
 	cfg.Exporters[otlpExporterID] = Exporter{OTLP: otlpExporterConfig}
 
 	pipelineID := fmt.Sprintf("traces/%s", pipeline.Name)

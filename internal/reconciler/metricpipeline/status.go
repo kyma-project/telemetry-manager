@@ -13,6 +13,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool) error {
@@ -36,7 +37,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
 
 	if r.flowHealthProbingEnabled {
-		r.setFlowHealthConditions(ctx, &pipeline)
+		r.setFlowHealthCondition(ctx, &pipeline)
 	}
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
@@ -66,7 +67,15 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 		}
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeAgentHealthy, reason, status, pipeline.Generation, conditions.MetricsMessage))
+	condition := metav1.Condition{
+		Type:               conditions.TypeAgentHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForMetricPipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
 func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
@@ -84,7 +93,15 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 		reason = conditions.ReasonDeploymentReady
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeGatewayHealthy, reason, status, pipeline.Generation, conditions.MetricsMessage))
+	condition := metav1.Condition{
+		Type:               conditions.TypeGatewayHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForMetricPipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, withinPipelineCountLimit bool) {
@@ -101,15 +118,59 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 		reason = conditions.ReasonMaxPipelinesExceeded
 	}
 
-	meta.SetStatusCondition(&pipeline.Status.Conditions, conditions.New(conditions.TypeConfigurationGenerated, reason, status, pipeline.Generation, conditions.MetricsMessage))
-}
-
-func (r *Reconciler) setFlowHealthConditions(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
-	_, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Failed to retrieve alerts")
-		return
+	condition := metav1.Condition{
+		Type:               conditions.TypeConfigurationGenerated,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForMetricPipeline(reason),
+		ObservedGeneration: pipeline.Generation,
 	}
 
-	//TODO: Reflect probe result in the status of the MetricPipeline
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+}
+
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {
+	var reason string
+	var status metav1.ConditionStatus
+
+	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	if err == nil {
+		reason = flowHealthReasonFor(probeResult)
+		if probeResult.Healthy {
+			status = metav1.ConditionTrue
+		} else {
+			status = metav1.ConditionFalse
+		}
+	} else {
+		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
+
+		reason = conditions.ReasonFlowHealthy
+		status = metav1.ConditionUnknown
+	}
+
+	condition := metav1.Condition{
+		Type:               conditions.TypeFlowHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForMetricPipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+}
+
+func flowHealthReasonFor(probeResult flowhealth.ProbeResult) string {
+	if probeResult.AllDataDropped {
+		return conditions.ReasonAllDataDropped
+	}
+	if probeResult.SomeDataDropped {
+		return conditions.ReasonSomeDataDropped
+	}
+	if probeResult.QueueAlmostFull {
+		return conditions.ReasonBufferFillingUp
+	}
+	if probeResult.Throttling {
+		return conditions.ReasonGatewayThrottling
+	}
+	return conditions.ReasonFlowHealthy
 }

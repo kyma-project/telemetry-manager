@@ -40,22 +40,22 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 		telemetryExportURLs[backend1Name] = backend1.TelemetryExportURL(proxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 
-		pipelineIncludeApp1Ns := kitk8s.NewMetricPipeline("include-"+app1Ns).
-			WithOutputEndpointFromSecret(backend1.HostSecretRef()).
-			PrometheusInput(true, kitk8s.IncludeNamespaces(app1Ns)).
-			RuntimeInput(true, kitk8s.IncludeNamespaces(app1Ns)).
-			OtlpInput(true, kitk8s.IncludeNamespaces(app1Ns))
+		pipelineIncludeApp1Ns := kitk8s.NewMetricPipelineV1Alpha1("include-"+app1Ns).
+			WithOutputEndpointFromSecret(backend1.HostSecretRefV1Alpha1()).
+			PrometheusInput(true, kitk8s.IncludeNamespacesV1Alpha1(app1Ns)).
+			RuntimeInput(true, kitk8s.IncludeNamespacesV1Alpha1(app1Ns)).
+			OtlpInput(true, kitk8s.IncludeNamespacesV1Alpha1(app1Ns))
 		objs = append(objs, pipelineIncludeApp1Ns.K8sObject())
 
 		backend2 := backend.New(backend2Name, backendNs, backend.SignalTypeMetrics)
 		telemetryExportURLs[backend2Name] = backend2.TelemetryExportURL(proxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 
-		pipelineExcludeApp1Ns := kitk8s.NewMetricPipeline("exclude-"+app1Ns).
-			WithOutputEndpointFromSecret(backend2.HostSecretRef()).
-			PrometheusInput(true, kitk8s.ExcludeNamespaces(app1Ns)).
-			RuntimeInput(true, kitk8s.ExcludeNamespaces(app1Ns)).
-			OtlpInput(true, kitk8s.ExcludeNamespaces(app1Ns))
+		pipelineExcludeApp1Ns := kitk8s.NewMetricPipelineV1Alpha1("exclude-"+app1Ns).
+			WithOutputEndpointFromSecret(backend2.HostSecretRefV1Alpha1()).
+			PrometheusInput(true, kitk8s.ExcludeNamespacesV1Alpha1(app1Ns)).
+			RuntimeInput(true, kitk8s.ExcludeNamespacesV1Alpha1(app1Ns)).
+			OtlpInput(true, kitk8s.ExcludeNamespacesV1Alpha1(app1Ns))
 		objs = append(objs, pipelineExcludeApp1Ns.K8sObject())
 
 		objs = append(objs,

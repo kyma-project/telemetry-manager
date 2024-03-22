@@ -70,14 +70,20 @@ type OTLPTLS struct {
 	Key *ValueType `json:"key,omitempty"`
 }
 
+type OTLPProtocol string
+
+const (
+	OTLPProtocolHTTP OTLPProtocol = "http"
+	OTLPProtocolGRPC OTLPProtocol = "grpc"
+)
+
 // OTLPOutput OTLP output configuration
 // +kubebuilder:validation:XValidation:rule="((!has(self.path) || size(self.path) <= 0) && (has(self.protocol) && self.protocol == 'grpc')) || (has(self.protocol) && self.protocol == 'http')", message="Path is only available with HTTP protocol"
 type OTLPOutput struct {
 	// Defines the OTLP protocol (http or grpc). Default is grpc.
-	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:default:=grpc
 	// +kubebuilder:validation:Enum=grpc;http
-	Protocol string `json:"protocol,omitempty"`
+	Protocol OTLPProtocol `json:"protocol,omitempty"`
 	// Defines the host and port (<host>:<port>) of an OTLP endpoint.
 	// +kubebuilder:validation:Required
 	Endpoint ValueType `json:"endpoint"`

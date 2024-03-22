@@ -26,8 +26,8 @@ type Rule struct {
 }
 
 func MakeRules() RuleGroups {
-	metricRuleBuilder := newRuleBuilder(signalTypeMetricPoints)
-	traceRuleBuilder := newRuleBuilder(signalTypeSpans)
+	metricRuleBuilder := newRuleBuilder(FlowTypeMetrics)
+	traceRuleBuilder := newRuleBuilder(FlowTypeTraces)
 
 	ruleBuilders := []ruleBuilder{metricRuleBuilder, traceRuleBuilder}
 	var rules []Rule
@@ -45,13 +45,6 @@ func MakeRules() RuleGroups {
 	}
 }
 
-type telemetryDataType string
-
-const (
-	signalTypeMetricPoints telemetryDataType = "metric_points"
-	signalTypeSpans        telemetryDataType = "spans"
-)
-
 const (
 	serviceLabelKey  = "service"
 	exporterLabelKey = "exporter"
@@ -65,24 +58,36 @@ const (
 )
 
 type ruleBuilder struct {
-	alertNamePrefix string
-	serviceName     string
-	dataType        telemetryDataType
+	serviceName   string
+	dataType      string
+	nameDecorator ruleNameDecorator
 }
 
-func newRuleBuilder(dataType telemetryDataType) ruleBuilder {
-	alertNamePrefix := "MetricGateway"
-	serviceName := "telemetry-metric-gateway-metrics"
+type ruleNameDecorator func(string) string
 
-	if dataType == signalTypeSpans {
-		alertNamePrefix = "TraceGateway"
-		serviceName = "telemetry-trace-gateway-metrics"
+var traceRuleNameDecorator = func(name string) string {
+	return "TraceGateway" + name
+}
+
+var metricRuleNameDecorator = func(name string) string {
+	return "MetricGateway" + name
+}
+
+func newRuleBuilder(t FlowType) ruleBuilder {
+	serviceName := "telemetry-metric-gateway-metrics"
+	dataType := "metric_points"
+	nameDecorator := metricRuleNameDecorator
+
+	if t == FlowTypeTraces {
+		serviceName = "telemetry-trace-collector-metrics"
+		dataType = "spans"
+		nameDecorator = traceRuleNameDecorator
 	}
 
 	return ruleBuilder{
-		alertNamePrefix: alertNamePrefix,
-		dataType:        dataType,
-		serviceName:     serviceName,
+		dataType:      dataType,
+		serviceName:   serviceName,
+		nameDecorator: nameDecorator,
 	}
 }
 
@@ -99,7 +104,7 @@ func (rb ruleBuilder) rules() []Rule {
 func (rb ruleBuilder) exporterSentRule() Rule {
 	metric := fmt.Sprintf("otelcol_exporter_sent_%s", rb.dataType)
 	return Rule{
-		Alert: rb.alertNamePrefix + alertNameExporterSentData,
+		Alert: rb.nameDecorator(alertNameExporterSentData),
 		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(exporterLabelKey).
 			greaterThan(0).
@@ -110,7 +115,7 @@ func (rb ruleBuilder) exporterSentRule() Rule {
 func (rb ruleBuilder) exporterDroppedRule() Rule {
 	metric := fmt.Sprintf("otelcol_exporter_send_failed_%s", rb.dataType)
 	return Rule{
-		Alert: rb.alertNamePrefix + alertNameExporterDroppedData,
+		Alert: rb.nameDecorator(alertNameExporterDroppedData),
 		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(exporterLabelKey).
 			greaterThan(0).
@@ -120,7 +125,7 @@ func (rb ruleBuilder) exporterDroppedRule() Rule {
 
 func (rb ruleBuilder) exporterQueueAlmostFullRule() Rule {
 	return Rule{
-		Alert: rb.alertNamePrefix + alertNameExporterQueueAlmostFull,
+		Alert: rb.nameDecorator(alertNameExporterQueueAlmostFull),
 		Expr: div("otelcol_exporter_queue_size", "otelcol_exporter_queue_capacity", selectService(rb.serviceName)).
 			greaterThan(0.8).
 			build(),
@@ -130,7 +135,7 @@ func (rb ruleBuilder) exporterQueueAlmostFullRule() Rule {
 func (rb ruleBuilder) exporterEnqueueFailedRule() Rule {
 	metric := fmt.Sprintf("otelcol_exporter_enqueue_failed_%s", rb.dataType)
 	return Rule{
-		Alert: rb.alertNamePrefix + alertNameExporterEnqueueFailed,
+		Alert: rb.nameDecorator(alertNameExporterEnqueueFailed),
 		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(exporterLabelKey).
 			greaterThan(0).
@@ -141,7 +146,7 @@ func (rb ruleBuilder) exporterEnqueueFailedRule() Rule {
 func (rb ruleBuilder) receiverRefusedRule() Rule {
 	metric := fmt.Sprintf("otelcol_receiver_refused_%s", rb.dataType)
 	return Rule{
-		Alert: rb.alertNamePrefix + alertNameReceiverRefusedData,
+		Alert: rb.nameDecorator(alertNameReceiverRefusedData),
 		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(receiverLabelKey).
 			greaterThan(0).

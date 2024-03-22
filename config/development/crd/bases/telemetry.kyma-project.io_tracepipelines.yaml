@@ -619,7 +619,6 @@ spec:
                         enum:
                         - grpc
                         - http
-                        minLength: 1
                         type: string
                       tls:
                         description: Defines TLS options for the OTLP output.

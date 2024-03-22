@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -18,6 +19,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 func TestUpdateStatus(t *testing.T) {
@@ -61,7 +64,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotNil(t, gatewayHealthyCond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionFalse, gatewayHealthyCond.Status)
 		require.Equal(t, conditions.ReasonDeploymentNotReady, gatewayHealthyCond.Reason)
-		require.Equal(t, conditions.MessageFor(conditions.ReasonDeploymentNotReady, conditions.TracesMessage), gatewayHealthyCond.Message)
+		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonDeploymentNotReady), gatewayHealthyCond.Message)
 		require.Equal(t, updatedPipeline.Generation, gatewayHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, gatewayHealthyCond.LastTransitionTime)
 
@@ -73,7 +76,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, conditions.TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, conditions.ReasonTraceGatewayDeploymentNotReady, pendingCond.Reason)
-		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageFor(conditions.ReasonTraceGatewayDeploymentNotReady, conditions.TracesMessage)
+		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
@@ -115,7 +118,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotNil(t, gatewayHealthyCond, "could not find condition of type %s", conditions.TypeGatewayHealthy)
 		require.Equal(t, metav1.ConditionTrue, gatewayHealthyCond.Status)
 		require.Equal(t, conditions.ReasonDeploymentReady, gatewayHealthyCond.Reason)
-		require.Equal(t, conditions.MessageFor(conditions.ReasonDeploymentReady, conditions.TracesMessage), gatewayHealthyCond.Message)
+		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonDeploymentReady), gatewayHealthyCond.Message)
 		require.Equal(t, updatedPipeline.Generation, gatewayHealthyCond.ObservedGeneration)
 		require.NotEmpty(t, gatewayHealthyCond.LastTransitionTime)
 
@@ -125,7 +128,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, conditions.TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionFalse, pendingCond.Status)
 		require.Equal(t, conditions.ReasonTraceGatewayDeploymentNotReady, pendingCond.Reason)
-		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageFor(conditions.ReasonTraceGatewayDeploymentNotReady, conditions.TracesMessage)
+		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
@@ -134,7 +137,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, conditions.TypeRunning, runningCond.Type)
 		require.Equal(t, metav1.ConditionTrue, runningCond.Status)
 		require.Equal(t, conditions.ReasonTraceGatewayDeploymentReady, runningCond.Reason)
-		runningCondMsg := conditions.RunningTypeDeprecationMsg + conditions.MessageFor(conditions.ReasonTraceGatewayDeploymentReady, conditions.TracesMessage)
+		runningCondMsg := conditions.RunningTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady)
 		require.Equal(t, runningCondMsg, runningCond.Message)
 		require.Equal(t, updatedPipeline.Generation, runningCond.ObservedGeneration)
 		require.NotEmpty(t, runningCond.LastTransitionTime)
@@ -153,14 +156,14 @@ func TestUpdateStatus(t *testing.T) {
 						Type:               conditions.TypePending,
 						Status:             metav1.ConditionFalse,
 						Reason:             conditions.ReasonTraceGatewayDeploymentNotReady,
-						Message:            conditions.MessageFor(conditions.ReasonTraceGatewayDeploymentNotReady, conditions.TracesMessage),
+						Message:            conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
 						Type:               conditions.TypeRunning,
 						Status:             metav1.ConditionTrue,
 						Reason:             conditions.ReasonTraceGatewayDeploymentReady,
-						Message:            conditions.MessageFor(conditions.ReasonTraceGatewayDeploymentReady, conditions.TracesMessage),
+						Message:            conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady),
 						LastTransitionTime: metav1.Now(),
 					},
 				},
@@ -203,7 +206,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
 		require.Equal(t, metav1.ConditionFalse, configurationGeneratedCond.Status)
 		require.Equal(t, conditions.ReasonReferencedSecretMissing, configurationGeneratedCond.Reason)
-		require.Equal(t, conditions.MessageFor(conditions.ReasonReferencedSecretMissing, conditions.TracesMessage), configurationGeneratedCond.Message)
+		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing), configurationGeneratedCond.Message)
 		require.Equal(t, updatedPipeline.Generation, configurationGeneratedCond.ObservedGeneration)
 		require.NotEmpty(t, configurationGeneratedCond.LastTransitionTime)
 
@@ -215,7 +218,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, conditions.TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, conditions.ReasonReferencedSecretMissing, pendingCond.Reason)
-		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageFor(conditions.ReasonReferencedSecretMissing, conditions.TracesMessage)
+		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
@@ -274,7 +277,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
 		require.Equal(t, metav1.ConditionTrue, configurationGeneratedCond.Status)
 		require.Equal(t, conditions.ReasonConfigurationGenerated, configurationGeneratedCond.Reason)
-		require.Equal(t, conditions.MessageFor(conditions.ReasonConfigurationGenerated, conditions.TracesMessage), configurationGeneratedCond.Message)
+		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonConfigurationGenerated), configurationGeneratedCond.Message)
 		require.Equal(t, updatedPipeline.Generation, configurationGeneratedCond.ObservedGeneration)
 		require.NotEmpty(t, configurationGeneratedCond.LastTransitionTime)
 
@@ -283,7 +286,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, conditions.TypeRunning, runningCond.Type)
 		require.Equal(t, metav1.ConditionTrue, runningCond.Status)
 		require.Equal(t, conditions.ReasonTraceGatewayDeploymentReady, runningCond.Reason)
-		runningCondMsg := conditions.RunningTypeDeprecationMsg + conditions.MessageFor(conditions.ReasonTraceGatewayDeploymentReady, conditions.TracesMessage)
+		runningCondMsg := conditions.RunningTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady)
 		require.Equal(t, runningCondMsg, runningCond.Message)
 		require.Equal(t, updatedPipeline.Generation, runningCond.ObservedGeneration)
 		require.NotEmpty(t, runningCond.LastTransitionTime)
@@ -325,7 +328,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
 		require.Equal(t, metav1.ConditionFalse, configurationGeneratedCond.Status)
 		require.Equal(t, conditions.ReasonMaxPipelinesExceeded, configurationGeneratedCond.Reason)
-		require.Equal(t, conditions.MessageFor(conditions.ReasonMaxPipelinesExceeded, conditions.TracesMessage), configurationGeneratedCond.Message)
+		require.Equal(t, conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded), configurationGeneratedCond.Message)
 		require.Equal(t, updatedPipeline.Generation, configurationGeneratedCond.ObservedGeneration)
 		require.NotEmpty(t, configurationGeneratedCond.LastTransitionTime)
 
@@ -337,10 +340,124 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, conditions.TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, conditions.ReasonMaxPipelinesExceeded, pendingCond.Reason)
-		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageFor(conditions.ReasonMaxPipelinesExceeded, conditions.TracesMessage)
+		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)
+	})
+
+	t.Run("flow healthy", func(t *testing.T) {
+		tests := []struct {
+			name           string
+			probe          flowhealth.ProbeResult
+			probeErr       error
+			expectedStatus metav1.ConditionStatus
+			expectedReason string
+		}{
+			{
+				name:           "prober fails",
+				probeErr:       assert.AnError,
+				expectedStatus: metav1.ConditionUnknown,
+				expectedReason: conditions.ReasonFlowHealthy,
+			},
+			{
+				name: "healthy",
+				probe: flowhealth.ProbeResult{
+					Healthy: true,
+				},
+				expectedStatus: metav1.ConditionTrue,
+				expectedReason: conditions.ReasonFlowHealthy,
+			},
+			{
+				name: "throttling",
+				probe: flowhealth.ProbeResult{
+					Throttling: true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonGatewayThrottling,
+			},
+			{
+				name: "buffer filling up",
+				probe: flowhealth.ProbeResult{
+					QueueAlmostFull: true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonBufferFillingUp,
+			},
+			{
+				name: "buffer filling up shadows other problems",
+				probe: flowhealth.ProbeResult{
+					QueueAlmostFull: true,
+					Throttling:      true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonBufferFillingUp,
+			},
+			{
+				name: "some data dropped",
+				probe: flowhealth.ProbeResult{
+					SomeDataDropped: true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonSomeDataDropped,
+			},
+			{
+				name: "some data dropped shadows other problems",
+				probe: flowhealth.ProbeResult{
+					SomeDataDropped: true,
+					Throttling:      true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonSomeDataDropped,
+			},
+			{
+				name: "all data dropped",
+				probe: flowhealth.ProbeResult{
+					AllDataDropped: true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonAllDataDropped,
+			},
+			{
+				name: "all data dropped shadows other problems",
+				probe: flowhealth.ProbeResult{
+					AllDataDropped: true,
+					Throttling:     true,
+				},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonAllDataDropped,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewTracePipelineBuilder().Build()
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				gatewayProberStub := &mocks.DeploymentProber{}
+				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+				flowHealthProberStub := &mocks.FlowHealthProber{}
+				flowHealthProberStub.On("Probe", mock.Anything, pipeline.Name).Return(tt.probe, tt.probeErr)
+
+				sut := Reconciler{
+					Client:                   fakeClient,
+					prober:                   gatewayProberStub,
+					flowHealthProbingEnabled: true,
+					flowHealthProber:         flowHealthProberStub,
+				}
+				err := sut.updateStatus(context.Background(), pipeline.Name, false)
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.TracePipeline
+				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+
+				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeFlowHealthy)
+				require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeFlowHealthy)
+				require.Equal(t, tt.expectedStatus, cond.Status)
+				require.Equal(t, tt.expectedReason, cond.Reason)
+			})
+		}
 	})
 
 	t.Run("should remove running condition and set pending condition to true if trace gateway deployment becomes not ready again", func(t *testing.T) {
@@ -362,28 +479,28 @@ func TestUpdateStatus(t *testing.T) {
 						Type:               conditions.TypeGatewayHealthy,
 						Status:             metav1.ConditionTrue,
 						Reason:             conditions.ReasonDeploymentReady,
-						Message:            conditions.MessageFor(conditions.ReasonDeploymentReady, conditions.TracesMessage),
+						Message:            conditions.MessageForTracePipeline(conditions.ReasonDeploymentReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
 						Type:               conditions.TypeConfigurationGenerated,
 						Status:             metav1.ConditionTrue,
 						Reason:             conditions.TypeConfigurationGenerated,
-						Message:            conditions.MessageFor(conditions.TypeConfigurationGenerated, conditions.TracesMessage),
+						Message:            conditions.MessageForTracePipeline(conditions.TypeConfigurationGenerated),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
 						Type:               conditions.TypePending,
 						Status:             metav1.ConditionFalse,
 						Reason:             conditions.ReasonTraceGatewayDeploymentNotReady,
-						Message:            conditions.MessageFor(conditions.ReasonTraceGatewayDeploymentNotReady, conditions.TracesMessage),
+						Message:            conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady),
 						LastTransitionTime: metav1.Now(),
 					},
 					{
 						Type:               conditions.TypeRunning,
 						Status:             metav1.ConditionTrue,
 						Reason:             conditions.ReasonTraceGatewayDeploymentReady,
-						Message:            conditions.MessageFor(conditions.ReasonTraceGatewayDeploymentReady, conditions.TracesMessage),
+						Message:            conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady),
 						LastTransitionTime: metav1.Now(),
 					},
 				},
@@ -415,7 +532,7 @@ func TestUpdateStatus(t *testing.T) {
 		require.Equal(t, conditions.TypePending, pendingCond.Type)
 		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
 		require.Equal(t, conditions.ReasonTraceGatewayDeploymentNotReady, pendingCond.Reason)
-		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageFor(conditions.ReasonTraceGatewayDeploymentNotReady, conditions.TracesMessage)
+		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady)
 		require.Equal(t, pendingCondMsg, pendingCond.Message)
 		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
 		require.NotEmpty(t, pendingCond.LastTransitionTime)

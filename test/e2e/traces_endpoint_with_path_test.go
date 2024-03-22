@@ -25,7 +25,7 @@ var _ = Describe("Traces Endpoint with Path", Label("tracing"), func() {
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		tracePipeline := kitk8s.NewTracePipeline("mock-trace-endpoint-path").
+		tracePipeline := kitk8s.NewTracePipelineV1Alpha1("mock-trace-endpoint-path").
 			WithProtocol("http").
 			WithOutputEndpoint(endpoint).WithEndpointPath(path)
 

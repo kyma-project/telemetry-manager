@@ -6,6 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/test/testkit"
 )
 
@@ -45,8 +46,16 @@ func (s *Secret) K8sObject() *corev1.Secret {
 	}
 }
 
-func (s *Secret) SecretKeyRef(key string) *telemetryv1alpha1.SecretKeyRef {
+func (s *Secret) SecretKeyRefV1Alpha1(key string) *telemetryv1alpha1.SecretKeyRef {
 	return &telemetryv1alpha1.SecretKeyRef{
+		Name:      s.name,
+		Namespace: s.namespace,
+		Key:       key,
+	}
+}
+
+func (s *Secret) SecretKeyRefV1Beta1(key string) *telemetryv1beta1.SecretKeyRef {
+	return &telemetryv1beta1.SecretKeyRef{
 		Name:      s.name,
 		Namespace: s.namespace,
 		Key:       key,

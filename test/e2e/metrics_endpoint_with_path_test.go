@@ -25,7 +25,7 @@ var _ = Describe("Metrics Endpoint with Path", Label("metrics"), func() {
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		metricPipeline := kitk8s.NewMetricPipeline("mock-metric-endpoint-path").
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("mock-metric-endpoint-path").
 			WithProtocol("http").
 			WithOutputEndpoint(endpoint).WithEndpointPath(path)
 

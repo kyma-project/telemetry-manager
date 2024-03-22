@@ -1,6 +1,9 @@
 # OpenTelemetry Logs PoC
 
-This PoC researches two main aspects of OpenTelemetry logs: [Log Record Parsing](#log-record-parsing) and [Buffering and Backpressure](#buffering-and-backpressure).
+This PoC researches the following main aspects of OpenTelemetry logs:
+- [Log Record Parsing](#log-record-parsing)
+- [Buffering and Backpressure](#buffering-and-backpressure)
+- Integrating with Istio to process [Istio Access Logs](#istio-access-logs)
 
 ## Log Record Parsing
 
@@ -167,3 +170,160 @@ During the evaluation, the following potential problems and risks have been iden
 * The queue capacity is configured by the number of batches. A limitation based on storage capacity is impossible. This makes it hard to give exact guarantees about the stored logs before data loss.
 * After it is allocated, the utilized storage space of the persistent queue never shrinks again. This is not a problem as long as a dedicated PVC is used for the queue, but makes it less suitable to be stored on the node's host file system.
 * Not using a batch processor in the agent might have a negative performance impact.
+
+## Istio Access Logs
+
+### Scope and Goals
+
+Istio comes with extension providers to configure its telemetry. The [EnvoyOpenTelemetryLogProvider](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider-EnvoyOpenTelemetryLogProvider) supports sending access logs to an OTLP service. This part of the PoC compares the EnvoyOpenTelemetryLogProvider (in combination with the OpenTelemetry Collector) to the [EnvoyFileAccessLogProvider](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider-EnvoyFileAccessLogProvider), which is currently used by Kyma's [Istio module](https://github.com/kyma-project/istio).
+
+### Setup for Istio Access Logs
+
+To enable OpenTelemetry based access logs in Istio, execute the following steps:
+
+1. Deploy log-gateway as described in [Setup for Buffering and Backpressure](#setup-for-buffering-and-backpressure).
+
+2. In the `istio-system` namespace, edit the `istio` ConfigMap and add the following envoyOtelAls extension provider to the extensionProviders list of the service mesh config:
+
+   ```yaml
+   - envoyOtelAls:
+       logFormat:
+         labels:
+           authority: '%REQ(:AUTHORITY)%'
+           bytes_received: '%BYTES_RECEIVED%'
+           bytes_sent: '%BYTES_SENT%'
+           connection_termination_details: '%CONNECTION_TERMINATION_DETAILS%'
+           downstream_local_address: '%DOWNSTREAM_LOCAL_ADDRESS%'
+           downstream_remote_address: '%DOWNSTREAM_REMOTE_ADDRESS%'
+           duration: '%DURATION%'
+           http.request.method: '%REQ(:METHOD)%'
+           url.path: '%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%'
+           network.protocol.name: '%PROTOCOL%'
+           request_id: '%REQ(X-REQUEST-ID)%'
+           requested_server_name: '%REQUESTED_SERVER_NAME%'
+           http.response.status_code: '%RESPONSE_CODE%'
+           response_code_details: '%RESPONSE_CODE_DETAILS%'
+           response_flags: '%RESPONSE_FLAGS%'
+           route_name: '%ROUTE_NAME%'
+           start_time: '%START_TIME%'
+           traceparent: '%REQ(TRACEPARENT)%'
+           tracestate: '%REQ(TRACESTATE)%'
+           upstream_cluster: '%UPSTREAM_CLUSTER%'
+           server.address: '%UPSTREAM_HOST%'
+           upstream_local_address: '%UPSTREAM_LOCAL_ADDRESS%'
+           upstream_service_time: '%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%'
+           upstream_transport_failure_reason: '%CONNECTION_TERMINATION_DETAILS%'
+           user_agent: '%REQ(USER-AGENT)%'
+           x_forwarded_for: '%REQ(X-FORWARDED-FOR)%'
+       service: log-gateway-opentelemetry-collector.otel-logging.svc.cluster.local
+       port: 4317
+     name: otlp
+   ```
+
+3. Using the Telemetry API, activate the extension provider:
+
+   ```yaml
+   apiVersion: telemetry.istio.io/v1alpha1
+   kind: Telemetry
+   metadata:
+     name: access-config
+     namespace: istio-system
+   spec:
+     accessLogging:
+       - providers:
+           - name: otlp
+    ```
+
+### Results
+
+Without any `logFormat` configuration, the extension provider generates access log records that have only a log body. For example, see the following record from the product catalog service of the OpenTelemetry demo application:
+
+```
+[2024-03-14T14:43:03.130Z] \"POST /oteldemo.CurrencyService/Convert HTTP/2\" 200 - via_upstream - \"-\" 26 19 7 6 \"-\" \"grpc-go/1.46.2\" \"422dff1b-2f95-9d22-87da-b8f2fa491c10\" \"otel-currencyservice:8080\" \"100.64.0.41:8080\" outbound|8080||otel-currencyservice.demo.svc.cluster.local 100.64.0.57:49312 100.106.93.100:8080 100.64.0.57:34402 - default
+```
+
+
+Adding the `logFormat` from the extension provider shown above will result in the following access logs as the following in SAP Cloud Logging:
+
+```json
+{
+  "_index": "logs-otel-v1-2024.03.14",
+  "_type": "_doc",
+  "_id": "HqpqPY4BkcJ6I2_utaN3",
+  "_version": 1,
+  "_score": null,
+  "_source": {
+    "traceId": "",
+    "spanId": "",
+    "severityText": "",
+    "flags": 0,
+    "time": "2024-03-14T14:43:03.130026Z",
+    "severityNumber": 0,
+    "droppedAttributesCount": 0,
+    "serviceName": null,
+    "body": "[2024-03-14T14:43:03.130Z] \"POST /oteldemo.CurrencyService/Convert HTTP/2\" 200 - via_upstream - \"-\" 26 19 7 6 \"-\" \"grpc-go/1.46.2\" \"422dff1b-2f95-9d22-87da-b8f2fa491c10\" \"otel-currencyservice:8080\" \"100.64.0.41:8080\" outbound|8080||otel-currencyservice.demo.svc.cluster.local 100.64.0.57:49312 100.106.93.100:8080 100.64.0.57:34402 - default\n",
+    "observedTime": "1970-01-01T00:00:00Z",
+    "schemaUrl": "",
+    "resource.attributes.k8s@namespace@name": "demo",
+    "resource.attributes.security@istio@io/tlsMode": "istio",
+    "log.attributes.route_name": "default",
+    "log.attributes.start_time": "2024-03-14T14:43:03.130Z",
+    "log.attributes.request_id": "422dff1b-2f95-9d22-87da-b8f2fa491c10",
+    "resource.attributes.k8s@pod@name": "otel-checkoutservice-5454f58ff6-lrklm",
+    "log.attributes.duration": "7",
+    "log.attributes.http@request@method": "POST",
+    "log.attributes.connection_termination_details": "-",
+    "resource.attributes.k8s@node@name": "shoot--berlin--ck-2-cpu-worker-z1-84978-2gm4w",
+    "log.attributes.upstream_local_address": "100.64.0.57:49312",
+    "log.attributes.requested_server_name": "-",
+    "resource.attributes.service@istio@io/canonical-name": "otel-checkoutservice",
+    "resource.attributes.app@kubernetes@io/component": "checkoutservice",
+    "log.attributes.authority": "otel-currencyservice:8080",
+    "log.attributes.bytes_sent": "19",
+    "resource.attributes.service@istio@io/canonical-revision": "latest",
+    "resource.attributes.app@kubernetes@io/name": "otel-checkoutservice",
+    "log.attributes.server@address": "100.64.0.41:8080",
+    "log.attributes.downstream_local_address": "100.106.93.100:8080",
+    "resource.attributes.k8s@deployment@name": "otel-checkoutservice",
+    "log.attributes.tracestate": "",
+    "log.attributes.x_forwarded_for": "-",
+    "resource.attributes.k8s@pod@start_time": "2024-03-14T08:49:24Z",
+    "log.attributes.bytes_received": "26",
+    "resource.attributes.app@kubernetes@io/instance": "otel",
+    "log.attributes.downstream_remote_address": "100.64.0.57:34402",
+    "resource.attributes.k8s@pod@ip": "100.64.0.57",
+    "log.attributes.traceparent": "00-7ffa505b8e9a17e6e48a222bf9a2b527-dad83bd909d0c495-01",
+    "log.attributes.upstream_service_time": "6",
+    "log.attributes.user_agent": "grpc-go/1.46.2",
+    "resource.attributes.k8s@pod@uid": "3a1dd812-b83e-4b16-8ac6-bbda64ee1f6e",
+    "log.attributes.http@response@status_code": "200",
+    "log.attributes.response_flags": "-",
+    "log.attributes.network@protocol@name": "HTTP/2",
+    "log.attributes.upstream_cluster": "outbound|8080||otel-currencyservice.demo.svc.cluster.local",
+    "resource.attributes.pod-template-hash": "5454f58ff6",
+    "log.attributes.url@path": "/oteldemo.CurrencyService/Convert",
+    "log.attributes.response_code_details": "via_upstream",
+    "resource.attributes.opentelemetry@io/name": "otel-checkoutservice",
+    "log.attributes.upstream_transport_failure_reason": "-"
+  },
+  "fields": {
+    "observedTime": [
+      "1970-01-01T00:00:00.000Z"
+    ],
+    "time": [
+      "2024-03-14T14:43:03.130026Z"
+    ]
+  },
+  "sort": [
+    1710427383130026000
+  ]
+}
+```
+
+The configured labels from the extension provider configuration result in log attributes of the OpenTelemetry log records. The log gateway enriches the log records with resource attributes to fulfill the semantic conventions. The source pod is identified by the `k8sattributes` processor using the client IP address.
+
+The OpenTelemetry log specification contains fields for a traceId and spanId. The extension provider does not allow to fill these fields but assigns them to a log attribute. To mitigate this limitation, we need a transform processor in the log gateway. An [issue](https://github.com/istio/istio/issues/49911) has been created for the Istio project.
+
+The OpenTelemetry [Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/) do not explicitly cover access logs yet. The shown extension provider configuration picks up attribute names from related areas like HTTP and URL where it made sense.
+
+We conclude that the EnvoyOpenTelemetryLogProvider supports emitting access logs to an OTLP endpoint with similar properties that the currently used JSON-based format provides in combination with Fluent Bit. Emitting access logs using the OTLP protocol has the advantage that regular Istio sidecar logs can be collected in the same way as regular application logs and are more easily available for troubleshooting if necessary.
