@@ -20,7 +20,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Telemetry Error/Warning Logs", Label("wip"), Ordered, func() {
+// TODO: What label should be used?
+var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordered, func() {
 	const (
 		mockNs            = "tlogs-http"
 		logBackendName    = "tlogs-log"
@@ -57,6 +58,7 @@ var _ = Describe("Telemetry Error/Warning Logs", Label("wip"), Ordered, func() {
 			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName})
 		logPipelineName = logPipeline.Name()
 		objs = append(objs, logPipeline.K8sObject())
+		// TODO: Enable all features (prom, istio, runtime)
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
 			WithOutputEndpointFromSecret(metricBackend.HostSecretRefV1Alpha1())
 		metricPipelineName = metricPipeline.Name()
@@ -76,7 +78,6 @@ var _ = Describe("Telemetry Error/Warning Logs", Label("wip"), Ordered, func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			now = time.Now().UTC()
 		})
 
 		It("Should have running metric and trace gateways", func() {
@@ -97,6 +98,7 @@ var _ = Describe("Telemetry Error/Warning Logs", Label("wip"), Ordered, func() {
 		})
 
 		It("Should not have any ERROR/WARNING level logs in the components", func() {
+			now = time.Now().UTC() // TODO: Where should we record the NOW moment, since if it's too soon flaky errors might still appear
 			Consistently(func(g Gomega) {
 				resp, err := proxyClient.Get(logTelemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
