@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -21,18 +22,19 @@ import (
 
 var _ = Describe("Telemetry Error/Warning Logs", Label("wip"), Ordered, func() {
 	const (
-		mockNs             = "tlogs-http"
-		logBackendName     = "tlogs-log-receiver"
-		metricBackendName  = "tlogs-metric-receiver"
-		traceBackendName   = "tlogs-trace-receiver"
-		logPipelineName    = "tlogs-log-pipeline"
-		metricPipelineName = "tlogs-metric-pipeline"
-		tracePipelineName  = "tlogs-trace-pipeline"
+		mockNs            = "tlogs-http"
+		logBackendName    = "tlogs-log"
+		metricBackendName = "tlogs-metric"
+		traceBackendName  = "tlogs-trace"
 	)
-	var logTelemetryExportURL string
-	// var metricTelemetryExportURL string
-	// var traceTelemetryExportURL string
-	var now time.Time
+
+	var (
+		logPipelineName       string
+		metricPipelineName    string
+		tracePipelineName     string
+		logTelemetryExportURL string
+		now                   time.Time
+	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -42,24 +44,26 @@ var _ = Describe("Telemetry Error/Warning Logs", Label("wip"), Ordered, func() {
 		logBackend := backend.New(logBackendName, mockNs, backend.SignalTypeLogs)
 		objs = append(objs, logBackend.K8sObjects()...)
 		logTelemetryExportURL = logBackend.TelemetryExportURL(proxyClient)
+		// TODO: Find out if metric/trace backends are needed
 		metricBackend := backend.New(metricBackendName, mockNs, backend.SignalTypeMetrics)
 		objs = append(objs, metricBackend.K8sObjects()...)
-		// metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
 		traceBackend := backend.New(traceBackendName, mockNs, backend.SignalTypeTraces)
 		objs = append(objs, traceBackend.K8sObjects()...)
-		// traceTelemetryExportURL = traceBackend.TelemetryExportURL(proxyClient)
 
 		// components
-		logPipeline := kitk8s.NewLogPipeline(logPipelineName).
-			WithSecretKeyRef(logBackend.HostSecretRef()).
+		logPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", logBackend.Name())).
+			WithSecretKeyRef(logBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
 			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName})
+		logPipelineName = logPipeline.Name()
 		objs = append(objs, logPipeline.K8sObject())
-		metricPipeline := kitk8s.NewMetricPipeline(metricPipelineName).
-			WithOutputEndpointFromSecret(metricBackend.HostSecretRef())
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
+			WithOutputEndpointFromSecret(metricBackend.HostSecretRefV1Alpha1())
+		metricPipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
-		tracePipeline := kitk8s.NewTracePipeline(tracePipelineName).
-			WithOutputEndpointFromSecret(traceBackend.HostSecretRef())
+		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-pipeline", traceBackend.Name())).
+			WithOutputEndpointFromSecret(traceBackend.HostSecretRefV1Alpha1())
+		tracePipelineName = tracePipeline.Name()
 		objs = append(objs, tracePipeline.K8sObject())
 
 		return objs
@@ -91,21 +95,6 @@ var _ = Describe("Telemetry Error/Warning Logs", Label("wip"), Ordered, func() {
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, metricPipelineName)
 			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, tracePipelineName)
 		})
-
-		// verifyComponentLogs := func(telemetryExportURL string) {
-		// 	Consistently(func(g Gomega) {
-		// 		resp, err := proxyClient.Get(telemetryExportURL)
-		// 		g.Expect(err).NotTo(HaveOccurred())
-		// 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		// 		g.Expect(resp).To(HaveHTTPBody(
-		// 			Not(ContainLd(ContainLogRecord(SatisfyAll(
-		// 				WithPodName(ContainSubstring("telemetry-")),
-		// 				WithLevel(Or(Equal("ERROR"), Equal("WARNING"))),
-		// 				WithTimestamp(BeTemporally(">=", now)),
-		// 			)))),
-		// 		))
-		// 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
-		// }
 
 		It("Should not have any ERROR/WARNING level logs in the components", func() {
 			Consistently(func(g Gomega) {
