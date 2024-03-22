@@ -78,7 +78,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 			verifiers.ShouldExposeCollectorMetrics(proxyClient, agentMetricsURL)
 		})
 
-		It("Ensures the metric agent netpolicy exists", Label(operationalTest), func() {
+		It("Ensures the metric agent network policy exists", Label(operationalTest), func() {
 			var networkPolicy networkingv1.NetworkPolicy
 			Expect(k8sClient.Get(ctx, kitkyma.MetricAgentNetworkPolicy, &networkPolicy)).To(Succeed())
 
