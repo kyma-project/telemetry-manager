@@ -212,7 +212,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
-        run:  bin/ginkgo run ---tags e2e --label-filter="self-mon" test/e2e
+        run:  bin/ginkgo run --tags e2e --label-filter="self-mon" test/e2e
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
