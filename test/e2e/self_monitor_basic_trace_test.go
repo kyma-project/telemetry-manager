@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ = Describe("Telemetry Self Monitor", Label("self-mon1"), Ordered, func() {
+var _ = Describe("Telemetry Self Monitor", Label("self-mon"), Ordered, func() {
 	const (
 		mockBackendName = "traces-receiver-selfmon"
 		mockNs          = "traces-basic-selfmon-test"
