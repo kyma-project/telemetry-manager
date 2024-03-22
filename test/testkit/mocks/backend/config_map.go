@@ -77,7 +77,7 @@ service:
 
 const LogConfigTemplate = `receivers:
   fluentforward:
-    endpoint: ${MY_POD_IP}:8006
+    endpoint: localhost:8006
   otlp:
     protocols:
       grpc:
