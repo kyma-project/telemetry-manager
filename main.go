@@ -124,7 +124,7 @@ var (
 	metricGatewayDynamicMemoryRequest string
 
 	enableSelfMonitor        bool
-	selfMonitorImage         string
+	selfMonitorImageVersion  string
 	selfMonitorCPURequest    string
 	selfMonitorCPULimit      string
 	selfMonitorMemoryRequest string
@@ -136,10 +136,12 @@ var (
 
 const (
 	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.96.0-7cd3d3a3"
-	overridesConfigMapName = "telemetry-override-config"
-	overridesConfigMapKey  = "override-config"
 	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.2.2-b5220c17"
 	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240228-d652f6a3"
+	selfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.45.4-6627fb45"
+
+	overridesConfigMapName = "telemetry-override-config"
+	overridesConfigMapKey  = "override-config"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-manager-webhook"
@@ -265,7 +267,7 @@ func main() {
 	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
 
 	flag.BoolVar(&enableSelfMonitor, "self-monitor-enabled", false, "Enable self-monitoring of the pipelines")
-	flag.StringVar(&selfMonitorImage, "self-monitor-image", "quay.io/prometheus/prometheus:v2.45.3", "Image for self-monitor")
+	flag.StringVar(&selfMonitorImageVersion, "self-monitor-image", selfMonitorImage, "Image for self-monitor")
 	flag.StringVar(&selfMonitorCPULimit, "self-monitor-cpu-limit", "0.2", "CPU limit for self-monitor")
 	flag.StringVar(&selfMonitorCPURequest, "self-monitor-cpu-request", "0.1", "CPU request for self-monitor")
 	flag.StringVar(&selfMonitorMemoryLimit, "self-monitor-memory-limit", "90Mi", "Memory limit for self-monitor")
@@ -633,7 +635,7 @@ func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 			Namespace: telemetryNamespace,
 
 			Deployment: selfmonitor.DeploymentConfig{
-				Image:             selfMonitorImage,
+				Image:             selfMonitorImageVersion,
 				PriorityClassName: selfMonitorPriorityClass,
 				CPULimit:          resource.MustParse(selfMonitorCPULimit),
 				CPURequest:        resource.MustParse(selfMonitorCPURequest),
