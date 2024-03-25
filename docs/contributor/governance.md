@@ -101,27 +101,27 @@ You can either suppress one or more lines of code inline, or exclude whole files
 
 To suppress a linting warning for a particular line of code, use nolint instruction `//no-lint:{LINTER} // {COMMENT}.` For the _LINTER_ and _COMMENT_ placeholders, you must enter the linter to be suppressed and a reason for the suppression.
 
-
 To suppress linting warnings for the whole block, use preceding inline nolint comments. The following example suppresses the linter for the entire file:
-```go
-//nolint:errcheck // The error check should be suppressied for the module.
-package config
 
-// The rest of the file will not be linted by errcheck.
-```
+   ```go
+   //nolint:errcheck // The error check should be suppressied for the module.
+   package config
+
+   // The rest of the file will not be linted by errcheck.
+   ```
 
 #### Suppress Linting Warnings for Whole Files
 
-To prevent some files from being linted, use the section `.issues.exclude-rules` in the `.golangci.yaml` configuration file. 
+To prevent some files from being linted, use the section `.issues.exclude-rules` in the `.golangci.yaml` configuration file.
 
 The code duplication linting scenario is problematic for being disabled an a per line basis. The following example suppresses the `dupl` linter for the set of three files in the _apis/telemetry/v1alpha1_ module:
 
-```yaml
-issues:
-  exclude-rules:
-    - linters: [ dupl ]
-      path: apis/telemetry/v1alpha1/(logparsers|metricpipeline|tracepipeline)_types_test.go
-```
+   ```yaml
+   issues:
+     exclude-rules:
+       - linters: [ dupl ]
+         path: apis/telemetry/v1alpha1/(logparsers|metricpipeline|tracepipeline)_types_test.go
+   ```
 
 ### Dev Environment Configuration
 
