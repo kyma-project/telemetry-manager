@@ -129,11 +129,15 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 		reason = conditions.ReasonTLSCertAboutToExpire
 	}
 
+	message := conditions.MessageForLogPipeline(reason)
+	if reason == conditions.ReasonTLSCertAboutToExpire || reason == conditions.ReasonExpiredTLSCert {
+		message = fmt.Sprintf(message, certValidationResult.Validity.Format(time.DateOnly))
+	}
 	condition := metav1.Condition{
 		Type:               conditions.TypeConfigurationGenerated,
 		Status:             status,
 		Reason:             reason,
-		Message:            fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly)),
+		Message:            message,
 		ObservedGeneration: pipeline.Generation,
 	}
 
