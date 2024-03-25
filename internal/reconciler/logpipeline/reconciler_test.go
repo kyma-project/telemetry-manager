@@ -193,6 +193,34 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 			},
 			deployablePipelines: false,
 		},
+		{
+			name: "should accept LogPipelines with valid certificate",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pipeline-with-valid-cert",
+					},
+					Spec: telemetryv1alpha1.LogPipelineSpec{
+						Output: telemetryv1alpha1.Output{
+							HTTP: &telemetryv1alpha1.HTTPOutput{
+								Host: telemetryv1alpha1.ValueType{
+									Value: "http://somehost",
+								},
+								TLSConfig: telemetryv1alpha1.TLSConfig{
+									Key: &telemetryv1alpha1.ValueType{
+										Value: "valid",
+									},
+									Cert: &telemetryv1alpha1.ValueType{
+										Value: "valid",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			deployablePipelines: true,
+		},
 	}
 
 	for _, test := range tests {
@@ -209,15 +237,15 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 				CertValid:       false,
 				PrivateKeyValid: true,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			})
-
-			validatorStub.On("ValidateCertificate", []byte("somecert"), []byte("invalidkey")).Return(cert.TLSCertValidationResult{
+			}).On("ValidateCertificate", []byte("somecert"), []byte("invalidkey")).Return(cert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: false,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			})
-
-			validatorStub.On("ValidateCertificate", []byte("expired"), []byte("expired")).Return(cert.TLSCertValidationResult{
+			}).On("ValidateCertificate", []byte("valid"), []byte("valid")).Return(cert.TLSCertValidationResult{
+				CertValid:       true,
+				PrivateKeyValid: true,
+				Validity:        time.Now().Add(time.Hour * 24 * 365),
+			}).On("ValidateCertificate", []byte("expired"), []byte("expired")).Return(cert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: true,
 				Validity:        time.Now().AddDate(-1, -1, -1),
