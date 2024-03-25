@@ -1,4 +1,4 @@
-# 1. Trace/Metric Pipeline status based on OTel Collector metrics
+# 1. Trace/Metric Pipeline Status Based on OTel Collector Metrics
 
 Date: 2023-08-11
 
@@ -9,8 +9,8 @@ Proposed
 ## Context
 
 The telemetry pipelines deploy active components to a cluster, and these components are responsible for dispatching data to third-party services.
-Inevitably, interruptions can occur, potentially hindering the successful delivery of data. 
-To enhance short-term resilience, we implement retries and buffering mechanisms. 
+Inevitably, interruptions can occur, potentially hindering the successful delivery of data.
+To enhance short-term resilience, we implement retries and buffering mechanisms.
 Nevertheless, there may be scenarios where data cannot be delivered, requiring user notification for prompt action.
 
 The typical situations causing problems are:
@@ -19,8 +19,8 @@ The typical situations causing problems are:
 * Backpressure or throttling due to overloading the third-party service.
 * Reaching the ingestion limit of a pipeline, which may occur even with auto-scaling in place (subject to a maximum replica setting).
 
-These situations can be monitored by collecting metrics from the relevant components, with [recently added documentation](https://github.com/kyma-project/telemetry-manager/pull/423) to guide the process. 
-However, this approach can be cumbersome for users, as it requires them to identify which services to scrape and filter the relevant metrics. 
+These situations can be monitored by collecting metrics from the relevant components, with [recently added documentation](https://github.com/kyma-project/telemetry-manager/pull/423) to guide the process.
+However, this approach can be cumbersome for users, as it requires them to identify which services to scrape and filter the relevant metrics.
 Additionally, these details delve into internal aspects that may undergo changes in the future.
 
 ### Goal
@@ -61,20 +61,23 @@ Clear communication regarding its internal nature is crucial to avoid any misuse
 
 ### Integrating Prometheus Querying into Telemetry Manager Reconciliation Loop
 
-#### Direct Prometheus Queries:
+#### Direct Prometheus Queries
+
 * Telemetry Manager manages a set of predefined PromQL queries and communicates with Prometheus using [expression queries API](https://prometheus.io/docs/prometheus/latest/querying/api/#expression-queries) to collect data points.
-  Subsequently, it utilizes this data to evaluate the status of Pipeline CRs. 
+  Subsequently, it utilizes this data to evaluate the status of Pipeline CRs.
 * However, it's crucial to note that if the querying process takes an extended duration, it may impact the reconciliation of TracePipeline and MetricPipeline.
 ![Prometheus Integration using Direct Queries](../assets/prom-integration-direct-queries-flow.svg "Prometheus Integration using Direct Queries")
 * Using [recording rules](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/) can improve query performance.
 
-#### Prometheus Queries with Additional Controller:
+#### Prometheus Queries with Additional Controller
+
 * Similar to [Direct Prometheus Queries](#direct-prometheus-queries), but it addresses the potential challenge of long-running queries, which could hinder reconciliation by introducing a separate PipelineMonitoring CR with its own reconciliation loop.
   This separation effectively isolates the query execution and result storage from the TracePipeline and MetricPipeline controllers.
   It's worth noting that while this approach enhances efficiency, it can introduce increased complexity to the overall setup.
 ![Prometheus Integration with Additional Controller](../assets/prom-integration-extra-ctrl-flow.svg "Prometheus Integration with Additional Controller")
 
-#### Prometheus Alerts:
+#### Prometheus Alerts
+
 * In this approach, PromQL expressions are defined as Prometheus alerts, with Prometheus responsible for their evaluation.
 * Telemetry Manager leverages the [alerts API](https://prometheus.io/docs/prometheus/latest/querying/api/#alerts) to periodically retrieve information regarding active alerts.
 * This method offers several advantages, including the avoidance of potentially long-running queries that can hinder reconciliation, as the evaluation is offloaded to Prometheus.
@@ -85,8 +88,10 @@ Clear communication regarding its internal nature is crucial to avoid any misuse
 ## Decision
 
 ### Metric Analysis
+
 Despite its inherent complexity, our preference leans toward running Prometheus as a standalone deployment. This approach offers the highest level of flexibility and ensures future-proofing, making it the most robust choice for our needs.
 The following things have to be considered:
+
 * To maintain security, we should make sure only Telemetry Manager can access Prometheus, and we can do this by deploying a NetworkPolicy.
 * For cost-effectiveness, it's a good idea for Prometheus to use ephemeral storage.
 * We only need to keep data for a short period, mainly focusing on current information and possibly the last few hours of historical data.
@@ -102,4 +107,4 @@ Using [Prometheus Queries with Additional Controller](#prometheus-queries-with-a
 ## Consequences
 
 We can decide on how to implement [Integrating Prometheus Querying into Telemetry Manager Reconciliation Loop](#integrating-prometheus-querying-into-telemetry-manager-reconciliation-loop) by conducting a Proof of Concept (PoC). This involves running a load test with a significant number of OTel Collector replicas and various PromQL queries. The results from this testing will guide us in selecting the most suitable approach for our unique circumstances.
-Future progress is tracked in https://github.com/kyma-project/telemetry-manager/issues/425.
+Future progress is tracked in <https://github.com/kyma-project/telemetry-manager/issues/425>.

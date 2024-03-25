@@ -35,7 +35,6 @@ Fluent Bit ingests logs directly into CloudWatch using the [Amazon CloudWatch ou
 - [Kubectl version that is within one minor version (older or newer) of `kube-apiserver`](https://kubernetes.io/releases/version-skew-policy/#kubectl)
 - AWS account with permissions to create new users and security policies
 
-
 ## Prepare the Namespace
 
 1. Export your namespace as a variable. Replace the `{NAMESPACE}` placeholder in the following command and run it:
@@ -43,10 +42,13 @@ Fluent Bit ingests logs directly into CloudWatch using the [Amazon CloudWatch ou
     ```bash
     export K8S_NAMESPACE="{NAMESPACE}"
     ```
-1. If you haven't created a namespace yet, do it now:
+
+2. If you haven't created a namespace yet, do it now:
+
     ```bash
     kubectl create namespace $K8S_NAMESPACE
     ```
+
 ## Set Up AWS Credentials
 
 ### Create AWS IAM User
@@ -55,14 +57,13 @@ Fluent Bit ingests logs directly into CloudWatch using the [Amazon CloudWatch ou
 2. In your AWS account, create an [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html) and attach the policy you just created, as well as the policy **AWSXrayWriteOnlyAccess**.
 3. For the [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html) you just created, create an access key for an application running outside AWS. Copy and Save the **access key** and **secret access key**; you need them to [Create a Secret with AWS Credentials](#create-a-secret-with-aws-credentials).
 
-
 ### Create a Secret with AWS Credentials
 
-To connect the AWS Distro to the AWS services, create a secret containing the credentials of the created IAM user into the Kyma cluster. In the following command, replace `{ACCESS_KEY}` with your access key, `{SECRET_ACCESS_KEY}` with your secret access key, and `{AWS_REGION}` with the AWS region you want to use:
- 
-```bash
-kubectl create secret generic aws-credentials -n $K8S_NAMESPACE --from-literal=AWS_ACCESS_KEY_ID={ACCESS_KEY} --from-literal=AWS_SECRET_ACCESS_KEY={SECRET_ACCESS_KEY} --from-literal=AWS_REGION={AWS_REGION}
- ```
+To connect the AWS Distro to the AWS services, create a Secret containing the credentials of the created IAM user into the Kyma cluster. In the following command, replace `{ACCESS_KEY}` with your access key, `{SECRET_ACCESS_KEY}` with your Secret access key, and `{AWS_REGION}` with the AWS region you want to use:
+
+   ```bash
+   kubectl create secret generic aws-credentials -n $K8S_NAMESPACE --from-literal=AWS_ACCESS_KEY_ID={ACCESS_KEY} --from-literal=AWS_SECRET_ACCESS_KEY={SECRET_ACCESS_KEY} --from-literal=AWS_REGION={AWS_REGION}
+   ```
 
 ## Deploy the AWS Distro
 
@@ -123,6 +124,7 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
    ```
 
 2. Deploy a TracePipeline:
+
    ```bash
    kubectl apply -f - <<EOF
    apiVersion: telemetry.kyma-project.io/v1alpha1
@@ -138,6 +140,7 @@ Use the Kyma Telemetry module to enable ingestion of the signals from your workl
    ```
 
 3. Deploy a MetricPipeline:
+
    ```bash
    kubectl apply -f - <<EOF
    apiVersion: telemetry.kyma-project.io/v1alpha1
