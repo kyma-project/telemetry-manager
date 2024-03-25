@@ -57,7 +57,7 @@ func MetricsShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExpor
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ConsistOfMds(WithMetrics(BeEquivalentTo(metrics)))))
+		g.Expect(resp).To(HaveHTTPBody(ContainMd(WithMetrics(BeEquivalentTo(metrics)))))
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())

@@ -86,7 +86,7 @@ var _ = Describe("Telemetry Self Monitor", Label("self-mon"), Ordered, func() {
 			Expect(k8sClient.Get(ctx, kitkyma.SelfMonitorName, &service)).To(Succeed())
 		})
 
-		It("Should have a trace backend running", Label(operationalTest), func() {
+		It("Should have a metrics backend running", Label(operationalTest), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 		})
 
