@@ -114,7 +114,7 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 
 	if !certValidationResult.PrivateKeyValid {
 		status = metav1.ConditionFalse
-		reason = conditions.ReasonInvalidTLSKey
+		reason = conditions.ReasonInvalidTLSPrivateKey
 	}
 
 	if time.Now().After(certValidationResult.Validity) {
@@ -133,7 +133,7 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 		Type:               conditions.TypeConfigurationGenerated,
 		Status:             status,
 		Reason:             reason,
-		Message:            conditions.MessageForLogPipeline(reason),
+		Message:            fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly)),
 		ObservedGeneration: pipeline.Generation,
 	}
 

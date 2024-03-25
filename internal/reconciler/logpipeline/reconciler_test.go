@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -110,6 +109,90 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 			},
 			deployablePipelines: true,
 		},
+		{
+			name: "should reject LogPipelines with invalid certificate",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pipeline-with-invalid-cert",
+					},
+					Spec: telemetryv1alpha1.LogPipelineSpec{
+						Output: telemetryv1alpha1.Output{
+							HTTP: &telemetryv1alpha1.HTTPOutput{
+								Host: telemetryv1alpha1.ValueType{
+									Value: "http://somehost",
+								},
+								TLSConfig: telemetryv1alpha1.TLSConfig{
+									Key: &telemetryv1alpha1.ValueType{
+										Value: "somekey",
+									},
+									Cert: &telemetryv1alpha1.ValueType{
+										Value: "invalidcert",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			deployablePipelines: false,
+		},
+		{
+			name: "should reject LogPipelines with invalid certificate key",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pipeline-with-invalid-cert-key",
+					},
+					Spec: telemetryv1alpha1.LogPipelineSpec{
+						Output: telemetryv1alpha1.Output{
+							HTTP: &telemetryv1alpha1.HTTPOutput{
+								Host: telemetryv1alpha1.ValueType{
+									Value: "http://somehost",
+								},
+								TLSConfig: telemetryv1alpha1.TLSConfig{
+									Key: &telemetryv1alpha1.ValueType{
+										Value: "invalidkey",
+									},
+									Cert: &telemetryv1alpha1.ValueType{
+										Value: "somecert",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			deployablePipelines: false,
+		},
+		{
+			name: "should reject LogPipelines with expired certificate",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pipeline-with-expired-cert",
+					},
+					Spec: telemetryv1alpha1.LogPipelineSpec{
+						Output: telemetryv1alpha1.Output{
+							HTTP: &telemetryv1alpha1.HTTPOutput{
+								Host: telemetryv1alpha1.ValueType{
+									Value: "http://somehost",
+								},
+								TLSConfig: telemetryv1alpha1.TLSConfig{
+									Key: &telemetryv1alpha1.ValueType{
+										Value: "expired",
+									},
+									Cert: &telemetryv1alpha1.ValueType{
+										Value: "expired",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			deployablePipelines: false,
+		},
 	}
 
 	for _, test := range tests {
@@ -121,10 +204,23 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 			validatorStub := &mocks.TLSCertValidator{}
-			validatorStub.On("ValidateCertificate", mock.Anything, mock.Anything).Return(cert.TLSCertValidationResult{
-				CertValid:       true,
+
+			validatorStub.On("ValidateCertificate", []byte("invalidcert"), []byte("somekey")).Return(cert.TLSCertValidationResult{
+				CertValid:       false,
 				PrivateKeyValid: true,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
+			})
+
+			validatorStub.On("ValidateCertificate", []byte("somecert"), []byte("invalidkey")).Return(cert.TLSCertValidationResult{
+				CertValid:       true,
+				PrivateKeyValid: false,
+				Validity:        time.Now().Add(time.Hour * 24 * 365),
+			})
+
+			validatorStub.On("ValidateCertificate", []byte("expired"), []byte("expired")).Return(cert.TLSCertValidationResult{
+				CertValid:       true,
+				PrivateKeyValid: true,
+				Validity:        time.Now().AddDate(-1, -1, -1),
 			})
 			deployablePipelines := getDeployableLogPipelines(ctx, test.pipelines, fakeClient, validatorStub)
 			for _, pipeline := range test.pipelines {
