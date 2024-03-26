@@ -40,26 +40,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-// TracePipelineReconciler reconciles a TracePipeline object
-type TracePipelineReconciler struct {
+// TracePipelineController reconciles a TracePipeline object
+type TracePipelineController struct {
 	client.Client
 	reconcileTriggerChan <-chan event.GenericEvent
 	reconciler           *tracepipeline.Reconciler
 }
 
-func NewTracePipelineReconciler(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, reconciler *tracepipeline.Reconciler) *TracePipelineReconciler {
-	return &TracePipelineReconciler{
+func NewTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, reconciler *tracepipeline.Reconciler) *TracePipelineController {
+	return &TracePipelineController{
 		Client:               client,
 		reconcileTriggerChan: reconcileTriggerChan,
 		reconciler:           reconciler,
 	}
 }
 
-func (r *TracePipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *TracePipelineController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	return r.reconciler.Reconcile(ctx, req)
 }
 
-func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *TracePipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1alpha1.TracePipeline{})
 
 	b.WatchesRawSource(
@@ -96,7 +96,7 @@ func (r *TracePipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	).Complete(r)
 }
 
-func (r *TracePipelineReconciler) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
+func (r *TracePipelineController) mapTelemetryChanges(ctx context.Context, object client.Object) []reconcile.Request {
 	_, ok := object.(*operatorv1alpha1.Telemetry)
 	if !ok {
 		logf.FromContext(ctx).V(1).Error(nil, "Unexpected type: expected Telemetry")
@@ -110,7 +110,7 @@ func (r *TracePipelineReconciler) mapTelemetryChanges(ctx context.Context, objec
 	return requests
 }
 
-func (r *TracePipelineReconciler) mapReconcileTriggerEvent(ctx context.Context, _ client.Object) []reconcile.Request {
+func (r *TracePipelineController) mapReconcileTriggerEvent(ctx context.Context, _ client.Object) []reconcile.Request {
 	requests, err := r.createRequestsForAllPipelines(ctx)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
@@ -118,7 +118,7 @@ func (r *TracePipelineReconciler) mapReconcileTriggerEvent(ctx context.Context, 
 	return requests
 }
 
-func (r *TracePipelineReconciler) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
+func (r *TracePipelineController) createRequestsForAllPipelines(ctx context.Context) ([]reconcile.Request, error) {
 	var pipelines telemetryv1alpha1.TracePipelineList
 	var requests []reconcile.Request
 	err := r.List(ctx, &pipelines)

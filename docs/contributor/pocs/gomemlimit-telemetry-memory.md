@@ -35,4 +35,3 @@ GOMEMLIMIT effectively mitigates OOM errors in heavily utilized Go applications.
 GOMEMLIMIT can help mitigate the risk of OOM errors, but it does not provide foolproof protection. Even with GOMEMLIMIT in place, a heavily utilized Go application must still prioritize efficient memory allocation strategies. Despite configuring an application with a GOMEMLIMIT, the application may encounter an OOM situation if circumstances necessitate additional memory allocation.
 
 ![TracePipeline with GOMEMLIMIT and OOM](./assets/with-gomemlimit-oom.jpg)
-

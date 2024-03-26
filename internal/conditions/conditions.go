@@ -1,14 +1,5 @@
 package conditions
 
-import (
-	"context"
-	"fmt"
-
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-)
-
 const (
 	TypeGatewayHealthy         = "GatewayHealthy"
 	TypeAgentHealthy           = "AgentHealthy"
@@ -59,13 +50,13 @@ const (
 	ReasonTraceGatewayDeploymentReady    = "TraceGatewayDeploymentReady"
 )
 
-var commonMessage = map[string]string{
+var commonMessages = map[string]string{
 	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
 	ReasonReferencedSecretMissing: "One or more referenced Secrets are missing",
 	ReasonMaxPipelinesExceeded:    "Maximum pipeline count limit exceeded",
 }
 
-var MetricsMessage = map[string]string{
+var metricPipelineMessages = map[string]string{
 	ReasonDeploymentNotReady:      "Metric gateway Deployment is not ready",
 	ReasonDeploymentReady:         "Metric gateway Deployment is ready",
 	ReasonDaemonSetNotReady:       "Metric agent DaemonSet is not ready",
@@ -78,7 +69,7 @@ var MetricsMessage = map[string]string{
 	ReasonFlowHealthy:             "Metrics are flowing normally to backend",
 }
 
-var TracesMessage = map[string]string{
+var tracePipelineMessages = map[string]string{
 	ReasonDeploymentNotReady:             "Trace gateway Deployment is not ready",
 	ReasonDeploymentReady:                "Trace gateway Deployment is ready",
 	ReasonTraceGatewayDeploymentNotReady: "Trace gateway Deployment is not ready",
@@ -91,7 +82,7 @@ var TracesMessage = map[string]string{
 	ReasonFlowHealthy:                    "Traces are flowing normally to backend",
 }
 
-var LogsMessage = map[string]string{
+var logPipelineMessages = map[string]string{
 	ReasonDaemonSetNotReady:     "Fluent Bit DaemonSet is not ready",
 	ReasonDaemonSetReady:        "Fluent Bit DaemonSet is ready",
 	ReasonFluentBitDSNotReady:   "Fluent Bit DaemonSet is not ready",
@@ -100,73 +91,24 @@ var LogsMessage = map[string]string{
 	ReasonLogComponentsRunning:  "All log components are running",
 }
 
-func New(condType, reason string, status metav1.ConditionStatus, generation int64, messageMap map[string]string) metav1.Condition {
-	return metav1.Condition{
-		Type:               condType,
-		Status:             status,
-		Reason:             reason,
-		Message:            MessageFor(reason, messageMap),
-		ObservedGeneration: generation,
-	}
+func MessageForLogPipeline(reason string) string {
+	return message(reason, logPipelineMessages)
 }
 
-// MessageFor returns a human-readable message corresponding to a given reason.
-// In more advanced scenarios, you may craft custom messages tailored to specific use cases.
-func MessageFor(reason string, messageMap map[string]string) string {
-	if condMessage, found := commonMessage[reason]; found {
+func MessageForTracePipeline(reason string) string {
+	return message(reason, tracePipelineMessages)
+}
+
+func MessageForMetricPipeline(reason string) string {
+	return message(reason, metricPipelineMessages)
+}
+
+func message(reason string, specializedMessages map[string]string) string {
+	if condMessage, found := commonMessages[reason]; found {
 		return condMessage
 	}
-	if condMessage, found := messageMap[reason]; found {
+	if condMessage, found := specializedMessages[reason]; found {
 		return condMessage
 	}
 	return ""
-}
-
-func HandlePendingCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, reason, resourceName string, messageMap map[string]string) {
-	log := logf.FromContext(ctx)
-
-	pending := New(
-		TypePending,
-		reason,
-		metav1.ConditionTrue,
-		generation,
-		messageMap,
-	)
-	pending.Message = PendingTypeDeprecationMsg + pending.Message
-
-	if meta.FindStatusCondition(*conditions, TypeRunning) != nil {
-		log.V(1).Info(fmt.Sprintf("Updating the status of %s: Removing the Running condition", resourceName))
-		meta.RemoveStatusCondition(conditions, TypeRunning)
-	}
-
-	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Pending condition to True", resourceName))
-	meta.SetStatusCondition(conditions, pending)
-}
-
-func HandleRunningCondition(ctx context.Context, conditions *[]metav1.Condition, generation int64, runningReason, pendingReason, resourceName string, messageMap map[string]string) {
-	log := logf.FromContext(ctx)
-
-	// Set Pending condition to False
-	pending := New(
-		TypePending,
-		pendingReason,
-		metav1.ConditionFalse,
-		generation,
-		messageMap,
-	)
-	pending.Message = PendingTypeDeprecationMsg + pending.Message
-	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Pending condition to False", resourceName))
-	meta.SetStatusCondition(conditions, pending)
-
-	// Set Running condition to True
-	running := New(
-		TypeRunning,
-		runningReason,
-		metav1.ConditionTrue,
-		generation,
-		messageMap,
-	)
-	running.Message = RunningTypeDeprecationMsg + running.Message
-	log.V(1).Info(fmt.Sprintf("Updating the status of %s: Setting the Running condition to True", resourceName))
-	meta.SetStatusCondition(conditions, running)
 }

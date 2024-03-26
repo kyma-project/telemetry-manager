@@ -126,14 +126,14 @@ var _ = BeforeSuite(func() {
 	}
 	Expect(k8sClient.Create(ctx, kymaSystemNamespace)).Should(Succeed())
 
-	logpipelineController := NewLogPipelineReconciler(
+	logPipelineController := NewLogPipelineController(
 		client,
 		logpipeline.NewReconciler(client, testLogPipelineConfig, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
 		testLogPipelineConfig)
-	err = logpipelineController.SetupWithManager(mgr)
+	err = logPipelineController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
-	logparserReconciler := NewLogParserReconciler(
+	logParserController := NewLogParserController(
 		client,
 		logparser.NewReconciler(
 			client,
@@ -144,22 +144,22 @@ var _ = BeforeSuite(func() {
 		),
 		testLogParserConfig,
 	)
-	err = logparserReconciler.SetupWithManager(mgr)
+	err = logParserController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
-	tracepipelineReconciler := NewTracePipelineReconciler(
+	tracePipelineController := NewTracePipelineController(
 		client,
 		nil,
 		tracepipeline.NewReconciler(client, testTracePipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, false, nil, overridesHandler),
 	)
-	err = tracepipelineReconciler.SetupWithManager(mgr)
+	err = tracePipelineController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
-	metricPipelineReconciler := NewMetricPipelineReconciler(
+	metricPipelineController := NewMetricPipelineController(
 		client,
 		nil,
 		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, false, nil, overridesHandler))
-	err = metricPipelineReconciler.SetupWithManager(mgr)
+	err = metricPipelineController.SetupWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	go func() {
