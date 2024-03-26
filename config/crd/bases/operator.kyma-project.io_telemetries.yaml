@@ -61,7 +61,7 @@ spec:
                         properties:
                           static:
                             description: |-
-                              Static is a scaling strategy allowing you to define a custom amount of replicas to be used for the gateway. Present only if Type =
+                              Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type =
                               StaticScalingStrategyType.
                             properties:
                               replicas:
@@ -92,7 +92,7 @@ spec:
                         properties:
                           static:
                             description: |-
-                              Static is a scaling strategy allowing you to define a custom amount of replicas to be used for the gateway. Present only if Type =
+                              Static is a scaling strategy enabling you to define a custom amount of replicas to be used for the gateway. Present only if Type =
                               StaticScalingStrategyType.
                             properties:
                               replicas:
