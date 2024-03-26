@@ -23,5 +23,5 @@ const (
 	DefaultInterval = time.Millisecond * 250
 
 	// TelemetryInterval is used for asynchronous checks when polling Telemetry data from a mock backend via the export URL.
-	TelemetryInterval = time.Second
+	TelemetryInterval = 3 * time.Second
 )

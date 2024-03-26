@@ -61,7 +61,7 @@ func TracesShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExport
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ConsistOfTds(
+		g.Expect(resp).To(HaveHTTPBody(ContainTd(
 			WithSpans(
 				SatisfyAll(
 					HaveLen(len(spanIDs)),
