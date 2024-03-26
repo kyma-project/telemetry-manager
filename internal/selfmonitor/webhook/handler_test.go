@@ -7,9 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type errReader struct{}
@@ -49,7 +51,8 @@ func TestHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			eventChan := make(chan event.GenericEvent, 1)
 
-			handler := NewHandler(eventChan)
+			noopLogger := logr.New(logf.NullLogSink{})
+			handler := NewHandler(eventChan, WithLogger(noopLogger))
 			if tc.requestBody == nil {
 				tc.requestBody = bytes.NewBuffer([]byte(`{"key":"value"}`))
 			}
