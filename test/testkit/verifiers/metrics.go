@@ -93,6 +93,7 @@ func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserverproxy.Client
 		g.Expect(err).NotTo(HaveOccurred())
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
+
 func MetricPipelineTelemetryHealthFlowIsHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline
