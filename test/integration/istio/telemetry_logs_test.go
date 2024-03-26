@@ -1,11 +1,10 @@
-//go:build e2e
+//go:build istio
 
-package e2e
+package istio
 
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -20,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-// TODO: What label should be used?
+// TODO: What label should be used? logs
 var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordered, func() {
 	const (
 		mockNs            = "tlogs-http"
@@ -34,7 +33,6 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 		metricPipelineName    string
 		tracePipelineName     string
 		logTelemetryExportURL string
-		now                   time.Time
 	)
 
 	makeResources := func() []client.Object {
@@ -45,11 +43,13 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 		logBackend := backend.New(logBackendName, mockNs, backend.SignalTypeLogs)
 		objs = append(objs, logBackend.K8sObjects()...)
 		logTelemetryExportURL = logBackend.TelemetryExportURL(proxyClient)
-		// TODO: Find out if metric/trace backends are needed
+
 		metricBackend := backend.New(metricBackendName, mockNs, backend.SignalTypeMetrics)
 		objs = append(objs, metricBackend.K8sObjects()...)
+
 		traceBackend := backend.New(traceBackendName, mockNs, backend.SignalTypeTraces)
 		objs = append(objs, traceBackend.K8sObjects()...)
+		// TODO: Generate some traces (see other traces test-cases)
 
 		// components
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", logBackend.Name())).
@@ -97,8 +97,9 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, tracePipelineName)
 		})
 
+		// TODO: Whitelist possible (flaky/expected) errors
+
 		It("Should not have any ERROR/WARNING level logs in the components", func() {
-			now = time.Now().UTC() // TODO: Where should we record the NOW moment, since if it's too soon flaky errors might still appear
 			Consistently(func(g Gomega) {
 				resp, err := proxyClient.Get(logTelemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -107,10 +108,12 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 					Not(ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-")),
 						WithLevel(Or(Equal("ERROR"), Equal("WARNING"))),
-						WithTimestamp(BeTemporally(">=", now)),
 					)))),
 				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
+
+	// configmap: FLuentBit, exclude_path (excluding self logs)
+	// https://vscode.dev/github/TeodorSAP/telemetry-manager/blob/test/check-error-logs/internal/fluentbit/config/builder/input.go#L15-L16
 })
