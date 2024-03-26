@@ -1,12 +1,12 @@
 package webhook
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/go-logr/logr"
-	"io"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Handler struct {
@@ -25,7 +25,7 @@ func WithLogger(logger logr.Logger) Option {
 func NewHandler(eventChan chan<- event.GenericEvent, opts ...Option) *Handler {
 	h := &Handler{
 		eventChan: eventChan,
-		logger:    logr.New(log.NullLogSink{}),
+		logger:    logr.New(logf.NullLogSink{}),
 	}
 
 	for _, opt := range opts {
