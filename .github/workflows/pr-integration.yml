@@ -199,3 +199,23 @@ jobs:
         if: success() || failure()
         with:
           failure: failure()
+
+  e2e-self-monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run tests
+        run:  bin/ginkgo run --tags e2e --label-filter="self-mon" test/e2e
+
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
