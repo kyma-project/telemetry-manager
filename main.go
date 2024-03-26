@@ -382,10 +382,12 @@ func main() {
 	}
 
 	if enableWebhook && enableSelfMonitor {
-		mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(reconcileTriggerChan))
+		mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(reconcileTriggerChan,
+			selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
 	}
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
 	}

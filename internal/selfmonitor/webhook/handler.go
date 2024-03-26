@@ -2,21 +2,58 @@ package webhook
 
 import (
 	"net/http"
+
+	"github.com/go-logr/logr"
+	"io"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type Handler struct {
 	eventChan chan<- event.GenericEvent
+	logger    logr.Logger
 }
 
-func NewHandler(eventChan chan<- event.GenericEvent) *Handler {
-	return &Handler{
-		eventChan: eventChan,
+type Option = func(*Handler)
+
+func WithLogger(logger logr.Logger) Option {
+	return func(h *Handler) {
+		h.logger = logger
 	}
 }
 
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.eventChan <- event.GenericEvent{}
+func NewHandler(eventChan chan<- event.GenericEvent, opts ...Option) *Handler {
+	h := &Handler{
+		eventChan: eventChan,
+		logger:    logr.New(log.NullLogSink{}),
+	}
 
+	for _, opt := range opts {
+		opt(h)
+	}
+
+	return h
+}
+
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		h.logger.Info("Invalid method", "method", r.Method)
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	req, err := io.ReadAll(r.Body)
+	if err != nil {
+		h.logger.Error(err, "Failed to read request body")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	defer r.Body.Close()
+
+	h.logger.V(1).Info("Webhook called. Triggering a reconciliation.",
+		"request", string(req))
+
+	h.eventChan <- event.GenericEvent{}
 	w.WriteHeader(http.StatusOK)
 }
