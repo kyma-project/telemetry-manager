@@ -12,6 +12,7 @@ import (
 func TestMakeConfigMarshalling(t *testing.T) {
 	config := MakeConfig(BuilderConfig{
 		ScrapeNamespace: "kyma-system",
+		WebhookURL:      "http://webhook:9090",
 	})
 	monitorConfigYaml, err := yaml.Marshal(config)
 	require.NoError(t, err)
