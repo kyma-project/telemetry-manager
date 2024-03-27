@@ -5,9 +5,11 @@ package istio
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -19,13 +21,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-// TODO: What label should be used? logs
+// TODO: Change to logs label
 var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordered, func() {
 	const (
 		mockNs            = "tlogs-http"
 		logBackendName    = "tlogs-log"
 		metricBackendName = "tlogs-metric"
 		traceBackendName  = "tlogs-trace"
+		nginxImage        = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
+		curlImage         = "europe-docker.pkg.dev/kyma-project/prod/external/curlimages/curl:7.78.0"
 	)
 
 	var (
@@ -33,7 +37,41 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 		metricPipelineName    string
 		tracePipelineName     string
 		logTelemetryExportURL string
+		now                   time.Time
 	)
+
+	sourcePodSpec := func() corev1.PodSpec {
+		return corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "source",
+					Image: curlImage,
+					Command: []string{
+						"/bin/sh",
+						"-c",
+						"while true; do curl http://destination:80; sleep 1; done",
+					},
+				},
+			},
+		}
+	}
+
+	destinationPodSpec := func() corev1.PodSpec {
+		return corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "destination",
+					Image: nginxImage,
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: 80,
+							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+				},
+			},
+		}
+	}
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -43,13 +81,17 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 		logBackend := backend.New(logBackendName, mockNs, backend.SignalTypeLogs)
 		objs = append(objs, logBackend.K8sObjects()...)
 		logTelemetryExportURL = logBackend.TelemetryExportURL(proxyClient)
-
 		metricBackend := backend.New(metricBackendName, mockNs, backend.SignalTypeMetrics)
 		objs = append(objs, metricBackend.K8sObjects()...)
-
 		traceBackend := backend.New(traceBackendName, mockNs, backend.SignalTypeTraces)
 		objs = append(objs, traceBackend.K8sObjects()...)
 		// TODO: Generate some traces (see other traces test-cases)
+
+		// metric istio set-up
+		source := kitk8s.NewPod("source", mockNs).WithPodSpec(sourcePodSpec())
+		destination := kitk8s.NewPod("destination", mockNs).WithPodSpec(destinationPodSpec()).WithLabel("app", "destination")
+		service := kitk8s.NewService("destination", mockNs).WithPort("http", 80)
+		objs = append(objs, source.K8sObject(), destination.K8sObject(), service.K8sObject(kitk8s.WithLabel("app", "destination")))
 
 		// components
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", logBackend.Name())).
@@ -58,9 +100,11 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName})
 		logPipelineName = logPipeline.Name()
 		objs = append(objs, logPipeline.K8sObject())
-		// TODO: Enable all features (prom, istio, runtime)
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
-			WithOutputEndpointFromSecret(metricBackend.HostSecretRefV1Alpha1())
+			WithOutputEndpointFromSecret(metricBackend.HostSecretRefV1Alpha1()).
+			PrometheusInput(true, kitk8s.IncludeNamespacesV1Alpha1(mockNs)).
+			IstioInput(true, kitk8s.IncludeNamespacesV1Alpha1(mockNs)).
+			RuntimeInput(true, kitk8s.IncludeNamespacesV1Alpha1(mockNs))
 		metricPipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-pipeline", traceBackend.Name())).
@@ -74,6 +118,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 	Context("When telemetry components are set-up", func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
+			// TEST: Comment-out for debugging
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
@@ -97,9 +142,16 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, tracePipelineName)
 		})
 
+		It("Should have a running metric agent daemonset", func() {
+			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
+		})
+
 		// TODO: Whitelist possible (flaky/expected) errors
+		// excludeWhitelistedLogs := func() string {
+		// }
 
 		It("Should not have any ERROR/WARNING level logs in the components", func() {
+			now = time.Now().UTC()
 			Consistently(func(g Gomega) {
 				resp, err := proxyClient.Get(logTelemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -108,6 +160,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 					Not(ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-")),
 						WithLevel(Or(Equal("ERROR"), Equal("WARNING"))),
+						WithTimestamp(BeTemporally(">=", now)),
 					)))),
 				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
