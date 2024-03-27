@@ -12,7 +12,8 @@ import (
 
 func SelfMonitorWebhookShouldHaveBeenCalled(proxyClient *apiserverproxy.Client) {
 	Eventually(func(g Gomega) {
-		telemetryManagerMetricsURL := proxyClient.ProxyURLForService(kitkyma.TelemetryManagerMetricsServiceName.Namespace,
+		telemetryManagerMetricsURL := proxyClient.ProxyURLForService(
+			kitkyma.TelemetryManagerMetricsServiceName.Namespace,
 			kitkyma.TelemetryManagerMetricsServiceName.Name,
 			"metrics",
 			kitkyma.TelemetryManagerMetricsPort)
@@ -20,7 +21,7 @@ func SelfMonitorWebhookShouldHaveBeenCalled(proxyClient *apiserverproxy.Client) 
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
-		g.Expect(resp).To(HaveHTTPBody(ContainPrometheusMetric("controller_runtime_webhook_requests_total")))
+		g.Expect(resp).To(HaveHTTPBody(ContainMetricFamily(WithName(Equal("controller_runtime_webhook_requests_total")))))
 
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())

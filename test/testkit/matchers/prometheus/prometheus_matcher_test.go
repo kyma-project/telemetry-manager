@@ -5,10 +5,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ContainPrometheusMetric", Label("metrics"), func() {
+var _ = Describe("ContainMetric", Label("metrics"), func() {
 	Context("with nil input", func() {
 		It("should fail", func() {
-			success, err := ContainPrometheusMetric("foo_metric").Match(nil)
+			success, err := ContainMetricFamily(WithName(Equal("foo_metric"))).Match(nil)
 			Expect(err).Should(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -16,7 +16,7 @@ var _ = Describe("ContainPrometheusMetric", Label("metrics"), func() {
 
 	Context("with empty input", func() {
 		It("should fail", func() {
-			success, err := ContainPrometheusMetric("foo_metric").Match([]byte{})
+			success, err := ContainMetricFamily(WithName(Equal("foo_metric"))).Match([]byte{})
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -24,7 +24,7 @@ var _ = Describe("ContainPrometheusMetric", Label("metrics"), func() {
 
 	Context("with invalid input", func() {
 		It("should fail", func() {
-			success, err := ContainPrometheusMetric("foo_metric").Match([]byte{1, 2, 3})
+			success, err := ContainMetricFamily(WithName(Equal("foo_metric"))).Match([]byte{1, 2, 3})
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(success).Should(BeFalse())
 		})
@@ -39,7 +39,7 @@ fluentbit_uptime{hostname="telemetry-fluent-bit-dglkf"} 5489
 # HELP fluentbit_input_bytes_total Number of input bytes.
 # TYPE fluentbit_input_bytes_total counter
 fluentbit_input_bytes_total{name="tele-tail"} 5217998`
-			Expect([]byte(fileBytes)).Should(ContainPrometheusMetric("fluentbit_uptime"))
+			Expect([]byte(fileBytes)).Should(ContainMetricFamily(WithName(Equal("fluentbit_uptime"))))
 		})
 	})
 })
