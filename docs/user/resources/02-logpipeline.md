@@ -206,6 +206,11 @@ The status of the LogPipeline is determined by the condition types `AgentHealthy
 | ConfigurationGenerated | True             | ConfigurationGenerated  |                                                                                                                                                                                                            |
 | ConfigurationGenerated | False            | ReferencedSecretMissing | One or more referenced Secrets are missing                                                                                                                                                                 |
 | ConfigurationGenerated | False            | UnsupportedLokiOutput   | grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README |
+| ConfigurationGenerated | False            | InvalidTLSCert          | TLS certificate invalid                                                                                                                                                                                    |
+| ConfigurationGenerated | False            | InvalidTLSPrivateKey    | TLS private key invalid                                                                                                                                                                                    |
+| ConfigurationGenerated | False            | ExpiredTLSCert          | TLS certificate expired on YYYY-MM-DD                                                                                                                                                                      |
+| ConfigurationGenerated | True             | TLSCertAboutToExpire    | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD                                                                                                                       |
+
 
 
 
