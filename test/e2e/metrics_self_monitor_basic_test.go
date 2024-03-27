@@ -54,7 +54,7 @@ var _ = Describe("Metrics Self Monitor", Label("self-mon"), Ordered, func() {
 		return objs
 	}
 
-	Context("When a metrics pipeline exists", Ordered, func() {
+	Context("When a metric pipeline exists", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -118,6 +118,10 @@ var _ = Describe("Metrics Self Monitor", Label("self-mon"), Ordered, func() {
 				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrue())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+		})
+
+		It("Should ensure that the self-monitor webhook has been called", func() {
+			verifiers.SelfMonitorWebhookShouldHaveBeenCalled(proxyClient)
 		})
 	})
 })

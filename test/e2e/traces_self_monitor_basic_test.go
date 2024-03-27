@@ -114,5 +114,9 @@ var _ = Describe("Traces Self Monitor", Label("self-mon"), Ordered, func() {
 				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrue())
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
+
+		It("Should ensure that the self-monitor webhook has been called", func() {
+			verifiers.SelfMonitorWebhookShouldHaveBeenCalled(proxyClient)
+		})
 	})
 })

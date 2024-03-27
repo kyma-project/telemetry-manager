@@ -78,11 +78,7 @@ var _ = Describe("Telemetry Manager", func() {
 
 		It("Should have a metrics service", Label("telemetry"), func() {
 			var service corev1.Service
-			key := types.NamespacedName{
-				Name:      "telemetry-manager-metrics",
-				Namespace: kitkyma.SystemNamespaceName,
-			}
-			err := k8sClient.Get(ctx, key, &service)
+			err := k8sClient.Get(ctx, kitkyma.TelemetryManagerMetricsServiceName, &service)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(service.Annotations).Should(HaveKeyWithValue("prometheus.io/scrape", "true"))
@@ -90,7 +86,7 @@ var _ = Describe("Telemetry Manager", func() {
 
 			Eventually(func() []corev1.EndpointAddress {
 				var endpoints corev1.Endpoints
-				err := k8sClient.Get(ctx, key, &endpoints)
+				err := k8sClient.Get(ctx, kitkyma.TelemetryManagerMetricsServiceName, &endpoints)
 				Expect(err).NotTo(HaveOccurred())
 				return endpoints.Subsets[0].Addresses
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).ShouldNot(BeEmpty())
