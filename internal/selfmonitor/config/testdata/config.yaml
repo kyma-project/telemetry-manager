@@ -5,7 +5,9 @@ alerting:
     alertmanagers:
         - static_configs:
             - targets:
-                - localhost:9093
+                - http://webhook:9090
+          tls_config:
+            insecure_skip_verify: true
 rule_files:
     - /etc/prometheus/alerting_rules.yml
 scrape_configs:
