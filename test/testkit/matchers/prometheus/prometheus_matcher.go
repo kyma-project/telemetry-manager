@@ -2,8 +2,6 @@ package prometheus
 
 import (
 	"bytes"
-	"fmt"
-
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	dto "github.com/prometheus/client_model/go"
@@ -44,7 +42,7 @@ func ContainMetric(matcher types.GomegaMatcher) types.GomegaMatcher {
 }
 
 func WithValue(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(m dto.Metric) (float64, error) {
+	return gomega.WithTransform(func(m *dto.Metric) (float64, error) {
 		if m.Gauge != nil {
 			return m.Gauge.GetValue(), nil
 		}
@@ -54,12 +52,12 @@ func WithValue(matcher types.GomegaMatcher) types.GomegaMatcher {
 		if m.Untyped != nil {
 			return m.Untyped.GetValue(), nil
 		}
-		return 0, fmt.Errorf("metric type not supported")
+		return 0, nil
 	}, matcher)
 }
 
 func WithLabels(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(m dto.Metric) (map[string]string, error) {
+	return gomega.WithTransform(func(m *dto.Metric) (map[string]string, error) {
 		labels := make(map[string]string)
 		for _, l := range m.Label {
 			labels[l.GetName()] = l.GetValue()

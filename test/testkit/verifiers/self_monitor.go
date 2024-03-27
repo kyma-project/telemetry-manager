@@ -3,6 +3,7 @@ package verifiers
 import (
 	. "github.com/onsi/gomega"
 	"net/http"
+	"time"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -28,5 +29,5 @@ func SelfMonitorWebhookShouldHaveBeenCalled(proxyClient *apiserverproxy.Client) 
 
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+	}, periodic.EventuallyTimeout, 5*time.Second).Should(Succeed())
 }
