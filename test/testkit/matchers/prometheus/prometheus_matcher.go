@@ -12,8 +12,7 @@ import (
 func WithMetricFamilies(matcher types.GomegaMatcher) types.GomegaMatcher {
 	return gomega.WithTransform(func(responseBody []byte) ([]*prommodel.MetricFamily, error) {
 		var parser expfmt.TextParser
-		// ignore duplicate metrics parsing error and try extract metric
-		mfs, _ := parser.TextToMetricFamilies(bytes.NewReader(responseBody))
+		mfs, _ := parser.TextToMetricFamilies(bytes.NewReader(responseBody)) //nolint:errcheck // ignore duplicate metrics parsing error and try extract metric
 		var result []*prommodel.MetricFamily
 		for _, mf := range mfs {
 			result = append(result, mf)
