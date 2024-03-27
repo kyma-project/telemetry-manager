@@ -2,18 +2,19 @@ package prometheus
 
 import (
 	"bytes"
+
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
-	dto "github.com/prometheus/client_model/go"
+	prommodel "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 )
 
 func WithMetricFamilies(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(responseBody []byte) ([]*dto.MetricFamily, error) {
+	return gomega.WithTransform(func(responseBody []byte) ([]*prommodel.MetricFamily, error) {
 		var parser expfmt.TextParser
 		// ignore duplicate metrics parsing error and try extract metric
 		mfs, _ := parser.TextToMetricFamilies(bytes.NewReader(responseBody))
-		var result []*dto.MetricFamily
+		var result []*prommodel.MetricFamily
 		for _, mf := range mfs {
 			result = append(result, mf)
 		}
@@ -26,13 +27,13 @@ func ContainMetricFamily(matcher types.GomegaMatcher) types.GomegaMatcher {
 }
 
 func WithName(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(mf *dto.MetricFamily) string {
+	return gomega.WithTransform(func(mf *prommodel.MetricFamily) string {
 		return mf.GetName()
 	}, matcher)
 }
 
 func WithMetrics(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(mf *dto.MetricFamily) []*dto.Metric {
+	return gomega.WithTransform(func(mf *prommodel.MetricFamily) []*prommodel.Metric {
 		return mf.GetMetric()
 	}, matcher)
 }
@@ -42,7 +43,7 @@ func ContainMetric(matcher types.GomegaMatcher) types.GomegaMatcher {
 }
 
 func WithValue(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(m *dto.Metric) (float64, error) {
+	return gomega.WithTransform(func(m *prommodel.Metric) (float64, error) {
 		if m.Gauge != nil {
 			return m.Gauge.GetValue(), nil
 		}
@@ -57,7 +58,7 @@ func WithValue(matcher types.GomegaMatcher) types.GomegaMatcher {
 }
 
 func WithLabels(matcher types.GomegaMatcher) types.GomegaMatcher {
-	return gomega.WithTransform(func(m *dto.Metric) (map[string]string, error) {
+	return gomega.WithTransform(func(m *prommodel.Metric) (map[string]string, error) {
 		labels := make(map[string]string)
 		for _, l := range m.Label {
 			labels[l.GetName()] = l.GetValue()

@@ -1,9 +1,10 @@
 package verifiers
 
 import (
-	. "github.com/onsi/gomega"
 	"net/http"
 	"time"
+
+	. "github.com/onsi/gomega"
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
