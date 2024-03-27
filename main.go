@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -41,6 +42,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -63,6 +65,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
+	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
 	logparserwebhook "github.com/kyma-project/telemetry-manager/webhook/logparser"
@@ -107,8 +110,8 @@ var (
 	fluentBitMemoryLimit               string
 	fluentBitCPURequest                string
 	fluentBitMemoryRequest             string
-	fluentBitImageVersion              string
-	fluentBitExporterVersion           string
+	fluentBitImage                     string
+	fluentBitExporterImage             string
 	fluentBitConfigPrepperImageVersion string
 	fluentBitPriorityClassName         string
 
@@ -135,11 +138,13 @@ var (
 )
 
 const (
-	otelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.96.0-7cd3d3a3"
+	defaultOtelImage              = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.96.0-79b139cb"
+	defaultFluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.2.2-b5220c17"
+	defaultFluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240228-d652f6a3"
+	defaultSelfMonitorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/telemetry-self-monitor:2.45.4-6627fb45"
+
 	overridesConfigMapName = "telemetry-override-config"
 	overridesConfigMapKey  = "override-config"
-	fluentBitImage         = "europe-docker.pkg.dev/kyma-project/prod/tpi/fluent-bit:2.2.2-b5220c17"
-	fluentBitExporterImage = "europe-docker.pkg.dev/kyma-project/prod/directory-size-exporter:v20240228-d652f6a3"
 
 	fluentBitDaemonSet = "telemetry-fluent-bit"
 	webhookServiceName = "telemetry-manager-webhook"
@@ -229,7 +234,7 @@ func main() {
 	flag.StringVar(&certDir, "cert-dir", ".", "Webhook TLS certificate directory")
 	flag.StringVar(&telemetryNamespace, "manager-namespace", getEnvOrDefault("MY_POD_NAMESPACE", "default"), "Namespace of the manager")
 
-	flag.StringVar(&traceGatewayImage, "trace-collector-image", otelImage, "Image for tracing OpenTelemetry Collector")
+	flag.StringVar(&traceGatewayImage, "trace-collector-image", defaultOtelImage, "Image for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceGatewayPriorityClass, "trace-collector-priority-class", "", "Priority class name for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceGatewayCPULimit, "trace-collector-cpu-limit", "700m", "CPU limit for tracing OpenTelemetry Collector")
 	flag.StringVar(&traceGatewayDynamicCPULimit, "trace-collector-dynamic-cpu-limit", "500m", "Additional CPU limit for tracing OpenTelemetry Collector per TracePipeline")
@@ -241,7 +246,7 @@ func main() {
 	flag.StringVar(&traceGatewayDynamicMemoryRequest, "trace-collector-dynamic-memory-request", "0", "Additional memory request for tracing OpenTelemetry Collector per TracePipeline")
 	flag.IntVar(&maxTracePipelines, "trace-collector-pipelines", 3, "Maximum number of TracePipelines to be created. If 0, no limit is applied.")
 
-	flag.StringVar(&metricGatewayImage, "metric-gateway-image", otelImage, "Image for metrics OpenTelemetry Collector")
+	flag.StringVar(&metricGatewayImage, "metric-gateway-image", defaultOtelImage, "Image for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayPriorityClass, "metric-gateway-priority-class", "", "Priority class name for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayCPULimit, "metric-gateway-cpu-limit", "900m", "CPU limit for metrics OpenTelemetry Collector")
 	flag.StringVar(&metricGatewayDynamicCPULimit, "metric-gateway-dynamic-cpu-limit", "100m", "Additional CPU limit for metrics OpenTelemetry Collector per MetricPipeline")
@@ -260,17 +265,17 @@ func main() {
 	flag.StringVar(&fluentBitMemoryLimit, "fluent-bit-memory-limit", "1Gi", "Memory limit for fluent-bit")
 	flag.StringVar(&fluentBitCPURequest, "fluent-bit-cpu-request", "100m", "CPU request for fluent-bit")
 	flag.StringVar(&fluentBitMemoryRequest, "fluent-bit-memory-request", "50Mi", "Memory request for fluent-bit")
-	flag.StringVar(&fluentBitImageVersion, "fluent-bit-image", fluentBitImage, "Image for fluent-bit")
-	flag.StringVar(&fluentBitExporterVersion, "fluent-bit-exporter-image", fluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
+	flag.StringVar(&fluentBitImage, "fluent-bit-image", defaultFluentBitImage, "Image for fluent-bit")
+	flag.StringVar(&fluentBitExporterImage, "fluent-bit-exporter-image", defaultFluentBitExporterImage, "Image for exporting fluent bit filesystem usage")
 	flag.StringVar(&fluentBitPriorityClassName, "fluent-bit-priority-class-name", "", "Name of the priority class of fluent bit ")
 
 	flag.BoolVar(&enableSelfMonitor, "self-monitor-enabled", false, "Enable self-monitoring of the pipelines")
-	flag.StringVar(&selfMonitorImage, "self-monitor-image", "quay.io/prometheus/prometheus:v2.45.3", "Image for self-monitor")
+	flag.StringVar(&selfMonitorImage, "self-monitor-image", defaultSelfMonitorImage, "Image for self-monitor")
 	flag.StringVar(&selfMonitorCPULimit, "self-monitor-cpu-limit", "0.2", "CPU limit for self-monitor")
 	flag.StringVar(&selfMonitorCPURequest, "self-monitor-cpu-request", "0.1", "CPU request for self-monitor")
 	flag.StringVar(&selfMonitorMemoryLimit, "self-monitor-memory-limit", "90Mi", "Memory limit for self-monitor")
 	flag.StringVar(&selfMonitorMemoryRequest, "self-monitor-memory-request", "42Mi", "Memory request for self-monitor")
-	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "telemetry-priority-class", "Priority class name for self-monitor")
+	flag.StringVar(&selfMonitorPriorityClass, "self-monitor-priority-class", "", "Priority class name for self-monitor")
 
 	flag.StringVar(&deniedOutputPlugins, "fluent-bit-denied-output-plugins", "", "Comma separated list of denied output plugins even if allowUnsupportedPlugins is enabled. If empty, all output plugins are allowed.")
 	flag.IntVar(&maxLogPipelines, "fluent-bit-max-pipelines", 5, "Maximum number of LogPipelines to be created. If 0, no limit is applied.")
@@ -350,8 +355,12 @@ func main() {
 	})
 
 	enableLoggingController(mgr)
-	enableTracingController(mgr)
-	enableMetricsController(mgr)
+
+	tracingControllerReconcileTriggerChan := make(chan event.GenericEvent)
+	enableTracingController(mgr, tracingControllerReconcileTriggerChan)
+
+	metricsControllerReconcileTriggerChan := make(chan event.GenericEvent)
+	enableMetricsController(mgr, metricsControllerReconcileTriggerChan)
 
 	webhookConfig := createWebhookConfig()
 	selfMonitorConfig := createSelfMonitoringConfig()
@@ -373,6 +382,13 @@ func main() {
 		enableWebhookServer(mgr, webhookConfig)
 	}
 
+	if enableWebhook && enableSelfMonitor {
+		mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
+			selfmonitorwebhook.WithSubscriber(tracingControllerReconcileTriggerChan),
+			selfmonitorwebhook.WithSubscriber(metricsControllerReconcileTriggerChan),
+			selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
+	}
+
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
@@ -382,7 +398,7 @@ func main() {
 func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) {
 	setupLog.Info("Starting with telemetry manager controller")
 
-	if err := createTelemetryReconciler(mgr.GetClient(), mgr.GetScheme(), webhookConfig, selfMonitorConfig).SetupWithManager(mgr); err != nil {
+	if err := createTelemetryController(mgr.GetClient(), mgr.GetScheme(), webhookConfig, selfMonitorConfig).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Telemetry")
 		os.Exit(1)
 	}
@@ -394,18 +410,18 @@ func enableLoggingController(mgr manager.Manager) {
 	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
 
-	if err := createLogPipelineReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+	if err := createLogPipelineController(mgr.GetClient()).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "LogPipeline")
 		os.Exit(1)
 	}
 
-	if err := createLogParserReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+	if err := createLogParserController(mgr.GetClient()).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "LogParser")
 		os.Exit(1)
 	}
 }
 
-func enableTracingController(mgr manager.Manager) {
+func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
 	setupLog.Info("Starting with tracing controller")
 	var err error
 	var flowHealthProber *flowhealth.Prober
@@ -415,13 +431,13 @@ func enableTracingController(mgr manager.Manager) {
 		os.Exit(1)
 	}
 
-	if err := createTracePipelineReconciler(mgr.GetClient(), flowHealthProber).SetupWithManager(mgr); err != nil {
+	if err := createTracePipelineController(mgr.GetClient(), reconcileTriggerChan, flowHealthProber).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "TracePipeline")
 		os.Exit(1)
 	}
 }
 
-func enableMetricsController(mgr manager.Manager) {
+func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
 	setupLog.Info("Starting with metrics controller")
 	var err error
 	var flowHealthProber *flowhealth.Prober
@@ -431,7 +447,7 @@ func enableMetricsController(mgr manager.Manager) {
 		os.Exit(1)
 	}
 
-	if err := createMetricPipelineReconciler(mgr.GetClient(), flowHealthProber).SetupWithManager(mgr); err != nil {
+	if err := createMetricPipelineController(mgr.GetClient(), reconcileTriggerChan, flowHealthProber).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "MetricPipeline")
 		os.Exit(1)
 	}
@@ -467,7 +483,7 @@ func validateFlags() error {
 	return nil
 }
 
-func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.LogPipelineReconciler {
+func createLogPipelineController(client client.Client) *telemetrycontrollers.LogPipelineController {
 	config := logpipeline.Config{
 		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
 		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
@@ -479,9 +495,9 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 		OverrideConfigMap:     types.NamespacedName{Name: overridesConfigMapName, Namespace: telemetryNamespace},
 		PipelineDefaults:      createPipelineDefaults(),
 		DaemonSetConfig: fluentbit.DaemonSetConfig{
-			FluentBitImage:              fluentBitImageVersion,
+			FluentBitImage:              fluentBitImage,
 			FluentBitConfigPrepperImage: fluentBitConfigPrepperImageVersion,
-			ExporterImage:               fluentBitExporterVersion,
+			ExporterImage:               fluentBitExporterImage,
 			PriorityClassName:           fluentBitPriorityClassName,
 			CPULimit:                    resource.MustParse(fluentBitCPULimit),
 			MemoryLimit:                 resource.MustParse(fluentBitMemoryLimit),
@@ -490,19 +506,19 @@ func createLogPipelineReconciler(client client.Client) *telemetrycontrollers.Log
 		},
 	}
 
-	return telemetrycontrollers.NewLogPipelineReconciler(
+	return telemetrycontrollers.NewLogPipelineController(
 		client,
 		logpipeline.NewReconciler(client, config, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
 		config)
 }
 
-func createLogParserReconciler(client client.Client) *telemetrycontrollers.LogParserReconciler {
+func createLogParserController(client client.Client) *telemetrycontrollers.LogParserController {
 	config := logparser.Config{
 		ParsersConfigMap: types.NamespacedName{Name: "telemetry-fluent-bit-parsers", Namespace: telemetryNamespace},
 		DaemonSet:        types.NamespacedName{Name: fluentBitDaemonSet, Namespace: telemetryNamespace},
 	}
 
-	return telemetrycontrollers.NewLogParserReconciler(
+	return telemetrycontrollers.NewLogParserController(
 		client,
 		logparser.NewReconciler(
 			client,
@@ -533,7 +549,7 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 		admission.NewDecoder(scheme))
 }
 
-func createTracePipelineReconciler(client client.Client, flowHealthProber *flowhealth.Prober) *telemetrycontrollers.TracePipelineReconciler {
+func createTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *flowhealth.Prober) *telemetrycontrollers.TracePipelineController {
 	config := tracepipeline.Config{
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
@@ -560,8 +576,9 @@ func createTracePipelineReconciler(client client.Client, flowHealthProber *flowh
 		MaxPipelines:           maxTracePipelines,
 	}
 
-	return telemetrycontrollers.NewTracePipelineReconciler(
+	return telemetrycontrollers.NewTracePipelineController(
 		client,
+		reconcileTriggerChan,
 		tracepipeline.NewReconciler(
 			client,
 			config,
@@ -572,7 +589,7 @@ func createTracePipelineReconciler(client client.Client, flowHealthProber *flowh
 	)
 }
 
-func createMetricPipelineReconciler(client client.Client, flowHealthProber *flowhealth.Prober) *telemetrycontrollers.MetricPipelineReconciler {
+func createMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *flowhealth.Prober) *telemetrycontrollers.MetricPipelineController {
 	config := metricpipeline.Config{
 		Agent: otelcollector.AgentConfig{
 			Config: otelcollector.Config{
@@ -613,8 +630,9 @@ func createMetricPipelineReconciler(client client.Client, flowHealthProber *flow
 		MaxPipelines:           maxMetricPipelines,
 	}
 
-	return telemetrycontrollers.NewMetricPipelineReconciler(
+	return telemetrycontrollers.NewMetricPipelineController(
 		client,
+		reconcileTriggerChan,
 		metricpipeline.NewReconciler(
 			client,
 			config,
@@ -641,6 +659,8 @@ func createSelfMonitoringConfig() telemetry.SelfMonitorConfig {
 				MemoryRequest:     resource.MustParse(selfMonitorMemoryRequest),
 			},
 		},
+		WebhookScheme: "https",
+		WebhookURL:    fmt.Sprintf("%s.%s.svc", webhookServiceName, telemetryNamespace),
 	}
 }
 
@@ -664,7 +684,7 @@ func parsePlugins(s string) []string {
 	return strings.SplitN(strings.ReplaceAll(s, " ", ""), ",", len(s))
 }
 
-func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) *operator.TelemetryReconciler {
+func createTelemetryController(client client.Client, scheme *runtime.Scheme, webhookConfig telemetry.WebhookConfig, selfMonitorConfig telemetry.SelfMonitorConfig) *operator.TelemetryController {
 	config := telemetry.Config{
 		Traces: telemetry.TracesConfig{
 			OTLPServiceName: traceOTLPServiceName,
@@ -679,7 +699,7 @@ func createTelemetryReconciler(client client.Client, scheme *runtime.Scheme, web
 		SelfMonitor:            selfMonitorConfig,
 	}
 
-	return operator.NewTelemetryReconciler(client, telemetry.NewReconciler(client, scheme, config, overridesHandler, enableSelfMonitor), config)
+	return operator.NewTelemetryController(client, telemetry.NewReconciler(client, scheme, config, overridesHandler, enableSelfMonitor), config)
 }
 
 func createWebhookConfig() telemetry.WebhookConfig {

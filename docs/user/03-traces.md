@@ -281,6 +281,7 @@ stringData:
 ```
 
 The value of the token can be stored in the referenced Secret without any prefix or scheme, and it can be configured in the headers section of the TracePipeline. In this example, the token has the prefix Bearer.
+
 ### Step 4: Rotate the Secret
 
 Telemetry Manager continuously watches the Secret referenced with the **secretKeyRef** construct. You can update the Secret’s values, and Telemetry Manager detects the changes and applies the new Secret to the setup.
@@ -340,10 +341,10 @@ spec:
 
 #### **Sampling Rate**
 
-By default, the sampling rate is configured to 1%. That means that only 1 trace out of 100 traces is reported to the trace gateway, and all others are dropped. The sampling decision itself is propagated as part of the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) so that either all involved components are reporting the span data of a trace, or none. 
+By default, the sampling rate is configured to 1%. That means that only 1 trace out of 100 traces is reported to the trace gateway, and all others are dropped. The sampling decision itself is propagated as part of the [trace context](https://www.w3.org/TR/trace-context/#sampled-flag) so that either all involved components are reporting the span data of a trace, or none.
 
 > [!TIP]
-> If you increase the sampling rate, you send more data your tracing backend and cause much higher network utilization in the cluster. 
+> If you increase the sampling rate, you send more data your tracing backend and cause much higher network utilization in the cluster.
 > To reduce costs and performance impacts in a production setup, a very low percentage of around 5% is recommended.
 
 To configure an "always-on" sampling, set the sampling rate to 100%:
@@ -487,6 +488,7 @@ System-related spans reported by Istio are filtered out without the opt-out opti
    To override the default percentage, you deploy a YAML file to an existing Kyma installation.
    To set the value for the **randomSamplingPercentage** attribute, create a values YAML file.
    The following example sets the value to `60`, which means 60% of the requests are sent to tracing backend.
+
     ```yaml
       apiVersion: telemetry.istio.io/v1alpha1
       kind: Telemetry

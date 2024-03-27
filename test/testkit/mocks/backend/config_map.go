@@ -32,8 +32,10 @@ func NewConfigMap(name, namespace, path string, signalType SignalType, withTLS b
 const metricsAndTracesConfigTemplate = `receivers:
   otlp:
     protocols:
-      grpc: {}
-      http: {}
+      grpc:
+        endpoint: ${MY_POD_IP}:4317
+      http:
+        endpoint: ${MY_POD_IP}:4318
 exporters:
   file:
     path: {{ FILEPATH }}
@@ -56,7 +58,9 @@ const tlsConfigTemplate = `receivers:
           cert_pem: "{{ CERT_PEM }}"
           key_pem: "{{ KEY_PEM }}"
           client_ca_file: {{ CA_FILE_PATH }}
-      http: {}
+        endpoint: ${MY_POD_IP}:4317
+      http:
+        endpoint: ${MY_POD_IP}:4318
 exporters:
   file:
     path: {{ FILEPATH }}
@@ -73,11 +77,13 @@ service:
 
 const LogConfigTemplate = `receivers:
   fluentforward:
-    endpoint: 0.0.0.0:8006
+    endpoint: localhost:8006
   otlp:
     protocols:
-      grpc: {}
-      http: {}
+      grpc:
+        endpoint: ${MY_POD_IP}:4317
+      http:
+        endpoint: ${MY_POD_IP}:4318
 exporters:
   file:
     path: {{ FILEPATH }}

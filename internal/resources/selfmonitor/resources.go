@@ -279,17 +279,7 @@ func makePodSpec(baseName, image string, opts ...podSpecOption) corev1.PodSpec {
 			{
 				Name:  containerName,
 				Image: image,
-				Args:  []string{"--storage.tsdb.retention.time=6h", "--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus/", "--web.enable-lifecycle"},
-				EnvFrom: []corev1.EnvFromSource{
-					{
-						SecretRef: &corev1.SecretEnvSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: baseName,
-							},
-							Optional: ptr.To(true),
-						},
-					},
-				},
+				Args:  []string{"--storage.tsdb.retention.time=6h", "--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus/"},
 				SecurityContext: &corev1.SecurityContext{
 					Privileged:               ptr.To(false),
 					RunAsUser:                ptr.To(prometheusUser),

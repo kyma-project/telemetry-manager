@@ -50,7 +50,7 @@ Status:
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
 
-## Custom resource parameters
+## Custom Resource Parameters
 
 For details, see the [Telemetry specification file](https://github.com/kyma-project/telemetry-manager/blob/main/apis/operator/v1alpha1/telemetry_types.go).
 
@@ -100,7 +100,7 @@ For details, see the [Telemetry specification file](https://github.com/kyma-proj
 
 <!-- TABLE-END -->
 
-The `state` attribute of the Telemetry CR is derived from the combined state of all the subcomponents, namely, from the condition types `LogComponentsHealthy`, `TraceComponentsHealthy` and `MetricComponentsHealthy`. 
+The `state` attribute of the Telemetry CR is derived from the combined state of all the subcomponents, namely, from the condition types `LogComponentsHealthy`, `TraceComponentsHealthy` and `MetricComponentsHealthy`.
 
 ### Log Components State
 
@@ -144,6 +144,6 @@ The state of the metric components is determined by the status condition of type
 
 ### Telemetry CR State
 
-- 'Ready': Only if all the subcomponent conditions (LogComponentsHealthy, TraceComponentsHealthy, and MetricComponentsHealthy) have a status of 'True.' 
-- 'Warning': If any of these conditions are not 'True'.
+- 'Ready': Only if all the subcomponent conditions (LogComponentsHealthy, TraceComponentsHealthy, and MetricComponentsHealthy) have a status of `True`.
+- 'Warning': If any of these conditions are not `True`.
 - 'Deleting': When a Telemetry CR is being deleted.

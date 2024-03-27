@@ -30,27 +30,27 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logparser"
 )
 
-// LogParserReconciler reconciles a Logparser object
-type LogParserReconciler struct {
+// LogParserController reconciles a Logparser object
+type LogParserController struct {
 	client.Client
 
 	config     logparser.Config
 	reconciler *logparser.Reconciler
 }
 
-func NewLogParserReconciler(client client.Client, reconciler *logparser.Reconciler, config logparser.Config) *LogParserReconciler {
-	return &LogParserReconciler{
+func NewLogParserController(client client.Client, reconciler *logparser.Reconciler, config logparser.Config) *LogParserController {
+	return &LogParserController{
 		Client:     client,
 		reconciler: reconciler,
 		config:     config,
 	}
 }
 
-func (r *LogParserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *LogParserController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	return r.reconciler.Reconcile(ctx, req)
 }
 
-func (r *LogParserReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *LogParserController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&telemetryv1alpha1.LogParser{}).
 		Watches(
