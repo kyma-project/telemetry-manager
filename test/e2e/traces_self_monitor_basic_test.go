@@ -12,6 +12,8 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -19,9 +21,11 @@ import (
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/types"
 )
 
-var _ = Describe("Telemetry Self Monitor", Label("self-mon"), Ordered, func() {
+var _ = Describe("Traces Self Monitor", Label("self-mon"), Ordered, func() {
 	const (
 		mockBackendName = "traces-receiver-selfmon"
 		mockNs          = "traces-basic-selfmon-test"
@@ -37,13 +41,12 @@ var _ = Describe("Telemetry Self Monitor", Label("self-mon"), Ordered, func() {
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces, backend.WithPersistentHostSecret(isOperational()))
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		pipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
-			Persistent(isOperational())
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
 		pipelineName = pipeline.Name()
 		objs = append(objs, pipeline.K8sObject())
 
@@ -59,9 +62,11 @@ var _ = Describe("Telemetry Self Monitor", Label("self-mon"), Ordered, func() {
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
+
 		It("Should have a running self-monitor", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.SelfMonitorName)
 		})
+
 		It("Should have a network policy deployed", func() {
 			var networkPolicy networkingv1.NetworkPolicy
 			Expect(k8sClient.Get(ctx, kitkyma.SelfMonitorNetworkPolicy, &networkPolicy)).To(Succeed())
@@ -85,23 +90,29 @@ var _ = Describe("Telemetry Self Monitor", Label("self-mon"), Ordered, func() {
 			Expect(k8sClient.Get(ctx, kitkyma.SelfMonitorName, &service)).To(Succeed())
 		})
 
-		It("Should have a running pipeline", Label(operationalTest), func() {
+		It("Should have a running pipeline", func() {
 			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should verify end-to-end trace delivery", Label(operationalTest), func() {
+		It("Should verify end-to-end trace delivery", func() {
 			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP)
 			traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, gatewayPushURL)
 			verifiers.TracesShouldBeDelivered(proxyClient, telemetryExportURL, traceID, spanIDs, attrs)
 		})
 
-		It("Should be able to get trace gateway metrics endpoint", Label(operationalTest), func() {
+		It("Should be able to get trace gateway metrics endpoint", func() {
 			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.TraceGatewayMetrics.Namespace, kitkyma.TraceGatewayMetrics.Name, "metrics", ports.Metrics)
 			verifiers.ShouldExposeCollectorMetrics(proxyClient, gatewayMetricsURL)
 		})
 
 		It("The telemetryFlowHealthy condition should be true", func() {
-			verifiers.TracePipelineTelemetryHealthFlowIsHealthy(ctx, k8sClient, pipelineName)
+			//TODO: add the conditions.TypeFlowHealthy check to verifiers.TracePipelineShouldBeHealthy after self monitor is released
+			Eventually(func(g Gomega) {
+				var pipeline telemetryv1alpha1.TracePipeline
+				key := types.NamespacedName{Name: pipelineName}
+				g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+				g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrue())
+			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 		})
 	})
 })
