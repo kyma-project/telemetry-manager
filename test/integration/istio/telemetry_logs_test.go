@@ -5,13 +5,6 @@ package istio
 import (
 	"fmt"
 	"net/http"
-	"time"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -22,10 +15,15 @@ import (
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	gomegatypes "github.com/onsi/gomega/types"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// TODO: Change to logs label
-var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordered, func() {
+var _ = Describe("Telemetry Components Error/Warning Logs", Label("logs"), Ordered, func() {
 	const (
 		mockNs             = "tlogs-http"
 		logBackendName     = "tlogs-log"
@@ -43,7 +41,6 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 		logTelemetryExportURL    string
 		metricTelemetryExportURL string
 		traceTelemetryExportURL  string
-		now                      time.Time
 	)
 
 	sourcePodSpec := func() corev1.PodSpec {
@@ -132,7 +129,6 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 	Context("When telemetry components are set-up", func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
-			// TEST: Comment-out for debugging
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
@@ -170,13 +166,16 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 			verifiers.TracesShouldBeDelivered(proxyClient, traceTelemetryExportURL, traceID, spanIDs, attrs)
 		})
 
-		// TODO: Whitelist possible (flaky/expected) errors
-		// excludeWhitelistedLogs := func() string {
-		// }
+		// whitelist possible (flaky/expected) errors
+		excludeWhitelistedLogs := func() gomegatypes.GomegaMatcher {
+			return Or(
+				ContainSubstring("The default endpoints for all servers in components will change to use localhost instead of 0.0.0.0 in a future version. Use the feature gate to preview the new default."),
+				ContainSubstring("Reconciler error"),
+				ContainSubstring("error re-reading certificate"),
+			)
+		}
 
 		It("Should not have any ERROR/WARNING level logs in the components", func() {
-			// TODO: Remove time constraint
-			now = time.Now().UTC()
 			Consistently(func(g Gomega) {
 				resp, err := proxyClient.Get(logTelemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -185,13 +184,13 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("wip"), Ordere
 					Not(ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-")),
 						WithLevel(Or(Equal("ERROR"), Equal("WARNING"))),
-						WithTimestamp(BeTemporally(">=", now)),
+						WithLogBody(Not(excludeWhitelistedLogs())),
 					)))),
 				))
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
 
-	// configmap: FLuentBit, exclude_path (excluding self logs)
-	// https://vscode.dev/github/TeodorSAP/telemetry-manager/blob/test/check-error-logs/internal/fluentbit/config/builder/input.go#L15-L16
+	// TODO: configmap: FLuentBit, exclude_path (excluding self logs)
+	// telemetry-manager/blob/test/check-error-logs/internal/fluentbit/config/builder/input.go#L15-L16
 })
