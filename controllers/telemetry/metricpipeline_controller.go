@@ -132,6 +132,7 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 }
 
 func (r *MetricPipelineController) mapReconcileTriggerEvent(ctx context.Context, _ client.Object) []reconcile.Request {
+	logf.FromContext(ctx).V(1).Info("Reconcile trigger event received")
 	requests, err := r.createRequestsForAllPipelines(ctx)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
