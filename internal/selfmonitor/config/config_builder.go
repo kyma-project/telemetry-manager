@@ -1,18 +1,21 @@
 package config
 
 import (
-	"fmt"
 	"time"
-
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
 
-func MakeConfig(scrapeNamespace string) Config {
+type BuilderConfig struct {
+	ScrapeNamespace string
+	WebhookURL      string
+	WebhookScheme   string
+}
+
+func MakeConfig(builderCfg BuilderConfig) Config {
 	promConfig := Config{}
 	promConfig.GlobalConfig = makeGlobalConfig()
-	promConfig.AlertingConfig = makeAlertConfig()
+	promConfig.AlertingConfig = makeAlertConfig(builderCfg.WebhookURL, builderCfg.WebhookScheme)
 	promConfig.RuleFiles = []string{"/etc/prometheus/alerting_rules.yml"}
-	promConfig.ScrapeConfigs = makeScrapeConfig(scrapeNamespace)
+	promConfig.ScrapeConfigs = makeScrapeConfig(builderCfg.ScrapeNamespace)
 	return promConfig
 }
 
@@ -23,12 +26,16 @@ func makeGlobalConfig() GlobalConfig {
 	}
 }
 
-func makeAlertConfig() AlertingConfig {
+func makeAlertConfig(webhookURL, webhookScheme string) AlertingConfig {
 	return AlertingConfig{
 		AlertManagers: []AlertManagerConfig{{
+			Scheme: webhookScheme,
 			StaticConfigs: []AlertManagerStaticConfig{{
-				Targets: []string{fmt.Sprintf("localhost:%d", ports.AlertingPort)},
+				Targets: []string{webhookURL},
 			}},
+			TLSConfig: TLSConfig{
+				InsecureSkipVerify: true,
+			},
 		}},
 	}
 }

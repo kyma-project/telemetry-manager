@@ -10,6 +10,7 @@ Follow these steps to set up the required environment:
 
 1. Create a Kubernetes cluster (k3d or Gardener).
 2. Create an overrides file specifically for the Prometheus Helm Chart. Save the file as `overrides.yaml`.
+
    ```yaml
     alertmanager:
       enabled: false
@@ -89,12 +90,16 @@ Follow these steps to set up the required environment:
                 action: replace
                 target_label: node
    ```
+
 3. Deploy Prometheus.
+
    ```shell
     kubectl create ns prometheus
     helm install -f overrides.yaml  prometheus prometheus-community/prometheus
    ```
+
 4. Create an endpoint in Telemetry Manager to be invoked by Prometheus:
+
    ```go
     reconcileTriggerChan := make(chan event.GenericEvent, 1024)
     go func() {
@@ -127,7 +132,9 @@ Follow these steps to set up the required environment:
         }
     }()
    ```
+
 5. Trigger reconciliation in MetricPipelineController whenever the endpoint is called by Prometheus:
+
    ```go
     func NewMetricPipelineReconciler(client client.Client, reconcileTriggerChan chan event.GenericEvent, reconciler *metricpipeline.Reconciler) *MetricPipelineReconciler {
         return &MetricPipelineReconciler{
@@ -158,7 +165,9 @@ Follow these steps to set up the required environment:
         return requests
     }
    ```
+
 6. Query Prometheus alerts in the Reconcile function:
+
    ```go
     import (
         "context"
@@ -199,6 +208,7 @@ Follow these steps to set up the required environment:
    ```
 
 7. Add a Kubernetes service for the alerts endpoint to the kustomize file:
+
    ```yaml
     apiVersion: v1
     kind: Service
@@ -216,7 +226,9 @@ Follow these steps to set up the required environment:
         kyma-project.io/component: controller
         control-plane: telemetry-manager
    ```
+
 8. Whitelist the endpoint port (9090) in the manager network policy:
+
    ```yaml
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -245,7 +257,9 @@ Follow these steps to set up the required environment:
             - protocol: TCP
               port: 9090
    ```
+
 9. Deploy the modified Telemetry Manager:
+
    ```shell
     export IMG=$DEV_IMAGE_REPO
     make docker-build
@@ -253,4 +267,5 @@ Follow these steps to set up the required environment:
     make install
     make deploy
    ```
+
 10. Intentionally break any scrape Target to fire the InstanceDown alert. Look at Telemetry Manager logs, you should see that Prometheus is pushing alerts via the endpoint, which triggers immediate reconciliation.

@@ -89,3 +89,12 @@ func TracesShouldNotBePresent(proxyClient *apiserverproxy.Client, telemetryExpor
 		g.Expect(err).NotTo(HaveOccurred())
 	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
+
+func TracePipelineTelemetryHealthFlowIsHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.TracePipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrue())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}

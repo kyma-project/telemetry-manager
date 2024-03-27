@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	logzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -149,6 +150,7 @@ var _ = BeforeSuite(func() {
 
 	tracePipelineController := NewTracePipelineController(
 		client,
+		make(chan event.GenericEvent),
 		tracepipeline.NewReconciler(client, testTracePipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, false, nil, overridesHandler),
 	)
 	err = tracePipelineController.SetupWithManager(mgr)
@@ -156,6 +158,7 @@ var _ = BeforeSuite(func() {
 
 	metricPipelineController := NewMetricPipelineController(
 		client,
+		make(chan event.GenericEvent),
 		metricpipeline.NewReconciler(client, testMetricPipelineReconcilerConfig, &k8sutils.DeploymentProber{Client: client}, &k8sutils.DaemonSetProber{Client: client}, false, nil, overridesHandler))
 	err = metricPipelineController.SetupWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())

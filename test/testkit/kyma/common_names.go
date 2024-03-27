@@ -13,6 +13,7 @@ const (
 	MetricGatewayBaseName = "telemetry-metric-gateway"
 	MetricAgentBaseName   = "telemetry-metric-agent"
 	TraceGatewayBaseName  = "telemetry-trace-collector"
+	SelfMonitorBaseName   = "telemetry-self-monitor"
 	DefaultTelemetryName  = "default"
 )
 
@@ -32,6 +33,9 @@ var (
 	TraceGatewayMetrics       = types.NamespacedName{Name: TraceGatewayBaseName + "-metrics", Namespace: SystemNamespaceName}
 	TraceGatewayNetworkPolicy = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
 	TraceGatewaySecretName    = types.NamespacedName{Name: TraceGatewayBaseName, Namespace: SystemNamespaceName}
+
+	SelfMonitorName          = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
+	SelfMonitorNetworkPolicy = types.NamespacedName{Name: SelfMonitorBaseName, Namespace: SystemNamespaceName}
 
 	TelemetryName = types.NamespacedName{Name: DefaultTelemetryName, Namespace: SystemNamespaceName}
 )

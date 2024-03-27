@@ -93,6 +93,7 @@ The Telemetry module supports the convenient shipment of applications and access
           uri: /customindex/kyma
     EOF
     ```
+
       </details>
     </div>
 
@@ -157,6 +158,7 @@ To analyze access logs of your workload in the default SAP Cloud Logging dashboa
           uri: /customindex/istio-envoy-kyma
     EOF
     ```
+
       </details>
     </div>
 
@@ -189,6 +191,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
         randomSamplingPercentage: 1.0
     EOF
     ```
+
      </details>
    </div>
 
@@ -234,6 +237,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
                   key: ingest-otlp-key
     EOF
     ```
+
      </details>
    </div>
 
@@ -290,6 +294,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
                   key: ingest-otlp-key
     EOF
     ```
+
      </details>
    </div>
 
@@ -307,7 +312,7 @@ To enable shipping traces to the SAP Cloud Logging service instance, follow this
 
 For easier access, add a navigation node to the Observability section as well as deep links to the Pod, Deployment, and Namespace views of the Kyma dashboard.
 
-1. Read the Cloud Logging dashboard URL from the secret:
+1. Read the Cloud Logging dashboard URL from the Secret:
 
     ```bash
     export DASHBOARD_URL=$(kubectl -n sap-cloud-logging-integration get secret sap-cloud-logging --template='{{index .data "dashboards-endpoint" | base64decode}}')

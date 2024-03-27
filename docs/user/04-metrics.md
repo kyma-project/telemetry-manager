@@ -427,13 +427,14 @@ Note that metrics from system namespaces are excluded by default when a namespac
 ### Step 9: Enable Diagnostic Metrics
 
 When using the `prometheus` or `istio` input feature of the MetricPipeline, typical scrape metrics are produced for every metric source. These metrics include:
+
 - `up`
 - `scrape_duration_seconds`
 - `scrape_samples_scraped`
 - `scrape_samples_post_metric_relabeling`
 - `scrape_series_added`
 
-These are rather technical metrics, useful for debugging and diagnostic purposes. 
+These are rather technical metrics, useful for debugging and diagnostic purposes.
 
 To enable diagnostic metrics, define a MetricPipeline that has the `diagnosticMetrics` section defined in inputs `prometheus` or/and `istio`. Learn more about the available [parameters and attributes](resources/05-metricpipeline.md).
 
@@ -508,7 +509,7 @@ The relevant metrics are:
 |---|---|---|
 | otelcol_exporter_enqueue_failed_metric_points | total[5m] > 0 | Indicates that new or retried items could not be added to the exporter buffer because the buffer is exhausted. Typically, that happens when the configured backend cannot handle the load on time and is causing back pressure. |
 | otelcol_exporter_send_failed_metric_points | total[5m] > 0 | Indicates that items are refused in an non-retryable way like a 400 status |
-| otelcol_processor_refused_metric_points | total[5m] > 0 | Indicates that items cannot be received because a processor refuses them. That usually happens when memory of the collector is exhausted because too much data arrived and throttling started.. |
+| otelcol_processor_refused_metric_points | total[5m] > 0 | Indicates that items cannot be received because a processor refuses them. That usually happens when memory of the collector is exhausted because too much data arrived and throttling started. |
 
 ## Limitations
 
@@ -572,9 +573,9 @@ Remedy:
 
 Symptom: Custom metrics don't arrive at the destination and the OTel Collector produces log entries "Failed to scrape Prometheus endpoint":
 
-```bash
-2023-08-29T09:53:07.123Z	warn	internal/transaction.go:111	Failed to scrape Prometheus endpoint	{"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
-```
+   ```bash
+   2023-08-29T09:53:07.123Z warn internal/transaction.go:111 Failed to scrape Prometheus endpoint {"kind": "receiver", "name": "prometheus/app-pods", "data_type": "metrics", "scrape_timestamp": 1693302787120, "target_labels": "{__name__=\"up\", instance=\"10.42.0.18:8080\", job=\"app-pods\"}"}
+   ```
 
 Cause: The workload is not configured to use 'STRICT' mTLS mode. For details, see [Activate Prometheus-based metrics](#step-4-activate-prometheus-based-metrics).
 

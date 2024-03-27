@@ -18,7 +18,7 @@ Additionally, we should offer runbooks to help them in resolving these problems.
 ### Throttling
 
 * Currently, throttling can only be triggered by Memory Limiter (increase in `otelcol_receiver_refused_metric_points` and `otelcol_processor_refused_metric_points`).
-There is a community discussion about incorporating a rate-limiting mechanism directly into the OTLP Receiver: https://github.com/open-telemetry/opentelemetry-collector/issues/6725.
+There is a [community discussion](https://github.com/open-telemetry/opentelemetry-collector/issues/6725) about incorporating a rate-limiting mechanism directly into the OTLP Receiver.
 * Throttling is often triggered by memory pressure from the exporter queue. However, during extreme traffic spikes, memory may exceed the soft limit even when the queue is empty.
 * When throttling occurs, gRPC status code [Unavailable](https://grpc.github.io/grpc/core/md_doc_statuscodes.html) is returned to the client.
 * Scaling may help if the backend is healthy, but could worsen things if not.
@@ -59,9 +59,10 @@ Ultimately, the user's primary concern is understanding whether the telemetry fl
 * Manually scale out the gateway (as long as no autoscaling capability is provided).
 
 With a single condition type, the **reason** field can show a value that is most relevant for the user. We suggest the following values, ordered from most to least critical:
-```
-AllTelemetryDataDropped > SomeTelemetryDataDropped > BufferFillingUp > GatewayThrottling > Healthy
-```
+
+   ```bash
+   AllTelemetryDataDropped > SomeTelemetryDataDropped > BufferFillingUp > GatewayThrottling > Healthy
+   ```
 
 The reasons are based on the following alert rules (an example for Metric Pipelines; the actual PromQL expressions must be defined later):
 | Alert Rule | Expression |
@@ -70,7 +71,7 @@ The reasons are based on the following alert rules (an example for Metric Pipeli
 | GatewayExporterDroppedMetrics  | `sum(rate(otelcol_exporter_send_failed_metric_points{...}[5m])) > 0`    |
 | GatewayReceiverRefusedMetrics  | `sum(rate(otelcol_receiver_refused_metric_points{...}[5m])) > 0`        |
 | GatewayExporterEnqueueFailed   | `sum(rate(otelcol_exporter_enqueue_failed_metric_points{...}[5m])) > 0` |
-| GatewayExporterQueueAlmostFull | `otelcol_exporter_queue_size / otelcol_exporter_queue_capacity > 0.8`   |                               |
+| GatewayExporterQueueAlmostFull | `otelcol_exporter_queue_size / otelcol_exporter_queue_capacity > 0.8`   |
 
 Then, we map the alert rules to the reasons as follows:
 
@@ -83,9 +84,11 @@ Then, we map the alert rules to the reasons as follows:
 | Healthy                           | **not** (GatewayExporterDroppedMetrics **or** GatewayExporterEnqueueFailed **or** HighBufferUtilization **or** GatewayReceiverRefusedMetrics) |
 
 > **NOTE:** `BufferFillingUp` should not result in a negative condition status. This reason would be aggregated as warning in the Telemetry module status.
+
 ### Gateway/Agent Communication
 
 The events mentioned above are about the Gateway Collector. Some other issues might happen with the Agent, like:
+
 * Gateway can't be reached (network problem).
 * Gateway won't accept data (gateway throttling).
 
@@ -99,4 +102,3 @@ In the future, we might think about adding a `TelemetryCollectionHealthy` condit
 The Telemetry Health Status API addresses possible obstacles in the telemetry flow. We can enhance the information in the message field and include a troubleshooting guide.
 
 Looking ahead, as the OTel Collector evolves, we may introduce additional values for **reason**, as well as expose simplified custom metrics derived from OTel Collector metrics to the user.
-

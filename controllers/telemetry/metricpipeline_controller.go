@@ -29,9 +29,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	operatorv1alpha1 "github.com/kyma-project/telemetry-manager/apis/operator/v1alpha1"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -42,14 +44,15 @@ import (
 // MetricPipelineController reconciles a MetricPipeline object
 type MetricPipelineController struct {
 	client.Client
-
-	reconciler *metricpipeline.Reconciler
+	reconcileTriggerChan <-chan event.GenericEvent
+	reconciler           *metricpipeline.Reconciler
 }
 
-func NewMetricPipelineController(client client.Client, reconciler *metricpipeline.Reconciler) *MetricPipelineController {
+func NewMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, reconciler *metricpipeline.Reconciler) *MetricPipelineController {
 	return &MetricPipelineController{
-		Client:     client,
-		reconciler: reconciler,
+		Client:               client,
+		reconcileTriggerChan: reconcileTriggerChan,
+		reconciler:           reconciler,
 	}
 }
 
@@ -60,6 +63,11 @@ func (r *MetricPipelineController) Reconcile(ctx context.Context, req ctrl.Reque
 // SetupWithManager sets up the controller with the Manager.
 func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr).For(&telemetryv1alpha1.MetricPipeline{})
+
+	b.WatchesRawSource(
+		&source.Channel{Source: r.reconcileTriggerChan},
+		handler.EnqueueRequestsFromMapFunc(r.mapReconcileTriggerEvent),
+	)
 
 	ownedResourceTypesToWatch := []client.Object{
 		&appsv1.Deployment{},
@@ -116,6 +124,15 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 		return nil
 	}
 
+	requests, err := r.createRequestsForAllPipelines(ctx)
+	if err != nil {
+		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
+	}
+	return requests
+}
+
+func (r *MetricPipelineController) mapReconcileTriggerEvent(ctx context.Context, _ client.Object) []reconcile.Request {
+	logf.FromContext(ctx).V(1).Info("Reconcile trigger event received")
 	requests, err := r.createRequestsForAllPipelines(ctx)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
