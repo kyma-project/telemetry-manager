@@ -21,7 +21,10 @@ func SelfMonitorWebhookShouldHaveBeenCalled(proxyClient *apiserverproxy.Client) 
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
-		g.Expect(resp).To(HaveHTTPBody(ContainMetricFamily(WithName(Equal("controller_runtime_webhook_requests_total")))))
+		g.Expect(resp).To(HaveHTTPBody(ContainMetricFamily(SatisfyAll(
+			WithName(Equal("controller_runtime_webhook_requests_total")),
+			ContainMetric(WithLabels(HaveKeyWithValue("webhook", "/api/v2/alerts"))),
+		))))
 
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
