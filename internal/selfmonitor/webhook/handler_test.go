@@ -49,10 +49,10 @@ func TestHandler(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			eventChan := make(chan event.GenericEvent, 1)
+			ch := make(chan event.GenericEvent, 1)
 
 			noopLogger := logr.New(logf.NullLogSink{})
-			handler := NewHandler(eventChan, WithLogger(noopLogger))
+			handler := NewHandler(WithSubscriber(ch), WithLogger(noopLogger))
 			if tc.requestBody == nil {
 				tc.requestBody = bytes.NewBuffer([]byte(`{"key":"value"}`))
 			}
@@ -65,7 +65,7 @@ func TestHandler(t *testing.T) {
 
 			require.Equal(t, tc.expectedStatus, rr.Code)
 			if tc.expectEvent {
-				require.NotEmpty(t, eventChan)
+				require.NotEmpty(t, ch)
 			}
 		})
 	}

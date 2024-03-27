@@ -10,8 +10,8 @@ import (
 )
 
 type Handler struct {
-	eventChan chan<- event.GenericEvent
-	logger    logr.Logger
+	subscribers []chan<- event.GenericEvent
+	logger      logr.Logger
 }
 
 type Option = func(*Handler)
@@ -22,10 +22,15 @@ func WithLogger(logger logr.Logger) Option {
 	}
 }
 
-func NewHandler(eventChan chan<- event.GenericEvent, opts ...Option) *Handler {
+func WithSubscriber(subscriber chan<- event.GenericEvent) Option {
+	return func(h *Handler) {
+		h.subscribers = append(h.subscribers, subscriber)
+	}
+}
+
+func NewHandler(opts ...Option) *Handler {
 	h := &Handler{
-		eventChan: eventChan,
-		logger:    logr.New(logf.NullLogSink{}),
+		logger: logr.New(logf.NullLogSink{}),
 	}
 
 	for _, opt := range opts {
@@ -51,9 +56,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	h.logger.V(1).Info("Webhook called. Triggering a reconciliation.",
+	h.logger.V(1).Info("Webhook called. Notifying the subscribers.",
 		"request", string(req))
 
-	h.eventChan <- event.GenericEvent{}
+	for _, sub := range h.subscribers {
+		sub <- event.GenericEvent{}
+	}
+
 	w.WriteHeader(http.StatusOK)
 }

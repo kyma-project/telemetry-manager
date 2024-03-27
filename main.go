@@ -354,11 +354,13 @@ func main() {
 		ConfigMapKey:  overridesConfigMapKey,
 	})
 
-	reconcileTriggerChan := make(chan event.GenericEvent)
-
 	enableLoggingController(mgr)
-	enableTracingController(mgr, reconcileTriggerChan)
-	enableMetricsController(mgr, reconcileTriggerChan)
+
+	tracingControllerReconcileTriggerChan := make(chan event.GenericEvent)
+	enableTracingController(mgr, tracingControllerReconcileTriggerChan)
+
+	metricsControllerReconcileTriggerChan := make(chan event.GenericEvent)
+	enableMetricsController(mgr, metricsControllerReconcileTriggerChan)
 
 	webhookConfig := createWebhookConfig()
 	selfMonitorConfig := createSelfMonitoringConfig()
@@ -381,7 +383,9 @@ func main() {
 	}
 
 	if enableWebhook && enableSelfMonitor {
-		mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(reconcileTriggerChan,
+		mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
+			selfmonitorwebhook.WithSubscriber(tracingControllerReconcileTriggerChan),
+			selfmonitorwebhook.WithSubscriber(metricsControllerReconcileTriggerChan),
 			selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
 	}
 
