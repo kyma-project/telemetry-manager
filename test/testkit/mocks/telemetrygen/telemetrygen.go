@@ -34,8 +34,8 @@ const (
 	SignalTypeMetrics = "metrics"
 )
 
-func New(namespace string) *kitk8s.Pod {
-	return kitk8s.NewPod("telemetrygen", namespace).WithPodSpec(PodSpec(SignalTypeMetrics, ""))
+func New(namespace string, signalType SignalType) *kitk8s.Pod {
+	return kitk8s.NewPod("telemetrygen", namespace).WithPodSpec(PodSpec(signalType, ""))
 }
 
 func PodSpec(signalType SignalType, serviceNameAttrValue string) corev1.PodSpec {

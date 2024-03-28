@@ -10,6 +10,8 @@ const (
 	KubeNamespace            = "kube-system"
 	IstioSystemNamespaceName = "istio-system"
 
+	TelemetryManagerMetricsPort = 8080
+
 	MetricGatewayBaseName = "telemetry-metric-gateway"
 	MetricAgentBaseName   = "telemetry-metric-agent"
 	TraceGatewayBaseName  = "telemetry-trace-collector"
@@ -18,7 +20,8 @@ const (
 )
 
 var (
-	TelemetryOperatorWebhookServiceName = types.NamespacedName{Name: "telemetry-manager-webhook", Namespace: SystemNamespaceName}
+	TelemetryManagerMetricsServiceName = types.NamespacedName{Name: "telemetry-manager-metrics", Namespace: SystemNamespaceName}
+	TelemetryManagerWebhookServiceName = types.NamespacedName{Name: "telemetry-manager-webhook", Namespace: SystemNamespaceName}
 
 	MetricGatewayName          = types.NamespacedName{Name: MetricGatewayBaseName, Namespace: SystemNamespaceName}
 	MetricGatewayMetrics       = types.NamespacedName{Name: MetricGatewayBaseName + "-metrics", Namespace: SystemNamespaceName}

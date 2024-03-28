@@ -59,9 +59,9 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 		objs = append(objs, pipelineExcludeApp1Ns.K8sObject())
 
 		objs = append(objs,
-			telemetrygen.New(app1Ns).K8sObject(),
-			telemetrygen.New(app2Ns).K8sObject(),
-			telemetrygen.New(kitkyma.SystemNamespaceName).K8sObject(),
+			telemetrygen.New(app1Ns, telemetrygen.SignalTypeMetrics).K8sObject(),
+			telemetrygen.New(app2Ns, telemetrygen.SignalTypeMetrics).K8sObject(),
+			telemetrygen.New(kitkyma.SystemNamespaceName, telemetrygen.SignalTypeMetrics).K8sObject(),
 
 			prommetricgen.New(app1Ns).Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 			prommetricgen.New(app2Ns).Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
