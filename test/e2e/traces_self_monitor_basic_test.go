@@ -25,7 +25,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Self Monitor", Label("self-mon"), Ordered, func() {
+var _ = Describe("Traces Self Monitor", Label("self-mon-traces"), Ordered, func() {
 	const (
 		mockBackendName = "traces-receiver-selfmon"
 		mockNs          = "traces-basic-selfmon-test"
@@ -112,6 +112,7 @@ var _ = Describe("Traces Self Monitor", Label("self-mon"), Ordered, func() {
 		})
 
 		It("Should ensure that the self-monitor webhook has been called", func() {
+			// Pushing traces to the trace gateway triggers an alert, which in turn makes the self-monitor call the webhook
 			verifiers.SelfMonitorWebhookShouldHaveBeenCalled(proxyClient)
 		})
 	})
