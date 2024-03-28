@@ -15,23 +15,23 @@ Proposed
 ### Log Rotation
 
 * Container logs are rotated and finally removed by the kubelet. Logs that have not been read by Fluent Bit before rotation are lost.
-* There is little to no indication (metrics, etc.) if this happened.
+* If logs are lost because of that, there is little to no indication (metrics, etc.).
 
 ### High Buffer Usage
 
 * After reading logs from the host file-system, the tail input plugin writes them the a persistent buffer.
 * The buffer has a limited capacity and can fill up if logs are read faster than they can be sent to the backend.
-* If the buffer is full and the tail input plugin keeps reading, the oldest logs will be dropped.
+* If the buffer is full and the tail input plugin keeps reading, the oldest logs are dropped.
 
 ### Backend Throttling
 
 * Each logging backend has an ingestion rate limit.
-* The backends maximum ingestion rate is propagated to Fluent Bit's output plugins. Either by blocking all output threads due to a slow response or returning errors, which require the output to perform retries.
-* The utilization of the file-system buffer is a good indicator for backend throttling.
+* The backend's maximum ingestion rate is propagated to Fluent Bit's output plugins - either by blocking all output threads due to a slow response, or by returning errors, which require the output to perform retries.
+* Utilization of the file-system buffer indicates backend throttling.
 
 ## Decision
 
-For the pipeline healthyness condition type, the **reason** field can show a value that is most relevant for the user. We suggest the following values, ordered from most to least critical:
+For the pipeline health condition type, the **reason** field can show a value that is most relevant for the user. We suggest the following values, ordered from most to least critical:
 
    ```
    AllTelemetryDataDropped > SomeTelemetryDataDropped > NoLogsDelivered > BufferFillingUp > Healthy
@@ -59,4 +59,4 @@ Then, we map the alert rules to the reasons as follows:
 
 > **NOTE:** `BufferFillingUp` should not result in a negative condition status. This reason would be aggregated as warning in the Telemetry module status.
 
-The file-system buffer related metrics are not mappable to a particular LogPipeline. Thus, the condition has to be set on all pipelines if indicated by file-system buffer metrics.
+The metrics related to file-system buffer are not mappable to a particular LogPipeline. Thus, the condition must be set on all pipelines if indicated by file-system buffer metrics.
