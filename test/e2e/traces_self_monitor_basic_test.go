@@ -20,7 +20,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -48,7 +48,10 @@ var _ = Describe("Traces Self Monitor", Label("self-mon"), Ordered, func() {
 		pipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
 		pipelineName = pipeline.Name()
-		objs = append(objs, pipeline.K8sObject())
+		objs = append(objs,
+			pipeline.K8sObject(),
+			telemetrygen.New(kitkyma.DefaultNamespaceName, telemetrygen.SignalTypeTraces).K8sObject(),
+		)
 
 		return objs
 	}
@@ -94,15 +97,8 @@ var _ = Describe("Traces Self Monitor", Label("self-mon"), Ordered, func() {
 			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should verify end-to-end trace delivery", func() {
-			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP)
-			traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, gatewayPushURL)
-			verifiers.TracesShouldBeDelivered(proxyClient, telemetryExportURL, traceID, spanIDs, attrs)
-		})
-
-		It("Should be able to get trace gateway metrics endpoint", func() {
-			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.TraceGatewayMetrics.Namespace, kitkyma.TraceGatewayMetrics.Name, "metrics", ports.Metrics)
-			verifiers.ShouldExposeCollectorMetrics(proxyClient, gatewayMetricsURL)
+		It("Should deliver telemetrygen traces", func() {
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, kitkyma.DefaultNamespaceName)
 		})
 
 		It("The telemetryFlowHealthy condition should be true", func() {

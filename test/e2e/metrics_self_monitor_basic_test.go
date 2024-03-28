@@ -20,7 +20,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otel/metrics"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -46,10 +46,12 @@ var _ = Describe("Metrics Self Monitor", Label("self-mon"), Ordered, func() {
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		pipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", mockBackendName)).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
-			RuntimeInput(true)
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
 		pipelineName = pipeline.Name()
-		objs = append(objs, pipeline.K8sObject())
+		objs = append(objs,
+			telemetrygen.New(kitkyma.DefaultNamespaceName, telemetrygen.SignalTypeMetrics).K8sObject(),
+			pipeline.K8sObject(),
+		)
 
 		return objs
 	}
@@ -99,15 +101,8 @@ var _ = Describe("Metrics Self Monitor", Label("self-mon"), Ordered, func() {
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should verify end-to-end metric delivery", func() {
-			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP)
-			gauges := kitmetrics.MakeAndSendGaugeMetrics(proxyClient, gatewayPushURL)
-			verifiers.MetricsShouldBeDelivered(proxyClient, telemetryExportURL, gauges)
-		})
-
-		It("Should be able to get metric gateway metrics endpoint", func() {
-			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.MetricGatewayMetrics.Namespace, kitkyma.MetricGatewayMetrics.Name, "metrics", ports.Metrics)
-			verifiers.ShouldExposeCollectorMetrics(proxyClient, gatewayMetricsURL)
+		It("Should deliver telemetrygen metrics", func() {
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, kitkyma.DefaultNamespaceName, telemetrygen.MetricNames)
 		})
 
 		It("Should have TypeFlowHealthy condition set to True", func() {

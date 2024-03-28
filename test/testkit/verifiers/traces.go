@@ -77,6 +77,21 @@ func TracesShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExport
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
+func TracesFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL, namespace string) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(telemetryExportURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(
+			ContainTd(SatisfyAll(
+				ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", namespace)),
+			)),
+		))
+		err = resp.Body.Close()
+		g.Expect(err).NotTo(HaveOccurred())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
 func TracesShouldNotBePresent(proxyClient *apiserverproxy.Client, telemetryExportURL string, traceID pcommon.TraceID) {
 	Consistently(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
