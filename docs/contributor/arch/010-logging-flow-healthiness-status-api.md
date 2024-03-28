@@ -14,20 +14,15 @@ Proposed
 
 ### Log Rotation
 
-* Container logs are rotated and finally removed by the kubelet. Logs that have not been read by Fluent Bit before rotation are lost.
-* If logs are lost because of that, there is little to no indication (metrics, etc.).
+Container logs are rotated and finally removed by the kubelet. Logs that have not been read by Fluent Bit before rotation are lost. If logs are lost because of that, there is little to no indication (metrics, etc.).
 
 ### High Buffer Usage
 
-* After reading logs from the host file-system, the tail input plugin writes them the a persistent buffer.
-* The buffer has a limited capacity and can fill up if logs are read faster than they can be sent to the backend.
-* If the buffer is full and the tail input plugin keeps reading, the oldest logs are dropped.
+After reading logs from the host file-system, the tail input plugin writes them the a persistent buffer. The buffer has a limited capacity and can fill up if logs are read faster than they can be sent to the backend. If the buffer is full and the tail input plugin keeps reading, the oldest logs are dropped.
 
 ### Backend Throttling
 
-* Each logging backend has an ingestion rate limit.
-* The backend's maximum ingestion rate is propagated to Fluent Bit's output plugins - either by blocking all output threads due to a slow response, or by returning errors, which require the output to perform retries.
-* Utilization of the file-system buffer indicates backend throttling.
+Each logging backend has an ingestion rate limit. The backend's maximum ingestion rate is propagated to Fluent Bit's output plugins - either by blocking all output threads due to a slow response, or by returning errors, which require the output to perform retries. Utilization of the file-system buffer indicates backend throttling.
 
 ## Decision
 
