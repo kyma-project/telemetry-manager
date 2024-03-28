@@ -54,4 +54,4 @@ Then, we map the alert rules to the reasons as follows:
 
 > **NOTE:** `BufferFillingUp` should not result in a negative condition status. This reason would be aggregated as warning in the Telemetry module status.
 
-The metrics related to file-system buffer are not mappable to a particular LogPipeline. Thus, telemetry-manager has to set the condition on all pipelines if file-system buffer usage is indicated by the metrics.
+The metrics related to file-system buffer are not mappable to a particular LogPipeline. Thus, Telemetry Manager must set the condition on all pipelines if file-system buffer usage is indicated by the metrics.
