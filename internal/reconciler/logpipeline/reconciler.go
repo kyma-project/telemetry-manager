@@ -19,6 +19,7 @@ package logpipeline
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -38,6 +39,7 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/tls/cert"
 )
 
 type Config struct {
@@ -64,6 +66,11 @@ type DaemonSetAnnotator interface {
 	SetAnnotation(ctx context.Context, name types.NamespacedName, key, value string) error
 }
 
+//go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
+type TLSCertValidator interface {
+	ValidateCertificate(certPEM []byte, keyPEM []byte) cert.TLSCertValidationResult
+}
+
 type Reconciler struct {
 	client.Client
 	config                  Config
@@ -73,6 +80,7 @@ type Reconciler struct {
 	syncer                  syncer
 	overridesHandler        *overrides.Handler
 	istioStatusChecker      istiostatus.Checker
+	tlsCertValidator        TLSCertValidator
 }
 
 func NewReconciler(client client.Client, config Config, prober DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
@@ -86,6 +94,7 @@ func NewReconciler(client client.Client, config Config, prober DaemonSetProber, 
 	r.syncer = syncer{client, config}
 	r.overridesHandler = overridesHandler
 	r.istioStatusChecker = istiostatus.NewChecker(client)
+	r.tlsCertValidator = &cert.TLSCertValidator{}
 
 	return &r
 }
@@ -136,7 +145,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	deployableLogPipelines := getDeployableLogPipelines(ctx, allPipelines.Items, r.Client)
+	deployableLogPipelines := getDeployableLogPipelines(ctx, allPipelines.Items, r.Client, r.tlsCertValidator)
 	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, deployableLogPipelines); err != nil {
 		return err
 	}
@@ -295,9 +304,11 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 
 // getDeployableLogPipelines returns the list of log pipelines that are ready to be rendered into the Fluent Bit configuration.
 // A pipeline is deployable if it is not being deleted, all secret references exist, and it doesn't have the legacy grafana-loki output defined.
-func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline, client client.Client) []telemetryv1alpha1.LogPipeline {
+func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline, client client.Client, certValidator TLSCertValidator) []telemetryv1alpha1.LogPipeline {
 	var deployablePipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
+		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator, client)
+
 		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
 			continue
 		}
@@ -305,6 +316,10 @@ func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1al
 			continue
 		}
 		if allPipelines[i].Spec.Output.IsLokiDefined() {
+			continue
+		}
+
+		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
 			continue
 		}
 		deployablePipelines = append(deployablePipelines, allPipelines[i])
@@ -318,4 +333,47 @@ func getFluentBitPorts() []int32 {
 		ports.ExporterMetrics,
 		ports.HTTP,
 	}
+}
+
+func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, validator TLSCertValidator, client client.Client) cert.TLSCertValidationResult {
+	if pipeline.Spec.Output.HTTP == nil || (pipeline.Spec.Output.HTTP.TLSConfig.Cert == nil && pipeline.Spec.Output.HTTP.TLSConfig.Key == nil) {
+		return cert.TLSCertValidationResult{
+			CertValid:       true,
+			PrivateKeyValid: true,
+			Validity:        time.Now().AddDate(1, 0, 0),
+		}
+	}
+
+	certValue := pipeline.Spec.Output.HTTP.TLSConfig.Cert
+	keyValue := pipeline.Spec.Output.HTTP.TLSConfig.Key
+
+	certData, err := resolveValue(ctx, client, *certValue)
+
+	if err != nil {
+		return cert.TLSCertValidationResult{
+			CertValid: false,
+		}
+	}
+
+	keyData, err := resolveValue(ctx, client, *keyValue)
+
+	if err != nil {
+		return cert.TLSCertValidationResult{
+			PrivateKeyValid: false,
+		}
+	}
+
+	return validator.ValidateCertificate(certData, keyData)
+
+}
+
+func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
+	if value.Value != "" {
+		return []byte(value.Value), nil
+	}
+	if value.ValueFrom.IsSecretKeyRef() {
+		return secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
+	}
+
+	return nil, fmt.Errorf("either value or secret key reference must be defined")
 }
