@@ -1,6 +1,6 @@
-//go:build istio
+//go:build telemetrycomponents
 
-package istio
+package telemetrycomponents
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ = Describe("Telemetry Components Error/Warning Logs", Label("logs"), Ordered, func() {
+var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-components"), Ordered, func() {
 	const (
 		mockNs             = "tlogs-http"
 		logBackendName     = "tlogs-log"
@@ -95,7 +95,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("logs"), Order
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", logBackend.Name())).
 			WithSecretKeyRef(logBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
-			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName})
+			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName, mockNs})
 		logPipelineName = logPipeline.Name()
 		objs = append(objs, logPipeline.K8sObject())
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
@@ -190,6 +190,10 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("logs"), Order
 			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 	})
+
+	// TODO: telemetry-manager logs should not be checked for
+
+	// TODO: Find the container name of the otlp-collector, might be a good idea to separate them (FluentBit logPipeline and OTLP logPipeline), so that you know exactly what fails
 
 	// TODO: configmap: FLuentBit, exclude_path (excluding self logs)
 	// telemetry-manager/blob/test/check-error-logs/internal/fluentbit/config/builder/input.go#L15-L16
