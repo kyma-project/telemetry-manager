@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 
@@ -40,6 +41,12 @@ func NewHandler(opts ...Option) *Handler {
 	return h
 }
 
+type Request []Alert
+
+type Alert struct {
+	Labels map[string]string `json:"labels"`
+}
+
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		h.logger.Info("Invalid method", "method", r.Method)
@@ -47,17 +54,23 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, err := io.ReadAll(r.Body)
+	reqYAML, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Error(err, "Failed to read request body")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	var req Request
+	if unmarshallErr := json.Unmarshal(reqYAML, &req); unmarshallErr != nil {
+		h.logger.Error(err, "Failed to unmarshal request body")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	defer r.Body.Close()
 
-	h.logger.V(1).Info("Webhook called. Notifying the subscribers.",
-		"request", string(req))
+	h.logger.V(1).Info("Webhook called. Notifying the subscribers.", "request", req)
 
 	for _, sub := range h.subscribers {
 		sub <- event.GenericEvent{}
