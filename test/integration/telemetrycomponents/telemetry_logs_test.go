@@ -95,7 +95,8 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", logBackend.Name())).
 			WithSecretKeyRef(logBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
-			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName, mockNs})
+			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName, mockNs}).
+			WithExcludeContainers([]string{"manager"})
 		logPipelineName = logPipeline.Name()
 		objs = append(objs, logPipeline.K8sObject())
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
@@ -170,7 +171,6 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		excludeWhitelistedLogs := func() gomegatypes.GomegaMatcher {
 			return Or(
 				ContainSubstring("The default endpoints for all servers in components will change to use localhost instead of 0.0.0.0 in a future version. Use the feature gate to preview the new default."),
-				ContainSubstring("Reconciler error"),
 				ContainSubstring("error re-reading certificate"),
 			)
 		}
