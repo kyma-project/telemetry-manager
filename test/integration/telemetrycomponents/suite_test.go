@@ -53,8 +53,8 @@ var (
 )
 
 func TestTelemetryComponentsIntegration(t *testing.T) {
-	format.MaxDepth = 0
-	format.MaxLength = 16000
+	format.MaxDepth = 20
+	format.MaxLength = 0
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Telemetry Components Integration Suite")
 }
