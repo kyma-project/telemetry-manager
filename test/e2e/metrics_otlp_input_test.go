@@ -36,7 +36,7 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 			OtlpInput(false)
 		objs = append(objs, pipelineWithoutOTLP.K8sObject())
 
-		objs = append(objs, telemetrygen.New(appNs).K8sObject())
+		objs = append(objs, telemetrygen.New(appNs, telemetrygen.SignalTypeMetrics).K8sObject())
 		return objs
 	}
 

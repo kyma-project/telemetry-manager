@@ -16,8 +16,7 @@ func ShouldExposeCollectorMetrics(proxyClient *apiserverproxy.Client, metricsURL
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 
-		//Take otelcol_process_uptime metric as an example
-		g.Expect(resp).To(HaveHTTPBody(ContainPrometheusMetric("otelcol_process_uptime")))
+		g.Expect(resp).To(HaveHTTPBody(ContainMetricFamily(WithName(ContainSubstring("otelcol")))))
 
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())

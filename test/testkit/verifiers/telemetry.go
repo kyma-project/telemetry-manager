@@ -16,7 +16,7 @@ import (
 func WebhookShouldBeHealthy(ctx context.Context, k8sClient client.Client) {
 	Eventually(func(g Gomega) {
 		var endpoints corev1.Endpoints
-		g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryOperatorWebhookServiceName, &endpoints)).To(Succeed())
+		g.Expect(k8sClient.Get(ctx, kitkyma.TelemetryManagerWebhookServiceName, &endpoints)).To(Succeed())
 		g.Expect(endpoints.Subsets).NotTo(BeEmpty())
 		for _, subset := range endpoints.Subsets {
 			g.Expect(subset.Addresses).NotTo(BeEmpty())

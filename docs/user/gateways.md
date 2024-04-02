@@ -28,10 +28,10 @@ The gateways automatically enrich your data by adding the following attributes:
   4. Pod name.
   5. If none of the above is available, the value is `unknown_service`.
 - `k8s.*` attributes: These attributes encapsulate various pieces of Kubernetes metadata associated with the Pod, including but not limited to:
-  1. Pod name.
-  2. Deployment/DaemonSet/StatefulSet/Job name.
-  3. Namespace.
-  4. Cluster name.
+  - Pod name.
+  - Deployment/DaemonSet/StatefulSet/Job name.
+  - Namespace.
+  - Cluster name.
 
 ## Istio Support
 

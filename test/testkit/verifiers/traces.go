@@ -77,6 +77,21 @@ func TracesShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExport
 	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
+func TracesFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL, namespace string) {
+	Eventually(func(g Gomega) {
+		resp, err := proxyClient.Get(telemetryExportURL)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+		g.Expect(resp).To(HaveHTTPBody(
+			ContainTd(SatisfyAll(
+				ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", namespace)),
+			)),
+		))
+		err = resp.Body.Close()
+		g.Expect(err).NotTo(HaveOccurred())
+	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
+}
+
 func TracesShouldNotBePresent(proxyClient *apiserverproxy.Client, telemetryExportURL string, traceID pcommon.TraceID) {
 	Consistently(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
@@ -88,13 +103,4 @@ func TracesShouldNotBePresent(proxyClient *apiserverproxy.Client, telemetryExpor
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
-}
-
-func TracePipelineTelemetryHealthFlowIsHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
-	Eventually(func(g Gomega) {
-		var pipeline telemetryv1alpha1.TracePipeline
-		key := types.NamespacedName{Name: pipelineName}
-		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypeFlowHealthy)).To(BeTrue())
-	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

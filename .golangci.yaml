@@ -78,6 +78,8 @@ linters-settings:
         alias: logpipelinevalidationmocks
       - pkg: github.com/prometheus/client_golang/api/prometheus/v1
         alias: promv1
+      - pkg: github.com/prometheus/client_model/go
+        alias: prommodel
       - pkg: go.opentelemetry.io/otel/sdk/trace
         alias: tracesdk
       - pkg: istio.io/api/security/v1beta1
