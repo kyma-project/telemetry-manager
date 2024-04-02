@@ -1,16 +1,22 @@
 package webhook
 
 import (
+	"context"
 	"encoding/json"
+	"github.com/go-logr/logr"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"io"
 	"net/http"
-
-	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"slices"
+	"strings"
 )
 
 type Handler struct {
+	c           client.Reader
 	subscribers []chan<- event.GenericEvent
 	logger      logr.Logger
 }
@@ -29,8 +35,9 @@ func WithSubscriber(subscriber chan<- event.GenericEvent) Option {
 	}
 }
 
-func NewHandler(opts ...Option) *Handler {
+func NewHandler(c client.Reader, opts ...Option) *Handler {
 	h := &Handler{
+		c:      c,
 		logger: logr.New(logf.NullLogSink{}),
 	}
 
@@ -40,8 +47,6 @@ func NewHandler(opts ...Option) *Handler {
 
 	return h
 }
-
-type Request []Alert
 
 type Alert struct {
 	Labels map[string]string `json:"labels"`
@@ -54,15 +59,15 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reqYAML, err := io.ReadAll(r.Body)
+	alertsYAML, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Error(err, "Failed to read request body")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	var req Request
-	if unmarshallErr := json.Unmarshal(reqYAML, &req); unmarshallErr != nil {
+	var alerts []Alert
+	if unmarshallErr := json.Unmarshal(alertsYAML, &alerts); unmarshallErr != nil {
 		h.logger.Error(err, "Failed to unmarshal request body")
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -70,11 +75,52 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	h.logger.V(1).Info("Webhook called. Notifying the subscribers.", "request", req)
+	h.logger.V(1).Info("Webhook called. Notifying the subscribers.", "request", alerts)
 
-	for _, sub := range h.subscribers {
-		sub <- event.GenericEvent{}
+	for _, ev := range h.metricPipelineReconcileEvents(alerts) {
+		for _, sub := range h.subscribers {
+			sub <- ev
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) metricPipelineReconcileEvents(alerts []Alert) []event.GenericEvent {
+	var events []event.GenericEvent
+
+	var allPipelines telemetryv1alpha1.MetricPipelineList
+	if err := h.c.List(context.TODO(), &allPipelines); err != nil {
+		h.logger.Error(err, "Failed to list MetricPipelines")
+		return nil
+	}
+
+	pipelinesToReconcile := slices.DeleteFunc(allPipelines.Items, func(mp telemetryv1alpha1.MetricPipeline) bool {
+		return matchesNoAlert(&mp, alerts)
+	})
+
+	for _, mp := range pipelinesToReconcile {
+		events = append(events, event.GenericEvent{Object: &mp})
+	}
+
+	return events
+}
+
+func matchesNoAlert(mp *telemetryv1alpha1.MetricPipeline, alerts []Alert) bool {
+	for _, alert := range alerts {
+		if strings.HasPrefix(alert.Labels["alertname"], "Metric") && matchesPipeline(alert.Labels, mp.Name) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func matchesPipeline(labels map[string]string, pipelineName string) bool {
+	exportedID, ok := labels["exporter"]
+	if !ok {
+		return false
+	}
+
+	return otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolHTTP, pipelineName) == exportedID || otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolGRPC, pipelineName) == exportedID
 }
