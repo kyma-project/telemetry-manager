@@ -29,13 +29,13 @@ func (errReader) Read(p []byte) (n int, err error) {
 
 func TestHandler(t *testing.T) {
 	tests := []struct {
-		name                 string
-		requestMethod        string
-		requestBody          io.Reader
-		resources            []client.Object
-		expectedStatus       int
-		expectedResourceName string
-		expectedResourceType any
+		name                       string
+		requestMethod              string
+		requestBody                io.Reader
+		resources                  []client.Object
+		expectedStatus             int
+		metricPipelinesToReconcile []string
+		tracePipelinesToReconcile  []string
 	}{
 		{
 			name:          "alert matches pipeline with same name",
@@ -44,9 +44,8 @@ func TestHandler(t *testing.T) {
 			resources: []client.Object{
 				ptr.To(testutils.NewMetricPipelineBuilder().WithName("cls").Build()),
 			},
-			expectedStatus:       http.StatusOK,
-			expectedResourceName: "cls",
-			expectedResourceType: &telemetryv1alpha1.MetricPipeline{},
+			expectedStatus:             http.StatusOK,
+			metricPipelinesToReconcile: []string{"cls"},
 		},
 		{
 			name:          "alert does not match pipeline with other name",
@@ -67,6 +66,17 @@ func TestHandler(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
+			name:          "alert matches all pipelines",
+			requestMethod: http.MethodPost,
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayReceiverRefusedData"}}]`)),
+			resources: []client.Object{
+				ptr.To(testutils.NewMetricPipelineBuilder().WithName("cls").Build()),
+				ptr.To(testutils.NewMetricPipelineBuilder().WithName("dynatrace").Build()),
+			},
+			expectedStatus:             http.StatusOK,
+			metricPipelinesToReconcile: []string{"cls", "dynatrace"},
+		},
+		{
 			name:           "invalid method",
 			requestMethod:  http.MethodGet,
 			expectedStatus: http.StatusMethodNotAllowed,
@@ -81,7 +91,8 @@ func TestHandler(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ch := make(chan event.GenericEvent, 1)
+			metricPipelineEvents := make(chan event.GenericEvent, 1024)
+			tracePipelineEvents := make(chan event.GenericEvent, 1024)
 
 			noopLogger := logr.New(logf.NullLogSink{})
 
@@ -89,7 +100,10 @@ func TestHandler(t *testing.T) {
 			_ = clientgoscheme.AddToScheme(scheme)
 			_ = telemetryv1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tc.resources...).Build()
-			handler := NewHandler(fakeClient, WithSubscriber(ch), WithLogger(noopLogger))
+			handler := NewHandler(fakeClient,
+				WithMetricPipelineSubscriber(metricPipelineEvents),
+				WithTracePipelineSubscriber(tracePipelineEvents),
+				WithLogger(noopLogger))
 
 			req, err := http.NewRequest(tc.requestMethod, "/", tc.requestBody)
 			require.NoError(t, err)
@@ -98,15 +112,31 @@ func TestHandler(t *testing.T) {
 			handler.ServeHTTP(rr, req)
 
 			require.Equal(t, tc.expectedStatus, rr.Code)
-			if tc.expectedResourceName != "" {
-				require.NotEmpty(t, ch)
-				event := <-ch
-				require.NotNil(t, event.Object)
-				require.Equal(t, tc.expectedResourceName, event.Object.GetName())
-				require.IsType(t, tc.expectedResourceType, event.Object)
+			if tc.metricPipelinesToReconcile != nil {
+				require.NotEmpty(t, metricPipelineEvents)
+				require.ElementsMatch(t, tc.metricPipelinesToReconcile, readAllNamesFromChannel(metricPipelineEvents))
 			} else {
-				require.Empty(t, ch)
+				require.Empty(t, metricPipelineEvents)
+			}
+
+			if tc.tracePipelinesToReconcile != nil {
+				require.NotEmpty(t, tracePipelineEvents)
+				require.ElementsMatch(t, tc.tracePipelinesToReconcile, readAllNamesFromChannel(tracePipelineEvents))
+			} else {
+				require.Empty(t, tracePipelineEvents)
 			}
 		})
+	}
+}
+
+func readAllNamesFromChannel(ch <-chan event.GenericEvent) []string {
+	var names []string
+	for {
+		select {
+		case event := <-ch:
+			names = append(names, event.Object.GetName())
+		default:
+			return names
+		}
 	}
 }

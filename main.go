@@ -384,8 +384,9 @@ func main() {
 
 	if enableWebhook && enableSelfMonitor {
 		mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
-			selfmonitorwebhook.WithSubscriber(tracingControllerReconcileTriggerChan),
-			selfmonitorwebhook.WithSubscriber(metricsControllerReconcileTriggerChan),
+			mgr.GetClient(),
+			selfmonitorwebhook.WithTracePipelineSubscriber(tracingControllerReconcileTriggerChan),
+			selfmonitorwebhook.WithMetricPipelineSubscriber(metricsControllerReconcileTriggerChan),
 			selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
 	}
 
