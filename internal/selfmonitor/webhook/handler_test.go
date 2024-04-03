@@ -38,7 +38,7 @@ func TestHandler(t *testing.T) {
 		tracePipelinesToReconcile  []string
 	}{
 		{
-			name:          "alert matches pipeline with same name",
+			name:          "alert matches metric pipeline with same name",
 			requestMethod: http.MethodPost,
 			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayExporterDroppedData","exporter":"otlp/cls"}}]`)),
 			resources: []client.Object{
@@ -46,6 +46,16 @@ func TestHandler(t *testing.T) {
 			},
 			expectedStatus:             http.StatusOK,
 			metricPipelinesToReconcile: []string{"cls"},
+		},
+		{
+			name:          "alert matches trace pipeline with same name",
+			requestMethod: http.MethodPost,
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"TraceGatewayExporterDroppedData","exporter":"otlp/cls"}}]`)),
+			resources: []client.Object{
+				ptr.To(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
+			},
+			expectedStatus:            http.StatusOK,
+			tracePipelinesToReconcile: []string{"cls"},
 		},
 		{
 			name:          "alert does not match pipeline with other name",
@@ -66,7 +76,7 @@ func TestHandler(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:          "alert matches all pipelines",
+			name:          "alert matches all metric pipelines",
 			requestMethod: http.MethodPost,
 			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayReceiverRefusedData"}}]`)),
 			resources: []client.Object{
@@ -101,8 +111,8 @@ func TestHandler(t *testing.T) {
 			_ = telemetryv1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tc.resources...).Build()
 			handler := NewHandler(fakeClient,
-				WithMetricPipelineSubscriber(metricPipelineEvents),
-				WithTracePipelineSubscriber(tracePipelineEvents),
+				WithSubscriber(metricPipelineEvents, MetricPipeline),
+				WithSubscriber(tracePipelineEvents, TracePipeline),
 				WithLogger(noopLogger))
 
 			req, err := http.NewRequest(tc.requestMethod, "/", tc.requestBody)
