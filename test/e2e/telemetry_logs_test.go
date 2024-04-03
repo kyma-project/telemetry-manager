@@ -7,6 +7,13 @@ import (
 	"net/http"
 	"time"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
@@ -16,13 +23,6 @@ import (
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/format"
-	gomegatypes "github.com/onsi/gomega/types"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-components"), Ordered, func() {
@@ -178,15 +178,6 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 			verifiers.TracesShouldBeDelivered(proxyClient, traceTelemetryExportURL, traceID, spanIDs, attrs)
 		})
 
-		// whitelist possible (flaky/expected) errors
-		excludeWhitelistedLogs := func() gomegatypes.GomegaMatcher {
-			return Or(
-				ContainSubstring("The default endpoints for all servers in components will change to use localhost instead of 0.0.0.0 in a future version. Use the feature gate to preview the new default."),
-				ContainSubstring("error re-reading certificate"),
-				ContainSubstring("grpc: addrConn.createTransport failed to connect"),
-			)
-		}
-
 		It("Should not have any ERROR/WARNING logs in the OTLP containers", func() {
 			Consistently(func(g Gomega) {
 				resp, err := proxyClient.Get(logOTLPTelemetryExportURL)
@@ -196,7 +187,11 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 					Not(ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-")),
 						WithLevel(BeElementOf(errorWarningLevels)),
-						WithLogBody(Not(excludeWhitelistedLogs())),
+						WithLogBody(Not( // whitelist possible (flaky/expected) errors
+							Or(
+								ContainSubstring("grpc: addrConn.createTransport failed to connect"),
+							),
+						)),
 					)))),
 				))
 			}, time.Second*120, periodic.TelemetryInterval).Should(Succeed())
