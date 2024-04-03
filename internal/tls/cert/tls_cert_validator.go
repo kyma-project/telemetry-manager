@@ -13,9 +13,11 @@ type TLSCertValidator struct {
 }
 
 type TLSCertValidationResult struct {
-	CertValid       bool
-	PrivateKeyValid bool
-	Validity        time.Time
+	CertValid                   bool
+	CertValidationMessage       string
+	PrivateKeyValid             bool
+	PrivateKeyValidationMessage string
+	Validity                    time.Time
 }
 
 func (tcv *TLSCertValidator) ValidateCertificate(certPEM []byte, keyPEM []byte) TLSCertValidationResult {
@@ -29,11 +31,13 @@ func (tcv *TLSCertValidator) ValidateCertificate(certPEM []byte, keyPEM []byte) 
 	cert, err := parseCertificate(certPEM)
 	if err != nil {
 		result.CertValid = false
+		result.CertValidationMessage = err.Error()
 	}
 
 	// Parse the private key
 	if _, err := parsePrivateKey(keyPEM); err != nil {
 		result.PrivateKeyValid = false
+		result.PrivateKeyValidationMessage = err.Error()
 	}
 
 	if result.CertValid && result.PrivateKeyValid {

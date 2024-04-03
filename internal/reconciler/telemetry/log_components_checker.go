@@ -69,7 +69,7 @@ func (l *logComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetr
 	for _, condType := range condTypes {
 		for _, pipeline := range pipelines {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
-			if cond != nil && (cond.Status == metav1.ConditionFalse || cond.Reason == conditions.ReasonTLSCertAboutToExpire) {
+			if cond != nil && (cond.Status == metav1.ConditionFalse || cond.Reason == conditions.ReasonTLSCertificateAboutToExpire) {
 				return cond.Reason
 			}
 		}
@@ -78,7 +78,7 @@ func (l *logComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetr
 }
 
 func (l *logComponentsChecker) determineConditionStatus(reason string) metav1.ConditionStatus {
-	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonLogComponentsRunning || reason == conditions.ReasonTLSCertAboutToExpire {
+	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonLogComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
 		return metav1.ConditionTrue
 	}
 	return metav1.ConditionFalse
@@ -111,7 +111,10 @@ func determineFormattedTLSCertificateMessage(pipelines []telemetryv1alpha1.LogPi
 
 	for _, p := range pipelines {
 		cond := meta.FindStatusCondition(p.Status.Conditions, conditions.TypeConfigurationGenerated)
-		if cond != nil && (cond.Reason == conditions.ReasonTLSCertAboutToExpire || cond.Reason == conditions.ReasonExpiredTLSCert) {
+		if cond != nil && (cond.Reason == conditions.ReasonTLSCertificateAboutToExpire ||
+			cond.Reason == conditions.ReasonTLSCertificateExpired ||
+			cond.Reason == conditions.ReasonTLSCertificateInvalid ||
+			cond.Reason == conditions.ReasonTLSPrivateKeyInvalid) {
 			return cond.Message
 		}
 	}
