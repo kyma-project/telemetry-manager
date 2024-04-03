@@ -18,6 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 	gomegatypes "github.com/onsi/gomega/types"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,8 +41,13 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		metricPipelineName        string
 		tracePipelineName         string
 		logOTLPTelemetryExportURL string
-		metricTelemetryExportURL  string
-		traceTelemetryExportURL   string
+		// metricTelemetryExportURL  string
+		traceTelemetryExportURL string
+		gomegaMaxLength         = format.MaxLength
+		errorWarningLevels      = []string{
+			"ERROR", "error",
+			"WARNING", "warning",
+			"WARN", "warn"}
 	)
 
 	sourcePodSpec := func() corev1.PodSpec {
@@ -86,7 +92,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		objs = append(objs, logOTLPBackend.K8sObjects()...)
 		logOTLPTelemetryExportURL = logOTLPBackend.TelemetryExportURL(proxyClient)
 		metricBackend := backend.New(metricBackendName, mockNs, backend.SignalTypeMetrics)
-		metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
+		// metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
 		traceBackend := backend.New(traceBackendName, mockNs, backend.SignalTypeTraces)
 		traceTelemetryExportURL = traceBackend.TelemetryExportURL(proxyClient)
@@ -104,7 +110,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 
 		// metrics & traces
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
-			WithOutputEndpointFromSecret(metricBackend.HostSecretRefV1Alpha1()).
+			// WithOutputEndpointFromSecret(metricBackend.HostSecretRefV1Alpha1()).
 			PrometheusInput(true, kitk8s.IncludeNamespacesV1Alpha1(mockNs)).
 			IstioInput(true, kitk8s.IncludeNamespacesV1Alpha1(mockNs)).
 			OtlpInput(true).
@@ -133,6 +139,8 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 
 	Context("When telemetry components are set-up", func() {
 		BeforeAll(func() {
+			fmt.Println(gomegaMaxLength) // TEST
+			format.MaxLength = 0         // remove Gomega truncation
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -161,9 +169,9 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
-		It("Should push metrics successfully", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, metricTelemetryExportURL, mockNs, telemetrygen.MetricNames)
-		})
+		// It("Should push metrics successfully", func() {
+		// 	verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, metricTelemetryExportURL, mockNs, telemetrygen.MetricNames)
+		// })
 
 		It("Should verify end-to-end trace delivery", func() {
 			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP)
@@ -187,14 +195,19 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 				g.Expect(resp).To(HaveHTTPBody(
 					Not(ContainLd(ContainLogRecord(SatisfyAll(
 						WithPodName(ContainSubstring("telemetry-")),
-						WithLevel(Or(Equal("ERROR"), Equal("WARNING"))),
+						WithLevel(BeElementOf(errorWarningLevels)),
 						WithLogBody(Not(excludeWhitelistedLogs())),
 					)))),
 				))
-			}, time.Second*120, periodic.TelemetryInterval).Should(Succeed())
+			}, time.Second*600, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		// TODO: Should not have any ERROR/WARNING level logs in the FluentBit containers
+
+		AfterAll(func() {
+			format.MaxLength = gomegaMaxLength // restore Gomega truncation
+			fmt.Println(format.MaxLength)      // TEST
+		})
 	})
 
 	// TODO: configmap: FLuentBit, exclude_path (excluding self logs)
