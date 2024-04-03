@@ -18,6 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 	gomegatypes "github.com/onsi/gomega/types"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -42,8 +43,8 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		logOTLPTelemetryExportURL string
 		// metricTelemetryExportURL  string
 		traceTelemetryExportURL string
-		// gomegaMaxLength         = format.MaxLength
-		errorWarningLevels = []string{
+		gomegaMaxLength         = format.MaxLength
+		errorWarningLevels      = []string{
 			"ERROR", "error",
 			"WARNING", "warning",
 			"WARN", "warn"}
@@ -138,7 +139,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 
 	Context("When telemetry components are set-up", func() {
 		BeforeAll(func() {
-			// format.MaxLength = 32000     // extend Gomega truncation
+			format.MaxLength = 0 // remove Gomega truncation
 			k8sObjects := makeResources()
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
@@ -203,7 +204,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		// TODO: Should not have any ERROR/WARNING level logs in the FluentBit containers
 
 		AfterAll(func() {
-			// format.MaxLength = gomegaMaxLength // restore Gomega truncation
+			format.MaxLength = gomegaMaxLength // restore Gomega truncation
 		})
 	})
 
