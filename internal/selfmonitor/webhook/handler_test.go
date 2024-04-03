@@ -89,6 +89,17 @@ func TestHandler(t *testing.T) {
 			metricPipelinesToReconcile: []string{"cls", "dynatrace"},
 		},
 		{
+			name:          "alert matches all trace pipelines",
+			requestMethod: http.MethodPost,
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"TraceGatewayReceiverRefusedData"}}]`)),
+			resources: []client.Object{
+				ptr.To(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
+				ptr.To(testutils.NewTracePipelineBuilder().WithName("dynatrace").Build()),
+			},
+			expectedStatus:            http.StatusOK,
+			tracePipelinesToReconcile: []string{"cls", "dynatrace"},
+		},
+		{
 			name:           "invalid method",
 			requestMethod:  http.MethodGet,
 			expectedStatus: http.StatusMethodNotAllowed,
@@ -98,6 +109,12 @@ func TestHandler(t *testing.T) {
 			requestMethod:  http.MethodPost,
 			requestBody:    errReader{},
 			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name:           "failed to unmarshal request body",
+			requestMethod:  http.MethodPost,
+			requestBody:    bytes.NewBuffer([]byte(`{"labels":{"alertname":"TraceGatewayReceiverRefusedData"}}`)),
+			expectedStatus: http.StatusBadRequest,
 		},
 	}
 
