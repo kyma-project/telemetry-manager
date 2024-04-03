@@ -94,16 +94,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
 	var events []event.GenericEvent
-
-	var allPipelines telemetryv1alpha1.MetricPipelineList
-	if err := h.c.List(ctx, &allPipelines); err != nil {
-		h.logger.Error(err, "Failed to list MetricPipelines")
-		return nil
+	var metricPipelines telemetryv1alpha1.MetricPipelineList
+	if err := h.c.List(ctx, &metricPipelines); err != nil {
+		return events
 	}
 
-	for i := range allPipelines.Items {
-		if shouldReconcile(&allPipelines.Items[i], alertrules.MetricPipeline, alerts) {
-			events = append(events, event.GenericEvent{Object: &allPipelines.Items[i]})
+	for i := range metricPipelines.Items {
+		if shouldReconcile(&metricPipelines.Items[i], alertrules.MetricPipeline, alerts) {
+			events = append(events, event.GenericEvent{Object: &metricPipelines.Items[i]})
 		}
 	}
 
@@ -112,16 +110,14 @@ func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []
 
 func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
 	var events []event.GenericEvent
-
-	var allPipelines telemetryv1alpha1.TracePipelineList
-	if err := h.c.List(ctx, &allPipelines); err != nil {
-		h.logger.Error(err, "Failed to list TracePipelines")
-		return nil
+	var tracePipelines telemetryv1alpha1.TracePipelineList
+	if err := h.c.List(ctx, &tracePipelines); err != nil {
+		return events
 	}
 
-	for i := range allPipelines.Items {
-		if shouldReconcile(&allPipelines.Items[i], alertrules.TracePipeline, alerts) {
-			events = append(events, event.GenericEvent{Object: &allPipelines.Items[i]})
+	for i := range tracePipelines.Items {
+		if shouldReconcile(&tracePipelines.Items[i], alertrules.TracePipeline, alerts) {
+			events = append(events, event.GenericEvent{Object: &tracePipelines.Items[i]})
 		}
 	}
 
