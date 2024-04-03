@@ -41,10 +41,10 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		metricPipelineName        string
 		tracePipelineName         string
 		logOTLPTelemetryExportURL string
-		// metricTelemetryExportURL  string
-		traceTelemetryExportURL string
-		gomegaMaxLength         = format.MaxLength
-		errorWarningLevels      = []string{
+		metricTelemetryExportURL  string
+		traceTelemetryExportURL   string
+		gomegaMaxLength           = format.MaxLength
+		errorWarningLevels        = []string{
 			"ERROR", "error",
 			"WARNING", "warning",
 			"WARN", "warn"}
@@ -92,7 +92,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		objs = append(objs, logOTLPBackend.K8sObjects()...)
 		logOTLPTelemetryExportURL = logOTLPBackend.TelemetryExportURL(proxyClient)
 		metricBackend := backend.New(metricBackendName, mockNs, backend.SignalTypeMetrics)
-		// metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
+		metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
 		traceBackend := backend.New(traceBackendName, mockNs, backend.SignalTypeTraces)
 		traceTelemetryExportURL = traceBackend.TelemetryExportURL(proxyClient)
@@ -110,7 +110,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 
 		// metrics & traces
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
-			// WithOutputEndpointFromSecret(metricBackend.HostSecretRefV1Alpha1()).
+			WithOutputEndpointFromSecret(metricBackend.HostSecretRefV1Alpha1()).
 			PrometheusInput(true, kitk8s.IncludeNamespacesV1Alpha1(mockNs)).
 			IstioInput(true, kitk8s.IncludeNamespacesV1Alpha1(mockNs)).
 			OtlpInput(true).
@@ -168,9 +168,9 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
-		// It("Should push metrics successfully", func() {
-		// 	verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, metricTelemetryExportURL, mockNs, telemetrygen.MetricNames)
-		// })
+		It("Should push metrics successfully", func() {
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, metricTelemetryExportURL, mockNs, telemetrygen.MetricNames)
+		})
 
 		It("Should verify end-to-end trace delivery", func() {
 			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP)
@@ -202,12 +202,11 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		})
 
 		// TODO: Should not have any ERROR/WARNING level logs in the FluentBit containers
+		// TODO: configmap: FLuentBit, exclude_path (excluding self logs)
+		// telemetry-manager/blob/test/check-error-logs/internal/fluentbit/config/builder/input.go#L15-L16
 
 		AfterAll(func() {
 			format.MaxLength = gomegaMaxLength // restore Gomega truncation
 		})
 	})
-
-	// TODO: configmap: FLuentBit, exclude_path (excluding self logs)
-	// telemetry-manager/blob/test/check-error-logs/internal/fluentbit/config/builder/input.go#L15-L16
 })
