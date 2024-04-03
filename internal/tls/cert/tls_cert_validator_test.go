@@ -1,0 +1,175 @@
+package cert
+
+import (
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestExpiredCertificate(t *testing.T) {
+
+	certData := []byte(`-----BEGIN CERTIFICATE-----
+MIICNjCCAZ+gAwIBAgIBADANBgkqhkiG9w0BAQ0FADA4MQswCQYDVQQGEwJ1czEL
+MAkGA1UECAwCTlkxDTALBgNVBAoMBFRlc3QxDTALBgNVBAMMBFRlc3QwHhcNMjQw
+MzIxMTQyNDE0WhcNMjQwMzE5MTQyNDE0WjA4MQswCQYDVQQGEwJ1czELMAkGA1UE
+CAwCTlkxDTALBgNVBAoMBFRlc3QxDTALBgNVBAMMBFRlc3QwgZ8wDQYJKoZIhvcN
+AQEBBQADgY0AMIGJAoGBAMfSQ/2hwo2Qf5wA5OQ/aFuz/tFbmxwWrxtw1cAG43A9
+zG7W75kESVdTiBeKTZRXhiG0+hCa7jKULD5GWczhkwR0wepkJ+LN7SO+XDjT2YX0
+hGLfdL8opWn59d/b/0wtE7lz2Q+G/puXlDd85kM9oV+kK8oU74pZ0sNgE5lPd8t9
+AgMBAAGjUDBOMB0GA1UdDgQWBBQnFMbU0Hpg5rOfpn66vG6JVp4uXzAfBgNVHSME
+GDAWgBQnFMbU0Hpg5rOfpn66vG6JVp4uXzAMBgNVHRMEBTADAQH/MA0GCSqGSIb3
+DQEBDQUAA4GBAGl/tj0QW096fknAer/Q2Hmt6KINFjk6tKfnnJYYU22NMp2DQMWB
+7mNxmglynPG/0hOw6OpG0ji+yPCPiZ+/RscNWgrCNAUxvsxrT8t0mEPR9lhLmxlV
+WxZIBPi0z6MoiZxVKSY8EBeVYCHWS9A2l1J6gAHptihe7y1j8I2ffSHm
+-----END CERTIFICATE-----`)
+
+	keyData := []byte(`-----BEGIN PRIVATE KEY-----
+MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAMfSQ/2hwo2Qf5wA
+5OQ/aFuz/tFbmxwWrxtw1cAG43A9zG7W75kESVdTiBeKTZRXhiG0+hCa7jKULD5G
+WczhkwR0wepkJ+LN7SO+XDjT2YX0hGLfdL8opWn59d/b/0wtE7lz2Q+G/puXlDd8
+5kM9oV+kK8oU74pZ0sNgE5lPd8t9AgMBAAECgYB5C3KMbjUAtIvY4OHHMnHxOzQd
+drSba1Jf+RZC4Old0NHKQwGZW/NhpwRF3k3okqx6NrtU28V3djLm9o7nga4gbgaj
+DIHVVVBBLhPS75aHaaqrol2rL0GuQtymJ9OFjFcnVY4ylU1eOD7Vvdzpgn7VtK47
+vvD1uAGypMwma1jOAQJBAPTq13sY+OtHxBSeHRkMyFshjGCc42ES3CclS6i0FiW+
+Ns2lQie+VD+chmE0OzkGdRk3IPmzfRyPAGfYBzyWr6ECQQDQ3QZ1KZ+u3kij6CUl
+6RgU0fKaiXZT9e0nEC3StlkiaaGfYgyLIEWoGdr3aaiwcFsOlH/1UEuaBY52weHU
+kT5dAkEA5ZpPfkBwAypZYTbFcplwLzbpQh1ycKvcpfopzrNdW+7Rs8JsnZOpqaTU
+ucXci15JYuUyzcR90sshBzkXt65QYQJAcHbjWEk+c7G7mY6SGjTGQ8e9A5uLPLCK
+r2MV2YVYv5/zaFgqeuu4tkid0GVzcPY/Ab3SnOxMmTXuvWGu0YAX/QJAZwN4lwdO
+ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
+5VAuzWx+wV5WwQ==
+-----END PRIVATE KEY-----`)
+
+	validator := TLSCertValidator{}
+
+	validationResult := validator.ValidateCertificate(certData, keyData)
+
+	require.True(t, time.Now().After(validationResult.Validity), "Certificate is not expired")
+}
+
+func TestCertificateAndPrivateKeyValidity(t *testing.T) {
+
+	certData := []byte(`-----BEGIN CERTIFICATE-----
+MIICNjCCAZ+gAwIBAgIBADANBgkqhkiG9w0BAQ0FADA4MQswCQYDVQQGEwJ1czEL
+MAkGA1UECAwCTlkxDTALBgNVBAoMBFRlc3QxDTALBgNVBAMMBFRlc3QwHhcNMjQw
+MzIxMTQyNDE0WhcNMjQwMzE5MTQyNDE0WjA4MQswCQYDVQQGEwJ1czELMAkGA1UE
+CAwCTlkxDTALBgNVBAoMBFRlc3QxDTALBgNVBAMMBFRlc3QwgZ8wDQYJKoZIhvcN
+AQEBBQADgY0AMIGJAoGBAMfSQ/2hwo2Qf5wA5OQ/aFuz/tFbmxwWrxtw1cAG43A9
+zG7W75kESVdTiBeKTZRXhiG0+hCa7jKULD5GWczhkwR0wepkJ+LN7SO+XDjT2YX0
+hGLfdL8opWn59d/b/0wtE7lz2Q+G/puXlDd85kM9oV+kK8oU74pZ0sNgE5lPd8t9
+AgMBAAGjUDBOMB0GA1UdDgQWBBQnFMbU0Hpg5rOfpn66vG6JVp4uXzAfBgNVHSME
+GDAWgBQnFMbU0Hpg5rOfpn66vG6JVp4uXzAMBgNVHRMEBTADAQH/MA0GCSqGSIb3
+DQEBDQUAA4GBAGl/tj0QW096fknAer/Q2Hmt6KINFjk6tKfnnJYYU22NMp2DQMWB
+7mNxmglynPG/0hOw6OpG0ji+yPCPiZ+/RscNWgrCNAUxvsxrT8t0mEPR9lhLmxlV
+WxZIBPi0z6MoiZxVKSY8EBeVYCHWS9A2l1J6gAHptihe7y1j8I2ffSHm
+-----END CERTIFICATE-----`)
+
+	keyData := []byte(`-----BEGIN PRIVATE KEY-----
+MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAMfSQ/2hwo2Qf5wA
+5OQ/aFuz/tFbmxwWrxtw1cAG43A9zG7W75kESVdTiBeKTZRXhiG0+hCa7jKULD5G
+WczhkwR0wepkJ+LN7SO+XDjT2YX0hGLfdL8opWn59d/b/0wtE7lz2Q+G/puXlDd8
+5kM9oV+kK8oU74pZ0sNgE5lPd8t9AgMBAAECgYB5C3KMbjUAtIvY4OHHMnHxOzQd
+drSba1Jf+RZC4Old0NHKQwGZW/NhpwRF3k3okqx6NrtU28V3djLm9o7nga4gbgaj
+DIHVVVBBLhPS75aHaaqrol2rL0GuQtymJ9OFjFcnVY4ylU1eOD7Vvdzpgn7VtK47
+vvD1uAGypMwma1jOAQJBAPTq13sY+OtHxBSeHRkMyFshjGCc42ES3CclS6i0FiW+
+Ns2lQie+VD+chmE0OzkGdRk3IPmzfRyPAGfYBzyWr6ECQQDQ3QZ1KZ+u3kij6CUl
+6RgU0fKaiXZT9e0nEC3StlkiaaGfYgyLIEWoGdr3aaiwcFsOlH/1UEuaBY52weHU
+kT5dAkEA5ZpPfkBwAypZYTbFcplwLzbpQh1ycKvcpfopzrNdW+7Rs8JsnZOpqaTU
+ucXci15JYuUyzcR90sshBzkXt65QYQJAcHbjWEk+c7G7mY6SGjTGQ8e9A5uLPLCK
+r2MV2YVYv5/zaFgqeuu4tkid0GVzcPY/Ab3SnOxMmTXuvWGu0YAX/QJAZwN4lwdO
+ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
+5VAuzWx+wV5WwQ==
+-----END PRIVATE KEY-----`)
+
+	validator := TLSCertValidator{}
+
+	validationResult := validator.ValidateCertificate(certData, keyData)
+
+	require.True(t, validationResult.CertValid, "Certificate is not valid")
+	require.True(t, validationResult.PrivateKeyValid, "Private Key is not valid")
+}
+
+func TestInvalidCertificate(t *testing.T) {
+
+	certData := []byte(`-----BEGIN CERTIFICATE-----
+MIICNjCCAZ+gAwIBAgIBADANBgkqhkiG9w0BAQ0FADA4MQswCQYDVQQGEwJ1czEL
+MAkGA1UECAwCTlkxDTALBgNVBAoMBFRlc3QxDTALBgNVBAMMBFRlc3QwHhcNMjQw
+MzIxMTQyNDE0WhcNMjQwMzE5MTQyNDE0WjA4MQswCQYDVQQGEwJ1czELMAkGA1UE
+CAwCTlkxDTALBgNVBAoMBFRlc3QxDTALBgNVBAMMBFRlc3QwgZ8wDQYJKoZIhvcN
+AQEBBQADgY0AMIGJAoGBAMfSQ/2hwo2Qf5wA5OQ/aFuz/tFbmxwWrxtw1cAG43A9
+zG7W75kESVdTiBeKTZRXhiG0+hCa7jKULD5GWczhkwR0wepkJ+LN7SO+XDjT2YX0
+hGLfdL8opWn59d/b/0wtE7lz2Q+G/puXlDd85kM9oV+kK8oU74pZ0sNgE5lPd8t9
+AgMBAAGjUDBOMB0GA1UdDgQWBBQnFMbU0Hpg5rOfpn66vG6JVp4uXzAfBgNVHSME
+GDAWgBQnFMbU0Hpg5rOfpn66vG6JVp4uXzAMBgNVHRMEBTADAQH/MA0GCSqGSIb3
+DQEBDQUAA4GBAGl/tj0QW096fknAer/Q2Hmt6KINFjk6tKfnnJYYU22NMp2DQMWB
+7mNxmglynPG/0hOw6OpG0ji+yPCPiZ+/RscNWgrCNAUxvsxrT8t0mEPR9lhLmxlV
+WxZIBPi0z6MoiZxVKSY8EBeVYCHWS9A2l1J6gAHptihe7y1j8I2ffS
+-----END CERTIFICATE-----`)
+
+	keyData := []byte(`-----BEGIN PRIVATE KEY-----
+MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAMfSQ/2hwo2Qf5wA
+5OQ/aFuz/tFbmxwWrxtw1cAG43A9zG7W75kESVdTiBeKTZRXhiG0+hCa7jKULD5G
+WczhkwR0wepkJ+LN7SO+XDjT2YX0hGLfdL8opWn59d/b/0wtE7lz2Q+G/puXlDd8
+5kM9oV+kK8oU74pZ0sNgE5lPd8t9AgMBAAECgYB5C3KMbjUAtIvY4OHHMnHxOzQd
+drSba1Jf+RZC4Old0NHKQwGZW/NhpwRF3k3okqx6NrtU28V3djLm9o7nga4gbgaj
+DIHVVVBBLhPS75aHaaqrol2rL0GuQtymJ9OFjFcnVY4ylU1eOD7Vvdzpgn7VtK47
+vvD1uAGypMwma1jOAQJBAPTq13sY+OtHxBSeHRkMyFshjGCc42ES3CclS6i0FiW+
+Ns2lQie+VD+chmE0OzkGdRk3IPmzfRyPAGfYBzyWr6ECQQDQ3QZ1KZ+u3kij6CUl
+6RgU0fKaiXZT9e0nEC3StlkiaaGfYgyLIEWoGdr3aaiwcFsOlH/1UEuaBY52weHU
+kT5dAkEA5ZpPfkBwAypZYTbFcplwLzbpQh1ycKvcpfopzrNdW+7Rs8JsnZOpqaTU
+ucXci15JYuUyzcR90sshBzkXt65QYQJAcHbjWEk+c7G7mY6SGjTGQ8e9A5uLPLCK
+r2MV2YVYv5/zaFgqeuu4tkid0GVzcPY/Ab3SnOxMmTXuvWGu0YAX/QJAZwN4lwdO
+ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
+5VAuzWx+wV5WwQ==
+-----END PRIVATE KEY-----`)
+
+	validator := TLSCertValidator{}
+
+	validationResult := validator.ValidateCertificate(certData, keyData)
+
+	require.False(t, validationResult.CertValid, "Certificate is valid")
+	require.True(t, validationResult.PrivateKeyValid, "Private Key is not valid")
+}
+
+func TestInvalidPrivateKey(t *testing.T) {
+
+	certData := []byte(`-----BEGIN CERTIFICATE-----
+MIICNjCCAZ+gAwIBAgIBADANBgkqhkiG9w0BAQ0FADA4MQswCQYDVQQGEwJ1czEL
+MAkGA1UECAwCTlkxDTALBgNVBAoMBFRlc3QxDTALBgNVBAMMBFRlc3QwHhcNMjQw
+MzIxMTQyNDE0WhcNMjQwMzE5MTQyNDE0WjA4MQswCQYDVQQGEwJ1czELMAkGA1UE
+CAwCTlkxDTALBgNVBAoMBFRlc3QxDTALBgNVBAMMBFRlc3QwgZ8wDQYJKoZIhvcN
+AQEBBQADgY0AMIGJAoGBAMfSQ/2hwo2Qf5wA5OQ/aFuz/tFbmxwWrxtw1cAG43A9
+zG7W75kESVdTiBeKTZRXhiG0+hCa7jKULD5GWczhkwR0wepkJ+LN7SO+XDjT2YX0
+hGLfdL8opWn59d/b/0wtE7lz2Q+G/puXlDd85kM9oV+kK8oU74pZ0sNgE5lPd8t9
+AgMBAAGjUDBOMB0GA1UdDgQWBBQnFMbU0Hpg5rOfpn66vG6JVp4uXzAfBgNVHSME
+GDAWgBQnFMbU0Hpg5rOfpn66vG6JVp4uXzAMBgNVHRMEBTADAQH/MA0GCSqGSIb3
+DQEBDQUAA4GBAGl/tj0QW096fknAer/Q2Hmt6KINFjk6tKfnnJYYU22NMp2DQMWB
+7mNxmglynPG/0hOw6OpG0ji+yPCPiZ+/RscNWgrCNAUxvsxrT8t0mEPR9lhLmxlV
+WxZIBPi0z6MoiZxVKSY8EBeVYCHWS9A2l1J6gAHptihe7y1j8I2ffSHm
+-----END CERTIFICATE-----`)
+
+	keyData := []byte(`-----BEGIN PRIVATE KEY-----
+MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAMfSQ/2hwo2Qf5wA
+5OQ/aFuz/tFbmxwWrxtw1cAG43A9zG7W75kESVdTiBeKTZRXhiG0+hCa7jKULD5G
+WczhkwR0wepkJ+LN7SO+XDjT2YX0hGLfdL8opWn59d/b/0wtE7lz2Q+G/puXlDd8
+5kM9oV+kK8oU74pZ0sNgE5lPd8t9AgMBAAECgYB5C3KMbjUAtIvY4OHHMnHxOzQd
+drSba1Jf+RZC4Old0NHKQwGZW/NhpwRF3k3okqx6NrtU28V3djLm9o7nga4gbgaj
+DIHVVVBBLhPS75aHaaqrol2rL0GuQtymJ9OFjFcnVY4ylU1eOD7Vvdzpgn7VtK47
+vvD1uAGypMwma1jOAQJBAPTq13sY+OtHxBSeHRkMyFshjGCc42ES3CclS6i0FiW+
+Ns2lQie+VD+chmE0OzkGdRk3IPmzfRyPAGfYBzyWr6ECQQDQ3QZ1KZ+u3kij6CUl
+6RgU0fKaiXZT9e0nEC3StlkiaaGfYgyLIEWoGdr3aaiwcFsOlH/1UEuaBY52weHU
+kT5dAkEA5ZpPfkBwAypZYTbFcplwLzbpQh1ycKvcpfopzrNdW+7Rs8JsnZOpqaTU
+ucXci15JYuUyzcR90sshBzkXt65QYQJAcHbjWEk+c7G7mY6SGjTGQ8e9A5uLPLCK
+r2MV2YVYv5/zaFgqeuu4tkid0GVzcPY/Ab3SnOxMmTXuvWGu0YAX/QJAZwN4lwdO
+ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
+5VAuzWx+wWwQ==
+-----END PRIVATE KEY-----`)
+
+	validator := TLSCertValidator{}
+
+	validationResult := validator.ValidateCertificate(certData, keyData)
+
+	require.True(t, validationResult.CertValid, "Certificate is not valid")
+	require.False(t, validationResult.PrivateKeyValid, "Private Key is valid")
+}
