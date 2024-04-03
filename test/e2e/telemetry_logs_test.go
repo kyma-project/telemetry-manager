@@ -25,7 +25,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-components"), Ordered, func() {
+var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("telemetry-logs-analysis"), Ordered, func() {
 	const (
 		mockNs             = "tlogs-http"
 		logOTLPBackendName = "tlogs-log-otlp"

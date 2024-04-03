@@ -178,7 +178,7 @@ jobs:
         with:
           failure: failure()
 
-  e2e-telemetry-components:
+  e2e-telemetry-logs-analysis:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -192,7 +192,7 @@ jobs:
       - name: Run tests
         run: |
           hack/deploy-istio.sh
-          bin/ginkgo run --tags e2e --label-filter="telemetry-components" test/e2e
+          bin/ginkgo run --tags e2e --label-filter="telemetry-logs-analysis" test/e2e
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"
