@@ -50,44 +50,40 @@ const (
 	LabelExporter = "exporter"
 	LabelReceiver = "receiver"
 
-	AlertNameExporterSentData        = "ExporterSentData"
-	AlertNameExporterDroppedData     = "ExporterDroppedData"
-	AlertNameExporterQueueAlmostFull = "ExporterQueueAlmostFull"
-	AlertNameExporterEnqueueFailed   = "ExporterEnqueueFailed"
-	AlertNameReceiverRefusedData     = "ReceiverRefusedData"
+	RuleNameGatewayExporterSentData        = "GatewayExporterSentData"
+	RuleNameGatewayExporterDroppedData     = "GatewayExporterDroppedData"
+	RuleNameGatewayExporterQueueAlmostFull = "GatewayExporterQueueAlmostFull"
+	RuleNameGatewayExporterEnqueueFailed   = "GatewayExporterEnqueueFailed"
+	RuleNameGatewayReceiverRefusedData     = "GatewayReceiverRefusedData"
 )
 
+func RuleNamePrefix(t PipelineType) string {
+	if t == TracePipeline {
+		return "Trace"
+	}
+
+	return "Metric"
+}
+
 type ruleBuilder struct {
-	serviceName   string
-	dataType      string
-	nameDecorator RuleNameDecorator
-}
-
-type RuleNameDecorator func(string) string
-
-var TraceRuleNameDecorator = func(name string) string {
-	return "TraceGateway" + name
-}
-
-var MetricRuleNameDecorator = func(name string) string {
-	return "MetricGateway" + name
+	serviceName string
+	dataType    string
+	namePrefix  string
 }
 
 func newRuleBuilder(t PipelineType) ruleBuilder {
 	serviceName := "telemetry-metric-gateway-metrics"
 	dataType := "metric_points"
-	nameDecorator := MetricRuleNameDecorator
 
 	if t == TracePipeline {
 		serviceName = "telemetry-trace-collector-metrics"
 		dataType = "spans"
-		nameDecorator = TraceRuleNameDecorator
 	}
 
 	return ruleBuilder{
-		dataType:      dataType,
-		serviceName:   serviceName,
-		nameDecorator: nameDecorator,
+		dataType:    dataType,
+		serviceName: serviceName,
+		namePrefix:  RuleNamePrefix(t),
 	}
 }
 
@@ -104,7 +100,7 @@ func (rb ruleBuilder) rules() []Rule {
 func (rb ruleBuilder) exporterSentRule() Rule {
 	metric := fmt.Sprintf("otelcol_exporter_sent_%s", rb.dataType)
 	return Rule{
-		Alert: rb.nameDecorator(AlertNameExporterSentData),
+		Alert: rb.namePrefix + RuleNameGatewayExporterSentData,
 		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(LabelExporter).
 			greaterThan(0).
@@ -115,7 +111,7 @@ func (rb ruleBuilder) exporterSentRule() Rule {
 func (rb ruleBuilder) exporterDroppedRule() Rule {
 	metric := fmt.Sprintf("otelcol_exporter_send_failed_%s", rb.dataType)
 	return Rule{
-		Alert: rb.nameDecorator(AlertNameExporterDroppedData),
+		Alert: rb.namePrefix + RuleNameGatewayExporterDroppedData,
 		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(LabelExporter).
 			greaterThan(0).
@@ -125,7 +121,7 @@ func (rb ruleBuilder) exporterDroppedRule() Rule {
 
 func (rb ruleBuilder) exporterQueueAlmostFullRule() Rule {
 	return Rule{
-		Alert: rb.nameDecorator(AlertNameExporterQueueAlmostFull),
+		Alert: rb.namePrefix + RuleNameGatewayExporterQueueAlmostFull,
 		Expr: div("otelcol_exporter_queue_size", "otelcol_exporter_queue_capacity", selectService(rb.serviceName)).
 			greaterThan(0.8).
 			build(),
@@ -135,7 +131,7 @@ func (rb ruleBuilder) exporterQueueAlmostFullRule() Rule {
 func (rb ruleBuilder) exporterEnqueueFailedRule() Rule {
 	metric := fmt.Sprintf("otelcol_exporter_enqueue_failed_%s", rb.dataType)
 	return Rule{
-		Alert: rb.nameDecorator(AlertNameExporterEnqueueFailed),
+		Alert: rb.namePrefix + RuleNameGatewayExporterEnqueueFailed,
 		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(LabelExporter).
 			greaterThan(0).
@@ -146,7 +142,7 @@ func (rb ruleBuilder) exporterEnqueueFailedRule() Rule {
 func (rb ruleBuilder) receiverRefusedRule() Rule {
 	metric := fmt.Sprintf("otelcol_receiver_refused_%s", rb.dataType)
 	return Rule{
-		Alert: rb.nameDecorator(AlertNameReceiverRefusedData),
+		Alert: rb.namePrefix + RuleNameGatewayReceiverRefusedData,
 		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(LabelReceiver).
 			greaterThan(0).

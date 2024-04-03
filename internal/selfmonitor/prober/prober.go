@@ -28,7 +28,7 @@ type alertGetter interface {
 type Prober struct {
 	clientTimeout time.Duration
 	getter        alertGetter
-	nameDecorator alertrules.RuleNameDecorator
+	pipelineType  alertrules.PipelineType
 }
 
 func NewProber(pipelineType alertrules.PipelineType, selfMonitorName types.NamespacedName) (*Prober, error) {
@@ -39,15 +39,10 @@ func NewProber(pipelineType alertrules.PipelineType, selfMonitorName types.Names
 		return nil, fmt.Errorf("failed to create Prometheus client: %w", err)
 	}
 
-	nameDecorator := alertrules.MetricRuleNameDecorator
-	if pipelineType == alertrules.TracePipeline {
-		nameDecorator = alertrules.TraceRuleNameDecorator
-	}
-
 	return &Prober{
 		getter:        promv1.NewAPI(client),
 		clientTimeout: clientTimeout,
-		nameDecorator: nameDecorator,
+		pipelineType:  pipelineType,
 	}, nil
 }
 
@@ -75,34 +70,34 @@ func (p *Prober) Probe(ctx context.Context, pipelineName string) (ProbeResult, e
 }
 
 func (p *Prober) allDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	exporterSentFiring := p.hasFiringAlertForPipeline(alerts, alertrules.AlertNameExporterSentData, pipelineName)
-	exporterDroppedFiring := p.hasFiringAlertForPipeline(alerts, alertrules.AlertNameExporterDroppedData, pipelineName)
-	exporterEnqueueFailedFiring := p.hasFiringAlertForPipeline(alerts, alertrules.AlertNameExporterEnqueueFailed, pipelineName)
+	exporterSentFiring := p.hasFiringAlertForPipeline(alerts, alertrules.RuleNameGatewayExporterSentData, pipelineName)
+	exporterDroppedFiring := p.hasFiringAlertForPipeline(alerts, alertrules.RuleNameGatewayExporterDroppedData, pipelineName)
+	exporterEnqueueFailedFiring := p.hasFiringAlertForPipeline(alerts, alertrules.RuleNameGatewayExporterEnqueueFailed, pipelineName)
 
 	return !exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring)
 }
 
 func (p *Prober) someDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	exporterSentFiring := p.hasFiringAlertForPipeline(alerts, alertrules.AlertNameExporterSentData, pipelineName)
-	exporterDroppedFiring := p.hasFiringAlertForPipeline(alerts, alertrules.AlertNameExporterDroppedData, pipelineName)
-	exporterEnqueueFailedFiring := p.hasFiringAlertForPipeline(alerts, alertrules.AlertNameExporterEnqueueFailed, pipelineName)
+	exporterSentFiring := p.hasFiringAlertForPipeline(alerts, alertrules.RuleNameGatewayExporterSentData, pipelineName)
+	exporterDroppedFiring := p.hasFiringAlertForPipeline(alerts, alertrules.RuleNameGatewayExporterDroppedData, pipelineName)
+	exporterEnqueueFailedFiring := p.hasFiringAlertForPipeline(alerts, alertrules.RuleNameGatewayExporterEnqueueFailed, pipelineName)
 
 	return exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring)
 }
 
 func (p *Prober) queueAlmostFull(alerts []promv1.Alert, pipelineName string) bool {
-	return p.hasFiringAlertForPipeline(alerts, alertrules.AlertNameExporterQueueAlmostFull, pipelineName)
+	return p.hasFiringAlertForPipeline(alerts, alertrules.RuleNameGatewayExporterQueueAlmostFull, pipelineName)
 }
 
 func (p *Prober) throttling(alerts []promv1.Alert) bool {
-	return p.hasFiringAlert(alerts, alertrules.AlertNameReceiverRefusedData)
+	return p.hasFiringAlert(alerts, alertrules.RuleNameGatewayReceiverRefusedData)
 }
 
 func (p *Prober) healthy(alerts []promv1.Alert, pipelineName string) bool {
-	return !(p.hasFiringAlertForPipeline(alerts, alertrules.AlertNameExporterDroppedData, pipelineName) ||
-		p.hasFiringAlertForPipeline(alerts, alertrules.AlertNameExporterQueueAlmostFull, pipelineName) ||
-		p.hasFiringAlertForPipeline(alerts, alertrules.AlertNameExporterEnqueueFailed, pipelineName) ||
-		p.hasFiringAlert(alerts, alertrules.AlertNameReceiverRefusedData))
+	return !(p.hasFiringAlertForPipeline(alerts, alertrules.RuleNameGatewayExporterDroppedData, pipelineName) ||
+		p.hasFiringAlertForPipeline(alerts, alertrules.RuleNameGatewayExporterQueueAlmostFull, pipelineName) ||
+		p.hasFiringAlertForPipeline(alerts, alertrules.RuleNameGatewayExporterEnqueueFailed, pipelineName) ||
+		p.hasFiringAlert(alerts, alertrules.RuleNameGatewayReceiverRefusedData))
 }
 
 func (p *Prober) retrieveAlerts(ctx context.Context) ([]promv1.Alert, error) {
@@ -140,7 +135,8 @@ func (p *Prober) hasFiringAlertForPipeline(alerts []promv1.Alert, alertName, pip
 
 func (p *Prober) matchesAlertName(alert promv1.Alert, alertName string) bool {
 	v, ok := alert.Labels[model.AlertNameLabel]
-	return ok && string(v) == p.nameDecorator(alertName)
+	expectedFullName := alertrules.RuleNamePrefix(p.pipelineType) + alertName
+	return ok && string(v) == expectedFullName
 }
 
 func matchesPipeline(alert promv1.Alert, pipelineName string) bool {

@@ -3,6 +3,6 @@ package alertrules
 type PipelineType string
 
 const (
-	MetricPipeline PipelineType = "Metric"
-	TracePipeline  PipelineType = "Trace"
+	MetricPipeline PipelineType = "MetricPipeline"
+	TracePipeline  PipelineType = "TracePipeline"
 )

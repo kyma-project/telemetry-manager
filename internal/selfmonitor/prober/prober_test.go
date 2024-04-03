@@ -267,8 +267,8 @@ func TestProber(t *testing.T) {
 			}
 
 			sut := Prober{
-				getter:        alertGetterMock,
-				nameDecorator: alertrules.TraceRuleNameDecorator,
+				getter:       alertGetterMock,
+				pipelineType: alertrules.TracePipeline,
 			}
 
 			result, err := sut.Probe(context.Background(), tc.pipelineName)

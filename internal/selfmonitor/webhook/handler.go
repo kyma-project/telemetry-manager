@@ -130,7 +130,8 @@ func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []A
 
 func shouldReconcile(pipeline client.Object, pipelineType alertrules.PipelineType, alerts []Alert) bool {
 	for _, alert := range alerts {
-		if !strings.HasPrefix(alert.Labels[model.AlertNameLabel], string(pipelineType)) {
+		expectedPrefix := alertrules.RuleNamePrefix(pipelineType)
+		if !strings.HasPrefix(alert.Labels[model.AlertNameLabel], expectedPrefix) {
 			continue
 		}
 
