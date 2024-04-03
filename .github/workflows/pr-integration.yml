@@ -178,6 +178,28 @@ jobs:
         with:
           failure: failure()
 
+  e2e-telemetry-components:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare Test
+        uses: "./.github/template/prepare-test"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run tests
+        run: |
+          hack/deploy-istio.sh
+          run: bin/ginkgo run --tags e2e --label-filter="telemetry-components" test/e2e
+
+      - name: Finalize Test
+        uses: "./.github/template/finalize-test"
+        if: success() || failure()
+        with:
+          failure: failure()
+
   e2e-integration-istio:
     runs-on: ubuntu-latest
     steps:
@@ -193,28 +215,6 @@ jobs:
         run: |
           hack/deploy-istio.sh
           bin/ginkgo run --tags istio test/integration/istio
-
-      - name: Finalize Test
-        uses: "./.github/template/finalize-test"
-        if: success() || failure()
-        with:
-          failure: failure()
-
-  e2e-integration-telemetry-components:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Prepare Test
-        uses: "./.github/template/prepare-test"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run tests
-        run: |
-          hack/deploy-istio.sh
-          bin/ginkgo run --tags telemetrycomponents test/integration/telemetrycomponents
 
       - name: Finalize Test
         uses: "./.github/template/finalize-test"

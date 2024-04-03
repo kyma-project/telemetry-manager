@@ -1,6 +1,6 @@
-//go:build telemetrycomponents
+//go:build e2e
 
-package telemetrycomponents
+package e2e
 
 import (
 	"fmt"
@@ -82,7 +82,6 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		// backends
-		// TEST: Comment out one of the backends + data flow check + commit => test should fail
 		logOTLPBackend := backend.New(logOTLPBackendName, mockNs, backend.SignalTypeLogs)
 		objs = append(objs, logOTLPBackend.K8sObjects()...)
 		logOTLPTelemetryExportURL = logOTLPBackend.TelemetryExportURL(proxyClient)
