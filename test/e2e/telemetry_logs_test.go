@@ -183,6 +183,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 			return Or(
 				ContainSubstring("The default endpoints for all servers in components will change to use localhost instead of 0.0.0.0 in a future version. Use the feature gate to preview the new default."),
 				ContainSubstring("error re-reading certificate"),
+				ContainSubstring("grpc: addrConn.createTransport failed to connect"),
 			)
 		}
 
