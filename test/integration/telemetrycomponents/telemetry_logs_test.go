@@ -5,6 +5,7 @@ package telemetrycomponents
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
@@ -26,7 +27,7 @@ import (
 var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-components"), Ordered, func() {
 	const (
 		mockNs             = "tlogs-http"
-		logBackendName     = "tlogs-log"
+		logOTLPBackendName = "tlogs-log-otlp"
 		metricBackendName  = "tlogs-metric"
 		traceBackendName   = "tlogs-trace"
 		nginxImage         = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
@@ -35,12 +36,12 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 	)
 
 	var (
-		logPipelineName          string
-		metricPipelineName       string
-		tracePipelineName        string
-		logTelemetryExportURL    string
-		metricTelemetryExportURL string
-		traceTelemetryExportURL  string
+		logOTLPPipelineName       string
+		metricPipelineName        string
+		tracePipelineName         string
+		logOTLPTelemetryExportURL string
+		metricTelemetryExportURL  string
+		traceTelemetryExportURL   string
 	)
 
 	sourcePodSpec := func() corev1.PodSpec {
@@ -81,9 +82,10 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		// backends
-		logBackend := backend.New(logBackendName, mockNs, backend.SignalTypeLogs)
-		objs = append(objs, logBackend.K8sObjects()...)
-		logTelemetryExportURL = logBackend.TelemetryExportURL(proxyClient)
+		// TEST: Comment out one of the backends + data flow check + commit => test should fail
+		logOTLPBackend := backend.New(logOTLPBackendName, mockNs, backend.SignalTypeLogs)
+		objs = append(objs, logOTLPBackend.K8sObjects()...)
+		logOTLPTelemetryExportURL = logOTLPBackend.TelemetryExportURL(proxyClient)
 		metricBackend := backend.New(metricBackendName, mockNs, backend.SignalTypeMetrics)
 		metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
@@ -91,14 +93,17 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		traceTelemetryExportURL = traceBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, traceBackend.K8sObjects()...)
 
-		// components
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", logBackend.Name())).
-			WithSecretKeyRef(logBackend.HostSecretRefV1Alpha1()).
+		// log pipelines
+		logOTLPPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", logOTLPBackend.Name())).
+			WithSecretKeyRef(logOTLPBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
-			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName, mockNs}).
-			WithExcludeContainers([]string{"manager"})
-		logPipelineName = logPipeline.Name()
-		objs = append(objs, logPipeline.K8sObject())
+			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName}).
+			WithIncludeContainers([]string{"collector"})
+		logOTLPPipelineName = logOTLPPipeline.Name()
+		objs = append(objs, logOTLPPipeline.K8sObject())
+		// TODO: Separate FluentBit logPipeline (CONTAINERS: fluent-bit, exporter)
+
+		// metrics & traces
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
 			WithOutputEndpointFromSecret(metricBackend.HostSecretRefV1Alpha1()).
 			PrometheusInput(true, kitk8s.IncludeNamespacesV1Alpha1(mockNs)).
@@ -112,7 +117,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		tracePipelineName = tracePipeline.Name()
 		objs = append(objs, tracePipeline.K8sObject())
 
-		// metrics istio set-up (pods)
+		// metrics istio set-up (src/dest pods)
 		source := kitk8s.NewPod("source", mockNs).WithPodSpec(sourcePodSpec())
 		destination := kitk8s.NewPod("destination", mockNs).WithPodSpec(destinationPodSpec()).WithLabel("app", "destination")
 		service := kitk8s.NewService("destination", mockNs).WithPort("http", 80)
@@ -142,13 +147,13 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 		})
 
 		It("Should have running backends", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logBackendName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logOTLPBackendName})
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: metricBackendName})
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: traceBackendName})
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, logPipelineName)
+			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, logOTLPPipelineName)
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, metricPipelineName)
 			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, tracePipelineName)
 		})
@@ -175,9 +180,9 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 			)
 		}
 
-		It("Should not have any ERROR/WARNING level logs in the components", func() {
+		It("Should not have any ERROR/WARNING logs in the OTLP containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(logTelemetryExportURL)
+				resp, err := proxyClient.Get(logOTLPTelemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -187,13 +192,11 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 						WithLogBody(Not(excludeWhitelistedLogs())),
 					)))),
 				))
-			}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+			}, time.Second*120, periodic.TelemetryInterval).Should(Succeed())
 		})
+
+		// TODO: Should not have any ERROR/WARNING level logs in the FluentBit containers
 	})
-
-	// TODO: telemetry-manager logs should not be checked for
-
-	// TODO: Find the container name of the otlp-collector, might be a good idea to separate them (FluentBit logPipeline and OTLP logPipeline), so that you know exactly what fails
 
 	// TODO: configmap: FLuentBit, exclude_path (excluding self logs)
 	// telemetry-manager/blob/test/check-error-logs/internal/fluentbit/config/builder/input.go#L15-L16
