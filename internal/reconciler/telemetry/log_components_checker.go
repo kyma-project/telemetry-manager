@@ -69,7 +69,7 @@ func (l *logComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetr
 	for _, condType := range condTypes {
 		for _, pipeline := range pipelines {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
-			if cond != nil && cond.Status == metav1.ConditionFalse {
+			if cond != nil && (cond.Status == metav1.ConditionFalse || cond.Reason == conditions.ReasonTLSCertificateAboutToExpire) {
 				return cond.Reason
 			}
 		}
@@ -78,13 +78,18 @@ func (l *logComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetr
 }
 
 func (l *logComponentsChecker) determineConditionStatus(reason string) metav1.ConditionStatus {
-	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonLogComponentsRunning {
+	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonLogComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
 		return metav1.ConditionTrue
 	}
 	return metav1.ConditionFalse
 }
 
 func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, reason string) string {
+	tlsAboutExpireMassage := determineFormattedTLSCertificateMessage(pipelines)
+	if len(tlsAboutExpireMassage) > 0 {
+		return tlsAboutExpireMassage
+	}
+
 	if reason != conditions.ReasonResourceBlocksDeletion {
 		return conditions.MessageForLogPipeline(reason)
 	}
@@ -100,6 +105,20 @@ func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alp
 			return p.Name
 		}),
 	})
+}
+
+func determineFormattedTLSCertificateMessage(pipelines []telemetryv1alpha1.LogPipeline) string {
+
+	for _, p := range pipelines {
+		cond := meta.FindStatusCondition(p.Status.Conditions, conditions.TypeConfigurationGenerated)
+		if cond != nil && (cond.Reason == conditions.ReasonTLSCertificateAboutToExpire ||
+			cond.Reason == conditions.ReasonTLSCertificateExpired ||
+			cond.Reason == conditions.ReasonTLSCertificateInvalid ||
+			cond.Reason == conditions.ReasonTLSPrivateKeyInvalid) {
+			return cond.Message
+		}
+	}
+	return ""
 }
 
 func (l *logComponentsChecker) addReasonPrefix(reason string) string {

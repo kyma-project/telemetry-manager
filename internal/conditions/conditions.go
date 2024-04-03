@@ -18,20 +18,24 @@ const (
 )
 
 const (
-	ReasonNoPipelineDeployed      = "NoPipelineDeployed"
-	ReasonReferencedSecretMissing = "ReferencedSecretMissing"
-	ReasonMaxPipelinesExceeded    = "MaxPipelinesExceeded"
-	ReasonResourceBlocksDeletion  = "ResourceBlocksDeletion"
-	ReasonConfigurationGenerated  = "ConfigurationGenerated"
-	ReasonDeploymentNotReady      = "DeploymentNotReady"
-	ReasonDeploymentReady         = "DeploymentReady"
-	ReasonDaemonSetNotReady       = "DaemonSetNotReady"
-	ReasonDaemonSetReady          = "DaemonSetReady"
-	ReasonAllDataDropped          = "AllTelemetryDataDropped"
-	ReasonSomeDataDropped         = "SomeTelemetryDataDropped"
-	ReasonBufferFillingUp         = "BufferFillingUp"
-	ReasonGatewayThrottling       = "GatewayThrottling"
-	ReasonFlowHealthy             = "Healthy"
+	ReasonNoPipelineDeployed          = "NoPipelineDeployed"
+	ReasonReferencedSecretMissing     = "ReferencedSecretMissing"
+	ReasonMaxPipelinesExceeded        = "MaxPipelinesExceeded"
+	ReasonResourceBlocksDeletion      = "ResourceBlocksDeletion"
+	ReasonConfigurationGenerated      = "ConfigurationGenerated"
+	ReasonDeploymentNotReady          = "DeploymentNotReady"
+	ReasonDeploymentReady             = "DeploymentReady"
+	ReasonDaemonSetNotReady           = "DaemonSetNotReady"
+	ReasonDaemonSetReady              = "DaemonSetReady"
+	ReasonAllDataDropped              = "AllTelemetryDataDropped"
+	ReasonSomeDataDropped             = "SomeTelemetryDataDropped"
+	ReasonBufferFillingUp             = "BufferFillingUp"
+	ReasonGatewayThrottling           = "GatewayThrottling"
+	ReasonFlowHealthy                 = "Healthy"
+	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
+	ReasonTLSPrivateKeyInvalid        = "TLSPrivateKeyInvalid"
+	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
+	ReasonTLSCertificateAboutToExpire = "TLSCertAboutToExpire"
 
 	ReasonMetricAgentNotRequired  = "AgentNotRequired"
 	ReasonMetricComponentsRunning = "MetricComponentsRunning"
@@ -83,12 +87,16 @@ var tracePipelineMessages = map[string]string{
 }
 
 var logPipelineMessages = map[string]string{
-	ReasonDaemonSetNotReady:     "Fluent Bit DaemonSet is not ready",
-	ReasonDaemonSetReady:        "Fluent Bit DaemonSet is ready",
-	ReasonFluentBitDSNotReady:   "Fluent Bit DaemonSet is not ready",
-	ReasonFluentBitDSReady:      "Fluent Bit DaemonSet is ready",
-	ReasonUnsupportedLokiOutput: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
-	ReasonLogComponentsRunning:  "All log components are running",
+	ReasonDaemonSetNotReady:           "Fluent Bit DaemonSet is not ready",
+	ReasonDaemonSetReady:              "Fluent Bit DaemonSet is ready",
+	ReasonFluentBitDSNotReady:         "Fluent Bit DaemonSet is not ready",
+	ReasonFluentBitDSReady:            "Fluent Bit DaemonSet is ready",
+	ReasonUnsupportedLokiOutput:       "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
+	ReasonLogComponentsRunning:        "All log components are running",
+	ReasonTLSCertificateInvalid:       "TLS certificate invalid: %s",
+	ReasonTLSPrivateKeyInvalid:        "TLS private key invalid: %s",
+	ReasonTLSCertificateExpired:       "TLS certificate expired on %s",
+	ReasonTLSCertificateAboutToExpire: "TLS certificate is about to expire, configured certificate is valid until %s",
 }
 
 func MessageForLogPipeline(reason string) string {
