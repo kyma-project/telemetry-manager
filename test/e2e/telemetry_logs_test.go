@@ -198,7 +198,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs", Label("telemetry-com
 						WithLogBody(Not(excludeWhitelistedLogs())),
 					)))),
 				))
-			}, time.Second*600, periodic.TelemetryInterval).Should(Succeed())
+			}, time.Second*120, periodic.TelemetryInterval).Should(Succeed())
 		})
 
 		// TODO: Should not have any ERROR/WARNING level logs in the FluentBit containers
