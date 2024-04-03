@@ -64,6 +64,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
@@ -76,7 +77,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	//nolint:gosec // pprof package is required for performance analysis.
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
 )
 
 var (
@@ -385,8 +386,8 @@ func main() {
 	if enableWebhook && enableSelfMonitor {
 		mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
 			mgr.GetClient(),
-			selfmonitorwebhook.WithSubscriber(tracingControllerReconcileTriggerChan, selfmonitorwebhook.TracePipeline),
-			selfmonitorwebhook.WithSubscriber(metricsControllerReconcileTriggerChan, selfmonitorwebhook.MetricPipeline),
+			selfmonitorwebhook.WithSubscriber(tracingControllerReconcileTriggerChan, alertrules.TracePipeline),
+			selfmonitorwebhook.WithSubscriber(metricsControllerReconcileTriggerChan, alertrules.MetricPipeline),
 			selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
 	}
 
@@ -426,7 +427,7 @@ func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 	setupLog.Info("Starting with tracing controller")
 	var err error
 	var flowHealthProber *prober.Prober
-	if flowHealthProber, err = prober.NewProber(prober.FlowTypeTraces,
+	if flowHealthProber, err = prober.NewProber(alertrules.TracePipeline,
 		types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
 		setupLog.Error(err, "Failed to create flow health prober")
 		os.Exit(1)
@@ -442,7 +443,7 @@ func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 	setupLog.Info("Starting with metrics controller")
 	var err error
 	var flowHealthProber *prober.Prober
-	if flowHealthProber, err = prober.NewProber(prober.FlowTypeMetrics,
+	if flowHealthProber, err = prober.NewProber(alertrules.MetricPipeline,
 		types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
 		setupLog.Error(err, "Failed to create flow health prober")
 		os.Exit(1)

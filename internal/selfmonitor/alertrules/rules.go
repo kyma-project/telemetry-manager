@@ -3,8 +3,6 @@ package alertrules
 import (
 	"fmt"
 	"time"
-
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
 )
 
 // RuleGroups is a set of rule groups that are typically exposed in a file.
@@ -28,8 +26,8 @@ type Rule struct {
 }
 
 func MakeRules() RuleGroups {
-	metricRuleBuilder := newRuleBuilder(selfmonitor.MetricPipeline)
-	traceRuleBuilder := newRuleBuilder(selfmonitor.TracePipeline)
+	metricRuleBuilder := newRuleBuilder(MetricPipeline)
+	traceRuleBuilder := newRuleBuilder(TracePipeline)
 
 	ruleBuilders := []ruleBuilder{metricRuleBuilder, traceRuleBuilder}
 	var rules []Rule
@@ -48,9 +46,9 @@ func MakeRules() RuleGroups {
 }
 
 const (
-	serviceLabelKey  = "service"
-	exporterLabelKey = "exporter"
-	receiverLabelKey = "receiver"
+	LabelService  = "service"
+	LabelExporter = "exporter"
+	LabelReceiver = "receiver"
 
 	AlertNameExporterSentData        = "ExporterSentData"
 	AlertNameExporterDroppedData     = "ExporterDroppedData"
@@ -75,12 +73,12 @@ var MetricRuleNameDecorator = func(name string) string {
 	return "MetricGateway" + name
 }
 
-func newRuleBuilder(t selfmonitor.PipelineType) ruleBuilder {
+func newRuleBuilder(t PipelineType) ruleBuilder {
 	serviceName := "telemetry-metric-gateway-metrics"
 	dataType := "metric_points"
 	nameDecorator := MetricRuleNameDecorator
 
-	if t == selfmonitor.TracePipeline {
+	if t == TracePipeline {
 		serviceName = "telemetry-trace-collector-metrics"
 		dataType = "spans"
 		nameDecorator = TraceRuleNameDecorator
@@ -108,7 +106,7 @@ func (rb ruleBuilder) exporterSentRule() Rule {
 	return Rule{
 		Alert: rb.nameDecorator(AlertNameExporterSentData),
 		Expr: rate(metric, selectService(rb.serviceName)).
-			sumBy(exporterLabelKey).
+			sumBy(LabelExporter).
 			greaterThan(0).
 			build(),
 	}
@@ -119,7 +117,7 @@ func (rb ruleBuilder) exporterDroppedRule() Rule {
 	return Rule{
 		Alert: rb.nameDecorator(AlertNameExporterDroppedData),
 		Expr: rate(metric, selectService(rb.serviceName)).
-			sumBy(exporterLabelKey).
+			sumBy(LabelExporter).
 			greaterThan(0).
 			build(),
 	}
@@ -139,7 +137,7 @@ func (rb ruleBuilder) exporterEnqueueFailedRule() Rule {
 	return Rule{
 		Alert: rb.nameDecorator(AlertNameExporterEnqueueFailed),
 		Expr: rate(metric, selectService(rb.serviceName)).
-			sumBy(exporterLabelKey).
+			sumBy(LabelExporter).
 			greaterThan(0).
 			build(),
 	}
@@ -150,7 +148,7 @@ func (rb ruleBuilder) receiverRefusedRule() Rule {
 	return Rule{
 		Alert: rb.nameDecorator(AlertNameReceiverRefusedData),
 		Expr: rate(metric, selectService(rb.serviceName)).
-			sumBy(receiverLabelKey).
+			sumBy(LabelReceiver).
 			greaterThan(0).
 			build(),
 	}

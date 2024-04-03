@@ -6,7 +6,7 @@ import (
 	"github.com/go-logr/logr"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
 	"github.com/prometheus/common/model"
 	"io"
 	"net/http"
@@ -18,13 +18,13 @@ import (
 
 type Handler struct {
 	c           client.Reader
-	subscribers map[selfmonitor.PipelineType]chan<- event.GenericEvent
+	subscribers map[alertrules.PipelineType]chan<- event.GenericEvent
 	logger      logr.Logger
 }
 
 type Option = func(*Handler)
 
-func WithSubscriber(subscriber chan<- event.GenericEvent, pipelineType selfmonitor.PipelineType) Option {
+func WithSubscriber(subscriber chan<- event.GenericEvent, pipelineType alertrules.PipelineType) Option {
 	return func(h *Handler) {
 		h.subscribers[pipelineType] = subscriber
 	}
@@ -40,7 +40,7 @@ func NewHandler(c client.Reader, opts ...Option) *Handler {
 	h := &Handler{
 		c:           c,
 		logger:      logr.New(logf.NullLogSink{}),
-		subscribers: make(map[selfmonitor.PipelineType]chan<- event.GenericEvent),
+		subscribers: make(map[alertrules.PipelineType]chan<- event.GenericEvent),
 	}
 
 	for _, opt := range opts {
@@ -82,11 +82,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := context.TODO()
 
 	for _, ev := range h.toMetricPipelineReconcileEvents(ctx, alerts) {
-		h.subscribers[selfmonitor.MetricPipeline] <- ev
+		h.subscribers[alertrules.MetricPipeline] <- ev
 	}
 
 	for _, ev := range h.toTracePipelineReconcileEvents(ctx, alerts) {
-		h.subscribers[selfmonitor.TracePipeline] <- ev
+		h.subscribers[alertrules.TracePipeline] <- ev
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -102,7 +102,7 @@ func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []
 	}
 
 	for i := range allPipelines.Items {
-		if shouldReconcile(&allPipelines.Items[i], selfmonitor.MetricPipeline, alerts) {
+		if shouldReconcile(&allPipelines.Items[i], alertrules.MetricPipeline, alerts) {
 			events = append(events, event.GenericEvent{Object: &allPipelines.Items[i]})
 		}
 	}
@@ -120,7 +120,7 @@ func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []A
 	}
 
 	for i := range allPipelines.Items {
-		if shouldReconcile(&allPipelines.Items[i], selfmonitor.TracePipeline, alerts) {
+		if shouldReconcile(&allPipelines.Items[i], alertrules.TracePipeline, alerts) {
 			events = append(events, event.GenericEvent{Object: &allPipelines.Items[i]})
 		}
 	}
@@ -128,7 +128,7 @@ func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []A
 	return events
 }
 
-func shouldReconcile(pipeline client.Object, pipelineType selfmonitor.PipelineType, alerts []Alert) bool {
+func shouldReconcile(pipeline client.Object, pipelineType alertrules.PipelineType, alerts []Alert) bool {
 	for _, alert := range alerts {
 		if !strings.HasPrefix(alert.Labels[model.AlertNameLabel], string(pipelineType)) {
 			continue
@@ -143,14 +143,14 @@ func shouldReconcile(pipeline client.Object, pipelineType selfmonitor.PipelineTy
 }
 
 func matchesAllPipelines(labels map[string]string) bool {
-	if _, ok := labels["exporter"]; !ok {
+	if _, ok := labels[alertrules.LabelExporter]; !ok {
 		return true
 	}
 	return false
 }
 
 func matchesPipeline(labels map[string]string, pipelineName string) bool {
-	exportedID, ok := labels["exporter"]
+	exportedID, ok := labels[alertrules.LabelExporter]
 	if !ok {
 		return false
 	}

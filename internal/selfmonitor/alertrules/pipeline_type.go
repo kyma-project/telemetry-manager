@@ -1,4 +1,4 @@
-package selfmonitor
+package alertrules
 
 type PipelineType string
 

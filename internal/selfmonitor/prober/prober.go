@@ -12,7 +12,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
@@ -32,7 +31,7 @@ type Prober struct {
 	nameDecorator alertrules.RuleNameDecorator
 }
 
-func NewProber(pipelineType selfmonitor.PipelineType, selfMonitorName types.NamespacedName) (*Prober, error) {
+func NewProber(pipelineType alertrules.PipelineType, selfMonitorName types.NamespacedName) (*Prober, error) {
 	client, err := api.NewClient(api.Config{
 		Address: fmt.Sprintf("http://%s.%s:%d", selfMonitorName.Name, selfMonitorName.Namespace, ports.PrometheusPort),
 	})
@@ -41,7 +40,7 @@ func NewProber(pipelineType selfmonitor.PipelineType, selfMonitorName types.Name
 	}
 
 	nameDecorator := alertrules.MetricRuleNameDecorator
-	if pipelineType == selfmonitor.TracePipeline {
+	if pipelineType == alertrules.TracePipeline {
 		nameDecorator = alertrules.TraceRuleNameDecorator
 	}
 
@@ -145,7 +144,7 @@ func (p *Prober) matchesAlertName(alert promv1.Alert, alertName string) bool {
 }
 
 func matchesPipeline(alert promv1.Alert, pipelineName string) bool {
-	labelValue, ok := alert.Labels[model.LabelName("exporter")]
+	labelValue, ok := alert.Labels[model.LabelName(alertrules.LabelExporter)]
 	if !ok {
 		return false
 	}
