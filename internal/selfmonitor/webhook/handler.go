@@ -3,17 +3,19 @@ package webhook
 import (
 	"context"
 	"encoding/json"
-	"github.com/go-logr/logr"
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
-	"github.com/prometheus/common/model"
 	"io"
 	"net/http"
+	"strings"
+
+	"github.com/go-logr/logr"
+	"github.com/prometheus/common/model"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"strings"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
 )
 
 type Handler struct {
@@ -79,13 +81,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.V(1).Info("Webhook called. Notifying the subscribers.", "request", alerts)
 
-	ctx := context.TODO()
-
-	for _, ev := range h.toMetricPipelineReconcileEvents(ctx, alerts) {
+	for _, ev := range h.toMetricPipelineReconcileEvents(r.Context(), alerts) {
 		h.subscribers[alertrules.MetricPipeline] <- ev
 	}
 
-	for _, ev := range h.toTracePipelineReconcileEvents(ctx, alerts) {
+	for _, ev := range h.toTracePipelineReconcileEvents(r.Context(), alerts) {
 		h.subscribers[alertrules.TracePipeline] <- ev
 	}
 
@@ -96,7 +96,7 @@ func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []
 	var events []event.GenericEvent
 
 	var allPipelines telemetryv1alpha1.MetricPipelineList
-	if err := h.c.List(context.TODO(), &allPipelines); err != nil {
+	if err := h.c.List(ctx, &allPipelines); err != nil {
 		h.logger.Error(err, "Failed to list MetricPipelines")
 		return nil
 	}
@@ -114,7 +114,7 @@ func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []A
 	var events []event.GenericEvent
 
 	var allPipelines telemetryv1alpha1.TracePipelineList
-	if err := h.c.List(context.TODO(), &allPipelines); err != nil {
+	if err := h.c.List(ctx, &allPipelines); err != nil {
 		h.logger.Error(err, "Failed to list TracePipelines")
 		return nil
 	}
