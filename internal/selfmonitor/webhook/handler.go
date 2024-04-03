@@ -79,13 +79,18 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	h.logger.V(1).Info("Webhook called. Notifying the subscribers.", "request", alerts)
+	metricPipelineEvents := h.toMetricPipelineReconcileEvents(r.Context(), alerts)
+	tracePipelineEvents := h.toTracePipelineReconcileEvents(r.Context(), alerts)
+	h.logger.V(1).Info("Webhook called. Notifying the subscribers.",
+		"request", alerts,
+		"metricPipelines", strings.Join(retrieveNames(metricPipelineEvents), ", "),
+		"tracePipelines", strings.Join(retrieveNames(tracePipelineEvents), ", "))
 
-	for _, ev := range h.toMetricPipelineReconcileEvents(r.Context(), alerts) {
+	for _, ev := range metricPipelineEvents {
 		h.subscribers[alertrules.MetricPipeline] <- ev
 	}
 
-	for _, ev := range h.toTracePipelineReconcileEvents(r.Context(), alerts) {
+	for _, ev := range tracePipelineEvents {
 		h.subscribers[alertrules.TracePipeline] <- ev
 	}
 
@@ -153,4 +158,12 @@ func matchesPipeline(labels map[string]string, pipelineName string) bool {
 	}
 
 	return otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolHTTP, pipelineName) == exportedID || otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolGRPC, pipelineName) == exportedID
+}
+
+func retrieveNames(events []event.GenericEvent) []string {
+	var names []string
+	for _, ev := range events {
+		names = append(names, ev.Object.GetName())
+	}
+	return names
 }
