@@ -83,8 +83,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tracePipelineEvents := h.toTracePipelineReconcileEvents(r.Context(), alerts)
 	h.logger.V(1).Info("Webhook called. Notifying the subscribers.",
 		"request", alerts,
-		"metricPipelines", strings.Join(retrieveNames(metricPipelineEvents), ", "),
-		"tracePipelines", strings.Join(retrieveNames(tracePipelineEvents), ", "))
+		"metricPipelines", retrieveNames(metricPipelineEvents),
+		"tracePipelines", retrieveNames(tracePipelineEvents),
+	)
 
 	for _, ev := range metricPipelineEvents {
 		h.subscribers[alertrules.MetricPipeline] <- ev
