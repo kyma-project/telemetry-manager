@@ -24,6 +24,7 @@ type logPipelineV1Alpha1 struct {
 	dropLabels        bool
 	output            telemetryv1alpha1.Output
 	filters           []telemetryv1alpha1.Filter
+	// TODO: Configure to also include FluentBit logs (2nd PR)
 }
 
 func NewLogPipelineV1Alpha1(name string) *logPipelineV1Alpha1 {
