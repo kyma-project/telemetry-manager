@@ -1,4 +1,4 @@
-package flowhealth
+package alertrules
 
 import (
 	"fmt"

@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -111,8 +112,8 @@ func TestHandler(t *testing.T) {
 			_ = telemetryv1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tc.resources...).Build()
 			handler := NewHandler(fakeClient,
-				WithSubscriber(metricPipelineEvents, MetricPipeline),
-				WithSubscriber(tracePipelineEvents, TracePipeline),
+				WithSubscriber(metricPipelineEvents, selfmonitor.MetricPipeline),
+				WithSubscriber(tracePipelineEvents, selfmonitor.TracePipeline),
 				WithLogger(noopLogger))
 
 			req, err := http.NewRequest(tc.requestMethod, "/", tc.requestBody)

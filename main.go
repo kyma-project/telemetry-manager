@@ -64,7 +64,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
 	"github.com/kyma-project/telemetry-manager/webhook/dryrun"
@@ -77,6 +76,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	//nolint:gosec // pprof package is required for performance analysis.
 	//nolint:gci // Mandatory kubebuilder imports scaffolding.
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 )
 
 var (
@@ -425,8 +425,8 @@ func enableLoggingController(mgr manager.Manager) {
 func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
 	setupLog.Info("Starting with tracing controller")
 	var err error
-	var flowHealthProber *flowhealth.Prober
-	if flowHealthProber, err = flowhealth.NewProber(flowhealth.FlowTypeTraces,
+	var flowHealthProber *prober.Prober
+	if flowHealthProber, err = prober.NewProber(prober.FlowTypeTraces,
 		types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
 		setupLog.Error(err, "Failed to create flow health prober")
 		os.Exit(1)
@@ -441,8 +441,8 @@ func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
 	setupLog.Info("Starting with metrics controller")
 	var err error
-	var flowHealthProber *flowhealth.Prober
-	if flowHealthProber, err = flowhealth.NewProber(flowhealth.FlowTypeMetrics,
+	var flowHealthProber *prober.Prober
+	if flowHealthProber, err = prober.NewProber(prober.FlowTypeMetrics,
 		types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
 		setupLog.Error(err, "Failed to create flow health prober")
 		os.Exit(1)
@@ -550,7 +550,7 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 		admission.NewDecoder(scheme))
 }
 
-func createTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *flowhealth.Prober) *telemetrycontrollers.TracePipelineController {
+func createTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.Prober) *telemetrycontrollers.TracePipelineController {
 	config := tracepipeline.Config{
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
@@ -590,7 +590,7 @@ func createTracePipelineController(client client.Client, reconcileTriggerChan <-
 	)
 }
 
-func createMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *flowhealth.Prober) *telemetrycontrollers.MetricPipelineController {
+func createMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.Prober) *telemetrycontrollers.MetricPipelineController {
 	config := metricpipeline.Config{
 		Agent: otelcollector.AgentConfig{
 			Config: otelcollector.Config{

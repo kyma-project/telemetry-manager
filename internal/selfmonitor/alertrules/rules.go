@@ -1,8 +1,10 @@
-package flowhealth
+package alertrules
 
 import (
 	"fmt"
 	"time"
+
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor"
 )
 
 // RuleGroups is a set of rule groups that are typically exposed in a file.
@@ -26,8 +28,8 @@ type Rule struct {
 }
 
 func MakeRules() RuleGroups {
-	metricRuleBuilder := newRuleBuilder(FlowTypeMetrics)
-	traceRuleBuilder := newRuleBuilder(FlowTypeTraces)
+	metricRuleBuilder := newRuleBuilder(selfmonitor.MetricPipeline)
+	traceRuleBuilder := newRuleBuilder(selfmonitor.TracePipeline)
 
 	ruleBuilders := []ruleBuilder{metricRuleBuilder, traceRuleBuilder}
 	var rules []Rule
@@ -50,38 +52,38 @@ const (
 	exporterLabelKey = "exporter"
 	receiverLabelKey = "receiver"
 
-	alertNameExporterSentData        = "ExporterSentData"
-	alertNameExporterDroppedData     = "ExporterDroppedData"
-	alertNameExporterQueueAlmostFull = "ExporterQueueAlmostFull"
-	alertNameExporterEnqueueFailed   = "ExporterEnqueueFailed"
-	alertNameReceiverRefusedData     = "ReceiverRefusedData"
+	AlertNameExporterSentData        = "ExporterSentData"
+	AlertNameExporterDroppedData     = "ExporterDroppedData"
+	AlertNameExporterQueueAlmostFull = "ExporterQueueAlmostFull"
+	AlertNameExporterEnqueueFailed   = "ExporterEnqueueFailed"
+	AlertNameReceiverRefusedData     = "ReceiverRefusedData"
 )
 
 type ruleBuilder struct {
 	serviceName   string
 	dataType      string
-	nameDecorator ruleNameDecorator
+	nameDecorator RuleNameDecorator
 }
 
-type ruleNameDecorator func(string) string
+type RuleNameDecorator func(string) string
 
-var traceRuleNameDecorator = func(name string) string {
+var TraceRuleNameDecorator = func(name string) string {
 	return "TraceGateway" + name
 }
 
-var metricRuleNameDecorator = func(name string) string {
+var MetricRuleNameDecorator = func(name string) string {
 	return "MetricGateway" + name
 }
 
-func newRuleBuilder(t FlowType) ruleBuilder {
+func newRuleBuilder(t selfmonitor.PipelineType) ruleBuilder {
 	serviceName := "telemetry-metric-gateway-metrics"
 	dataType := "metric_points"
-	nameDecorator := metricRuleNameDecorator
+	nameDecorator := MetricRuleNameDecorator
 
-	if t == FlowTypeTraces {
+	if t == selfmonitor.TracePipeline {
 		serviceName = "telemetry-trace-collector-metrics"
 		dataType = "spans"
-		nameDecorator = traceRuleNameDecorator
+		nameDecorator = TraceRuleNameDecorator
 	}
 
 	return ruleBuilder{
@@ -104,7 +106,7 @@ func (rb ruleBuilder) rules() []Rule {
 func (rb ruleBuilder) exporterSentRule() Rule {
 	metric := fmt.Sprintf("otelcol_exporter_sent_%s", rb.dataType)
 	return Rule{
-		Alert: rb.nameDecorator(alertNameExporterSentData),
+		Alert: rb.nameDecorator(AlertNameExporterSentData),
 		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(exporterLabelKey).
 			greaterThan(0).
@@ -115,7 +117,7 @@ func (rb ruleBuilder) exporterSentRule() Rule {
 func (rb ruleBuilder) exporterDroppedRule() Rule {
 	metric := fmt.Sprintf("otelcol_exporter_send_failed_%s", rb.dataType)
 	return Rule{
-		Alert: rb.nameDecorator(alertNameExporterDroppedData),
+		Alert: rb.nameDecorator(AlertNameExporterDroppedData),
 		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(exporterLabelKey).
 			greaterThan(0).
@@ -125,7 +127,7 @@ func (rb ruleBuilder) exporterDroppedRule() Rule {
 
 func (rb ruleBuilder) exporterQueueAlmostFullRule() Rule {
 	return Rule{
-		Alert: rb.nameDecorator(alertNameExporterQueueAlmostFull),
+		Alert: rb.nameDecorator(AlertNameExporterQueueAlmostFull),
 		Expr: div("otelcol_exporter_queue_size", "otelcol_exporter_queue_capacity", selectService(rb.serviceName)).
 			greaterThan(0.8).
 			build(),
@@ -135,7 +137,7 @@ func (rb ruleBuilder) exporterQueueAlmostFullRule() Rule {
 func (rb ruleBuilder) exporterEnqueueFailedRule() Rule {
 	metric := fmt.Sprintf("otelcol_exporter_enqueue_failed_%s", rb.dataType)
 	return Rule{
-		Alert: rb.nameDecorator(alertNameExporterEnqueueFailed),
+		Alert: rb.nameDecorator(AlertNameExporterEnqueueFailed),
 		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(exporterLabelKey).
 			greaterThan(0).
@@ -146,7 +148,7 @@ func (rb ruleBuilder) exporterEnqueueFailedRule() Rule {
 func (rb ruleBuilder) receiverRefusedRule() Rule {
 	metric := fmt.Sprintf("otelcol_receiver_refused_%s", rb.dataType)
 	return Rule{
-		Alert: rb.nameDecorator(alertNameReceiverRefusedData),
+		Alert: rb.nameDecorator(AlertNameReceiverRefusedData),
 		Expr: rate(metric, selectService(rb.serviceName)).
 			sumBy(receiverLabelKey).
 			greaterThan(0).

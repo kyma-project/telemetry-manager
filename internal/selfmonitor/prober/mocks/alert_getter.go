@@ -3,9 +3,9 @@
 package mocks
 
 import (
-	context "context"
+	"context"
 
-	mock "github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/mock"
 
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
