@@ -66,7 +66,7 @@ func (r *MetricPipelineController) SetupWithManager(mgr ctrl.Manager) error {
 
 	b.WatchesRawSource(
 		&source.Channel{Source: r.reconcileTriggerChan},
-		handler.EnqueueRequestsFromMapFunc(r.mapReconcileTriggerEvent),
+		&handler.EnqueueRequestForObject{},
 	)
 
 	ownedResourceTypesToWatch := []client.Object{
@@ -124,15 +124,6 @@ func (r *MetricPipelineController) mapTelemetryChanges(ctx context.Context, obje
 		return nil
 	}
 
-	requests, err := r.createRequestsForAllPipelines(ctx)
-	if err != nil {
-		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
-	}
-	return requests
-}
-
-func (r *MetricPipelineController) mapReconcileTriggerEvent(ctx context.Context, _ client.Object) []reconcile.Request {
-	logf.FromContext(ctx).V(1).Info("Reconcile trigger event received")
 	requests, err := r.createRequestsForAllPipelines(ctx)
 	if err != nil {
 		logf.FromContext(ctx).Error(err, "Unable to create reconcile requests")
