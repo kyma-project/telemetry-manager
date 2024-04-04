@@ -89,6 +89,8 @@ type InputContainers struct {
 	Include []string `json:"include,omitempty"`
 	// Specifies to exclude only the container logs with the specified container names.
 	Exclude []string `json:"exclude,omitempty"`
+	// Set to `true` if collecting from all Containers must also include the FluentBit Containers like fluent-bit.
+	FluentBit bool `json:"system,omitempty"`
 }
 
 // Describes a filtering option on the logs of the pipeline.

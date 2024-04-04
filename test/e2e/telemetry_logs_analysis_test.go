@@ -26,17 +26,21 @@ import (
 var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("telemetry-logs-analysis"), Ordered, func() {
 	const (
 		mockNs                      = "tlogs-http"
-		otelCollectorLogBackendName = "tlogs-log-otlp"
+		otelCollectorLogBackendName = "tlogs-log-otelcollector"
+		fluentBitLogBackendName     = "tlogs-log-fluentbit"
 		metricBackendName           = "tlogs-metric"
 		traceBackendName            = "tlogs-trace"
 		pushMetricsDepName          = "push-metrics-istiofied"
+		consistentlyTimeout         = time.Second * 120
 	)
 
 	var (
 		otelCollectorLogPipelineName       string
+		fluentBitLogPipelineName           string
 		metricPipelineName                 string
 		tracePipelineName                  string
 		otelCollectorLogTelemetryExportURL string
+		fluentBitLogTelemetryExportURL     string
 		metricTelemetryExportURL           string
 		traceTelemetryExportURL            string
 		gomegaMaxLength                    = format.MaxLength
@@ -54,6 +58,9 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		otelCollectorLogBackend := backend.New(otelCollectorLogBackendName, mockNs, backend.SignalTypeLogs)
 		objs = append(objs, otelCollectorLogBackend.K8sObjects()...)
 		otelCollectorLogTelemetryExportURL = otelCollectorLogBackend.TelemetryExportURL(proxyClient)
+		fluentBitLogBackend := backend.New(fluentBitLogBackendName, mockNs, backend.SignalTypeLogs)
+		objs = append(objs, fluentBitLogBackend.K8sObjects()...)
+		otelCollectorLogTelemetryExportURL = otelCollectorLogBackend.TelemetryExportURL(proxyClient)
 		metricBackend := backend.New(metricBackendName, mockNs, backend.SignalTypeMetrics)
 		metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
@@ -68,8 +75,13 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName}).
 			WithIncludeContainers([]string{"collector"})
 		otelCollectorLogPipelineName = otelCollectorLogPipeline.Name()
-		objs = append(objs, otelCollectorLogPipeline.K8sObject())
-		// TODO: Separate FluentBit logPipeline (CONTAINERS: fluent-bit, exporter)
+		fluentBitLogPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", fluentBitLogBackend.Name())).
+			WithSecretKeyRef(fluentBitLogBackend.HostSecretRefV1Alpha1()).
+			WithHTTPOutput().
+			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName}).
+			WithIncludeContainers([]string{"fluent-bit", "exporter"})
+		fluentBitLogPipelineName = fluentBitLogPipeline.Name()
+		objs = append(objs, otelCollectorLogPipeline.K8sObject(), fluentBitLogPipeline.K8sObject())
 
 		// metrics & traces
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
@@ -88,7 +100,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		// metrics istio set-up (src/dest pods)
 		objs = append(objs, trafficgen.K8sObjects(mockNs)...)
 
-		// metric istio set-up (telemetrygen)
+		// metrics istio set-up (telemetrygen)
 		objs = append(objs,
 			kitk8s.NewPod("telemetrygen-metrics", mockNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics, "")).K8sObject(),
 			kitk8s.NewPod("telemetrygen-traces", mockNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeTraces, "")).K8sObject(),
@@ -114,12 +126,14 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 
 		It("Should have running backends", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: otelCollectorLogBackendName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: fluentBitLogBackendName})
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: metricBackendName})
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: traceBackendName})
 		})
 
 		It("Should have running pipelines", func() {
 			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, otelCollectorLogPipelineName)
+			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, fluentBitLogPipelineName)
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, metricPipelineName)
 			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, tracePipelineName)
 		})
@@ -136,7 +150,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, traceTelemetryExportURL, mockNs)
 		})
 
-		It("Should not have any ERROR/WARNING logs in the OTLP containers", func() {
+		It("Should not have any ERROR/WARNING logs in the OtelCollector containers", func() {
 			Consistently(func(g Gomega) {
 				resp, err := proxyClient.Get(otelCollectorLogTelemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -152,12 +166,22 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 						)),
 					)))),
 				))
-			}, time.Second*120, periodic.TelemetryInterval).Should(Succeed())
+			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		// TODO: Should not have any ERROR/WARNING level logs in the FluentBit containers
-		// TODO: configmap: FLuentBit, exclude_path (excluding self logs)
-		// telemetry-manager/blob/test/check-error-logs/internal/fluentbit/config/builder/input.go#L15-L16
+		It("Should not have any ERROR/WARNING logs in the FluentBit containers", func() {
+			Consistently(func(g Gomega) {
+				resp, err := proxyClient.Get(fluentBitLogTelemetryExportURL)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
+				g.Expect(resp).To(HaveHTTPBody(
+					Not(ContainLd(ContainLogRecord(SatisfyAll(
+						WithPodName(ContainSubstring("telemetry-")),
+						WithLevel(BeElementOf(errorWarningLevels)),
+					)))),
+				))
+			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
 
 		AfterAll(func() {
 			format.MaxLength = gomegaMaxLength // restore Gomega truncation

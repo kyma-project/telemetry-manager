@@ -48,8 +48,9 @@ func createIncludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
 }
 
 func createExcludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
-	excludePath := []string{
-		makeLogPath("kyma-system", "telemetry-fluent-bit-*", "fluent-bit"),
+	excludePath := []string{}
+	if !pipeline.Spec.Input.Application.Containers.FluentBit {
+		excludePath = append(excludePath, makeLogPath("kyma-system", "telemetry-fluent-bit-*", "fluent-bit"))
 	}
 
 	excludeNamespaces := pipeline.Spec.Input.Application.Namespaces.Exclude
