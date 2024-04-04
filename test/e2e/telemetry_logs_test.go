@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -20,6 +19,7 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
 	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
@@ -31,8 +31,6 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		logOTLPBackendName = "tlogs-log-otlp"
 		metricBackendName  = "tlogs-metric"
 		traceBackendName   = "tlogs-trace"
-		nginxImage         = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
-		curlImage          = "europe-docker.pkg.dev/kyma-project/prod/external/curlimages/curl:7.78.0"
 		pushMetricsDepName = "push-metrics-istiofied"
 	)
 
@@ -49,39 +47,6 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 			"WARNING", "warning",
 			"WARN", "warn"}
 	)
-
-	sourcePodSpec := func() corev1.PodSpec {
-		return corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  "source",
-					Image: curlImage,
-					Command: []string{
-						"/bin/sh",
-						"-c",
-						"while true; do curl http://destination:80; sleep 1; done",
-					},
-				},
-			},
-		}
-	}
-
-	destinationPodSpec := func() corev1.PodSpec {
-		return corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  "destination",
-					Image: nginxImage,
-					Ports: []corev1.ContainerPort{
-						{
-							ContainerPort: 80,
-							Protocol:      corev1.ProtocolTCP,
-						},
-					},
-				},
-			},
-		}
-	}
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -123,10 +88,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		objs = append(objs, tracePipeline.K8sObject())
 
 		// metrics istio set-up (src/dest pods)
-		source := kitk8s.NewPod("source", mockNs).WithPodSpec(sourcePodSpec())
-		destination := kitk8s.NewPod("destination", mockNs).WithPodSpec(destinationPodSpec()).WithLabel("app", "destination")
-		service := kitk8s.NewService("destination", mockNs).WithPort("http", 80)
-		objs = append(objs, source.K8sObject(), destination.K8sObject(), service.K8sObject(kitk8s.WithLabel("app", "destination")))
+		objs = append(objs, trafficgen.K8sObjects(mockNs)...)
 
 		// metric istio set-up (telemetrygen)
 		podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics, "")
