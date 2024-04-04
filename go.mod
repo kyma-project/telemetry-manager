@@ -9,8 +9,8 @@ require (
 	github.com/onsi/ginkgo/v2 v2.17.1
 	github.com/onsi/gomega v1.32.0
 	github.com/prometheus/client_golang v1.19.0
-	github.com/prometheus/client_model v0.6.0
-	github.com/prometheus/common v0.51.1
+	github.com/prometheus/client_model v0.6.1
+	github.com/prometheus/common v0.52.2
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/collector/pdata v1.4.0
 	go.opentelemetry.io/otel v1.24.0
