@@ -13,36 +13,34 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
-	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("telemetry-logs-analysis"), Ordered, func() {
 	const (
-		mockNs             = "tlogs-http"
-		logOTLPBackendName = "tlogs-log-otlp"
-		metricBackendName  = "tlogs-metric"
-		traceBackendName   = "tlogs-trace"
-		pushMetricsDepName = "push-metrics-istiofied"
+		mockNs                      = "tlogs-http"
+		otelCollectorLogBackendName = "tlogs-log-otlp"
+		metricBackendName           = "tlogs-metric"
+		traceBackendName            = "tlogs-trace"
+		pushMetricsDepName          = "push-metrics-istiofied"
 	)
 
 	var (
-		logOTLPPipelineName       string
-		metricPipelineName        string
-		tracePipelineName         string
-		logOTLPTelemetryExportURL string
-		metricTelemetryExportURL  string
-		traceTelemetryExportURL   string
-		gomegaMaxLength           = format.MaxLength
-		errorWarningLevels        = []string{
+		otelCollectorLogPipelineName       string
+		metricPipelineName                 string
+		tracePipelineName                  string
+		otelCollectorLogTelemetryExportURL string
+		metricTelemetryExportURL           string
+		traceTelemetryExportURL            string
+		gomegaMaxLength                    = format.MaxLength
+		errorWarningLevels                 = []string{
 			"ERROR", "error",
 			"WARNING", "warning",
 			"WARN", "warn"}
@@ -53,9 +51,9 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		// backends
-		logOTLPBackend := backend.New(logOTLPBackendName, mockNs, backend.SignalTypeLogs)
+		logOTLPBackend := backend.New(otelCollectorLogBackendName, mockNs, backend.SignalTypeLogs)
 		objs = append(objs, logOTLPBackend.K8sObjects()...)
-		logOTLPTelemetryExportURL = logOTLPBackend.TelemetryExportURL(proxyClient)
+		otelCollectorLogTelemetryExportURL = logOTLPBackend.TelemetryExportURL(proxyClient)
 		metricBackend := backend.New(metricBackendName, mockNs, backend.SignalTypeMetrics)
 		metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
@@ -69,7 +67,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 			WithHTTPOutput().
 			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName}).
 			WithIncludeContainers([]string{"collector"})
-		logOTLPPipelineName = logOTLPPipeline.Name()
+		otelCollectorLogPipelineName = logOTLPPipeline.Name()
 		objs = append(objs, logOTLPPipeline.K8sObject())
 		// TODO: Separate FluentBit logPipeline (CONTAINERS: fluent-bit, exporter)
 
@@ -91,9 +89,9 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		objs = append(objs, trafficgen.K8sObjects(mockNs)...)
 
 		// metric istio set-up (telemetrygen)
-		podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics, "")
 		objs = append(objs,
-			kitk8s.NewDeployment(pushMetricsDepName, mockNs).WithPodSpec(podSpec).K8sObject(),
+			kitk8s.NewPod("telemetrygen-metrics", mockNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics, "")).K8sObject(),
+			kitk8s.NewPod("telemetrygen-traces", mockNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeTraces, "")).K8sObject(),
 		)
 
 		return objs
@@ -115,13 +113,13 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		})
 
 		It("Should have running backends", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logOTLPBackendName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: otelCollectorLogBackendName})
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: metricBackendName})
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: traceBackendName})
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, logOTLPPipelineName)
+			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, otelCollectorLogPipelineName)
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, metricPipelineName)
 			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, tracePipelineName)
 		})
@@ -134,15 +132,13 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, metricTelemetryExportURL, mockNs, telemetrygen.MetricNames)
 		})
 
-		It("Should verify end-to-end trace delivery", func() {
-			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP)
-			traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, gatewayPushURL)
-			verifiers.TracesShouldBeDelivered(proxyClient, traceTelemetryExportURL, traceID, spanIDs, attrs)
+		It("Should push traces successfully", func() {
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, traceTelemetryExportURL, mockNs)
 		})
 
 		It("Should not have any ERROR/WARNING logs in the OTLP containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(logOTLPTelemetryExportURL)
+				resp, err := proxyClient.Get(otelCollectorLogTelemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
