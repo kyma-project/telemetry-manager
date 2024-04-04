@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -19,7 +20,6 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -47,7 +47,10 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 		pipeline := kitk8s.NewTracePipelineV1Beta1(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Beta1())
 		pipelineName = pipeline.Name()
-		objs = append(objs, pipeline.K8sObject())
+		objs = append(objs,
+			telemetrygen.New(kitkyma.DefaultNamespaceName, telemetrygen.SignalTypeTraces).K8sObject(),
+			pipeline.K8sObject(),
+		)
 
 		return objs
 	}
@@ -164,10 +167,8 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should verify end-to-end trace delivery", func() {
-			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP)
-			traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, gatewayPushURL)
-			verifiers.TracesShouldBeDelivered(proxyClient, telemetryExportURL, traceID, spanIDs, attrs)
+		It("Should deliver telemetrygen traces", Label(operationalTest), func() {
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, kitkyma.DefaultNamespaceName)
 		})
 
 		It("Should be able to get trace gateway metrics endpoint", func() {

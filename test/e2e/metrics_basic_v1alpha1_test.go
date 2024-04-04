@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -19,7 +20,6 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otel/metrics"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -48,7 +48,10 @@ var _ = Describe("Metrics Basic v1alpha1", Label("metrics"), func() {
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
 			Persistent(isOperational())
 		pipelineName = metricPipeline.Name()
-		objs = append(objs, metricPipeline.K8sObject())
+		objs = append(objs,
+			telemetrygen.New(kitkyma.DefaultNamespaceName, telemetrygen.SignalTypeMetrics).K8sObject(),
+			metricPipeline.K8sObject(),
+		)
 
 		return objs
 	}
@@ -155,10 +158,8 @@ var _ = Describe("Metrics Basic v1alpha1", Label("metrics"), func() {
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should verify end-to-end metric delivery", Label(operationalTest), func() {
-			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP)
-			gauges := kitmetrics.MakeAndSendGaugeMetrics(proxyClient, gatewayPushURL)
-			verifiers.MetricsShouldBeDelivered(proxyClient, telemetryExportURL, gauges)
+		It("Should deliver telemetrygen metrics", func() {
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, kitkyma.DefaultNamespaceName, telemetrygen.MetricNames)
 		})
 
 		It("Should be able to get metric gateway metrics endpoint", Label(operationalTest), func() {
