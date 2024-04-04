@@ -51,9 +51,9 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		// backends
-		logOTLPBackend := backend.New(otelCollectorLogBackendName, mockNs, backend.SignalTypeLogs)
-		objs = append(objs, logOTLPBackend.K8sObjects()...)
-		otelCollectorLogTelemetryExportURL = logOTLPBackend.TelemetryExportURL(proxyClient)
+		otelCollectorLogBackend := backend.New(otelCollectorLogBackendName, mockNs, backend.SignalTypeLogs)
+		objs = append(objs, otelCollectorLogBackend.K8sObjects()...)
+		otelCollectorLogTelemetryExportURL = otelCollectorLogBackend.TelemetryExportURL(proxyClient)
 		metricBackend := backend.New(metricBackendName, mockNs, backend.SignalTypeMetrics)
 		metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
@@ -62,13 +62,13 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		objs = append(objs, traceBackend.K8sObjects()...)
 
 		// log pipelines
-		logOTLPPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", logOTLPBackend.Name())).
-			WithSecretKeyRef(logOTLPBackend.HostSecretRefV1Alpha1()).
+		otelCollectorLogPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", otelCollectorLogBackend.Name())).
+			WithSecretKeyRef(otelCollectorLogBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
 			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName}).
 			WithIncludeContainers([]string{"collector"})
-		otelCollectorLogPipelineName = logOTLPPipeline.Name()
-		objs = append(objs, logOTLPPipeline.K8sObject())
+		otelCollectorLogPipelineName = otelCollectorLogPipeline.Name()
+		objs = append(objs, otelCollectorLogPipeline.K8sObject())
 		// TODO: Separate FluentBit logPipeline (CONTAINERS: fluent-bit, exporter)
 
 		// metrics & traces

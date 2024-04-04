@@ -1,6 +1,8 @@
 package trafficgen
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -12,6 +14,7 @@ const (
 	curlImage       = "europe-docker.pkg.dev/kyma-project/prod/external/curlimages/curl:7.78.0"
 	sourceName      = "source"
 	destinationName = "destination"
+	destinationPort = 80
 	appLabelKey     = "app"
 )
 
@@ -24,7 +27,7 @@ func sourcePodSpec() corev1.PodSpec {
 				Command: []string{
 					"/bin/sh",
 					"-c",
-					"while true; do curl http://destination:80; sleep 1; done",
+					fmt.Sprintf("while true; do curl http://%s:%d; sleep 1; done", destinationName, destinationPort),
 				},
 			},
 		},
@@ -39,7 +42,7 @@ func destinationPodSpec() corev1.PodSpec {
 				Image: nginxImage,
 				Ports: []corev1.ContainerPort{
 					{
-						ContainerPort: 80,
+						ContainerPort: destinationPort,
 						Protocol:      corev1.ProtocolTCP,
 					},
 				},
@@ -52,6 +55,6 @@ func K8sObjects(namespace string) []client.Object {
 	return []client.Object{
 		kitk8s.NewPod(sourceName, namespace).WithPodSpec(sourcePodSpec()).K8sObject(),
 		kitk8s.NewPod(destinationName, namespace).WithPodSpec(destinationPodSpec()).WithLabel(appLabelKey, destinationName).K8sObject(),
-		kitk8s.NewService(destinationName, namespace).WithPort("http", 80).K8sObject(kitk8s.WithLabel(appLabelKey, destinationName)),
+		kitk8s.NewService(destinationName, namespace).WithPort("http", destinationPort).K8sObject(kitk8s.WithLabel(appLabelKey, destinationName)),
 	}
 }
