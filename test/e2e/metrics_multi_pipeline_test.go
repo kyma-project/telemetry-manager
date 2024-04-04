@@ -19,7 +19,6 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -30,7 +29,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 			mockNs           = "metric-multi-pipeline"
 			mockBackendName1 = "metric-receiver-1"
 			mockBackendName2 = "metric-receiver-2"
-			telemetrygenNs   = "multi-metric-pipeline-test"
+			telemetrygenNs   = "metric-multi-pipeline-test"
 		)
 		var (
 			pipelines = kitkyma.NewPipelineList()
@@ -183,7 +182,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 			telemetrygenNs  = "broken-metric-pipeline-test"
 		)
 		var (
-			urls                = urlprovider.New()
+			//urls                = urlprovider.New()
 			healthyPipelineName string
 			brokenPipelineName  string
 			telemetryExportURL  string
@@ -197,7 +196,8 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 
 			mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
 			objs = append(objs, mockBackend.K8sObjects()...)
-			urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
+			//urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
+			telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 			healthyPipeline := kitk8s.NewMetricPipelineV1Alpha1("healthy").WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
 			healthyPipelineName = healthyPipeline.Name()
@@ -208,7 +208,6 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 			brokenPipeline := kitk8s.NewMetricPipelineV1Alpha1("broken").WithOutputEndpointFromSecret(unreachableHostSecret.SecretKeyRefV1Alpha1("metric-host"))
 			brokenPipelineName = brokenPipeline.Name()
 			objs = append(objs, brokenPipeline.K8sObject(), unreachableHostSecret.K8sObject())
-			telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 			//urls.SetOTLPPush(proxyClient.ProxyURLForService(
 			//	kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP),

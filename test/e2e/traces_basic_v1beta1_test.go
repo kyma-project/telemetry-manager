@@ -27,7 +27,8 @@ import (
 var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 	const (
 		mockBackendName = "traces-receiver"
-		mockNs          = "traces-basic-v1beta1-test"
+		mockNs          = "traces-basic-v1beta1-mock"
+		telemetrygenNs  = "traces-basic-v1beta1"
 	)
 
 	var (
@@ -38,7 +39,9 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(),
+			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
+		)
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
 		objs = append(objs, mockBackend.K8sObjects()...)
@@ -48,7 +51,7 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Beta1())
 		pipelineName = pipeline.Name()
 		objs = append(objs,
-			telemetrygen.New(kitkyma.DefaultNamespaceName, telemetrygen.SignalTypeTraces).K8sObject(),
+			telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeTraces).K8sObject(),
 			pipeline.K8sObject(),
 		)
 
@@ -168,7 +171,7 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 		})
 
 		It("Should deliver telemetrygen traces", Label(operationalTest), func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, kitkyma.DefaultNamespaceName)
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs)
 		})
 
 		It("Should be able to get trace gateway metrics endpoint", func() {

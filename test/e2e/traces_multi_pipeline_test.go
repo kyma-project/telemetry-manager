@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"slices"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -15,12 +16,9 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/ports"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
-	kittraces "github.com/kyma-project/telemetry-manager/test/testkit/otel/traces"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -30,28 +28,37 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 			mockNs           = "traces-multi-pipeline"
 			mockBackendName1 = "trace-receiver-1"
 			mockBackendName2 = "trace-receiver-2"
+			telemetrygenNs   = "trace-multi-pipeline-test"
 		)
 		var (
 			pipelines = kitkyma.NewPipelineList()
-			urls      = urlprovider.New()
+			//urls                = urlprovider.New()
+			telemetryExportURLs []string
 		)
 
 		makeResources := func() []client.Object {
 			var objs []client.Object
-			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(),
+				kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
+			)
 
 			for _, backendName := range []string{mockBackendName1, mockBackendName2} {
 				mockBackend := backend.New(backendName, mockNs, backend.SignalTypeTraces)
 				objs = append(objs, mockBackend.K8sObjects()...)
-				urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
+				//urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
+				telemetryExportURLs = append(telemetryExportURLs, mockBackend.TelemetryExportURL(proxyClient))
 
 				pipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
 				pipelines.Append(pipeline.Name())
 				objs = append(objs, pipeline.K8sObject())
 			}
 
-			urls.SetOTLPPush(proxyClient.ProxyURLForService(
-				kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
+			//urls.SetOTLPPush(proxyClient.ProxyURLForService(
+			//	kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
+			//)
+
+			objs = append(objs,
+				telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeTraces).K8sObject(),
 			)
 
 			return objs
@@ -74,10 +81,15 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName1, Namespace: mockNs})
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName2, Namespace: mockNs})
 		})
-		It("Should verify end-to-end trace delivery", func() {
-			traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName1), traceID, spanIDs, attrs)
-			verifiers.TracesShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName2), traceID, spanIDs, attrs)
+		//It("Should verify end-to-end trace delivery", func() {
+		//	traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, urls.OTLPPush())
+		//	verifiers.TracesShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName1), traceID, spanIDs, attrs)
+		//	verifiers.TracesShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName2), traceID, spanIDs, attrs)
+		//})
+		It("Should verify traces from telemetrygen are delivered", func() {
+			for _, telemetryExportURL := range telemetryExportURLs {
+				verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs)
+			}
 		})
 	})
 
@@ -167,11 +179,13 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 		const (
 			mockBackendName = "traces-receiver"
 			mockNs          = "traces-broken-pipeline"
+			telemetrygenNs  = "broken-metric-pipeline-test"
 		)
 		var (
-			urls                = urlprovider.New()
+			//urls                = urlprovider.New()
 			healthyPipelineName string
 			brokenPipelineName  string
+			telemetryExportURL  string
 		)
 
 		makeResources := func() []client.Object {
@@ -180,20 +194,24 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 
 			mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
 			objs = append(objs, mockBackend.K8sObjects()...)
-			urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
+			//urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
+			telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 			healthyPipeline := kitk8s.NewTracePipelineV1Alpha1("healthy").WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
 			healthyPipelineName = healthyPipeline.Name()
 			objs = append(objs, healthyPipeline.K8sObject())
 
-			unreachableHostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname-broken", kitkyma.DefaultNamespaceName,
-				kitk8s.WithStringData("metric-host", "http://unreachable:4317"))
-			brokenPipeline := kitk8s.NewTracePipelineV1Alpha1("broken").WithOutputEndpointFromSecret(unreachableHostSecret.SecretKeyRefV1Alpha1("metric-host"))
+			unreachableHostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname-broken", kitkyma.DefaultNamespaceName,
+				kitk8s.WithStringData("trace-host", "http://unreachable:4317"))
+			brokenPipeline := kitk8s.NewTracePipelineV1Alpha1("broken").WithOutputEndpointFromSecret(unreachableHostSecret.SecretKeyRefV1Alpha1("trace-host"))
 			brokenPipelineName = brokenPipeline.Name()
 			objs = append(objs, brokenPipeline.K8sObject(), unreachableHostSecret.K8sObject())
 
-			urls.SetOTLPPush(proxyClient.ProxyURLForService(
-				kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
+			//urls.SetOTLPPush(proxyClient.ProxyURLForService(
+			//	kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
+			//)
+			objs = append(objs,
+				telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeTraces).K8sObject(),
 			)
 
 			return objs
@@ -221,9 +239,12 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 		})
 
-		It("Should verify end-to-end trace delivery for the remaining pipeline", func() {
-			traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, urls.OTLPPush())
-			verifiers.TracesShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, attrs)
+		//It("Should verify end-to-end trace delivery for the remaining pipeline", func() {
+		//	traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, urls.OTLPPush())
+		//	verifiers.TracesShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, attrs)
+		//})
+		It("Should verify traces from telemetrygen are delivered", func() {
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs)
 		})
 	})
 })
