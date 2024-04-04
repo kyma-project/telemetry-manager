@@ -28,6 +28,7 @@ var _ = Describe("Metrics Basic v1alpha1", Label("metrics"), func() {
 	const (
 		mockBackendName = "metric-receiver"
 		mockNs          = "metric-mocks"
+		telemetrygenNs  = "metric-basic-v1alpha1"
 	)
 
 	var (
@@ -38,7 +39,9 @@ var _ = Describe("Metrics Basic v1alpha1", Label("metrics"), func() {
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(),
+			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
+		)
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithPersistentHostSecret(isOperational()))
 		objs = append(objs, mockBackend.K8sObjects()...)
@@ -49,7 +52,7 @@ var _ = Describe("Metrics Basic v1alpha1", Label("metrics"), func() {
 			Persistent(isOperational())
 		pipelineName = metricPipeline.Name()
 		objs = append(objs,
-			telemetrygen.New(kitkyma.DefaultNamespaceName, telemetrygen.SignalTypeMetrics).K8sObject(),
+			telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeMetrics).K8sObject(),
 			metricPipeline.K8sObject(),
 		)
 
@@ -159,7 +162,7 @@ var _ = Describe("Metrics Basic v1alpha1", Label("metrics"), func() {
 		})
 
 		It("Should deliver telemetrygen metrics", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, kitkyma.DefaultNamespaceName, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs, telemetrygen.MetricNames)
 		})
 
 		It("Should be able to get metric gateway metrics endpoint", Label(operationalTest), func() {
