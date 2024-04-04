@@ -3,6 +3,7 @@ package logpipeline
 import (
 	"context"
 	"fmt"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -14,6 +15,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
+
+const twoWeeks = time.Hour * 24 * 7 * 2
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
 	var pipeline telemetryv1alpha1.LogPipeline
@@ -93,7 +96,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonConfigurationGenerated
-
+	certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator, r.Client)
 	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonReferencedSecretMissing
@@ -104,11 +107,40 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 		reason = conditions.ReasonUnsupportedLokiOutput
 	}
 
+	message := conditions.MessageForLogPipeline(reason)
+
+	if !certValidationResult.CertValid {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonTLSCertificateInvalid
+		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.CertValidationMessage)
+	}
+
+	if !certValidationResult.PrivateKeyValid {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonTLSPrivateKeyInvalid
+		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.PrivateKeyValidationMessage)
+	}
+
+	if time.Now().After(certValidationResult.Validity) {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonTLSCertificateExpired
+	}
+
+	//ensure not expired and about to expire
+	validUntil := time.Until(certValidationResult.Validity)
+	if validUntil > 0 && validUntil <= twoWeeks {
+		status = metav1.ConditionTrue
+		reason = conditions.ReasonTLSCertificateAboutToExpire
+	}
+
+	if reason == conditions.ReasonTLSCertificateAboutToExpire || reason == conditions.ReasonTLSCertificateExpired {
+		message = fmt.Sprintf(message, certValidationResult.Validity.Format(time.DateOnly))
+	}
 	condition := metav1.Condition{
 		Type:               conditions.TypeConfigurationGenerated,
 		Status:             status,
 		Reason:             reason,
-		Message:            conditions.MessageForLogPipeline(reason),
+		Message:            message,
 		ObservedGeneration: pipeline.Generation,
 	}
 
