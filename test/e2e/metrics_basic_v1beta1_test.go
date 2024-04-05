@@ -26,9 +26,9 @@ import (
 
 var _ = Describe("Metrics Basic v1beta1", Label("metrics", "v1beta1"), func() {
 	const (
-		mockBackendName = "metric-receiver"
-		mockNs          = "metric-basic-v1beta1-test"
-		telemetrygenNs  = "metric-basic-v1beta1"
+		mockBackendName = "metrics-receiver"
+		mockNs          = "metrics-basic-v1beta1-test"
+		telemetrygenNs  = "metrics-basic-v1beta1"
 	)
 
 	var (
@@ -161,7 +161,7 @@ var _ = Describe("Metrics Basic v1beta1", Label("metrics", "v1beta1"), func() {
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should deliver telemetrygen metrics", func() {
+		It("Should deliver telemetrygen metrics", Label(operationalTest), func() {
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs, telemetrygen.MetricNames)
 		})
 

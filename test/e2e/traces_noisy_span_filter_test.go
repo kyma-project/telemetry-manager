@@ -80,7 +80,7 @@ var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 		})
 
-		It("Should deliver telemetrygen traces", Label(operationalTest), func() {
+		It("Should deliver telemetrygen traces", func() {
 			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs)
 		})
 

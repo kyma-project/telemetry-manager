@@ -143,7 +143,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should have metrics with service.name set to telemetry-metric-gateway", Label(operationalTest), func() {
+		It("Should have metrics with service.name set to telemetry-metric-gateway", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
@@ -156,7 +156,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 			}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
 
-		It("Should have metrics with service.name set to telemetry-metric-agent", Label(operationalTest), func() {
+		It("Should have metrics with service.name set to telemetry-metric-agent", func() {
 			Eventually(func(g Gomega) {
 				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())

@@ -161,7 +161,7 @@ var _ = Describe("Metrics Basic v1alpha1", Label("metrics"), func() {
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should deliver telemetrygen metrics", func() {
+		It("Should deliver telemetrygen metrics", Label(operationalTest), func() {
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs, telemetrygen.MetricNames)
 		})
 
