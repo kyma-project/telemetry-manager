@@ -42,9 +42,8 @@ func WithServiceName(serviceName string) Option {
 
 func WithResourceAttribute(key, value string) Option {
 	return func(spec *corev1.PodSpec) {
-		attr := fmt.Sprintf("--%s=\"%s\"", key, value)
 		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
-		spec.Containers[0].Args = append(spec.Containers[0].Args, attr)
+		spec.Containers[0].Args = append(spec.Containers[0].Args, fmt.Sprintf("%s=\"%s\"", key, value))
 	}
 }
 
