@@ -1,14 +1,14 @@
 package trace
 
 import (
+	crand "crypto/rand"
+	"encoding/binary"
+	"math/rand"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-
-	crand "crypto/rand"
-	"encoding/binary"
-	"math/rand"
 )
 
 var _ = Describe("WithTds", func() {
