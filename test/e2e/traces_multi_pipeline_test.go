@@ -179,7 +179,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 		const (
 			mockBackendName = "traces-receiver"
 			mockNs          = "traces-broken-pipeline"
-			telemetrygenNs  = "broken-metric-pipeline-test"
+			telemetrygenNs  = "broken-trace-pipeline-test"
 		)
 		var (
 			//urls                = urlprovider.New()
@@ -190,7 +190,9 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 
 		makeResources := func() []client.Object {
 			var objs []client.Object
-			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(),
+				kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
+			)
 
 			mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
 			objs = append(objs, mockBackend.K8sObjects()...)
