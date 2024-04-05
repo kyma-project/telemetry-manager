@@ -27,7 +27,7 @@ import (
 var _ = Describe("Traces Basic v1alpha1", Label("traces"), func() {
 	const (
 		mockBackendName = "traces-receiver"
-		mockNs          = "traces-basic-mock"
+		mockNs          = "traces-basic-test"
 		telemetrygenNs  = "traces-basic-v1alpha1"
 	)
 
