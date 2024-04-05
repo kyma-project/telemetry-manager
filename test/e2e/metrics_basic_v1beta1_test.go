@@ -19,7 +19,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otel/metrics"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
@@ -28,6 +28,7 @@ var _ = Describe("Metrics Basic v1beta1", Label("metrics", "v1beta1"), func() {
 	const (
 		mockBackendName = "metrics-receiver"
 		mockNs          = "metrics-basic-v1beta1-test"
+		telemetrygenNs  = "metrics-basic-v1beta1"
 	)
 
 	var (
@@ -38,7 +39,9 @@ var _ = Describe("Metrics Basic v1beta1", Label("metrics", "v1beta1"), func() {
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(),
+			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
+		)
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockBackend.K8sObjects()...)
@@ -48,7 +51,10 @@ var _ = Describe("Metrics Basic v1beta1", Label("metrics", "v1beta1"), func() {
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Beta1())
 
 		pipelineName = metricPipeline.Name()
-		objs = append(objs, metricPipeline.K8sObject())
+		objs = append(objs,
+			telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeMetrics).K8sObject(),
+			metricPipeline.K8sObject(),
+		)
 
 		return objs
 	}
@@ -155,10 +161,8 @@ var _ = Describe("Metrics Basic v1beta1", Label("metrics", "v1beta1"), func() {
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should verify end-to-end metric delivery", func() {
-			gatewayPushURL := proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP)
-			gauges := kitmetrics.MakeAndSendGaugeMetrics(proxyClient, gatewayPushURL)
-			verifiers.MetricsShouldBeDelivered(proxyClient, telemetryExportURL, gauges)
+		It("Should deliver telemetrygen metrics", Label(operationalTest), func() {
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs, telemetrygen.MetricNames)
 		})
 
 		It("Should be able to get metric gateway metrics endpoint", func() {
