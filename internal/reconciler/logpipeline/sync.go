@@ -63,7 +63,7 @@ func (s *syncer) syncSectionsConfigMap(ctx context.Context, pipeline *telemetryv
 	if !isLogPipelineDeployable(deployablePipelines, pipeline) {
 		delete(cm.Data, cmKey)
 	} else {
-		newConfig, err := builder.BuildFluentBitConfig(pipeline, s.config.PipelineDefaults)
+		newConfig, err := builder.BuildFluentBitConfig(pipeline, s.config.PipelineDefaults, s.config.Overrides.Logging)
 		if err != nil {
 			return fmt.Errorf("unable to build section: %w", err)
 		}

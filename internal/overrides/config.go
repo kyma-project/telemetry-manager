@@ -17,7 +17,8 @@ type TracingConfig struct {
 }
 
 type LoggingConfig struct {
-	Paused bool `yaml:"paused,omitempty"`
+	Paused           bool `yaml:"paused,omitempty"`
+	CollectAgentLogs bool `yaml:"collectAgentLogs,omitempty"`
 }
 
 type MetricConfig struct {

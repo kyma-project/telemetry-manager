@@ -47,9 +47,9 @@ func createIncludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
 	return strings.Join(includePath, ",")
 }
 
-func createExcludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
+func createExcludePath(pipeline *telemetryv1alpha1.LogPipeline, collectAgentLogs bool) string {
 	excludePath := []string{}
-	if !pipeline.Spec.Input.Application.Containers.FluentBit {
+	if !collectAgentLogs {
 		excludePath = append(excludePath, makeLogPath("kyma-system", "telemetry-fluent-bit-*", "fluent-bit"))
 	}
 

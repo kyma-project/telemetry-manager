@@ -42,6 +42,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 	var tests = []struct {
 		name             string
 		pipeline         *telemetryv1alpha1.LogPipeline
+		collectAgentLogs bool
 		expectedIncludes []string
 		expectedExcludes []string
 	}{
@@ -50,11 +51,28 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			&telemetryv1alpha1.LogPipeline{
 				ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
 			},
+			false,
 			[]string{
 				"/var/log/containers/*_*_*-*.log",
 			},
 			[]string{
 				"/var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log",
+				"/var/log/containers/*_kyma-system_*-*.log",
+				"/var/log/containers/*_kube-system_*-*.log",
+				"/var/log/containers/*_istio-system_*-*.log",
+				"/var/log/containers/*_compass-system_*-*.log",
+			},
+		},
+		{
+			"include agent logs",
+			&telemetryv1alpha1.LogPipeline{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-logpipeline"},
+			},
+			true,
+			[]string{
+				"/var/log/containers/*_*_*-*.log",
+			},
+			[]string{
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
 				"/var/log/containers/*_istio-system_*-*.log",
@@ -74,6 +92,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 					},
 				},
 			},
+			false,
 			[]string{
 				"/var/log/containers/*_*_*-*.log",
 			},
@@ -96,6 +115,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 					},
 				},
 			},
+			false,
 			[]string{
 				"/var/log/containers/*_foo_*-*.log",
 			},
@@ -118,6 +138,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 					},
 				},
 			},
+			false,
 			[]string{
 				"/var/log/containers/*_*_foo-*.log",
 			},
@@ -149,6 +170,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 					},
 				},
 			},
+			false,
 			[]string{
 				"/var/log/containers/*_foo_bar-*.log",
 			},
@@ -177,6 +199,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 					},
 				},
 			},
+			false,
 			[]string{
 				"/var/log/containers/*_foo_istio-proxy-*.log",
 				"/var/log/containers/*_bar_istio-proxy-*.log",
@@ -201,6 +224,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 					},
 				},
 			},
+			false,
 			[]string{
 				"/var/log/containers/*_*_*-*.log",
 			},
@@ -227,6 +251,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 					},
 				},
 			},
+			false,
 			[]string{
 				"/var/log/containers/*_*_*-*.log",
 			},
@@ -250,6 +275,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 					},
 				},
 			},
+			false,
 			[]string{
 				"/var/log/containers/*_*_*-*.log",
 			},
@@ -282,6 +308,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 					},
 				},
 			},
+			false,
 			[]string{
 				"/var/log/containers/*_*_*-*.log",
 			},
@@ -310,6 +337,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 					},
 				},
 			},
+			false,
 			[]string{
 				"/var/log/containers/*_kyma-system_*-*.log",
 				"/var/log/containers/*_kube-system_*-*.log",
@@ -328,7 +356,7 @@ func TestCreateIncludeAndExcludePath(t *testing.T) {
 			actualIncludes := strings.Split(createIncludePath(test.pipeline), ",")
 			require.Equal(t, test.expectedIncludes, actualIncludes, "Unexpected include paths for test: %s", test.name)
 
-			actualExcludes := strings.Split(createExcludePath(test.pipeline), ",")
+			actualExcludes := strings.Split(createExcludePath(test.pipeline, test.collectAgentLogs), ",")
 			require.Equal(t, test.expectedExcludes, actualExcludes, "Unexpected exclude paths for test: %s", test.name)
 		})
 	}
