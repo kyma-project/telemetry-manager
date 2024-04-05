@@ -13,18 +13,17 @@ import (
 type logPipelineV1Alpha1 struct {
 	persistent bool
 
-	name                string
-	secretKeyRef        *telemetryv1alpha1.SecretKeyRef
-	systemNamespaces    bool
-	includeNamespaces   []string
-	excludeNamespaces   []string
-	includeContainers   []string
-	excludeContainers   []string
-	fluentBitContainers bool
-	keepAnnotations     bool
-	dropLabels          bool
-	output              telemetryv1alpha1.Output
-	filters             []telemetryv1alpha1.Filter
+	name              string
+	secretKeyRef      *telemetryv1alpha1.SecretKeyRef
+	systemNamespaces  bool
+	includeNamespaces []string
+	excludeNamespaces []string
+	includeContainers []string
+	excludeContainers []string
+	keepAnnotations   bool
+	dropLabels        bool
+	output            telemetryv1alpha1.Output
+	filters           []telemetryv1alpha1.Filter
 }
 
 func NewLogPipelineV1Alpha1(name string) *logPipelineV1Alpha1 {
@@ -64,11 +63,6 @@ func (p *logPipelineV1Alpha1) WithIncludeContainers(names []string) *logPipeline
 
 func (p *logPipelineV1Alpha1) WithExcludeContainers(names []string) *logPipelineV1Alpha1 {
 	p.excludeContainers = names
-	return p
-}
-
-func (p *logPipelineV1Alpha1) WithFluentBitContainers(enable bool) *logPipelineV1Alpha1 {
-	p.fluentBitContainers = enable
 	return p
 }
 
@@ -178,9 +172,8 @@ func (p *logPipelineV1Alpha1) K8sObject() *telemetryv1alpha1.LogPipeline {
 						Exclude: p.excludeNamespaces,
 					},
 					Containers: telemetryv1alpha1.InputContainers{
-						Include:   p.includeContainers,
-						Exclude:   p.excludeContainers,
-						FluentBit: p.fluentBitContainers,
+						Include: p.includeContainers,
+						Exclude: p.excludeContainers,
 					},
 					KeepAnnotations: p.keepAnnotations,
 					DropLabels:      p.dropLabels,
