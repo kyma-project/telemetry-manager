@@ -24,8 +24,7 @@ var _ = Describe("Traces mTLS", Label("traces"), func() {
 		telemetrygenNs  = "traces-mtls"
 	)
 	var (
-		pipelineName string
-		//urls               = urlprovider.New()
+		pipelineName       string
 		telemetryExportURL string
 	)
 
@@ -37,7 +36,6 @@ var _ = Describe("Traces mTLS", Label("traces"), func() {
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces, backend.WithTLS())
 		objs = append(objs, mockBackend.K8sObjects()...)
-		//urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		pipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
@@ -48,10 +46,6 @@ var _ = Describe("Traces mTLS", Label("traces"), func() {
 		objs = append(objs, pipeline.K8sObject(),
 			telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeTraces).K8sObject(),
 		)
-
-		//urls.SetOTLPPush(proxyClient.ProxyURLForService(
-		//	kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
-		//)
 
 		return objs
 	}

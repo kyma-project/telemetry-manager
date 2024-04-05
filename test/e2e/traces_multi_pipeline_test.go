@@ -31,8 +31,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 			telemetrygenNs   = "trace-multi-pipeline-test"
 		)
 		var (
-			pipelines = kitkyma.NewPipelineList()
-			//urls                = urlprovider.New()
+			pipelines           = kitkyma.NewPipelineList()
 			telemetryExportURLs []string
 		)
 
@@ -45,17 +44,12 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 			for _, backendName := range []string{mockBackendName1, mockBackendName2} {
 				mockBackend := backend.New(backendName, mockNs, backend.SignalTypeTraces)
 				objs = append(objs, mockBackend.K8sObjects()...)
-				//urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 				telemetryExportURLs = append(telemetryExportURLs, mockBackend.TelemetryExportURL(proxyClient))
 
 				pipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
 				pipelines.Append(pipeline.Name())
 				objs = append(objs, pipeline.K8sObject())
 			}
-
-			//urls.SetOTLPPush(proxyClient.ProxyURLForService(
-			//	kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
-			//)
 
 			objs = append(objs,
 				telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeTraces).K8sObject(),
@@ -81,11 +75,6 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName1, Namespace: mockNs})
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName2, Namespace: mockNs})
 		})
-		//It("Should verify end-to-end trace delivery", func() {
-		//	traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, urls.OTLPPush())
-		//	verifiers.TracesShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName1), traceID, spanIDs, attrs)
-		//	verifiers.TracesShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName2), traceID, spanIDs, attrs)
-		//})
 		It("Should verify traces from telemetrygen are delivered", func() {
 			for _, telemetryExportURL := range telemetryExportURLs {
 				verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs)
@@ -182,7 +171,6 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 			telemetrygenNs  = "broken-trace-pipeline-test"
 		)
 		var (
-			//urls                = urlprovider.New()
 			healthyPipelineName string
 			brokenPipelineName  string
 			telemetryExportURL  string
@@ -196,7 +184,6 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 
 			mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
 			objs = append(objs, mockBackend.K8sObjects()...)
-			//urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 			telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 			healthyPipeline := kitk8s.NewTracePipelineV1Alpha1("healthy").WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
@@ -209,9 +196,6 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 			brokenPipelineName = brokenPipeline.Name()
 			objs = append(objs, brokenPipeline.K8sObject(), unreachableHostSecret.K8sObject())
 
-			//urls.SetOTLPPush(proxyClient.ProxyURLForService(
-			//	kitkyma.SystemNamespaceName, "telemetry-otlp-traces", "v1/traces/", ports.OTLPHTTP),
-			//)
 			objs = append(objs,
 				telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeTraces).K8sObject(),
 			)
@@ -241,10 +225,6 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 		})
 
-		//It("Should verify end-to-end trace delivery for the remaining pipeline", func() {
-		//	traceID, spanIDs, attrs := kittraces.MakeAndSendTraces(proxyClient, urls.OTLPPush())
-		//	verifiers.TracesShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName), traceID, spanIDs, attrs)
-		//})
 		It("Should verify traces from telemetrygen are delivered", func() {
 			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs)
 		})

@@ -23,8 +23,7 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 		telemetrygenNs  = "metric-mtls"
 	)
 	var (
-		pipelineName string
-		//urls               = urlprovider.New()
+		pipelineName       string
 		telemetryExportURL string
 	)
 
@@ -36,7 +35,6 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS())
 		objs = append(objs, mockBackend.K8sObjects()...)
-		//urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
@@ -48,9 +46,6 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 			telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeMetrics).K8sObject(),
 			metricPipeline.K8sObject(),
 		)
-		//urls.SetOTLPPush(proxyClient.ProxyURLForService(
-		//	kitkyma.SystemNamespaceName, "telemetry-otlp-metrics", "v1/metrics/", ports.OTLPHTTP),
-		//)
 
 		return objs
 	}
@@ -73,10 +68,6 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 		})
 
-		//It("Should verify end-to-end metric delivery", func() {
-		//	gauges := kitmetrics.MakeAndSendGaugeMetrics(proxyClient, urls.OTLPPush())
-		//	verifiers.MetricsShouldBeDelivered(proxyClient, urls.MockBackendExport(mockBackendName), gauges)
-		//})
 		It("Should deliver telemetrygen metrics", func() {
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs, telemetrygen.MetricNames)
 		})
