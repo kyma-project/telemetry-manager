@@ -1,10 +1,8 @@
 package urlprovider
 
 type URLProvider struct {
-	metrics        string
 	mockBackendURL map[string]string
 	otlpPush       string
-	metricPod      string
 }
 
 func New() *URLProvider {
