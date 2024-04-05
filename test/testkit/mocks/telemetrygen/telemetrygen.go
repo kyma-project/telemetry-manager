@@ -34,11 +34,33 @@ const (
 	SignalTypeMetrics = "metrics"
 )
 
-func New(namespace string, signalType SignalType) *kitk8s.Pod {
-	return kitk8s.NewPod("telemetrygen", namespace).WithPodSpec(PodSpec(signalType, ""))
+type Option func(*corev1.PodSpec)
+
+func WithServiceName(serviceName string) Option {
+	return WithResourceAttribute("service.name", serviceName)
 }
 
-func PodSpec(signalType SignalType, serviceNameAttrValue string) corev1.PodSpec {
+func WithResourceAttribute(key, value string) Option {
+	return func(spec *corev1.PodSpec) {
+		attr := fmt.Sprintf("--%s=\"%s\"", key, value)
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--otlp-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, attr)
+	}
+}
+
+func WithTelemetryAttribute(key, value string) Option {
+	return func(spec *corev1.PodSpec) {
+		attr := fmt.Sprintf("--%s=\"%s\"", key, value)
+		spec.Containers[0].Args = append(spec.Containers[0].Args, "--telemetry-attributes")
+		spec.Containers[0].Args = append(spec.Containers[0].Args, attr)
+	}
+}
+
+func New(namespace string, signalType SignalType, opts ...Option) *kitk8s.Pod {
+	return kitk8s.NewPod("telemetrygen", namespace).WithPodSpec(PodSpec(signalType, opts...))
+}
+
+func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 	var gatewayPushURL string
 	if signalType == SignalTypeTraces {
 		gatewayPushURL = "telemetry-otlp-traces.kyma-system:4317"
@@ -46,13 +68,11 @@ func PodSpec(signalType SignalType, serviceNameAttrValue string) corev1.PodSpec 
 		gatewayPushURL = "telemetry-otlp-metrics.kyma-system:4317"
 	}
 
-	serviceNameAttr := fmt.Sprintf("service.name=\"%s\"", serviceNameAttrValue)
-
 	return corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:  "telemetrygen",
-				Image: "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.87.0",
+				Image: "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.97.0",
 				Args: []string{
 					string(signalType),
 					"--rate",
@@ -61,8 +81,6 @@ func PodSpec(signalType SignalType, serviceNameAttrValue string) corev1.PodSpec 
 					"30m",
 					"--otlp-endpoint",
 					gatewayPushURL,
-					"--otlp-attributes",
-					serviceNameAttr,
 					"--otlp-insecure",
 				},
 				ImagePullPolicy: corev1.PullAlways,
