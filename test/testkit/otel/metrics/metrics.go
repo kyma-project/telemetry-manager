@@ -1,50 +1,19 @@
 package metrics
 
 import (
-	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"math/rand"
-	"net/url"
 	"time"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 )
 
 var (
 	ErrInvalidURL       = errors.New("the ProxyURLForService is invalid")
 	ErrExporterCreation = errors.New("metric exporter cannot be created")
 )
-
-type httpAuthProvider interface {
-	TLSConfig() *tls.Config
-	Token() string
-}
-
-type Builder struct {
-	metrics []pmetric.Metric
-}
-
-func NewBuilder() *Builder {
-	return &Builder{}
-}
-
-func (b *Builder) WithMetric(m pmetric.Metric) *Builder {
-	b.metrics = append(b.metrics, m)
-	return b
-}
-
-func (b *Builder) Build() pmetric.Metrics {
-	md := pmetric.NewMetrics()
-	scopeMetric := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty()
-	for _, metrics := range b.metrics {
-		metrics.CopyTo(scopeMetric.Metrics().AppendEmpty())
-	}
-	return md
-}
 
 type MetricOption = func(pmetric.Metric)
 
@@ -87,27 +56,4 @@ func setMetricDefaults(m pmetric.Metric) {
 	m.SetName("dummy_gauge")
 	m.SetDescription("Dummy gauge")
 	m.SetUnit("ms")
-}
-
-func NewHTTPExporter(otlpURL string, authProvider httpAuthProvider) (exporter Exporter, err error) {
-	urlSegments, err := url.Parse(otlpURL)
-	if err != nil {
-		return exporter, fmt.Errorf("%w: %v", ErrInvalidURL, err)
-	}
-
-	opts := []otlpmetrichttp.Option{otlpmetrichttp.WithTLSClientConfig(authProvider.TLSConfig()),
-		otlpmetrichttp.WithEndpoint(urlSegments.Host),
-		otlpmetrichttp.WithURLPath(urlSegments.Path),
-	}
-
-	if len(authProvider.Token()) > 0 {
-		opts = append(opts, otlpmetrichttp.WithHeaders(map[string]string{"Authorization": authProvider.Token()}))
-	}
-
-	e, err := otlpmetrichttp.New(context.TODO(), opts...)
-	if err != nil {
-		return exporter, fmt.Errorf("%w: %v", ErrExporterCreation, err)
-	}
-
-	return NewExporter(e), nil
 }
