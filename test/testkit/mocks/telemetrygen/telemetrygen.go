@@ -68,7 +68,7 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 		gatewayPushURL = "telemetry-otlp-metrics.kyma-system:4317"
 	}
 
-	return corev1.PodSpec{
+	spec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:  "telemetrygen",
@@ -95,4 +95,10 @@ func PodSpec(signalType SignalType, opts ...Option) corev1.PodSpec {
 			},
 		},
 	}
+
+	for _, opt := range opts {
+		opt(&spec)
+	}
+
+	return spec
 }
