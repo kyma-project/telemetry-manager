@@ -9,7 +9,6 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 	. "github.com/onsi/ginkgo/v2"
@@ -37,11 +36,11 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 	)
 
 	var (
-		urls                                            = urlprovider.New()
 		pipelineName                                    string
 		istiofiedPipelineName                           string
 		telemetryExportURL, telemetryIstiofiedExportURL string
 		istiofiedAppURL, appURL                         string
+		metricServiceURL                                string
 	)
 
 	makeResources := func() []client.Object {
@@ -70,7 +69,7 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
 			WithPort("grpc-otlp", ports.OTLPGRPC).
 			WithPort("http-metrics", ports.Metrics)
-		urls.SetMetrics(proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics))
+		metricServiceURL = proxyClient.ProxyURLForService(kitkyma.SystemNamespaceName, "telemetry-otlp-traces-external", "metrics", ports.Metrics)
 		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")))
 
 		// Abusing metrics provider for istio traces
@@ -122,7 +121,7 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		It("Trace collector with should answer requests", func() {
 			By("Calling metrics service", func() {
 				Eventually(func(g Gomega) {
-					resp, err := proxyClient.Get(urls.Metrics())
+					resp, err := proxyClient.Get(metricServiceURL)
 					g.Expect(err).NotTo(HaveOccurred())
 					g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())

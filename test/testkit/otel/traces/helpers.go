@@ -12,24 +12,6 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 )
 
-func MakeAndSendTraces(proxyClient *apiserverproxy.Client, otlpPushURL string) (pcommon.TraceID, []pcommon.SpanID, pcommon.Map) {
-	traceID := NewTraceID()
-	var spanIDs []pcommon.SpanID
-	for i := 0; i < 100; i++ {
-		spanIDs = append(spanIDs, NewSpanID())
-	}
-
-	attrs := pcommon.NewMap()
-	attrs.PutStr("attrA", "chocolate")
-	attrs.PutStr("attrB", "raspberry")
-	attrs.PutStr("attrC", "vanilla")
-	traces := MakeTraces(traceID, spanIDs, attrs, pcommon.NewMap())
-
-	gomega.Expect(sendTraces(context.Background(), proxyClient, traces, otlpPushURL)).To(gomega.Succeed())
-
-	return traceID, spanIDs, attrs
-}
-
 func MakeAndSendTracesWithAttributes(proxyClient *apiserverproxy.Client, otlpPushURL string, attributes pcommon.Map, resAttributes pcommon.Map) (pcommon.TraceID, []pcommon.SpanID) {
 	traceID := NewTraceID()
 	var spanIDs = []pcommon.SpanID{NewSpanID()}
