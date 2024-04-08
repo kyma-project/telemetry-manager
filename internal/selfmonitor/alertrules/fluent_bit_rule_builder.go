@@ -38,7 +38,7 @@ func (rb fluentBitRuleBuilder) receiverReadRule() Rule {
 func (rb fluentBitRuleBuilder) exporterDroppedRule() Rule {
 	return Rule{
 		Alert: RuleNameLogAgentExporterDroppedLogs,
-		Expr: rate("fluentbit_output_retries_failed_total", selectService(fluentBitMetricsServiceName)).
+		Expr: rate("fluentbit_output_dropped_records_total", selectService(fluentBitMetricsServiceName)).
 			greaterThan(0).
 			build(),
 	}
