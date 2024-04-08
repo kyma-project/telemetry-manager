@@ -5,11 +5,7 @@ import (
 )
 
 const (
-	LabelService  = "service"
-	LabelExporter = "exporter"
-	LabelReceiver = "receiver"
-
-	// OTEL Collector rule names. Note that the actual full names will be prefixed with Metric or Trace.
+	// OTEL Collector rule names. Note that the actual full names will be prefixed with Metric or Trace
 	RuleNameGatewayExporterSentData        = "GatewayExporterSentData"
 	RuleNameGatewayExporterDroppedData     = "GatewayExporterDroppedData"
 	RuleNameGatewayExporterQueueAlmostFull = "GatewayExporterQueueAlmostFull"
@@ -20,8 +16,14 @@ const (
 	RuleNameLogAgentExporterSentLogs    = "LogAgentExporterSentLogs"
 	RuleNameLogAgentReceiverReadLogs    = "LogAgentReceiverReadLogs"
 	RuleNameLogAgentExporterDroppedLogs = "LogAgentExporterDroppedLogs"
-	RuleNameLogAgentBufferInUse         = "LogAgentLogBufferInUse"
+	RuleNameLogAgentBufferInUse         = "LogAgentBufferInUse"
 	RuleNameLogAgentBufferFull          = "LogAgentBufferFull"
+
+	LabelService = "service"
+
+	// OTel Collector rule labels
+	LabelExporter = "exporter"
+	LabelReceiver = "receiver"
 )
 
 // RuleGroups is a set of rule groups that are typically exposed in a file.

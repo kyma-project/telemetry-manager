@@ -1,7 +1,7 @@
 package alertrules
 
 const (
-	fluentBitMetricsServiceName = "telemetry-fluent-bit-metrics\""
+	fluentBitMetricsServiceName = "telemetry-fluent-bit-metrics"
 )
 
 type fluentBitRuleBuilder struct {
