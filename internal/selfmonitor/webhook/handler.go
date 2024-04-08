@@ -57,6 +57,8 @@ type Alert struct {
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Security-Policy", "default-src 'self'")
+
 	if r.Method != http.MethodPost {
 		h.logger.Info("Invalid method", "method", r.Method)
 		w.WriteHeader(http.StatusMethodNotAllowed)
