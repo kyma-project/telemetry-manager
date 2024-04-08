@@ -14,7 +14,7 @@ func TestMakeRules(t *testing.T) {
 	ruleGroup := rules.Groups[0]
 	require.Equal(t, "default", ruleGroup.Name)
 
-	require.Len(t, ruleGroup.Rules, 10)
+	require.Len(t, ruleGroup.Rules, 15)
 	require.Equal(t, "MetricGatewayExporterSentData", ruleGroup.Rules[0].Alert)
 	require.Equal(t, "sum by (exporter) (rate(otelcol_exporter_sent_metric_points{service=\"telemetry-metric-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[0].Expr)
 

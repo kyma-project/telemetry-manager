@@ -57,7 +57,7 @@ func MakeRules() RuleGroups {
 	traceRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    "spans",
 		serviceName: "telemetry-trace-collector-metrics",
-		namePrefix:  RuleNamePrefix(LogPipeline),
+		namePrefix:  RuleNamePrefix(TracePipeline),
 	}
 	rules = append(rules, traceRuleBuilder.rules()...)
 
