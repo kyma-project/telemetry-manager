@@ -5,7 +5,6 @@ const (
 )
 
 type fluentBitRuleBuilder struct {
-	namePrefix string
 }
 
 func (rb fluentBitRuleBuilder) rules() []Rule {
