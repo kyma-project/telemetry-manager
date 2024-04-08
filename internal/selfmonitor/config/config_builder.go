@@ -93,7 +93,7 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 				{
 					SourceLabels: []string{"__name__"},
 					Action:       Keep,
-					Regex:        "(otelcol_.*)",
+					Regex:        "(otelcol_.*|fluentbit_.*|telemetry_.*)",
 				},
 			},
 			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{

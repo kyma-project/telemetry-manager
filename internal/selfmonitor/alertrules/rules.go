@@ -45,25 +45,24 @@ type Rule struct {
 }
 
 func MakeRules() RuleGroups {
+	var rules []Rule
+
 	metricRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    "metric_points",
 		serviceName: "telemetry-metric-gateway-metrics",
 		namePrefix:  RuleNamePrefix(MetricPipeline),
 	}
+	rules = append(rules, metricRuleBuilder.rules()...)
+
 	traceRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    "spans",
 		serviceName: "telemetry-trace-collector-metrics",
 		namePrefix:  RuleNamePrefix(LogPipeline),
 	}
-	logRuleBuilder := fluentBitRuleBuilder{
-		serviceName: "telemetry-fluent-bit-metrics",
-	}
+	rules = append(rules, traceRuleBuilder.rules()...)
 
-	ruleBuilders := []ruleBuilder{metricRuleBuilder, traceRuleBuilder, logRuleBuilder}
-	var rules []Rule
-	for _, rb := range ruleBuilders {
-		rules = append(rules, rb.rules()...)
-	}
+	logRuleBuilder := fluentBitRuleBuilder{}
+	rules = append(rules, logRuleBuilder.rules()...)
 
 	return RuleGroups{
 		Groups: []RuleGroup{
@@ -73,10 +72,6 @@ func MakeRules() RuleGroups {
 			},
 		},
 	}
-}
-
-type ruleBuilder interface {
-	rules() []Rule
 }
 
 func RuleNamePrefix(t PipelineType) string {

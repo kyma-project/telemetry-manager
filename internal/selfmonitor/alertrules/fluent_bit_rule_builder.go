@@ -1,8 +1,11 @@
 package alertrules
 
+const (
+	fluentBitMetricsServiceName = "telemetry-fluent-bit-metrics\""
+)
+
 type fluentBitRuleBuilder struct {
-	serviceName string
-	namePrefix  string
+	namePrefix string
 }
 
 func (rb fluentBitRuleBuilder) rules() []Rule {
@@ -18,8 +21,7 @@ func (rb fluentBitRuleBuilder) rules() []Rule {
 func (rb fluentBitRuleBuilder) exporterSentRule() Rule {
 	return Rule{
 		Alert: RuleNameLogAgentExporterSentLogs,
-		Expr: rate("fluentbit_output_bytes_total", selectService(rb.serviceName)).
-			sumBy(LabelExporter).
+		Expr: rate("fluentbit_output_bytes_total", selectService(fluentBitMetricsServiceName)).
 			greaterThan(0).
 			build(),
 	}
@@ -28,8 +30,7 @@ func (rb fluentBitRuleBuilder) exporterSentRule() Rule {
 func (rb fluentBitRuleBuilder) receiverReadRule() Rule {
 	return Rule{
 		Alert: RuleNameLogAgentReceiverReadLogs,
-		Expr: rate("fluentbit_input_bytes_total", selectService(rb.serviceName)).
-			sumBy(LabelExporter).
+		Expr: rate("fluentbit_input_bytes_total", selectService(fluentBitMetricsServiceName)).
 			greaterThan(0).
 			build(),
 	}
@@ -38,8 +39,8 @@ func (rb fluentBitRuleBuilder) receiverReadRule() Rule {
 func (rb fluentBitRuleBuilder) exporterDroppedRule() Rule {
 	return Rule{
 		Alert: RuleNameLogAgentExporterDroppedLogs,
-		Expr: div("fluentbit_output_retries_failed_total", "otelcol_exporter_queue_capacity", selectService(rb.serviceName)).
-			greaterThan(0.8).
+		Expr: rate("fluentbit_output_retries_failed_total", selectService(fluentBitMetricsServiceName)).
+			greaterThan(0).
 			build(),
 	}
 }
@@ -47,19 +48,13 @@ func (rb fluentBitRuleBuilder) exporterDroppedRule() Rule {
 func (rb fluentBitRuleBuilder) bufferInUseRule() Rule {
 	return Rule{
 		Alert: RuleNameLogAgentBufferInUse,
-		Expr: rate("telemetry_fsbuffer_usage_bytes", selectService(rb.serviceName)).
-			sumBy(LabelExporter).
-			greaterThan(300000000).
-			build(),
+		Expr:  "telemetry_fsbuffer_usage_bytes > 300000000",
 	}
 }
 
 func (rb fluentBitRuleBuilder) bufferFullRule() Rule {
 	return Rule{
 		Alert: RuleNameLogAgentBufferFull,
-		Expr: rate("telemetry_fsbuffer_usage_bytes", selectService(rb.serviceName)).
-			sumBy(LabelReceiver).
-			greaterThan(900000000).
-			build(),
+		Expr:  "telemetry_fsbuffer_usage_bytes > 900000000",
 	}
 }
