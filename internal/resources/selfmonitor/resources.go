@@ -3,8 +3,6 @@ package selfmonitor
 import (
 	"context"
 	"fmt"
-	"maps"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -15,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+	"maps"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -239,6 +238,7 @@ func makeSelfMonitorDeployment(cfg *Config, configChecksum string) *appsv1.Deplo
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
 		commonresources.WithPriorityClass(cfg.Deployment.PriorityClassName),
 		commonresources.WithResources(resources),
+		commonresources.WithGoMemLimitEnvVar(cfg.Deployment.MemoryLimit),
 	)
 
 	return &appsv1.Deployment{

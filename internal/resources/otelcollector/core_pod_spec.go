@@ -1,7 +1,9 @@
 package otelcollector
 
 import (
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 
@@ -37,6 +39,17 @@ func withEnvVarFromSource(envVarName, fieldPath string) podSpecOption {
 					APIVersion: "v1",
 				},
 			},
+		})
+	}
+}
+
+func withEnvVarGoMemLimit(memoryLimit resource.Quantity) podSpecOption {
+	goMemLimitValue := memoryLimit.Value() / 100 * 80
+	goMemLimit := resource.NewQuantity(goMemLimitValue, resource.BinarySI)
+	return func(pod *corev1.PodSpec) {
+		pod.Containers[0].Env = append(pod.Containers[0].Env, corev1.EnvVar{
+			Name:  config.EnvVarGoMemLimit,
+			Value: goMemLimit.String(),
 		})
 	}
 }

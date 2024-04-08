@@ -3,8 +3,6 @@ package otelcollector
 import (
 	"context"
 	"fmt"
-	"maps"
-
 	istiosecurityv1beta "istio.io/api/security/v1beta1"
 	istiotypev1beta1 "istio.io/api/type/v1beta1"
 	istiosecurityclientv1beta "istio.io/client-go/pkg/apis/security/v1beta1"
@@ -16,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+	"maps"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
@@ -104,12 +103,14 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioConfi
 	}
 	resources := makeGatewayResourceRequirements(cfg)
 	affinity := makePodAffinity(selectorLabels)
+
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
 		commonresources.WithPriorityClass(cfg.Deployment.PriorityClassName),
 		commonresources.WithResources(resources),
 		withAffinity(affinity),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
+		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 	)
 
 	return &appsv1.Deployment{

@@ -80,6 +80,7 @@ func makeAgentDaemonSet(cfg *AgentConfig, configChecksum string) *appsv1.DaemonS
 		commonresources.WithResources(resources),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
+		commonresources.WithGoMemLimitEnvVar(cfg.DaemonSet.MemoryLimit),
 		withVolume(corev1.Volume{Name: istioCertVolumeName, VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		}}),
