@@ -64,7 +64,7 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 					SourceLabels: []string{"__meta_kubernetes_service_annotation_prometheus_io_path"},
 					Action:       Replace,
 					TargetLabel:  "__metrics_path__",
-					Regex:        "true",
+					Regex:        "(.+)",
 				},
 				{
 					SourceLabels: []string{"__address__", "__meta_kubernetes_service_annotation_prometheus_io_port"},

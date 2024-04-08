@@ -392,11 +392,11 @@ func TestApplyGatewayResourcesWithSelfMonEnabled(t *testing.T) {
 func createGatewayConfig(istioEnabled, selfMonEnabled bool) *GatewayConfig {
 	return &GatewayConfig{
 		Config: Config{
-			BaseName:         name,
-			Namespace:        namespace,
-			CollectorConfig:  cfg,
-			CollectorEnvVars: envVars,
-			SelfMonitorLabel: selfMonEnabled,
+			BaseName:                name,
+			Namespace:               namespace,
+			CollectorConfig:         cfg,
+			CollectorEnvVars:        envVars,
+			ObserveBySelfMonitoring: selfMonEnabled,
 		},
 		OTLPServiceName:      otlpServiceName,
 		CanReceiveOpenCensus: true,
