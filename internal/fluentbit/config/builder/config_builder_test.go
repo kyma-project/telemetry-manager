@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/overrides"
 )
 
 func TestCreateRecordModifierFilter(t *testing.T) {
@@ -170,7 +171,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 		FsBufferLimit:     "1G",
 	}
 
-	actual, err := BuildFluentBitConfig(logPipeline, defaults)
+	actual, err := BuildFluentBitConfig(logPipeline, defaults, overrides.LoggingConfig{})
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 }
@@ -180,7 +181,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     name             tail
     alias            foo
     db               /data/flb_foo.db
-    exclude_path     /var/log/containers/telemetry-fluent-bit-*_kyma-system_fluent-bit-*.log
+    exclude_path     
     mem_buf_limit    5MB
     multiline.parser docker, cri, go, python, java
     path             /var/log/containers/*_*_*-*.log
@@ -237,8 +238,12 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 		StorageType:       "filesystem",
 		FsBufferLimit:     "1G",
 	}
+	overridesConfig := overrides.LoggingConfig{
+		Paused:           false,
+		CollectAgentLogs: true,
+	}
 
-	actual, err := BuildFluentBitConfig(logPipeline, defaults)
+	actual, err := BuildFluentBitConfig(logPipeline, defaults, overridesConfig)
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 }
@@ -253,7 +258,7 @@ func TestMergeSectionsConfigWithMissingOutput(t *testing.T) {
 		FsBufferLimit:     "1G",
 	}
 
-	actual, err := BuildFluentBitConfig(logPipeline, defaults)
+	actual, err := BuildFluentBitConfig(logPipeline, defaults, overrides.LoggingConfig{})
 	require.Error(t, err)
 	require.Empty(t, actual)
 }
