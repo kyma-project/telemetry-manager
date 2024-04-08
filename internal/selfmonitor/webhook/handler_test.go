@@ -154,6 +154,8 @@ func TestHandler(t *testing.T) {
 			} else {
 				require.Empty(t, tracePipelineEvents)
 			}
+
+			require.Equal(t, rr.Header().Get("Content-Security-Policy"), "default-src 'self'")
 		})
 	}
 }
