@@ -1,6 +1,7 @@
 package cert
 
 import (
+	"bytes"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -27,15 +28,19 @@ func (tcv *TLSCertValidator) ValidateCertificate(certPEM []byte, keyPEM []byte) 
 		Validity:        time.Now().Add(time.Hour * 24 * 365),
 	}
 
+	// Make a best effort replacement of linebreaks in cert/key if present.
+	sanitizedCert := bytes.ReplaceAll(certPEM, []byte("\\n"), []byte("\n"))
+	sanitizedKey := bytes.ReplaceAll(keyPEM, []byte("\\n"), []byte("\n"))
+
 	// Parse the certificate
-	cert, err := parseCertificate(certPEM)
+	cert, err := parseCertificate(sanitizedCert)
 	if err != nil {
 		result.CertValid = false
 		result.CertValidationMessage = err.Error()
 	}
 
 	// Parse the private key
-	if _, err := parsePrivateKey(keyPEM); err != nil {
+	if _, err := parsePrivateKey(sanitizedKey); err != nil {
 		result.PrivateKeyValid = false
 		result.PrivateKeyValidationMessage = err.Error()
 	}

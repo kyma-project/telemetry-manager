@@ -104,8 +104,8 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		// metrics istio set-up (trafficgen & telemetrygen)
 		objs = append(objs, trafficgen.K8sObjects(mockNs)...)
 		objs = append(objs,
-			kitk8s.NewPod("telemetrygen-metrics", mockNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics, "")).K8sObject(),
-			kitk8s.NewPod("telemetrygen-traces", mockNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeTraces, "")).K8sObject(),
+			kitk8s.NewPod("telemetrygen-metrics", mockNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)).K8sObject(),
+			kitk8s.NewPod("telemetrygen-traces", mockNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeTraces)).K8sObject(),
 		)
 
 		return objs

@@ -73,12 +73,12 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 			verifiers.DaemonSetShouldBeReady(ctx, k8sClient, kitkyma.MetricAgentName)
 		})
 
-		It("Ensures accessibility of metric agent metrics endpoint", Label(operationalTest), func() {
+		It("Ensures accessibility of metric agent metrics endpoint", func() {
 			agentMetricsURL := proxyClient.ProxyURLForService(kitkyma.MetricAgentMetrics.Namespace, kitkyma.MetricAgentMetrics.Name, "metrics", ports.Metrics)
 			verifiers.ShouldExposeCollectorMetrics(proxyClient, agentMetricsURL)
 		})
 
-		It("Ensures the metric agent network policy exists", Label(operationalTest), func() {
+		It("Ensures the metric agent network policy exists", func() {
 			var networkPolicy networkingv1.NetworkPolicy
 			Expect(k8sClient.Get(ctx, kitkyma.MetricAgentNetworkPolicy, &networkPolicy)).To(Succeed())
 

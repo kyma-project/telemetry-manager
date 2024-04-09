@@ -1,4 +1,4 @@
-package flowhealth
+package prober
 
 import (
 	"context"
@@ -10,7 +10,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober/mocks"
 )
 
 func TestProber(t *testing.T) {
@@ -266,8 +267,8 @@ func TestProber(t *testing.T) {
 			}
 
 			sut := Prober{
-				getter:        alertGetterMock,
-				nameDecorator: traceRuleNameDecorator,
+				getter:       alertGetterMock,
+				pipelineType: alertrules.TracePipeline,
 			}
 
 			result, err := sut.Probe(context.Background(), tc.pipelineName)

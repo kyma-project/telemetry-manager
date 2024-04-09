@@ -5,11 +5,11 @@ import (
 )
 
 type Config struct {
-	BaseName         string
-	Namespace        string
-	CollectorConfig  string
-	CollectorEnvVars map[string][]byte
-	SelfMonitorLabel bool
+	BaseName                string
+	Namespace               string
+	CollectorConfig         string
+	CollectorEnvVars        map[string][]byte
+	ObserveBySelfMonitoring bool
 }
 
 type GatewayConfig struct {

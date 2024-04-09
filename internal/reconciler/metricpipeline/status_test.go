@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
@@ -315,7 +315,7 @@ func TestUpdateStatus(t *testing.T) {
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name           string
-			probe          flowhealth.ProbeResult
+			probe          prober.ProbeResult
 			probeErr       error
 			expectedStatus metav1.ConditionStatus
 			expectedReason string
@@ -328,7 +328,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "healthy",
-				probe: flowhealth.ProbeResult{
+				probe: prober.ProbeResult{
 					Healthy: true,
 				},
 				expectedStatus: metav1.ConditionTrue,
@@ -336,7 +336,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "throttling",
-				probe: flowhealth.ProbeResult{
+				probe: prober.ProbeResult{
 					Throttling: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
@@ -344,7 +344,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "buffer filling up",
-				probe: flowhealth.ProbeResult{
+				probe: prober.ProbeResult{
 					QueueAlmostFull: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
@@ -352,7 +352,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "buffer filling up shadows other problems",
-				probe: flowhealth.ProbeResult{
+				probe: prober.ProbeResult{
 					QueueAlmostFull: true,
 					Throttling:      true,
 				},
@@ -361,7 +361,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "some data dropped",
-				probe: flowhealth.ProbeResult{
+				probe: prober.ProbeResult{
 					SomeDataDropped: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
@@ -369,7 +369,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "some data dropped shadows other problems",
-				probe: flowhealth.ProbeResult{
+				probe: prober.ProbeResult{
 					SomeDataDropped: true,
 					Throttling:      true,
 				},
@@ -378,7 +378,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "all data dropped",
-				probe: flowhealth.ProbeResult{
+				probe: prober.ProbeResult{
 					AllDataDropped: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
@@ -386,7 +386,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "all data dropped shadows other problems",
-				probe: flowhealth.ProbeResult{
+				probe: prober.ProbeResult{
 					AllDataDropped: true,
 					Throttling:     true,
 				},

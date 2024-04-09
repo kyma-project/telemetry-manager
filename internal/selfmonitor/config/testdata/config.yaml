@@ -23,7 +23,7 @@ scrape_configs:
           regex: enabled
           action: keep
         - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
-          regex: "true"
+          regex: (.+)
           target_label: __metrics_path__
           action: replace
         - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
@@ -42,7 +42,7 @@ scrape_configs:
           action: replace
       metric_relabel_configs:
         - source_labels: [__name__]
-          regex: (otelcol_.*)
+          regex: (otelcol_.*|fluentbit_.*|telemetry_.*)
           action: keep
       kubernetes_sd_configs:
         - role: endpoints

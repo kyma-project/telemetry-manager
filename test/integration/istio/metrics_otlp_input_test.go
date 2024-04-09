@@ -58,7 +58,7 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		objs = append(objs, peerAuth.K8sObject(kitk8s.WithLabel("app", istiofiedBackendName)))
 
 		// Create 2 deployments (with and without side-car) which would push the metrics to the metrics gateway.
-		podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics, "")
+		podSpec := telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)
 		objs = append(objs,
 			kitk8s.NewDeployment(pushMetricsDepName, backendNs).WithPodSpec(podSpec).K8sObject(),
 			kitk8s.NewDeployment(pushMetricsIstiofiedDepName, istiofiedBackendNs).WithPodSpec(podSpec).K8sObject(),
