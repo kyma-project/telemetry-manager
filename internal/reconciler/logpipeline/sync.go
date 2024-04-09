@@ -3,6 +3,7 @@ package logpipeline
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -13,7 +14,6 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
-	"github.com/kyma-project/telemetry-manager/internal/tls"
 	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
@@ -194,7 +194,10 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 				return err
 			}
 
-			sanitizedCert, sanitizedKey := tls.SanitizeSecret(newSecret.Data[targetCertVariable], newSecret.Data[targetKeyVariable])
+			// Make a best effort replacement of linebreaks in cert/key if present.
+			sanitizedCert := []byte(strings.ReplaceAll(string(newSecret.Data[targetCertVariable]), "\\n", "\n"))
+			sanitizedKey := []byte(strings.ReplaceAll(string(newSecret.Data[targetKeyVariable]), "\\n", "\n"))
+
 			newSecret.Data[targetCertVariable] = sanitizedCert
 			newSecret.Data[targetKeyVariable] = sanitizedKey
 		}

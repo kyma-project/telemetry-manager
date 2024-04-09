@@ -12,7 +12,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"github.com/kyma-project/telemetry-manager/internal/tls"
 	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
@@ -109,7 +108,9 @@ func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][
 				return err
 			}
 
-			sanitizedCert, sanitizedKey := tls.SanitizeSecret(cert, key)
+			// Make a best effort replacement of linebreaks in cert/key if present.
+			sanitizedCert := []byte(strings.ReplaceAll(string(cert), "\\n", "\n"))
+			sanitizedKey := []byte(strings.ReplaceAll(string(key), "\\n", "\n"))
 
 			tlsConfigCertVariable := makeTLSCertVariable(pipelineName)
 			secretData[tlsConfigCertVariable] = sanitizedCert
