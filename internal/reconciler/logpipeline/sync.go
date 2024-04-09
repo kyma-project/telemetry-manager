@@ -1,10 +1,9 @@
 package logpipeline
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"strings"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -195,8 +194,8 @@ func (s *syncer) syncTLSConfigSecret(ctx context.Context, logPipelines []telemet
 			}
 
 			// Make a best effort replacement of linebreaks in cert/key if present.
-			sanitizedCert := []byte(strings.ReplaceAll(string(newSecret.Data[targetCertVariable]), "\\n", "\n"))
-			sanitizedKey := []byte(strings.ReplaceAll(string(newSecret.Data[targetKeyVariable]), "\\n", "\n"))
+			sanitizedCert := bytes.ReplaceAll(newSecret.Data[targetCertVariable], []byte("\\n"), []byte("\n"))
+			sanitizedKey := bytes.ReplaceAll(newSecret.Data[targetKeyVariable], []byte("\\n"), []byte("\n"))
 
 			newSecret.Data[targetCertVariable] = sanitizedCert
 			newSecret.Data[targetKeyVariable] = sanitizedKey

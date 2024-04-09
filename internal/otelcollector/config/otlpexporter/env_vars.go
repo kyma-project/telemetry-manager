@@ -1,6 +1,7 @@
 package otlpexporter
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -109,8 +110,8 @@ func makeTLSEnvVar(ctx context.Context, c client.Reader, secretData map[string][
 			}
 
 			// Make a best effort replacement of linebreaks in cert/key if present.
-			sanitizedCert := []byte(strings.ReplaceAll(string(cert), "\\n", "\n"))
-			sanitizedKey := []byte(strings.ReplaceAll(string(key), "\\n", "\n"))
+			sanitizedCert := bytes.ReplaceAll(cert, []byte("\\n"), []byte("\n"))
+			sanitizedKey := bytes.ReplaceAll(key, []byte("\\n"), []byte("\n"))
 
 			tlsConfigCertVariable := makeTLSCertVariable(pipelineName)
 			secretData[tlsConfigCertVariable] = sanitizedCert
