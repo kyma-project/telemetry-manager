@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"strconv"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -17,31 +18,55 @@ type Level string
 
 const (
 	DEBUG Level = "debug"
+	INFO  Level = "info"
 )
 
 const overridesTemplate = `global:
   logLevel: {{ LEVEL }}
 tracing:
-  paused: true
+  paused: {{ PAUSED }}
 logging:
-  paused: true
+  paused: {{ PAUSED }}
+  collectAgentLogs: {{ AGENT_LOGS }}
 metrics:
-  paused: true
+  paused: {{ PAUSED }}
 telemetry:
-  paused: true`
+  paused: {{ PAUSED }}`
 
 type Overrides struct {
-	level Level
+	paused           bool
+	level            Level
+	collectAgentLogs bool
 }
 
-func NewOverrides(level Level) *Overrides {
+func NewOverrides() *Overrides {
 	return &Overrides{
-		level: level,
+		level:  INFO,
+		paused: true,
 	}
 }
 
+func (o *Overrides) WithPaused(paused bool) *Overrides {
+	o.paused = paused
+	return o
+}
+
+func (o *Overrides) WithLogLevel(level Level) *Overrides {
+	o.level = level
+	return o
+}
+
+func (o *Overrides) WithCollectAgentLogs(collectAgentLogs bool) *Overrides {
+	o.collectAgentLogs = collectAgentLogs
+	return o
+}
+
 func (o *Overrides) K8sObject() *corev1.ConfigMap {
-	config := strings.Replace(overridesTemplate, "{{ LEVEL }}", string(o.level), 1)
+	config := overridesTemplate
+	config = strings.Replace(config, "{{ PAUSED }}", strconv.FormatBool(o.paused), -1)
+	config = strings.Replace(config, "{{ LEVEL }}", string(o.level), 1)
+	config = strings.Replace(config, "{{ AGENT_LOGS }}", strconv.FormatBool(o.collectAgentLogs), 1)
+
 	data := make(map[string]string)
 	data["override-config"] = config
 

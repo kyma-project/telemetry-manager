@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
+var _ = Describe("Overrides", Label("telemetry-overrides"), Ordered, func() {
 	const (
 		mockBackendName = "overrides-receiver"
 		mockNs          = "overrides-http-output"
@@ -108,7 +108,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 		})
 
 		It("Should add the overrides configmap and modify the log pipeline", func() {
-			overrides = kitk8s.NewOverrides(kitk8s.DEBUG).K8sObject()
+			overrides = kitk8s.NewOverrides().WithLogLevel(kitk8s.DEBUG).K8sObject()
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, overrides)).Should(Succeed())
 
 			lookupKey := types.NamespacedName{

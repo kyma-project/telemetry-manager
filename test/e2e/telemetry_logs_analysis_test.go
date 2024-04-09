@@ -60,7 +60,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		otelCollectorLogTelemetryExportURL = otelCollectorLogBackend.TelemetryExportURL(proxyClient)
 		fluentBitLogBackend := backend.New(fluentBitLogBackendName, mockNs, backend.SignalTypeLogs)
 		objs = append(objs, fluentBitLogBackend.K8sObjects()...)
-		otelCollectorLogTelemetryExportURL = otelCollectorLogBackend.TelemetryExportURL(proxyClient)
+		fluentBitLogTelemetryExportURL = fluentBitLogBackend.TelemetryExportURL(proxyClient)
 		metricBackend := backend.New(metricBackendName, mockNs, backend.SignalTypeMetrics)
 		metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
@@ -83,6 +83,10 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		fluentBitLogPipelineName = fluentBitLogPipeline.Name()
 		objs = append(objs, otelCollectorLogPipeline.K8sObject(), fluentBitLogPipeline.K8sObject())
 
+		// logs overrides (include agent logs)
+		overrides := kitk8s.NewOverrides().WithPaused(false).WithCollectAgentLogs(true)
+		objs = append(objs, overrides.K8sObject())
+
 		// metrics & traces
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
 			WithOutputEndpointFromSecret(metricBackend.HostSecretRefV1Alpha1()).
@@ -97,10 +101,8 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		tracePipelineName = tracePipeline.Name()
 		objs = append(objs, tracePipeline.K8sObject())
 
-		// metrics istio set-up (src/dest pods)
+		// metrics istio set-up (trafficgen & telemetrygen)
 		objs = append(objs, trafficgen.K8sObjects(mockNs)...)
-
-		// metrics istio set-up (telemetrygen)
 		objs = append(objs,
 			kitk8s.NewPod("telemetrygen-metrics", mockNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics, "")).K8sObject(),
 			kitk8s.NewPod("telemetrygen-traces", mockNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeTraces, "")).K8sObject(),
