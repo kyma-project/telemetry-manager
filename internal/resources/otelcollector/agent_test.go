@@ -243,10 +243,10 @@ func TestApplyAgentResources_WithSelfMonEnabled(t *testing.T) {
 	agentConfig := &AgentConfig{
 		allowedPorts: []int32{5555, 6666},
 		Config: Config{
-			BaseName:         name,
-			Namespace:        namespace,
-			CollectorConfig:  cfg,
-			SelfMonitorLabel: true,
+			BaseName:                name,
+			Namespace:               namespace,
+			CollectorConfig:         cfg,
+			ObserveBySelfMonitoring: true,
 		},
 	}
 

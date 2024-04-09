@@ -506,6 +506,7 @@ func createLogPipelineController(client client.Client) *telemetrycontrollers.Log
 			CPURequest:                  resource.MustParse(fluentBitCPURequest),
 			MemoryRequest:               resource.MustParse(fluentBitMemoryRequest),
 		},
+		ObserveBySelfMonitoring: enableSelfMonitor,
 	}
 
 	return telemetrycontrollers.NewLogPipelineController(
@@ -555,9 +556,9 @@ func createTracePipelineController(client client.Client, reconcileTriggerChan <-
 	config := tracepipeline.Config{
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
-				Namespace:        telemetryNamespace,
-				BaseName:         "telemetry-trace-collector",
-				SelfMonitorLabel: enableSelfMonitor,
+				Namespace:               telemetryNamespace,
+				BaseName:                "telemetry-trace-collector",
+				ObserveBySelfMonitoring: enableSelfMonitor,
 			},
 			Deployment: otelcollector.DeploymentConfig{
 				Image:                traceGatewayImage,
@@ -595,9 +596,9 @@ func createMetricPipelineController(client client.Client, reconcileTriggerChan <
 	config := metricpipeline.Config{
 		Agent: otelcollector.AgentConfig{
 			Config: otelcollector.Config{
-				Namespace:        telemetryNamespace,
-				BaseName:         "telemetry-metric-agent",
-				SelfMonitorLabel: enableSelfMonitor,
+				Namespace:               telemetryNamespace,
+				BaseName:                "telemetry-metric-agent",
+				ObserveBySelfMonitoring: enableSelfMonitor,
 			},
 			DaemonSet: otelcollector.DaemonSetConfig{
 				Image:             metricGatewayImage,
@@ -610,9 +611,9 @@ func createMetricPipelineController(client client.Client, reconcileTriggerChan <
 		},
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
-				Namespace:        telemetryNamespace,
-				BaseName:         "telemetry-metric-gateway",
-				SelfMonitorLabel: enableSelfMonitor,
+				Namespace:               telemetryNamespace,
+				BaseName:                "telemetry-metric-gateway",
+				ObserveBySelfMonitoring: enableSelfMonitor,
 			},
 			Deployment: otelcollector.DeploymentConfig{
 				Image:                metricGatewayImage,
