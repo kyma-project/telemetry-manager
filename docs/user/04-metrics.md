@@ -491,11 +491,12 @@ To activate the constructed MetricPipeline, follow these steps:
 
 ### Result
 
-You activated a MetricPipeline and metrics start streaming to your backend. To verify that the pipeline is running, verify that the status of the LogPipeline in your cluster is `Ready`:
+You activated a MetricPipeline and metrics start streaming to your backend. To verify that the pipeline is running, verify that the status of the MetricPipeline in your cluster is `Ready`:
     ```bash
     kubectl get metricpipeline
     NAME              STATUS    AGE
     backend           Ready     44s
+    ```
 
 ## Operations
 
