@@ -120,12 +120,12 @@ func (r *TelemetryController) mapTracePipeline(ctx context.Context, object clien
 }
 
 func (r *TelemetryController) mapMetricPipeline(ctx context.Context, object client.Object) []reconcile.Request {
-	tracePipeline, ok := object.(*telemetryv1alpha1.MetricPipeline)
+	metricPipeline, ok := object.(*telemetryv1alpha1.MetricPipeline)
 	if !ok {
 		logf.FromContext(ctx).Error(nil, "Unable to cast object to MetricPipeline")
 		return nil
 	}
-	if len(tracePipeline.Status.Conditions) == 0 {
+	if len(metricPipeline.Status.Conditions) == 0 {
 		return nil
 	}
 
