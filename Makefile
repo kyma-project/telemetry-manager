@@ -51,6 +51,10 @@ help: ## Display this help.
 
 
 ##@ Development
+.PHONY: lint-dev
+lint-dev: manifests manifests-dev golangci-lint ## regenerate manifests and run lint
+	${GOLANGCI_LINT} run
+
 lint-autofix: golangci-lint ## Autofix all possible linting errors.
 	${GOLANGCI_LINT} run --fix
 
