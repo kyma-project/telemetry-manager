@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober/mocks"
 )
 
-func TestProber(t *testing.T) {
+func TestOTelPipelineProber(t *testing.T) {
 	testCases := []struct {
 		name         string
 		alerts       promv1.AlertsResult
@@ -81,7 +81,7 @@ func TestProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "exporter label mismatch",
+			name:         "exporter label does not match pipeline name",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
@@ -128,6 +128,13 @@ func TestProber(t *testing.T) {
 					{
 						Labels: model.LabelSet{
 							"alertname": "MetricGatewayExporterDroppedData",
+							"exporter":  "otlp/cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+					{
+						Labels: model.LabelSet{
+							"alertname": "LogAgentBufferFull",
 							"exporter":  "otlp/cls",
 						},
 						State: promv1.AlertStateFiring,
