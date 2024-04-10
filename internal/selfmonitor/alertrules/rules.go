@@ -53,6 +53,14 @@ type Rule struct {
 	Annotations map[string]string `yaml:"annotations,omitempty"`
 }
 
+type pipelineType int
+
+const (
+	typeMetricPipeline pipelineType = iota
+	typeTracePipeline
+	typeLogPipeline
+)
+
 func MakeRules() RuleGroups {
 	var rules []Rule
 

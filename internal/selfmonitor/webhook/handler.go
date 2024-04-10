@@ -16,33 +16,35 @@ import (
 
 type Handler struct {
 	c           client.Reader
-	subscribers map[string]chan<- event.GenericEvent
+	subscribers map[subscriberType]chan<- event.GenericEvent
 	logger      logr.Logger
 }
 
 type Option = func(*Handler)
 
+type subscriberType int
+
 const (
-	metricPipelineSubscriber = "metricPipelines"
-	tracePipelineSubscriber  = "tracePipelines"
-	logPipelineSubscriber    = "logPipelines"
+	subscriberMetricPipeline subscriberType = iota
+	subscriberTracePipeline
+	subscriberLogPipeline
 )
 
 func WithMetricPipelineSubscriber(subscriber chan<- event.GenericEvent) Option {
-	return withSubscriber(subscriber, metricPipelineSubscriber)
+	return withSubscriber(subscriber, subscriberMetricPipeline)
 }
 
 func WithTracePipelineSubscriber(subscriber chan<- event.GenericEvent) Option {
-	return withSubscriber(subscriber, tracePipelineSubscriber)
+	return withSubscriber(subscriber, subscriberTracePipeline)
 }
 
 func WithLogPipelineSubscriber(subscriber chan<- event.GenericEvent) Option {
-	return withSubscriber(subscriber, logPipelineSubscriber)
+	return withSubscriber(subscriber, subscriberLogPipeline)
 }
 
-func withSubscriber(subscriber chan<- event.GenericEvent, pipelineType string) Option {
+func withSubscriber(sub chan<- event.GenericEvent, subType subscriberType) Option {
 	return func(h *Handler) {
-		h.subscribers[pipelineType] = subscriber
+		h.subscribers[subType] = sub
 	}
 }
 
@@ -60,7 +62,7 @@ func NewHandler(c client.Reader, opts ...Option) *Handler {
 	h := &Handler{
 		c:           c,
 		logger:      logr.New(logf.NullLogSink{}),
-		subscribers: make(map[string]chan<- event.GenericEvent),
+		subscribers: make(map[subscriberType]chan<- event.GenericEvent),
 	}
 
 	for _, opt := range opts {
@@ -110,15 +112,15 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	)
 
 	for _, ev := range metricPipelineEvents {
-		h.subscribers[metricPipelineSubscriber] <- ev
+		h.subscribers[subscriberMetricPipeline] <- ev
 	}
 
 	for _, ev := range tracePipelineEvents {
-		h.subscribers[tracePipelineSubscriber] <- ev
+		h.subscribers[subscriberTracePipeline] <- ev
 	}
 
 	for _, ev := range logPipelineEvents {
-		h.subscribers[logPipelineSubscriber] <- ev
+		h.subscribers[subscriberLogPipeline] <- ev
 	}
 
 	w.WriteHeader(http.StatusOK)
