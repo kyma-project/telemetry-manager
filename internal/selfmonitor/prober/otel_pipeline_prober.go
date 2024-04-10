@@ -23,14 +23,14 @@ type OTelPipelineProbeResult struct {
 }
 
 func NewMetricPipelineProber(selfMonitorName types.NamespacedName) (*OTelPipelineProber, error) {
-	return newOTelPipelineProber(alertrules.MetricPipeline, selfMonitorName, alertrules.MatchesMetricPipelineRule)
+	return newOTelPipelineProber(selfMonitorName, alertrules.MatchesMetricPipelineRule)
 }
 
 func NewTracePipelineProber(selfMonitorName types.NamespacedName) (*OTelPipelineProber, error) {
-	return newOTelPipelineProber(alertrules.TracePipeline, selfMonitorName, alertrules.MatchesTracePipelineRule)
+	return newOTelPipelineProber(selfMonitorName, alertrules.MatchesTracePipelineRule)
 }
 
-func newOTelPipelineProber(pipelineType alertrules.PipelineType, selfMonitorName types.NamespacedName, matcher matcherFunc) (*OTelPipelineProber, error) {
+func newOTelPipelineProber(selfMonitorName types.NamespacedName, matcher matcherFunc) (*OTelPipelineProber, error) {
 	promClient, err := newPrometheusClient(selfMonitorName)
 	if err != nil {
 		return nil, err

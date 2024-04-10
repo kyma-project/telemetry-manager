@@ -9,8 +9,7 @@ import (
 )
 
 type LogPipelineProber struct {
-	getter       alertGetter
-	pipelineType alertrules.PipelineType
+	getter alertGetter
 }
 
 type LogPipelineProbeResult struct {

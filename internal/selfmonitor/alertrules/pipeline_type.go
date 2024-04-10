@@ -1,9 +1,9 @@
 package alertrules
 
-type PipelineType string
+type pipelineType string
 
 const (
-	MetricPipeline PipelineType = "MetricPipeline"
-	TracePipeline  PipelineType = "TracePipeline"
-	LogPipeline    PipelineType = "LogPipeline"
+	metricPipeline pipelineType = "MetricPipeline"
+	tracePipeline  pipelineType = "TracePipeline"
+	logPipeline    pipelineType = "LogPipeline"
 )

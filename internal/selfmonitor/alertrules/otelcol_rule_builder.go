@@ -25,7 +25,7 @@ func (rb otelCollectorRuleBuilder) exporterSentRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix + RuleNameGatewayExporterSentData,
 		Expr: rate(metric, selectService(rb.serviceName)).
-			sumBy(LabelExporter).
+			sumBy(labelExporter).
 			greaterThan(0).
 			build(),
 	}
@@ -36,7 +36,7 @@ func (rb otelCollectorRuleBuilder) exporterDroppedRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix + RuleNameGatewayExporterDroppedData,
 		Expr: rate(metric, selectService(rb.serviceName)).
-			sumBy(LabelExporter).
+			sumBy(labelExporter).
 			greaterThan(0).
 			build(),
 	}
@@ -56,7 +56,7 @@ func (rb otelCollectorRuleBuilder) exporterEnqueueFailedRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix + RuleNameGatewayExporterEnqueueFailed,
 		Expr: rate(metric, selectService(rb.serviceName)).
-			sumBy(LabelExporter).
+			sumBy(labelExporter).
 			greaterThan(0).
 			build(),
 	}
@@ -67,7 +67,7 @@ func (rb otelCollectorRuleBuilder) receiverRefusedRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix + RuleNameGatewayReceiverRefusedData,
 		Expr: rate(metric, selectService(rb.serviceName)).
-			sumBy(LabelReceiver).
+			sumBy(labelReceiver).
 			greaterThan(0).
 			build(),
 	}
