@@ -59,14 +59,14 @@ func MakeRules() RuleGroups {
 	metricRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    "metric_points",
 		serviceName: "telemetry-metric-gateway-metrics",
-		namePrefix:  ruleNamePrefix(metricPipeline),
+		namePrefix:  ruleNamePrefix(typeMetricPipeline),
 	}
 	rules = append(rules, metricRuleBuilder.rules()...)
 
 	traceRuleBuilder := otelCollectorRuleBuilder{
 		dataType:    "spans",
 		serviceName: "telemetry-trace-collector-metrics",
-		namePrefix:  ruleNamePrefix(tracePipeline),
+		namePrefix:  ruleNamePrefix(typeTracePipeline),
 	}
 	rules = append(rules, traceRuleBuilder.rules()...)
 
@@ -85,11 +85,11 @@ func MakeRules() RuleGroups {
 
 func ruleNamePrefix(t pipelineType) string {
 	switch t {
-	case metricPipeline:
+	case typeMetricPipeline:
 		return "Metric"
-	case tracePipeline:
+	case typeTracePipeline:
 		return "Trace"
-	case logPipeline:
+	case typeLogPipeline:
 		return "Log"
 	}
 	return ""
@@ -108,7 +108,7 @@ func MatchesLogPipelineRule(labelSet map[string]string, expectedRuleName string,
 			return false
 		}
 	} else {
-		if !strings.HasPrefix(ruleName, ruleNamePrefix(logPipeline)) {
+		if !strings.HasPrefix(ruleName, ruleNamePrefix(typeLogPipeline)) {
 			return false
 		}
 	}
@@ -125,13 +125,13 @@ func MatchesLogPipelineRule(labelSet map[string]string, expectedRuleName string,
 // MatchesMetricPipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a metric pipeline.
 // If the alert does not have an exporter label, it should be matched by all pipelines.
 func MatchesMetricPipelineRule(labelSet map[string]string, expectedRuleName string, expectedPipelineName string) bool {
-	return matchesOTelPipelineRule(labelSet, expectedRuleName, expectedPipelineName, metricPipeline)
+	return matchesOTelPipelineRule(labelSet, expectedRuleName, expectedPipelineName, typeMetricPipeline)
 }
 
 // MatchesTracePipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a trace pipeline.
 // If the alert does not have an exporter label, it should be matched by all pipelines.
 func MatchesTracePipelineRule(labelSet map[string]string, expectedRuleName string, expectedPipelineName string) bool {
-	return matchesOTelPipelineRule(labelSet, expectedRuleName, expectedPipelineName, tracePipeline)
+	return matchesOTelPipelineRule(labelSet, expectedRuleName, expectedPipelineName, typeTracePipeline)
 }
 
 func matchesOTelPipelineRule(labelSet map[string]string, expectedRuleName string, expectedPipelineName string, t pipelineType) bool {
