@@ -184,19 +184,18 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 }
 
 func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
-	if probeResult.AllDataDropped {
+	switch {
+	case probeResult.AllDataDropped:
 		return conditions.ReasonAllDataDropped
-	}
-	if probeResult.SomeDataDropped {
+	case probeResult.SomeDataDropped:
 		return conditions.ReasonSomeDataDropped
-	}
-	if probeResult.NoLogsDelivered {
+	case probeResult.NoLogsDelivered:
 		return conditions.ReasonNoLogsDelivered
-	}
-	if probeResult.BufferFillingUp {
+	case probeResult.BufferFillingUp:
 		return conditions.ReasonBufferFillingUp
+	default:
+		return conditions.ReasonFlowHealthy
 	}
-	return conditions.ReasonFlowHealthy
 }
 
 func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
