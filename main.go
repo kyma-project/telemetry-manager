@@ -433,8 +433,7 @@ func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 	setupLog.Info("Starting with tracing controller")
 	var err error
 	var flowHealthProber *prober.OTelPipelineProber
-	if flowHealthProber, err = prober.NewOTelPipelineProber(alertrules.TracePipeline,
-		types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
+	if flowHealthProber, err = prober.NewTracePipelineProber(types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
 		setupLog.Error(err, "Failed to create flow health prober")
 		os.Exit(1)
 	}
@@ -449,8 +448,7 @@ func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 	setupLog.Info("Starting with metrics controller")
 	var err error
 	var flowHealthProber *prober.OTelPipelineProber
-	if flowHealthProber, err = prober.NewOTelPipelineProber(alertrules.MetricPipeline,
-		types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
+	if flowHealthProber, err = prober.NewMetricPipelineProber(types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
 		setupLog.Error(err, "Failed to create flow health prober")
 		os.Exit(1)
 	}
