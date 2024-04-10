@@ -25,7 +25,13 @@ type LogPipelineProbeResult struct {
 }
 
 func NewLogPipelineProber(selfMonitorName types.NamespacedName) (*LogPipelineProber, error) {
+	promClient, err := newPrometheusClient(selfMonitorName)
+	if err != nil {
+		return nil, err
+	}
+
 	return &LogPipelineProber{
+		getter:        promClient,
 		clientTimeout: clientTimeout,
 	}, nil
 }

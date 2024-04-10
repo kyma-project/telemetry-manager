@@ -41,18 +41,26 @@ type OTelPipelineProbeResult struct {
 }
 
 func NewOTelPipelineProber(pipelineType alertrules.PipelineType, selfMonitorName types.NamespacedName) (*OTelPipelineProber, error) {
+	promClient, err := newPrometheusClient(selfMonitorName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &OTelPipelineProber{
+		getter:        promClient,
+		clientTimeout: clientTimeout,
+		pipelineType:  pipelineType,
+	}, nil
+}
+
+func newPrometheusClient(selfMonitorName types.NamespacedName) (promv1.API, error) {
 	client, err := api.NewClient(api.Config{
 		Address: fmt.Sprintf("http://%s.%s:%d", selfMonitorName.Name, selfMonitorName.Namespace, ports.PrometheusPort),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Prometheus client: %w", err)
 	}
-
-	return &OTelPipelineProber{
-		getter:        promv1.NewAPI(client),
-		clientTimeout: clientTimeout,
-		pipelineType:  pipelineType,
-	}, nil
+	return promv1.NewAPI(client), nil
 }
 
 func (p *OTelPipelineProber) Probe(ctx context.Context, pipelineName string) (OTelPipelineProbeResult, error) {
