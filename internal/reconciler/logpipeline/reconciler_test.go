@@ -2,6 +2,7 @@ package logpipeline
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
 	"testing"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
-	"github.com/kyma-project/telemetry-manager/internal/tls/cert"
 )
 
 func TestGetDeployableLogPipelines(t *testing.T) {
@@ -233,19 +233,19 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 
 			validatorStub := &mocks.TLSCertValidator{}
 
-			validatorStub.On("ValidateCertificate", []byte("invalidcert"), []byte("somekey")).Return(cert.TLSCertValidationResult{
+			validatorStub.On("ValidateCertificate", []byte("invalidcert"), []byte("somekey")).Return(tlsCert.TLSCertValidationResult{
 				CertValid:       false,
 				PrivateKeyValid: true,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", []byte("somecert"), []byte("invalidkey")).Return(cert.TLSCertValidationResult{
+			}).On("ValidateCertificate", []byte("somecert"), []byte("invalidkey")).Return(tlsCert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: false,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", []byte("valid"), []byte("valid")).Return(cert.TLSCertValidationResult{
+			}).On("ValidateCertificate", []byte("valid"), []byte("valid")).Return(tlsCert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: true,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", []byte("expired"), []byte("expired")).Return(cert.TLSCertValidationResult{
+			}).On("ValidateCertificate", []byte("expired"), []byte("expired")).Return(tlsCert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: true,
 				Validity:        time.Now().AddDate(-1, -1, -1),

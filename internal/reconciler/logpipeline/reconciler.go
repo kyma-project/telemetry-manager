@@ -19,6 +19,7 @@ package logpipeline
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -39,7 +40,6 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"github.com/kyma-project/telemetry-manager/internal/tls/cert"
 )
 
 type Config struct {
@@ -69,7 +69,7 @@ type DaemonSetAnnotator interface {
 
 //go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ValidateCertificate(certPEM []byte, keyPEM []byte) cert.TLSCertValidationResult
+	ValidateCertificate(certPEM []byte, keyPEM []byte) tlsCert.TLSCertValidationResult
 }
 
 type Reconciler struct {
@@ -95,7 +95,7 @@ func NewReconciler(client client.Client, config Config, prober DaemonSetProber, 
 	r.syncer = syncer{client, config}
 	r.overridesHandler = overridesHandler
 	r.istioStatusChecker = istiostatus.NewChecker(client)
-	r.tlsCertValidator = &cert.TLSCertValidator{}
+	r.tlsCertValidator = &tlsCert.TLSCertValidator{}
 
 	return &r
 }
@@ -334,9 +334,9 @@ func getFluentBitPorts() []int32 {
 	}
 }
 
-func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, validator TLSCertValidator, client client.Client) cert.TLSCertValidationResult {
+func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, validator TLSCertValidator, client client.Client) tlsCert.TLSCertValidationResult {
 	if pipeline.Spec.Output.HTTP == nil || (pipeline.Spec.Output.HTTP.TLSConfig.Cert == nil && pipeline.Spec.Output.HTTP.TLSConfig.Key == nil) {
-		return cert.TLSCertValidationResult{
+		return tlsCert.TLSCertValidationResult{
 			CertValid:       true,
 			PrivateKeyValid: true,
 			Validity:        time.Now().AddDate(1, 0, 0),
@@ -349,7 +349,7 @@ func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1
 	certData, err := resolveValue(ctx, client, *certValue)
 
 	if err != nil {
-		return cert.TLSCertValidationResult{
+		return tlsCert.TLSCertValidationResult{
 			CertValid: false,
 		}
 	}
@@ -357,7 +357,7 @@ func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1
 	keyData, err := resolveValue(ctx, client, *keyValue)
 
 	if err != nil {
-		return cert.TLSCertValidationResult{
+		return tlsCert.TLSCertValidationResult{
 			PrivateKeyValid: false,
 		}
 	}

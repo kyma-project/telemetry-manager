@@ -52,12 +52,35 @@ func (lp *LogPipeline) GetTLSSecretRefs() []SecretKeyRef {
 	return refs
 }
 
+func (lp *LogPipeline) TLSCertAndKeyExist() bool {
+	output := lp.Spec.Output
+	if output.IsHTTPDefined() {
+		tlsConfig := output.HTTP.TLSConfig
+		return tlsConfig.Cert != nil && tlsConfig.Key != nil
+	}
+	return false
+}
+
 func (tp *TracePipeline) GetSecretRefs() []SecretKeyRef {
 	return getRefsInOtlpOutput(tp.Spec.Output.Otlp)
 }
 
+func (tp *TracePipeline) TLSCertAndKeyExist() bool {
+	output := tp.Spec.Output.Otlp
+	return checkOTLPTLSCertExists(output)
+}
+
 func (mp *MetricPipeline) GetSecretRefs() []SecretKeyRef {
 	return getRefsInOtlpOutput(mp.Spec.Output.Otlp)
+}
+
+func (mp *MetricPipeline) TLSCertAndKeyExist() bool {
+	output := mp.Spec.Output.Otlp
+	return checkOTLPTLSCertExists(output)
+}
+
+func checkOTLPTLSCertExists(otlpOut *OtlpOutput) bool {
+	return otlpOut.TLS.Cert != nil && otlpOut.TLS.Key != nil
 }
 
 func getRefsInOtlpOutput(otlpOut *OtlpOutput) []SecretKeyRef {
