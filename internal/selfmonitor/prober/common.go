@@ -2,13 +2,14 @@ package prober
 
 import (
 	"context"
-	"time"
 	"fmt"
+	"time"
 
-	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"github.com/prometheus/client_golang/api"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
+	"github.com/prometheus/client_golang/api"
+	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/common/model"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -25,6 +26,8 @@ type PipelineProbeResult struct {
 	SomeDataDropped bool
 	Healthy         bool
 }
+
+type matcherFunc func(alertLabels map[string]string, expectedRuleName string, expectedPipelineName string) bool
 
 func newPrometheusClient(selfMonitorName types.NamespacedName) (promv1.API, error) {
 	client, err := api.NewClient(api.Config{
@@ -46,4 +49,21 @@ func retrieveAlerts(ctx context.Context, getter alertGetter) ([]promv1.Alert, er
 	}
 
 	return result.Alerts, nil
+}
+
+func evaluateRuleWithMatcher(alerts []promv1.Alert, alertName, pipelineName string, mf matcherFunc) bool {
+	for _, alert := range alerts {
+		if alert.State == promv1.AlertStateFiring && mf(toRawLabels(alert.Labels), alertName, pipelineName) {
+			return true
+		}
+	}
+	return false
+}
+
+func toRawLabels(ls model.LabelSet) map[string]string {
+	rawLabels := make(map[string]string, len(ls))
+	for k, v := range ls {
+		rawLabels[string(k)] = string(v)
+	}
+	return rawLabels
 }

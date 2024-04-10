@@ -1,6 +1,9 @@
 package alertrules
 
 import (
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
+	"github.com/prometheus/common/model"
 	"time"
 )
 
@@ -82,4 +85,54 @@ func RuleNamePrefix(t PipelineType) string {
 	}
 
 	return "Metric"
+}
+
+// MatchesLogPipelineRule checks if the given alert label set matches the expected rule name and pipeline name for a log pipeline.
+// If the alert does not have a name label, it should be matched by all pipelines.
+func MatchesLogPipelineRule(labelSet map[string]string, expectedRuleName string, expectedPipelineName string) bool {
+	ruleName, hasRuleName := labelSet[model.AlertNameLabel]
+	if !hasRuleName || ruleName != expectedRuleName {
+		return false
+	}
+
+	name, hasName := labelSet["name"]
+	if !hasName {
+		// If the alert does not have a name label, it should be matched by all pipelines
+		return false
+	}
+
+	return name == expectedPipelineName
+}
+
+// MatchesMetricPipelineRule checks if the given alert label set matches the expected rule name and pipeline name for a metric pipeline.
+// If the alert does not have an exporter label, it should be matched by all pipelines.
+func MatchesMetricPipelineRule(labelSet map[string]string, expectedRuleName string, expectedPipelineName string) bool {
+	return matchesOTelPipelineRule(labelSet, expectedRuleName, expectedPipelineName, MetricPipeline)
+}
+
+// MatchesTracePipelineRule checks if the given alert label set matches the expected rule name and pipeline name for a trace pipeline.
+// If the alert does not have an exporter label, it should be matched by all pipelines.
+func MatchesTracePipelineRule(labelSet map[string]string, expectedRuleName string, expectedPipelineName string) bool {
+	return matchesOTelPipelineRule(labelSet, expectedRuleName, expectedPipelineName, TracePipeline)
+}
+
+func matchesOTelPipelineRule(labelSet map[string]string, expectedRuleName string, expectedPipelineName string, t PipelineType) bool {
+	ruleName, hasRuleName := labelSet[model.AlertNameLabel]
+	if !hasRuleName {
+		return false
+	}
+
+	expectedFullName := RuleNamePrefix(t) + expectedRuleName
+	if ruleName != expectedFullName {
+		return false
+	}
+
+	exporterID, hasExporter := labelSet["exporter"]
+	if !hasExporter {
+		// If the alert does not have an exporter label, it should be matched by all pipelines
+		return true
+	}
+
+	return otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolHTTP, expectedPipelineName) == exporterID ||
+		otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolGRPC, expectedPipelineName) == exporterID
 }
