@@ -52,6 +52,10 @@ func WithLogger(logger logr.Logger) Option {
 	}
 }
 
+// NewHandler creates a new self-monitor webhook handler.
+// This handler serves an endpoint that mimics Alertmanager, allowing Prometheus to send alerts to it.
+// The handler then notifies the subscribers, typically controllers, about the alerts that match the pipelines.
+// Subsequently, the subscribers reconcile the pipelines based on the received alerts.
 func NewHandler(c client.Reader, opts ...Option) *Handler {
 	h := &Handler{
 		c:           c,
