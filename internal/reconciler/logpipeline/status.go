@@ -103,18 +103,11 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonConfigurationGenerated
 	certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator, r.Client)
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonReferencedSecretMissing
-	}
-
-	if pipeline.Spec.Output.IsLokiDefined() {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonUnsupportedLokiOutput
-	}
-
 	message := conditions.MessageForLogPipeline(reason)
 
+	// The order with checking TLS and the checking ReferenceSecretExists needs to be maintained. If the TLS Cert
+	// does not exist then checking TLS Cert will set a message saying CertIsInvalid which would be overridden by
+	// ReferenceSecretNot found.
 	if !certValidationResult.CertValid {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonTLSCertificateInvalid
@@ -130,6 +123,7 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	if time.Now().After(certValidationResult.Validity) {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonTLSCertificateExpired
+		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly))
 	}
 
 	//ensure not expired and about to expire
@@ -137,11 +131,21 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	if validUntil > 0 && validUntil <= twoWeeks {
 		status = metav1.ConditionTrue
 		reason = conditions.ReasonTLSCertificateAboutToExpire
+		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly))
 	}
 
-	if reason == conditions.ReasonTLSCertificateAboutToExpire || reason == conditions.ReasonTLSCertificateExpired {
-		message = fmt.Sprintf(message, certValidationResult.Validity.Format(time.DateOnly))
+	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonReferencedSecretMissing
+		message = conditions.MessageForLogPipeline(reason)
 	}
+
+	if pipeline.Spec.Output.IsLokiDefined() {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonUnsupportedLokiOutput
+		message = conditions.MessageForLogPipeline(reason)
+	}
+
 	condition := metav1.Condition{
 		Type:               conditions.TypeConfigurationGenerated,
 		Status:             status,
