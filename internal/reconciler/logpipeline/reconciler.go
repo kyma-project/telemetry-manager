@@ -350,7 +350,7 @@ func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1
 
 	if err != nil {
 		return cert.TLSCertValidationResult{
-			CertPresent: false,
+			CertValid: false,
 		}
 	}
 
@@ -358,7 +358,7 @@ func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1
 
 	if err != nil {
 		return cert.TLSCertValidationResult{
-			CertPresent: false,
+			CertValid: false,
 		}
 	}
 

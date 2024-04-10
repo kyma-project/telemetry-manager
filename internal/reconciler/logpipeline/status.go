@@ -96,48 +96,48 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonConfigurationGenerated
+	certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator, r.Client)
+	message := conditions.MessageForLogPipeline(reason)
+
+	// The order with checking TLS and the checking ReferenceSecretExists needs to be maintained. As if the TLS Cert does not exist then checking TLS Cert will
+	if !certValidationResult.CertValid {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonTLSCertificateInvalid
+		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.CertValidationMessage)
+	}
+
+	if !certValidationResult.PrivateKeyValid {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonTLSPrivateKeyInvalid
+		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.PrivateKeyValidationMessage)
+	}
+
+	if time.Now().After(certValidationResult.Validity) {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonTLSCertificateExpired
+		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly))
+	}
+
+	//ensure not expired and about to expire
+	validUntil := time.Until(certValidationResult.Validity)
+	if validUntil > 0 && validUntil <= twoWeeks {
+		status = metav1.ConditionTrue
+		reason = conditions.ReasonTLSCertificateAboutToExpire
+		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly))
+	}
+
 	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonReferencedSecretMissing
+		message = conditions.MessageForLogPipeline(reason)
 	}
 
 	if pipeline.Spec.Output.IsLokiDefined() {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonUnsupportedLokiOutput
+		message = conditions.MessageForLogPipeline(reason)
 	}
 
-	message := conditions.MessageForLogPipeline(reason)
-
-	certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator, r.Client)
-	if certValidationResult.CertPresent {
-		if !certValidationResult.CertValid {
-			status = metav1.ConditionFalse
-			reason = conditions.ReasonTLSCertificateInvalid
-			message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.CertValidationMessage)
-		}
-
-		if !certValidationResult.PrivateKeyValid {
-			status = metav1.ConditionFalse
-			reason = conditions.ReasonTLSPrivateKeyInvalid
-			message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.PrivateKeyValidationMessage)
-		}
-
-		if time.Now().After(certValidationResult.Validity) {
-			status = metav1.ConditionFalse
-			reason = conditions.ReasonTLSCertificateExpired
-		}
-
-		//ensure not expired and about to expire
-		validUntil := time.Until(certValidationResult.Validity)
-		if validUntil > 0 && validUntil <= twoWeeks {
-			status = metav1.ConditionTrue
-			reason = conditions.ReasonTLSCertificateAboutToExpire
-		}
-
-		if reason == conditions.ReasonTLSCertificateAboutToExpire || reason == conditions.ReasonTLSCertificateExpired {
-			message = fmt.Sprintf(message, certValidationResult.Validity.Format(time.DateOnly))
-		}
-	}
 	condition := metav1.Condition{
 		Type:               conditions.TypeConfigurationGenerated,
 		Status:             status,

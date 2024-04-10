@@ -19,14 +19,12 @@ type TLSCertValidationResult struct {
 	PrivateKeyValid             bool
 	PrivateKeyValidationMessage string
 	Validity                    time.Time
-	CertPresent                 bool
 }
 
 func (tcv *TLSCertValidator) ValidateCertificate(certPEM []byte, keyPEM []byte) TLSCertValidationResult {
 	result := TLSCertValidationResult{
 		CertValid:       true,
 		PrivateKeyValid: true,
-		CertPresent:     false,
 		Validity:        time.Now().Add(time.Hour * 24 * 365),
 	}
 
