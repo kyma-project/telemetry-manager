@@ -343,7 +343,7 @@ func TestUpdateStatus(t *testing.T) {
 			{
 				name: "healthy",
 				probe: prober.LogPipelineProbeResult{
-					Healthy: true,
+					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus: metav1.ConditionTrue,
 				expectedReason: conditions.ReasonFlowHealthy,
@@ -376,7 +376,7 @@ func TestUpdateStatus(t *testing.T) {
 			{
 				name: "some data dropped",
 				probe: prober.LogPipelineProbeResult{
-					SomeDataDropped: true,
+					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
 				expectedReason: conditions.ReasonSomeDataDropped,
@@ -384,8 +384,8 @@ func TestUpdateStatus(t *testing.T) {
 			{
 				name: "some data dropped shadows other problems",
 				probe: prober.LogPipelineProbeResult{
-					SomeDataDropped: true,
-					BufferFillingUp: true,
+					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+					BufferFillingUp:     true,
 				},
 				expectedStatus: metav1.ConditionFalse,
 				expectedReason: conditions.ReasonSomeDataDropped,
@@ -393,7 +393,7 @@ func TestUpdateStatus(t *testing.T) {
 			{
 				name: "all data dropped",
 				probe: prober.LogPipelineProbeResult{
-					AllDataDropped: true,
+					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
 				expectedReason: conditions.ReasonAllDataDropped,
@@ -401,8 +401,10 @@ func TestUpdateStatus(t *testing.T) {
 			{
 				name: "all data dropped shadows other problems",
 				probe: prober.LogPipelineProbeResult{
-					AllDataDropped:  true,
-					SomeDataDropped: true,
+					PipelineProbeResult: prober.PipelineProbeResult{
+						AllDataDropped:  true,
+						SomeDataDropped: true,
+					},
 				},
 				expectedStatus: metav1.ConditionFalse,
 				expectedReason: conditions.ReasonAllDataDropped,

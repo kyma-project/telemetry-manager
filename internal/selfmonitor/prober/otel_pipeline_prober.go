@@ -3,9 +3,6 @@ package prober
 import (
 	"context"
 	"fmt"
-	"time"
-
-	"github.com/prometheus/client_golang/api"
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	"k8s.io/apimachinery/pkg/types"
@@ -13,31 +10,19 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
-
-const (
-	clientTimeout = 10 * time.Second
-)
-
-//go:generate mockery --name alertGetter --filename=alert_getter.go --exported
-type alertGetter interface {
-	Alerts(ctx context.Context) (promv1.AlertsResult, error)
-}
 
 // OTelPipelineProber is a prober for OTel Collector pipelines
 type OTelPipelineProber struct {
-	clientTimeout time.Duration
-	getter        alertGetter
-	pipelineType  alertrules.PipelineType
+	getter       alertGetter
+	pipelineType alertrules.PipelineType
 }
 
 type OTelPipelineProbeResult struct {
-	AllDataDropped  bool
-	SomeDataDropped bool
+	PipelineProbeResult
+
 	QueueAlmostFull bool
 	Throttling      bool
-	Healthy         bool
 }
 
 func NewOTelPipelineProber(pipelineType alertrules.PipelineType, selfMonitorName types.NamespacedName) (*OTelPipelineProber, error) {
@@ -47,34 +32,25 @@ func NewOTelPipelineProber(pipelineType alertrules.PipelineType, selfMonitorName
 	}
 
 	return &OTelPipelineProber{
-		getter:        promClient,
-		clientTimeout: clientTimeout,
-		pipelineType:  pipelineType,
+		getter:       promClient,
+		pipelineType: pipelineType,
 	}, nil
 }
 
-func newPrometheusClient(selfMonitorName types.NamespacedName) (promv1.API, error) {
-	client, err := api.NewClient(api.Config{
-		Address: fmt.Sprintf("http://%s.%s:%d", selfMonitorName.Name, selfMonitorName.Namespace, ports.PrometheusPort),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Prometheus client: %w", err)
-	}
-	return promv1.NewAPI(client), nil
-}
-
 func (p *OTelPipelineProber) Probe(ctx context.Context, pipelineName string) (OTelPipelineProbeResult, error) {
-	alerts, err := p.retrieveAlerts(ctx)
+	alerts, err := retrieveAlerts(ctx, p.getter)
 	if err != nil {
 		return OTelPipelineProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
 	return OTelPipelineProbeResult{
-		AllDataDropped:  p.allDataDropped(alerts, pipelineName),
-		SomeDataDropped: p.someDataDropped(alerts, pipelineName),
+		PipelineProbeResult: PipelineProbeResult{
+			AllDataDropped:  p.allDataDropped(alerts, pipelineName),
+			SomeDataDropped: p.someDataDropped(alerts, pipelineName),
+			Healthy:         p.healthy(alerts, pipelineName),
+		},
 		QueueAlmostFull: p.queueAlmostFull(alerts, pipelineName),
 		Throttling:      p.throttling(alerts),
-		Healthy:         p.healthy(alerts, pipelineName),
 	}, nil
 }
 
@@ -107,18 +83,6 @@ func (p *OTelPipelineProber) healthy(alerts []promv1.Alert, pipelineName string)
 		p.hasFiringAlertForPipeline(alerts, alertrules.RuleNameGatewayExporterQueueAlmostFull, pipelineName) ||
 		p.hasFiringAlertForPipeline(alerts, alertrules.RuleNameGatewayExporterEnqueueFailed, pipelineName) ||
 		p.hasFiringAlert(alerts, alertrules.RuleNameGatewayReceiverRefusedData))
-}
-
-func (p *OTelPipelineProber) retrieveAlerts(ctx context.Context) ([]promv1.Alert, error) {
-	childCtx, cancel := context.WithTimeout(ctx, p.clientTimeout)
-	defer cancel()
-
-	result, err := p.getter.Alerts(childCtx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query Prometheus alerts: %w", err)
-	}
-
-	return result.Alerts, nil
 }
 
 func (p *OTelPipelineProber) hasFiringAlert(alerts []promv1.Alert, alertName string) bool {

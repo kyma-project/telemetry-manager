@@ -7,21 +7,18 @@ import (
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	"k8s.io/apimachinery/pkg/types"
-	"time"
 )
 
 type LogPipelineProber struct {
-	clientTimeout time.Duration
-	getter        alertGetter
-	pipelineType  alertrules.PipelineType
+	getter       alertGetter
+	pipelineType alertrules.PipelineType
 }
 
 type LogPipelineProbeResult struct {
-	AllDataDropped  bool
-	SomeDataDropped bool
+	PipelineProbeResult
+
 	NoLogsDelivered bool
 	BufferFillingUp bool
-	Healthy         bool
 }
 
 func NewLogPipelineProber(selfMonitorName types.NamespacedName) (*LogPipelineProber, error) {
@@ -31,36 +28,25 @@ func NewLogPipelineProber(selfMonitorName types.NamespacedName) (*LogPipelinePro
 	}
 
 	return &LogPipelineProber{
-		getter:        promClient,
-		clientTimeout: clientTimeout,
+		getter: promClient,
 	}, nil
 }
 
 func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (LogPipelineProbeResult, error) {
-	alerts, err := p.retrieveAlerts(ctx)
+	alerts, err := retrieveAlerts(ctx, p.getter)
 	if err != nil {
 		return LogPipelineProbeResult{}, fmt.Errorf("failed to retrieve alerts: %w", err)
 	}
 
 	return LogPipelineProbeResult{
-		AllDataDropped:  p.allDataDropped(alerts, pipelineName),
-		SomeDataDropped: p.someDataDropped(alerts, pipelineName),
+		PipelineProbeResult: PipelineProbeResult{
+			AllDataDropped:  p.allDataDropped(alerts, pipelineName),
+			SomeDataDropped: p.someDataDropped(alerts, pipelineName),
+			Healthy:         p.healthy(alerts, pipelineName),
+		},
 		NoLogsDelivered: p.noLogsDelivered(alerts, pipelineName),
 		BufferFillingUp: p.bufferFillingUp(alerts),
-		Healthy:         p.healthy(alerts, pipelineName),
 	}, nil
-}
-
-func (p *LogPipelineProber) retrieveAlerts(ctx context.Context) ([]promv1.Alert, error) {
-	childCtx, cancel := context.WithTimeout(ctx, p.clientTimeout)
-	defer cancel()
-
-	result, err := p.getter.Alerts(childCtx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query Prometheus alerts: %w", err)
-	}
-
-	return result.Alerts, nil
 }
 
 func (p *LogPipelineProber) allDataDropped(alerts []promv1.Alert, pipelineName string) bool {
