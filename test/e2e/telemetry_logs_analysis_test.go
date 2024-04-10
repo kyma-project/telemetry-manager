@@ -115,7 +115,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		BeforeAll(func() {
 			format.MaxLength = 0 // remove Gomega truncation
 			k8sObjects := makeResources()
-			DeferCleanup(func() { // TODO: Create defer cleanup and check ---> overrides configmap + fluent-bit configmap + mock backend: what logs are pushed to the receiver (port forwarding)
+			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
