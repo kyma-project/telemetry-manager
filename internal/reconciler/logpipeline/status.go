@@ -107,34 +107,36 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	}
 
 	message := conditions.MessageForLogPipeline(reason)
+
 	certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator, r.Client)
+	if certValidationResult.CertPresent {
+		if !certValidationResult.CertValid {
+			status = metav1.ConditionFalse
+			reason = conditions.ReasonTLSCertificateInvalid
+			message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.CertValidationMessage)
+		}
 
-	if !certValidationResult.CertValid {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonTLSCertificateInvalid
-		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.CertValidationMessage)
-	}
+		if !certValidationResult.PrivateKeyValid {
+			status = metav1.ConditionFalse
+			reason = conditions.ReasonTLSPrivateKeyInvalid
+			message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.PrivateKeyValidationMessage)
+		}
 
-	if !certValidationResult.PrivateKeyValid {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonTLSPrivateKeyInvalid
-		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.PrivateKeyValidationMessage)
-	}
+		if time.Now().After(certValidationResult.Validity) {
+			status = metav1.ConditionFalse
+			reason = conditions.ReasonTLSCertificateExpired
+		}
 
-	if time.Now().After(certValidationResult.Validity) {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonTLSCertificateExpired
-	}
+		//ensure not expired and about to expire
+		validUntil := time.Until(certValidationResult.Validity)
+		if validUntil > 0 && validUntil <= twoWeeks {
+			status = metav1.ConditionTrue
+			reason = conditions.ReasonTLSCertificateAboutToExpire
+		}
 
-	//ensure not expired and about to expire
-	validUntil := time.Until(certValidationResult.Validity)
-	if validUntil > 0 && validUntil <= twoWeeks {
-		status = metav1.ConditionTrue
-		reason = conditions.ReasonTLSCertificateAboutToExpire
-	}
-
-	if reason == conditions.ReasonTLSCertificateAboutToExpire || reason == conditions.ReasonTLSCertificateExpired {
-		message = fmt.Sprintf(message, certValidationResult.Validity.Format(time.DateOnly))
+		if reason == conditions.ReasonTLSCertificateAboutToExpire || reason == conditions.ReasonTLSCertificateExpired {
+			message = fmt.Sprintf(message, certValidationResult.Validity.Format(time.DateOnly))
+		}
 	}
 	condition := metav1.Condition{
 		Type:               conditions.TypeConfigurationGenerated,
