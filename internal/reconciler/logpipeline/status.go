@@ -99,7 +99,9 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator, r.Client)
 	message := conditions.MessageForLogPipeline(reason)
 
-	// The order with checking TLS and the checking ReferenceSecretExists needs to be maintained. As if the TLS Cert does not exist then checking TLS Cert will
+	// The order with checking TLS and the checking ReferenceSecretExists needs to be maintained. If the TLS Cert
+	// does not exist then checking TLS Cert will set a message saying CertIsInvalid which would be overridden by
+	// ReferenceSecretNot found.
 	if !certValidationResult.CertValid {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonTLSCertificateInvalid
