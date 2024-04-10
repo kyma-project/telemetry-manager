@@ -81,7 +81,7 @@ type FlowHealthProber interface {
 type Reconciler struct {
 	client.Client
 	config                   Config
-	agentProber              DaemonSetProber
+	prober                   DaemonSetProber
 	flowHealthProbingEnabled bool
 	flowHealthProber         FlowHealthProber
 	allLogPipelines          prometheus.Gauge
@@ -102,7 +102,7 @@ func NewReconciler(
 	var r Reconciler
 	r.Client = client
 	r.config = config
-	r.agentProber = agentProber
+	r.prober = agentProber
 	r.flowHealthProbingEnabled = flowHealthProbingEnabled
 	r.flowHealthProber = flowHealthProber
 	r.allLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_all_logpipelines", Help: "Number of log pipelines."})
