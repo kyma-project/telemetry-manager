@@ -58,12 +58,14 @@ lint-dev: manifests manifests-dev golangci-lint ## regenerate manifests and run 
 lint-autofix: golangci-lint ## Autofix all possible linting errors.
 	${GOLANGCI_LINT} run --fix
 
-lint-manifests: manifests manifests-dev check-clean
+lint-manifests: _check-clean-manifests
 
-lint: golangci-lint lint-manifests
+lint _lint : golangci-lint lint-manifests
 	go version
 	${GOLANGCI_LINT} version
 	GO111MODULE=on ${GOLANGCI_LINT} run
+
+
 
 .PHONY: crd-docs-gen
 crd-docs-gen: tablegen ## Generates CRD spec into docs folder
@@ -120,9 +122,12 @@ check-coverage: go-test-coverage ## Check tests coverage.
 build: generate fmt vet tidy ## Build manager binary.
 	go build -o bin/manager main.go
 
-check-clean: ## Check if repo is clean up-to-date. Used after code generation
+check-clean _check-clean-manifests : ## Check if repo is clean up-to-date. Used after code generation
 	@echo "Checking if all generated files are up-to-date"
 	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-dev' to update them." && exit 1)
+
+
+_check-clean-manifests: manifests manifests-dev
 
 tls.key:
 	@openssl genrsa -out tls.key 4096
