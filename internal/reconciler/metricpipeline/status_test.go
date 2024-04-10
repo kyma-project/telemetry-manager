@@ -315,7 +315,7 @@ func TestUpdateStatus(t *testing.T) {
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name           string
-			probe          prober.ProbeResult
+			probe          prober.OTelPipelineProbeResult
 			probeErr       error
 			expectedStatus metav1.ConditionStatus
 			expectedReason string
@@ -328,7 +328,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "healthy",
-				probe: prober.ProbeResult{
+				probe: prober.OTelPipelineProbeResult{
 					Healthy: true,
 				},
 				expectedStatus: metav1.ConditionTrue,
@@ -336,7 +336,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "throttling",
-				probe: prober.ProbeResult{
+				probe: prober.OTelPipelineProbeResult{
 					Throttling: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
@@ -344,7 +344,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "buffer filling up",
-				probe: prober.ProbeResult{
+				probe: prober.OTelPipelineProbeResult{
 					QueueAlmostFull: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
@@ -352,7 +352,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "buffer filling up shadows other problems",
-				probe: prober.ProbeResult{
+				probe: prober.OTelPipelineProbeResult{
 					QueueAlmostFull: true,
 					Throttling:      true,
 				},
@@ -361,7 +361,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "some data dropped",
-				probe: prober.ProbeResult{
+				probe: prober.OTelPipelineProbeResult{
 					SomeDataDropped: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
@@ -369,7 +369,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "some data dropped shadows other problems",
-				probe: prober.ProbeResult{
+				probe: prober.OTelPipelineProbeResult{
 					SomeDataDropped: true,
 					Throttling:      true,
 				},
@@ -378,7 +378,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "all data dropped",
-				probe: prober.ProbeResult{
+				probe: prober.OTelPipelineProbeResult{
 					AllDataDropped: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
@@ -386,7 +386,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "all data dropped shadows other problems",
-				probe: prober.ProbeResult{
+				probe: prober.OTelPipelineProbeResult{
 					AllDataDropped: true,
 					Throttling:     true,
 				},

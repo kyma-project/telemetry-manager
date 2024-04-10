@@ -159,7 +159,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func flowHealthReasonFor(probeResult prober.ProbeResult) string {
+func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
 	if probeResult.AllDataDropped {
 		return conditions.ReasonAllDataDropped
 	}

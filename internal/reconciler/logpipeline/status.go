@@ -14,6 +14,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 )
 
 const twoWeeks = time.Hour * 24 * 7 * 2
@@ -47,6 +48,11 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
+
+	if r.flowHealthProbingEnabled {
+		r.setFlowHealthCondition(ctx, &pipeline)
+	}
+
 	r.setLegacyConditions(ctx, &pipeline)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
@@ -69,7 +75,7 @@ func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *
 }
 
 func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-	healthy, err := r.prober.IsReady(ctx, r.config.DaemonSet)
+	healthy, err := r.agentProber.IsReady(ctx, r.config.DaemonSet)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe fluent bit daemonset - set condition as not healthy")
 		healthy = false
@@ -147,6 +153,52 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+	var reason string
+	var status metav1.ConditionStatus
+
+	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	if err == nil {
+		reason = flowHealthReasonFor(probeResult)
+		if probeResult.Healthy {
+			status = metav1.ConditionTrue
+		} else {
+			status = metav1.ConditionFalse
+		}
+	} else {
+		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
+
+		reason = conditions.ReasonFlowHealthy
+		status = metav1.ConditionUnknown
+	}
+
+	condition := metav1.Condition{
+		Type:               conditions.TypeFlowHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForLogPipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+}
+
+func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
+	if probeResult.AllDataDropped {
+		return conditions.ReasonAllDataDropped
+	}
+	if probeResult.SomeDataDropped {
+		return conditions.ReasonSomeDataDropped
+	}
+	if probeResult.NoLogsDelivered {
+		return conditions.ReasonNoLogsDelivered
+	}
+	if probeResult.BufferFillingUp {
+		return conditions.ReasonBufferFillingUp
+	}
+	return conditions.ReasonFlowHealthy
+}
+
 func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
 	if pipeline.Spec.Output.IsLokiDefined() {
 		conditions.HandlePendingCondition(&pipeline.Status.Conditions, pipeline.Generation,
@@ -163,7 +215,7 @@ func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetr
 		return
 	}
 
-	fluentBitReady, err := r.prober.IsReady(ctx, r.config.DaemonSet)
+	fluentBitReady, err := r.agentProber.IsReady(ctx, r.config.DaemonSet)
 	if err != nil {
 		logf.FromContext(ctx).V(1).Error(err, "Failed to probe fluent bit daemonset")
 		fluentBitReady = false

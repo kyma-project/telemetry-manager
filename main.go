@@ -412,7 +412,13 @@ func enableLoggingController(mgr manager.Manager) {
 	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
 
-	if err := createLogPipelineController(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+	flowHealthProber, err := prober.NewLogPipelineProber(types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace})
+	if err != nil {
+		setupLog.Error(err, "Failed to create flow health prober")
+		os.Exit(1)
+	}
+
+	if err := createLogPipelineController(mgr.GetClient(), flowHealthProber).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "LogPipeline")
 		os.Exit(1)
 	}
@@ -426,8 +432,8 @@ func enableLoggingController(mgr manager.Manager) {
 func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
 	setupLog.Info("Starting with tracing controller")
 	var err error
-	var flowHealthProber *prober.Prober
-	if flowHealthProber, err = prober.NewProber(alertrules.TracePipeline,
+	var flowHealthProber *prober.OTelPipelineProber
+	if flowHealthProber, err = prober.NewOTelPipelineProber(alertrules.TracePipeline,
 		types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
 		setupLog.Error(err, "Failed to create flow health prober")
 		os.Exit(1)
@@ -442,8 +448,8 @@ func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
 	setupLog.Info("Starting with metrics controller")
 	var err error
-	var flowHealthProber *prober.Prober
-	if flowHealthProber, err = prober.NewProber(alertrules.MetricPipeline,
+	var flowHealthProber *prober.OTelPipelineProber
+	if flowHealthProber, err = prober.NewOTelPipelineProber(alertrules.MetricPipeline,
 		types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
 		setupLog.Error(err, "Failed to create flow health prober")
 		os.Exit(1)
@@ -485,7 +491,7 @@ func validateFlags() error {
 	return nil
 }
 
-func createLogPipelineController(client client.Client) *telemetrycontrollers.LogPipelineController {
+func createLogPipelineController(client client.Client, flowHealthProber *prober.LogPipelineProber) *telemetrycontrollers.LogPipelineController {
 	config := logpipeline.Config{
 		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
 		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
@@ -511,7 +517,14 @@ func createLogPipelineController(client client.Client) *telemetrycontrollers.Log
 
 	return telemetrycontrollers.NewLogPipelineController(
 		client,
-		logpipeline.NewReconciler(client, config, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
+		logpipeline.NewReconciler(
+			client,
+			config,
+			&k8sutils.DaemonSetProber{Client: client},
+			enableSelfMonitor,
+			flowHealthProber,
+			overridesHandler,
+		),
 		config)
 }
 
@@ -552,7 +565,7 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 		admission.NewDecoder(scheme))
 }
 
-func createTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.Prober) *telemetrycontrollers.TracePipelineController {
+func createTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.OTelPipelineProber) *telemetrycontrollers.TracePipelineController {
 	config := tracepipeline.Config{
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
@@ -592,7 +605,7 @@ func createTracePipelineController(client client.Client, reconcileTriggerChan <-
 	)
 }
 
-func createMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.Prober) *telemetrycontrollers.MetricPipelineController {
+func createMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.OTelPipelineProber) *telemetrycontrollers.MetricPipelineController {
 	config := metricpipeline.Config{
 		Agent: otelcollector.AgentConfig{
 			Config: otelcollector.Config{

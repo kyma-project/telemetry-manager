@@ -31,6 +31,7 @@ const (
 	ReasonSomeDataDropped             = "SomeTelemetryDataDropped"
 	ReasonBufferFillingUp             = "BufferFillingUp"
 	ReasonGatewayThrottling           = "GatewayThrottling"
+	ReasonNoLogsDelivered             = "NoLogsDelivered"
 	ReasonFlowHealthy                 = "Healthy"
 	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
 	ReasonTLSPrivateKeyInvalid        = "TLSPrivateKeyInvalid"

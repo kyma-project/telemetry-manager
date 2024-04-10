@@ -20,7 +20,7 @@ func TestProber(t *testing.T) {
 		alerts       promv1.AlertsResult
 		alertsErr    error
 		pipelineName string
-		expected     ProbeResult
+		expected     OTelPipelineProbeResult
 		expectErr    bool
 	}{
 		{
@@ -35,7 +35,7 @@ func TestProber(t *testing.T) {
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{Healthy: true},
 		},
 		{
 			name:         "unknown alert firing",
@@ -51,7 +51,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{Healthy: true},
 		},
 		{
 			name:         "alert missing exporter label",
@@ -66,7 +66,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{Healthy: true},
 		},
 		{
 			name:         "exporter label mismatch",
@@ -82,7 +82,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{Healthy: true},
 		},
 		{
 			name:         "overlapping pipeline names",
@@ -98,7 +98,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{Healthy: true},
 		},
 		{
 			name:         "flow type mismatch",
@@ -114,7 +114,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{Healthy: true},
 		},
 		{
 			name:         "exporter dropped data firing",
@@ -130,7 +130,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{AllDataDropped: true},
+			expected: OTelPipelineProbeResult{AllDataDropped: true},
 		},
 		{
 			name:         "exporter sent data and exporter dropped data firing",
@@ -153,7 +153,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{SomeDataDropped: true},
+			expected: OTelPipelineProbeResult{SomeDataDropped: true},
 		},
 		{
 			name:         "exporter sent data and exporter enqueue failed firing",
@@ -176,7 +176,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{SomeDataDropped: true},
+			expected: OTelPipelineProbeResult{SomeDataDropped: true},
 		},
 		{
 			name:         "exporter sent data and exporter dropped data and exporter enqueue failed firing",
@@ -206,7 +206,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{SomeDataDropped: true},
+			expected: OTelPipelineProbeResult{SomeDataDropped: true},
 		},
 		{
 			name:         "queue almost full firing",
@@ -222,7 +222,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{QueueAlmostFull: true},
+			expected: OTelPipelineProbeResult{QueueAlmostFull: true},
 		},
 		{
 			name:         "receiver refused firing",
@@ -237,7 +237,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{Throttling: true},
+			expected: OTelPipelineProbeResult{Throttling: true},
 		},
 		{
 			name:         "healthy",
@@ -252,7 +252,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{Healthy: true},
 		},
 	}
 
@@ -266,7 +266,7 @@ func TestProber(t *testing.T) {
 				alertGetterMock.On("Alerts", mock.Anything).Return(tc.alerts, nil)
 			}
 
-			sut := Prober{
+			sut := OTelPipelineProber{
 				getter:       alertGetterMock,
 				pipelineType: alertrules.TracePipeline,
 			}

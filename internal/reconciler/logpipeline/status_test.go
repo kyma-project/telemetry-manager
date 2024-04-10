@@ -46,9 +46,9 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
-			prober: proberStub,
+			Client:      fakeClient,
+			config:      Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
+			agentProber: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name)
@@ -101,9 +101,9 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
-			prober: proberStub,
+			Client:      fakeClient,
+			config:      Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
+			agentProber: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name)
@@ -169,9 +169,9 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
-			prober: proberStub,
+			Client:      fakeClient,
+			config:      Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
+			agentProber: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name)
@@ -238,9 +238,9 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
-			prober: proberStub,
+			Client:      fakeClient,
+			config:      Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
+			agentProber: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name)
@@ -290,9 +290,9 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
-			prober: proberStub,
+			Client:      fakeClient,
+			config:      Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
+			agentProber: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name)
@@ -391,9 +391,9 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
-			prober: proberStub,
+			Client:      fakeClient,
+			config:      Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
+			agentProber: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name)
@@ -476,9 +476,9 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
-			prober: proberStub,
+			Client:      fakeClient,
+			config:      Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
+			agentProber: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name)
@@ -555,9 +555,9 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
-			prober: proberStub,
+			Client:      fakeClient,
+			config:      Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
+			agentProber: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name)
@@ -597,9 +597,9 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
-			prober: proberStub,
+			Client:      fakeClient,
+			config:      Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
+			agentProber: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name)
@@ -625,9 +625,9 @@ func TestUpdateStatus(t *testing.T) {
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 		sut := Reconciler{
-			Client: fakeClient,
-			config: Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
-			prober: proberStub,
+			Client:      fakeClient,
+			config:      Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
+			agentProber: proberStub,
 		}
 
 		err := sut.updateStatus(context.Background(), pipeline.Name)
