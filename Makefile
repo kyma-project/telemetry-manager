@@ -58,10 +58,9 @@ lint-dev: manifests manifests-dev golangci-lint ## regenerate manifests and run 
 lint-autofix: golangci-lint ## Autofix all possible linting errors.
 	${GOLANGCI_LINT} run --fix
 
-lint-manifests:
-	hack/lint-manifests.sh
+lint-manifests: check-clean-manifests check-clean-manifests-dev
 
-lint: golangci-lint lint-manifests
+lint: golangci-lint check-clean
 	go version
 	${GOLANGCI_LINT} version
 	GO111MODULE=on ${GOLANGCI_LINT} run
@@ -120,6 +119,10 @@ check-coverage: go-test-coverage ## Check tests coverage.
 .PHONY: build
 build: generate fmt vet tidy ## Build manager binary.
 	go build -o bin/manager main.go
+
+check-clean: generate manifests manifests-dev ## Check if all generated files are up-to-date
+	@echo "Checking if all generated files are up-to-date"
+	@git diff --name-only --exit-code -- '*.go' || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-dev' to update them." && exit 1)
 
 tls.key:
 	@openssl genrsa -out tls.key 4096
