@@ -6,7 +6,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 )
 
 type PipelineDefaults struct {
@@ -16,8 +15,13 @@ type PipelineDefaults struct {
 	FsBufferLimit     string
 }
 
+type BuilderConfig struct {
+	PipelineDefaults
+	CollectAgentLogs bool
+}
+
 // BuildFluentBitConfig merges Fluent Bit filters and outputs to a single Fluent Bit configuration.
-func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, defaults PipelineDefaults, overridesConfig overrides.LoggingConfig) (string, error) {
+func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, config BuilderConfig) (string, error) {
 	err := validateOutput(pipeline)
 	if err != nil {
 		return "", err
@@ -29,7 +33,7 @@ func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, defaults Pipe
 	}
 
 	includePath := createIncludePath(pipeline)
-	excludePath := createExcludePath(pipeline, overridesConfig.CollectAgentLogs)
+	excludePath := createExcludePath(pipeline, config.CollectAgentLogs)
 
 	var sb strings.Builder
 	sb.WriteString(createInputSection(pipeline, includePath, excludePath))
@@ -37,7 +41,7 @@ func BuildFluentBitConfig(pipeline *telemetryv1alpha1.LogPipeline, defaults Pipe
 	sb.WriteString(createKubernetesFilter(pipeline))
 	sb.WriteString(createCustomFilters(pipeline))
 	sb.WriteString(createLuaDedotFilter(pipeline))
-	sb.WriteString(createOutputSection(pipeline, defaults))
+	sb.WriteString(createOutputSection(pipeline, config.PipelineDefaults))
 
 	return sb.String(), nil
 }

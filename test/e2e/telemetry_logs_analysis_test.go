@@ -54,6 +54,10 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
+		// logs overrides (include agent logs)
+		overrides := kitk8s.NewOverrides().WithPaused(false).WithCollectAgentLogs(true)
+		objs = append(objs, overrides.K8sObject())
+
 		// backends
 		otelCollectorLogBackend := backend.New(otelCollectorLogBackendName, mockNs, backend.SignalTypeLogs)
 		objs = append(objs, otelCollectorLogBackend.K8sObjects()...)
@@ -83,10 +87,6 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		fluentBitLogPipelineName = fluentBitLogPipeline.Name()
 		objs = append(objs, otelCollectorLogPipeline.K8sObject(), fluentBitLogPipeline.K8sObject())
 
-		// logs overrides (include agent logs)
-		overrides := kitk8s.NewOverrides().WithPaused(false).WithCollectAgentLogs(true)
-		objs = append(objs, overrides.K8sObject())
-
 		// metrics & traces
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
 			WithOutputEndpointFromSecret(metricBackend.HostSecretRefV1Alpha1()).
@@ -115,7 +115,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		BeforeAll(func() {
 			format.MaxLength = 0 // remove Gomega truncation
 			k8sObjects := makeResources()
-			DeferCleanup(func() {
+			DeferCleanup(func() { // TODO: Create defer cleanup and check ---> overrides configmap + fluent-bit configmap + mock backend: what logs are pushed to the receiver (port forwarding)
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())

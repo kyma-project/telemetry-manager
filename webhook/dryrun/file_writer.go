@@ -12,7 +12,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
-	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 )
 
@@ -104,7 +103,10 @@ func (f *fileWriterImpl) writeSections(pipeline *telemetryv1alpha1.LogPipeline, 
 		return err
 	}
 
-	sectionsConfig, err := builder.BuildFluentBitConfig(pipeline, f.config.PipelineDefaults, overrides.LoggingConfig{})
+	builderConfig := builder.BuilderConfig{
+		PipelineDefaults: f.config.PipelineDefaults,
+	}
+	sectionsConfig, err := builder.BuildFluentBitConfig(pipeline, builderConfig)
 	if err != nil {
 		return err
 	}
