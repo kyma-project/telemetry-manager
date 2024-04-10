@@ -96,7 +96,6 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonConfigurationGenerated
-	certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator, r.Client)
 	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonReferencedSecretMissing
@@ -108,6 +107,7 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	}
 
 	message := conditions.MessageForLogPipeline(reason)
+	certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator, r.Client)
 
 	if !certValidationResult.CertValid {
 		status = metav1.ConditionFalse
