@@ -3,30 +3,44 @@ package webhook
 import (
 	"context"
 	"encoding/json"
+	"github.com/go-logr/logr"
 	"io"
 	"net/http"
-	"strings"
-
-	"github.com/go-logr/logr"
-	"github.com/prometheus/common/model"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
 )
 
 type Handler struct {
 	c           client.Reader
-	subscribers map[alertrules.PipelineType]chan<- event.GenericEvent
+	subscribers map[string]chan<- event.GenericEvent
 	logger      logr.Logger
 }
 
 type Option = func(*Handler)
 
-func WithSubscriber(subscriber chan<- event.GenericEvent, pipelineType alertrules.PipelineType) Option {
+const (
+	metricPipelineSubscriber = "metricPipelines"
+	tracePipelineSubscriber  = "tracePipelines"
+	logPipelineSubscriber    = "logPipelines"
+)
+
+func WithMetricPipelineSubscriber(subscriber chan<- event.GenericEvent) Option {
+	return withSubscriber(subscriber, metricPipelineSubscriber)
+}
+
+func WithTracePipelineSubscriber(subscriber chan<- event.GenericEvent) Option {
+	return withSubscriber(subscriber, tracePipelineSubscriber)
+}
+
+func WithLogPipelineSubscriber(subscriber chan<- event.GenericEvent) Option {
+	return withSubscriber(subscriber, logPipelineSubscriber)
+}
+
+func withSubscriber(subscriber chan<- event.GenericEvent, pipelineType string) Option {
 	return func(h *Handler) {
 		h.subscribers[pipelineType] = subscriber
 	}
@@ -42,7 +56,7 @@ func NewHandler(c client.Reader, opts ...Option) *Handler {
 	h := &Handler{
 		c:           c,
 		logger:      logr.New(logf.NullLogSink{}),
-		subscribers: make(map[alertrules.PipelineType]chan<- event.GenericEvent),
+		subscribers: make(map[string]chan<- event.GenericEvent),
 	}
 
 	for _, opt := range opts {
@@ -83,18 +97,24 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	metricPipelineEvents := h.toMetricPipelineReconcileEvents(r.Context(), alerts)
 	tracePipelineEvents := h.toTracePipelineReconcileEvents(r.Context(), alerts)
+	logPipelineEvents := h.toLogPipelineReconcileEvents(r.Context(), alerts)
 	h.logger.V(1).Info("Webhook called. Notifying the subscribers.",
 		"request", alerts,
 		"metricPipelines", retrieveNames(metricPipelineEvents),
 		"tracePipelines", retrieveNames(tracePipelineEvents),
+		"logPipelines", retrieveNames(logPipelineEvents),
 	)
 
 	for _, ev := range metricPipelineEvents {
-		h.subscribers[alertrules.MetricPipeline] <- ev
+		h.subscribers[metricPipelineSubscriber] <- ev
 	}
 
 	for _, ev := range tracePipelineEvents {
-		h.subscribers[alertrules.TracePipeline] <- ev
+		h.subscribers[tracePipelineSubscriber] <- ev
+	}
+
+	for _, ev := range logPipelineEvents {
+		h.subscribers[logPipelineSubscriber] <- ev
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -108,8 +128,11 @@ func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []
 	}
 
 	for i := range metricPipelines.Items {
-		if shouldReconcile(&metricPipelines.Items[i], alertrules.MetricPipeline, alerts) {
-			events = append(events, event.GenericEvent{Object: &metricPipelines.Items[i]})
+		pipelineName := metricPipelines.Items[i].GetName()
+		for _, alert := range alerts {
+			if alertrules.MatchesMetricPipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
+				events = append(events, event.GenericEvent{Object: &metricPipelines.Items[i]})
+			}
 		}
 	}
 
@@ -124,43 +147,34 @@ func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []A
 	}
 
 	for i := range tracePipelines.Items {
-		if shouldReconcile(&tracePipelines.Items[i], alertrules.TracePipeline, alerts) {
-			events = append(events, event.GenericEvent{Object: &tracePipelines.Items[i]})
+		pipelineName := tracePipelines.Items[i].GetName()
+		for _, alert := range alerts {
+			if alertrules.MatchesTracePipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
+				events = append(events, event.GenericEvent{Object: &tracePipelines.Items[i]})
+			}
 		}
 	}
 
 	return events
 }
 
-func shouldReconcile(pipeline client.Object, pipelineType alertrules.PipelineType, alerts []Alert) bool {
-	for _, alert := range alerts {
-		expectedPrefix := alertrules.RuleNamePrefix(pipelineType)
-		if !strings.HasPrefix(alert.Labels[model.AlertNameLabel], expectedPrefix) {
-			continue
+func (h *Handler) toLogPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
+	var events []event.GenericEvent
+	var logPipelines telemetryv1alpha1.LogPipelineList
+	if err := h.c.List(ctx, &logPipelines); err != nil {
+		return events
+	}
+
+	for i := range logPipelines.Items {
+		pipelineName := logPipelines.Items[i].GetName()
+		for _, alert := range alerts {
+			if alertrules.MatchesLogPipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
+				events = append(events, event.GenericEvent{Object: &logPipelines.Items[i]})
+			}
 		}
-
-		if matchesAllPipelines(alert.Labels) || matchesPipeline(alert.Labels, pipeline.GetName()) {
-			return true
-		}
 	}
 
-	return false
-}
-
-func matchesAllPipelines(labels map[string]string) bool {
-	if _, ok := labels[alertrules.LabelExporter]; !ok {
-		return true
-	}
-	return false
-}
-
-func matchesPipeline(labels map[string]string, pipelineName string) bool {
-	exportedID, ok := labels[alertrules.LabelExporter]
-	if !ok {
-		return false
-	}
-
-	return otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolHTTP, pipelineName) == exportedID || otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolGRPC, pipelineName) == exportedID
+	return events
 }
 
 func retrieveNames(events []event.GenericEvent) []string {
