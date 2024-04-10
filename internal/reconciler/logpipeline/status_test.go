@@ -411,7 +411,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				pipeline := testutils.NewTracePipelineBuilder().Build()
+				pipeline := testutils.NewLogPipelineBuilder().Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				agentProberStub := &mocks.DaemonSetProber{}
@@ -429,7 +429,7 @@ func TestUpdateStatus(t *testing.T) {
 				err := sut.updateStatus(context.Background(), pipeline.Name)
 				require.NoError(t, err)
 
-				var updatedPipeline telemetryv1alpha1.TracePipeline
+				var updatedPipeline telemetryv1alpha1.LogPipeline
 				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
 
 				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeFlowHealthy)
