@@ -127,7 +127,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
+func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent { //nolint:dupl // The functions are similar but not identical
 	var events []event.GenericEvent
 	var metricPipelines telemetryv1alpha1.MetricPipelineList
 	if err := h.c.List(ctx, &metricPipelines); err != nil {
@@ -146,7 +146,7 @@ func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []
 	return events
 }
 
-func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
+func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent { //nolint:dupl // The functions are similar but not identical
 	var events []event.GenericEvent
 	var tracePipelines telemetryv1alpha1.TracePipelineList
 	if err := h.c.List(ctx, &tracePipelines); err != nil {
@@ -165,7 +165,7 @@ func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []A
 	return events
 }
 
-func (h *Handler) toLogPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
+func (h *Handler) toLogPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent { //nolint:dupl // The functions are similar but not identical
 	var events []event.GenericEvent
 	var logPipelines telemetryv1alpha1.LogPipelineList
 	if err := h.c.List(ctx, &logPipelines); err != nil {
