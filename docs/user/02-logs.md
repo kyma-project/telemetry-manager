@@ -357,7 +357,7 @@ The `tail` input plugin reads the log message from a log file managed by the con
   "time": "2022-05-23T15:04:52.193317532Z",
   "stream": "stdout",
   "_p": "F",
-  "log": "{\"level\": \"warn\",\"message\": \"This is the actual message\",\"tenant\": \"myTenant\",\"traceID\": \"123\"}
+  "log": "{\"level\": \"warn\",\"message\": \"This is the actual message\",\"tenant\": \"myTenant\",\"traceID\": \"123\"}"
 }
 ```
 
