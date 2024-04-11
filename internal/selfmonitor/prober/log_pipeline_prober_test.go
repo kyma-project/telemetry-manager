@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober/mocks"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestLogPipelineProber(t *testing.T) {
