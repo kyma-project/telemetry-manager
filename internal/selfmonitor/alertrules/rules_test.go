@@ -60,3 +60,79 @@ func TestMakeRules(t *testing.T) {
 	require.Equal(t, "LogAgentBufferFull", ruleGroup.Rules[14].Alert)
 	require.Equal(t, "telemetry_fsbuffer_usage_bytes > 900000000", ruleGroup.Rules[14].Expr)
 }
+
+func TestMatchesLogPipelineRule(t *testing.T) {
+	tests := []struct {
+		name                 string
+		labelSet             map[string]string
+		expectedRuleName     string
+		expectedPipelineName string
+		expectedResult       bool
+	}{
+		{
+			name: "rule name matches and pipeline name matches",
+			labelSet: map[string]string{
+				"alertname": "LogAgentBufferFull",
+				"name":      "testPipeline",
+			},
+			expectedRuleName:     "LogAgentBufferFull",
+			expectedPipelineName: "testPipeline",
+			expectedResult:       true,
+		},
+		{
+			name: "rule name matches and pipeline name does not match",
+			labelSet: map[string]string{
+				"alertname": "LogAgentBufferFull",
+				"name":      "testPipeline",
+			},
+			expectedRuleName:     "testAlert",
+			expectedPipelineName: "otherPipeline",
+			expectedResult:       false,
+		},
+		{
+			name: "rule name does not match and pipeline name matches",
+			labelSet: map[string]string{
+				"alertname": "LogAgentBufferFull",
+				"name":      "testPipeline",
+			},
+			expectedRuleName:     "MetricGatewayExporterSentData",
+			expectedPipelineName: "testPipeline",
+			expectedResult:       false,
+		},
+		{
+			name: "rule name matches and name label is missing",
+			labelSet: map[string]string{
+				"alertname": "LogAgentBufferFull",
+			},
+			expectedRuleName:     "LogAgentBufferFull",
+			expectedPipelineName: "testPipeline",
+			expectedResult:       true,
+		},
+		{
+			name: "rule name is RulesAny and name label is missing",
+			labelSet: map[string]string{
+				"alertname": "LogAgentBufferFull",
+			},
+			expectedRuleName:     RulesAny,
+			expectedPipelineName: "testPipeline",
+			expectedResult:       true,
+		},
+		{
+			name: "rule name is RulesAny and name label is present but doesn't match prefix",
+			labelSet: map[string]string{
+				"alertname": "LogAgentBufferFull",
+				"name":      "otherPipeline",
+			},
+			expectedRuleName:     RulesAny,
+			expectedPipelineName: "testPipeline",
+			expectedResult:       false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := MatchesLogPipelineRule(test.labelSet, test.expectedRuleName, test.expectedPipelineName)
+			require.Equal(t, test.expectedResult, result)
+		})
+	}
+}

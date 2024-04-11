@@ -23,7 +23,8 @@ const (
 	RuleNameLogAgentBufferInUse         = "LogAgentBufferInUse"
 	RuleNameLogAgentBufferFull          = "LogAgentBufferFull"
 
-	LabelService = "service"
+	// Common rule labels
+	labelService = "service"
 
 	// OTel Collector rule labels
 	labelExporter = "exporter"
@@ -107,18 +108,21 @@ const (
 	RulesAny = "any"
 )
 
-// MatchesLogPipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a log pipeline.
+// MatchesLogPipelineRule checks if the given alert label set matches the expected rule name and pipeline name for a log pipeline.
 // If the alert does not have a name label, it should be matched by all pipelines.
+// RulesAny can be used to match any LogPipeline rule name.
 func MatchesLogPipelineRule(labelSet map[string]string, expectedRuleName string, expectedPipelineName string) bool {
 	ruleName, hasRuleName := labelSet[model.AlertNameLabel]
-	if expectedRuleName != RulesAny {
-		if !hasRuleName || ruleName != expectedRuleName {
-			return false
-		}
-	} else {
-		if !strings.HasPrefix(ruleName, ruleNamePrefix(typeLogPipeline)) {
-			return false
-		}
+	if !hasRuleName {
+		return false
+	}
+
+	if isLogPipelineRule := strings.HasPrefix(ruleName, ruleNamePrefix(typeLogPipeline)); !isLogPipelineRule {
+		return false
+	}
+
+	if expectedRuleName != RulesAny && ruleName != expectedRuleName {
+		return false
 	}
 
 	name, hasName := labelSet[labelName]
