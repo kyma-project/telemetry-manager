@@ -63,11 +63,11 @@ func TestMakeRules(t *testing.T) {
 
 func TestMatchesLogPipelineRule(t *testing.T) {
 	tests := []struct {
-		name                 string
-		labelSet             map[string]string
-		expectedRuleName     string
-		expectedPipelineName string
-		expectedResult       bool
+		name               string
+		labelSet           map[string]string
+		unprefixedRuleName string
+		pipelineName       string
+		expectedResult     bool
 	}{
 		{
 			name: "rule name matches and pipeline name matches",
@@ -75,9 +75,9 @@ func TestMatchesLogPipelineRule(t *testing.T) {
 				"alertname": "LogAgentBufferFull",
 				"name":      "testPipeline",
 			},
-			expectedRuleName:     "LogAgentBufferFull",
-			expectedPipelineName: "testPipeline",
-			expectedResult:       true,
+			unprefixedRuleName: "AgentBufferFull",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
 		},
 		{
 			name: "rule name matches and pipeline name does not match",
@@ -85,37 +85,37 @@ func TestMatchesLogPipelineRule(t *testing.T) {
 				"alertname": "LogAgentBufferFull",
 				"name":      "testPipeline",
 			},
-			expectedRuleName:     "testAlert",
-			expectedPipelineName: "otherPipeline",
-			expectedResult:       false,
+			unprefixedRuleName: "testAlert",
+			pipelineName:       "otherPipeline",
+			expectedResult:     false,
 		},
 		{
 			name: "rule name does not match and pipeline name matches",
 			labelSet: map[string]string{
-				"alertname": "LogAgentBufferFull",
+				"alertname": "MetricAgentBufferFull",
 				"name":      "testPipeline",
 			},
-			expectedRuleName:     "MetricGatewayExporterSentData",
-			expectedPipelineName: "testPipeline",
-			expectedResult:       false,
+			unprefixedRuleName: "AgentBufferFull",
+			pipelineName:       "testPipeline",
+			expectedResult:     false,
 		},
 		{
 			name: "rule name matches and name label is missing",
 			labelSet: map[string]string{
 				"alertname": "LogAgentBufferFull",
 			},
-			expectedRuleName:     "LogAgentBufferFull",
-			expectedPipelineName: "testPipeline",
-			expectedResult:       true,
+			unprefixedRuleName: "AgentBufferFull",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
 		},
 		{
 			name: "rule name is RulesAny and name label is missing",
 			labelSet: map[string]string{
 				"alertname": "LogAgentBufferFull",
 			},
-			expectedRuleName:     RulesAny,
-			expectedPipelineName: "testPipeline",
-			expectedResult:       true,
+			unprefixedRuleName: RulesAny,
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
 		},
 		{
 			name: "rule name is RulesAny and name label is present but doesn't match prefix",
@@ -123,15 +123,167 @@ func TestMatchesLogPipelineRule(t *testing.T) {
 				"alertname": "LogAgentBufferFull",
 				"name":      "otherPipeline",
 			},
-			expectedRuleName:     RulesAny,
-			expectedPipelineName: "testPipeline",
-			expectedResult:       false,
+			unprefixedRuleName: RulesAny,
+			pipelineName:       "testPipeline",
+			expectedResult:     false,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := MatchesLogPipelineRule(test.labelSet, test.expectedRuleName, test.expectedPipelineName)
+			result := MatchesLogPipelineRule(test.labelSet, test.unprefixedRuleName, test.pipelineName)
+			require.Equal(t, test.expectedResult, result)
+		})
+	}
+}
+
+func TestMatchesMetricPipelineRule(t *testing.T) {
+	tests := []struct {
+		name               string
+		labelSet           map[string]string
+		unprefixedRuleName string
+		pipelineName       string
+		expectedResult     bool
+	}{
+		{
+			name: "rule name matches and pipeline name matches",
+			labelSet: map[string]string{
+				"alertname": "MetricGatewayExporterSentData",
+				"exporter":  "otlp/testPipeline",
+			},
+			unprefixedRuleName: "GatewayExporterSentData",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name matches and pipeline name does not match",
+			labelSet: map[string]string{
+				"alertname": "MetricGatewayExporterSentData",
+				"exporter":  "otlp/testPipeline",
+			},
+			unprefixedRuleName: "GatewayExporterSentData",
+			pipelineName:       "otherPipeline",
+			expectedResult:     false,
+		},
+		{
+			name: "rule name does not match and pipeline name matches",
+			labelSet: map[string]string{
+				"alertname": "LogAgentBufferFull",
+				"exporter":  "otlp/testPipeline",
+			},
+			unprefixedRuleName: "MetricGatewayExporterSentData",
+			pipelineName:       "testPipeline",
+			expectedResult:     false,
+		},
+		{
+			name: "rule name matches and name label is missing",
+			labelSet: map[string]string{
+				"alertname": "MetricGatewayExporterSentData",
+			},
+			unprefixedRuleName: "GatewayExporterSentData",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name is RulesAny and name label is missing",
+			labelSet: map[string]string{
+				"alertname": "MetricGatewayExporterSentData",
+			},
+			unprefixedRuleName: RulesAny,
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name is RulesAny and name label is present but doesn't match prefix",
+			labelSet: map[string]string{
+				"alertname": "MetricGatewayExporterSentData",
+				"exporter":  "otlp/otherPipeline",
+			},
+			unprefixedRuleName: RulesAny,
+			pipelineName:       "otlp/testPipeline",
+			expectedResult:     false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := MatchesMetricPipelineRule(test.labelSet, test.unprefixedRuleName, test.pipelineName)
+			require.Equal(t, test.expectedResult, result)
+		})
+	}
+}
+
+func TestMatchesTracePipelineRule(t *testing.T) {
+	tests := []struct {
+		name               string
+		labelSet           map[string]string
+		unprefixedRuleName string
+		pipelineName       string
+		expectedResult     bool
+	}{
+		{
+			name: "rule name matches and pipeline name matches",
+			labelSet: map[string]string{
+				"alertname": "TraceGatewayExporterSentData",
+				"exporter":  "otlp/testPipeline",
+			},
+			unprefixedRuleName: "GatewayExporterSentData",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name matches and pipeline name does not match",
+			labelSet: map[string]string{
+				"alertname": "TraceGatewayExporterSentData",
+				"exporter":  "otlp/testPipeline",
+			},
+			unprefixedRuleName: "GatewayExporterSentData",
+			pipelineName:       "otherPipeline",
+			expectedResult:     false,
+		},
+		{
+			name: "rule name does not match and pipeline name matches",
+			labelSet: map[string]string{
+				"alertname": "LogAgentBufferFull",
+				"exporter":  "otlp/testPipeline",
+			},
+			unprefixedRuleName: "TraceGatewayExporterSentData",
+			pipelineName:       "testPipeline",
+			expectedResult:     false,
+		},
+		{
+			name: "rule name matches and name label is missing",
+			labelSet: map[string]string{
+				"alertname": "TraceGatewayExporterSentData",
+			},
+			unprefixedRuleName: "GatewayExporterSentData",
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name is RulesAny and name label is missing",
+			labelSet: map[string]string{
+				"alertname": "TraceGatewayExporterSentData",
+			},
+			unprefixedRuleName: RulesAny,
+			pipelineName:       "testPipeline",
+			expectedResult:     true,
+		},
+		{
+			name: "rule name is RulesAny and name label is present but doesn't match prefix",
+			labelSet: map[string]string{
+				"alertname": "TraceGatewayExporterSentData",
+				"exporter":  "otlp/otherPipeline",
+			},
+			unprefixedRuleName: RulesAny,
+			pipelineName:       "otlp/testPipeline",
+			expectedResult:     false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := MatchesTracePipelineRule(test.labelSet, test.unprefixedRuleName, test.pipelineName)
 			require.Equal(t, test.expectedResult, result)
 		})
 	}

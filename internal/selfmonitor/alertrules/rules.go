@@ -16,12 +16,12 @@ const (
 	RuleNameGatewayExporterEnqueueFailed   = "GatewayExporterEnqueueFailed"
 	RuleNameGatewayReceiverRefusedData     = "GatewayReceiverRefusedData"
 
-	// Fluent Bit rule names
-	RuleNameLogAgentExporterSentLogs    = "LogAgentExporterSentLogs"
-	RuleNameLogAgentReceiverReadLogs    = "LogAgentReceiverReadLogs"
-	RuleNameLogAgentExporterDroppedLogs = "LogAgentExporterDroppedLogs"
-	RuleNameLogAgentBufferInUse         = "LogAgentBufferInUse"
-	RuleNameLogAgentBufferFull          = "LogAgentBufferFull"
+	// Fluent Bit rule names. Note that the actual full names will be prefixed with Log
+	RuleNameLogAgentExporterSentLogs    = "AgentExporterSentLogs"
+	RuleNameLogAgentReceiverReadLogs    = "AgentReceiverReadLogs"
+	RuleNameLogAgentExporterDroppedLogs = "AgentExporterDroppedLogs"
+	RuleNameLogAgentBufferInUse         = "AgentBufferInUse"
+	RuleNameLogAgentBufferFull          = "AgentBufferFull"
 
 	// Common rule labels
 	labelService = "service"
@@ -111,17 +111,8 @@ const (
 // MatchesLogPipelineRule checks if the given alert label set matches the expected rule name and pipeline name for a log pipeline.
 // If the alert does not have a name label, it should be matched by all pipelines.
 // RulesAny can be used to match any LogPipeline rule name.
-func MatchesLogPipelineRule(labelSet map[string]string, expectedRuleName string, expectedPipelineName string) bool {
-	ruleName, hasRuleName := labelSet[model.AlertNameLabel]
-	if !hasRuleName {
-		return false
-	}
-
-	if isLogPipelineRule := strings.HasPrefix(ruleName, ruleNamePrefix(typeLogPipeline)); !isLogPipelineRule {
-		return false
-	}
-
-	if expectedRuleName != RulesAny && ruleName != expectedRuleName {
+func MatchesLogPipelineRule(labelSet map[string]string, ruleNameWithoutPrefix string, pipelineName string) bool {
+	if !matchesRuleName(labelSet, ruleNameWithoutPrefix, typeLogPipeline) {
 		return false
 	}
 
@@ -131,36 +122,24 @@ func MatchesLogPipelineRule(labelSet map[string]string, expectedRuleName string,
 		return true
 	}
 
-	return name == expectedPipelineName
+	return name == pipelineName
 }
 
 // MatchesMetricPipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a metric pipeline.
 // If the alert does not have an exporter label, it should be matched by all pipelines.
-func MatchesMetricPipelineRule(labelSet map[string]string, expectedRuleName string, expectedPipelineName string) bool {
-	return matchesOTelPipelineRule(labelSet, expectedRuleName, expectedPipelineName, typeMetricPipeline)
+func MatchesMetricPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
+	return matchesOTelPipelineRule(labelSet, unprefixedRuleName, pipelineName, typeMetricPipeline)
 }
 
 // MatchesTracePipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a trace pipeline.
 // If the alert does not have an exporter label, it should be matched by all pipelines.
-func MatchesTracePipelineRule(labelSet map[string]string, expectedRuleName string, expectedPipelineName string) bool {
-	return matchesOTelPipelineRule(labelSet, expectedRuleName, expectedPipelineName, typeTracePipeline)
+func MatchesTracePipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
+	return matchesOTelPipelineRule(labelSet, unprefixedRuleName, pipelineName, typeTracePipeline)
 }
 
-func matchesOTelPipelineRule(labelSet map[string]string, expectedRuleName string, expectedPipelineName string, t pipelineType) bool {
-	ruleName, hasRuleName := labelSet[model.AlertNameLabel]
-	if !hasRuleName {
+func matchesOTelPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string, t pipelineType) bool {
+	if !matchesRuleName(labelSet, unprefixedRuleName, t) {
 		return false
-	}
-
-	if expectedRuleName != RulesAny {
-		expectedFullName := ruleNamePrefix(t) + expectedRuleName
-		if ruleName != expectedFullName {
-			return false
-		}
-	} else {
-		if !strings.HasPrefix(ruleName, ruleNamePrefix(t)) {
-			return false
-		}
 	}
 
 	exporterID, hasExporter := labelSet[labelExporter]
@@ -169,6 +148,25 @@ func matchesOTelPipelineRule(labelSet map[string]string, expectedRuleName string
 		return true
 	}
 
-	return otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolHTTP, expectedPipelineName) == exporterID ||
-		otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolGRPC, expectedPipelineName) == exporterID
+	return otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolHTTP, pipelineName) == exporterID ||
+		otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolGRPC, pipelineName) == exporterID
+}
+
+func matchesRuleName(labelSet map[string]string, unprefixedRuleName string, t pipelineType) bool {
+	ruleName, hasRuleName := labelSet[model.AlertNameLabel]
+	if !hasRuleName {
+		return false
+	}
+
+	if matchesPrefix := strings.HasPrefix(ruleName, ruleNamePrefix(t)); !matchesPrefix {
+		return false
+	}
+
+	if unprefixedRuleName != RulesAny {
+		if ruleName != ruleNamePrefix(t)+unprefixedRuleName {
+			return false
+		}
+	}
+
+	return true
 }
