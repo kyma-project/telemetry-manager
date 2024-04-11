@@ -9,9 +9,9 @@ import (
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	"k8s.io/apimachinery/pkg/types"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
