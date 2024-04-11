@@ -135,6 +135,8 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 
 	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
 	if err == nil {
+		logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
+
 		reason = flowHealthReasonFor(probeResult)
 		if probeResult.Healthy {
 			status = metav1.ConditionTrue
