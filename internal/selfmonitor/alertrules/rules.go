@@ -118,13 +118,16 @@ func MatchesLogPipelineRule(labelSet map[string]string, ruleNameWithoutPrefix st
 		return false
 	}
 
-	name, hasName := labelSet[labelName]
-	if !hasName {
+	nameLabel, hasNameLabel := labelSet[labelName]
+	if !hasNameLabel {
 		// If the alert does not have a name label, it should be matched by all pipelines
 		return true
 	}
 
-	return name == pipelineName
+	// Some Fluent Bit metrics have output plugin name appended to the pipeline name as the "name" label
+	// Note that it's not possible to match a custom output since the suffix is not known in advance
+	nameSuffix := "-http"
+	return nameLabel == pipelineName || nameLabel == pipelineName+nameSuffix
 }
 
 // MatchesMetricPipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a metric pipeline.
@@ -144,14 +147,14 @@ func matchesOTelPipelineRule(labelSet map[string]string, unprefixedRuleName stri
 		return false
 	}
 
-	exporterID, hasExporter := labelSet[labelExporter]
-	if !hasExporter {
+	exporterLabel, hasExporterLabel := labelSet[labelExporter]
+	if !hasExporterLabel {
 		// If the alert does not have an exporter label, it should be matched by all pipelines
 		return true
 	}
 
-	return otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolHTTP, pipelineName) == exporterID ||
-		otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolGRPC, pipelineName) == exporterID
+	return otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolHTTP, pipelineName) == exporterLabel ||
+		otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolGRPC, pipelineName) == exporterLabel
 }
 
 func matchesRuleName(labelSet map[string]string, unprefixedRuleName string, t pipelineType) bool {
