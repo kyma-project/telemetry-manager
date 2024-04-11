@@ -7,13 +7,13 @@ import (
 	"net/http"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
-	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 type Handler struct {
@@ -155,7 +155,7 @@ func (h *Handler) toPipelineReconcileEvents(ctx context.Context,
 
 	var events []event.GenericEvent
 
-	pipelines, err := h.list(pipelineList)
+	pipelines, err := h.list(ctx, pipelineList)
 	if err != nil {
 		h.logger.Error(err, "Failed to list pipelines", "kind", pipelineList.GetObjectKind().GroupVersionKind().Kind)
 		return events
@@ -173,8 +173,8 @@ func (h *Handler) toPipelineReconcileEvents(ctx context.Context,
 }
 
 // list retrieves an object list of type client.ObjectList and unpacks it into a slice of client.Objects.
-func (h *Handler) list(objs client.ObjectList) ([]client.Object, error) {
-	if err := h.c.List(context.Background(), objs); err != nil {
+func (h *Handler) list(ctx context.Context, objs client.ObjectList) ([]client.Object, error) {
+	if err := h.c.List(ctx, objs); err != nil {
 		return nil, err
 	}
 
