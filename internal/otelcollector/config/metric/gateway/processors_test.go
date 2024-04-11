@@ -29,9 +29,9 @@ func TestProcessors(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().Build()})
 		require.NoError(t, err)
 
-		require.Equal(t, "0.1s", collectorConfig.Processors.MemoryLimiter.CheckInterval)
+		require.Equal(t, "1s", collectorConfig.Processors.MemoryLimiter.CheckInterval)
 		require.Equal(t, 75, collectorConfig.Processors.MemoryLimiter.LimitPercentage)
-		require.Equal(t, 20, collectorConfig.Processors.MemoryLimiter.SpikeLimitPercentage)
+		require.Equal(t, 15, collectorConfig.Processors.MemoryLimiter.SpikeLimitPercentage)
 	})
 
 	t.Run("batch processors", func(t *testing.T) {
