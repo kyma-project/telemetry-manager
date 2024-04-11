@@ -1,8 +1,29 @@
 package alertrules
 
 import (
-	"fmt"
 	"time"
+)
+
+const (
+	// OTEL Collector rule names. Note that the actual full names will be prefixed with Metric or Trace
+	RuleNameGatewayExporterSentData        = "GatewayExporterSentData"
+	RuleNameGatewayExporterDroppedData     = "GatewayExporterDroppedData"
+	RuleNameGatewayExporterQueueAlmostFull = "GatewayExporterQueueAlmostFull"
+	RuleNameGatewayExporterEnqueueFailed   = "GatewayExporterEnqueueFailed"
+	RuleNameGatewayReceiverRefusedData     = "GatewayReceiverRefusedData"
+
+	// Fluent Bit rule names
+	RuleNameLogAgentExporterSentLogs    = "LogAgentExporterSentLogs"
+	RuleNameLogAgentReceiverReadLogs    = "LogAgentReceiverReadLogs"
+	RuleNameLogAgentExporterDroppedLogs = "LogAgentExporterDroppedLogs"
+	RuleNameLogAgentBufferInUse         = "LogAgentBufferInUse"
+	RuleNameLogAgentBufferFull          = "LogAgentBufferFull"
+
+	LabelService = "service"
+
+	// OTel Collector rule labels
+	LabelExporter = "exporter"
+	LabelReceiver = "receiver"
 )
 
 // RuleGroups is a set of rule groups that are typically exposed in a file.
@@ -26,14 +47,24 @@ type Rule struct {
 }
 
 func MakeRules() RuleGroups {
-	metricRuleBuilder := newRuleBuilder(MetricPipeline)
-	traceRuleBuilder := newRuleBuilder(TracePipeline)
-
-	ruleBuilders := []ruleBuilder{metricRuleBuilder, traceRuleBuilder}
 	var rules []Rule
-	for _, rb := range ruleBuilders {
-		rules = append(rules, rb.rules()...)
+
+	metricRuleBuilder := otelCollectorRuleBuilder{
+		dataType:    "metric_points",
+		serviceName: "telemetry-metric-gateway-metrics",
+		namePrefix:  RuleNamePrefix(MetricPipeline),
 	}
+	rules = append(rules, metricRuleBuilder.rules()...)
+
+	traceRuleBuilder := otelCollectorRuleBuilder{
+		dataType:    "spans",
+		serviceName: "telemetry-trace-collector-metrics",
+		namePrefix:  RuleNamePrefix(TracePipeline),
+	}
+	rules = append(rules, traceRuleBuilder.rules()...)
+
+	logRuleBuilder := fluentBitRuleBuilder{}
+	rules = append(rules, logRuleBuilder.rules()...)
 
 	return RuleGroups{
 		Groups: []RuleGroup{
@@ -45,107 +76,10 @@ func MakeRules() RuleGroups {
 	}
 }
 
-const (
-	LabelService  = "service"
-	LabelExporter = "exporter"
-	LabelReceiver = "receiver"
-
-	RuleNameGatewayExporterSentData        = "GatewayExporterSentData"
-	RuleNameGatewayExporterDroppedData     = "GatewayExporterDroppedData"
-	RuleNameGatewayExporterQueueAlmostFull = "GatewayExporterQueueAlmostFull"
-	RuleNameGatewayExporterEnqueueFailed   = "GatewayExporterEnqueueFailed"
-	RuleNameGatewayReceiverRefusedData     = "GatewayReceiverRefusedData"
-)
-
 func RuleNamePrefix(t PipelineType) string {
 	if t == TracePipeline {
 		return "Trace"
 	}
 
 	return "Metric"
-}
-
-type ruleBuilder struct {
-	serviceName string
-	dataType    string
-	namePrefix  string
-}
-
-func newRuleBuilder(t PipelineType) ruleBuilder {
-	serviceName := "telemetry-metric-gateway-metrics"
-	dataType := "metric_points"
-
-	if t == TracePipeline {
-		serviceName = "telemetry-trace-collector-metrics"
-		dataType = "spans"
-	}
-
-	return ruleBuilder{
-		dataType:    dataType,
-		serviceName: serviceName,
-		namePrefix:  RuleNamePrefix(t),
-	}
-}
-
-func (rb ruleBuilder) rules() []Rule {
-	return []Rule{
-		rb.exporterSentRule(),
-		rb.exporterDroppedRule(),
-		rb.exporterQueueAlmostFullRule(),
-		rb.exporterEnqueueFailedRule(),
-		rb.receiverRefusedRule(),
-	}
-}
-
-func (rb ruleBuilder) exporterSentRule() Rule {
-	metric := fmt.Sprintf("otelcol_exporter_sent_%s", rb.dataType)
-	return Rule{
-		Alert: rb.namePrefix + RuleNameGatewayExporterSentData,
-		Expr: rate(metric, selectService(rb.serviceName)).
-			sumBy(LabelExporter).
-			greaterThan(0).
-			build(),
-	}
-}
-
-func (rb ruleBuilder) exporterDroppedRule() Rule {
-	metric := fmt.Sprintf("otelcol_exporter_send_failed_%s", rb.dataType)
-	return Rule{
-		Alert: rb.namePrefix + RuleNameGatewayExporterDroppedData,
-		Expr: rate(metric, selectService(rb.serviceName)).
-			sumBy(LabelExporter).
-			greaterThan(0).
-			build(),
-	}
-}
-
-func (rb ruleBuilder) exporterQueueAlmostFullRule() Rule {
-	return Rule{
-		Alert: rb.namePrefix + RuleNameGatewayExporterQueueAlmostFull,
-		Expr: div("otelcol_exporter_queue_size", "otelcol_exporter_queue_capacity", selectService(rb.serviceName)).
-			greaterThan(0.8).
-			build(),
-	}
-}
-
-func (rb ruleBuilder) exporterEnqueueFailedRule() Rule {
-	metric := fmt.Sprintf("otelcol_exporter_enqueue_failed_%s", rb.dataType)
-	return Rule{
-		Alert: rb.namePrefix + RuleNameGatewayExporterEnqueueFailed,
-		Expr: rate(metric, selectService(rb.serviceName)).
-			sumBy(LabelExporter).
-			greaterThan(0).
-			build(),
-	}
-}
-
-func (rb ruleBuilder) receiverRefusedRule() Rule {
-	metric := fmt.Sprintf("otelcol_receiver_refused_%s", rb.dataType)
-	return Rule{
-		Alert: rb.namePrefix + RuleNameGatewayReceiverRefusedData,
-		Expr: rate(metric, selectService(rb.serviceName)).
-			sumBy(LabelReceiver).
-			greaterThan(0).
-			build(),
-	}
 }

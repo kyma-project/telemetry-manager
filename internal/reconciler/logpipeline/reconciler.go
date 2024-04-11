@@ -43,17 +43,18 @@ import (
 )
 
 type Config struct {
-	DaemonSet             types.NamespacedName
-	SectionsConfigMap     types.NamespacedName
-	FilesConfigMap        types.NamespacedName
-	LuaConfigMap          types.NamespacedName
-	ParsersConfigMap      types.NamespacedName
-	EnvSecret             types.NamespacedName
-	OutputTLSConfigSecret types.NamespacedName
-	OverrideConfigMap     types.NamespacedName
-	PipelineDefaults      builder.PipelineDefaults
-	Overrides             overrides.Config
-	DaemonSetConfig       fluentbit.DaemonSetConfig
+	DaemonSet               types.NamespacedName
+	SectionsConfigMap       types.NamespacedName
+	FilesConfigMap          types.NamespacedName
+	LuaConfigMap            types.NamespacedName
+	ParsersConfigMap        types.NamespacedName
+	EnvSecret               types.NamespacedName
+	OutputTLSConfigSecret   types.NamespacedName
+	OverrideConfigMap       types.NamespacedName
+	PipelineDefaults        builder.PipelineDefaults
+	Overrides               overrides.Config
+	DaemonSetConfig         fluentbit.DaemonSetConfig
+	ObserveBySelfMonitoring bool
 }
 
 //go:generate mockery --name DaemonSetProber --filename daemon_set_prober.go
@@ -179,12 +180,12 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to create fluent bit cluster role Binding: %w", err)
 	}
 
-	exporterMetricsService := fluentbit.MakeExporterMetricsService(r.config.DaemonSet)
+	exporterMetricsService := fluentbit.MakeExporterMetricsService(r.config.DaemonSet, r.config.ObserveBySelfMonitoring)
 	if err := k8sutils.CreateOrUpdateService(ctx, ownerRefSetter, exporterMetricsService); err != nil {
 		return fmt.Errorf("failed to reconcile exporter metrics service: %w", err)
 	}
 
-	metricsService := fluentbit.MakeMetricsService(r.config.DaemonSet)
+	metricsService := fluentbit.MakeMetricsService(r.config.DaemonSet, r.config.ObserveBySelfMonitoring)
 	if err := k8sutils.CreateOrUpdateService(ctx, ownerRefSetter, metricsService); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
@@ -307,8 +308,6 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline, client client.Client, certValidator TLSCertValidator) []telemetryv1alpha1.LogPipeline {
 	var deployablePipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
-		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator, client)
-
 		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
 			continue
 		}
@@ -318,7 +317,7 @@ func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1al
 		if allPipelines[i].Spec.Output.IsLokiDefined() {
 			continue
 		}
-
+		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator, client)
 		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
 			continue
 		}
