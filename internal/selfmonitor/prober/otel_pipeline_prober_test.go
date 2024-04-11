@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober/mocks"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestOTelPipelineProber(t *testing.T) {
@@ -309,18 +309,16 @@ func TestOTelPipelineProber(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			alertGetterMock := &mocks.AlertGetter{}
+			sut, err := NewTracePipelineProber(types.NamespacedName{Name: "test"})
+			require.NoError(t, err)
 
+			alertGetterMock := &mocks.AlertGetter{}
 			if tc.alertsErr != nil {
 				alertGetterMock.On("Alerts", mock.Anything).Return(promv1.AlertsResult{}, tc.alertsErr)
 			} else {
 				alertGetterMock.On("Alerts", mock.Anything).Return(tc.alerts, nil)
 			}
-
-			sut := &OTelPipelineProber{
-				getter:  alertGetterMock,
-				matcher: alertrules.MatchesTracePipelineRule,
-			}
+			sut.getter = alertGetterMock
 
 			result, err := sut.Probe(context.Background(), tc.pipelineName)
 

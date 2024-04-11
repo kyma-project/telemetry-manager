@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober/mocks"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestLogPipelineProber(t *testing.T) {
@@ -269,17 +270,16 @@ func TestLogPipelineProber(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			alertGetterMock := &mocks.AlertGetter{}
+			sut, err := NewLogPipelineProber(types.NamespacedName{})
+			require.NoError(t, err)
 
+			alertGetterMock := &mocks.AlertGetter{}
 			if tc.alertsErr != nil {
 				alertGetterMock.On("Alerts", mock.Anything).Return(promv1.AlertsResult{}, tc.alertsErr)
 			} else {
 				alertGetterMock.On("Alerts", mock.Anything).Return(tc.alerts, nil)
 			}
-
-			sut := LogPipelineProber{
-				getter: alertGetterMock,
-			}
+			sut.getter = alertGetterMock
 
 			result, err := sut.Probe(context.Background(), tc.pipelineName)
 
