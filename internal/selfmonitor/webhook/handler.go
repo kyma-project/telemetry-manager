@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -128,43 +127,18 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-type PipelineList interface {
-	GetItems() []Pipeline
-}
-
-type Pipeline interface {
-	GetName() string
-}
-
 func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
-	return h.toPipelineReconcileEvents(ctx, alerts, &telemetryv1alpha1.MetricPipelineList{}, alertrules.MatchesMetricPipelineRule)
-}
-
-func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
-	return h.toPipelineReconcileEvents(ctx, alerts, &telemetryv1alpha1.TracePipelineList{}, alertrules.MatchesTracePipelineRule)
-}
-
-func (h *Handler) toLogPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
-	return h.toPipelineReconcileEvents(ctx, alerts, &telemetryv1alpha1.LogPipelineList{}, alertrules.MatchesLogPipelineRule)
-}
-
-func (h *Handler) toPipelineReconcileEvents(ctx context.Context,
-	alerts []Alert,
-	pipelineList client.ObjectList,
-	matchFunc func(labels map[string]string, rule string, name string) bool) []event.GenericEvent {
-
 	var events []event.GenericEvent
-
-	pipelines, err := h.list(ctx, pipelineList)
-	if err != nil {
-		h.logger.Error(err, "Failed to list pipelines", "kind", pipelineList.GetObjectKind().GroupVersionKind().Kind)
+	var metricPipelines telemetryv1alpha1.MetricPipelineList
+	if err := h.c.List(ctx, &metricPipelines); err != nil {
 		return events
 	}
 
-	for i := range pipelines {
+	for i := range metricPipelines.Items {
+		pipelineName := metricPipelines.Items[i].GetName()
 		for _, alert := range alerts {
-			if matchFunc(alert.Labels, alertrules.RulesAny, pipelines[i].GetName()) {
-				events = append(events, event.GenericEvent{Object: pipelines[i]})
+			if alertrules.MatchesMetricPipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
+				events = append(events, event.GenericEvent{Object: &metricPipelines.Items[i]})
 			}
 		}
 	}
@@ -172,23 +146,42 @@ func (h *Handler) toPipelineReconcileEvents(ctx context.Context,
 	return events
 }
 
-// list retrieves an object list of type client.ObjectList and unpacks it into a slice of client.Objects.
-func (h *Handler) list(ctx context.Context, objs client.ObjectList) ([]client.Object, error) {
-	if err := h.c.List(ctx, objs); err != nil {
-		return nil, err
+func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
+	var events []event.GenericEvent
+	var tracePipelines telemetryv1alpha1.TracePipelineList
+	if err := h.c.List(ctx, &tracePipelines); err != nil {
+		return events
 	}
 
-	runtimeObjs, err := meta.ExtractList(objs)
-	if err != nil {
-		return nil, err
+	for i := range tracePipelines.Items {
+		pipelineName := tracePipelines.Items[i].GetName()
+		for _, alert := range alerts {
+			if alertrules.MatchesTracePipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
+				events = append(events, event.GenericEvent{Object: &tracePipelines.Items[i]})
+			}
+		}
 	}
 
-	var objects []client.Object
-	for _, runtimeObj := range runtimeObjs {
-		objects = append(objects, runtimeObj.(client.Object))
+	return events
+}
+
+func (h *Handler) toLogPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
+	var events []event.GenericEvent
+	var logPipelines telemetryv1alpha1.LogPipelineList
+	if err := h.c.List(ctx, &logPipelines); err != nil {
+		return events
 	}
 
-	return objects, nil
+	for i := range logPipelines.Items {
+		pipelineName := logPipelines.Items[i].GetName()
+		for _, alert := range alerts {
+			if alertrules.MatchesLogPipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
+				events = append(events, event.GenericEvent{Object: &logPipelines.Items[i]})
+			}
+		}
+	}
+
+	return events
 }
 
 func retrieveNames(events []event.GenericEvent) []string {
