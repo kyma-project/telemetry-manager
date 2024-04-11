@@ -160,7 +160,7 @@ func matchesRuleName(labelSet map[string]string, unprefixedRuleName string, t pi
 		return false
 	}
 
-	if matchesPrefix := strings.HasPrefix(ruleName, ruleNamePrefix(t)); !matchesPrefix {
+	if !strings.HasPrefix(ruleName, ruleNamePrefix(t)) {
 		return false
 	}
 
