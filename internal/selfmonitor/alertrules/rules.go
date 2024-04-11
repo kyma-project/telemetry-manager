@@ -1,11 +1,13 @@
 package alertrules
 
 import (
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
-	"github.com/prometheus/common/model"
 	"strings"
 	"time"
+
+	"github.com/prometheus/common/model"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 )
 
 const (

@@ -3,6 +3,7 @@ package prober
 import (
 	"context"
 	"fmt"
+
 	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"k8s.io/apimachinery/pkg/types"
 
