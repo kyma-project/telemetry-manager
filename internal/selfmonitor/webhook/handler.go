@@ -13,6 +13,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
+	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 type Handler struct {
@@ -127,37 +128,43 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+type PipelineList interface {
+	GetItems() []Pipeline
+}
+
+type Pipeline interface {
+	GetName() string
+}
+
 func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
-	var events []event.GenericEvent
-	var metricPipelines telemetryv1alpha1.MetricPipelineList
-	if err := h.c.List(ctx, &metricPipelines); err != nil {
-		return events
-	}
-
-	for i := range metricPipelines.Items {
-		pipelineName := metricPipelines.Items[i].GetName()
-		for _, alert := range alerts {
-			if alertrules.MatchesMetricPipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
-				events = append(events, event.GenericEvent{Object: &metricPipelines.Items[i]})
-			}
-		}
-	}
-
-	return events
+	return h.toPipelineReconcileEvents(ctx, alerts, &telemetryv1alpha1.MetricPipelineList{}, alertrules.MatchesMetricPipelineRule)
 }
 
 func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
+	return h.toPipelineReconcileEvents(ctx, alerts, &telemetryv1alpha1.TracePipelineList{}, alertrules.MatchesTracePipelineRule)
+}
+
+func (h *Handler) toLogPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
+	return h.toPipelineReconcileEvents(ctx, alerts, &telemetryv1alpha1.LogPipelineList{}, alertrules.MatchesLogPipelineRule)
+}
+
+func (h *Handler) toPipelineReconcileEvents(ctx context.Context,
+	alerts []Alert,
+	pipelineList client.ObjectList,
+	matchFunc func(labels map[string]string, rule string, name string) bool) []event.GenericEvent {
+
 	var events []event.GenericEvent
-	var tracePipelines telemetryv1alpha1.TracePipelineList
-	if err := h.c.List(ctx, &tracePipelines); err != nil {
+
+	pipelines, err := h.list(pipelineList)
+	if err != nil {
+		h.logger.Error(err, "Failed to list pipelines", "kind", pipelineList.GetObjectKind().GroupVersionKind().Kind)
 		return events
 	}
 
-	for i := range tracePipelines.Items {
-		pipelineName := tracePipelines.Items[i].GetName()
+	for i := range pipelines {
 		for _, alert := range alerts {
-			if alertrules.MatchesTracePipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
-				events = append(events, event.GenericEvent{Object: &tracePipelines.Items[i]})
+			if matchFunc(alert.Labels, alertrules.RulesAny, pipelines[i].GetName()) {
+				events = append(events, event.GenericEvent{Object: pipelines[i]})
 			}
 		}
 	}
@@ -165,23 +172,23 @@ func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []A
 	return events
 }
 
-func (h *Handler) toLogPipelineReconcileEvents(ctx context.Context, alerts []Alert) []event.GenericEvent {
-	var events []event.GenericEvent
-	var logPipelines telemetryv1alpha1.LogPipelineList
-	if err := h.c.List(ctx, &logPipelines); err != nil {
-		return events
+// list retrieves an object list of type client.ObjectList and unpacks it into a slice of client.Objects.
+func (h *Handler) list(objs client.ObjectList) ([]client.Object, error) {
+	if err := h.c.List(context.Background(), objs); err != nil {
+		return nil, err
 	}
 
-	for i := range logPipelines.Items {
-		pipelineName := logPipelines.Items[i].GetName()
-		for _, alert := range alerts {
-			if alertrules.MatchesLogPipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
-				events = append(events, event.GenericEvent{Object: &logPipelines.Items[i]})
-			}
-		}
+	runtimeObjs, err := meta.ExtractList(objs)
+	if err != nil {
+		return nil, err
 	}
 
-	return events
+	var objects []client.Object
+	for _, runtimeObj := range runtimeObjs {
+		objects = append(objects, runtimeObj.(client.Object))
+	}
+
+	return objects, nil
 }
 
 func retrieveNames(events []event.GenericEvent) []string {
