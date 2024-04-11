@@ -20,7 +20,7 @@ func (rb fluentBitRuleBuilder) rules() []Rule {
 func (rb fluentBitRuleBuilder) exporterSentRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentExporterSentLogs,
-		Expr: rate("fluentbit_output_bytes_total", selectService(fluentBitMetricsServiceName)).
+		Expr: rate("fluentbit_output_proc_bytes_total", selectService(fluentBitMetricsServiceName)).
 			greaterThan(0).
 			build(),
 	}
