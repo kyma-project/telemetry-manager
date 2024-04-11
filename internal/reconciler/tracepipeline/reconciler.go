@@ -19,6 +19,8 @@ package tracepipeline
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
+	"time"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
@@ -56,6 +58,11 @@ type FlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.ProbeResult, error)
 }
 
+//go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
+type TLSCertValidator interface {
+	ResolveAndValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) tlsCert.TLSCertValidationResult
+}
+
 type Reconciler struct {
 	client.Client
 	config                   Config
@@ -64,6 +71,7 @@ type Reconciler struct {
 	flowHealthProber         FlowHealthProber
 	overridesHandler         *overrides.Handler
 	istioStatusChecker       istiostatus.Checker
+	tlsCertValidator         TLSCertValidator
 }
 
 func NewReconciler(client client.Client,
@@ -80,6 +88,7 @@ func NewReconciler(client client.Client,
 		flowHealthProber:         flowHealthProber,
 		overridesHandler:         overridesHandler,
 		istioStatusChecker:       istiostatus.NewChecker(client),
+		tlsCertValidator:         tlsCert.New(client),
 	}
 }
 
@@ -131,7 +140,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list trace pipelines: %w", err)
 	}
-	deployablePipelines, err := getDeployableTracePipelines(ctx, allPipelinesList.Items, r, lock)
+	deployablePipelines, err := getDeployableTracePipelines(ctx, allPipelinesList.Items, r, lock, r.tlsCertValidator)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
 	}
@@ -148,7 +157,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 }
 
 // getDeployableTracePipelines returns the list of trace pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func getDeployableTracePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline, client client.Client, lock *k8sutils.ResourceCountLock) ([]telemetryv1alpha1.TracePipeline, error) {
+func getDeployableTracePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline, client client.Client, lock *k8sutils.ResourceCountLock, certValidator TLSCertValidator) ([]telemetryv1alpha1.TracePipeline, error) {
 	var deployablePipelines []telemetryv1alpha1.TracePipeline
 	for i := range allPipelines {
 		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
@@ -156,6 +165,11 @@ func getDeployableTracePipelines(ctx context.Context, allPipelines []telemetryv1
 		}
 
 		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
+			continue
+		}
+
+		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator)
+		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
 			continue
 		}
 
@@ -234,4 +248,16 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 		}
 	}
 	return defaultReplicaCount
+}
+
+func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, validator TLSCertValidator) tlsCert.TLSCertValidationResult {
+	if pipeline.Spec.Output.Otlp.TLS == nil || (pipeline.Spec.Output.Otlp.TLS.Cert == nil && pipeline.Spec.Output.Otlp.TLS.Key == nil) {
+		return tlsCert.TLSCertValidationResult{
+			CertValid:       true,
+			PrivateKeyValid: true,
+			Validity:        time.Now().AddDate(1, 0, 0),
+		}
+	}
+
+	return validator.ResolveAndValidateCertificate(ctx, pipeline.Spec.Output.Otlp.TLS.Cert, pipeline.Spec.Output.Otlp.TLS.Key)
 }

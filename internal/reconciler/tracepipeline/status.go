@@ -81,15 +81,26 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonConfigurationGenerated
+	// We will add some extra information to message field in conditions.EvaluateTLSCertCondition.
+	// So assign message in each condition
+	message := conditions.MessageForLogPipeline(reason)
 
 	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonReferencedSecretMissing
+		message = conditions.MessageForTracePipeline(reason)
+	}
+
+	if !secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) && pipeline.TLSCertAndKeyExist() {
+		// we should set TLSCert status only if tls cert is present
+		certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator)
+		status, reason, message = conditions.EvaluateTLSCertCondition(certValidationResult)
 	}
 
 	if !withinPipelineCountLimit {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonMaxPipelinesExceeded
+		message = conditions.MessageForTracePipeline(reason)
 	}
 
 	condition := metav1.Condition{
@@ -97,7 +108,7 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 		Status:             status,
 		ObservedGeneration: pipeline.Generation,
 		Reason:             reason,
-		Message:            conditions.MessageForTracePipeline(reason),
+		Message:            message,
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)

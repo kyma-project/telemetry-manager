@@ -69,7 +69,7 @@ type DaemonSetAnnotator interface {
 
 //go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ValidateCertificate(certPEM []byte, keyPEM []byte) tlsCert.TLSCertValidationResult
+	ResolveAndValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) tlsCert.TLSCertValidationResult
 }
 
 type Reconciler struct {
@@ -95,7 +95,7 @@ func NewReconciler(client client.Client, config Config, prober DaemonSetProber, 
 	r.syncer = syncer{client, config}
 	r.overridesHandler = overridesHandler
 	r.istioStatusChecker = istiostatus.NewChecker(client)
-	r.tlsCertValidator = &tlsCert.TLSCertValidator{}
+	r.tlsCertValidator = tlsCert.New(client)
 
 	return &r
 }
@@ -317,7 +317,7 @@ func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1al
 		if allPipelines[i].Spec.Output.IsLokiDefined() {
 			continue
 		}
-		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator, client)
+		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator)
 		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
 			continue
 		}
@@ -334,7 +334,7 @@ func getFluentBitPorts() []int32 {
 	}
 }
 
-func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, validator TLSCertValidator, client client.Client) tlsCert.TLSCertValidationResult {
+func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, validator TLSCertValidator) tlsCert.TLSCertValidationResult {
 	if pipeline.Spec.Output.HTTP == nil || (pipeline.Spec.Output.HTTP.TLSConfig.Cert == nil && pipeline.Spec.Output.HTTP.TLSConfig.Key == nil) {
 		return tlsCert.TLSCertValidationResult{
 			CertValid:       true,
@@ -343,36 +343,36 @@ func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1
 		}
 	}
 
-	certValue := pipeline.Spec.Output.HTTP.TLSConfig.Cert
-	keyValue := pipeline.Spec.Output.HTTP.TLSConfig.Key
+	//certValue := pipeline.Spec.Output.HTTP.TLSConfig.Cert
+	//keyValue := pipeline.Spec.Output.HTTP.TLSConfig.Key
 
-	certData, err := resolveValue(ctx, client, *certValue)
+	//certData, err := resolveValue(ctx, client, *certValue)
+	//
+	//if err != nil {
+	//	return tlsCert.TLSCertValidationResult{
+	//		CertValid: false,
+	//	}
+	//}
+	//
+	//keyData, err := resolveValue(ctx, client, *keyValue)
+	//
+	//if err != nil {
+	//	return tlsCert.TLSCertValidationResult{
+	//		PrivateKeyValid: false,
+	//	}
+	//}
 
-	if err != nil {
-		return tlsCert.TLSCertValidationResult{
-			CertValid: false,
-		}
-	}
-
-	keyData, err := resolveValue(ctx, client, *keyValue)
-
-	if err != nil {
-		return tlsCert.TLSCertValidationResult{
-			PrivateKeyValid: false,
-		}
-	}
-
-	return validator.ValidateCertificate(certData, keyData)
+	return validator.ResolveAndValidateCertificate(ctx, pipeline.Spec.Output.HTTP.TLSConfig.Cert, pipeline.Spec.Output.HTTP.TLSConfig.Key)
 
 }
 
-func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
-	if value.Value != "" {
-		return []byte(value.Value), nil
-	}
-	if value.ValueFrom.IsSecretKeyRef() {
-		return secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
-	}
-
-	return nil, fmt.Errorf("either value or secret key reference must be defined")
-}
+//func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
+//	if value.Value != "" {
+//		return []byte(value.Value), nil
+//	}
+//	if value.ValueFrom.IsSecretKeyRef() {
+//		return secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
+//	}
+//
+//	return nil, fmt.Errorf("either value or secret key reference must be defined")
+//}

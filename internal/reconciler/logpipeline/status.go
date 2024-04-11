@@ -133,12 +133,11 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 		message = conditions.MessageForLogPipeline(reason)
 	}
 
-	if !secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+	if !secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) && pipeline.TLSCertAndKeyExist() {
 		// we should set TLSCert status only if tls cert is present
-		if pipeline.TLSCertAndKeyExist() {
-			certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator, r.Client)
-			status, reason, message = conditions.EvaluateTLSCertCondition(certValidationResult)
-		}
+		certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator)
+		status, reason, message = conditions.EvaluateTLSCertCondition(certValidationResult)
+
 	}
 
 	if pipeline.Spec.Output.IsLokiDefined() {

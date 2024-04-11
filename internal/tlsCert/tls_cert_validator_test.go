@@ -1,6 +1,8 @@
 package tlsCert
 
 import (
+	"context"
+	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"testing"
 	"time"
 
@@ -43,7 +45,7 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 
 	validator := TLSCertValidator{}
 
-	validationResult := validator.ValidateCertificate(certData, keyData)
+	validationResult := validator.ResolveAndValidateCertificate(certData, keyData)
 
 	require.True(t, time.Now().After(validationResult.Validity), "Certificate is not expired")
 }
@@ -84,7 +86,7 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 
 	validator := TLSCertValidator{}
 
-	validationResult := validator.ValidateCertificate(certData, keyData)
+	validationResult := validator.ResolveAndValidateCertificate(certData, keyData)
 
 	require.True(t, validationResult.CertValid, "Certificate is not valid")
 	require.True(t, validationResult.PrivateKeyValid, "Private Key is not valid")
@@ -125,8 +127,12 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 -----END PRIVATE KEY-----`)
 
 	validator := TLSCertValidator{}
+	cert := v1alpha1.ValueType{
+		Value: string(certData),
+	}
 
-	validationResult := validator.ValidateCertificate(certData, keyData)
+	ctx := context.TODO()
+	validationResult := validator.ResolveAndValidateCertificate(ctx, certData, keyData)
 
 	require.False(t, validationResult.CertValid, "Certificate is valid")
 	require.True(t, validationResult.PrivateKeyValid, "Private Key is not valid")
@@ -168,7 +174,7 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 
 	validator := TLSCertValidator{}
 
-	validationResult := validator.ValidateCertificate(certData, keyData)
+	validationResult := validator.ResolveAndValidateCertificate(certData, keyData)
 
 	require.True(t, validationResult.CertValid, "Certificate is not valid")
 	require.False(t, validationResult.PrivateKeyValid, "Private Key is valid")
@@ -179,7 +185,7 @@ func TestSanitizeTLSSecretWithEscapedNewLine(t *testing.T) {
 	cert := "-----BEGIN CERTIFICATE-----\\nMIIDLzCCAhegAwIBAgIUTDC2e9uCi0ggzWiI7XkkXNWmMY0wDQYJKoZIhvcNAQEL\nBQAwJzELMAkGA1UEBhMCVVMxGDAWBgNVBAMMD0V4YW1wbGUtZm9vLWJhcjAeFw0y\nMzEyMjgxMzUwNDNaFw0yNjEwMTcxMzUwNDNaMCcxCzAJBgNVBAYTAlVTMRgwFgYD\nVQQDDA9FeGFtcGxlLWZvby1iYXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\nAoIBAQCu9t8rBBx0VlnArkIqmjUcdh+nqFje5w4hNCWAxwZYhmLioldyTVGTAoZ/\nivP/q2sqKgoLIKu+9LYu1k762T5xuhWUfW+BD4mVQuoF6NxJlOW1UgttThXlDD0/\nMWjQ4CL4+iLhlr7OK3PpaQwlak0nlgO4U6eK2vTjkTbgZYXRnRusW7OSfYDlcUSq\nU7TrmwJuXvug6QobmPWYSdqaTG7cLqF+5Voy1w2JKhceQ1DGvUZ8qVFNuUZivytd\nEsGpnxaTEURK0scgroYXpP/j1W9CV2eJYGI/YMGrtuMz0SRTP7zh/ZyUs3xtUcpn\nEkASuELd7GKWQ+JliLnHlTqBh/LfAgMBAAGjUzBRMB0GA1UdDgQWBBTYsQEqc5CX\nzjBGv/O04Qd5sOu5QjAfBgNVHSMEGDAWgBTYsQEqc5CXzjBGv/O04Qd5sOu5QjAP\nBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQA1L7IsQ9GTFl9GQMGo\n+JOffZxhR9AiwnCPXTMWF8qYC99F39i946wJIkgJN6wm8Rt46gA65EfJw6YdjdB6\n8kjg3CDRDIFn2QRrP4x8tS4EBu9tUkss/2h0I16MEEB9RV8adjH0lkiPwQwP50uW\nwLlwMHw9KsxA1MATzSmBruzW//gyoJFaBKYsYqYa7VKcEyQqKgiQypBN2O01twF3\ntahLFTIeeD0e4fMe++mwJh8rT5sRpCLmFDIoajmLkjj48P7hvgtLFN+vRTqgqViq\nySngIMt75xyXeTm15o7LrEe4B4HkpWt4CbeUW/44HrCUoItuhyea7baGecLx8VoS\nR3xg\\n-----END CERTIFICATE-----\n"
 
 	validator := TLSCertValidator{}
-	validationResult := validator.ValidateCertificate([]byte(cert), []byte(key))
+	validationResult := validator.ResolveAndValidateCertificate([]byte(cert), []byte(key))
 
 	require.True(t, validationResult.CertValid)
 	require.True(t, validationResult.PrivateKeyValid)
@@ -190,7 +196,7 @@ func TestSanitizeValidTLSSecret(t *testing.T) {
 	cert := "-----BEGIN CERTIFICATE-----\nMIIDLzCCAhegAwIBAgIUTDC2e9uCi0ggzWiI7XkkXNWmMY0wDQYJKoZIhvcNAQEL\nBQAwJzELMAkGA1UEBhMCVVMxGDAWBgNVBAMMD0V4YW1wbGUtZm9vLWJhcjAeFw0y\nMzEyMjgxMzUwNDNaFw0yNjEwMTcxMzUwNDNaMCcxCzAJBgNVBAYTAlVTMRgwFgYD\nVQQDDA9FeGFtcGxlLWZvby1iYXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\nAoIBAQCu9t8rBBx0VlnArkIqmjUcdh+nqFje5w4hNCWAxwZYhmLioldyTVGTAoZ/\nivP/q2sqKgoLIKu+9LYu1k762T5xuhWUfW+BD4mVQuoF6NxJlOW1UgttThXlDD0/\nMWjQ4CL4+iLhlr7OK3PpaQwlak0nlgO4U6eK2vTjkTbgZYXRnRusW7OSfYDlcUSq\nU7TrmwJuXvug6QobmPWYSdqaTG7cLqF+5Voy1w2JKhceQ1DGvUZ8qVFNuUZivytd\nEsGpnxaTEURK0scgroYXpP/j1W9CV2eJYGI/YMGrtuMz0SRTP7zh/ZyUs3xtUcpn\nEkASuELd7GKWQ+JliLnHlTqBh/LfAgMBAAGjUzBRMB0GA1UdDgQWBBTYsQEqc5CX\nzjBGv/O04Qd5sOu5QjAfBgNVHSMEGDAWgBTYsQEqc5CXzjBGv/O04Qd5sOu5QjAP\nBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQA1L7IsQ9GTFl9GQMGo\n+JOffZxhR9AiwnCPXTMWF8qYC99F39i946wJIkgJN6wm8Rt46gA65EfJw6YdjdB6\n8kjg3CDRDIFn2QRrP4x8tS4EBu9tUkss/2h0I16MEEB9RV8adjH0lkiPwQwP50uW\nwLlwMHw9KsxA1MATzSmBruzW//gyoJFaBKYsYqYa7VKcEyQqKgiQypBN2O01twF3\ntahLFTIeeD0e4fMe++mwJh8rT5sRpCLmFDIoajmLkjj48P7hvgtLFN+vRTqgqViq\nySngIMt75xyXeTm15o7LrEe4B4HkpWt4CbeUW/44HrCUoItuhyea7baGecLx8VoS\nR3xg\n-----END CERTIFICATE-----\n"
 
 	validator := TLSCertValidator{}
-	validationResult := validator.ValidateCertificate([]byte(cert), []byte(key))
+	validationResult := validator.ResolveAndValidateCertificate([]byte(cert), []byte(key))
 
 	require.True(t, validationResult.CertValid)
 	require.True(t, validationResult.PrivateKeyValid)
