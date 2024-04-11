@@ -74,7 +74,7 @@ func TestLogPipelineProber(t *testing.T) {
 			},
 			expected: LogPipelineProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
-					Healthy: true,
+					AllDataDropped: true,
 				},
 			},
 		},
@@ -142,6 +142,125 @@ func TestLogPipelineProber(t *testing.T) {
 			expected: LogPipelineProbeResult{
 				PipelineProbeResult: PipelineProbeResult{
 					AllDataDropped: true,
+				},
+			},
+		},
+		{
+			name:         "buffer full firing",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "LogAgentBufferFull",
+							"name":      "cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: LogPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					AllDataDropped: true,
+				},
+			},
+		},
+		{
+			name:         "exporter sent logs and exporter dropped logs firing",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "LogAgentExporterDroppedLogs",
+							"name":      "cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+					{
+						Labels: model.LabelSet{
+							"alertname": "LogAgentExporterSentLogs",
+							"name":      "cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: LogPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					SomeDataDropped: true,
+				},
+			},
+		},
+		{
+			name:         "exporter sent logs and buffer full firing",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "LogAgentBufferFull",
+							"name":      "cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+					{
+						Labels: model.LabelSet{
+							"alertname": "LogAgentExporterSentLogs",
+							"name":      "cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: LogPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					SomeDataDropped: true,
+				},
+			},
+		},
+		{
+			name:         "receiver read logs and exporter did not send logs firing",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "LogAgentReceiverReadLogs",
+							"name":      "cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: LogPipelineProbeResult{
+				NoLogsDelivered: true,
+			},
+		},
+		{
+			name:         "exporter read logs and exporter sent logs firing",
+			pipelineName: "cls",
+			alerts: promv1.AlertsResult{
+				Alerts: []promv1.Alert{
+					{
+						Labels: model.LabelSet{
+							"alertname": "LogAgentReceiverReadLogs",
+							"name":      "cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+					{
+						Labels: model.LabelSet{
+							"alertname": "LogAgentExporterSentLogs",
+							"name":      "cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
+				},
+			},
+			expected: LogPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					Healthy: true,
 				},
 			},
 		},
