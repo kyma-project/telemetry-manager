@@ -1,7 +1,8 @@
 package common
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
+	"strconv"
+
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -9,7 +10,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"strconv"
+
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config"
 )
 
 type podSpecOption = func(pod *corev1.PodSpec)
