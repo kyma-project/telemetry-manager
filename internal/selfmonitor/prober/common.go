@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -48,6 +49,8 @@ func retrieveAlerts(ctx context.Context, getter alertGetter) ([]promv1.Alert, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Prometheus alerts: %w", err)
 	}
+
+	logf.FromContext(ctx).V(1).Info("Retrieved alerts", "alerts", result.Alerts)
 
 	return result.Alerts, nil
 }
