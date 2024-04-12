@@ -10,6 +10,10 @@ import (
 const twoWeeks = time.Hour * 24 * 7 * 2
 
 func EvaluateTLSCertCondition(certValidationResult tlsCert.TLSCertValidationResult) (status metav1.ConditionStatus, reason, message string) {
+	status = metav1.ConditionTrue
+	reason = ReasonConfigurationGenerated
+	message = MessageForLogPipeline(reason)
+
 	if !certValidationResult.CertValid {
 		status = metav1.ConditionFalse
 		reason = ReasonTLSCertificateInvalid

@@ -49,7 +49,7 @@ func (tcv *TLSCertValidator) ResolveAndValidateCertificate(ctx context.Context, 
 	keyData, err := resolveValue(ctx, tcv.client, *keyPEM)
 
 	if err != nil {
-		result.CertValid = false
+		result.PrivateKeyValid = false
 		return result
 	}
 
