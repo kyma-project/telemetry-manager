@@ -3,8 +3,6 @@ package logpipeline
 import (
 	"context"
 	"fmt"
-	"time"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,8 +13,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 )
-
-const twoWeeks = time.Hour * 24 * 7 * 2
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
 	var pipeline telemetryv1alpha1.LogPipeline

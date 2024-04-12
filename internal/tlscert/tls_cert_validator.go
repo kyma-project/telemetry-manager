@@ -1,4 +1,4 @@
-package tlsCert
+package tlscert
 
 import (
 	"bytes"
@@ -6,10 +6,12 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 
 	_ "crypto"
 )

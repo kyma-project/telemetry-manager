@@ -2,7 +2,6 @@ package metricpipeline
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,6 +13,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 )
 
 var (

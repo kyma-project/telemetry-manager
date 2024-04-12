@@ -19,7 +19,6 @@ package logpipeline
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -40,6 +39,7 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
 )
 
 type Config struct {
@@ -69,7 +69,7 @@ type DaemonSetAnnotator interface {
 
 //go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ResolveAndValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) tlsCert.TLSCertValidationResult
+	ResolveAndValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) tlscert.TLSCertValidationResult
 }
 
 type Reconciler struct {
@@ -95,7 +95,7 @@ func NewReconciler(client client.Client, config Config, prober DaemonSetProber, 
 	r.syncer = syncer{client, config}
 	r.overridesHandler = overridesHandler
 	r.istioStatusChecker = istiostatus.NewChecker(client)
-	r.tlsCertValidator = tlsCert.New(client)
+	r.tlsCertValidator = tlscert.New(client)
 
 	return &r
 }
@@ -334,9 +334,9 @@ func getFluentBitPorts() []int32 {
 	}
 }
 
-func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, validator TLSCertValidator) tlsCert.TLSCertValidationResult {
+func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, validator TLSCertValidator) tlscert.TLSCertValidationResult {
 	if pipeline.Spec.Output.HTTP == nil || (pipeline.Spec.Output.HTTP.TLSConfig.Cert == nil && pipeline.Spec.Output.HTTP.TLSConfig.Key == nil) {
-		return tlsCert.TLSCertValidationResult{
+		return tlscert.TLSCertValidationResult{
 			CertValid:       true,
 			PrivateKeyValid: true,
 			Validity:        time.Now().AddDate(1, 0, 0),

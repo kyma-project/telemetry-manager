@@ -2,14 +2,16 @@ package conditions
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
 )
 
 const twoWeeks = time.Hour * 24 * 7 * 2
 
-func EvaluateTLSCertCondition(certValidationResult tlsCert.TLSCertValidationResult) (status metav1.ConditionStatus, reason, message string) {
+func EvaluateTLSCertCondition(certValidationResult tlscert.TLSCertValidationResult) (status metav1.ConditionStatus, reason, message string) {
 	status = metav1.ConditionTrue
 	reason = ReasonConfigurationGenerated
 	message = MessageForLogPipeline(reason)

@@ -2,7 +2,6 @@ package logpipeline
 
 import (
 	"context"
-	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
 	"testing"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
 )
 
 func TestGetDeployableLogPipelines(t *testing.T) {
@@ -235,19 +235,19 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 			//invalidCert :=
 			//somekey :=
 
-			validatorStub.On("ResolveAndValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "invalidcert"}, &telemetryv1alpha1.ValueType{Value: "somekey"}).Return(tlsCert.TLSCertValidationResult{
+			validatorStub.On("ResolveAndValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "invalidcert"}, &telemetryv1alpha1.ValueType{Value: "somekey"}).Return(tlscert.TLSCertValidationResult{
 				CertValid:       false,
 				PrivateKeyValid: true,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ResolveAndValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "somecert"}, &telemetryv1alpha1.ValueType{Value: "invalidkey"}).Return(tlsCert.TLSCertValidationResult{
+			}).On("ResolveAndValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "somecert"}, &telemetryv1alpha1.ValueType{Value: "invalidkey"}).Return(tlscert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: false,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ResolveAndValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "valid"}, &telemetryv1alpha1.ValueType{Value: "valid"}).Return(tlsCert.TLSCertValidationResult{
+			}).On("ResolveAndValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "valid"}, &telemetryv1alpha1.ValueType{Value: "valid"}).Return(tlscert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: true,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ResolveAndValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "expired"}, &telemetryv1alpha1.ValueType{Value: "expired"}).Return(tlsCert.TLSCertValidationResult{
+			}).On("ResolveAndValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "expired"}, &telemetryv1alpha1.ValueType{Value: "expired"}).Return(tlscert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: true,
 				Validity:        time.Now().AddDate(-1, -1, -1),

@@ -19,7 +19,6 @@ package tracepipeline
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -38,6 +37,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
 )
 
 const defaultReplicaCount int32 = 2
@@ -60,7 +60,7 @@ type FlowHealthProber interface {
 
 //go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ResolveAndValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) tlsCert.TLSCertValidationResult
+	ResolveAndValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) tlscert.TLSCertValidationResult
 }
 
 type Reconciler struct {
@@ -88,7 +88,7 @@ func NewReconciler(client client.Client,
 		flowHealthProber:         flowHealthProber,
 		overridesHandler:         overridesHandler,
 		istioStatusChecker:       istiostatus.NewChecker(client),
-		tlsCertValidator:         tlsCert.New(client),
+		tlsCertValidator:         tlscert.New(client),
 	}
 }
 
@@ -250,9 +250,9 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	return defaultReplicaCount
 }
 
-func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, validator TLSCertValidator) tlsCert.TLSCertValidationResult {
+func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, validator TLSCertValidator) tlscert.TLSCertValidationResult {
 	if pipeline.Spec.Output.Otlp.TLS == nil || (pipeline.Spec.Output.Otlp.TLS.Cert == nil && pipeline.Spec.Output.Otlp.TLS.Key == nil) {
-		return tlsCert.TLSCertValidationResult{
+		return tlscert.TLSCertValidationResult{
 			CertValid:       true,
 			PrivateKeyValid: true,
 			Validity:        time.Now().AddDate(1, 0, 0),

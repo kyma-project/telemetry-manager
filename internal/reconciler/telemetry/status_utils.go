@@ -2,11 +2,13 @@ package telemetry
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"k8s.io/apimachinery/pkg/api/meta"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"slices"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 )
 
 type blockingResources struct {
@@ -28,7 +30,7 @@ func generateDeletionBlockedMessage(resources ...blockingResources) string {
 		strings.Join(resourcesDesc, ", "))
 }
 
-func determineTLSCertMsg(statusConditions []v1.Condition) string {
+func determineTLSCertMsg(statusConditions []metav1.Condition) string {
 	cond := meta.FindStatusCondition(statusConditions, conditions.TypeConfigurationGenerated)
 	if cond != nil && (cond.Reason == conditions.ReasonTLSCertificateAboutToExpire ||
 		cond.Reason == conditions.ReasonTLSCertificateExpired ||
