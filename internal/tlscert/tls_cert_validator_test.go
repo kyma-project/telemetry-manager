@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
 func TestExpiredCertificate(t *testing.T) {
@@ -48,11 +48,11 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	cert := v1alpha1.ValueType{
+	cert := telemetryv1alpha1.ValueType{
 		Value: string(certData),
 	}
 
-	key := v1alpha1.ValueType{
+	key := telemetryv1alpha1.ValueType{
 		Value: string(keyData),
 	}
 
@@ -98,11 +98,11 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	cert := v1alpha1.ValueType{
+	cert := telemetryv1alpha1.ValueType{
 		Value: string(certData),
 	}
 
-	key := v1alpha1.ValueType{
+	key := telemetryv1alpha1.ValueType{
 		Value: string(keyData),
 	}
 
@@ -148,11 +148,11 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	cert := v1alpha1.ValueType{
+	cert := telemetryv1alpha1.ValueType{
 		Value: string(certData),
 	}
 
-	key := v1alpha1.ValueType{
+	key := telemetryv1alpha1.ValueType{
 		Value: string(keyData),
 	}
 	ctx := context.TODO()
@@ -199,11 +199,11 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	cert := v1alpha1.ValueType{
+	cert := telemetryv1alpha1.ValueType{
 		Value: string(certData),
 	}
 
-	key := v1alpha1.ValueType{
+	key := telemetryv1alpha1.ValueType{
 		Value: string(keyData),
 	}
 
@@ -220,11 +220,11 @@ func TestSanitizeTLSSecretWithEscapedNewLine(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	cert := v1alpha1.ValueType{
+	cert := telemetryv1alpha1.ValueType{
 		Value: certData,
 	}
 
-	key := v1alpha1.ValueType{
+	key := telemetryv1alpha1.ValueType{
 		Value: keyData,
 	}
 
@@ -241,11 +241,11 @@ func TestSanitizeValidTLSSecret(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().Build()
 	validator := New(fakeClient)
 
-	cert := v1alpha1.ValueType{
+	cert := telemetryv1alpha1.ValueType{
 		Value: certData,
 	}
 
-	key := v1alpha1.ValueType{
+	key := telemetryv1alpha1.ValueType{
 		Value: keyData,
 	}
 	validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &cert, &key)

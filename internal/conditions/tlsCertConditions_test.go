@@ -52,7 +52,7 @@ func Test_EvaluateTLSCertCondition(t *testing.T) {
 			given:           tlscert.TLSCertValidationResult{CertValid: true, PrivateKeyValid: true, Validity: time.Now().AddDate(1, 0, 0)},
 			expectedStatus:  metav1.ConditionTrue,
 			expectedReason:  ReasonConfigurationGenerated,
-			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonConfigurationGenerated)),
+			expectedMessage: MessageForLogPipeline(ReasonConfigurationGenerated),
 		},
 	}
 
