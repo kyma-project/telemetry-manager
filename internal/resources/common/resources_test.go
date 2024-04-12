@@ -1,11 +1,11 @@
 package common
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -36,7 +36,9 @@ func TestWithGoMemLimitEnvVar(t *testing.T) {
 	memLimit := resource.NewQuantity(1000, resource.BinarySI)
 	pod := corev1.PodSpec{
 		Containers: []corev1.Container{
-			{Name: "test"},
+			{
+				Name: "test",
+			},
 		},
 	}
 	podSpec := WithGoMemLimitEnvVar(*memLimit)
