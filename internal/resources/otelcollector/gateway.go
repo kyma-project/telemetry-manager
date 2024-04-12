@@ -104,12 +104,14 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioConfi
 	}
 	resources := makeGatewayResourceRequirements(cfg)
 	affinity := makePodAffinity(selectorLabels)
+
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
 		commonresources.WithPriorityClass(cfg.Deployment.PriorityClassName),
 		commonresources.WithResources(resources),
 		withAffinity(affinity),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
+		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 	)
 
 	return &appsv1.Deployment{

@@ -65,6 +65,8 @@ spec:
             cpu: 5m
             memory: 100Mi
         env:
+        - name: GOMEMLIMIT
+          value: "300MiB"
         - name: APP_LOG_LEVEL
           value: "info"
         - name: MY_POD_NAMESPACE

@@ -10,9 +10,9 @@ require (
 	github.com/onsi/gomega v1.32.0
 	github.com/prometheus/client_golang v1.19.0
 	github.com/prometheus/client_model v0.6.1
-	github.com/prometheus/common v0.52.2
+	github.com/prometheus/common v0.52.3
 	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/collector/pdata v1.4.0
+	go.opentelemetry.io/collector/pdata v1.5.0
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v3 v3.0.1
 	istio.io/api v1.21.0
@@ -60,7 +60,7 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
-	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/term v0.18.0 // indirect
