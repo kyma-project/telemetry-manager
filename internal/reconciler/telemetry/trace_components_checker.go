@@ -79,13 +79,18 @@ func (t *traceComponentsChecker) firstUnhealthyPipelineReason(pipelines []teleme
 }
 
 func (t *traceComponentsChecker) determineConditionStatus(reason string) metav1.ConditionStatus {
-	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonTraceComponentsRunning {
+	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonTraceComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
 		return metav1.ConditionTrue
 	}
 	return metav1.ConditionFalse
 }
 
 func (t *traceComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.TracePipeline, reason string) string {
+	tlsAboutExpireMassage := t.checkTLSCertificateMessage(pipelines)
+	if len(tlsAboutExpireMassage) > 0 {
+		return tlsAboutExpireMassage
+	}
+
 	if reason != conditions.ReasonResourceBlocksDeletion {
 		return conditions.MessageForTracePipeline(reason)
 	}
@@ -106,4 +111,14 @@ func (t *traceComponentsChecker) addReasonPrefix(reason string) string {
 		return "TracePipeline" + reason
 	}
 	return reason
+}
+
+func (t *traceComponentsChecker) checkTLSCertificateMessage(pipelines []telemetryv1alpha1.TracePipeline) string {
+	for _, p := range pipelines {
+		tlsCertMsg := determineTLSCertMsg(p.Status.Conditions)
+		if tlsCertMsg != "" {
+			return tlsCertMsg
+		}
+	}
+	return ""
 }

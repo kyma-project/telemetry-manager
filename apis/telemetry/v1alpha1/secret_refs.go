@@ -80,7 +80,7 @@ func (mp *MetricPipeline) TLSCertAndKeyExist() bool {
 }
 
 func checkOTLPTLSCertExists(otlpOut *OtlpOutput) bool {
-	return otlpOut.TLS.Cert != nil && otlpOut.TLS.Key != nil
+	return otlpOut.TLS != nil && (otlpOut.TLS.Cert != nil && otlpOut.TLS.Key != nil)
 }
 
 func getRefsInOtlpOutput(otlpOut *OtlpOutput) []SecretKeyRef {

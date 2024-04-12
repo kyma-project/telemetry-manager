@@ -252,3 +252,18 @@ func TestSanitizeValidTLSSecret(t *testing.T) {
 	require.True(t, validationResult.CertValid)
 	require.True(t, validationResult.PrivateKeyValid)
 }
+
+//func TestMissingCertValue(t *testing.T) {
+//	fakeClient := fake.NewClientBuilder().Build()
+//	validator := New(fakeClient)
+//	cert := v1alpha1.ValueType{
+//		Value: "",
+//	}
+//
+//	key := v1alpha1.ValueType{
+//		Value: "",
+//	}
+//	require.True(t, validationResult.CertValid)
+//	require.True(t, validationResult.PrivateKeyValid)
+//
+//}
