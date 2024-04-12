@@ -5,9 +5,8 @@ package mocks
 import (
 	context "context"
 
-	mock "github.com/stretchr/testify/mock"
-
 	tlsCert "github.com/kyma-project/telemetry-manager/internal/tlsCert"
+	mock "github.com/stretchr/testify/mock"
 
 	v1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )

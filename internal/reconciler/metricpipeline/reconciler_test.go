@@ -2,6 +2,7 @@ package metricpipeline
 
 import (
 	"context"
+	"github.com/kyma-project/telemetry-manager/internal/reconciler/metricpipeline/mocks"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -84,8 +85,9 @@ func TestGetDeployableMetricPipelines(t *testing.T) {
 	err := l.TryAcquireLock(ctx, &pipeline1)
 	require.NoError(t, err)
 
+	validatorStub := &mocks.TLSCertValidator{}
 	pipelines := []telemetryv1alpha1.MetricPipeline{pipeline1}
-	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l)
+	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l, validatorStub)
 	require.NoError(t, err)
 	require.Contains(t, deployablePipelines, pipeline1)
 }
@@ -103,9 +105,10 @@ func TestMultipleGetDeployableMetricPipelines(t *testing.T) {
 
 	err = l.TryAcquireLock(ctx, &pipeline2)
 	require.NoError(t, err)
+	validatorStub := &mocks.TLSCertValidator{}
 
 	pipelines := []telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2}
-	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l)
+	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l, validatorStub)
 	require.NoError(t, err)
 	require.Contains(t, deployablePipelines, pipeline1)
 	require.Contains(t, deployablePipelines, pipeline2)
@@ -122,8 +125,9 @@ func TestMultipleGetDeployableMetricPipelinesWithoutLock(t *testing.T) {
 	err := l.TryAcquireLock(ctx, &pipeline1)
 	require.NoError(t, err)
 
+	validatorStub := &mocks.TLSCertValidator{}
 	pipelines := []telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2}
-	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l)
+	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l, validatorStub)
 	require.NoError(t, err)
 	require.Contains(t, deployablePipelines, pipeline1)
 	require.NotContains(t, deployablePipelines, pipeline2)
@@ -140,8 +144,9 @@ func TestGetDeployableMetricPipelinesWithMissingSecretReference(t *testing.T) {
 	err := l.TryAcquireLock(ctx, &pipelineWithSecretRef)
 	require.NoError(t, err)
 
+	validatorStub := &mocks.TLSCertValidator{}
 	pipelines := []telemetryv1alpha1.MetricPipeline{pipelineWithSecretRef}
-	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l)
+	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l, validatorStub)
 	require.NoError(t, err)
 	require.NotContains(t, deployablePipelines, pipelineWithSecretRef)
 }
@@ -157,8 +162,9 @@ func TestGetDeployableMetricPipelinesWithoutLock(t *testing.T) {
 	err := l.TryAcquireLock(ctx, &pipelineWithSecretRef)
 	require.NoError(t, err)
 
+	validatorStub := &mocks.TLSCertValidator{}
 	pipelines := []telemetryv1alpha1.MetricPipeline{pipeline1}
-	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l)
+	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l, validatorStub)
 	require.NoError(t, err)
 	require.NotContains(t, deployablePipelines, pipeline1)
 }

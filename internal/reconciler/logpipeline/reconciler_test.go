@@ -232,20 +232,22 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 			validatorStub := &mocks.TLSCertValidator{}
+			//invalidCert :=
+			//somekey :=
 
-			validatorStub.On("ValidateCertificate", []byte("invalidcert"), []byte("somekey")).Return(tlsCert.TLSCertValidationResult{
+			validatorStub.On("ResolveAndValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "invalidcert"}, &telemetryv1alpha1.ValueType{Value: "somekey"}).Return(tlsCert.TLSCertValidationResult{
 				CertValid:       false,
 				PrivateKeyValid: true,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", []byte("somecert"), []byte("invalidkey")).Return(tlsCert.TLSCertValidationResult{
+			}).On("ResolveAndValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "somecert"}, &telemetryv1alpha1.ValueType{Value: "invalidkey"}).Return(tlsCert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: false,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", []byte("valid"), []byte("valid")).Return(tlsCert.TLSCertValidationResult{
+			}).On("ResolveAndValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "valid"}, &telemetryv1alpha1.ValueType{Value: "valid"}).Return(tlsCert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: true,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", []byte("expired"), []byte("expired")).Return(tlsCert.TLSCertValidationResult{
+			}).On("ResolveAndValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "expired"}, &telemetryv1alpha1.ValueType{Value: "expired"}).Return(tlsCert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: true,
 				Validity:        time.Now().AddDate(-1, -1, -1),
