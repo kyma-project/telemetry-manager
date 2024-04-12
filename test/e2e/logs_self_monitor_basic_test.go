@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Self Monitor", Label("logs"), Ordered, func() {
+var _ = Describe("Logs Self Monitor", Label("self-mon-logs"), Ordered, func() {
 	const (
 		mockBackendName = "log-receiver-selfmon"
 		mockNs          = "log-http-output-selfmon-test"
