@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	tlsCert "github.com/kyma-project/telemetry-manager/internal/tlsCert"
+	tlscert "github.com/kyma-project/telemetry-manager/internal/tlscert"
 	mock "github.com/stretchr/testify/mock"
 
 	v1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -17,18 +17,18 @@ type TLSCertValidator struct {
 }
 
 // ResolveAndValidateCertificate provides a mock function with given fields: ctx, certPEM, keyPEM
-func (_m *TLSCertValidator) ResolveAndValidateCertificate(ctx context.Context, certPEM *v1alpha1.ValueType, keyPEM *v1alpha1.ValueType) tlsCert.TLSCertValidationResult {
+func (_m *TLSCertValidator) ResolveAndValidateCertificate(ctx context.Context, certPEM *v1alpha1.ValueType, keyPEM *v1alpha1.ValueType) tlscert.TLSCertValidationResult {
 	ret := _m.Called(ctx, certPEM, keyPEM)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ResolveAndValidateCertificate")
 	}
 
-	var r0 tlsCert.TLSCertValidationResult
-	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.ValueType, *v1alpha1.ValueType) tlsCert.TLSCertValidationResult); ok {
+	var r0 tlscert.TLSCertValidationResult
+	if rf, ok := ret.Get(0).(func(context.Context, *v1alpha1.ValueType, *v1alpha1.ValueType) tlscert.TLSCertValidationResult); ok {
 		r0 = rf(ctx, certPEM, keyPEM)
 	} else {
-		r0 = ret.Get(0).(tlsCert.TLSCertValidationResult)
+		r0 = ret.Get(0).(tlscert.TLSCertValidationResult)
 	}
 
 	return r0

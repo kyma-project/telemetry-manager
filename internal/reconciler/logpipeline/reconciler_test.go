@@ -15,7 +15,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
-	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 func TestGetDeployableLogPipelines(t *testing.T) {

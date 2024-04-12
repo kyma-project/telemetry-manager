@@ -37,7 +37,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 const defaultReplicaCount int32 = 2

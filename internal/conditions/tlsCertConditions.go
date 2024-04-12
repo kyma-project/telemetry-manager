@@ -6,7 +6,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kyma-project/telemetry-manager/internal/tlsCert"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 const twoWeeks = time.Hour * 24 * 7 * 2
