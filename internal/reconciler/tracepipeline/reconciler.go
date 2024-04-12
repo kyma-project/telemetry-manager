@@ -55,7 +55,7 @@ type DeploymentProber interface {
 
 //go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
 type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (prober.ProbeResult, error)
+	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
 }
 
 //go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go

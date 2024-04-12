@@ -19,7 +19,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
@@ -38,6 +37,7 @@ func TestHandler(t *testing.T) {
 		expectedStatus             int
 		metricPipelinesToReconcile []string
 		tracePipelinesToReconcile  []string
+		logPipelinesToReconcile    []string
 	}{
 		{
 			name:          "alert matches metric pipeline with same name",
@@ -58,6 +58,16 @@ func TestHandler(t *testing.T) {
 			},
 			expectedStatus:            http.StatusOK,
 			tracePipelinesToReconcile: []string{"cls"},
+		},
+		{
+			name:          "alert matches log pipeline with same name",
+			requestMethod: http.MethodPost,
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"LogAgentExporterDroppedLogs","name":"cls"}}]`)),
+			resources: []client.Object{
+				ptr.To(testutils.NewLogPipelineBuilder().WithName("cls").Build()),
+			},
+			expectedStatus:          http.StatusOK,
+			logPipelinesToReconcile: []string{"cls"},
 		},
 		{
 			name:          "alert does not match pipeline with other name",
@@ -100,6 +110,17 @@ func TestHandler(t *testing.T) {
 			tracePipelinesToReconcile: []string{"cls", "dynatrace"},
 		},
 		{
+			name:          "alert matches all log pipelines",
+			requestMethod: http.MethodPost,
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"LogAgentBufferFull"}}]`)),
+			resources: []client.Object{
+				ptr.To(testutils.NewLogPipelineBuilder().WithName("cls").Build()),
+				ptr.To(testutils.NewLogPipelineBuilder().WithName("dynatrace").Build()),
+			},
+			expectedStatus:          http.StatusOK,
+			logPipelinesToReconcile: []string{"cls", "dynatrace"},
+		},
+		{
 			name:           "invalid method",
 			requestMethod:  http.MethodGet,
 			expectedStatus: http.StatusMethodNotAllowed,
@@ -122,6 +143,7 @@ func TestHandler(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			metricPipelineEvents := make(chan event.GenericEvent, 1024)
 			tracePipelineEvents := make(chan event.GenericEvent, 1024)
+			logPipelineEvents := make(chan event.GenericEvent, 1024)
 
 			noopLogger := logr.New(logf.NullLogSink{})
 
@@ -130,8 +152,9 @@ func TestHandler(t *testing.T) {
 			_ = telemetryv1alpha1.AddToScheme(scheme)
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tc.resources...).Build()
 			handler := NewHandler(fakeClient,
-				WithSubscriber(metricPipelineEvents, alertrules.MetricPipeline),
-				WithSubscriber(tracePipelineEvents, alertrules.TracePipeline),
+				WithMetricPipelineSubscriber(metricPipelineEvents),
+				WithTracePipelineSubscriber(tracePipelineEvents),
+				WithLogPipelineSubscriber(logPipelineEvents),
 				WithLogger(noopLogger))
 
 			req, err := http.NewRequest(tc.requestMethod, "/", tc.requestBody)
@@ -153,6 +176,13 @@ func TestHandler(t *testing.T) {
 				require.ElementsMatch(t, tc.tracePipelinesToReconcile, readAllNamesFromChannel(tracePipelineEvents))
 			} else {
 				require.Empty(t, tracePipelineEvents)
+			}
+
+			if tc.logPipelinesToReconcile != nil {
+				require.NotEmpty(t, logPipelineEvents)
+				require.ElementsMatch(t, tc.logPipelinesToReconcile, readAllNamesFromChannel(logPipelineEvents))
+			} else {
+				require.Empty(t, logPipelineEvents)
 			}
 
 			require.Equal(t, rr.Header().Get("Content-Security-Policy"), "default-src 'self'")

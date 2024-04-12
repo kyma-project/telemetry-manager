@@ -64,7 +64,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/resources/selfmonitor"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	selfmonitorwebhook "github.com/kyma-project/telemetry-manager/internal/selfmonitor/webhook"
 	"github.com/kyma-project/telemetry-manager/internal/webhookcert"
@@ -355,13 +354,14 @@ func main() {
 		ConfigMapKey:  overridesConfigMapKey,
 	})
 
-	enableLoggingController(mgr)
+	tracePipelineReconcileTriggerChan := make(chan event.GenericEvent)
+	enableTracingController(mgr, tracePipelineReconcileTriggerChan)
 
-	tracingControllerReconcileTriggerChan := make(chan event.GenericEvent)
-	enableTracingController(mgr, tracingControllerReconcileTriggerChan)
+	metricPipelineReconcileTriggerChan := make(chan event.GenericEvent)
+	enableMetricsController(mgr, metricPipelineReconcileTriggerChan)
 
-	metricsControllerReconcileTriggerChan := make(chan event.GenericEvent)
-	enableMetricsController(mgr, metricsControllerReconcileTriggerChan)
+	logPipelineReconcileTriggerChan := make(chan event.GenericEvent)
+	enableLoggingController(mgr, logPipelineReconcileTriggerChan)
 
 	webhookConfig := createWebhookConfig()
 	selfMonitorConfig := createSelfMonitoringConfig()
@@ -386,8 +386,9 @@ func main() {
 	if enableWebhook && enableSelfMonitor {
 		mgr.GetWebhookServer().Register("/api/v2/alerts", selfmonitorwebhook.NewHandler(
 			mgr.GetClient(),
-			selfmonitorwebhook.WithSubscriber(tracingControllerReconcileTriggerChan, alertrules.TracePipeline),
-			selfmonitorwebhook.WithSubscriber(metricsControllerReconcileTriggerChan, alertrules.MetricPipeline),
+			selfmonitorwebhook.WithTracePipelineSubscriber(tracePipelineReconcileTriggerChan),
+			selfmonitorwebhook.WithMetricPipelineSubscriber(metricPipelineReconcileTriggerChan),
+			selfmonitorwebhook.WithLogPipelineSubscriber(logPipelineReconcileTriggerChan),
 			selfmonitorwebhook.WithLogger(ctrl.Log.WithName("self-monitor-webhook"))))
 	}
 
@@ -406,13 +407,19 @@ func enableTelemetryModuleController(mgr manager.Manager, webhookConfig telemetr
 	}
 }
 
-func enableLoggingController(mgr manager.Manager) {
+func enableLoggingController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
 	setupLog.Info("Starting with logging controllers")
 
 	mgr.GetWebhookServer().Register("/validate-logpipeline", &webhook.Admission{Handler: createLogPipelineValidator(mgr.GetClient())})
 	mgr.GetWebhookServer().Register("/validate-logparser", &webhook.Admission{Handler: createLogParserValidator(mgr.GetClient())})
 
-	if err := createLogPipelineController(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+	flowHealthProber, err := prober.NewLogPipelineProber(types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace})
+	if err != nil {
+		setupLog.Error(err, "Failed to create flow health prober")
+		os.Exit(1)
+	}
+
+	if err := createLogPipelineController(mgr.GetClient(), reconcileTriggerChan, flowHealthProber).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "LogPipeline")
 		os.Exit(1)
 	}
@@ -426,9 +433,8 @@ func enableLoggingController(mgr manager.Manager) {
 func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
 	setupLog.Info("Starting with tracing controller")
 	var err error
-	var flowHealthProber *prober.Prober
-	if flowHealthProber, err = prober.NewProber(alertrules.TracePipeline,
-		types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
+	var flowHealthProber *prober.OTelPipelineProber
+	if flowHealthProber, err = prober.NewTracePipelineProber(types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
 		setupLog.Error(err, "Failed to create flow health prober")
 		os.Exit(1)
 	}
@@ -442,9 +448,8 @@ func enableTracingController(mgr manager.Manager, reconcileTriggerChan <-chan ev
 func enableMetricsController(mgr manager.Manager, reconcileTriggerChan <-chan event.GenericEvent) {
 	setupLog.Info("Starting with metrics controller")
 	var err error
-	var flowHealthProber *prober.Prober
-	if flowHealthProber, err = prober.NewProber(alertrules.MetricPipeline,
-		types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
+	var flowHealthProber *prober.OTelPipelineProber
+	if flowHealthProber, err = prober.NewMetricPipelineProber(types.NamespacedName{Name: selfMonitorName, Namespace: telemetryNamespace}); err != nil {
 		setupLog.Error(err, "Failed to create flow health prober")
 		os.Exit(1)
 	}
@@ -485,7 +490,7 @@ func validateFlags() error {
 	return nil
 }
 
-func createLogPipelineController(client client.Client) *telemetrycontrollers.LogPipelineController {
+func createLogPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.LogPipelineProber) *telemetrycontrollers.LogPipelineController {
 	config := logpipeline.Config{
 		SectionsConfigMap:     types.NamespacedName{Name: "telemetry-fluent-bit-sections", Namespace: telemetryNamespace},
 		FilesConfigMap:        types.NamespacedName{Name: "telemetry-fluent-bit-files", Namespace: telemetryNamespace},
@@ -511,8 +516,15 @@ func createLogPipelineController(client client.Client) *telemetrycontrollers.Log
 
 	return telemetrycontrollers.NewLogPipelineController(
 		client,
-		logpipeline.NewReconciler(client, config, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
-		config)
+		reconcileTriggerChan,
+		logpipeline.NewReconciler(
+			client,
+			config,
+			&k8sutils.DaemonSetProber{Client: client},
+			enableSelfMonitor,
+			flowHealthProber,
+			overridesHandler,
+		))
 }
 
 func createLogParserController(client client.Client) *telemetrycontrollers.LogParserController {
@@ -552,7 +564,7 @@ func createLogParserValidator(client client.Client) *logparserwebhook.Validating
 		admission.NewDecoder(scheme))
 }
 
-func createTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.Prober) *telemetrycontrollers.TracePipelineController {
+func createTracePipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.OTelPipelineProber) *telemetrycontrollers.TracePipelineController {
 	config := tracepipeline.Config{
 		Gateway: otelcollector.GatewayConfig{
 			Config: otelcollector.Config{
@@ -592,7 +604,7 @@ func createTracePipelineController(client client.Client, reconcileTriggerChan <-
 	)
 }
 
-func createMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.Prober) *telemetrycontrollers.MetricPipelineController {
+func createMetricPipelineController(client client.Client, reconcileTriggerChan <-chan event.GenericEvent, flowHealthProber *prober.OTelPipelineProber) *telemetrycontrollers.MetricPipelineController {
 	config := metricpipeline.Config{
 		Agent: otelcollector.AgentConfig{
 			Config: otelcollector.Config{

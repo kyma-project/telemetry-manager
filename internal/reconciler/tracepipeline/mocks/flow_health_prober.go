@@ -15,22 +15,22 @@ type FlowHealthProber struct {
 }
 
 // Probe provides a mock function with given fields: ctx, pipelineName
-func (_m *FlowHealthProber) Probe(ctx context.Context, pipelineName string) (prober.ProbeResult, error) {
+func (_m *FlowHealthProber) Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error) {
 	ret := _m.Called(ctx, pipelineName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Probe")
 	}
 
-	var r0 prober.ProbeResult
+	var r0 prober.OTelPipelineProbeResult
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (prober.ProbeResult, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (prober.OTelPipelineProbeResult, error)); ok {
 		return rf(ctx, pipelineName)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) prober.ProbeResult); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) prober.OTelPipelineProbeResult); ok {
 		r0 = rf(ctx, pipelineName)
 	} else {
-		r0 = ret.Get(0).(prober.ProbeResult)
+		r0 = ret.Get(0).(prober.OTelPipelineProbeResult)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
