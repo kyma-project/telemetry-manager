@@ -86,9 +86,10 @@ func TestApplyAgentResources(t *testing.T) {
 		require.NotNil(t, container.ReadinessProbe, "readiness probe must be defined")
 
 		envVars := container.Env
-		require.Len(t, envVars, 2)
+		require.Len(t, envVars, 3)
 		require.Equal(t, envVars[0].Name, "MY_POD_IP")
 		require.Equal(t, envVars[1].Name, "MY_NODE_NAME")
+		require.Equal(t, envVars[2].Name, "GOMEMLIMIT")
 		require.Equal(t, envVars[0].ValueFrom.FieldRef.FieldPath, "status.podIP")
 		require.Equal(t, envVars[1].ValueFrom.FieldRef.FieldPath, "spec.nodeName")
 
