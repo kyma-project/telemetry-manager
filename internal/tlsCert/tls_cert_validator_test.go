@@ -3,6 +3,7 @@ package tlsCert
 import (
 	"context"
 	"github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
 	"time"
 
@@ -43,9 +44,18 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 5VAuzWx+wV5WwQ==
 -----END PRIVATE KEY-----`)
 
-	validator := TLSCertValidator{}
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := New(fakeClient)
 
-	validationResult := validator.ResolveAndValidateCertificate(certData, keyData)
+	cert := v1alpha1.ValueType{
+		Value: string(certData),
+	}
+
+	key := v1alpha1.ValueType{
+		Value: string(keyData),
+	}
+
+	validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &cert, &key)
 
 	require.True(t, time.Now().After(validationResult.Validity), "Certificate is not expired")
 }
@@ -84,9 +94,18 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 5VAuzWx+wV5WwQ==
 -----END PRIVATE KEY-----`)
 
-	validator := TLSCertValidator{}
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := New(fakeClient)
 
-	validationResult := validator.ResolveAndValidateCertificate(certData, keyData)
+	cert := v1alpha1.ValueType{
+		Value: string(certData),
+	}
+
+	key := v1alpha1.ValueType{
+		Value: string(keyData),
+	}
+
+	validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &cert, &key)
 
 	require.True(t, validationResult.CertValid, "Certificate is not valid")
 	require.True(t, validationResult.PrivateKeyValid, "Private Key is not valid")
@@ -125,14 +144,18 @@ r2MV2YVYv5/zaFgqeuu4tkid0GVzcPY/Ab3SnOxMmTXuvWGu0YAX/QJAZwN4lwdO
 ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 5VAuzWx+wV5WwQ==
 -----END PRIVATE KEY-----`)
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := New(fakeClient)
 
-	validator := TLSCertValidator{}
 	cert := v1alpha1.ValueType{
 		Value: string(certData),
 	}
 
+	key := v1alpha1.ValueType{
+		Value: string(keyData),
+	}
 	ctx := context.TODO()
-	validationResult := validator.ResolveAndValidateCertificate(ctx, certData, keyData)
+	validationResult := validator.ResolveAndValidateCertificate(ctx, &cert, &key)
 
 	require.False(t, validationResult.CertValid, "Certificate is valid")
 	require.True(t, validationResult.PrivateKeyValid, "Private Key is not valid")
@@ -172,31 +195,59 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 5VAuzWx+wWwQ==
 -----END PRIVATE KEY-----`)
 
-	validator := TLSCertValidator{}
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := New(fakeClient)
 
-	validationResult := validator.ResolveAndValidateCertificate(certData, keyData)
+	cert := v1alpha1.ValueType{
+		Value: string(certData),
+	}
+
+	key := v1alpha1.ValueType{
+		Value: string(keyData),
+	}
+
+	validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &cert, &key)
 
 	require.True(t, validationResult.CertValid, "Certificate is not valid")
 	require.False(t, validationResult.PrivateKeyValid, "Private Key is valid")
 }
 
 func TestSanitizeTLSSecretWithEscapedNewLine(t *testing.T) {
-	key := "-----BEGIN PRIVATE KEY-----\\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCu9t8rBBx0VlnA\nrkIqmjUcdh+nqFje5w4hNCWAxwZYhmLioldyTVGTAoZ/ivP/q2sqKgoLIKu+9LYu\n1k762T5xuhWUfW+BD4mVQuoF6NxJlOW1UgttThXlDD0/MWjQ4CL4+iLhlr7OK3Pp\naQwlak0nlgO4U6eK2vTjkTbgZYXRnRusW7OSfYDlcUSqU7TrmwJuXvug6QobmPWY\nSdqaTG7cLqF+5Voy1w2JKhceQ1DGvUZ8qVFNuUZivytdEsGpnxaTEURK0scgroYX\npP/j1W9CV2eJYGI/YMGrtuMz0SRTP7zh/ZyUs3xtUcpnEkASuELd7GKWQ+JliLnH\nlTqBh/LfAgMBAAECggEAF7pWMKIUQ84UH6E3oEnH1c4f49+yUbnEZ59dTgDFF7X9\n7Mi3Eu1xGH6kA+GxznoOWf+tMK4jweKztFgPCk5HqCpkKSj2ZBUvLkVkBxzPMdFr\nckgn/Du16hlbUwRzN7ngiaMj84kQjlWZQ3h3aQ7osMDTof4CVOlLLcjbSC+sfW0s\nJacmcgP1rYVAcBo2IAo60WAxZBQzKbSHRSVS0g9khUoinfcdKDeyYGze//AiXXXR\nriJ9AYjGTsafV9+VCk6crcznk66eeJXAatecy4Jeu0k5vTta2GAeVkTviNQ4WlQA\nJIFd9uRAUAO5opra/MG9aDi62XcpvDTq8h6Clk5zqQKBgQD27KUIOrIlOnfeosGz\nIjNTMHXrDFG04t05jClSO+6D7mBr7l+t5rS7tPIsKtyibVcYggZKFa8jIYl30dxE\nL3/A8WVRRTZ6AckznzhyIbF1imTzK1sDbNSWwHvoICQ71DPO4nWwD/HnF5owgq9o\npAD/1vnAJLOgO9b/MsN4kip2twKBgQC1ZSRpjRkLgPO5uNxWVjSCf1s0fY9o6Byi\ngNmpsBwQ4by3+VOL+G0JrX1puZV/QL4vNZZ4fNo8xK9b16FmvWwImqadVr6AOzU7\nfMSHo5DUv+mXjA0KHBkdqbWLg3ppGicGYohnotq2lx+2Kubl039OdB+KtXF2OVgx\nnX2PKO19GQKBgGw1aF0i287UwJMgYCJQao2aPxKyY1wRz0DY24LeILhQTpD99ZAP\n+kQIF9ijL+0+XVywHnF47zdGCygnH5ACAMpc/zmOS0FMZw/oRqQ9f7cy3upxpYDq\nwH8P+zzOWRKe+9U+CLUPR8Mt5LQ9kQEaXhW/79L0QoOFtcJATMkZxOIhAoGBAIAe\ntQ48U5E1fnASKsZsUuBNNc0oVi+Bqh/5JEPfGKOv3UyQNLtrNxCb0jXnl7jusKXF\nksb9YGOFhFo5Pk3Dwtd86+u7hggqSZn/sQwgsj4iYsngaKFYYUD7SjgFIGO1zhSL\nac7RTuuiaAqR2M5BiOyPxmuBZmdbb3hzxWhlPwCZAoGAfYn3JgsVTp+DnXHOU9j5\nt1tKHLafi7nRVXmnHbFABmLC0KyJfWZqaCdUoJHRNhggAu918BWA2hlEWjmIG+id\nWiJ4y5oa63TrG/cr9zvdNHBy30KzvpK+aTgV5uPni7iV7URC1EEhghn6stB3LuvB\n0oPRUIeUnfrscWwxggtUGFE=\\n-----END PRIVATE KEY-----\n"
-	cert := "-----BEGIN CERTIFICATE-----\\nMIIDLzCCAhegAwIBAgIUTDC2e9uCi0ggzWiI7XkkXNWmMY0wDQYJKoZIhvcNAQEL\nBQAwJzELMAkGA1UEBhMCVVMxGDAWBgNVBAMMD0V4YW1wbGUtZm9vLWJhcjAeFw0y\nMzEyMjgxMzUwNDNaFw0yNjEwMTcxMzUwNDNaMCcxCzAJBgNVBAYTAlVTMRgwFgYD\nVQQDDA9FeGFtcGxlLWZvby1iYXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\nAoIBAQCu9t8rBBx0VlnArkIqmjUcdh+nqFje5w4hNCWAxwZYhmLioldyTVGTAoZ/\nivP/q2sqKgoLIKu+9LYu1k762T5xuhWUfW+BD4mVQuoF6NxJlOW1UgttThXlDD0/\nMWjQ4CL4+iLhlr7OK3PpaQwlak0nlgO4U6eK2vTjkTbgZYXRnRusW7OSfYDlcUSq\nU7TrmwJuXvug6QobmPWYSdqaTG7cLqF+5Voy1w2JKhceQ1DGvUZ8qVFNuUZivytd\nEsGpnxaTEURK0scgroYXpP/j1W9CV2eJYGI/YMGrtuMz0SRTP7zh/ZyUs3xtUcpn\nEkASuELd7GKWQ+JliLnHlTqBh/LfAgMBAAGjUzBRMB0GA1UdDgQWBBTYsQEqc5CX\nzjBGv/O04Qd5sOu5QjAfBgNVHSMEGDAWgBTYsQEqc5CXzjBGv/O04Qd5sOu5QjAP\nBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQA1L7IsQ9GTFl9GQMGo\n+JOffZxhR9AiwnCPXTMWF8qYC99F39i946wJIkgJN6wm8Rt46gA65EfJw6YdjdB6\n8kjg3CDRDIFn2QRrP4x8tS4EBu9tUkss/2h0I16MEEB9RV8adjH0lkiPwQwP50uW\nwLlwMHw9KsxA1MATzSmBruzW//gyoJFaBKYsYqYa7VKcEyQqKgiQypBN2O01twF3\ntahLFTIeeD0e4fMe++mwJh8rT5sRpCLmFDIoajmLkjj48P7hvgtLFN+vRTqgqViq\nySngIMt75xyXeTm15o7LrEe4B4HkpWt4CbeUW/44HrCUoItuhyea7baGecLx8VoS\nR3xg\\n-----END CERTIFICATE-----\n"
+	keyData := "-----BEGIN PRIVATE KEY-----\\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCu9t8rBBx0VlnA\nrkIqmjUcdh+nqFje5w4hNCWAxwZYhmLioldyTVGTAoZ/ivP/q2sqKgoLIKu+9LYu\n1k762T5xuhWUfW+BD4mVQuoF6NxJlOW1UgttThXlDD0/MWjQ4CL4+iLhlr7OK3Pp\naQwlak0nlgO4U6eK2vTjkTbgZYXRnRusW7OSfYDlcUSqU7TrmwJuXvug6QobmPWY\nSdqaTG7cLqF+5Voy1w2JKhceQ1DGvUZ8qVFNuUZivytdEsGpnxaTEURK0scgroYX\npP/j1W9CV2eJYGI/YMGrtuMz0SRTP7zh/ZyUs3xtUcpnEkASuELd7GKWQ+JliLnH\nlTqBh/LfAgMBAAECggEAF7pWMKIUQ84UH6E3oEnH1c4f49+yUbnEZ59dTgDFF7X9\n7Mi3Eu1xGH6kA+GxznoOWf+tMK4jweKztFgPCk5HqCpkKSj2ZBUvLkVkBxzPMdFr\nckgn/Du16hlbUwRzN7ngiaMj84kQjlWZQ3h3aQ7osMDTof4CVOlLLcjbSC+sfW0s\nJacmcgP1rYVAcBo2IAo60WAxZBQzKbSHRSVS0g9khUoinfcdKDeyYGze//AiXXXR\nriJ9AYjGTsafV9+VCk6crcznk66eeJXAatecy4Jeu0k5vTta2GAeVkTviNQ4WlQA\nJIFd9uRAUAO5opra/MG9aDi62XcpvDTq8h6Clk5zqQKBgQD27KUIOrIlOnfeosGz\nIjNTMHXrDFG04t05jClSO+6D7mBr7l+t5rS7tPIsKtyibVcYggZKFa8jIYl30dxE\nL3/A8WVRRTZ6AckznzhyIbF1imTzK1sDbNSWwHvoICQ71DPO4nWwD/HnF5owgq9o\npAD/1vnAJLOgO9b/MsN4kip2twKBgQC1ZSRpjRkLgPO5uNxWVjSCf1s0fY9o6Byi\ngNmpsBwQ4by3+VOL+G0JrX1puZV/QL4vNZZ4fNo8xK9b16FmvWwImqadVr6AOzU7\nfMSHo5DUv+mXjA0KHBkdqbWLg3ppGicGYohnotq2lx+2Kubl039OdB+KtXF2OVgx\nnX2PKO19GQKBgGw1aF0i287UwJMgYCJQao2aPxKyY1wRz0DY24LeILhQTpD99ZAP\n+kQIF9ijL+0+XVywHnF47zdGCygnH5ACAMpc/zmOS0FMZw/oRqQ9f7cy3upxpYDq\nwH8P+zzOWRKe+9U+CLUPR8Mt5LQ9kQEaXhW/79L0QoOFtcJATMkZxOIhAoGBAIAe\ntQ48U5E1fnASKsZsUuBNNc0oVi+Bqh/5JEPfGKOv3UyQNLtrNxCb0jXnl7jusKXF\nksb9YGOFhFo5Pk3Dwtd86+u7hggqSZn/sQwgsj4iYsngaKFYYUD7SjgFIGO1zhSL\nac7RTuuiaAqR2M5BiOyPxmuBZmdbb3hzxWhlPwCZAoGAfYn3JgsVTp+DnXHOU9j5\nt1tKHLafi7nRVXmnHbFABmLC0KyJfWZqaCdUoJHRNhggAu918BWA2hlEWjmIG+id\nWiJ4y5oa63TrG/cr9zvdNHBy30KzvpK+aTgV5uPni7iV7URC1EEhghn6stB3LuvB\n0oPRUIeUnfrscWwxggtUGFE=\\n-----END PRIVATE KEY-----\n"
+	certData := "-----BEGIN CERTIFICATE-----\\nMIIDLzCCAhegAwIBAgIUTDC2e9uCi0ggzWiI7XkkXNWmMY0wDQYJKoZIhvcNAQEL\nBQAwJzELMAkGA1UEBhMCVVMxGDAWBgNVBAMMD0V4YW1wbGUtZm9vLWJhcjAeFw0y\nMzEyMjgxMzUwNDNaFw0yNjEwMTcxMzUwNDNaMCcxCzAJBgNVBAYTAlVTMRgwFgYD\nVQQDDA9FeGFtcGxlLWZvby1iYXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\nAoIBAQCu9t8rBBx0VlnArkIqmjUcdh+nqFje5w4hNCWAxwZYhmLioldyTVGTAoZ/\nivP/q2sqKgoLIKu+9LYu1k762T5xuhWUfW+BD4mVQuoF6NxJlOW1UgttThXlDD0/\nMWjQ4CL4+iLhlr7OK3PpaQwlak0nlgO4U6eK2vTjkTbgZYXRnRusW7OSfYDlcUSq\nU7TrmwJuXvug6QobmPWYSdqaTG7cLqF+5Voy1w2JKhceQ1DGvUZ8qVFNuUZivytd\nEsGpnxaTEURK0scgroYXpP/j1W9CV2eJYGI/YMGrtuMz0SRTP7zh/ZyUs3xtUcpn\nEkASuELd7GKWQ+JliLnHlTqBh/LfAgMBAAGjUzBRMB0GA1UdDgQWBBTYsQEqc5CX\nzjBGv/O04Qd5sOu5QjAfBgNVHSMEGDAWgBTYsQEqc5CXzjBGv/O04Qd5sOu5QjAP\nBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQA1L7IsQ9GTFl9GQMGo\n+JOffZxhR9AiwnCPXTMWF8qYC99F39i946wJIkgJN6wm8Rt46gA65EfJw6YdjdB6\n8kjg3CDRDIFn2QRrP4x8tS4EBu9tUkss/2h0I16MEEB9RV8adjH0lkiPwQwP50uW\nwLlwMHw9KsxA1MATzSmBruzW//gyoJFaBKYsYqYa7VKcEyQqKgiQypBN2O01twF3\ntahLFTIeeD0e4fMe++mwJh8rT5sRpCLmFDIoajmLkjj48P7hvgtLFN+vRTqgqViq\nySngIMt75xyXeTm15o7LrEe4B4HkpWt4CbeUW/44HrCUoItuhyea7baGecLx8VoS\nR3xg\\n-----END CERTIFICATE-----\n"
 
-	validator := TLSCertValidator{}
-	validationResult := validator.ResolveAndValidateCertificate([]byte(cert), []byte(key))
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := New(fakeClient)
+
+	cert := v1alpha1.ValueType{
+		Value: certData,
+	}
+
+	key := v1alpha1.ValueType{
+		Value: keyData,
+	}
+
+	validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &cert, &key)
 
 	require.True(t, validationResult.CertValid)
 	require.True(t, validationResult.PrivateKeyValid)
 }
 
 func TestSanitizeValidTLSSecret(t *testing.T) {
-	key := "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCu9t8rBBx0VlnA\nrkIqmjUcdh+nqFje5w4hNCWAxwZYhmLioldyTVGTAoZ/ivP/q2sqKgoLIKu+9LYu\n1k762T5xuhWUfW+BD4mVQuoF6NxJlOW1UgttThXlDD0/MWjQ4CL4+iLhlr7OK3Pp\naQwlak0nlgO4U6eK2vTjkTbgZYXRnRusW7OSfYDlcUSqU7TrmwJuXvug6QobmPWY\nSdqaTG7cLqF+5Voy1w2JKhceQ1DGvUZ8qVFNuUZivytdEsGpnxaTEURK0scgroYX\npP/j1W9CV2eJYGI/YMGrtuMz0SRTP7zh/ZyUs3xtUcpnEkASuELd7GKWQ+JliLnH\nlTqBh/LfAgMBAAECggEAF7pWMKIUQ84UH6E3oEnH1c4f49+yUbnEZ59dTgDFF7X9\n7Mi3Eu1xGH6kA+GxznoOWf+tMK4jweKztFgPCk5HqCpkKSj2ZBUvLkVkBxzPMdFr\nckgn/Du16hlbUwRzN7ngiaMj84kQjlWZQ3h3aQ7osMDTof4CVOlLLcjbSC+sfW0s\nJacmcgP1rYVAcBo2IAo60WAxZBQzKbSHRSVS0g9khUoinfcdKDeyYGze//AiXXXR\nriJ9AYjGTsafV9+VCk6crcznk66eeJXAatecy4Jeu0k5vTta2GAeVkTviNQ4WlQA\nJIFd9uRAUAO5opra/MG9aDi62XcpvDTq8h6Clk5zqQKBgQD27KUIOrIlOnfeosGz\nIjNTMHXrDFG04t05jClSO+6D7mBr7l+t5rS7tPIsKtyibVcYggZKFa8jIYl30dxE\nL3/A8WVRRTZ6AckznzhyIbF1imTzK1sDbNSWwHvoICQ71DPO4nWwD/HnF5owgq9o\npAD/1vnAJLOgO9b/MsN4kip2twKBgQC1ZSRpjRkLgPO5uNxWVjSCf1s0fY9o6Byi\ngNmpsBwQ4by3+VOL+G0JrX1puZV/QL4vNZZ4fNo8xK9b16FmvWwImqadVr6AOzU7\nfMSHo5DUv+mXjA0KHBkdqbWLg3ppGicGYohnotq2lx+2Kubl039OdB+KtXF2OVgx\nnX2PKO19GQKBgGw1aF0i287UwJMgYCJQao2aPxKyY1wRz0DY24LeILhQTpD99ZAP\n+kQIF9ijL+0+XVywHnF47zdGCygnH5ACAMpc/zmOS0FMZw/oRqQ9f7cy3upxpYDq\nwH8P+zzOWRKe+9U+CLUPR8Mt5LQ9kQEaXhW/79L0QoOFtcJATMkZxOIhAoGBAIAe\ntQ48U5E1fnASKsZsUuBNNc0oVi+Bqh/5JEPfGKOv3UyQNLtrNxCb0jXnl7jusKXF\nksb9YGOFhFo5Pk3Dwtd86+u7hggqSZn/sQwgsj4iYsngaKFYYUD7SjgFIGO1zhSL\nac7RTuuiaAqR2M5BiOyPxmuBZmdbb3hzxWhlPwCZAoGAfYn3JgsVTp+DnXHOU9j5\nt1tKHLafi7nRVXmnHbFABmLC0KyJfWZqaCdUoJHRNhggAu918BWA2hlEWjmIG+id\nWiJ4y5oa63TrG/cr9zvdNHBy30KzvpK+aTgV5uPni7iV7URC1EEhghn6stB3LuvB\n0oPRUIeUnfrscWwxggtUGFE=\n-----END PRIVATE KEY-----\n"
-	cert := "-----BEGIN CERTIFICATE-----\nMIIDLzCCAhegAwIBAgIUTDC2e9uCi0ggzWiI7XkkXNWmMY0wDQYJKoZIhvcNAQEL\nBQAwJzELMAkGA1UEBhMCVVMxGDAWBgNVBAMMD0V4YW1wbGUtZm9vLWJhcjAeFw0y\nMzEyMjgxMzUwNDNaFw0yNjEwMTcxMzUwNDNaMCcxCzAJBgNVBAYTAlVTMRgwFgYD\nVQQDDA9FeGFtcGxlLWZvby1iYXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\nAoIBAQCu9t8rBBx0VlnArkIqmjUcdh+nqFje5w4hNCWAxwZYhmLioldyTVGTAoZ/\nivP/q2sqKgoLIKu+9LYu1k762T5xuhWUfW+BD4mVQuoF6NxJlOW1UgttThXlDD0/\nMWjQ4CL4+iLhlr7OK3PpaQwlak0nlgO4U6eK2vTjkTbgZYXRnRusW7OSfYDlcUSq\nU7TrmwJuXvug6QobmPWYSdqaTG7cLqF+5Voy1w2JKhceQ1DGvUZ8qVFNuUZivytd\nEsGpnxaTEURK0scgroYXpP/j1W9CV2eJYGI/YMGrtuMz0SRTP7zh/ZyUs3xtUcpn\nEkASuELd7GKWQ+JliLnHlTqBh/LfAgMBAAGjUzBRMB0GA1UdDgQWBBTYsQEqc5CX\nzjBGv/O04Qd5sOu5QjAfBgNVHSMEGDAWgBTYsQEqc5CXzjBGv/O04Qd5sOu5QjAP\nBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQA1L7IsQ9GTFl9GQMGo\n+JOffZxhR9AiwnCPXTMWF8qYC99F39i946wJIkgJN6wm8Rt46gA65EfJw6YdjdB6\n8kjg3CDRDIFn2QRrP4x8tS4EBu9tUkss/2h0I16MEEB9RV8adjH0lkiPwQwP50uW\nwLlwMHw9KsxA1MATzSmBruzW//gyoJFaBKYsYqYa7VKcEyQqKgiQypBN2O01twF3\ntahLFTIeeD0e4fMe++mwJh8rT5sRpCLmFDIoajmLkjj48P7hvgtLFN+vRTqgqViq\nySngIMt75xyXeTm15o7LrEe4B4HkpWt4CbeUW/44HrCUoItuhyea7baGecLx8VoS\nR3xg\n-----END CERTIFICATE-----\n"
+	keyData := "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCu9t8rBBx0VlnA\nrkIqmjUcdh+nqFje5w4hNCWAxwZYhmLioldyTVGTAoZ/ivP/q2sqKgoLIKu+9LYu\n1k762T5xuhWUfW+BD4mVQuoF6NxJlOW1UgttThXlDD0/MWjQ4CL4+iLhlr7OK3Pp\naQwlak0nlgO4U6eK2vTjkTbgZYXRnRusW7OSfYDlcUSqU7TrmwJuXvug6QobmPWY\nSdqaTG7cLqF+5Voy1w2JKhceQ1DGvUZ8qVFNuUZivytdEsGpnxaTEURK0scgroYX\npP/j1W9CV2eJYGI/YMGrtuMz0SRTP7zh/ZyUs3xtUcpnEkASuELd7GKWQ+JliLnH\nlTqBh/LfAgMBAAECggEAF7pWMKIUQ84UH6E3oEnH1c4f49+yUbnEZ59dTgDFF7X9\n7Mi3Eu1xGH6kA+GxznoOWf+tMK4jweKztFgPCk5HqCpkKSj2ZBUvLkVkBxzPMdFr\nckgn/Du16hlbUwRzN7ngiaMj84kQjlWZQ3h3aQ7osMDTof4CVOlLLcjbSC+sfW0s\nJacmcgP1rYVAcBo2IAo60WAxZBQzKbSHRSVS0g9khUoinfcdKDeyYGze//AiXXXR\nriJ9AYjGTsafV9+VCk6crcznk66eeJXAatecy4Jeu0k5vTta2GAeVkTviNQ4WlQA\nJIFd9uRAUAO5opra/MG9aDi62XcpvDTq8h6Clk5zqQKBgQD27KUIOrIlOnfeosGz\nIjNTMHXrDFG04t05jClSO+6D7mBr7l+t5rS7tPIsKtyibVcYggZKFa8jIYl30dxE\nL3/A8WVRRTZ6AckznzhyIbF1imTzK1sDbNSWwHvoICQ71DPO4nWwD/HnF5owgq9o\npAD/1vnAJLOgO9b/MsN4kip2twKBgQC1ZSRpjRkLgPO5uNxWVjSCf1s0fY9o6Byi\ngNmpsBwQ4by3+VOL+G0JrX1puZV/QL4vNZZ4fNo8xK9b16FmvWwImqadVr6AOzU7\nfMSHo5DUv+mXjA0KHBkdqbWLg3ppGicGYohnotq2lx+2Kubl039OdB+KtXF2OVgx\nnX2PKO19GQKBgGw1aF0i287UwJMgYCJQao2aPxKyY1wRz0DY24LeILhQTpD99ZAP\n+kQIF9ijL+0+XVywHnF47zdGCygnH5ACAMpc/zmOS0FMZw/oRqQ9f7cy3upxpYDq\nwH8P+zzOWRKe+9U+CLUPR8Mt5LQ9kQEaXhW/79L0QoOFtcJATMkZxOIhAoGBAIAe\ntQ48U5E1fnASKsZsUuBNNc0oVi+Bqh/5JEPfGKOv3UyQNLtrNxCb0jXnl7jusKXF\nksb9YGOFhFo5Pk3Dwtd86+u7hggqSZn/sQwgsj4iYsngaKFYYUD7SjgFIGO1zhSL\nac7RTuuiaAqR2M5BiOyPxmuBZmdbb3hzxWhlPwCZAoGAfYn3JgsVTp+DnXHOU9j5\nt1tKHLafi7nRVXmnHbFABmLC0KyJfWZqaCdUoJHRNhggAu918BWA2hlEWjmIG+id\nWiJ4y5oa63TrG/cr9zvdNHBy30KzvpK+aTgV5uPni7iV7URC1EEhghn6stB3LuvB\n0oPRUIeUnfrscWwxggtUGFE=\n-----END PRIVATE KEY-----\n"
+	certData := "-----BEGIN CERTIFICATE-----\nMIIDLzCCAhegAwIBAgIUTDC2e9uCi0ggzWiI7XkkXNWmMY0wDQYJKoZIhvcNAQEL\nBQAwJzELMAkGA1UEBhMCVVMxGDAWBgNVBAMMD0V4YW1wbGUtZm9vLWJhcjAeFw0y\nMzEyMjgxMzUwNDNaFw0yNjEwMTcxMzUwNDNaMCcxCzAJBgNVBAYTAlVTMRgwFgYD\nVQQDDA9FeGFtcGxlLWZvby1iYXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\nAoIBAQCu9t8rBBx0VlnArkIqmjUcdh+nqFje5w4hNCWAxwZYhmLioldyTVGTAoZ/\nivP/q2sqKgoLIKu+9LYu1k762T5xuhWUfW+BD4mVQuoF6NxJlOW1UgttThXlDD0/\nMWjQ4CL4+iLhlr7OK3PpaQwlak0nlgO4U6eK2vTjkTbgZYXRnRusW7OSfYDlcUSq\nU7TrmwJuXvug6QobmPWYSdqaTG7cLqF+5Voy1w2JKhceQ1DGvUZ8qVFNuUZivytd\nEsGpnxaTEURK0scgroYXpP/j1W9CV2eJYGI/YMGrtuMz0SRTP7zh/ZyUs3xtUcpn\nEkASuELd7GKWQ+JliLnHlTqBh/LfAgMBAAGjUzBRMB0GA1UdDgQWBBTYsQEqc5CX\nzjBGv/O04Qd5sOu5QjAfBgNVHSMEGDAWgBTYsQEqc5CXzjBGv/O04Qd5sOu5QjAP\nBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQA1L7IsQ9GTFl9GQMGo\n+JOffZxhR9AiwnCPXTMWF8qYC99F39i946wJIkgJN6wm8Rt46gA65EfJw6YdjdB6\n8kjg3CDRDIFn2QRrP4x8tS4EBu9tUkss/2h0I16MEEB9RV8adjH0lkiPwQwP50uW\nwLlwMHw9KsxA1MATzSmBruzW//gyoJFaBKYsYqYa7VKcEyQqKgiQypBN2O01twF3\ntahLFTIeeD0e4fMe++mwJh8rT5sRpCLmFDIoajmLkjj48P7hvgtLFN+vRTqgqViq\nySngIMt75xyXeTm15o7LrEe4B4HkpWt4CbeUW/44HrCUoItuhyea7baGecLx8VoS\nR3xg\n-----END CERTIFICATE-----\n"
 
-	validator := TLSCertValidator{}
-	validationResult := validator.ResolveAndValidateCertificate([]byte(cert), []byte(key))
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := New(fakeClient)
+
+	cert := v1alpha1.ValueType{
+		Value: certData,
+	}
+
+	key := v1alpha1.ValueType{
+		Value: keyData,
+	}
+	validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &cert, &key)
 
 	require.True(t, validationResult.CertValid)
 	require.True(t, validationResult.PrivateKeyValid)
