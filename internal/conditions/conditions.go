@@ -31,6 +31,7 @@ const (
 	ReasonSomeDataDropped             = "SomeTelemetryDataDropped"
 	ReasonBufferFillingUp             = "BufferFillingUp"
 	ReasonGatewayThrottling           = "GatewayThrottling"
+	ReasonNoLogsDelivered             = "NoLogsDelivered"
 	ReasonFlowHealthy                 = "Healthy"
 	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
 	ReasonTLSPrivateKeyInvalid        = "TLSPrivateKeyInvalid"
@@ -93,6 +94,11 @@ var logPipelineMessages = map[string]string{
 	ReasonFluentBitDSReady:            "Fluent Bit DaemonSet is ready",
 	ReasonUnsupportedLokiOutput:       "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
 	ReasonLogComponentsRunning:        "All log components are running",
+	ReasonAllDataDropped:              "All logs dropped: backend unreachable or rejecting",
+	ReasonSomeDataDropped:             "Some logs dropped: backend unreachable or rejecting",
+	ReasonBufferFillingUp:             "Buffer nearing capacity: incoming log rate exceeds export rate",
+	ReasonNoLogsDelivered:             "No logs delivered to backend",
+	ReasonFlowHealthy:                 "Logs are flowing normally to backend",
 	ReasonTLSCertificateInvalid:       "TLS certificate invalid: %s",
 	ReasonTLSPrivateKeyInvalid:        "TLS private key invalid: %s",
 	ReasonTLSCertificateExpired:       "TLS certificate expired on %s",

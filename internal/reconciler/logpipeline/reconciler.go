@@ -39,6 +39,7 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/tls/cert"
 )
 
@@ -72,23 +73,38 @@ type TLSCertValidator interface {
 	ValidateCertificate(certPEM []byte, keyPEM []byte) cert.TLSCertValidationResult
 }
 
-type Reconciler struct {
-	client.Client
-	config                  Config
-	prober                  DaemonSetProber
-	allLogPipelines         prometheus.Gauge
-	unsupportedLogPipelines prometheus.Gauge
-	syncer                  syncer
-	overridesHandler        *overrides.Handler
-	istioStatusChecker      istiostatus.Checker
-	tlsCertValidator        TLSCertValidator
+//go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
+type FlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (prober.LogPipelineProbeResult, error)
 }
 
-func NewReconciler(client client.Client, config Config, prober DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
+type Reconciler struct {
+	client.Client
+	config                   Config
+	prober                   DaemonSetProber
+	flowHealthProbingEnabled bool
+	flowHealthProber         FlowHealthProber
+	allLogPipelines          prometheus.Gauge
+	unsupportedLogPipelines  prometheus.Gauge
+	syncer                   syncer
+	overridesHandler         *overrides.Handler
+	istioStatusChecker       istiostatus.Checker
+	tlsCertValidator         TLSCertValidator
+}
+
+func NewReconciler(
+	client client.Client,
+	config Config,
+	agentProber DaemonSetProber,
+	flowHealthProbingEnabled bool,
+	flowHealthProber FlowHealthProber,
+	overridesHandler *overrides.Handler) *Reconciler {
 	var r Reconciler
 	r.Client = client
 	r.config = config
-	r.prober = prober
+	r.prober = agentProber
+	r.flowHealthProbingEnabled = flowHealthProbingEnabled
+	r.flowHealthProber = flowHealthProber
 	r.allLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_all_logpipelines", Help: "Number of log pipelines."})
 	r.unsupportedLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_unsupported_logpipelines", Help: "Number of log pipelines with custom filters or outputs."})
 	metrics.Registry.MustRegister(r.allLogPipelines, r.unsupportedLogPipelines)
