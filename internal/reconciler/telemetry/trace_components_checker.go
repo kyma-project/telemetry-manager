@@ -70,7 +70,7 @@ func (t *traceComponentsChecker) firstUnhealthyPipelineReason(pipelines []teleme
 	for _, condType := range condTypes {
 		for _, pipeline := range pipelines {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
-			if cond != nil && cond.Status == metav1.ConditionFalse {
+			if cond != nil && (cond.Status == metav1.ConditionFalse || cond.Reason == conditions.ReasonTLSCertificateAboutToExpire) {
 				return cond.Reason
 			}
 		}
