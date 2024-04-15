@@ -73,6 +73,12 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 					Regex:        "(.+?)(?::\\d+)?;(\\d+)",
 					Replacement:  "$1:$2",
 				},
+				//{
+				//	SourceLabels: []string{"__name__", "exporter"},
+				//	Action:       Replace,
+				//	Regex:        "otelcol_\\d+;\\d+/(.+)",
+				//	TargetLabel:  "pipeline",
+				//},
 				{
 					SourceLabels: []string{"__meta_kubernetes_namespace"},
 					Action:       Replace,
@@ -94,6 +100,19 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 					SourceLabels: []string{"__name__"},
 					Action:       Keep,
 					Regex:        "(otelcol_.*|fluentbit_.*|telemetry_.*)",
+				},
+				{
+					SourceLabels: []string{"__name__", "name"},
+					Action:       Replace,
+					Regex:        "fluentbit_.+;(.+)",
+					TargetLabel:  "pipeline_name",
+				},
+				{
+					SourceLabels: []string{"__name__", "exporter"},
+					Action:       Replace,
+					Regex:        "otelcol_.+;(.+)/(.+)",
+					TargetLabel:  "pipeline_name",
+					Replacement:  "$2",
 				},
 			},
 			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{

@@ -353,12 +353,12 @@ func MakeConfigMap(name types.NamespacedName, includeSections bool) *corev1.Conf
     Name tail
     Path /null.log
     Tag null.*
-    Alias null-tail
+    Alias null
 
 [OUTPUT]
     Name null
     Match null.*
-    Alias null-null
+    Alias null
 
 `
 	fluentBitConfig = strings.Replace(fluentBitConfig, "{{ HTTP_PORT }}", strconv.Itoa(ports.HTTP), 1)
