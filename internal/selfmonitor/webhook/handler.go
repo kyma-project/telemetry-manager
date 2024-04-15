@@ -137,7 +137,7 @@ func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []
 	for i := range metricPipelines.Items {
 		pipelineName := metricPipelines.Items[i].GetName()
 		for _, alert := range alerts {
-			if alertrules.MatchesRule(alert.Labels, alertrules.RulesAny, pipelineName) {
+			if alertrules.MatchesMetricPipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
 				events = append(events, event.GenericEvent{Object: &metricPipelines.Items[i]})
 			}
 		}
@@ -156,7 +156,7 @@ func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []A
 	for i := range tracePipelines.Items {
 		pipelineName := tracePipelines.Items[i].GetName()
 		for _, alert := range alerts {
-			if alertrules.MatchesRule(alert.Labels, alertrules.RulesAny, pipelineName) {
+			if alertrules.MatchesTracePipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
 				events = append(events, event.GenericEvent{Object: &tracePipelines.Items[i]})
 			}
 		}
@@ -175,7 +175,7 @@ func (h *Handler) toLogPipelineReconcileEvents(ctx context.Context, alerts []Ale
 	for i := range logPipelines.Items {
 		pipelineName := logPipelines.Items[i].GetName()
 		for _, alert := range alerts {
-			if alertrules.MatchesRule(alert.Labels, alertrules.RulesAny, pipelineName) {
+			if alertrules.MatchesLogPipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
 				events = append(events, event.GenericEvent{Object: &logPipelines.Items[i]})
 			}
 		}

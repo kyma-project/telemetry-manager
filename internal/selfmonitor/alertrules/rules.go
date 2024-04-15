@@ -5,6 +5,9 @@ import (
 	"time"
 
 	"github.com/prometheus/common/model"
+
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/otelcollector/config/otlpexporter"
 )
 
 const (
@@ -25,8 +28,12 @@ const (
 	// Common rule labels
 	labelService = "service"
 
-	labelReceiver     = "receiver"
-	labelPipelineName = "pipeline_name"
+	// OTel Collector rule labels
+	labelExporter = "exporter"
+	labelReceiver = "receiver"
+
+	// Fluent Bit rule labels
+	labelName = "name"
 )
 
 // RuleGroups is a set of rule groups that are typically exposed in a file.
@@ -103,21 +110,51 @@ const (
 	RulesAny = "any"
 )
 
-// MatchesRule checks if the given alert label set matches the expected rule name and pipeline name for a given log/trace/metric pipeline.
-// If the alert does not have the pipeline_name label, it should be matched by all pipelines.
+// MatchesLogPipelineRule checks if the given alert label set matches the expected rule name and pipeline name for a log pipeline.
+// If the alert does not have a name label, it should be matched by all pipelines.
 // RulesAny can be used to match any LogPipeline rule name.
-func MatchesRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
-	if !matchesRuleName(labelSet, unprefixedRuleName, typeLogPipeline) {
+func MatchesLogPipelineRule(labelSet map[string]string, ruleNameWithoutPrefix string, pipelineName string) bool {
+	if !matchesRuleName(labelSet, ruleNameWithoutPrefix, typeLogPipeline) {
 		return false
 	}
 
-	pipelineNameLabel, hasLabel := labelSet[labelPipelineName]
-	if !hasLabel {
+	nameLabel, hasNameLabel := labelSet[labelName]
+	if !hasNameLabel {
 		// If the alert does not have a name label, it should be matched by all pipelines
 		return true
 	}
 
-	return pipelineNameLabel == pipelineName
+	// Some Fluent Bit metrics have output plugin name appended to the pipeline name as the "name" label
+	// Note that it's not possible to match a custom output since the suffix is not known in advance
+	nameSuffix := "-http"
+	return nameLabel == pipelineName || nameLabel == pipelineName+nameSuffix
+}
+
+// MatchesMetricPipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a metric pipeline.
+// If the alert does not have an exporter label, it should be matched by all pipelines.
+func MatchesMetricPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
+	return matchesOTelPipelineRule(labelSet, unprefixedRuleName, pipelineName, typeMetricPipeline)
+}
+
+// MatchesTracePipelineRule checks if the given alert label set matches the expected rule name (or RulesAny) and pipeline name for a trace pipeline.
+// If the alert does not have an exporter label, it should be matched by all pipelines.
+func MatchesTracePipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string) bool {
+	return matchesOTelPipelineRule(labelSet, unprefixedRuleName, pipelineName, typeTracePipeline)
+}
+
+func matchesOTelPipelineRule(labelSet map[string]string, unprefixedRuleName string, pipelineName string, t pipelineType) bool {
+	if !matchesRuleName(labelSet, unprefixedRuleName, t) {
+		return false
+	}
+
+	exporterLabel, hasExporterLabel := labelSet[labelExporter]
+	if !hasExporterLabel {
+		// If the alert does not have an exporter label, it should be matched by all pipelines
+		return true
+	}
+
+	return otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolHTTP, pipelineName) == exporterLabel ||
+		otlpexporter.ExporterID(telemetryv1alpha1.OtlpProtocolGRPC, pipelineName) == exporterLabel
 }
 
 func matchesRuleName(labelSet map[string]string, unprefixedRuleName string, t pipelineType) bool {
