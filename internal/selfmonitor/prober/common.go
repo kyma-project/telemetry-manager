@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/ports"
 )
 
@@ -55,9 +56,10 @@ func retrieveAlerts(ctx context.Context, getter alertGetter) ([]promv1.Alert, er
 	return result.Alerts, nil
 }
 
-func evaluateRuleWithMatcher(alerts []promv1.Alert, alertName, pipelineName string, mf matcherFunc) bool {
+func evaluateRule(alerts []promv1.Alert, alertName, pipelineName string) bool {
 	for _, alert := range alerts {
-		if alert.State == promv1.AlertStateFiring && mf(toRawLabels(alert.Labels), alertName, pipelineName) {
+		if alert.State == promv1.AlertStateFiring &&
+			alertrules.MatchesRule(toRawLabels(alert.Labels), alertName, pipelineName) {
 			return true
 		}
 	}

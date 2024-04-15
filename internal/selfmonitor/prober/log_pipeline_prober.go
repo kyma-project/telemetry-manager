@@ -50,41 +50,37 @@ func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (Log
 }
 
 func (p *LogPipelineProber) allDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	exporterSentLogs := p.evaluateRule(alerts, alertrules.RuleNameLogAgentExporterSentLogs, pipelineName)
-	exporterDroppedLogs := p.evaluateRule(alerts, alertrules.RuleNameLogAgentExporterDroppedLogs, pipelineName)
-	bufferFull := p.evaluateRule(alerts, alertrules.RuleNameLogAgentBufferFull, pipelineName)
+	exporterSentLogs := evaluateRule(alerts, alertrules.RuleNameLogAgentExporterSentLogs, pipelineName)
+	exporterDroppedLogs := evaluateRule(alerts, alertrules.RuleNameLogAgentExporterDroppedLogs, pipelineName)
+	bufferFull := evaluateRule(alerts, alertrules.RuleNameLogAgentBufferFull, pipelineName)
 	return !exporterSentLogs && (exporterDroppedLogs || bufferFull)
 }
 
 func (p *LogPipelineProber) someDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	exporterSentLogs := p.evaluateRule(alerts, alertrules.RuleNameLogAgentExporterSentLogs, pipelineName)
-	exporterDroppedLogs := p.evaluateRule(alerts, alertrules.RuleNameLogAgentExporterDroppedLogs, pipelineName)
-	bufferFull := p.evaluateRule(alerts, alertrules.RuleNameLogAgentBufferFull, pipelineName)
+	exporterSentLogs := evaluateRule(alerts, alertrules.RuleNameLogAgentExporterSentLogs, pipelineName)
+	exporterDroppedLogs := evaluateRule(alerts, alertrules.RuleNameLogAgentExporterDroppedLogs, pipelineName)
+	bufferFull := evaluateRule(alerts, alertrules.RuleNameLogAgentBufferFull, pipelineName)
 	return exporterSentLogs && (exporterDroppedLogs || bufferFull)
 }
 
 func (p *LogPipelineProber) noLogsDelivered(alerts []promv1.Alert, pipelineName string) bool {
-	receiverReadLogs := p.evaluateRule(alerts, alertrules.RuleNameLogAgentReceiverReadLogs, pipelineName)
-	exporterSentLogs := p.evaluateRule(alerts, alertrules.RuleNameLogAgentExporterSentLogs, pipelineName)
+	receiverReadLogs := evaluateRule(alerts, alertrules.RuleNameLogAgentReceiverReadLogs, pipelineName)
+	exporterSentLogs := evaluateRule(alerts, alertrules.RuleNameLogAgentExporterSentLogs, pipelineName)
 	return receiverReadLogs && !exporterSentLogs
 }
 
 func (p *LogPipelineProber) bufferFillingUp(alerts []promv1.Alert, pipelineName string) bool {
-	return p.evaluateRule(alerts, alertrules.RuleNameLogAgentBufferInUse, pipelineName)
+	return evaluateRule(alerts, alertrules.RuleNameLogAgentBufferInUse, pipelineName)
 }
 
 func (p *LogPipelineProber) healthy(alerts []promv1.Alert, pipelineName string) bool {
 	// The pipeline is healthy if none of the following conditions are met:
-	bufferInUse := p.evaluateRule(alerts, alertrules.RuleNameLogAgentBufferInUse, pipelineName)
-	bufferFull := p.evaluateRule(alerts, alertrules.RuleNameLogAgentBufferFull, pipelineName)
-	exporterDroppedLogs := p.evaluateRule(alerts, alertrules.RuleNameLogAgentExporterDroppedLogs, pipelineName)
+	bufferInUse := evaluateRule(alerts, alertrules.RuleNameLogAgentBufferInUse, pipelineName)
+	bufferFull := evaluateRule(alerts, alertrules.RuleNameLogAgentBufferFull, pipelineName)
+	exporterDroppedLogs := evaluateRule(alerts, alertrules.RuleNameLogAgentExporterDroppedLogs, pipelineName)
 
 	// The pipeline is healthy if either no logs are being read or all logs are being sent
-	receiverReadLogs := p.evaluateRule(alerts, alertrules.RuleNameLogAgentReceiverReadLogs, pipelineName)
-	exporterSentLogs := p.evaluateRule(alerts, alertrules.RuleNameLogAgentExporterSentLogs, pipelineName)
+	receiverReadLogs := evaluateRule(alerts, alertrules.RuleNameLogAgentReceiverReadLogs, pipelineName)
+	exporterSentLogs := evaluateRule(alerts, alertrules.RuleNameLogAgentExporterSentLogs, pipelineName)
 	return !(bufferInUse || bufferFull || exporterDroppedLogs) && (!receiverReadLogs || exporterSentLogs)
-}
-
-func (p *LogPipelineProber) evaluateRule(alerts []promv1.Alert, alertName, pipelineName string) bool {
-	return evaluateRuleWithMatcher(alerts, alertName, pipelineName, alertrules.MatchesLogPipelineRule)
 }
