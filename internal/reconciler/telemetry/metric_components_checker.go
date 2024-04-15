@@ -30,7 +30,7 @@ func (m *metricComponentsChecker) Check(ctx context.Context, telemetryInDeletion
 	message := m.createMessageForReason(metricPipelines.Items, reason)
 	reasonWithPrefix := m.addReasonPrefix(reason)
 
-	const conditionType = "MetricComponentsHealthy"
+	conditionType := "MetricComponentsHealthy"
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  status,
