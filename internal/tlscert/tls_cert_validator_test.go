@@ -254,17 +254,37 @@ func TestSanitizeValidTLSSecret(t *testing.T) {
 	require.True(t, validationResult.PrivateKeyValid)
 }
 
-//func TestMissingCertValue(t *testing.T) {
-//	fakeClient := fake.NewClientBuilder().Build()
-//	validator := New(fakeClient)
-//	cert := v1alpha1.ValueType{
-//		Value: "",
-//	}
-//
-//	key := v1alpha1.ValueType{
-//		Value: "",
-//	}
-//	require.True(t, validationResult.CertValid)
-//	require.True(t, validationResult.PrivateKeyValid)
-//
-//}
+func TestMissingCertValue(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := New(fakeClient)
+
+	tests := []struct {
+		name              string
+		inputCert         telemetryv1alpha1.ValueType
+		inputKey          telemetryv1alpha1.ValueType
+		expectedCertValid bool
+		expectedKeyValue  bool
+	}{
+		{
+			name:              "Cert value is empty",
+			inputCert:         telemetryv1alpha1.ValueType{Value: "", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
+			inputKey:          telemetryv1alpha1.ValueType{Value: "key", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
+			expectedCertValid: false,
+			expectedKeyValue:  true,
+		}, {
+			name:              "Key value is empty",
+			inputCert:         telemetryv1alpha1.ValueType{Value: "Cert", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
+			inputKey:          telemetryv1alpha1.ValueType{Value: "", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
+			expectedCertValid: true,
+			expectedKeyValue:  false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &test.inputCert, &test.inputKey)
+			require.Equal(t, test.expectedCertValid, validationResult.CertValid)
+			require.Equal(t, test.expectedKeyValue, validationResult.PrivateKeyValid)
+		})
+	}
+
+}
