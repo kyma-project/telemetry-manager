@@ -38,7 +38,7 @@ func generateCustomOutput(output *telemetryv1alpha1.Output, fsBufferLimit string
 		sb.AddConfigParam(p.Key, p.Value)
 	}
 	if !aliasPresent {
-		sb.AddConfigParam("alias", fmt.Sprintf("%s-%s", name, outputName))
+		sb.AddConfigParam("alias", fmt.Sprintf("%s/%s", outputName, name))
 	}
 	sb.AddConfigParam("match", fmt.Sprintf("%s.*", name))
 	sb.AddConfigParam("storage.total_limit_size", fsBufferLimit)
@@ -51,7 +51,7 @@ func generateHTTPOutput(httpOutput *telemetryv1alpha1.HTTPOutput, fsBufferLimit 
 	sb.AddConfigParam("name", "http")
 	sb.AddConfigParam("allow_duplicated_headers", "true")
 	sb.AddConfigParam("match", fmt.Sprintf("%s.*", name))
-	sb.AddConfigParam("alias", fmt.Sprintf("%s-http", name))
+	sb.AddConfigParam("alias", fmt.Sprintf("http/%s", name))
 	sb.AddConfigParam("storage.total_limit_size", fsBufferLimit)
 	sb.AddConfigParam("retry_limit", retryLimit)
 	sb.AddIfNotEmpty("uri", httpOutput.URI)
