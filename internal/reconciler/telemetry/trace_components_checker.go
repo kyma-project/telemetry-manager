@@ -59,8 +59,8 @@ func (t *traceComponentsChecker) determineReason(pipelines []telemetryv1alpha1.T
 func (t *traceComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.TracePipeline) string {
 	// condTypes order defines the priority of negative conditions
 	condTypes := []string{
-		conditions.TypeGatewayHealthy,
 		conditions.TypeConfigurationGenerated,
+		conditions.TypeGatewayHealthy,
 	}
 
 	if t.flowHealthProbingEnabled {

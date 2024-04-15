@@ -58,9 +58,9 @@ func (m *metricComponentsChecker) determineReason(pipelines []telemetryv1alpha1.
 func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.MetricPipeline) string {
 	// condTypes order defines the priority of negative conditions
 	condTypes := []string{
+		conditions.TypeConfigurationGenerated,
 		conditions.TypeGatewayHealthy,
 		conditions.TypeAgentHealthy,
-		conditions.TypeConfigurationGenerated,
 	}
 
 	if m.flowHealthProbingEnabled {

@@ -63,8 +63,8 @@ func (l *logComponentsChecker) determineReason(pipelines []telemetryv1alpha1.Log
 func (l *logComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.LogPipeline) string {
 	// condTypes order defines the priority of negative conditions
 	condTypes := []string{
-		conditions.TypeAgentHealthy,
 		conditions.TypeConfigurationGenerated,
+		conditions.TypeAgentHealthy,
 	}
 	for _, condType := range condTypes {
 		for _, pipeline := range pipelines {
