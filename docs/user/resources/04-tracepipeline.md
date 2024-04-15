@@ -154,3 +154,13 @@ The status of the TracePipeline is determined by the condition types `GatewayHea
 | ConfigurationGenerated | True             | ConfigurationGenerated  |                                            |
 | ConfigurationGenerated | False            | ReferencedSecretMissing | One or more referenced Secrets are missing |
 | ConfigurationGenerated | False            | MaxPipelinesExceeded    | Maximum pipeline count limit exceeded      |
+
+Reflecting the TracePipeline's data flow in `TelemetryFlowHealthy` condition type is currently under development and determined by the following reasons:
+
+| Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                   |
+|----------------------|------------------|-------------------|-------------------------------------------------------------------------------------|
+| TelemetryFlowHealthy | True             | FlowHealthy       | Traces are flowing normally to backend                                              |
+| TelemetryFlowHealthy | False            | GatewayThrottling | Trace collector experiencing high influx: Unable to receive metrics at the current rate |
+| TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                    |
+| TelemetryFlowHealthy | False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting                               |
+| TelemetryFlowHealthy | False            | AllDataDropped    | All traces dropped: backend unreachable or rejecting                                |

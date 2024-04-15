@@ -181,3 +181,13 @@ The status of the MetricPipeline is determined by the condition types `GatewayHe
 | ConfigurationGenerated | True             | ConfigurationGenerated  |                                            |
 | ConfigurationGenerated | False            | ReferencedSecretMissing | One or more referenced Secrets are missing |
 | ConfigurationGenerated | False            | MaxPipelinesExceeded    | Maximum pipeline count limit exceeded      |
+
+Reflecting the MetricPipeline's data flow in `TelemetryFlowHealthy` condition type is currently under development and determined by the following reasons:
+
+| Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                  |
+|----------------------|------------------|-------------------|------------------------------------------------------------------------------------|
+| TelemetryFlowHealthy | True             | FlowHealthy       | Metrics are flowing normally to backend                                            |
+| TelemetryFlowHealthy | False            | GatewayThrottling | Metric gateway experiencing high influx: Unable to receive metrics at the current rate |
+| TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                   |
+| TelemetryFlowHealthy | False            | SomeDataDropped   | Some metrics dropped: backend unreachable or rejecting                             |
+| TelemetryFlowHealthy | False            | AllDataDropped    | All metrics dropped: backend unreachable or rejecting                              |
