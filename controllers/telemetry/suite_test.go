@@ -129,8 +129,9 @@ var _ = BeforeSuite(func() {
 
 	logPipelineController := NewLogPipelineController(
 		client,
-		logpipeline.NewReconciler(client, testLogPipelineConfig, &k8sutils.DaemonSetProber{Client: client}, overridesHandler),
-		testLogPipelineConfig)
+		make(chan event.GenericEvent),
+		logpipeline.NewReconciler(client, testLogPipelineConfig, &k8sutils.DaemonSetProber{Client: client}, false, nil, overridesHandler))
+
 	err = logPipelineController.SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 

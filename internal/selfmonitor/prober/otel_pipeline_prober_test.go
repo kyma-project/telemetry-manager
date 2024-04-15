@@ -1,4 +1,4 @@
-package flowhealth
+package prober
 
 import (
 	"context"
@@ -9,17 +9,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth/mocks"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober/mocks"
 )
 
-func TestProber(t *testing.T) {
+func TestOTelPipelineProber(t *testing.T) {
 	testCases := []struct {
 		name         string
 		alerts       promv1.AlertsResult
 		alertsErr    error
 		pipelineName string
-		expected     ProbeResult
+		expected     OTelPipelineProbeResult
 		expectErr    bool
 	}{
 		{
@@ -34,7 +35,11 @@ func TestProber(t *testing.T) {
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					Healthy: true,
+				},
+			},
 		},
 		{
 			name:         "unknown alert firing",
@@ -50,7 +55,11 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					Healthy: true,
+				},
+			},
 		},
 		{
 			name:         "alert missing exporter label",
@@ -65,10 +74,14 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					AllDataDropped: true,
+				},
+			},
 		},
 		{
-			name:         "exporter label mismatch",
+			name:         "exporter label does not match pipeline name",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
@@ -81,7 +94,11 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					Healthy: true,
+				},
+			},
 		},
 		{
 			name:         "overlapping pipeline names",
@@ -97,7 +114,11 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					Healthy: true,
+				},
+			},
 		},
 		{
 			name:         "flow type mismatch",
@@ -111,9 +132,20 @@ func TestProber(t *testing.T) {
 						},
 						State: promv1.AlertStateFiring,
 					},
+					{
+						Labels: model.LabelSet{
+							"alertname": "LogAgentBufferFull",
+							"exporter":  "otlp/cls",
+						},
+						State: promv1.AlertStateFiring,
+					},
 				},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					Healthy: true,
+				},
+			},
 		},
 		{
 			name:         "exporter dropped data firing",
@@ -129,7 +161,11 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{AllDataDropped: true},
+			expected: OTelPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					AllDataDropped: true,
+				},
+			},
 		},
 		{
 			name:         "exporter sent data and exporter dropped data firing",
@@ -152,7 +188,11 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{SomeDataDropped: true},
+			expected: OTelPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					SomeDataDropped: true,
+				},
+			},
 		},
 		{
 			name:         "exporter sent data and exporter enqueue failed firing",
@@ -175,7 +215,11 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{SomeDataDropped: true},
+			expected: OTelPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					SomeDataDropped: true,
+				},
+			},
 		},
 		{
 			name:         "exporter sent data and exporter dropped data and exporter enqueue failed firing",
@@ -205,7 +249,11 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{SomeDataDropped: true},
+			expected: OTelPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					SomeDataDropped: true,
+				},
+			},
 		},
 		{
 			name:         "queue almost full firing",
@@ -221,7 +269,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{QueueAlmostFull: true},
+			expected: OTelPipelineProbeResult{QueueAlmostFull: true},
 		},
 		{
 			name:         "receiver refused firing",
@@ -236,7 +284,7 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{Throttling: true},
+			expected: OTelPipelineProbeResult{Throttling: true},
 		},
 		{
 			name:         "healthy",
@@ -251,24 +299,26 @@ func TestProber(t *testing.T) {
 					},
 				},
 			},
-			expected: ProbeResult{Healthy: true},
+			expected: OTelPipelineProbeResult{
+				PipelineProbeResult: PipelineProbeResult{
+					Healthy: true,
+				},
+			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			alertGetterMock := &mocks.AlertGetter{}
+			sut, err := NewTracePipelineProber(types.NamespacedName{Name: "test"})
+			require.NoError(t, err)
 
+			alertGetterMock := &mocks.AlertGetter{}
 			if tc.alertsErr != nil {
 				alertGetterMock.On("Alerts", mock.Anything).Return(promv1.AlertsResult{}, tc.alertsErr)
 			} else {
 				alertGetterMock.On("Alerts", mock.Anything).Return(tc.alerts, nil)
 			}
-
-			sut := Prober{
-				getter:        alertGetterMock,
-				nameDecorator: traceRuleNameDecorator,
-			}
+			sut.getter = alertGetterMock
 
 			result, err := sut.Probe(context.Background(), tc.pipelineName)
 

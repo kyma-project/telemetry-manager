@@ -162,6 +162,18 @@ var _ = Describe("WithLogRecordAttrs", func() {
 	})
 })
 
+var _ = Describe("WithLogBody", func() {
+	It("should apply matcher", func() {
+		ld := plog.NewLogs()
+		rl := ld.ResourceLogs().AppendEmpty()
+		lrs := rl.ScopeLogs().AppendEmpty().LogRecords()
+		lr := lrs.AppendEmpty()
+		lr.Body().SetStr("This is a test log body.")
+
+		Expect(mustMarshalLogs(ld)).Should(ContainLd(ContainLogRecord(WithLogBody(Equal("This is a test log body.")))))
+	})
+})
+
 func mustMarshalLogs(ld plog.Logs) []byte {
 	var marshaler plog.JSONMarshaler
 	bytes, err := marshaler.MarshalLogs(ld)

@@ -133,3 +133,9 @@ func WithLogRecordAttrs(matcher types.GomegaMatcher) types.GomegaMatcher {
 		return lr.Attributes().AsRaw()
 	}, matcher)
 }
+
+func WithLogBody(matcher types.GomegaMatcher) types.GomegaMatcher {
+	return gomega.WithTransform(func(lr plog.LogRecord) string {
+		return lr.Body().AsString()
+	}, matcher)
+}

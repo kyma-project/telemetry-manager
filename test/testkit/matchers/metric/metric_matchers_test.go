@@ -1,11 +1,12 @@
 package metric
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-
-	kitmetrics "github.com/kyma-project/telemetry-manager/test/testkit/otel/metrics"
 )
 
 var _ = Describe("WithMds", func() {
@@ -46,9 +47,7 @@ var _ = Describe("WithResourceAttrs", func() {
 var _ = Describe("WithMetrics", func() {
 	It("should apply matcher", func() {
 		md := pmetric.NewMetrics()
-		metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
-		gauge := kitmetrics.NewGauge()
-		gauge.CopyTo(metrics.AppendEmpty())
+		md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics().AppendEmpty()
 
 		Expect(mustMarshalMetrics(md)).Should(ContainMd(WithMetrics(HaveLen(1))))
 	})
@@ -57,9 +56,7 @@ var _ = Describe("WithMetrics", func() {
 var _ = Describe("WithName", func() {
 	It("should apply matcher", func() {
 		md := pmetric.NewMetrics()
-		metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
-		gauge := kitmetrics.NewGauge(kitmetrics.WithName("container.cpu.time"))
-		gauge.CopyTo(metrics.AppendEmpty())
+		md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics().AppendEmpty().SetName("container.cpu.time")
 
 		Expect(mustMarshalMetrics(md)).Should(ContainMd(ContainMetric(WithName(ContainSubstring("container")))))
 	})
@@ -68,9 +65,7 @@ var _ = Describe("WithName", func() {
 var _ = Describe("WithType", func() {
 	It("should apply matcher", func() {
 		md := pmetric.NewMetrics()
-		metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
-		gauge := kitmetrics.NewGauge()
-		gauge.CopyTo(metrics.AppendEmpty())
+		md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics().AppendEmpty().SetEmptyGauge()
 
 		Expect(mustMarshalMetrics(md)).Should(ContainMd(ContainMetric(WithType(Equal(pmetric.MetricTypeGauge)))))
 	})
@@ -79,13 +74,18 @@ var _ = Describe("WithType", func() {
 var _ = Describe("WithDataPointAttrs", func() {
 	It("should apply matcher", func() {
 		md := pmetric.NewMetrics()
-		metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
-		gauge := kitmetrics.NewGauge()
-		gauge.CopyTo(metrics.AppendEmpty())
+		gauge := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics().AppendEmpty().SetEmptyGauge()
 
-		//TODO: rewrite the test fixture builder to inject custom attrs
+		pts := gauge.DataPoints()
+
+		pt := pts.AppendEmpty()
+		pt.SetStartTimestamp(pcommon.NewTimestampFromTime(time.Now()))
+		pt.SetTimestamp(pcommon.NewTimestampFromTime(time.Now()))
+		pt.SetDoubleValue(1.5)
+		pt.Attributes().PutStr("foo", "bar")
+
 		Expect(mustMarshalMetrics(md)).Should(
-			ContainMd(ContainMetric(WithDataPointAttrs(ContainElement(HaveKey("pt-label-key-0"))))),
+			ContainMd(ContainMetric(WithDataPointAttrs(ContainElement(HaveKey("foo"))))),
 		)
 	})
 })

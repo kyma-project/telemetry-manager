@@ -12,7 +12,6 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/urlprovider"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 
@@ -31,8 +30,9 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 	)
 
 	var (
-		urls         = urlprovider.New()
-		pipelineName string
+		pipelineName       string
+		telemetryExportURL string
+		metricPodURL       string
 	)
 
 	makeResources := func() []client.Object {
@@ -41,7 +41,7 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		urls.SetMockBackendExport(mockBackend.Name(), mockBackend.TelemetryExportURL(proxyClient))
+		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		istioAccessLogsPipeline := kitk8s.NewLogPipelineV1Alpha1("pipeline-istio-access-logs").
 			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
@@ -53,7 +53,7 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 		// Abusing metrics provider for istio access logs
 		sampleApp := prommetricgen.New(sampleAppNs, prommetricgen.WithName("access-log-emitter"))
 		objs = append(objs, sampleApp.Pod().K8sObject())
-		urls.SetMetricPodURL(proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort()))
+		metricPodURL = proxyClient.ProxyURLForPod(sampleAppNs, sampleApp.Name(), sampleApp.MetricsEndpoint(), sampleApp.MetricsPort())
 
 		return objs
 	}
@@ -89,7 +89,7 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 
 		It("Should invoke the metrics endpoint to generate access logs", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MetricPodURL())
+				resp, err := proxyClient.Get(metricPodURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
@@ -97,7 +97,7 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 
 		It("Should verify istio logs are present", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(urls.MockBackendExport(mockBackendName))
+				resp, err := proxyClient.Get(telemetryExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(

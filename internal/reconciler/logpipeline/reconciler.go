@@ -39,21 +39,23 @@ import (
 	commonresources "github.com/kyma-project/telemetry-manager/internal/resources/common"
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/tls/cert"
 )
 
 type Config struct {
-	DaemonSet             types.NamespacedName
-	SectionsConfigMap     types.NamespacedName
-	FilesConfigMap        types.NamespacedName
-	LuaConfigMap          types.NamespacedName
-	ParsersConfigMap      types.NamespacedName
-	EnvSecret             types.NamespacedName
-	OutputTLSConfigSecret types.NamespacedName
-	OverrideConfigMap     types.NamespacedName
-	PipelineDefaults      builder.PipelineDefaults
-	Overrides             overrides.Config
-	DaemonSetConfig       fluentbit.DaemonSetConfig
+	DaemonSet               types.NamespacedName
+	SectionsConfigMap       types.NamespacedName
+	FilesConfigMap          types.NamespacedName
+	LuaConfigMap            types.NamespacedName
+	ParsersConfigMap        types.NamespacedName
+	EnvSecret               types.NamespacedName
+	OutputTLSConfigSecret   types.NamespacedName
+	OverrideConfigMap       types.NamespacedName
+	PipelineDefaults        builder.PipelineDefaults
+	Overrides               overrides.Config
+	DaemonSetConfig         fluentbit.DaemonSetConfig
+	ObserveBySelfMonitoring bool
 }
 
 //go:generate mockery --name DaemonSetProber --filename daemon_set_prober.go
@@ -71,23 +73,38 @@ type TLSCertValidator interface {
 	ValidateCertificate(certPEM []byte, keyPEM []byte) cert.TLSCertValidationResult
 }
 
-type Reconciler struct {
-	client.Client
-	config                  Config
-	prober                  DaemonSetProber
-	allLogPipelines         prometheus.Gauge
-	unsupportedLogPipelines prometheus.Gauge
-	syncer                  syncer
-	overridesHandler        *overrides.Handler
-	istioStatusChecker      istiostatus.Checker
-	tlsCertValidator        TLSCertValidator
+//go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
+type FlowHealthProber interface {
+	Probe(ctx context.Context, pipelineName string) (prober.LogPipelineProbeResult, error)
 }
 
-func NewReconciler(client client.Client, config Config, prober DaemonSetProber, overridesHandler *overrides.Handler) *Reconciler {
+type Reconciler struct {
+	client.Client
+	config                   Config
+	prober                   DaemonSetProber
+	flowHealthProbingEnabled bool
+	flowHealthProber         FlowHealthProber
+	allLogPipelines          prometheus.Gauge
+	unsupportedLogPipelines  prometheus.Gauge
+	syncer                   syncer
+	overridesHandler         *overrides.Handler
+	istioStatusChecker       istiostatus.Checker
+	tlsCertValidator         TLSCertValidator
+}
+
+func NewReconciler(
+	client client.Client,
+	config Config,
+	agentProber DaemonSetProber,
+	flowHealthProbingEnabled bool,
+	flowHealthProber FlowHealthProber,
+	overridesHandler *overrides.Handler) *Reconciler {
 	var r Reconciler
 	r.Client = client
 	r.config = config
-	r.prober = prober
+	r.prober = agentProber
+	r.flowHealthProbingEnabled = flowHealthProbingEnabled
+	r.flowHealthProber = flowHealthProber
 	r.allLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_all_logpipelines", Help: "Number of log pipelines."})
 	r.unsupportedLogPipelines = prometheus.NewGauge(prometheus.GaugeOpts{Name: "telemetry_unsupported_logpipelines", Help: "Number of log pipelines with custom filters or outputs."})
 	metrics.Registry.MustRegister(r.allLogPipelines, r.unsupportedLogPipelines)
@@ -179,12 +196,12 @@ func (r *Reconciler) reconcileFluentBit(ctx context.Context, pipeline *telemetry
 		return fmt.Errorf("failed to create fluent bit cluster role Binding: %w", err)
 	}
 
-	exporterMetricsService := fluentbit.MakeExporterMetricsService(r.config.DaemonSet)
+	exporterMetricsService := fluentbit.MakeExporterMetricsService(r.config.DaemonSet, r.config.ObserveBySelfMonitoring)
 	if err := k8sutils.CreateOrUpdateService(ctx, ownerRefSetter, exporterMetricsService); err != nil {
 		return fmt.Errorf("failed to reconcile exporter metrics service: %w", err)
 	}
 
-	metricsService := fluentbit.MakeMetricsService(r.config.DaemonSet)
+	metricsService := fluentbit.MakeMetricsService(r.config.DaemonSet, r.config.ObserveBySelfMonitoring)
 	if err := k8sutils.CreateOrUpdateService(ctx, ownerRefSetter, metricsService); err != nil {
 		return fmt.Errorf("failed to reconcile fluent bit metrics service: %w", err)
 	}
@@ -307,8 +324,6 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline, client client.Client, certValidator TLSCertValidator) []telemetryv1alpha1.LogPipeline {
 	var deployablePipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
-		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator, client)
-
 		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
 			continue
 		}
@@ -318,7 +333,7 @@ func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1al
 		if allPipelines[i].Spec.Output.IsLokiDefined() {
 			continue
 		}
-
+		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator, client)
 		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
 			continue
 		}

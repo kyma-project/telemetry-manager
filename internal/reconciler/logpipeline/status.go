@@ -14,6 +14,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 )
 
 const twoWeeks = time.Hour * 24 * 7 * 2
@@ -47,6 +48,11 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
+
+	if r.flowHealthProbingEnabled {
+		r.setFlowHealthCondition(ctx, &pipeline)
+	}
+
 	r.setLegacyConditions(ctx, &pipeline)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {
@@ -97,18 +103,11 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	status := metav1.ConditionTrue
 	reason := conditions.ReasonConfigurationGenerated
 	certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator, r.Client)
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonReferencedSecretMissing
-	}
-
-	if pipeline.Spec.Output.IsLokiDefined() {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonUnsupportedLokiOutput
-	}
-
 	message := conditions.MessageForLogPipeline(reason)
 
+	// The order with checking TLS and the checking ReferenceSecretExists needs to be maintained. If the TLS Cert
+	// does not exist then checking TLS Cert will set a message saying CertIsInvalid which would be overridden by
+	// ReferenceSecretNot found.
 	if !certValidationResult.CertValid {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonTLSCertificateInvalid
@@ -124,6 +123,7 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	if time.Now().After(certValidationResult.Validity) {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonTLSCertificateExpired
+		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly))
 	}
 
 	//ensure not expired and about to expire
@@ -131,11 +131,21 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	if validUntil > 0 && validUntil <= twoWeeks {
 		status = metav1.ConditionTrue
 		reason = conditions.ReasonTLSCertificateAboutToExpire
+		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly))
 	}
 
-	if reason == conditions.ReasonTLSCertificateAboutToExpire || reason == conditions.ReasonTLSCertificateExpired {
-		message = fmt.Sprintf(message, certValidationResult.Validity.Format(time.DateOnly))
+	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonReferencedSecretMissing
+		message = conditions.MessageForLogPipeline(reason)
 	}
+
+	if pipeline.Spec.Output.IsLokiDefined() {
+		status = metav1.ConditionFalse
+		reason = conditions.ReasonUnsupportedLokiOutput
+		message = conditions.MessageForLogPipeline(reason)
+	}
+
 	condition := metav1.Condition{
 		Type:               conditions.TypeConfigurationGenerated,
 		Status:             status,
@@ -145,6 +155,53 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+}
+
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+	var reason string
+	var status metav1.ConditionStatus
+
+	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+	if err == nil {
+		logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
+
+		reason = flowHealthReasonFor(probeResult)
+		if probeResult.Healthy {
+			status = metav1.ConditionTrue
+		} else {
+			status = metav1.ConditionFalse
+		}
+	} else {
+		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
+
+		reason = conditions.ReasonFlowHealthy
+		status = metav1.ConditionUnknown
+	}
+
+	condition := metav1.Condition{
+		Type:               conditions.TypeFlowHealthy,
+		Status:             status,
+		Reason:             reason,
+		Message:            conditions.MessageForLogPipeline(reason),
+		ObservedGeneration: pipeline.Generation,
+	}
+
+	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+}
+
+func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
+	switch {
+	case probeResult.AllDataDropped:
+		return conditions.ReasonAllDataDropped
+	case probeResult.SomeDataDropped:
+		return conditions.ReasonSomeDataDropped
+	case probeResult.NoLogsDelivered:
+		return conditions.ReasonNoLogsDelivered
+	case probeResult.BufferFillingUp:
+		return conditions.ReasonBufferFillingUp
+	default:
+		return conditions.ReasonFlowHealthy
+	}
 }
 
 func (r *Reconciler) setLegacyConditions(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {

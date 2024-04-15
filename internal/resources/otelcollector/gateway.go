@@ -28,7 +28,7 @@ import (
 func ApplyGatewayResources(ctx context.Context, c client.Client, cfg *GatewayConfig) error {
 	name := types.NamespacedName{Namespace: cfg.Namespace, Name: cfg.BaseName}
 
-	if err := applyCommonResources(ctx, c, name, makeGatewayClusterRole(name), cfg.allowedPorts, cfg.SelfMonitorLabel); err != nil {
+	if err := applyCommonResources(ctx, c, name, makeGatewayClusterRole(name), cfg.allowedPorts, cfg.ObserveBySelfMonitoring); err != nil {
 		return fmt.Errorf("failed to create common resource: %w", err)
 	}
 
@@ -104,12 +104,14 @@ func makeGatewayDeployment(cfg *GatewayConfig, configChecksum string, istioConfi
 	}
 	resources := makeGatewayResourceRequirements(cfg)
 	affinity := makePodAffinity(selectorLabels)
+
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
 		commonresources.WithPriorityClass(cfg.Deployment.PriorityClassName),
 		commonresources.WithResources(resources),
 		withAffinity(affinity),
 		withEnvVarFromSource(config.EnvVarCurrentPodIP, fieldPathPodIP),
 		withEnvVarFromSource(config.EnvVarCurrentNodeName, fieldPathNodeName),
+		commonresources.WithGoMemLimitEnvVar(resources.Limits[corev1.ResourceMemory]),
 	)
 
 	return &appsv1.Deployment{

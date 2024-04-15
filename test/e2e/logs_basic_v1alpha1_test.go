@@ -19,7 +19,7 @@ var _ = Describe("Logs Basic v1alpha1", Label("logs"), Ordered, func() {
 		mockBackendName = "log-receiver"
 		mockNs          = "log-http-output"
 		logProducerName = "log-producer-http-output" //#nosec G101 -- This is a false positive
-		pipelineName    = "http-output-pipeline"
+		pipelineName    = "http-output-pipeline-alpha1"
 	)
 	var telemetryExportURL string
 

@@ -111,9 +111,10 @@ func TestApplyGatewayResources(t *testing.T) {
 		require.Equal(t, baseMemoryLimit, *resources.Limits.Memory(), "memory limit should be defined")
 
 		envVars := container.Env
-		require.Len(t, envVars, 2)
+		require.Len(t, envVars, 3)
 		require.Equal(t, envVars[0].Name, "MY_POD_IP")
 		require.Equal(t, envVars[1].Name, "MY_NODE_NAME")
+		require.Equal(t, envVars[2].Name, "GOMEMLIMIT")
 		require.Equal(t, envVars[0].ValueFrom.FieldRef.FieldPath, "status.podIP")
 		require.Equal(t, envVars[1].ValueFrom.FieldRef.FieldPath, "spec.nodeName")
 
@@ -392,11 +393,11 @@ func TestApplyGatewayResourcesWithSelfMonEnabled(t *testing.T) {
 func createGatewayConfig(istioEnabled, selfMonEnabled bool) *GatewayConfig {
 	return &GatewayConfig{
 		Config: Config{
-			BaseName:         name,
-			Namespace:        namespace,
-			CollectorConfig:  cfg,
-			CollectorEnvVars: envVars,
-			SelfMonitorLabel: selfMonEnabled,
+			BaseName:                name,
+			Namespace:               namespace,
+			CollectorConfig:         cfg,
+			CollectorEnvVars:        envVars,
+			ObserveBySelfMonitoring: selfMonEnabled,
 		},
 		OTLPServiceName:      otlpServiceName,
 		CanReceiveOpenCensus: true,

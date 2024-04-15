@@ -20,7 +20,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 )
 
 const defaultReplicaCount int32 = 2
@@ -44,7 +44,7 @@ type DaemonSetProber interface {
 
 //go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
 type FlowHealthProber interface {
-	Probe(ctx context.Context, pipelineName string) (flowhealth.ProbeResult, error)
+	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
 }
 
 type Reconciler struct {

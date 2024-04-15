@@ -13,7 +13,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 )
 
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, withinPipelineCountLimit bool) error {
@@ -135,6 +135,8 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 
 	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
 	if err == nil {
+		logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
+
 		reason = flowHealthReasonFor(probeResult)
 		if probeResult.Healthy {
 			status = metav1.ConditionTrue
@@ -159,7 +161,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func flowHealthReasonFor(probeResult flowhealth.ProbeResult) string {
+func flowHealthReasonFor(probeResult prober.OTelPipelineProbeResult) string {
 	if probeResult.AllDataDropped {
 		return conditions.ReasonAllDataDropped
 	}

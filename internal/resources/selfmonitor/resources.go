@@ -239,6 +239,7 @@ func makeSelfMonitorDeployment(cfg *Config, configChecksum string) *appsv1.Deplo
 	podSpec := makePodSpec(cfg.BaseName, cfg.Deployment.Image,
 		commonresources.WithPriorityClass(cfg.Deployment.PriorityClassName),
 		commonresources.WithResources(resources),
+		commonresources.WithGoMemLimitEnvVar(cfg.Deployment.MemoryLimit),
 	)
 
 	return &appsv1.Deployment{

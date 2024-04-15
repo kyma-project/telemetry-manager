@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	. "github.com/onsi/gomega"
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
@@ -53,54 +52,28 @@ func TraceCollectorConfigShouldNotContainPipeline(ctx context.Context, k8sClient
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(BeTrue())
 }
 
-func TracesShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL string,
-	traceID pcommon.TraceID,
-	spanIDs []pcommon.SpanID,
-	spanAttrs pcommon.Map) {
-	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(telemetryExportURL)
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(ConsistOfTds(
-			WithSpans(
-				SatisfyAll(
-					HaveLen(len(spanIDs)),
-					WithSpanIDs(ConsistOf(spanIDs)),
-					HaveEach(SatisfyAll(
-						WithTraceID(Equal(traceID)),
-						WithSpanAttrs(BeEquivalentTo(spanAttrs.AsRaw())),
-					)),
-				),
-			))))
-		err = resp.Body.Close()
-		g.Expect(err).NotTo(HaveOccurred())
-	}, periodic.EventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
-}
-
 func TracesFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL, namespace string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(
-			ContainTd(SatisfyAll(
-				ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", namespace)),
-			)),
+			ContainTd(ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", namespace))),
 		))
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func TracesShouldNotBePresent(proxyClient *apiserverproxy.Client, telemetryExportURL string, traceID pcommon.TraceID) {
+func TracesFromNamespacesShouldNotBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL string, namespaces []string) {
 	Consistently(func(g Gomega) {
 		resp, err := proxyClient.Get(telemetryExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
-		g.Expect(resp).To(HaveHTTPBody(Not(ContainTd(
-			ContainSpan(WithTraceID(Equal(traceID))),
-		))))
+		g.Expect(resp).To(HaveHTTPBody(
+			Not(ContainTd(ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", BeElementOf(namespaces))))),
+		))
 		err = resp.Body.Close()
 		g.Expect(err).NotTo(HaveOccurred())
-	}, periodic.ConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

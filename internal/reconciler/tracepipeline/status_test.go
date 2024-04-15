@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/tracepipeline/mocks"
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/flowhealth"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
@@ -349,7 +349,7 @@ func TestUpdateStatus(t *testing.T) {
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
 			name           string
-			probe          flowhealth.ProbeResult
+			probe          prober.OTelPipelineProbeResult
 			probeErr       error
 			expectedStatus metav1.ConditionStatus
 			expectedReason string
@@ -362,15 +362,15 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "healthy",
-				probe: flowhealth.ProbeResult{
-					Healthy: true,
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{Healthy: true},
 				},
 				expectedStatus: metav1.ConditionTrue,
 				expectedReason: conditions.ReasonFlowHealthy,
 			},
 			{
 				name: "throttling",
-				probe: flowhealth.ProbeResult{
+				probe: prober.OTelPipelineProbeResult{
 					Throttling: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
@@ -378,7 +378,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "buffer filling up",
-				probe: flowhealth.ProbeResult{
+				probe: prober.OTelPipelineProbeResult{
 					QueueAlmostFull: true,
 				},
 				expectedStatus: metav1.ConditionFalse,
@@ -386,7 +386,7 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "buffer filling up shadows other problems",
-				probe: flowhealth.ProbeResult{
+				probe: prober.OTelPipelineProbeResult{
 					QueueAlmostFull: true,
 					Throttling:      true,
 				},
@@ -395,34 +395,34 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			{
 				name: "some data dropped",
-				probe: flowhealth.ProbeResult{
-					SomeDataDropped: true,
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
 				expectedReason: conditions.ReasonSomeDataDropped,
 			},
 			{
 				name: "some data dropped shadows other problems",
-				probe: flowhealth.ProbeResult{
-					SomeDataDropped: true,
-					Throttling:      true,
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{SomeDataDropped: true},
+					Throttling:          true,
 				},
 				expectedStatus: metav1.ConditionFalse,
 				expectedReason: conditions.ReasonSomeDataDropped,
 			},
 			{
 				name: "all data dropped",
-				probe: flowhealth.ProbeResult{
-					AllDataDropped: true,
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
 				},
 				expectedStatus: metav1.ConditionFalse,
 				expectedReason: conditions.ReasonAllDataDropped,
 			},
 			{
 				name: "all data dropped shadows other problems",
-				probe: flowhealth.ProbeResult{
-					AllDataDropped: true,
-					Throttling:     true,
+				probe: prober.OTelPipelineProbeResult{
+					PipelineProbeResult: prober.PipelineProbeResult{AllDataDropped: true},
+					Throttling:          true,
 				},
 				expectedStatus: metav1.ConditionFalse,
 				expectedReason: conditions.ReasonAllDataDropped,
