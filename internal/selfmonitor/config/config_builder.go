@@ -101,6 +101,7 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 					Action:       Keep,
 					Regex:        "(otelcol_.*|fluentbit_.*|telemetry_.*)",
 				},
+				// Add a pipeline_name label to the Fluent Bit and OTel Collector metrics to simplify pipeline matching
 				{
 					SourceLabels: []string{"__name__", "name"},
 					Action:       Replace,
