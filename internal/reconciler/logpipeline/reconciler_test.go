@@ -232,8 +232,6 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 			fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 			validatorStub := &mocks.TLSCertValidator{}
-			//invalidCert :=
-			//somekey :=
 
 			validatorStub.On("ResolveAndValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "invalidcert"}, &telemetryv1alpha1.ValueType{Value: "somekey"}).Return(tlscert.TLSCertValidationResult{
 				CertValid:       false,

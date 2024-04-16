@@ -171,13 +171,17 @@ For details, see the [MetricPipeline specification file](https://github.com/kyma
 
 The status of the MetricPipeline is determined by the condition types `GatewayHealthy`, `AgentHealthy` and `ConfigurationGenerated`:
 
-| Condition Type         | Condition Status | Condition Reason        | Condition Message                          |
-|------------------------|------------------|-------------------------|--------------------------------------------|
-| GatewayHealthy         | True             | DeploymentReady         | Metric gateway Deployment is ready         |
-| GatewayHealthy         | False            | DeploymentNotReady      | Metric gateway Deployment is not ready     |
-| AgentHealthy           | True             | AgentNotRequired        |                                            |
-| AgentHealthy           | True             | DaemonSetReady          | Metric agent DaemonSet is ready            |
-| AgentHealthy           | False            | DaemonSetNotReady       | Metric agent DaemonSet is not ready        |
-| ConfigurationGenerated | True             | ConfigurationGenerated  |                                            |
-| ConfigurationGenerated | False            | ReferencedSecretMissing | One or more referenced Secrets are missing |
-| ConfigurationGenerated | False            | MaxPipelinesExceeded    | Maximum pipeline count limit exceeded      |
+| Condition Type         | Condition Status | Condition Reason        | Condition Message                                                                    |
+|------------------------|------------------|-------------------------|--------------------------------------------------------------------------------------|
+| GatewayHealthy         | True             | DeploymentReady         | Metric gateway Deployment is ready                                                   |
+| GatewayHealthy         | False            | DeploymentNotReady      | Metric gateway Deployment is not ready                                               |
+| AgentHealthy           | True             | AgentNotRequired        |                                                                                      |
+| AgentHealthy           | True             | DaemonSetReady          | Metric agent DaemonSet is ready                                                      |
+| AgentHealthy           | False            | DaemonSetNotReady       | Metric agent DaemonSet is not ready                                                  |
+| ConfigurationGenerated | True             | ConfigurationGenerated  |                                                                                      |
+| ConfigurationGenerated | False            | ReferencedSecretMissing | One or more referenced Secrets are missing                                           |
+| ConfigurationGenerated | False            | MaxPipelinesExceeded    | Maximum pipeline count limit exceeded                                                |
+| ConfigurationGenerated | False            | InvalidTLSCert          | TLS certificate invalid                                                              |                                                                                                                                                                                         |
+| ConfigurationGenerated | False            | InvalidTLSPrivateKey    | TLS private key invalid                                                              |                                                                                                                                                                                         |
+| ConfigurationGenerated | False            | ExpiredTLSCert          | TLS certificate expired on YYYY-MM-DD                                                |                                                                                                                                                                                         |
+| ConfigurationGenerated | True             | TLSCertAboutToExpire    | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD |   

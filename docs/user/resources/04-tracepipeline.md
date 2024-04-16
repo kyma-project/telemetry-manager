@@ -147,10 +147,14 @@ The status of the TracePipeline is determined by the condition types `GatewayHea
 
 > **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
 
-| Condition Type         | Condition Status | Condition Reason        | Condition Message                          |
-|------------------------|------------------|-------------------------|--------------------------------------------|
-| GatewayHealthy         | True             | DeploymentReady         | Trace gateway Deployment is ready          |
-| GatewayHealthy         | False            | DeploymentNotReady      | Trace gateway Deployment is not ready      |
-| ConfigurationGenerated | True             | ConfigurationGenerated  |                                            |
-| ConfigurationGenerated | False            | ReferencedSecretMissing | One or more referenced Secrets are missing |
-| ConfigurationGenerated | False            | MaxPipelinesExceeded    | Maximum pipeline count limit exceeded      |
+| Condition Type         | Condition Status | Condition Reason        | Condition Message                                                                    |
+|------------------------|------------------|-------------------------|--------------------------------------------------------------------------------------|
+| GatewayHealthy         | True             | DeploymentReady         | Trace gateway Deployment is ready                                                    |
+| GatewayHealthy         | False            | DeploymentNotReady      | Trace gateway Deployment is not ready                                                |
+| ConfigurationGenerated | True             | ConfigurationGenerated  |                                                                                      |
+| ConfigurationGenerated | False            | ReferencedSecretMissing | One or more referenced Secrets are missing                                           |
+| ConfigurationGenerated | False            | MaxPipelinesExceeded    | Maximum pipeline count limit exceeded                                                |
+| ConfigurationGenerated | False            | InvalidTLSCert          | TLS certificate invalid                                                              |
+| ConfigurationGenerated | False            | InvalidTLSPrivateKey    | TLS private key invalid                                                              |
+| ConfigurationGenerated | False            | ExpiredTLSCert          | TLS certificate expired on YYYY-MM-DD                                                |
+| ConfigurationGenerated | True             | TLSCertAboutToExpire    | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD | 
