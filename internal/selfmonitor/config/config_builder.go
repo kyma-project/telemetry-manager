@@ -73,12 +73,6 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 					Regex:        "(.+?)(?::\\d+)?;(\\d+)",
 					Replacement:  "$1:$2",
 				},
-				//{
-				//	SourceLabels: []string{"__name__", "exporter"},
-				//	Action:       Replace,
-				//	Regex:        "otelcol_\\d+;\\d+/(.+)",
-				//	TargetLabel:  "pipeline",
-				//},
 				{
 					SourceLabels: []string{"__meta_kubernetes_namespace"},
 					Action:       Replace,
@@ -101,17 +95,20 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 					Action:       Keep,
 					Regex:        "(otelcol_.*|fluentbit_.*|telemetry_.*)",
 				},
-				// Add a pipeline_name label to the Fluent Bit and OTel Collector metrics to simplify pipeline matching
+				// The following relabel configs add an artificial pipeline_name label to the Fluent Bit and OTel Collector metrics to simplify pipeline matching
+				// For Fluent Bit metrics, the pipeline_name is based on the name label. Note that a regex group matching Kubernetes resource names (alphanumerical chars and hyphens) is used to extract the pipeline name.
+				// It allows to filter out timeseries with technical names (storage_backend.0, tail.0, etc.)
+				// For OTel Collector metrics, the pipeline_name is extracted from the exporter label, which has the format [otlp|otlphttp]/<pipeline_name>
 				{
 					SourceLabels: []string{"__name__", "name"},
 					Action:       Replace,
-					Regex:        "fluentbit_.+;(.+)",
+					Regex:        "fluentbit_.+;([a-zA-Z0-9-]+)",
 					TargetLabel:  "pipeline_name",
 				},
 				{
 					SourceLabels: []string{"__name__", "exporter"},
 					Action:       Replace,
-					Regex:        "otelcol_.+;(.+)/(.+)",
+					Regex:        "otelcol_.+;(.+)/([a-zA-Z0-9-]+)",
 					TargetLabel:  "pipeline_name",
 					Replacement:  "$2",
 				},

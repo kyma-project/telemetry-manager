@@ -48,6 +48,11 @@ func (eb *exprBuilder) sumBy(labels ...string) *exprBuilder {
 	return eb
 }
 
+func (eb *exprBuilder) sumByPipelineName() *exprBuilder {
+	eb.expr = fmt.Sprintf("sum by (%s) (%s)", labelPipelineName, eb.expr)
+	return eb
+}
+
 func (eb *exprBuilder) greaterThan(value float64) *exprBuilder {
 	eb.expr = fmt.Sprintf("%s > %s", eb.expr, strconv.FormatFloat(value, 'f', -1, 64))
 	return eb

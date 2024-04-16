@@ -16,31 +16,31 @@ func TestMakeRules(t *testing.T) {
 
 	require.Len(t, ruleGroup.Rules, 15)
 	require.Equal(t, "MetricGatewayExporterSentData", ruleGroup.Rules[0].Alert)
-	require.Equal(t, "sum by (exporter) (rate(otelcol_exporter_sent_metric_points{service=\"telemetry-metric-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[0].Expr)
+	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_sent_metric_points{service=\"telemetry-metric-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[0].Expr)
 
 	require.Equal(t, "MetricGatewayExporterDroppedData", ruleGroup.Rules[1].Alert)
-	require.Equal(t, "sum by (exporter) (rate(otelcol_exporter_send_failed_metric_points{service=\"telemetry-metric-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[1].Expr)
+	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_send_failed_metric_points{service=\"telemetry-metric-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[1].Expr)
 
 	require.Equal(t, "MetricGatewayExporterQueueAlmostFull", ruleGroup.Rules[2].Alert)
 	require.Equal(t, "otelcol_exporter_queue_size{service=\"telemetry-metric-gateway-metrics\"} / otelcol_exporter_queue_capacity{service=\"telemetry-metric-gateway-metrics\"} > 0.8", ruleGroup.Rules[2].Expr)
 
 	require.Equal(t, "MetricGatewayExporterEnqueueFailed", ruleGroup.Rules[3].Alert)
-	require.Equal(t, "sum by (exporter) (rate(otelcol_exporter_enqueue_failed_metric_points{service=\"telemetry-metric-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[3].Expr)
+	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_enqueue_failed_metric_points{service=\"telemetry-metric-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[3].Expr)
 
 	require.Equal(t, "MetricGatewayReceiverRefusedData", ruleGroup.Rules[4].Alert)
 	require.Equal(t, "sum by (receiver) (rate(otelcol_receiver_refused_metric_points{service=\"telemetry-metric-gateway-metrics\"}[5m])) > 0", ruleGroup.Rules[4].Expr)
 
 	require.Equal(t, "TraceGatewayExporterSentData", ruleGroup.Rules[5].Alert)
-	require.Equal(t, "sum by (exporter) (rate(otelcol_exporter_sent_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[5].Expr)
+	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_sent_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[5].Expr)
 
 	require.Equal(t, "TraceGatewayExporterDroppedData", ruleGroup.Rules[6].Alert)
-	require.Equal(t, "sum by (exporter) (rate(otelcol_exporter_send_failed_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[6].Expr)
+	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_send_failed_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[6].Expr)
 
 	require.Equal(t, "TraceGatewayExporterQueueAlmostFull", ruleGroup.Rules[7].Alert)
 	require.Equal(t, "otelcol_exporter_queue_size{service=\"telemetry-trace-collector-metrics\"} / otelcol_exporter_queue_capacity{service=\"telemetry-trace-collector-metrics\"} > 0.8", ruleGroup.Rules[7].Expr)
 
 	require.Equal(t, "TraceGatewayExporterEnqueueFailed", ruleGroup.Rules[8].Alert)
-	require.Equal(t, "sum by (exporter) (rate(otelcol_exporter_enqueue_failed_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[8].Expr)
+	require.Equal(t, "sum by (pipeline_name) (rate(otelcol_exporter_enqueue_failed_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[8].Expr)
 
 	require.Equal(t, "TraceGatewayReceiverRefusedData", ruleGroup.Rules[9].Alert)
 	require.Equal(t, "sum by (receiver) (rate(otelcol_receiver_refused_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[9].Expr)
@@ -72,8 +72,8 @@ func TestMatchesLogPipelineRule(t *testing.T) {
 		{
 			name: "rule name matches and pipeline name matches",
 			labelSet: map[string]string{
-				"alertname": "LogAgentBufferFull",
-				"name":      "testPipeline",
+				"alertname":     "LogAgentBufferFull",
+				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "AgentBufferFull",
 			pipelineName:       "testPipeline",
@@ -82,8 +82,8 @@ func TestMatchesLogPipelineRule(t *testing.T) {
 		{
 			name: "rule name matches and pipeline name does not match",
 			labelSet: map[string]string{
-				"alertname": "LogAgentBufferFull",
-				"name":      "testPipeline",
+				"alertname":     "LogAgentBufferFull",
+				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "testAlert",
 			pipelineName:       "otherPipeline",
@@ -92,8 +92,8 @@ func TestMatchesLogPipelineRule(t *testing.T) {
 		{
 			name: "rule name does not match and pipeline name matches",
 			labelSet: map[string]string{
-				"alertname": "MetricAgentBufferFull",
-				"name":      "testPipeline",
+				"alertname":     "MetricAgentBufferFull",
+				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "AgentBufferFull",
 			pipelineName:       "testPipeline",
@@ -120,8 +120,8 @@ func TestMatchesLogPipelineRule(t *testing.T) {
 		{
 			name: "rule name is RulesAny and name label is present but doesn't match prefix",
 			labelSet: map[string]string{
-				"alertname": "LogAgentBufferFull",
-				"name":      "otherPipeline",
+				"alertname":     "LogAgentBufferFull",
+				"pipeline_name": "otherPipeline",
 			},
 			unprefixedRuleName: RulesAny,
 			pipelineName:       "testPipeline",
@@ -148,8 +148,8 @@ func TestMatchesMetricPipelineRule(t *testing.T) {
 		{
 			name: "rule name matches and pipeline name matches",
 			labelSet: map[string]string{
-				"alertname": "MetricGatewayExporterSentData",
-				"exporter":  "otlp/testPipeline",
+				"alertname":     "MetricGatewayExporterSentData",
+				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "GatewayExporterSentData",
 			pipelineName:       "testPipeline",
@@ -158,8 +158,8 @@ func TestMatchesMetricPipelineRule(t *testing.T) {
 		{
 			name: "rule name matches and pipeline name does not match",
 			labelSet: map[string]string{
-				"alertname": "MetricGatewayExporterSentData",
-				"exporter":  "otlp/testPipeline",
+				"alertname":     "MetricGatewayExporterSentData",
+				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "GatewayExporterSentData",
 			pipelineName:       "otherPipeline",
@@ -168,8 +168,8 @@ func TestMatchesMetricPipelineRule(t *testing.T) {
 		{
 			name: "rule name does not match and pipeline name matches",
 			labelSet: map[string]string{
-				"alertname": "LogAgentBufferFull",
-				"exporter":  "otlp/testPipeline",
+				"alertname":     "LogAgentBufferFull",
+				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "MetricGatewayExporterSentData",
 			pipelineName:       "testPipeline",
@@ -196,8 +196,8 @@ func TestMatchesMetricPipelineRule(t *testing.T) {
 		{
 			name: "rule name is RulesAny and name label is present but doesn't match prefix",
 			labelSet: map[string]string{
-				"alertname": "MetricGatewayExporterSentData",
-				"exporter":  "otlp/otherPipeline",
+				"alertname":     "MetricGatewayExporterSentData",
+				"pipeline_name": "otherPipeline",
 			},
 			unprefixedRuleName: RulesAny,
 			pipelineName:       "otlp/testPipeline",
@@ -224,8 +224,8 @@ func TestMatchesTracePipelineRule(t *testing.T) {
 		{
 			name: "rule name matches and pipeline name matches",
 			labelSet: map[string]string{
-				"alertname": "TraceGatewayExporterSentData",
-				"exporter":  "otlp/testPipeline",
+				"alertname":     "TraceGatewayExporterSentData",
+				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "GatewayExporterSentData",
 			pipelineName:       "testPipeline",
@@ -234,8 +234,8 @@ func TestMatchesTracePipelineRule(t *testing.T) {
 		{
 			name: "rule name matches and pipeline name does not match",
 			labelSet: map[string]string{
-				"alertname": "TraceGatewayExporterSentData",
-				"exporter":  "otlp/testPipeline",
+				"alertname":     "TraceGatewayExporterSentData",
+				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "GatewayExporterSentData",
 			pipelineName:       "otherPipeline",
@@ -244,8 +244,8 @@ func TestMatchesTracePipelineRule(t *testing.T) {
 		{
 			name: "rule name does not match and pipeline name matches",
 			labelSet: map[string]string{
-				"alertname": "LogAgentBufferFull",
-				"exporter":  "otlp/testPipeline",
+				"alertname":     "LogAgentBufferFull",
+				"pipeline_name": "testPipeline",
 			},
 			unprefixedRuleName: "TraceGatewayExporterSentData",
 			pipelineName:       "testPipeline",
@@ -272,8 +272,8 @@ func TestMatchesTracePipelineRule(t *testing.T) {
 		{
 			name: "rule name is RulesAny and name label is present but doesn't match prefix",
 			labelSet: map[string]string{
-				"alertname": "TraceGatewayExporterSentData",
-				"exporter":  "otlp/otherPipeline",
+				"alertname":     "TraceGatewayExporterSentData",
+				"pipeline_name": "otherPipeline",
 			},
 			unprefixedRuleName: RulesAny,
 			pipelineName:       "otlp/testPipeline",

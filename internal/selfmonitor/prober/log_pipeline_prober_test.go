@@ -48,8 +48,8 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "UnknownAlert",
-							"exporter":  "otlp/cls",
+							"alertname":     "UnknownAlert",
+							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
@@ -62,7 +62,7 @@ func TestLogPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "alert missing name label",
+			name:         "alert missing pipeline_name label",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
@@ -81,14 +81,14 @@ func TestLogPipelineProber(t *testing.T) {
 			},
 		},
 		{
-			name:         "name label does not match pipeline name",
+			name:         "pipeline_name label does not match pipeline name",
 			pipelineName: "cls",
 			alerts: promv1.AlertsResult{
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentBufferFull",
-							"name":      "dynatrace",
+							"alertname":     "LogAgentBufferFull",
+							"pipeline_name": "dynatrace",
 						},
 						State: promv1.AlertStateFiring,
 					},
@@ -107,15 +107,15 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "MetricGatewayExporterDroppedData",
-							"exporter":  "otlp/cls",
+							"alertname":     "MetricGatewayExporterDroppedData",
+							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
 					{
 						Labels: model.LabelSet{
-							"alertname": "TraceGatewayExporterDroppedData",
-							"exporter":  "otlp/cls",
+							"alertname":     "TraceGatewayExporterDroppedData",
+							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
@@ -134,8 +134,8 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentExporterDroppedLogs",
-							"name":      "cls-http",
+							"alertname":     "LogAgentExporterDroppedLogs",
+							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
@@ -154,8 +154,8 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentBufferFull",
-							"name":      "cls",
+							"alertname":     "LogAgentBufferFull",
+							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
@@ -174,15 +174,15 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentExporterDroppedLogs",
-							"name":      "cls-http",
+							"alertname":     "LogAgentExporterDroppedLogs",
+							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentExporterSentLogs",
-							"name":      "cls-http",
+							"alertname":     "LogAgentExporterSentLogs",
+							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
@@ -201,15 +201,15 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentBufferFull",
-							"name":      "cls",
+							"alertname":     "LogAgentBufferFull",
+							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentExporterSentLogs",
-							"name":      "cls-http",
+							"alertname":     "LogAgentExporterSentLogs",
+							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
@@ -228,8 +228,8 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentReceiverReadLogs",
-							"name":      "cls",
+							"alertname":     "LogAgentReceiverReadLogs",
+							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
@@ -246,15 +246,15 @@ func TestLogPipelineProber(t *testing.T) {
 				Alerts: []promv1.Alert{
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentReceiverReadLogs",
-							"name":      "cls",
+							"alertname":     "LogAgentReceiverReadLogs",
+							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},
 					{
 						Labels: model.LabelSet{
-							"alertname": "LogAgentExporterSentLogs",
-							"name":      "cls-http",
+							"alertname":     "LogAgentExporterSentLogs",
+							"pipeline_name": "cls",
 						},
 						State: promv1.AlertStateFiring,
 					},

@@ -42,7 +42,7 @@ func TestHandler(t *testing.T) {
 		{
 			name:          "alert matches metric pipeline with same name",
 			requestMethod: http.MethodPost,
-			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayExporterDroppedData","exporter":"otlp/cls"}}]`)),
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayExporterDroppedData","pipeline_name":"cls"}}]`)),
 			resources: []client.Object{
 				ptr.To(testutils.NewMetricPipelineBuilder().WithName("cls").Build()),
 			},
@@ -52,7 +52,7 @@ func TestHandler(t *testing.T) {
 		{
 			name:          "alert matches trace pipeline with same name",
 			requestMethod: http.MethodPost,
-			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"TraceGatewayExporterDroppedData","exporter":"otlp/cls"}}]`)),
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"TraceGatewayExporterDroppedData","pipeline_name":"cls"}}]`)),
 			resources: []client.Object{
 				ptr.To(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
 			},
@@ -62,7 +62,7 @@ func TestHandler(t *testing.T) {
 		{
 			name:          "alert matches log pipeline with same name",
 			requestMethod: http.MethodPost,
-			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"LogAgentExporterDroppedLogs","name":"cls"}}]`)),
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"LogAgentExporterDroppedLogs","pipeline_name":"cls"}}]`)),
 			resources: []client.Object{
 				ptr.To(testutils.NewLogPipelineBuilder().WithName("cls").Build()),
 			},
@@ -72,7 +72,7 @@ func TestHandler(t *testing.T) {
 		{
 			name:          "alert does not match pipeline with other name",
 			requestMethod: http.MethodPost,
-			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayExporterDroppedData","exporter":"otlp/dynatrace"}}]`)),
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayExporterDroppedData","pipeline_name":"dynatrace"}}]`)),
 			resources: []client.Object{
 				ptr.To(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
 			},
@@ -81,7 +81,7 @@ func TestHandler(t *testing.T) {
 		{
 			name:          "alert does not match pipeline of other type",
 			requestMethod: http.MethodPost,
-			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayExporterDroppedData","exporter":"otlp/cls"}}]`)),
+			requestBody:   bytes.NewBuffer([]byte(`[{"labels":{"alertname":"MetricGatewayExporterDroppedData","pipeline_name":"cls"}}]`)),
 			resources: []client.Object{
 				ptr.To(testutils.NewTracePipelineBuilder().WithName("cls").Build()),
 			},
