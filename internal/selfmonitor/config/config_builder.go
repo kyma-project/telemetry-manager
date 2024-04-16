@@ -108,9 +108,8 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 				{
 					SourceLabels: []string{"__name__", "exporter"},
 					Action:       Replace,
-					Regex:        "otelcol_.+;(.+)/([a-zA-Z0-9-]+)",
+					Regex:        "otelcol_.+;.+/([a-zA-Z0-9-]+)",
 					TargetLabel:  "pipeline_name",
-					Replacement:  "$2",
 				},
 			},
 			KubernetesDiscoveryConfigs: []KubernetesDiscoveryConfig{{

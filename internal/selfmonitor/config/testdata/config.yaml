@@ -49,9 +49,8 @@ scrape_configs:
           target_label: pipeline_name
           action: replace
         - source_labels: [__name__, exporter]
-          regex: otelcol_.+;(.+)/([a-zA-Z0-9-]+)
+          regex: otelcol_.+;.+/([a-zA-Z0-9-]+)
           target_label: pipeline_name
-          replacement: $2
           action: replace
       kubernetes_sd_configs:
         - role: endpoints
