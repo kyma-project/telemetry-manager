@@ -119,7 +119,7 @@ func TestMergeSectionsConfig(t *testing.T) {
 [OUTPUT]
     name                     http
     match                    foo.*
-    alias                    http/foo
+    alias                    foo
     allow_duplicated_headers true
     format                   json
     host                     localhost
@@ -208,7 +208,7 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
 [OUTPUT]
     name                     stdout
     match                    foo.*
-    alias                    stdout/foo
+    alias                    foo
     retry_limit              300
     storage.total_limit_size 1G
 
