@@ -7,3 +7,6 @@ f7d7d265cb40c46f876bc0a825d7efffbbcc05db:internal/tls/cert/tls_cert_validator_te
 0c1b1be475538e896a0ef5173e2407b8754b6193:internal/tls/cert/tls_cert_validator_test.go:private-key:27
 d1d091352e4a6e69c8877e4a104f333b54362295:internal/tls/cert/tls_cert_validator_test.go:private-key:178
 d1d091352e4a6e69c8877e4a104f333b54362295:internal/tls/cert/tls_cert_validator_test.go:private-key:189
+491dd9e17f076128d3edfbe37ebae5b130900692:internal/tlsCert/tls_cert_validator_test.go:private-key:216
+491dd9e17f076128d3edfbe37ebae5b130900692:internal/tlsCert/tls_cert_validator_test.go:private-key:237
+999330acfc45ac17ba4a307c6170e631cf4eae08:internal/tls/cert/tls_cert_validator_test.go:private-key:178

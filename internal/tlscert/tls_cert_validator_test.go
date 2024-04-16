@@ -281,9 +281,10 @@ func TestMissingCertValue(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &test.inputCert, &test.inputKey)
-			require.Equal(t, test.expectedCertValid, validationResult.CertValid)
-			require.Equal(t, test.expectedKeyValue, validationResult.PrivateKeyValid)
+			tt := test
+			validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &tt.inputCert, &tt.inputKey)
+			require.Equal(t, tt.expectedCertValid, validationResult.CertValid)
+			require.Equal(t, tt.expectedKeyValue, validationResult.PrivateKeyValid)
 		})
 	}
 
