@@ -44,6 +44,14 @@ scrape_configs:
         - source_labels: [__name__]
           regex: (otelcol_.*|fluentbit_.*|telemetry_.*)
           action: keep
+        - source_labels: [__name__, name]
+          regex: fluentbit_.+;([a-zA-Z0-9-]+)
+          target_label: pipeline_name
+          action: replace
+        - source_labels: [__name__, exporter]
+          regex: otelcol_.+;.+/([a-zA-Z0-9-]+)
+          target_label: pipeline_name
+          action: replace
       kubernetes_sd_configs:
         - role: endpoints
           namespaces:

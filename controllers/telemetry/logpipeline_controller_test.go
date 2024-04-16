@@ -100,7 +100,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 [OUTPUT]
     name                     stdout
     match                    log-pipeline.*
-    alias                    log-pipeline-stdout
+    alias                    log-pipeline
     retry_limit              300
     storage.total_limit_size 1G`
 
