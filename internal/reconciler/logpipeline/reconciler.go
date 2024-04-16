@@ -359,36 +359,6 @@ func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1
 		}
 	}
 
-	//certValue := pipeline.Spec.Output.HTTP.TLSConfig.Cert
-	//keyValue := pipeline.Spec.Output.HTTP.TLSConfig.Key
-
-	//certData, err := resolveValue(ctx, client, *certValue)
-	//
-	//if err != nil {
-	//	return tlsCert.TLSCertValidationResult{
-	//		CertValid: false,
-	//	}
-	//}
-	//
-	//keyData, err := resolveValue(ctx, client, *keyValue)
-	//
-	//if err != nil {
-	//	return tlsCert.TLSCertValidationResult{
-	//		PrivateKeyValid: false,
-	//	}
-	//}
-
 	return validator.ResolveAndValidateCertificate(ctx, pipeline.Spec.Output.HTTP.TLSConfig.Cert, pipeline.Spec.Output.HTTP.TLSConfig.Key)
 
 }
-
-//func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
-//	if value.Value != "" {
-//		return []byte(value.Value), nil
-//	}
-//	if value.ValueFrom.IsSecretKeyRef() {
-//		return secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
-//	}
-//
-//	return nil, fmt.Errorf("either value or secret key reference must be defined")
-//}

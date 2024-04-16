@@ -244,6 +244,80 @@ func TestUpdateStatus(t *testing.T) {
 				HTTP: "http://traces.telemetry-system:4318",
 			}},
 		},
+		{
+			name: "logpipeline has invalid cert",
+			config: &Config{
+				Traces:  TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
+				Metrics: MetricsConfig{OTLPServiceName: "metrics", Namespace: "telemetry-system"},
+			},
+			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSCertificateInvalid},
+			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
+			tracesCheckerReturn:  &metav1.Condition{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceComponentsRunning},
+			//resources: []client.Object{
+			//	pointerFrom(testutils.NewTracePipelineBuilder().Build()),
+			//},
+			expectedState: operatorv1alpha1.StateWarning,
+			expectedConditions: []metav1.Condition{
+				{Type: "LogComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSCertificateInvalid},
+				{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
+				{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceComponentsRunning},
+			},
+			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{
+				Traces: &operatorv1alpha1.OTLPEndpoints{
+					GRPC: "http://traces.telemetry-system:4317",
+					HTTP: "http://traces.telemetry-system:4318",
+				}, Metrics: &operatorv1alpha1.OTLPEndpoints{
+					GRPC: "http://metrics.telemetry-system:4317",
+					HTTP: "http://metrics.telemetry-system:4318",
+				}},
+		},
+		{
+			name: "trace pipeline has expired cert",
+			config: &Config{
+				Metrics: MetricsConfig{OTLPServiceName: "metrics", Namespace: "telemetry-system"},
+			},
+			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonDaemonSetReady},
+			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
+			tracesCheckerReturn:  &metav1.Condition{Type: "TraceComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSCertificateExpired},
+			resources: []client.Object{
+				pointerFrom(testutils.NewTracePipelineBuilder().Build()),
+			},
+			expectedState: operatorv1alpha1.StateWarning,
+			expectedConditions: []metav1.Condition{
+				{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonDaemonSetReady},
+				{Type: "MetricComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonMetricComponentsRunning},
+				{Type: "TraceComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSCertificateExpired},
+			},
+			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{Metrics: &operatorv1alpha1.OTLPEndpoints{
+				GRPC: "http://metrics.telemetry-system:4317",
+				HTTP: "http://metrics.telemetry-system:4318",
+			}},
+		},
+		{
+			name: "metric pipeline has cert expiring in 2 weeks",
+			config: &Config{
+				Traces: TracesConfig{OTLPServiceName: "traces", Namespace: "telemetry-system"},
+			},
+			telemetry:            &operatorv1alpha1.Telemetry{ObjectMeta: metav1.ObjectMeta{Name: "default"}},
+			logsCheckerReturn:    &metav1.Condition{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonDaemonSetReady},
+			metricsCheckerReturn: &metav1.Condition{Type: "MetricComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSCertificateAboutToExpire},
+			tracesCheckerReturn:  &metav1.Condition{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceComponentsRunning},
+			resources: []client.Object{
+				pointerFrom(testutils.NewTracePipelineBuilder().Build()),
+			},
+			expectedState: operatorv1alpha1.StateWarning,
+			expectedConditions: []metav1.Condition{
+				{Type: "LogComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonDaemonSetReady},
+				{Type: "MetricComponentsHealthy", Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSCertificateAboutToExpire},
+				{Type: "TraceComponentsHealthy", Status: metav1.ConditionTrue, Reason: conditions.ReasonTraceComponentsRunning},
+			},
+			expectedEndpoints: operatorv1alpha1.GatewayEndpoints{Traces: &operatorv1alpha1.OTLPEndpoints{
+				GRPC: "http://traces.telemetry-system:4317",
+				HTTP: "http://traces.telemetry-system:4318",
+			}},
+		},
 	}
 
 	for _, tt := range tests {

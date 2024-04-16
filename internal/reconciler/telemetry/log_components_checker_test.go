@@ -131,7 +131,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should prioritize unready fluent bit reason over missing secret",
+			name: "should prioritize unready ConfigGenerated reason over AgentHealthy reason",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
@@ -148,8 +148,8 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
-				Reason:  "FluentBitDaemonSetNotReady",
-				Message: "Fluent Bit DaemonSet is not ready",
+				Reason:  "LogPipelineReferencedSecretMissing",
+				Message: "One or more referenced Secrets are missing",
 			},
 		},
 		{

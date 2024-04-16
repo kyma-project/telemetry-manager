@@ -101,35 +101,6 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	reason := conditions.ReasonConfigurationGenerated
 	message := conditions.MessageForLogPipeline(reason)
 
-	//// The order with checking TLS and the checking ReferenceSecretExists needs to be maintained. If the TLS Cert
-	//// does not exist then checking TLS Cert will set a message saying CertIsInvalid which would be overridden by
-	//// ReferenceSecretNot found.
-	//if !certValidationResult.CertValid {
-	//	status = metav1.ConditionFalse
-	//	reason = conditions.ReasonTLSCertificateInvalid
-	//	message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.CertValidationMessage)
-	//}
-	//
-	//if !certValidationResult.PrivateKeyValid {
-	//	status = metav1.ConditionFalse
-	//	reason = conditions.ReasonTLSPrivateKeyInvalid
-	//	message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.PrivateKeyValidationMessage)
-	//}
-	//
-	//if time.Now().After(certValidationResult.Validity) {
-	//	status = metav1.ConditionFalse
-	//	reason = conditions.ReasonTLSCertificateExpired
-	//	message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly))
-	//}
-	//
-	////ensure not expired and about to expire
-	//validUntil := time.Until(certValidationResult.Validity)
-	//if validUntil > 0 && validUntil <= twoWeeks {
-	//	status = metav1.ConditionTrue
-	//	reason = conditions.ReasonTLSCertificateAboutToExpire
-	//	message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly))
-	//}
-
 	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
 		status = metav1.ConditionFalse
 		reason = conditions.ReasonReferencedSecretMissing
