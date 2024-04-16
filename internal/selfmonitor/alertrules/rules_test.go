@@ -46,13 +46,13 @@ func TestMakeRules(t *testing.T) {
 	require.Equal(t, "sum by (receiver) (rate(otelcol_receiver_refused_spans{service=\"telemetry-trace-collector-metrics\"}[5m])) > 0", ruleGroup.Rules[9].Expr)
 
 	require.Equal(t, "LogAgentExporterSentLogs", ruleGroup.Rules[10].Alert)
-	require.Equal(t, "rate(fluentbit_output_proc_bytes_total{service=\"telemetry-fluent-bit-metrics\"}[5m]) > 0", ruleGroup.Rules[10].Expr)
+	require.Equal(t, "sum by (pipeline_name) (rate(fluentbit_output_proc_bytes_total{service=\"telemetry-fluent-bit-metrics\"}[5m])) > 0", ruleGroup.Rules[10].Expr)
 
 	require.Equal(t, "LogAgentReceiverReadLogs", ruleGroup.Rules[11].Alert)
-	require.Equal(t, "rate(fluentbit_input_bytes_total{service=\"telemetry-fluent-bit-metrics\"}[5m]) > 0", ruleGroup.Rules[11].Expr)
+	require.Equal(t, "sum by (pipeline_name) (rate(fluentbit_input_bytes_total{service=\"telemetry-fluent-bit-metrics\"}[5m])) > 0", ruleGroup.Rules[11].Expr)
 
 	require.Equal(t, "LogAgentExporterDroppedLogs", ruleGroup.Rules[12].Alert)
-	require.Equal(t, "rate(fluentbit_output_dropped_records_total{service=\"telemetry-fluent-bit-metrics\"}[5m]) > 0", ruleGroup.Rules[12].Expr)
+	require.Equal(t, "sum by (pipeline_name) (rate(fluentbit_output_dropped_records_total{service=\"telemetry-fluent-bit-metrics\"}[5m])) > 0", ruleGroup.Rules[12].Expr)
 
 	require.Equal(t, "LogAgentBufferInUse", ruleGroup.Rules[13].Alert)
 	require.Equal(t, "telemetry_fsbuffer_usage_bytes > 300000000", ruleGroup.Rules[13].Expr)
