@@ -48,6 +48,11 @@ func (eb *exprBuilder) sumBy(labels ...string) *exprBuilder {
 	return eb
 }
 
+func (eb *exprBuilder) maxBy(labels ...string) *exprBuilder {
+	eb.expr = fmt.Sprintf("max by (%s) (%s)", strings.Join(labels, ","), eb.expr)
+	return eb
+}
+
 func (eb *exprBuilder) greaterThan(value float64) *exprBuilder {
 	eb.expr = fmt.Sprintf("%s > %s", eb.expr, strconv.FormatFloat(value, 'f', -1, 64))
 	return eb

@@ -46,6 +46,7 @@ func (rb otelCollectorRuleBuilder) exporterQueueAlmostFullRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix + RuleNameGatewayExporterQueueAlmostFull,
 		Expr: div("otelcol_exporter_queue_size", "otelcol_exporter_queue_capacity", selectService(rb.serviceName)).
+			maxBy(labelPipelineName).
 			greaterThan(0.8).
 			build(),
 	}
