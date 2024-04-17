@@ -56,7 +56,7 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 		Value: string(keyData),
 	}
 
-	validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &cert, &key)
+	validationResult := validator.ValidateCertificate(context.TODO(), &cert, &key)
 
 	require.True(t, time.Now().After(validationResult.Validity), "Certificate is not expired")
 }
@@ -106,7 +106,7 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 		Value: string(keyData),
 	}
 
-	validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &cert, &key)
+	validationResult := validator.ValidateCertificate(context.TODO(), &cert, &key)
 
 	require.True(t, validationResult.CertValid, "Certificate is not valid")
 	require.True(t, validationResult.PrivateKeyValid, "Private Key is not valid")
@@ -156,7 +156,7 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 		Value: string(keyData),
 	}
 	ctx := context.TODO()
-	validationResult := validator.ResolveAndValidateCertificate(ctx, &cert, &key)
+	validationResult := validator.ValidateCertificate(ctx, &cert, &key)
 
 	require.False(t, validationResult.CertValid, "Certificate is valid")
 	require.True(t, validationResult.PrivateKeyValid, "Private Key is not valid")
@@ -207,7 +207,7 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 		Value: string(keyData),
 	}
 
-	validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &cert, &key)
+	validationResult := validator.ValidateCertificate(context.TODO(), &cert, &key)
 
 	require.True(t, validationResult.CertValid, "Certificate is not valid")
 	require.False(t, validationResult.PrivateKeyValid, "Private Key is valid")
@@ -228,7 +228,7 @@ func TestSanitizeTLSSecretWithEscapedNewLine(t *testing.T) {
 		Value: keyData,
 	}
 
-	validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &cert, &key)
+	validationResult := validator.ValidateCertificate(context.TODO(), &cert, &key)
 
 	require.True(t, validationResult.CertValid)
 	require.True(t, validationResult.PrivateKeyValid)
@@ -248,7 +248,7 @@ func TestSanitizeValidTLSSecret(t *testing.T) {
 	key := telemetryv1alpha1.ValueType{
 		Value: keyData,
 	}
-	validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &cert, &key)
+	validationResult := validator.ValidateCertificate(context.TODO(), &cert, &key)
 
 	require.True(t, validationResult.CertValid)
 	require.True(t, validationResult.PrivateKeyValid)
@@ -282,7 +282,7 @@ func TestMissingCertValue(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			tt := test
-			validationResult := validator.ResolveAndValidateCertificate(context.TODO(), &tt.inputCert, &tt.inputKey)
+			validationResult := validator.ValidateCertificate(context.TODO(), &tt.inputCert, &tt.inputKey)
 			require.Equal(t, tt.expectedCertValid, validationResult.CertValid)
 			require.Equal(t, tt.expectedKeyValue, validationResult.PrivateKeyValid)
 		})

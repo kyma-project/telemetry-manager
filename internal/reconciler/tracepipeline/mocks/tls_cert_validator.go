@@ -16,12 +16,12 @@ type TLSCertValidator struct {
 	mock.Mock
 }
 
-// ResolveAndValidateCertificate provides a mock function with given fields: ctx, certPEM, keyPEM
-func (_m *TLSCertValidator) ResolveAndValidateCertificate(ctx context.Context, certPEM *v1alpha1.ValueType, keyPEM *v1alpha1.ValueType) tlscert.TLSCertValidationResult {
+// ValidateCertificate provides a mock function with given fields: ctx, certPEM, keyPEM
+func (_m *TLSCertValidator) ValidateCertificate(ctx context.Context, certPEM *v1alpha1.ValueType, keyPEM *v1alpha1.ValueType) tlscert.TLSCertValidationResult {
 	ret := _m.Called(ctx, certPEM, keyPEM)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ResolveAndValidateCertificate")
+		panic("no return value specified for ValidateCertificate")
 	}
 
 	var r0 tlscert.TLSCertValidationResult

@@ -34,7 +34,7 @@ func New(client client.Client) *TLSCertValidator {
 	}
 }
 
-func (tcv *TLSCertValidator) ResolveAndValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) TLSCertValidationResult {
+func (tcv *TLSCertValidator) ValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) TLSCertValidationResult {
 	result := TLSCertValidationResult{
 		CertValid:       true,
 		PrivateKeyValid: true,

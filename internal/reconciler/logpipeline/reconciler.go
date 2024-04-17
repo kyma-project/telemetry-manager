@@ -70,7 +70,7 @@ type DaemonSetAnnotator interface {
 
 //go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ResolveAndValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) tlscert.TLSCertValidationResult
+	ValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) tlscert.TLSCertValidationResult
 }
 
 //go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
@@ -359,6 +359,6 @@ func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1
 		}
 	}
 
-	return validator.ResolveAndValidateCertificate(ctx, pipeline.Spec.Output.HTTP.TLSConfig.Cert, pipeline.Spec.Output.HTTP.TLSConfig.Key)
+	return validator.ValidateCertificate(ctx, pipeline.Spec.Output.HTTP.TLSConfig.Cert, pipeline.Spec.Output.HTTP.TLSConfig.Key)
 
 }

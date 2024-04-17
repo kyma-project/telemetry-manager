@@ -15,23 +15,24 @@ func EvaluateTLSCertCondition(certValidationResult tlscert.TLSCertValidationResu
 	status = metav1.ConditionTrue
 	reason = ReasonConfigurationGenerated
 	message = MessageForLogPipeline(reason)
+	validationMsg := ""
 
 	if !certValidationResult.CertValid {
 		status = metav1.ConditionFalse
 		reason = ReasonTLSCertificateInvalid
-		message = fmt.Sprintf(MessageForLogPipeline(reason), certValidationResult.CertValidationMessage)
+		validationMsg = certValidationResult.CertValidationMessage
 	}
 
 	if !certValidationResult.PrivateKeyValid {
 		status = metav1.ConditionFalse
 		reason = ReasonTLSPrivateKeyInvalid
-		message = fmt.Sprintf(MessageForLogPipeline(reason), certValidationResult.PrivateKeyValidationMessage)
+		validationMsg = certValidationResult.PrivateKeyValidationMessage
 	}
 
 	if time.Now().After(certValidationResult.Validity) {
 		status = metav1.ConditionFalse
 		reason = ReasonTLSCertificateExpired
-		message = fmt.Sprintf(MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly))
+		validationMsg = certValidationResult.Validity.Format(time.DateOnly)
 	}
 
 	//ensure not expired and about to expire
@@ -39,7 +40,11 @@ func EvaluateTLSCertCondition(certValidationResult tlscert.TLSCertValidationResu
 	if validUntil > 0 && validUntil <= twoWeeks {
 		status = metav1.ConditionTrue
 		reason = ReasonTLSCertificateAboutToExpire
-		message = fmt.Sprintf(MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly))
+		validationMsg = certValidationResult.Validity.Format(time.DateOnly)
+	}
+
+	if validationMsg != "" {
+		message = fmt.Sprintf(MessageForLogPipeline(reason), validationMsg)
 	}
 
 	return status, reason, message
