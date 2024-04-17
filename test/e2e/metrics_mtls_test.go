@@ -54,9 +54,9 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
-			DeferCleanup(func() {
-				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			})
+			//DeferCleanup(func() {
+			//	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			//})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 

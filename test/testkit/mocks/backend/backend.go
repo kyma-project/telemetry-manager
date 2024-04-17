@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -76,7 +77,8 @@ func WithPersistentHostSecret(persistentHostSecret bool) Option {
 func (b *Backend) buildResources() {
 	if b.withTLS {
 		backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
-		certs, err := tls.GenerateTLSCerts(backendDNSName)
+		tlsCrt := tls.NewCerts()
+		certs, err := tlsCrt.WithExpiry(time.Now(), time.Now().Add(365*24*time.Hour)).GenerateTLSCerts(backendDNSName)
 		if err != nil {
 			panic(fmt.Errorf("could not generate TLS certs: %v", err))
 		}
