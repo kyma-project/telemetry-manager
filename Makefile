@@ -60,7 +60,7 @@ lint-autofix: golangci-lint ## Autofix all possible linting errors.
 
 lint-manifests: _check-clean-manifests
 
-lint _lint : golangci-lint lint-manifests
+lint: golangci-lint lint-manifests
 	go version
 	${GOLANGCI_LINT} version
 	GO111MODULE=on ${GOLANGCI_LINT} run
