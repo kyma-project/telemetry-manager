@@ -185,3 +185,13 @@ The status of the MetricPipeline is determined by the condition types `GatewayHe
 | ConfigurationGenerated | False            | InvalidTLSPrivateKey    | TLS private key invalid                                                              |                                                                                                                                                                                         |
 | ConfigurationGenerated | False            | ExpiredTLSCert          | TLS certificate expired on YYYY-MM-DD                                                |                                                                                                                                                                                         |
 | ConfigurationGenerated | True             | TLSCertAboutToExpire    | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD |   
+
+Reflecting the MetricPipeline's data flow in `TelemetryFlowHealthy` condition type is currently under development and determined by the following reasons:
+
+| Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                  |
+|----------------------|------------------|-------------------|------------------------------------------------------------------------------------|
+| TelemetryFlowHealthy | True             | FlowHealthy       | Metrics are flowing normally to backend                                            |
+| TelemetryFlowHealthy | False            | GatewayThrottling | Metric gateway experiencing high influx: Unable to receive metrics at the current rate |
+| TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                   |
+| TelemetryFlowHealthy | False            | SomeDataDropped   | Some metrics dropped: backend unreachable or rejecting                             |
+| TelemetryFlowHealthy | False            | AllDataDropped    | All metrics dropped: backend unreachable or rejecting                              |

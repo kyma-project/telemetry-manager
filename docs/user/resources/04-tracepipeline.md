@@ -158,3 +158,13 @@ The status of the TracePipeline is determined by the condition types `GatewayHea
 | ConfigurationGenerated | False            | InvalidTLSPrivateKey    | TLS private key invalid                                                              |
 | ConfigurationGenerated | False            | ExpiredTLSCert          | TLS certificate expired on YYYY-MM-DD                                                |
 | ConfigurationGenerated | True             | TLSCertAboutToExpire    | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD | 
+
+Reflecting the TracePipeline's data flow in `TelemetryFlowHealthy` condition type is currently under development and determined by the following reasons:
+
+| Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                   |
+|----------------------|------------------|-------------------|-------------------------------------------------------------------------------------|
+| TelemetryFlowHealthy | True             | FlowHealthy       | Traces are flowing normally to backend                                              |
+| TelemetryFlowHealthy | False            | GatewayThrottling | Trace collector experiencing high influx: Unable to receive metrics at the current rate |
+| TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                    |
+| TelemetryFlowHealthy | False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting                               |
+| TelemetryFlowHealthy | False            | AllDataDropped    | All traces dropped: backend unreachable or rejecting                                |

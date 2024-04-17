@@ -211,5 +211,12 @@ The status of the LogPipeline is determined by the condition types `AgentHealthy
 | ConfigurationGenerated | False            | ExpiredTLSCert          | TLS certificate expired on YYYY-MM-DD                                                                                                                                                                                               |
 | ConfigurationGenerated | True             | TLSCertAboutToExpire    | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD                                                                                                                                                |
 
+Reflecting the LogPipeline's data flow in `TelemetryFlowHealthy` condition type is currently under development and determined by the following reasons:
 
-
+| Condition Type       | Condition Status | Condition Reason | Condition Message                                              |
+|----------------------|------------------|------------------|----------------------------------------------------------------|
+| TelemetryFlowHealthy | True             | FlowHealthy      | Logs are flowing normally to backend                           |
+| TelemetryFlowHealthy | False            | BufferFillingUp  | Buffer nearing capacity: incoming log rate exceeds the export rate |
+| TelemetryFlowHealthy | False            | NoLogsDelivered  | No logs delivered to backend                                   |
+| TelemetryFlowHealthy | False            | SomeDataDropped  | Some logs dropped: backend unreachable or rejecting            |
+| TelemetryFlowHealthy | False            | AllDataDropped   | All logs dropped: backend unreachable or rejecting             |
