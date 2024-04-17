@@ -38,12 +38,18 @@ type Backend struct {
 	persistentHostSecret bool
 	withTLS              bool
 	TLSCerts             tls.Certs
+	tlsOptions           TLSOptions
 
 	ConfigMap        *ConfigMap
 	FluentDConfigMap *fluentd.ConfigMap
 	Deployment       *Deployment
 	ExternalService  *ExternalService
 	HostSecret       *kitk8s.Secret
+}
+
+type TLSOptions struct {
+	timeFrom time.Time
+	timeUpto time.Time
 }
 
 func New(name, namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -62,9 +68,11 @@ func New(name, namespace string, signalType SignalType, opts ...Option) *Backend
 	return backend
 }
 
-func WithTLS() Option {
+func WithTLS(timeFrom, timeUpto time.Time) Option {
 	return func(b *Backend) {
 		b.withTLS = true
+		b.tlsOptions.timeFrom = timeFrom
+		b.tlsOptions.timeUpto = timeUpto
 	}
 }
 
@@ -78,7 +86,8 @@ func (b *Backend) buildResources() {
 	if b.withTLS {
 		backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
 		tlsCrt := tls.NewCerts()
-		certs, err := tlsCrt.WithExpiry(time.Now(), time.Now().Add(365*24*time.Hour)).GenerateTLSCerts(backendDNSName)
+		//time.Now().Add(365*24*time.Hour)
+		certs, err := tlsCrt.WithExpiry(b.tlsOptions.timeFrom, b.tlsOptions.timeUpto).GenerateTLSCerts(backendDNSName)
 		if err != nil {
 			panic(fmt.Errorf("could not generate TLS certs: %v", err))
 		}

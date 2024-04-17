@@ -30,9 +30,7 @@ func (c *Certificate) WithExpiry(time, timeAfter time.Time) *Certificate {
 }
 
 func NewCerts() *Certificate {
-	return &Certificate{
-		BasicConstraintsValid: true,
-	}
+	return &Certificate{}
 }
 
 // helper function to create a cert template with a serial number and other required fields
@@ -42,7 +40,7 @@ func (c *Certificate) certTemplate(serialNumber int64, commonName string) *x509.
 		Subject:               pkix.Name{CommonName: commonName},
 		NotBefore:             c.certValidFrom,
 		NotAfter:              c.certValidTo,
-		BasicConstraintsValid: c.BasicConstraintsValid,
+		BasicConstraintsValid: true,
 	}
 }
 

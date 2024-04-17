@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
@@ -27,7 +28,7 @@ var _ = Describe("Logs mTLS", Label("logs"), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithTLS())
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithTLS(time.Now(), time.Now().AddDate(0, 0, 30)))
 		mockLogProducer := loggen.New(logProducerName, mockNs)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-mtls-test")))

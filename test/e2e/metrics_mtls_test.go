@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"fmt"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -33,7 +34,7 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
 		)
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS())
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS(time.Now(), time.Now().AddDate(0, 0, 30)))
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
@@ -54,9 +55,9 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
-			//DeferCleanup(func() {
-			//	Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
-			//})
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			})
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
