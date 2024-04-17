@@ -51,24 +51,16 @@ help: ## Display this help.
 
 
 ##@ Development
-.PHONY: lint-dev
-lint-dev: manifests manifests-dev golangci-lint ## regenerate manifests and run lint
-	${GOLANGCI_LINT} run
-
 lint-autofix: golangci-lint ## Autofix all possible linting errors.
 	${GOLANGCI_LINT} run --fix
 
-lint-manifests: _check-clean-manifests
-
-lint: golangci-lint lint-manifests
+lint: golangci-lint manifests manifests-dev ## Lint the codebase using the golangci-lint tool.
 	go version
 	${GOLANGCI_LINT} version
 	GO111MODULE=on ${GOLANGCI_LINT} run
 
-
-
 .PHONY: crd-docs-gen
-crd-docs-gen: tablegen ## Generates CRD spec into docs folder
+crd-docs-gen: tablegen manifests## Generates CRD spec into docs folder
 	${TABLE_GEN} --crd-filename ./config/crd/bases/operator.kyma-project.io_telemetries.yaml --md-filename ./docs/user/resources/01-telemetry.md
 	${TABLE_GEN} --crd-filename ./config/crd/bases/telemetry.kyma-project.io_logpipelines.yaml --md-filename ./docs/user/resources/02-logpipeline.md
 	${TABLE_GEN} --crd-filename ./config/crd/bases/telemetry.kyma-project.io_logparsers.yaml --md-filename ./docs/user/resources/03-logparser.md
@@ -80,7 +72,6 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	$(CONTROLLER_GEN) rbac:roleName=manager-role webhook paths="./..."
 	$(CONTROLLER_GEN) crd paths="./apis/operator/v1alpha1" output:crd:artifacts:config=config/crd/bases
 	$(CONTROLLER_GEN) crd paths="./apis/telemetry/v1alpha1" output:crd:artifacts:config=config/crd/bases
-	$(MAKE) crd-docs-gen
 
 .PHONY: manifests-dev
 manifests-dev: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition for v1alpha1 and v1beta1.
@@ -122,12 +113,10 @@ check-coverage: go-test-coverage ## Check tests coverage.
 build: generate fmt vet tidy ## Build manager binary.
 	go build -o bin/manager main.go
 
-check-clean _check-clean-manifests : ## Check if repo is clean up-to-date. Used after code generation
+check-clean: ## Check if repo is clean up-to-date. Used after code generation
 	@echo "Checking if all generated files are up-to-date"
 	@git diff --name-only --exit-code || (echo "Generated files are not up-to-date. Please run 'make generate manifests manifests-dev' to update them." && exit 1)
 
-
-_check-clean-manifests: manifests manifests-dev
 
 tls.key:
 	@openssl genrsa -out tls.key 4096
