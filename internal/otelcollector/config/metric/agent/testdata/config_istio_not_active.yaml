@@ -45,6 +45,7 @@ service:
             encoding: json
     extensions:
         - health_check
+        - pprof
 receivers:
     kubeletstats:
         collection_interval: 30s

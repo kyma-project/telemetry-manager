@@ -97,7 +97,7 @@ func makeServiceConfig(inputs inputSources) config.Service {
 				Encoding: "json",
 			},
 		},
-		Extensions: []string{"health_check"},
+		Extensions: []string{"health_check", "pprof"},
 	}
 }
 
