@@ -198,6 +198,26 @@ func TestTraceComponentsCheck(t *testing.T) {
 				Message: "Trace collector experiencing high influx: Unable to receive metrics at current rate",
 			},
 		},
+		{
+			name: "should return show tlsCertInvalid if one of the pipelines has invalid tls cert",
+			pipelines: []telemetryv1alpha1.TracePipeline{
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonTraceGatewayDeploymentNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewTracePipelineBuilder().
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionTrue, Reason: conditions.ReasonTLSCertificateAboutToExpire, Message: "TLS certificate is about to expire, configured certificate is valid until 22.04.2024"}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "TraceComponentsHealthy",
+				Status:  "True",
+				Reason:  "TLSCertificateAboutToExpire",
+				Message: "TLS certificate is about to expire, configured certificate is valid until 22.04.2024",
+			},
+		},
 	}
 
 	for _, test := range tests {

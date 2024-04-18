@@ -197,6 +197,27 @@ func TestLogComponentsCheck(t *testing.T) {
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (baz,foo), LogParsers (bar)",
 			},
 		},
+		{
+			name: "should return show tlsCertExpired if one of the pipelines has expired tls cert",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSCertificateExpired, Message: "TLS certificate expired on 20.01.2023"}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "False",
+				Reason:  "TLSCertificateExpired",
+				Message: "TLS certificate expired on 20.01.2023",
+			},
+		},
 	}
 
 	for _, test := range tests {

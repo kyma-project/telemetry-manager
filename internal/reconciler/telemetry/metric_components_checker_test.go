@@ -217,6 +217,26 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Message: "Metric gateway experiencing high influx: Unable to receive metrics at current rate",
 			},
 		},
+		{
+			name: "should return show tlsCertInvalid if one of the pipelines has invalid tls cert",
+			pipelines: []telemetryv1alpha1.MetricPipeline{
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(healthyGatewayCond).
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					Build(),
+				testutils.NewMetricPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSCertificateInvalid, Message: "TLS certificate invalid: unable to decode pem blocks"}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "MetricComponentsHealthy",
+				Status:  "False",
+				Reason:  "TLSCertificateInvalid",
+				Message: "TLS certificate invalid: unable to decode pem blocks",
+			},
+		},
 	}
 
 	for _, test := range tests {
