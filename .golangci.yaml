@@ -134,7 +134,7 @@ linters-settings:
     local-prefixes: github.com/kyma-project/telemetry-manager
 
   govet:
-    check-shadowing: true
+    enable: ['shadow']
 
   loggercheck:
     klog: true # Allows checking for the k8s.io/klog/v2.
