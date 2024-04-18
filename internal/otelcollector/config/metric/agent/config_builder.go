@@ -25,7 +25,7 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []telemetryv1
 
 	return &Config{
 		Base: config.Base{
-			Service:    makeServiceConfig(inputs),
+			Service:    config.DefaultService(makePipelinesConfig(inputs)),
 			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(inputs, isIstioActive),
@@ -82,22 +82,6 @@ func makeExportersConfig(gatewayServiceName types.NamespacedName) Exporters {
 				MaxElapsedTime:  "300s",
 			},
 		},
-	}
-}
-
-func makeServiceConfig(inputs inputSources) config.Service {
-	return config.Service{
-		Pipelines: makePipelinesConfig(inputs),
-		Telemetry: config.Telemetry{
-			Metrics: config.Metrics{
-				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
-			},
-			Logs: config.Logs{
-				Level:    "info",
-				Encoding: "json",
-			},
-		},
-		Extensions: []string{"health_check", "pprof"},
 	}
 }
 

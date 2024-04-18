@@ -17,7 +17,7 @@ import (
 func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alpha1.MetricPipeline) (*Config, otlpexporter.EnvVars, error) {
 	cfg := &Config{
 		Base: config.Base{
-			Service:    makeServiceConfig(),
+			Service:    config.DefaultService(make(config.Pipelines)),
 			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(),
@@ -58,22 +58,6 @@ func makeReceiversConfig() Receivers {
 				},
 			},
 		},
-	}
-}
-
-func makeServiceConfig() config.Service {
-	return config.Service{
-		Pipelines: make(config.Pipelines),
-		Telemetry: config.Telemetry{
-			Metrics: config.Metrics{
-				Address: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.Metrics),
-			},
-			Logs: config.Logs{
-				Level:    "info",
-				Encoding: "json",
-			},
-		},
-		Extensions: []string{"health_check", "pprof"},
 	}
 }
 
