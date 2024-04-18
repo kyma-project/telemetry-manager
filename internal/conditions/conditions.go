@@ -36,7 +36,7 @@ const (
 	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
 	ReasonTLSPrivateKeyInvalid        = "TLSPrivateKeyInvalid"
 	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
-	ReasonTLSCertificateAboutToExpire = "TLSCertAboutToExpire"
+	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
 
 	ReasonMetricAgentNotRequired  = "AgentNotRequired"
 	ReasonMetricComponentsRunning = "MetricComponentsRunning"

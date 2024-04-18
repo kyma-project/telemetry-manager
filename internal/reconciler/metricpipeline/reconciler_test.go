@@ -87,7 +87,11 @@ func TestGetDeployableMetricPipelines(t *testing.T) {
 
 	validatorStub := &mocks.TLSCertValidator{}
 	pipelines := []telemetryv1alpha1.MetricPipeline{pipeline1}
-	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l, validatorStub)
+	reconciler := Reconciler{
+		Client:           fakeClient,
+		tlsCertValidator: validatorStub,
+	}
+	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines, l)
 	require.NoError(t, err)
 	require.Contains(t, deployablePipelines, pipeline1)
 }
@@ -108,7 +112,11 @@ func TestMultipleGetDeployableMetricPipelines(t *testing.T) {
 	validatorStub := &mocks.TLSCertValidator{}
 
 	pipelines := []telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2}
-	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l, validatorStub)
+	reconciler := Reconciler{
+		Client:           fakeClient,
+		tlsCertValidator: validatorStub,
+	}
+	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines, l)
 	require.NoError(t, err)
 	require.Contains(t, deployablePipelines, pipeline1)
 	require.Contains(t, deployablePipelines, pipeline2)
@@ -127,7 +135,11 @@ func TestMultipleGetDeployableMetricPipelinesWithoutLock(t *testing.T) {
 
 	validatorStub := &mocks.TLSCertValidator{}
 	pipelines := []telemetryv1alpha1.MetricPipeline{pipeline1, pipeline2}
-	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l, validatorStub)
+	reconciler := Reconciler{
+		Client:           fakeClient,
+		tlsCertValidator: validatorStub,
+	}
+	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines, l)
 	require.NoError(t, err)
 	require.Contains(t, deployablePipelines, pipeline1)
 	require.NotContains(t, deployablePipelines, pipeline2)
@@ -146,7 +158,11 @@ func TestGetDeployableMetricPipelinesWithMissingSecretReference(t *testing.T) {
 
 	validatorStub := &mocks.TLSCertValidator{}
 	pipelines := []telemetryv1alpha1.MetricPipeline{pipelineWithSecretRef}
-	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l, validatorStub)
+	reconciler := Reconciler{
+		Client:           fakeClient,
+		tlsCertValidator: validatorStub,
+	}
+	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines, l)
 	require.NoError(t, err)
 	require.NotContains(t, deployablePipelines, pipelineWithSecretRef)
 }
@@ -164,7 +180,11 @@ func TestGetDeployableMetricPipelinesWithoutLock(t *testing.T) {
 
 	validatorStub := &mocks.TLSCertValidator{}
 	pipelines := []telemetryv1alpha1.MetricPipeline{pipeline1}
-	deployablePipelines, err := getDeployableMetricPipelines(ctx, pipelines, fakeClient, l, validatorStub)
+	reconciler := Reconciler{
+		Client:           fakeClient,
+		tlsCertValidator: validatorStub,
+	}
+	deployablePipelines, err := reconciler.getReconcilablePipelines(ctx, pipelines, l)
 	require.NoError(t, err)
 	require.NotContains(t, deployablePipelines, pipeline1)
 }

@@ -356,5 +356,9 @@ func getFluentBitPorts() []int32 {
 }
 
 func tlsCertValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
-	return pipeline.Spec.Output.HTTP != nil && (pipeline.Spec.Output.HTTP.TLSConfig.Cert != nil || pipeline.Spec.Output.HTTP.TLSConfig.Key != nil)
+	http := pipeline.Spec.Output.HTTP
+	if http == nil {
+		return false
+	}
+	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil
 }
