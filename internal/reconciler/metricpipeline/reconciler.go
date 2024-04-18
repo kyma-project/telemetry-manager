@@ -167,7 +167,6 @@ func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines 
 		if isReconcilable {
 			reconcilablePipelines = append(reconcilablePipelines, allPipelines[i])
 		}
-
 	}
 	return reconcilablePipelines, nil
 }

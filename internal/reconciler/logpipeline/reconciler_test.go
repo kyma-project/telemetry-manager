@@ -250,7 +250,11 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 				PrivateKeyValid: true,
 				Validity:        time.Now().AddDate(-1, -1, -1),
 			})
-			deployablePipelines := getDeployableLogPipelines(ctx, test.pipelines, fakeClient, validatorStub)
+			reconciler := Reconciler{
+				Client:           fakeClient,
+				tlsCertValidator: validatorStub,
+			}
+			deployablePipelines := reconciler.getReconcilablePipelines(ctx, test.pipelines)
 			for _, pipeline := range test.pipelines {
 				if test.deployablePipelines == true {
 					require.Contains(t, deployablePipelines, pipeline)

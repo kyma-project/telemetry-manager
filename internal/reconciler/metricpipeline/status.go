@@ -120,11 +120,11 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 
 func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, withinPipelineCountLimit bool) (status metav1.ConditionStatus, reason string, message string) {
 	if !withinPipelineCountLimit {
-		return metav1.ConditionFalse, conditions.ReasonMaxPipelinesExceeded, conditions.MessageForMetricPipeline(reason)
+		return metav1.ConditionFalse, conditions.ReasonMaxPipelinesExceeded, conditions.MessageForMetricPipeline(conditions.ReasonMaxPipelinesExceeded)
 	}
 
 	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.MessageForMetricPipeline(reason)
+		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.MessageForMetricPipeline(conditions.ReasonReferencedSecretMissing)
 	}
 
 	if tlsCertValidationRequired(pipeline) {
@@ -132,7 +132,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 		return conditions.EvaluateTLSCertCondition(certValidationResult)
 	}
 
-	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForMetricPipeline(reason)
+	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForMetricPipeline(conditions.ReasonConfigurationGenerated)
 }
 
 func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline) {

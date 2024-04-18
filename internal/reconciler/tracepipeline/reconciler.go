@@ -140,53 +140,59 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list trace pipelines: %w", err)
 	}
-	deployablePipelines, err := getDeployableTracePipelines(ctx, allPipelinesList.Items, r, lock, r.tlsCertValidator)
+	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items, lock)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
 	}
-	if len(deployablePipelines) == 0 {
+	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: no trace pipeline ready for deployment")
 		return nil
 	}
 
-	if err = r.reconcileTraceGateway(ctx, pipeline, deployablePipelines); err != nil {
+	if err = r.reconcileTraceGateway(ctx, pipeline, reconcilablePipelines); err != nil {
 		return fmt.Errorf("failed to reconcile trace gateway: %w", err)
 	}
 
 	return nil
 }
 
-// getDeployableTracePipelines returns the list of trace pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func getDeployableTracePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline, client client.Client, lock *k8sutils.ResourceCountLock, certValidator TLSCertValidator) ([]telemetryv1alpha1.TracePipeline, error) {
-	var deployablePipelines []telemetryv1alpha1.TracePipeline
+// getReconcilablePipelines returns the list of trace pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline, lock *k8sutils.ResourceCountLock) ([]telemetryv1alpha1.TracePipeline, error) {
+	var reconcilablePipelines []telemetryv1alpha1.TracePipeline
 	for i := range allPipelines {
-		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
-			continue
-		}
-
-		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
-			continue
-		}
-
-		if !tlsCertValidationRequired(&allPipelines[i]) {
-			continue
-		}
-
-		certValidationResult := certValidator.ValidateCertificate(ctx, allPipelines[i].Spec.Output.Otlp.TLS.Cert, allPipelines[i].Spec.Output.Otlp.TLS.Key)
-		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
-			continue
-		}
-
-		hasLock, err := lock.IsLockHolder(ctx, &allPipelines[i])
+		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i], lock)
 		if err != nil {
 			return nil, err
 		}
 
-		if hasLock {
-			deployablePipelines = append(deployablePipelines, allPipelines[i])
+		if isReconcilable {
+			reconcilablePipelines = append(reconcilablePipelines, allPipelines[i])
 		}
 	}
-	return deployablePipelines, nil
+	return reconcilablePipelines, nil
+}
+
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, lock *k8sutils.ResourceCountLock) (bool, error) {
+	if !pipeline.GetDeletionTimestamp().IsZero() {
+		return false, nil
+	}
+
+	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+		return false, nil
+	}
+
+	if tlsCertValidationRequired(pipeline) {
+		certValidationResult := r.tlsCertValidator.ValidateCertificate(ctx, pipeline.Spec.Output.Otlp.TLS.Cert, pipeline.Spec.Output.Otlp.TLS.Key)
+		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
+			return false, nil
+		}
+	}
+	hasLock, err := lock.IsLockHolder(ctx, pipeline)
+	if err != nil {
+		return false, fmt.Errorf("failed to check lock: %w", err)
+	}
+	return hasLock, nil
+
 }
 
 func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, allPipelines []telemetryv1alpha1.TracePipeline) error {
@@ -254,18 +260,14 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 	return defaultReplicaCount
 }
 
-func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, validator TLSCertValidator) tlscert.TLSCertValidationResult {
-	if pipeline.Spec.Output.Otlp.TLS == nil || (pipeline.Spec.Output.Otlp.TLS.Cert == nil && pipeline.Spec.Output.Otlp.TLS.Key == nil) {
-		return tlscert.TLSCertValidationResult{
-			CertValid:       true,
-			PrivateKeyValid: true,
-			Validity:        time.Now().AddDate(1, 0, 0),
-		}
+func tlsCertValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
+	otlp := pipeline.Spec.Output.Otlp
+	if otlp == nil {
+		return false
+	}
+	if otlp.TLS == nil {
+		return false
 	}
 
-	return validator.ValidateCertificate(ctx, pipeline.Spec.Output.Otlp.TLS.Cert, pipeline.Spec.Output.Otlp.TLS.Key)
-}
-
-func tlsCertValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
-	return pipeline.Spec.Output.Otlp.TLS == nil || (pipeline.Spec.Output.Otlp.TLS.Cert == nil && pipeline.Spec.Output.Otlp.TLS.Key == nil)
+	return pipeline.Spec.Output.Otlp.TLS.Cert == nil && pipeline.Spec.Output.Otlp.TLS.Key == nil
 }

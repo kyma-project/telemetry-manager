@@ -112,11 +112,11 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 
 func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (status metav1.ConditionStatus, reason string, message string) {
 	if pipeline.Spec.Output.IsLokiDefined() {
-		return metav1.ConditionFalse, conditions.ReasonUnsupportedLokiOutput, conditions.MessageForLogPipeline(reason)
+		return metav1.ConditionFalse, conditions.ReasonUnsupportedLokiOutput, conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput)
 	}
 
 	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.MessageForMetricPipeline(reason)
+		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.MessageForMetricPipeline(conditions.ReasonReferencedSecretMissing)
 	}
 
 	if tlsCertValidationRequired(pipeline) {
@@ -124,7 +124,7 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 		return conditions.EvaluateTLSCertCondition(certValidationResult)
 	}
 
-	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForMetricPipeline(reason)
+	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForMetricPipeline(conditions.ReasonConfigurationGenerated)
 }
 
 func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
