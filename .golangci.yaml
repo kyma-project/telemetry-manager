@@ -18,7 +18,7 @@ linters:
     - structcheck
     - varcheck
   # Linters to be enabled after fixing the issues
-    # - intrange
+    - intrange
     - copyloopvar
     - cyclop
     - depguard
