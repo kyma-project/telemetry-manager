@@ -1,4 +1,4 @@
-package alertrules
+package config
 
 import (
 	"strings"

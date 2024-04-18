@@ -1,4 +1,4 @@
-package alertrules
+package config
 
 const (
 	fluentBitMetricsServiceName = "telemetry-fluent-bit-metrics"
