@@ -57,6 +57,13 @@ func (l *logComponentsChecker) determineReason(pipelines []telemetryv1alpha1.Log
 		return reason
 	}
 
+	for _, pipeline := range pipelines {
+		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+		if cond != nil && cond.Reason == conditions.ReasonTLSCertificateAboutToExpire {
+			return cond.Reason
+		}
+	}
+
 	return conditions.ReasonLogComponentsRunning
 }
 
@@ -69,7 +76,7 @@ func (l *logComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetr
 	for _, condType := range condTypes {
 		for _, pipeline := range pipelines {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
-			if cond != nil && (cond.Status == metav1.ConditionFalse || cond.Reason == conditions.ReasonTLSCertificateAboutToExpire) {
+			if cond != nil && cond.Status == metav1.ConditionFalse {
 				return cond.Reason
 			}
 		}

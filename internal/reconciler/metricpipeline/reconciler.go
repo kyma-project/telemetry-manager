@@ -169,7 +169,11 @@ func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv
 			continue
 		}
 
-		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator)
+		if !tlsCertValidationRequired(&allPipelines[i]) {
+			continue
+		}
+
+		certValidationResult := certValidator.ValidateCertificate(ctx, allPipelines[i].Spec.Output.Otlp.TLS.Cert, allPipelines[i].Spec.Output.Otlp.TLS.Key)
 		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
 			continue
 		}
@@ -297,14 +301,6 @@ func getGatewayPorts() []int32 {
 	}
 }
 
-func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, validator TLSCertValidator) tlscert.TLSCertValidationResult {
-	if pipeline.Spec.Output.Otlp.TLS == nil || (pipeline.Spec.Output.Otlp.TLS.Cert == nil && pipeline.Spec.Output.Otlp.TLS.Key == nil) {
-		return tlscert.TLSCertValidationResult{
-			CertValid:       true,
-			PrivateKeyValid: true,
-			Validity:        time.Now().AddDate(1, 0, 0),
-		}
-	}
-
-	return validator.ValidateCertificate(ctx, pipeline.Spec.Output.Otlp.TLS.Cert, pipeline.Spec.Output.Otlp.TLS.Key)
+func tlsCertValidationRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	return pipeline.Spec.Output.Otlp.TLS == nil || (pipeline.Spec.Output.Otlp.TLS.Cert == nil && pipeline.Spec.Output.Otlp.TLS.Key == nil)
 }

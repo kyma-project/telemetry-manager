@@ -91,9 +91,9 @@ func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pip
 		message = conditions.MessageForTracePipeline(reason)
 	}
 
-	if !secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) && pipeline.TLSCertAndKeyExist() {
-		// we should set TLSCert status only if tls cert is present
-		certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator)
+	// we should set TLSCert status only if tls cert is present
+	if tlsCertValidationRequired(pipeline) {
+		certValidationResult := r.tlsCertValidator.ValidateCertificate(ctx, pipeline.Spec.Output.Otlp.TLS.Cert, pipeline.Spec.Output.Otlp.TLS.Key)
 		status, reason, message = conditions.EvaluateTLSCertCondition(certValidationResult)
 	}
 

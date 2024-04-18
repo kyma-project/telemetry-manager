@@ -333,7 +333,12 @@ func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1al
 		if allPipelines[i].Spec.Output.IsLokiDefined() {
 			continue
 		}
-		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator)
+
+		if !tlsCertValidationRequired(&allPipelines[i]) {
+			continue
+		}
+
+		certValidationResult := certValidator.ValidateCertificate(ctx, allPipelines[i].Spec.Output.HTTP.TLSConfig.Cert, allPipelines[i].Spec.Output.HTTP.TLSConfig.Key)
 		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
 			continue
 		}
@@ -350,15 +355,6 @@ func getFluentBitPorts() []int32 {
 	}
 }
 
-func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, validator TLSCertValidator) tlscert.TLSCertValidationResult {
-	if pipeline.Spec.Output.HTTP == nil || (pipeline.Spec.Output.HTTP.TLSConfig.Cert == nil && pipeline.Spec.Output.HTTP.TLSConfig.Key == nil) {
-		return tlscert.TLSCertValidationResult{
-			CertValid:       true,
-			PrivateKeyValid: true,
-			Validity:        time.Now().AddDate(1, 0, 0),
-		}
-	}
-
-	return validator.ValidateCertificate(ctx, pipeline.Spec.Output.HTTP.TLSConfig.Cert, pipeline.Spec.Output.HTTP.TLSConfig.Key)
-
+func tlsCertValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
+	return pipeline.Spec.Output.HTTP != nil && (pipeline.Spec.Output.HTTP.TLSConfig.Cert != nil || pipeline.Spec.Output.HTTP.TLSConfig.Key != nil)
 }

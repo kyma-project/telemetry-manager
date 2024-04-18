@@ -168,7 +168,11 @@ func getDeployableTracePipelines(ctx context.Context, allPipelines []telemetryv1
 			continue
 		}
 
-		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator)
+		if !tlsCertValidationRequired(&allPipelines[i]) {
+			continue
+		}
+
+		certValidationResult := certValidator.ValidateCertificate(ctx, allPipelines[i].Spec.Output.Otlp.TLS.Cert, allPipelines[i].Spec.Output.Otlp.TLS.Key)
 		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
 			continue
 		}
@@ -260,4 +264,8 @@ func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1
 	}
 
 	return validator.ValidateCertificate(ctx, pipeline.Spec.Output.Otlp.TLS.Cert, pipeline.Spec.Output.Otlp.TLS.Key)
+}
+
+func tlsCertValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
+	return pipeline.Spec.Output.Otlp.TLS == nil || (pipeline.Spec.Output.Otlp.TLS.Cert == nil && pipeline.Spec.Output.Otlp.TLS.Key == nil)
 }

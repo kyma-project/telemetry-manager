@@ -14,7 +14,7 @@ const twoWeeks = time.Hour * 24 * 7 * 2
 func EvaluateTLSCertCondition(certValidationResult tlscert.TLSCertValidationResult) (status metav1.ConditionStatus, reason, message string) {
 	status = metav1.ConditionTrue
 	reason = ReasonConfigurationGenerated
-	message = MessageForLogPipeline(reason)
+	message = ""
 	validationMsg := ""
 
 	if !certValidationResult.CertValid {
@@ -44,7 +44,7 @@ func EvaluateTLSCertCondition(certValidationResult tlscert.TLSCertValidationResu
 	}
 
 	if validationMsg != "" {
-		message = fmt.Sprintf(MessageForLogPipeline(reason), validationMsg)
+		message = fmt.Sprintf(CommonMessages(reason), validationMsg)
 	}
 
 	return status, reason, message
