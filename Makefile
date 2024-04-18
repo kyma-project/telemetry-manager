@@ -54,7 +54,7 @@ help: ## Display this help.
 lint-autofix: golangci-lint ## Autofix all possible linting errors.
 	${GOLANGCI_LINT} run --fix
 
-lint: golangci-lint manifests manifests-dev ## Lint the codebase using the golangci-lint tool.
+lint: golangci-lint ## Lint the codebase using the golangci-lint tool.
 	go version
 	${GOLANGCI_LINT} version
 	GO111MODULE=on ${GOLANGCI_LINT} run
