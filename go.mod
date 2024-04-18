@@ -15,7 +15,7 @@ require (
 	go.opentelemetry.io/collector/pdata v1.5.0
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.21.0
+	istio.io/api v1.21.1
 	istio.io/client-go v1.21.0
 	k8s.io/api v0.29.4
 	k8s.io/apiextensions-apiserver v0.29.3
