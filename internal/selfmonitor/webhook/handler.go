@@ -12,7 +12,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/alertrules"
+	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/config"
 )
 
 type Handler struct {
@@ -137,7 +137,7 @@ func (h *Handler) toMetricPipelineReconcileEvents(ctx context.Context, alerts []
 	for i := range metricPipelines.Items {
 		pipelineName := metricPipelines.Items[i].GetName()
 		for _, alert := range alerts {
-			if alertrules.MatchesMetricPipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
+			if config.MatchesMetricPipelineRule(alert.Labels, config.RulesAny, pipelineName) {
 				events = append(events, event.GenericEvent{Object: &metricPipelines.Items[i]})
 			}
 		}
@@ -156,7 +156,7 @@ func (h *Handler) toTracePipelineReconcileEvents(ctx context.Context, alerts []A
 	for i := range tracePipelines.Items {
 		pipelineName := tracePipelines.Items[i].GetName()
 		for _, alert := range alerts {
-			if alertrules.MatchesTracePipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
+			if config.MatchesTracePipelineRule(alert.Labels, config.RulesAny, pipelineName) {
 				events = append(events, event.GenericEvent{Object: &tracePipelines.Items[i]})
 			}
 		}
@@ -175,7 +175,7 @@ func (h *Handler) toLogPipelineReconcileEvents(ctx context.Context, alerts []Ale
 	for i := range logPipelines.Items {
 		pipelineName := logPipelines.Items[i].GetName()
 		for _, alert := range alerts {
-			if alertrules.MatchesLogPipelineRule(alert.Labels, alertrules.RulesAny, pipelineName) {
+			if config.MatchesLogPipelineRule(alert.Labels, config.RulesAny, pipelineName) {
 				events = append(events, event.GenericEvent{Object: &logPipelines.Items[i]})
 			}
 		}
