@@ -1,7 +1,16 @@
-package alertrules
+package config
+
+import (
+	"fmt"
+)
 
 const (
 	fluentBitMetricsServiceName = "telemetry-fluent-bit-metrics"
+
+	metricFluentBitOutputProcBytesTotal      = "fluentbit_output_proc_bytes_total"
+	metricFluentBitInputBytesTotal           = "fluentbit_input_bytes_total"
+	metricFluentBitOutputDroppedRecordsTotal = "fluentbit_output_dropped_records_total"
+	metricFluentBitBufferUsageBytes          = "telemetry_fsbuffer_usage_bytes"
 )
 
 type fluentBitRuleBuilder struct {
@@ -20,7 +29,7 @@ func (rb fluentBitRuleBuilder) rules() []Rule {
 func (rb fluentBitRuleBuilder) exporterSentRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentExporterSentLogs,
-		Expr: rate("fluentbit_output_proc_bytes_total", selectService(fluentBitMetricsServiceName)).
+		Expr: rate(metricFluentBitOutputProcBytesTotal, selectService(fluentBitMetricsServiceName)).
 			sumBy(labelPipelineName).
 			greaterThan(0).
 			build(),
@@ -30,7 +39,7 @@ func (rb fluentBitRuleBuilder) exporterSentRule() Rule {
 func (rb fluentBitRuleBuilder) receiverReadRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentReceiverReadLogs,
-		Expr: rate("fluentbit_input_bytes_total", selectService(fluentBitMetricsServiceName)).
+		Expr: rate(metricFluentBitInputBytesTotal, selectService(fluentBitMetricsServiceName)).
 			sumBy(labelPipelineName).
 			greaterThan(0).
 			build(),
@@ -40,7 +49,7 @@ func (rb fluentBitRuleBuilder) receiverReadRule() Rule {
 func (rb fluentBitRuleBuilder) exporterDroppedRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentExporterDroppedLogs,
-		Expr: rate("fluentbit_output_dropped_records_total", selectService(fluentBitMetricsServiceName)).
+		Expr: rate(metricFluentBitOutputDroppedRecordsTotal, selectService(fluentBitMetricsServiceName)).
 			sumBy(labelPipelineName).
 			greaterThan(0).
 			build(),
@@ -50,14 +59,14 @@ func (rb fluentBitRuleBuilder) exporterDroppedRule() Rule {
 func (rb fluentBitRuleBuilder) bufferInUseRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentBufferInUse,
-		Expr:  "telemetry_fsbuffer_usage_bytes > 300000000",
+		Expr:  fmt.Sprintf("%s > 300000000", metricFluentBitBufferUsageBytes),
 	}
 }
 
 func (rb fluentBitRuleBuilder) bufferFullRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentBufferFull,
-		Expr:  "telemetry_fsbuffer_usage_bytes > 900000000",
+		Expr:  fmt.Sprintf("%s > 900000000", metricFluentBitBufferUsageBytes),
 	}
 }
 
