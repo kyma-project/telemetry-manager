@@ -4,40 +4,62 @@ run:
   build-tags:
     - e2e
 linters:
-  disable-all: true
-  enable:
-    - asasalint
-    - asciicheck
-    - bodyclose
-    - dogsled
-    - dupl
-    - dupword
-    - errcheck
-    - errchkjson
-    - exportloopref
-    - gci
-    - ginkgolinter
-    - gocheckcompilerdirectives
-    - gochecknoinits
-    - gocyclo
-    - gofmt
-    - goimports
-    - gosec
-    - gosimple
-    - govet
-    - importas
-    - ineffassign
-    - loggercheck
-    - misspell
-    - misspell
-    - nilnil
-    - nolintlint
-    - revive
-    - staticcheck
-    - stylecheck
-    - typecheck
-    - unparam
-    - unused
+  enable-all: true
+  disable:
+  # Depreacted linters
+    - deadcode
+    - exhaustivestruct
+    - golint
+    - ifshort
+    - interfacer
+    - maligned
+    - nosnakecase
+    - scopelint
+    - structcheck
+    - varcheck
+  # Linters to be enabled after fixing the issues
+    # - intrange
+    - copyloopvar
+    - cyclop
+    - depguard
+    - errname
+    - errorlint
+    - exhaustive
+    - exhaustruct
+    - forcetypeassert
+    - funlen
+    - gochecknoglobals
+    - goconst
+    - gocritic
+    - godot
+    - godox
+    - goerr113
+    - gofumpt
+    - gomnd
+    - ireturn
+    - lll
+    - maintidx
+    - makezero
+    - mirror
+    - nestif
+    - nlreturn
+    - noctx
+    - nonamedreturns
+    - paralleltest
+    - perfsprint
+    - prealloc
+    - predeclared
+    - protogetter
+    - tagliatelle
+    - testifylint
+    - testpackage
+    - thelper
+    - tparallel
+    - varnamelen
+    - wastedassign
+    - whitespace
+    - wrapcheck
+    - wsl
 
 linters-settings:
   dupl:
@@ -134,7 +156,8 @@ linters-settings:
     local-prefixes: github.com/kyma-project/telemetry-manager
 
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
 
   loggercheck:
     klog: true # Allows checking for the k8s.io/klog/v2.
