@@ -7,10 +7,10 @@ import (
 const (
 	fluentBitMetricsServiceName = "telemetry-fluent-bit-metrics"
 
-	metricFluentBitOutputProcBytesTotal = "fluentbit_output_proc_bytes_total"
-	metricFluentBitInputBytesTotal      = "fluentbit_input_bytes_total"
-	metricFluentBitOutputDroppedRecords = "fluentbit_output_dropped_records_total"
-	metricFluentBitBufferUsageBytes     = "telemetry_fsbuffer_usage_bytes"
+	metricFluentBitOutputProcBytesTotal      = "fluentbit_output_proc_bytes_total"
+	metricFluentBitInputBytesTotal           = "fluentbit_input_bytes_total"
+	metricFluentBitOutputDroppedRecordsTotal = "fluentbit_output_dropped_records_total"
+	metricFluentBitBufferUsageBytes          = "telemetry_fsbuffer_usage_bytes"
 )
 
 type fluentBitRuleBuilder struct {
@@ -49,7 +49,7 @@ func (rb fluentBitRuleBuilder) receiverReadRule() Rule {
 func (rb fluentBitRuleBuilder) exporterDroppedRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentExporterDroppedLogs,
-		Expr: rate(metricFluentBitOutputDroppedRecords, selectService(fluentBitMetricsServiceName)).
+		Expr: rate(metricFluentBitOutputDroppedRecordsTotal, selectService(fluentBitMetricsServiceName)).
 			sumBy(labelPipelineName).
 			greaterThan(0).
 			build(),

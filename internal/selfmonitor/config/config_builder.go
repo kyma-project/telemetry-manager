@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"time"
 )
 
@@ -93,7 +94,7 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 				{
 					SourceLabels: []string{"__name__"},
 					Action:       Keep,
-					Regex:        "(otelcol_.*|fluentbit_.*|telemetry_.*)",
+					Regex:        srapableMetricsRegex(),
 				},
 				// The following relabel configs add an artificial pipeline_name label to the Fluent Bit and OTel Collector metrics to simplify pipeline matching
 				// For Fluent Bit metrics, the pipeline_name is based on the name label. Note that a regex group matching Kubernetes resource names (alphanumerical chars and hyphens) is used to extract the pipeline name.
@@ -118,4 +119,28 @@ func makeScrapeConfig(scrapeNamespace string) []ScrapeConfig {
 			}},
 		},
 	}
+}
+
+func srapableMetricsRegex() string {
+	fluentBitMetrics := []string{
+		metricFluentBitOutputProcBytesTotal,
+		metricFluentBitOutputDroppedRecordsTotal,
+		metricFluentBitInputBytesTotal,
+		metricFluentBitBufferUsageBytes,
+	}
+
+	otelCollectorMetrics := []string{
+		metricOtelCollectorExporterSent,
+		metricOtelCollectorExporterSendFailed,
+		metricOtelCollectorExporterQueueSize,
+		metricOtelCollectorExporterQueueCapacity,
+		metricOtelCollectorExporterEnqueueFailed,
+		metricOtelCollectorReceiverRefused,
+	}
+
+	for i := range otelCollectorMetrics {
+		otelCollectorMetrics[i] += "_.*"
+	}
+
+	return strings.Join(append(fluentBitMetrics, otelCollectorMetrics...), "|")
 }
