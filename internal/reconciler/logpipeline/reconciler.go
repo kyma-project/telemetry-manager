@@ -308,6 +308,8 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline, client client.Client, certValidator TLSCertValidator) []telemetryv1alpha1.LogPipeline {
 	var deployablePipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
+		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator, client)
+
 		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
 			continue
 		}
@@ -317,7 +319,7 @@ func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1al
 		if allPipelines[i].Spec.Output.IsLokiDefined() {
 			continue
 		}
-		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator, client)
+
 		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
 			continue
 		}
