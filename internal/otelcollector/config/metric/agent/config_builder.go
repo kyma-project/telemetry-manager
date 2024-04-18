@@ -25,8 +25,8 @@ func MakeConfig(gatewayServiceName types.NamespacedName, pipelines []telemetryv1
 
 	return &Config{
 		Base: config.Base{
-			Extensions: makeExtensionsConfig(),
 			Service:    makeServiceConfig(inputs),
+			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(inputs, isIstioActive),
 		Processors: makeProcessorsConfig(inputs),
@@ -81,14 +81,6 @@ func makeExportersConfig(gatewayServiceName types.NamespacedName) Exporters {
 				MaxInterval:     "30s",
 				MaxElapsedTime:  "300s",
 			},
-		},
-	}
-}
-
-func makeExtensionsConfig() config.Extensions {
-	return config.Extensions{
-		HealthCheck: config.Endpoint{
-			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.HealthCheck),
 		},
 	}
 }

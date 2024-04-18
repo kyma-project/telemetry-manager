@@ -18,7 +18,7 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alp
 	cfg := &Config{
 		Base: config.Base{
 			Service:    makeServiceConfig(),
-			Extensions: makeExtensionsConfig(),
+			Extensions: config.DefaultExtensions(),
 		},
 		Receivers:  makeReceiversConfig(),
 		Processors: makeProcessorsConfig(),
@@ -57,17 +57,6 @@ func makeReceiversConfig() Receivers {
 					Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OTLPGRPC),
 				},
 			},
-		},
-	}
-}
-
-func makeExtensionsConfig() config.Extensions {
-	return config.Extensions{
-		HealthCheck: config.Endpoint{
-			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.HealthCheck),
-		},
-		Pprof: config.Endpoint{
-			Endpoint: fmt.Sprintf("127.0.0.1:%d", ports.Pprof),
 		},
 	}
 }
