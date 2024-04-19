@@ -24,6 +24,13 @@ func Test_EvaluateTLSCertCondition(t *testing.T) {
 			given:           tlscert.TLSCertValidationResult{CertValid: false, CertValidationMessage: "Cert is invalid", PrivateKeyValid: true, Validity: time.Now().AddDate(1, 0, 0)},
 			expectedStatus:  metav1.ConditionFalse,
 			expectedReason:  ReasonTLSCertificateInvalid,
+			expectedMessage: fmt.Sprintf(CommonMessages(ReasonTLSCertificateInvalid), "Cert is invalid"),
+		},
+		{
+			name:            "Invalid Certificate and PrivateKey",
+			given:           tlscert.TLSCertValidationResult{CertValid: false, CertValidationMessage: "Cert is invalid", PrivateKeyValid: false, PrivateKeyValidationMessage: "PrivateKey is invalid", Validity: time.Now().AddDate(1, 0, 0)},
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  ReasonTLSCertificateInvalid,
 			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSCertificateInvalid), "Cert is invalid"),
 		},
 		{
