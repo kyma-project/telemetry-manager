@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -63,6 +64,10 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 
 		It("Should have running pipelines", func() {
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+		})
+
+		It("Should have a tlsCertAboutToExpire Condition set", func() {
+			verifiers.MetricPipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateAboutToExpire)
 		})
 
 		It("Should have a metric backend running", func() {
