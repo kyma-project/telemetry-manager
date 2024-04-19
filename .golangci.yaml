@@ -19,7 +19,6 @@ linters:
     - varcheck
   # Linters to be enabled after fixing the issues
     - intrange
-    - copyloopvar
     - cyclop
     - depguard
     - errname
