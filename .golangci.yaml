@@ -54,7 +54,6 @@ linters:
     - thelper
     - tparallel
     - varnamelen
-    - wastedassign
     - whitespace
     - wrapcheck
     - wsl
