@@ -49,7 +49,7 @@ func Test_EvaluateTLSCertCondition(t *testing.T) {
 		},
 		{
 			name:            "Certificate about to expire",
-			given:           tlscert.TLSCertValidationResult{Validity: time.Now().AddDate(0, 0, 7)},
+			given:           tlscert.TLSCertValidationResult{CertValid: true, PrivateKeyValid: true, Validity: time.Now().AddDate(0, 0, 7)},
 			expectedStatus:  metav1.ConditionTrue,
 			expectedReason:  ReasonTLSCertificateAboutToExpire,
 			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSCertificateAboutToExpire), time.Now().AddDate(0, 0, 7).Format(time.DateOnly)),
