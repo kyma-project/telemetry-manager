@@ -39,7 +39,7 @@ func NewConfigBuilder(reader client.Reader, otlpOutput *telemetryv1alpha1.OtlpOu
 func (cb *ConfigBuilder) MakeConfig(ctx context.Context) (*config.OTLPExporter, EnvVars, error) {
 	envVars, err := makeEnvVars(ctx, cb.reader, cb.otlpOutput, cb.pipelineName)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to make env vars: %v", err)
+		return nil, nil, fmt.Errorf("failed to make env vars: %w", err)
 	}
 
 	exportersConfig := makeExportersConfig(cb.otlpOutput, cb.pipelineName, envVars, cb.queueSize, cb.signalType)

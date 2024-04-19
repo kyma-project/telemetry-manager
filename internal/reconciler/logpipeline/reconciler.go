@@ -146,9 +146,9 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	defer func() {
 		if statusErr := r.updateStatus(ctx, pipeline.Name); statusErr != nil {
 			if err != nil {
-				err = fmt.Errorf("failed while updating status: %v: %v", statusErr, err)
+				err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
 			} else {
-				err = fmt.Errorf("failed to update status: %v", statusErr)
+				err = fmt.Errorf("failed to update status: %w", statusErr)
 			}
 		}
 	}()
@@ -283,37 +283,37 @@ func isUnsupported(pipeline *telemetryv1alpha1.LogPipeline) bool {
 func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 	var baseCm corev1.ConfigMap
 	if err := r.Get(ctx, r.config.DaemonSet, &baseCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.DaemonSet.Namespace, r.config.DaemonSet.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", r.config.DaemonSet.Namespace, r.config.DaemonSet.Name, err)
 	}
 
 	var parsersCm corev1.ConfigMap
 	if err := r.Get(ctx, r.config.ParsersConfigMap, &parsersCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.ParsersConfigMap.Namespace, r.config.ParsersConfigMap.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", r.config.ParsersConfigMap.Namespace, r.config.ParsersConfigMap.Name, err)
 	}
 
 	var luaCm corev1.ConfigMap
 	if err := r.Get(ctx, r.config.LuaConfigMap, &luaCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.LuaConfigMap.Namespace, r.config.LuaConfigMap.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", r.config.LuaConfigMap.Namespace, r.config.LuaConfigMap.Name, err)
 	}
 
 	var sectionsCm corev1.ConfigMap
 	if err := r.Get(ctx, r.config.SectionsConfigMap, &sectionsCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.SectionsConfigMap.Namespace, r.config.SectionsConfigMap.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", r.config.SectionsConfigMap.Namespace, r.config.SectionsConfigMap.Name, err)
 	}
 
 	var filesCm corev1.ConfigMap
 	if err := r.Get(ctx, r.config.FilesConfigMap, &filesCm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.FilesConfigMap.Namespace, r.config.FilesConfigMap.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", r.config.FilesConfigMap.Namespace, r.config.FilesConfigMap.Name, err)
 	}
 
 	var envSecret corev1.Secret
 	if err := r.Get(ctx, r.config.EnvSecret, &envSecret); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s Secret: %v", r.config.EnvSecret.Namespace, r.config.EnvSecret.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s Secret: %w", r.config.EnvSecret.Namespace, r.config.EnvSecret.Name, err)
 	}
 
 	var tlsSecret corev1.Secret
 	if err := r.Get(ctx, r.config.OutputTLSConfigSecret, &tlsSecret); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s Secret: %v", r.config.OutputTLSConfigSecret.Namespace, r.config.OutputTLSConfigSecret.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s Secret: %w", r.config.OutputTLSConfigSecret.Namespace, r.config.OutputTLSConfigSecret.Name, err)
 	}
 
 	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret, tlsSecret}), nil

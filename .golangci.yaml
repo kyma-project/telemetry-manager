@@ -21,7 +21,6 @@ linters:
     - intrange
     - cyclop
     - depguard
-    - errorlint
     - exhaustive
     - exhaustruct
     - forcetypeassert

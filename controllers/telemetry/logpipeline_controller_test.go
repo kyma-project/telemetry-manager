@@ -570,7 +570,7 @@ func validateKeyExistsInFluentbitSectionsConf(ctx context.Context, key string) e
 	err := k8sClient.Get(ctx, configMapLookupKey, &fluentBitCm)
 	if err != nil {
 
-		return fmt.Errorf("could not get configmap: %s: %s", configMapLookupKey.Name, err)
+		return fmt.Errorf("could not get configmap: %s: %w", configMapLookupKey.Name, err)
 	}
 	if _, ok := fluentBitCm.Data[key]; !ok {
 		return fmt.Errorf("did not find the key: %s", key)

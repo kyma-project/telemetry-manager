@@ -26,11 +26,11 @@ func (s *syncer) syncFluentBitConfig(ctx context.Context, pipeline *telemetryv1a
 	log := logf.FromContext(ctx)
 
 	if err := s.syncSectionsConfigMap(ctx, pipeline, deployableLogPipelines); err != nil {
-		return fmt.Errorf("failed to sync sections: %v", err)
+		return fmt.Errorf("failed to sync sections: %w", err)
 	}
 
 	if err := s.syncFilesConfigMap(ctx, pipeline); err != nil {
-		return fmt.Errorf("failed to sync mounted files: %v", err)
+		return fmt.Errorf("failed to sync mounted files: %w", err)
 	}
 
 	if err := s.syncEnvSecret(ctx, deployableLogPipelines); err != nil {
