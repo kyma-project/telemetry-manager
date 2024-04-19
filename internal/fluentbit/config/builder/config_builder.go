@@ -15,6 +15,7 @@ type PipelineDefaults struct {
 	FsBufferLimit     string
 }
 
+// FluentBit builder configuration
 type BuilderConfig struct {
 	PipelineDefaults
 	CollectAgentLogs bool

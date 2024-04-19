@@ -25,9 +25,10 @@ import (
 
 var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("telemetry-logs-analysis"), Ordered, func() {
 	const (
-		mockNs                      = "tlogs-http"
-		otelCollectorLogBackendName = "tlogs-log-otelcollector"
-		fluentBitLogBackendName     = "tlogs-log-fluentbit"
+		otelCollectorNs             = "tlogs-otelcollector"
+		fluentBitNs                 = "tlogs-fluentbit"
+		otelCollectorLogBackendName = "tlogs-otelcollector-log"
+		fluentBitLogBackendName     = "tlogs-fluentbit-log"
 		metricBackendName           = "tlogs-metric"
 		traceBackendName            = "tlogs-trace"
 		pushMetricsDepName          = "push-metrics-istiofied"
@@ -50,25 +51,18 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 			"WARN", "warn"}
 	)
 
-	makeResources := func() []client.Object {
+	makeResourcesOtelCollector := func() []client.Object {
 		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
-
-		// logs overrides (include agent logs)
-		overrides := kitk8s.NewOverrides().WithPaused(false).WithCollectAgentLogs(true)
-		objs = append(objs, overrides.K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(otelCollectorNs).K8sObject())
 
 		// backends
-		otelCollectorLogBackend := backend.New(otelCollectorLogBackendName, mockNs, backend.SignalTypeLogs)
+		otelCollectorLogBackend := backend.New(otelCollectorLogBackendName, otelCollectorNs, backend.SignalTypeLogs)
 		objs = append(objs, otelCollectorLogBackend.K8sObjects()...)
 		otelCollectorLogTelemetryExportURL = otelCollectorLogBackend.TelemetryExportURL(proxyClient)
-		fluentBitLogBackend := backend.New(fluentBitLogBackendName, mockNs, backend.SignalTypeLogs)
-		objs = append(objs, fluentBitLogBackend.K8sObjects()...)
-		fluentBitLogTelemetryExportURL = fluentBitLogBackend.TelemetryExportURL(proxyClient)
-		metricBackend := backend.New(metricBackendName, mockNs, backend.SignalTypeMetrics)
+		metricBackend := backend.New(metricBackendName, otelCollectorNs, backend.SignalTypeMetrics)
 		metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
-		traceBackend := backend.New(traceBackendName, mockNs, backend.SignalTypeTraces)
+		traceBackend := backend.New(traceBackendName, otelCollectorNs, backend.SignalTypeTraces)
 		traceTelemetryExportURL = traceBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, traceBackend.K8sObjects()...)
 
@@ -79,21 +73,15 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName}).
 			WithIncludeContainers([]string{"collector"})
 		otelCollectorLogPipelineName = otelCollectorLogPipeline.Name()
-		fluentBitLogPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", fluentBitLogBackend.Name())).
-			WithSecretKeyRef(fluentBitLogBackend.HostSecretRefV1Alpha1()).
-			WithHTTPOutput().
-			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName}).
-			WithIncludeContainers([]string{"fluent-bit", "exporter"})
-		fluentBitLogPipelineName = fluentBitLogPipeline.Name()
-		objs = append(objs, otelCollectorLogPipeline.K8sObject(), fluentBitLogPipeline.K8sObject())
+		objs = append(objs, otelCollectorLogPipeline.K8sObject())
 
 		// metrics & traces
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", metricBackend.Name())).
 			WithOutputEndpointFromSecret(metricBackend.HostSecretRefV1Alpha1()).
-			PrometheusInput(true, kitk8s.IncludeNamespacesV1Alpha1(mockNs)).
-			IstioInput(true, kitk8s.IncludeNamespacesV1Alpha1(mockNs)).
+			PrometheusInput(true, kitk8s.IncludeNamespacesV1Alpha1(otelCollectorNs)).
+			IstioInput(true, kitk8s.IncludeNamespacesV1Alpha1(otelCollectorNs)).
 			OtlpInput(true).
-			RuntimeInput(true, kitk8s.IncludeNamespacesV1Alpha1(mockNs))
+			RuntimeInput(true, kitk8s.IncludeNamespacesV1Alpha1(otelCollectorNs))
 		metricPipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-pipeline", traceBackend.Name())).
@@ -102,19 +90,44 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		objs = append(objs, tracePipeline.K8sObject())
 
 		// metrics istio set-up (trafficgen & telemetrygen)
-		objs = append(objs, trafficgen.K8sObjects(mockNs)...)
+		objs = append(objs, trafficgen.K8sObjects(otelCollectorNs)...)
 		objs = append(objs,
-			kitk8s.NewPod("telemetrygen-metrics", mockNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)).K8sObject(),
-			kitk8s.NewPod("telemetrygen-traces", mockNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeTraces)).K8sObject(),
+			kitk8s.NewPod("telemetrygen-metrics", otelCollectorNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeMetrics)).K8sObject(),
+			kitk8s.NewPod("telemetrygen-traces", otelCollectorNs).WithPodSpec(telemetrygen.PodSpec(telemetrygen.SignalTypeTraces)).K8sObject(),
 		)
 
 		return objs
 	}
 
-	Context("When telemetry components are set-up", func() {
+	makeResourcesFluentBit := func() []client.Object {
+		var objs []client.Object
+		objs = append(objs, kitk8s.NewNamespace(fluentBitNs).K8sObject())
+
+		// logs overrides (include agent logs)
+		overrides := kitk8s.NewOverrides().WithPaused(false).WithCollectAgentLogs(true)
+		objs = append(objs, overrides.K8sObject())
+
+		// backend
+		fluentBitLogBackend := backend.New(fluentBitLogBackendName, fluentBitNs, backend.SignalTypeLogs)
+		objs = append(objs, fluentBitLogBackend.K8sObjects()...)
+		fluentBitLogTelemetryExportURL = fluentBitLogBackend.TelemetryExportURL(proxyClient)
+
+		// log pipeline
+		fluentBitLogPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", fluentBitLogBackend.Name())).
+			WithSecretKeyRef(fluentBitLogBackend.HostSecretRefV1Alpha1()).
+			WithHTTPOutput().
+			WithIncludeNamespaces([]string{kitkyma.SystemNamespaceName}).
+			WithIncludeContainers([]string{"fluent-bit", "exporter"})
+		fluentBitLogPipelineName = fluentBitLogPipeline.Name()
+		objs = append(objs, fluentBitLogPipeline.K8sObject())
+
+		return objs
+	}
+
+	Context("When OtelCollector-based components are deployed", func() {
 		BeforeAll(func() {
 			format.MaxLength = 0 // remove Gomega truncation
-			k8sObjects := makeResources()
+			k8sObjects := makeResourcesOtelCollector()
 			DeferCleanup(func() {
 				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 			})
@@ -127,15 +140,13 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		})
 
 		It("Should have running backends", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: otelCollectorLogBackendName})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: fluentBitLogBackendName})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: metricBackendName})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: traceBackendName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: otelCollectorNs, Name: otelCollectorLogBackendName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: otelCollectorNs, Name: metricBackendName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: otelCollectorNs, Name: traceBackendName})
 		})
 
 		It("Should have running pipelines", func() {
 			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, otelCollectorLogPipelineName)
-			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, fluentBitLogPipelineName)
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, metricPipelineName)
 			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, tracePipelineName)
 		})
@@ -145,11 +156,11 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		})
 
 		It("Should push metrics successfully", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, metricTelemetryExportURL, mockNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, metricTelemetryExportURL, otelCollectorNs, telemetrygen.MetricNames)
 		})
 
 		It("Should push traces successfully", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, traceTelemetryExportURL, mockNs)
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, traceTelemetryExportURL, otelCollectorNs)
 		})
 
 		It("Should not have any ERROR/WARNING logs in the OtelCollector containers", func() {
@@ -169,6 +180,29 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 					)))),
 				))
 			}, consistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
+		})
+
+		AfterAll(func() {
+			format.MaxLength = gomegaMaxLength // restore Gomega truncation
+		})
+	})
+
+	Context("When FluentBit-based components are deployed", func() {
+		BeforeAll(func() {
+			format.MaxLength = 0 // remove Gomega truncation
+			k8sObjects := makeResourcesFluentBit()
+			DeferCleanup(func() {
+				Expect(kitk8s.DeleteObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+			})
+			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
+		})
+
+		It("Should have a running backend", func() {
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: fluentBitNs, Name: fluentBitLogBackendName})
+		})
+
+		It("Should have a running pipeline", func() {
+			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, fluentBitLogPipelineName)
 		})
 
 		It("Should not have any ERROR/WARNING logs in the FluentBit containers", func() {
