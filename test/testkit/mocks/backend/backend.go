@@ -50,6 +50,7 @@ type Backend struct {
 type TLSOptions struct {
 	timeFrom time.Time
 	timeUpto time.Time
+	invalid  bool
 }
 
 func New(name, namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -76,6 +77,13 @@ func WithTLS(timeFrom, timeUpto time.Time) Option {
 	}
 }
 
+func WithInvalidTLS() Option {
+	return func(b *Backend) {
+		b.withTLS = true
+		b.tlsOptions.invalid = true
+	}
+}
+
 func WithPersistentHostSecret(persistentHostSecret bool) Option {
 	return func(b *Backend) {
 		b.persistentHostSecret = persistentHostSecret
@@ -83,11 +91,18 @@ func WithPersistentHostSecret(persistentHostSecret bool) Option {
 }
 
 func (b *Backend) buildResources() {
+
 	if b.withTLS {
+		var certs tls.Certs
+		var err error
 		backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
 		tlsCrt := tls.NewCerts()
-		//time.Now().Add(365*24*time.Hour)
-		certs, err := tlsCrt.WithExpiry(b.tlsOptions.timeFrom, b.tlsOptions.timeUpto).GenerateTLSCerts(backendDNSName)
+		if b.tlsOptions.invalid {
+			certs, err = tlsCrt.WithExpiry(b.tlsOptions.timeFrom, b.tlsOptions.timeUpto).GenerateTLSCerts(backendDNSName)
+		} else {
+			certs, err = tlsCrt.WithExpiry(b.tlsOptions.timeFrom, b.tlsOptions.timeUpto).GenerateTLSCerts(backendDNSName)
+		}
+
 		if err != nil {
 			panic(fmt.Errorf("could not generate TLS certs: %v", err))
 		}

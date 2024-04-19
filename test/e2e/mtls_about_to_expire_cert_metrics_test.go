@@ -18,11 +18,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics mTLS", Label("metrics"), func() {
+var _ = Describe("Metrics mTLS with certificates expiring within 2 weeks", Label("mtls"), func() {
 	const (
 		mockBackendName = "metric-tls-receiver"
 		mockNs          = "metric-mocks-2week-tls-pipeline"
-		telemetrygenNs  = "metric-mtls"
+		telemetrygenNs  = "metric-mtls-2weeks-to-expire"
 	)
 	var (
 		pipelineName       string
@@ -52,7 +52,7 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 		return objs
 	}
 
-	Context("When a metricpipeline with TLS Cert expiring in 1 week is activated", Ordered, func() {
+	Context("When a metric pipeline with TLS Cert expiring in 1 week is activated", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -66,8 +66,12 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a tlsCertAboutToExpire Condition set", func() {
-			verifiers.MetricPipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateAboutToExpire)
+		It("Should have a tlsCertAboutToExpire Condition set in pipeline conditions", func() {
+			verifiers.MetricPipelineWithTLSCerAboutToExpireCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateAboutToExpire)
+		})
+
+		It("Should have telemetryCR showing correct condition in its status", func() {
+			verifiers.TelemetryCRShouldHaveTLSConditionForMetricPipeline(ctx, k8sClient, "MetricComponentsHealthy", conditions.ReasonTLSCertificateAboutToExpire, true)
 		})
 
 		It("Should have a metric backend running", func() {

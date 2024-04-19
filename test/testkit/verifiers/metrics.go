@@ -94,7 +94,7 @@ func MetricsFromNamespaceShouldNotBeDelivered(proxyClient *apiserverproxy.Client
 	}, periodic.TelemetryConsistentlyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func MetricPipelineShouldHaveTLSCondition(ctx context.Context, k8sClient client.Client, pipelineName string, tlsCondition string) {
+func MetricPipelineWithTLSCerAboutToExpireCondition(ctx context.Context, k8sClient client.Client, pipelineName string, tlsCondition string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.MetricPipeline
 		key := types.NamespacedName{Name: pipelineName}
