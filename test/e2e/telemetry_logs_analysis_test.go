@@ -66,7 +66,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		traceTelemetryExportURL = traceBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, traceBackend.K8sObjects()...)
 
-		// log pipelines
+		// log pipeline
 		otelCollectorLogPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", otelCollectorLogBackend.Name())).
 			WithSecretKeyRef(otelCollectorLogBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
