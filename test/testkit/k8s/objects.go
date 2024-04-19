@@ -73,9 +73,9 @@ func labelMatches(labels Labels, label, value string) bool {
 	return l == value
 }
 
-func versionsMatch(new, existing client.Object) bool {
-	newVersion := new.GetLabels()[VersionLabelName]
-	existingVersion, ok := existing.GetLabels()[VersionLabelName]
+func versionsMatch(newObj, existingObj client.Object) bool {
+	newVersion := newObj.GetLabels()[VersionLabelName]
+	existingVersion, ok := existingObj.GetLabels()[VersionLabelName]
 	if !ok {
 		return true
 	}
