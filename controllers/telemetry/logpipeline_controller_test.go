@@ -466,7 +466,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			},
 		}
 
-		var expectedKeyNotFoundError = errors.New("did not find the key: missing-secret-ref-logpipeline.conf")
+		var errExpectedKeyNotFound = errors.New("did not find the key: missing-secret-ref-logpipeline.conf")
 
 		It("Creates a healthy LogPipeline", func() {
 			Expect(k8sClient.Create(ctx, healthyLogPipeline)).Should(Succeed())
@@ -485,7 +485,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 		It("Should not include the LogPipeline with missing secret in fluent-bit-sections configmap", func() {
 			Consistently(func() error {
 				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
-			}, timeout, interval).Should(Equal(expectedKeyNotFoundError))
+			}, timeout, interval).Should(Equal(errExpectedKeyNotFound))
 		})
 
 		It("Should update fluent-bit-sections configmap when secret is created", func() {
@@ -499,7 +499,7 @@ var _ = Describe("LogPipeline controller", Ordered, func() {
 			Expect(k8sClient.Delete(ctx, pipelineSecret)).Should(Succeed())
 			Eventually(func() error {
 				return validateKeyExistsInFluentbitSectionsConf(ctx, "missing-secret-ref-logpipeline.conf")
-			}, timeout, interval).Should(Equal(expectedKeyNotFoundError))
+			}, timeout, interval).Should(Equal(errExpectedKeyNotFound))
 		})
 
 	})
