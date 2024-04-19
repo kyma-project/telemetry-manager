@@ -13,7 +13,7 @@ func createInputSection(pipeline *telemetryv1alpha1.LogPipeline, includePath, ex
 	inputBuilder.AddConfigParam("name", "tail")
 	inputBuilder.AddConfigParam("alias", pipeline.Name)
 	inputBuilder.AddConfigParam("path", includePath)
-	inputBuilder.AddConfigParam("exclude_path", excludePath)
+	inputBuilder.AddIfNotEmpty("exclude_path", excludePath)
 	inputBuilder.AddConfigParam("multiline.parser", "docker, cri, go, python, java")
 	inputBuilder.AddConfigParam("tag", fmt.Sprintf("%s.*", pipeline.Name))
 	inputBuilder.AddConfigParam("skip_long_lines", "on")
@@ -47,9 +47,10 @@ func createIncludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
 	return strings.Join(includePath, ",")
 }
 
-func createExcludePath(pipeline *telemetryv1alpha1.LogPipeline) string {
-	excludePath := []string{
-		makeLogPath("kyma-system", "telemetry-fluent-bit-*", "fluent-bit"),
+func createExcludePath(pipeline *telemetryv1alpha1.LogPipeline, collectAgentLogs bool) string {
+	excludePath := []string{}
+	if !collectAgentLogs {
+		excludePath = append(excludePath, makeLogPath("kyma-system", "telemetry-fluent-bit-*", "fluent-bit"))
 	}
 
 	excludeNamespaces := pipeline.Spec.Input.Application.Namespaces.Exclude

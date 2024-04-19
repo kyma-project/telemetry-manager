@@ -108,7 +108,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 		})
 
 		It("Should add the overrides configmap and modify the log pipeline", func() {
-			overrides = kitk8s.NewOverrides(kitk8s.DEBUG).K8sObject()
+			overrides = kitk8s.NewOverrides().WithLogLevel(kitk8s.DEBUG).K8sObject()
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, overrides)).Should(Succeed())
 
 			lookupKey := types.NamespacedName{
