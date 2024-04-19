@@ -180,7 +180,6 @@ func TestMergeSectionsConfigCustomOutput(t *testing.T) {
     name             tail
     alias            foo
     db               /data/flb_foo.db
-    exclude_path     
     mem_buf_limit    5MB
     multiline.parser docker, cri, go, python, java
     path             /var/log/containers/*_*_*-*.log
