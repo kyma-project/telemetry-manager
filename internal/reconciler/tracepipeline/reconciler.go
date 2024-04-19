@@ -269,5 +269,5 @@ func tlsCertValidationRequired(pipeline *telemetryv1alpha1.TracePipeline) bool {
 		return false
 	}
 
-	return pipeline.Spec.Output.Otlp.TLS.Cert == nil && pipeline.Spec.Output.Otlp.TLS.Key == nil
+	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil
 }
