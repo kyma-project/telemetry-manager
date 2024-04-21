@@ -1,16 +1,16 @@
 package config
 
-import (
-	"fmt"
-)
-
 const (
-	fluentBitMetricsServiceName = "telemetry-fluent-bit-metrics"
+	fluentBitMetricsServiceName        = "telemetry-fluent-bit-metrics"
+	fluentBitSidecarMetricsServiceName = "telemetry-fluent-bit-exporter-metrics"
 
 	metricFluentBitOutputProcBytesTotal      = "fluentbit_output_proc_bytes_total"
 	metricFluentBitInputBytesTotal           = "fluentbit_input_bytes_total"
 	metricFluentBitOutputDroppedRecordsTotal = "fluentbit_output_dropped_records_total"
 	metricFluentBitBufferUsageBytes          = "telemetry_fsbuffer_usage_bytes"
+
+	bufferUsage300MB = 300000000
+	bufferUsage900MB = 900000000
 )
 
 type fluentBitRuleBuilder struct {
@@ -59,14 +59,18 @@ func (rb fluentBitRuleBuilder) exporterDroppedRule() Rule {
 func (rb fluentBitRuleBuilder) bufferInUseRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentBufferInUse,
-		Expr:  fmt.Sprintf("%s > 300000000", metricFluentBitBufferUsageBytes),
+		Expr: instant(metricFluentBitBufferUsageBytes).
+			greaterThan(bufferUsage300MB).
+			build(),
 	}
 }
 
 func (rb fluentBitRuleBuilder) bufferFullRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentBufferFull,
-		Expr:  fmt.Sprintf("%s > 900000000", metricFluentBitBufferUsageBytes),
+		Expr: instant(metricFluentBitBufferUsageBytes).
+			greaterThan(bufferUsage900MB).
+			build(),
 	}
 }
 
