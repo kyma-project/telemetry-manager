@@ -59,7 +59,7 @@ func (rb fluentBitRuleBuilder) exporterDroppedRule() Rule {
 func (rb fluentBitRuleBuilder) bufferInUseRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentBufferInUse,
-		Expr: instant(metricFluentBitBufferUsageBytes).
+		Expr: instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
 			greaterThan(bufferUsage300MB).
 			build(),
 	}
@@ -68,7 +68,7 @@ func (rb fluentBitRuleBuilder) bufferInUseRule() Rule {
 func (rb fluentBitRuleBuilder) bufferFullRule() Rule {
 	return Rule{
 		Alert: rb.namePrefix() + RuleNameLogAgentBufferFull,
-		Expr: instant(metricFluentBitBufferUsageBytes).
+		Expr: instant(metricFluentBitBufferUsageBytes, selectService(fluentBitSidecarMetricsServiceName)).
 			greaterThan(bufferUsage900MB).
 			build(),
 	}
