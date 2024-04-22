@@ -61,36 +61,36 @@ func (p *OTelPipelineProber) Probe(ctx context.Context, pipelineName string) (OT
 }
 
 func (p *OTelPipelineProber) allDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	exporterSentFiring := p.evaluateRule(alerts, config.RuleNameGatewayExporterSentData, pipelineName)
-	exporterDroppedFiring := p.evaluateRule(alerts, config.RuleNameGatewayExporterDroppedData, pipelineName)
-	exporterEnqueueFailedFiring := p.evaluateRule(alerts, config.RuleNameGatewayExporterEnqueueFailed, pipelineName)
+	exporterSentFiring := p.isFiring(alerts, config.RuleNameGatewayExporterSentData, pipelineName)
+	exporterDroppedFiring := p.isFiring(alerts, config.RuleNameGatewayExporterDroppedData, pipelineName)
+	exporterEnqueueFailedFiring := p.isFiring(alerts, config.RuleNameGatewayExporterEnqueueFailed, pipelineName)
 
 	return !exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring)
 }
 
 func (p *OTelPipelineProber) someDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	exporterSentFiring := p.evaluateRule(alerts, config.RuleNameGatewayExporterSentData, pipelineName)
-	exporterDroppedFiring := p.evaluateRule(alerts, config.RuleNameGatewayExporterDroppedData, pipelineName)
-	exporterEnqueueFailedFiring := p.evaluateRule(alerts, config.RuleNameGatewayExporterEnqueueFailed, pipelineName)
+	exporterSentFiring := p.isFiring(alerts, config.RuleNameGatewayExporterSentData, pipelineName)
+	exporterDroppedFiring := p.isFiring(alerts, config.RuleNameGatewayExporterDroppedData, pipelineName)
+	exporterEnqueueFailedFiring := p.isFiring(alerts, config.RuleNameGatewayExporterEnqueueFailed, pipelineName)
 
 	return exporterSentFiring && (exporterDroppedFiring || exporterEnqueueFailedFiring)
 }
 
 func (p *OTelPipelineProber) queueAlmostFull(alerts []promv1.Alert, pipelineName string) bool {
-	return p.evaluateRule(alerts, config.RuleNameGatewayExporterQueueAlmostFull, pipelineName)
+	return p.isFiring(alerts, config.RuleNameGatewayExporterQueueAlmostFull, pipelineName)
 }
 
 func (p *OTelPipelineProber) throttling(alerts []promv1.Alert, pipelineName string) bool {
-	return p.evaluateRule(alerts, config.RuleNameGatewayReceiverRefusedData, pipelineName)
+	return p.isFiring(alerts, config.RuleNameGatewayReceiverRefusedData, pipelineName)
 }
 
 func (p *OTelPipelineProber) healthy(alerts []promv1.Alert, pipelineName string) bool {
-	return !(p.evaluateRule(alerts, config.RuleNameGatewayExporterDroppedData, pipelineName) ||
-		p.evaluateRule(alerts, config.RuleNameGatewayExporterQueueAlmostFull, pipelineName) ||
-		p.evaluateRule(alerts, config.RuleNameGatewayExporterEnqueueFailed, pipelineName) ||
-		p.evaluateRule(alerts, config.RuleNameGatewayReceiverRefusedData, pipelineName))
+	return !(p.isFiring(alerts, config.RuleNameGatewayExporterDroppedData, pipelineName) ||
+		p.isFiring(alerts, config.RuleNameGatewayExporterQueueAlmostFull, pipelineName) ||
+		p.isFiring(alerts, config.RuleNameGatewayExporterEnqueueFailed, pipelineName) ||
+		p.isFiring(alerts, config.RuleNameGatewayReceiverRefusedData, pipelineName))
 }
 
-func (p *OTelPipelineProber) evaluateRule(alerts []promv1.Alert, alertName, pipelineName string) bool {
-	return evaluateRuleWithMatcher(alerts, alertName, pipelineName, p.matcher)
+func (p *OTelPipelineProber) isFiring(alerts []promv1.Alert, alertName, pipelineName string) bool {
+	return isFiringWithMatcher(alerts, alertName, pipelineName, p.matcher)
 }
