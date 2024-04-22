@@ -31,24 +31,24 @@ spec:
         value: https://myBackend:4317
 status:
   conditions:
-    - lastTransitionTime: "2024-01-09T07:02:16Z"
-      message: "Metric agent DaemonSet is ready"
-      observedGeneration: 1
-      reason: DaemonSetReady
-      status: "True"
-      type: AgentHealthy
-    - lastTransitionTime: "2024-01-08T10:40:18Z"
-      message: "Metric gateway Deployment is ready"
-      observedGeneration: 1
-      reason: DeploymentReady
-      status: "True"
-      type: GatewayHealthy
-    - lastTransitionTime: "2023-12-28T11:27:04Z"
-      message: ""
-      observedGeneration: 1
-      reason: ConfigurationGenerated
-      status: "True"
-      type: ConfigurationGenerated
+  - lastTransitionTime: "2024-01-09T07:02:16Z"
+    message: "Metric agent DaemonSet is ready"
+    observedGeneration: 1
+    reason: DaemonSetReady
+    status: "True"
+    type: AgentHealthy
+  - lastTransitionTime: "2024-01-08T10:40:18Z"
+    message: "Metric gateway Deployment is ready"
+    observedGeneration: 1
+    reason: DeploymentReady
+    status: "True"
+    type: GatewayHealthy
+  - lastTransitionTime: "2023-12-28T11:27:04Z"
+    message: ""
+    observedGeneration: 1
+    reason: ConfigurationGenerated
+    status: "True"
+    type: ConfigurationGenerated
 ```
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.

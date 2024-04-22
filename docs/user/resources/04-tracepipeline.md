@@ -23,30 +23,30 @@ spec:
         value: http://jaeger-collector.jaeger.svc.cluster.local:4317
 status:
   conditions:
-    - lastTransitionTime: "2024-02-29T01:18:28Z"
-      message: Trace gateway Deployment is ready
-      observedGeneration: 1
-      reason: DeploymentReady
-      status: "True"
-      type: GatewayHealthy
-    - lastTransitionTime: "2024-02-29T01:18:27Z"
-      message: ""
-      observedGeneration: 1
-      reason: ConfigurationGenerated
-      status: "True"
-      type: ConfigurationGenerated
-    - lastTransitionTime: "2024-02-29T01:18:28Z"
-      message: '[NOTE: The "Pending" type is deprecated] Trace gateway Deployment is not ready'
-      observedGeneration: 1
-      reason: TraceGatewayDeploymentNotReady
-      status: "False"
-      type: Pending
-    - lastTransitionTime: "2024-02-29T01:18:28Z"
-      message: '[NOTE: The "Running" type is deprecated] Trace gateway Deployment is ready'
-      observedGeneration: 1
-      reason: TraceGatewayDeploymentReady
-      status: "True"
-      type: Running
+  - lastTransitionTime: "2024-02-29T01:18:28Z"
+    message: Trace gateway Deployment is ready
+    observedGeneration: 1
+    reason: DeploymentReady
+    status: "True"
+    type: GatewayHealthy
+  - lastTransitionTime: "2024-02-29T01:18:27Z"
+    message: ""
+    observedGeneration: 1
+    reason: ConfigurationGenerated
+    status: "True"
+    type: ConfigurationGenerated
+  - lastTransitionTime: "2024-02-29T01:18:28Z"
+    message: '[NOTE: The "Pending" type is deprecated] Trace gateway Deployment is not ready'
+    observedGeneration: 1
+    reason: TraceGatewayDeploymentNotReady
+    status: "False"
+    type: Pending
+  - lastTransitionTime: "2024-02-29T01:18:28Z"
+    message: '[NOTE: The "Running" type is deprecated] Trace gateway Deployment is ready'
+    observedGeneration: 1
+    reason: TraceGatewayDeploymentReady
+    status: "True"
+    type: Running
 ```
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
