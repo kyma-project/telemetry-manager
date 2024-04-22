@@ -3,6 +3,7 @@ package metricpipeline
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/types"
@@ -21,6 +22,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 const defaultReplicaCount int32 = 2
@@ -47,6 +49,11 @@ type FlowHealthProber interface {
 	Probe(ctx context.Context, pipelineName string) (prober.OTelPipelineProbeResult, error)
 }
 
+//go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
+type TLSCertValidator interface {
+	ValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) tlscert.TLSCertValidationResult
+}
+
 type Reconciler struct {
 	client.Client
 	config                   Config
@@ -56,6 +63,7 @@ type Reconciler struct {
 	flowHealthProber         FlowHealthProber
 	overridesHandler         *overrides.Handler
 	istioStatusChecker       istiostatus.Checker
+	tlsCertValidator         TLSCertValidator
 }
 
 func NewReconciler(
@@ -74,6 +82,7 @@ func NewReconciler(
 		flowHealthProber:         flowHealthProber,
 		overridesHandler:         overridesHandler,
 		istioStatusChecker:       istiostatus.NewChecker(client),
+		tlsCertValidator:         tlscert.New(client),
 	}
 }
 
@@ -126,16 +135,16 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return fmt.Errorf("failed to list metric pipelines: %w", err)
 	}
 
-	deployablePipelines, err := getDeployableMetricPipelines(ctx, allPipelinesList.Items, r, lock)
+	reconcilablePipelines, err := r.getReconcilablePipelines(ctx, allPipelinesList.Items, lock)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable metric pipelines: %w", err)
 	}
-	if len(deployablePipelines) == 0 {
+	if len(reconcilablePipelines) == 0 {
 		logf.FromContext(ctx).V(1).Info("Skipping reconciliation: no metric pipeline ready for deployment")
 		return nil
 	}
 
-	if err = r.reconcileMetricGateway(ctx, pipeline, deployablePipelines); err != nil {
+	if err = r.reconcileMetricGateway(ctx, pipeline, reconcilablePipelines); err != nil {
 		return fmt.Errorf("failed to reconcile metric gateway: %w", err)
 	}
 
@@ -148,28 +157,43 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	return nil
 }
 
-// getDeployableMetricPipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
-func getDeployableMetricPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, client client.Client, lock *k8sutils.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
-	var deployablePipelines []telemetryv1alpha1.MetricPipeline
+// getReconcilablePipelines returns the list of metric pipelines that are ready to be rendered into the otel collector configuration. A pipeline is deployable if it is not being deleted, all secret references exist, and is not above the pipeline limit.
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.MetricPipeline, lock *k8sutils.ResourceCountLock) ([]telemetryv1alpha1.MetricPipeline, error) {
+	var reconcilablePipelines []telemetryv1alpha1.MetricPipeline
 	for i := range allPipelines {
-		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
-			continue
-		}
-
-		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
-			continue
-		}
-
-		hasLock, err := lock.IsLockHolder(ctx, &allPipelines[i])
+		isReconcilable, err := r.isReconcilable(ctx, &allPipelines[i], lock)
 		if err != nil {
 			return nil, err
 		}
 
-		if hasLock {
-			deployablePipelines = append(deployablePipelines, allPipelines[i])
+		if isReconcilable {
+			reconcilablePipelines = append(reconcilablePipelines, allPipelines[i])
 		}
 	}
-	return deployablePipelines, nil
+	return reconcilablePipelines, nil
+}
+
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.MetricPipeline, lock *k8sutils.ResourceCountLock) (bool, error) {
+	if !pipeline.GetDeletionTimestamp().IsZero() {
+		return false, nil
+	}
+
+	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+		return false, nil
+	}
+
+	if tlsCertValidationRequired(pipeline) {
+		certValidationResult := r.tlsCertValidator.ValidateCertificate(ctx, pipeline.Spec.Output.Otlp.TLS.Cert, pipeline.Spec.Output.Otlp.TLS.Key)
+		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
+			return false, nil
+		}
+	}
+
+	hasLock, err := lock.IsLockHolder(ctx, pipeline)
+	if err != nil {
+		return false, fmt.Errorf("failed to check lock: %w", err)
+	}
+	return hasLock, nil
 }
 
 func isMetricAgentRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
@@ -281,4 +305,15 @@ func getGatewayPorts() []int32 {
 		ports.OTLPHTTP,
 		ports.OTLPGRPC,
 	}
+}
+
+func tlsCertValidationRequired(pipeline *telemetryv1alpha1.MetricPipeline) bool {
+	otlp := pipeline.Spec.Output.Otlp
+	if otlp == nil {
+		return false
+	}
+	if otlp.TLS == nil {
+		return false
+	}
+	return otlp.TLS.Cert != nil || otlp.TLS.Key != nil
 }
