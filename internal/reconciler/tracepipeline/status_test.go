@@ -150,24 +150,6 @@ func TestUpdateStatus(t *testing.T) {
 				Name:       pipelineName,
 				Generation: 1,
 			},
-			Status: telemetryv1alpha1.TracePipelineStatus{
-				Conditions: []metav1.Condition{
-					{
-						Type:               conditions.TypePending,
-						Status:             metav1.ConditionFalse,
-						Reason:             conditions.ReasonTraceGatewayDeploymentNotReady,
-						Message:            conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentNotReady),
-						LastTransitionTime: metav1.Now(),
-					},
-					{
-						Type:               conditions.TypeRunning,
-						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonTraceGatewayDeploymentReady,
-						Message:            conditions.MessageForTracePipeline(conditions.ReasonTraceGatewayDeploymentReady),
-						LastTransitionTime: metav1.Now(),
-					},
-				},
-			},
 			Spec: telemetryv1alpha1.TracePipelineSpec{
 				Output: telemetryv1alpha1.TracePipelineOutput{
 					Otlp: &telemetryv1alpha1.OtlpOutput{
