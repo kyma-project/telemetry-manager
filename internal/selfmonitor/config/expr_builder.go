@@ -20,6 +20,17 @@ func selectService(serviceName string) labelSelector {
 	}
 }
 
+func instant(metric string, selectors ...labelSelector) *exprBuilder {
+	for _, s := range selectors {
+		metric = s(metric)
+	}
+
+	eb := &exprBuilder{
+		expr: metric,
+	}
+	return eb
+}
+
 func rate(metric string, selectors ...labelSelector) *exprBuilder {
 	for _, s := range selectors {
 		metric = s(metric)

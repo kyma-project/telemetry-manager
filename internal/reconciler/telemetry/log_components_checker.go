@@ -14,7 +14,8 @@ import (
 )
 
 type logComponentsChecker struct {
-	client client.Client
+	client                   client.Client
+	flowHealthProbingEnabled bool
 }
 
 func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
@@ -65,6 +66,7 @@ func (l *logComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetr
 	condTypes := []string{
 		conditions.TypeAgentHealthy,
 		conditions.TypeConfigurationGenerated,
+		conditions.TypeFlowHealthy,
 	}
 	for _, condType := range condTypes {
 		for _, pipeline := range pipelines {
