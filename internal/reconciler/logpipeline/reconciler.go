@@ -41,6 +41,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/tls/cert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Config struct {
@@ -80,16 +81,17 @@ type FlowHealthProber interface {
 
 type Reconciler struct {
 	client.Client
-	config                   Config
-	prober                   DaemonSetProber
-	flowHealthProbingEnabled bool
-	flowHealthProber         FlowHealthProber
-	allLogPipelines          prometheus.Gauge
-	unsupportedLogPipelines  prometheus.Gauge
-	syncer                   syncer
-	overridesHandler         *overrides.Handler
-	istioStatusChecker       istiostatus.Checker
-	tlsCertValidator         TLSCertValidator
+	config                     Config
+	prober                     DaemonSetProber
+	flowHealthProbingEnabled   bool
+	flowHealthProber           FlowHealthProber
+	allLogPipelines            prometheus.Gauge
+	unsupportedLogPipelines    prometheus.Gauge
+	syncer                     syncer
+	overridesHandler           *overrides.Handler
+	istioStatusChecker         istiostatus.Checker
+	tlsCertValidator           TLSCertValidator
+	pipelinesConditionsCleared bool
 }
 
 func NewReconciler(
@@ -156,6 +158,10 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	var allPipelines telemetryv1alpha1.LogPipelineList
 	if err := r.List(ctx, &allPipelines); err != nil {
 		return fmt.Errorf("failed to get all log pipelines while syncing Fluent Bit ConfigMaps: %w", err)
+	}
+
+	if err = r.clearPipelinesConditions(ctx, allPipelines.Items); err != nil {
+		return fmt.Errorf("failed to clear the conditions list for log pipelines: %w", err)
 	}
 
 	if err = ensureFinalizers(ctx, r.Client, pipeline); err != nil {
@@ -391,4 +397,20 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 	}
 
 	return nil, fmt.Errorf("either value or secret key reference must be defined")
+}
+
+func (r *Reconciler) clearPipelinesConditions(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) error {
+	if r.pipelinesConditionsCleared {
+		return nil
+	}
+
+	for i := range allPipelines {
+		allPipelines[i].Status.Conditions = []metav1.Condition{}
+		if err := r.Status().Update(ctx, &allPipelines[i]); err != nil {
+			return fmt.Errorf("failed to update LogPipeline status: %w", err)
+		}
+	}
+	r.pipelinesConditionsCleared = true
+
+	return nil
 }
