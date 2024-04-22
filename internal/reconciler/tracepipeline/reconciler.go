@@ -120,9 +120,9 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	defer func() {
 		if statusErr := r.updateStatus(ctx, pipeline.Name, lockAcquired); statusErr != nil {
 			if err != nil {
-				err = fmt.Errorf("failed while updating status: %v: %v", statusErr, err)
+				err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
 			} else {
-				err = fmt.Errorf("failed to update status: %v", statusErr)
+				err = fmt.Errorf("failed to update status: %w", statusErr)
 			}
 		}
 	}()
