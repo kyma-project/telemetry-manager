@@ -132,7 +132,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should prioritize unready fluent bit reason over missing secret",
+			name: "should prioritize unready ConfigGenerated reason over AgentHealthy reason",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
@@ -149,8 +149,8 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
-				Reason:  "FluentBitDaemonSetNotReady",
-				Message: "Fluent Bit DaemonSet is not ready",
+				Reason:  "LogPipelineReferencedSecretMissing",
+				Message: "One or more referenced Secrets are missing",
 			},
 		},
 		{
@@ -228,6 +228,27 @@ func TestLogComponentsCheck(t *testing.T) {
 				Status:  "False",
 				Reason:  "NoLogsDelivered",
 				Message: "No logs delivered to backend",
+			},
+		},
+		{
+			name: "should return show tlsCertificateExpired if one of the pipelines has expired tls cert",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSCertificateExpired, Message: "TLS certificate expired on 20.01.2023"}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "False",
+				Reason:  "TLSCertificateExpired",
+				Message: "TLS certificate expired on 20.01.2023",
 			},
 		},
 	}
