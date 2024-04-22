@@ -66,13 +66,13 @@ type TLSCertValidator interface {
 
 type Reconciler struct {
 	client.Client
-	config                   Config
-	prober                   DeploymentProber
-	flowHealthProbingEnabled bool
-	flowHealthProber         FlowHealthProber
-	overridesHandler         *overrides.Handler
-	istioStatusChecker       istiostatus.Checker
-	tlsCertValidator         TLSCertValidator
+	config                     Config
+	prober                     DeploymentProber
+	flowHealthProbingEnabled   bool
+	flowHealthProber           FlowHealthProber
+	overridesHandler           *overrides.Handler
+	istioStatusChecker         istiostatus.Checker
+	tlsCertValidator           TLSCertValidator
 	pipelinesConditionsCleared bool
 }
 
