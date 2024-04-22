@@ -55,9 +55,9 @@ func retrieveAlerts(ctx context.Context, getter alertGetter) ([]promv1.Alert, er
 	return result.Alerts, nil
 }
 
-func evaluateRuleWithMatcher(alerts []promv1.Alert, alertName, pipelineName string, mf matcherFunc) bool {
+func isFiringWithMatcher(alerts []promv1.Alert, ruleName, pipelineName string, mf matcherFunc) bool {
 	for _, alert := range alerts {
-		if alert.State == promv1.AlertStateFiring && mf(toRawLabels(alert.Labels), alertName, pipelineName) {
+		if alert.State == promv1.AlertStateFiring && mf(toRawLabels(alert.Labels), ruleName, pipelineName) {
 			return true
 		}
 	}

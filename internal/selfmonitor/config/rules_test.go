@@ -55,10 +55,10 @@ func TestMakeRules(t *testing.T) {
 	require.Equal(t, "sum by (pipeline_name) (rate(fluentbit_output_dropped_records_total{service=\"telemetry-fluent-bit-metrics\"}[5m])) > 0", ruleGroup.Rules[12].Expr)
 
 	require.Equal(t, "LogAgentBufferInUse", ruleGroup.Rules[13].Alert)
-	require.Equal(t, "telemetry_fsbuffer_usage_bytes > 300000000", ruleGroup.Rules[13].Expr)
+	require.Equal(t, "telemetry_fsbuffer_usage_bytes{service=\"telemetry-fluent-bit-exporter-metrics\"} > 300000000", ruleGroup.Rules[13].Expr)
 
 	require.Equal(t, "LogAgentBufferFull", ruleGroup.Rules[14].Alert)
-	require.Equal(t, "telemetry_fsbuffer_usage_bytes > 900000000", ruleGroup.Rules[14].Expr)
+	require.Equal(t, "telemetry_fsbuffer_usage_bytes{service=\"telemetry-fluent-bit-exporter-metrics\"} > 900000000", ruleGroup.Rules[14].Expr)
 }
 
 func TestMatchesLogPipelineRule(t *testing.T) {
