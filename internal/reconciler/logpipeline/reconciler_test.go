@@ -15,7 +15,7 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
-	"github.com/kyma-project/telemetry-manager/internal/tls/cert"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 func TestGetDeployableLogPipelines(t *testing.T) {
@@ -233,24 +233,28 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 
 			validatorStub := &mocks.TLSCertValidator{}
 
-			validatorStub.On("ValidateCertificate", []byte("invalidcert"), []byte("somekey")).Return(cert.TLSCertValidationResult{
+			validatorStub.On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "invalidcert"}, &telemetryv1alpha1.ValueType{Value: "somekey"}).Return(tlscert.TLSCertValidationResult{
 				CertValid:       false,
 				PrivateKeyValid: true,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", []byte("somecert"), []byte("invalidkey")).Return(cert.TLSCertValidationResult{
+			}).On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "somecert"}, &telemetryv1alpha1.ValueType{Value: "invalidkey"}).Return(tlscert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: false,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", []byte("valid"), []byte("valid")).Return(cert.TLSCertValidationResult{
+			}).On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "valid"}, &telemetryv1alpha1.ValueType{Value: "valid"}).Return(tlscert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: true,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", []byte("expired"), []byte("expired")).Return(cert.TLSCertValidationResult{
+			}).On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "expired"}, &telemetryv1alpha1.ValueType{Value: "expired"}).Return(tlscert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: true,
 				Validity:        time.Now().AddDate(-1, -1, -1),
 			})
-			deployablePipelines := getDeployableLogPipelines(ctx, test.pipelines, fakeClient, validatorStub)
+			reconciler := Reconciler{
+				Client:           fakeClient,
+				tlsCertValidator: validatorStub,
+			}
+			deployablePipelines := reconciler.getReconcilablePipelines(ctx, test.pipelines)
 			for _, pipeline := range test.pipelines {
 				if test.deployablePipelines == true {
 					require.Contains(t, deployablePipelines, pipeline)

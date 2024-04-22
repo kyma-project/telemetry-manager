@@ -757,4 +757,90 @@ func TestUpdateStatus(t *testing.T) {
 
 		require.False(t, updatedPipeline.Status.UnsupportedMode)
 	})
+
+	t.Run("referenced secret does not exists for host and exists for tls cert", func(t *testing.T) {
+		pipelineName := "pipeline"
+		pipeline := &telemetryv1alpha1.LogPipeline{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       pipelineName,
+				Generation: 1,
+			},
+			Spec: telemetryv1alpha1.LogPipelineSpec{
+				Output: telemetryv1alpha1.Output{
+					HTTP: &telemetryv1alpha1.HTTPOutput{
+						Host: telemetryv1alpha1.ValueType{
+							ValueFrom: &telemetryv1alpha1.ValueFromSource{
+								SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Name:      "some-secret",
+									Namespace: "some-namespace",
+									Key:       "host",
+								},
+							},
+						},
+						TLSConfig: telemetryv1alpha1.TLSConfig{
+							Cert: &telemetryv1alpha1.ValueType{
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Name:      "some-secret",
+									Namespace: "some-namespace",
+									Key:       "cert",
+								}},
+							},
+							Key: &telemetryv1alpha1.ValueType{
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+									Name:      "some-secret",
+									Namespace: "some-namespace",
+									Key:       "key",
+								}},
+							},
+						},
+					},
+				}},
+		}
+		secret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "some-secret",
+				Namespace: "some-namespace",
+			},
+			Data: map[string][]byte{"cert": []byte("cert"), "key": []byte("key")},
+		}
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline, secret).WithStatusSubresource(pipeline).Build()
+
+		proberStub := &mocks.DaemonSetProber{}
+		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+
+		sut := Reconciler{
+			Client: fakeClient,
+			config: Config{DaemonSet: types.NamespacedName{Name: "fluent-bit"}},
+			prober: proberStub,
+		}
+
+		err := sut.updateStatus(context.Background(), pipeline.Name)
+		require.NoError(t, err)
+
+		var updatedPipeline telemetryv1alpha1.LogPipeline
+		_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipelineName}, &updatedPipeline)
+
+		configurationGeneratedCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+		require.NotNil(t, configurationGeneratedCond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
+		require.Equal(t, metav1.ConditionFalse, configurationGeneratedCond.Status)
+		require.Equal(t, conditions.ReasonReferencedSecretMissing, configurationGeneratedCond.Reason)
+		require.Equal(t, conditions.MessageForLogPipeline(conditions.ReasonReferencedSecretMissing), configurationGeneratedCond.Message)
+		require.Equal(t, updatedPipeline.Generation, configurationGeneratedCond.ObservedGeneration)
+		require.NotEmpty(t, configurationGeneratedCond.LastTransitionTime)
+
+		runningCond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeRunning)
+		require.Nil(t, runningCond)
+
+		conditionsSize := len(updatedPipeline.Status.Conditions)
+		pendingCond := updatedPipeline.Status.Conditions[conditionsSize-1]
+		require.Equal(t, conditions.TypePending, pendingCond.Type)
+		require.Equal(t, metav1.ConditionTrue, pendingCond.Status)
+		require.Equal(t, conditions.ReasonReferencedSecretMissing, pendingCond.Reason)
+		pendingCondMsg := conditions.PendingTypeDeprecationMsg + conditions.MessageForLogPipeline(conditions.ReasonReferencedSecretMissing)
+		require.Equal(t, pendingCondMsg, pendingCond.Message)
+		require.Equal(t, updatedPipeline.Generation, pendingCond.ObservedGeneration)
+		require.NotEmpty(t, pendingCond.LastTransitionTime)
+
+	})
 }

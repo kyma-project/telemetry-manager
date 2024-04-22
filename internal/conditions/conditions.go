@@ -36,7 +36,7 @@ const (
 	ReasonTLSCertificateInvalid       = "TLSCertificateInvalid"
 	ReasonTLSPrivateKeyInvalid        = "TLSPrivateKeyInvalid"
 	ReasonTLSCertificateExpired       = "TLSCertificateExpired"
-	ReasonTLSCertificateAboutToExpire = "TLSCertAboutToExpire"
+	ReasonTLSCertificateAboutToExpire = "TLSCertificateAboutToExpire"
 
 	ReasonMetricAgentNotRequired  = "AgentNotRequired"
 	ReasonMetricComponentsRunning = "MetricComponentsRunning"
@@ -56,9 +56,13 @@ const (
 )
 
 var commonMessages = map[string]string{
-	ReasonNoPipelineDeployed:      "No pipelines have been deployed",
-	ReasonReferencedSecretMissing: "One or more referenced Secrets are missing",
-	ReasonMaxPipelinesExceeded:    "Maximum pipeline count limit exceeded",
+	ReasonNoPipelineDeployed:          "No pipelines have been deployed",
+	ReasonReferencedSecretMissing:     "One or more referenced Secrets are missing",
+	ReasonMaxPipelinesExceeded:        "Maximum pipeline count limit exceeded",
+	ReasonTLSCertificateInvalid:       "TLS certificate invalid: %s",
+	ReasonTLSPrivateKeyInvalid:        "TLS private key invalid: %s",
+	ReasonTLSCertificateExpired:       "TLS certificate expired on %s",
+	ReasonTLSCertificateAboutToExpire: "TLS certificate is about to expire, configured certificate is valid until %s",
 }
 
 var metricPipelineMessages = map[string]string{
@@ -88,21 +92,17 @@ var tracePipelineMessages = map[string]string{
 }
 
 var logPipelineMessages = map[string]string{
-	ReasonDaemonSetNotReady:           "Fluent Bit DaemonSet is not ready",
-	ReasonDaemonSetReady:              "Fluent Bit DaemonSet is ready",
-	ReasonFluentBitDSNotReady:         "Fluent Bit DaemonSet is not ready",
-	ReasonFluentBitDSReady:            "Fluent Bit DaemonSet is ready",
-	ReasonUnsupportedLokiOutput:       "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
-	ReasonLogComponentsRunning:        "All log components are running",
-	ReasonAllDataDropped:              "All logs dropped: backend unreachable or rejecting",
-	ReasonSomeDataDropped:             "Some logs dropped: backend unreachable or rejecting",
-	ReasonBufferFillingUp:             "Buffer nearing capacity: incoming log rate exceeds export rate",
-	ReasonNoLogsDelivered:             "No logs delivered to backend",
-	ReasonFlowHealthy:                 "Logs are flowing normally to backend",
-	ReasonTLSCertificateInvalid:       "TLS certificate invalid: %s",
-	ReasonTLSPrivateKeyInvalid:        "TLS private key invalid: %s",
-	ReasonTLSCertificateExpired:       "TLS certificate expired on %s",
-	ReasonTLSCertificateAboutToExpire: "TLS certificate is about to expire, configured certificate is valid until %s",
+	ReasonDaemonSetNotReady:     "Fluent Bit DaemonSet is not ready",
+	ReasonDaemonSetReady:        "Fluent Bit DaemonSet is ready",
+	ReasonFluentBitDSNotReady:   "Fluent Bit DaemonSet is not ready",
+	ReasonFluentBitDSReady:      "Fluent Bit DaemonSet is ready",
+	ReasonUnsupportedLokiOutput: "grafana-loki output is not supported anymore. For integration with a custom Loki installation, use the `custom` output and follow https://kyma-project.io/#/telemetry-manager/user/integration/loki/README",
+	ReasonLogComponentsRunning:  "All log components are running",
+	ReasonAllDataDropped:        "All logs dropped: backend unreachable or rejecting",
+	ReasonSomeDataDropped:       "Some logs dropped: backend unreachable or rejecting",
+	ReasonBufferFillingUp:       "Buffer nearing capacity: incoming log rate exceeds export rate",
+	ReasonNoLogsDelivered:       "No logs delivered to backend",
+	ReasonFlowHealthy:           "Logs are flowing normally to backend",
 }
 
 func MessageForLogPipeline(reason string) string {
@@ -115,6 +115,13 @@ func MessageForTracePipeline(reason string) string {
 
 func MessageForMetricPipeline(reason string) string {
 	return message(reason, metricPipelineMessages)
+}
+
+func CommonMessages(reason string) string {
+	if condMessage, found := commonMessages[reason]; found {
+		return condMessage
+	}
+	return ""
 }
 
 func message(reason string, specializedMessages map[string]string) string {

@@ -40,7 +40,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/fluentbit"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
-	"github.com/kyma-project/telemetry-manager/internal/tls/cert"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 type Config struct {
@@ -70,7 +70,7 @@ type DaemonSetAnnotator interface {
 
 //go:generate mockery --name TLSCertValidator --filename tls_cert_validator.go
 type TLSCertValidator interface {
-	ValidateCertificate(certPEM []byte, keyPEM []byte) cert.TLSCertValidationResult
+	ValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) tlscert.TLSCertValidationResult
 }
 
 //go:generate mockery --name FlowHealthProber --filename flow_health_prober.go
@@ -111,7 +111,7 @@ func NewReconciler(
 	r.syncer = syncer{client, config}
 	r.overridesHandler = overridesHandler
 	r.istioStatusChecker = istiostatus.NewChecker(client)
-	r.tlsCertValidator = &cert.TLSCertValidator{}
+	r.tlsCertValidator = tlscert.New(client)
 
 	return &r
 }
@@ -162,7 +162,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	deployableLogPipelines := getDeployableLogPipelines(ctx, allPipelines.Items, r.Client, r.tlsCertValidator)
+	deployableLogPipelines := r.getReconcilablePipelines(ctx, allPipelines.Items)
 	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, deployableLogPipelines); err != nil {
 		return err
 	}
@@ -319,28 +319,39 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 	return configchecksum.Calculate([]corev1.ConfigMap{baseCm, parsersCm, luaCm, sectionsCm, filesCm}, []corev1.Secret{envSecret, tlsSecret}), nil
 }
 
-// getDeployableLogPipelines returns the list of log pipelines that are ready to be rendered into the Fluent Bit configuration.
+// getReconcilablePipelines returns the list of log pipelines that are ready to be rendered into the Fluent Bit configuration.
 // A pipeline is deployable if it is not being deleted, all secret references exist, and it doesn't have the legacy grafana-loki output defined.
-func getDeployableLogPipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline, client client.Client, certValidator TLSCertValidator) []telemetryv1alpha1.LogPipeline {
+func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.LogPipeline {
 	var deployablePipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
-		if !allPipelines[i].GetDeletionTimestamp().IsZero() {
-			continue
+		isReconcilable := r.isReconcilable(ctx, &allPipelines[i])
+		if isReconcilable {
+			deployablePipelines = append(deployablePipelines, allPipelines[i])
 		}
-		if secretref.ReferencesNonExistentSecret(ctx, client, &allPipelines[i]) {
-			continue
-		}
-		if allPipelines[i].Spec.Output.IsLokiDefined() {
-			continue
-		}
-		certValidationResult := getTLSCertValidationResult(ctx, &allPipelines[i], certValidator, client)
-		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
-			continue
-		}
-		deployablePipelines = append(deployablePipelines, allPipelines[i])
 	}
 
 	return deployablePipelines
+}
+
+func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) bool {
+	if !pipeline.GetDeletionTimestamp().IsZero() {
+		return false
+	}
+	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+		return false
+	}
+	if pipeline.Spec.Output.IsLokiDefined() {
+		return false
+	}
+
+	if tlsCertValidationRequired(pipeline) {
+		certValidationResult := r.tlsCertValidator.ValidateCertificate(ctx, pipeline.Spec.Output.HTTP.TLSConfig.Cert, pipeline.Spec.Output.HTTP.TLSConfig.Key)
+		if !certValidationResult.CertValid || !certValidationResult.PrivateKeyValid || time.Now().After(certValidationResult.Validity) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func getFluentBitPorts() []int32 {
@@ -350,45 +361,10 @@ func getFluentBitPorts() []int32 {
 	}
 }
 
-func getTLSCertValidationResult(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, validator TLSCertValidator, client client.Client) cert.TLSCertValidationResult {
-	if pipeline.Spec.Output.HTTP == nil || (pipeline.Spec.Output.HTTP.TLSConfig.Cert == nil && pipeline.Spec.Output.HTTP.TLSConfig.Key == nil) {
-		return cert.TLSCertValidationResult{
-			CertValid:       true,
-			PrivateKeyValid: true,
-			Validity:        time.Now().AddDate(1, 0, 0),
-		}
+func tlsCertValidationRequired(pipeline *telemetryv1alpha1.LogPipeline) bool {
+	http := pipeline.Spec.Output.HTTP
+	if http == nil {
+		return false
 	}
-
-	certValue := pipeline.Spec.Output.HTTP.TLSConfig.Cert
-	keyValue := pipeline.Spec.Output.HTTP.TLSConfig.Key
-
-	certData, err := resolveValue(ctx, client, *certValue)
-
-	if err != nil {
-		return cert.TLSCertValidationResult{
-			CertValid: false,
-		}
-	}
-
-	keyData, err := resolveValue(ctx, client, *keyValue)
-
-	if err != nil {
-		return cert.TLSCertValidationResult{
-			PrivateKeyValid: false,
-		}
-	}
-
-	return validator.ValidateCertificate(certData, keyData)
-
-}
-
-func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
-	if value.Value != "" {
-		return []byte(value.Value), nil
-	}
-	if value.ValueFrom.IsSecretKeyRef() {
-		return secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
-	}
-
-	return nil, fmt.Errorf("either value or secret key reference must be defined")
+	return http.TLSConfig.Cert != nil || http.TLSConfig.Key != nil
 }

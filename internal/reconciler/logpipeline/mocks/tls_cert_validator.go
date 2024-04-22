@@ -3,8 +3,7 @@
 package mocks
 
 import (
-	cert "github.com/kyma-project/telemetry-manager/internal/tls/cert"
-
+	cert "github.com/kyma-project/telemetry-manager/internal/tls"
 	mock "github.com/stretchr/testify/mock"
 )
 
