@@ -24,7 +24,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 			return nil
 		}
 
-		return fmt.Errorf("failed to get LogPipeline: %v", err)
+		return fmt.Errorf("failed to get LogPipeline: %w", err)
 	}
 
 	if pipeline.DeletionTimestamp != nil {
@@ -64,7 +64,7 @@ func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *
 	if pipeline.Status.UnsupportedMode != desiredUnsupportedMode {
 		pipeline.Status.UnsupportedMode = desiredUnsupportedMode
 		if err := r.Status().Update(ctx, pipeline); err != nil {
-			return fmt.Errorf("failed to update LogPipeline unsupported mode status: %v", err)
+			return fmt.Errorf("failed to update LogPipeline unsupported mode status: %w", err)
 		}
 	}
 

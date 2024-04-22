@@ -24,7 +24,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 			return nil
 		}
 
-		return fmt.Errorf("failed to get TracePipeline: %v", err)
+		return fmt.Errorf("failed to get TracePipeline: %w", err)
 	}
 
 	if pipeline.DeletionTimestamp != nil {

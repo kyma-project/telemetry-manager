@@ -255,12 +255,12 @@ func CreateOrUpdateValidatingWebhookConfiguration(ctx context.Context, c client.
 	return c.Update(ctx, desired)
 }
 
-func mergeMetadata(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
-	new.ResourceVersion = old.ResourceVersion
+func mergeMetadata(newMeta *metav1.ObjectMeta, oldMeta metav1.ObjectMeta) {
+	newMeta.ResourceVersion = oldMeta.ResourceVersion
 
-	new.SetLabels(mergeMaps(new.Labels, old.Labels))
-	new.SetAnnotations(mergeMaps(new.Annotations, old.Annotations))
-	new.SetOwnerReferences(mergeOwnerReferences(new.OwnerReferences, old.OwnerReferences))
+	newMeta.SetLabels(mergeMaps(newMeta.Labels, oldMeta.Labels))
+	newMeta.SetAnnotations(mergeMaps(newMeta.Annotations, oldMeta.Annotations))
+	newMeta.SetOwnerReferences(mergeOwnerReferences(newMeta.OwnerReferences, oldMeta.OwnerReferences))
 }
 
 func ownerSliceContains(owners []metav1.OwnerReference, owner metav1.OwnerReference) bool {
@@ -286,14 +286,14 @@ func mergeOwnerReferences(newOwners []metav1.OwnerReference, oldOwners []metav1.
 	return merged
 }
 
-func mergeMaps(new map[string]string, old map[string]string) map[string]string {
-	return mergeMapsByPrefix(new, old, "")
+func mergeMaps(newMap map[string]string, oldMap map[string]string) map[string]string {
+	return mergeMapsByPrefix(newMap, oldMap, "")
 }
 
-func mergePodAnnotations(new *metav1.ObjectMeta, old metav1.ObjectMeta) {
-	new.SetAnnotations(mergeMapsByPrefix(new.Annotations, old.Annotations, "kubectl.kubernetes.io/"))
-	new.SetAnnotations(mergeMapsByPrefix(new.Annotations, old.Annotations, "checksum/"))
-	new.SetAnnotations(mergeMapsByPrefix(new.Annotations, old.Annotations, "istio-operator.kyma-project.io/restartedAt"))
+func mergePodAnnotations(newMeta *metav1.ObjectMeta, oldMeta metav1.ObjectMeta) {
+	newMeta.SetAnnotations(mergeMapsByPrefix(newMeta.Annotations, oldMeta.Annotations, "kubectl.kubernetes.io/"))
+	newMeta.SetAnnotations(mergeMapsByPrefix(newMeta.Annotations, oldMeta.Annotations, "checksum/"))
+	newMeta.SetAnnotations(mergeMapsByPrefix(newMeta.Annotations, oldMeta.Annotations, "istio-operator.kyma-project.io/restartedAt"))
 }
 
 func mergeMapsByPrefix(newMap map[string]string, oldMap map[string]string, prefix string) map[string]string {
