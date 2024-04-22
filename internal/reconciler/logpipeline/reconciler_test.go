@@ -18,12 +18,12 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
-func TestGetDeployableLogPipelines(t *testing.T) {
+func TestGetReconcilableLogPipelines(t *testing.T) {
 	timestamp := metav1.Now()
 	tests := []struct {
-		name                string
-		pipelines           []telemetryv1alpha1.LogPipeline
-		deployablePipelines bool
+		name                     string
+		pipelines                []telemetryv1alpha1.LogPipeline
+		reconcilableLogPipelines bool
 	}{
 		{
 			name: "should reject LogPipelines which are being deleted",
@@ -39,7 +39,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 						}},
 				},
 			},
-			deployablePipelines: false,
+			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should reject LogPipelines with missing Secrets",
@@ -64,7 +64,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 						}},
 				},
 			},
-			deployablePipelines: false,
+			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should reject LogPipelines with Loki Output",
@@ -83,7 +83,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 						}},
 				},
 			},
-			deployablePipelines: false,
+			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should accept healthy LogPipelines",
@@ -107,7 +107,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 						}},
 				},
 			},
-			deployablePipelines: true,
+			reconcilableLogPipelines: true,
 		},
 		{
 			name: "should reject LogPipelines with invalid certificate",
@@ -135,7 +135,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 					},
 				},
 			},
-			deployablePipelines: false,
+			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should reject LogPipelines with invalid certificate key",
@@ -163,7 +163,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 					},
 				},
 			},
-			deployablePipelines: false,
+			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should reject LogPipelines with expired certificate",
@@ -191,7 +191,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 					},
 				},
 			},
-			deployablePipelines: false,
+			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should accept LogPipelines with valid certificate",
@@ -219,7 +219,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 					},
 				},
 			},
-			deployablePipelines: true,
+			reconcilableLogPipelines: true,
 		},
 	}
 
@@ -254,12 +254,12 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 				Client:           fakeClient,
 				tlsCertValidator: validatorStub,
 			}
-			deployablePipelines := reconciler.getReconcilablePipelines(ctx, test.pipelines)
+			reconcilablePipelines := reconciler.getReconcilablePipelines(ctx, test.pipelines)
 			for _, pipeline := range test.pipelines {
-				if test.deployablePipelines == true {
-					require.Contains(t, deployablePipelines, pipeline)
+				if test.reconcilableLogPipelines == true {
+					require.Contains(t, reconcilablePipelines, pipeline)
 				} else {
-					require.NotContains(t, deployablePipelines, pipeline)
+					require.NotContains(t, reconcilablePipelines, pipeline)
 				}
 			}
 		})

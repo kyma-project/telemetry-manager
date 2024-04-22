@@ -42,14 +42,12 @@ func (tcv *TLSCertValidator) ValidateCertificate(ctx context.Context, certPEM *t
 	}
 
 	certData, err := resolveValue(ctx, tcv.client, *certPEM)
-
 	if err != nil {
 		result.CertValid = false
 		return result
 	}
 
 	keyData, err := resolveValue(ctx, tcv.client, *keyPEM)
-
 	if err != nil {
 		result.PrivateKeyValid = false
 		return result

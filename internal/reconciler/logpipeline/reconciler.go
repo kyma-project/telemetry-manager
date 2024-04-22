@@ -162,12 +162,12 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 		return err
 	}
 
-	deployableLogPipelines := r.getReconcilablePipelines(ctx, allPipelines.Items)
-	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, deployableLogPipelines); err != nil {
+	reconcilablePipelines := r.getReconcilablePipelines(ctx, allPipelines.Items)
+	if err = r.syncer.syncFluentBitConfig(ctx, pipeline, reconcilablePipelines); err != nil {
 		return err
 	}
 
-	if err = r.reconcileFluentBit(ctx, pipeline, deployableLogPipelines); err != nil {
+	if err = r.reconcileFluentBit(ctx, pipeline, reconcilablePipelines); err != nil {
 		return err
 	}
 
@@ -322,15 +322,15 @@ func (r *Reconciler) calculateChecksum(ctx context.Context) (string, error) {
 // getReconcilablePipelines returns the list of log pipelines that are ready to be rendered into the Fluent Bit configuration.
 // A pipeline is deployable if it is not being deleted, all secret references exist, and it doesn't have the legacy grafana-loki output defined.
 func (r *Reconciler) getReconcilablePipelines(ctx context.Context, allPipelines []telemetryv1alpha1.LogPipeline) []telemetryv1alpha1.LogPipeline {
-	var deployablePipelines []telemetryv1alpha1.LogPipeline
+	var reconcilableLogPipelines []telemetryv1alpha1.LogPipeline
 	for i := range allPipelines {
 		isReconcilable := r.isReconcilable(ctx, &allPipelines[i])
 		if isReconcilable {
-			deployablePipelines = append(deployablePipelines, allPipelines[i])
+			reconcilableLogPipelines = append(reconcilableLogPipelines, allPipelines[i])
 		}
 	}
 
-	return deployablePipelines
+	return reconcilableLogPipelines
 }
 
 func (r *Reconciler) isReconcilable(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) bool {

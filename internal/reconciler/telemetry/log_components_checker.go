@@ -94,7 +94,7 @@ func (l *logComponentsChecker) determineConditionStatus(reason string) metav1.Co
 }
 
 func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, reason string) string {
-	tlsAboutExpireMassage := l.checkTLSCertificateMessage(pipelines)
+	tlsAboutExpireMassage := l.firstTLSCertificateMessage(pipelines)
 	if len(tlsAboutExpireMassage) > 0 {
 		return tlsAboutExpireMassage
 	}
@@ -116,7 +116,7 @@ func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alp
 	})
 }
 
-func (l *logComponentsChecker) checkTLSCertificateMessage(pipelines []telemetryv1alpha1.LogPipeline) string {
+func (l *logComponentsChecker) firstTLSCertificateMessage(pipelines []telemetryv1alpha1.LogPipeline) string {
 	for _, p := range pipelines {
 		tlsCertMsg := determineTLSCertMsg(p.Status.Conditions)
 		if tlsCertMsg != "" {
