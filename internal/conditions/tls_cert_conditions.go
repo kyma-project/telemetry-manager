@@ -13,22 +13,22 @@ const twoWeeks = time.Hour * 24 * 7 * 2
 
 func EvaluateTLSCertCondition(certValidationResult tlscert.TLSCertValidationResult) (status metav1.ConditionStatus, reason, message string) {
 	if !certValidationResult.CertValid {
-		return metav1.ConditionFalse, ReasonTLSCertificateInvalid, fmt.Sprintf(CommonMessages(ReasonTLSCertificateInvalid), certValidationResult.CertValidationMessage)
+		return metav1.ConditionFalse, ReasonTLSCertificateInvalid, fmt.Sprintf(getCommonMessage(ReasonTLSCertificateInvalid), certValidationResult.CertValidationMessage)
 	}
 
 	if !certValidationResult.PrivateKeyValid {
-		return metav1.ConditionFalse, ReasonTLSPrivateKeyInvalid, fmt.Sprintf(CommonMessages(ReasonTLSPrivateKeyInvalid), certValidationResult.PrivateKeyValidationMessage)
+		return metav1.ConditionFalse, ReasonTLSPrivateKeyInvalid, fmt.Sprintf(getCommonMessage(ReasonTLSPrivateKeyInvalid), certValidationResult.PrivateKeyValidationMessage)
 
 	}
 
 	if time.Now().After(certValidationResult.Validity) {
-		return metav1.ConditionFalse, ReasonTLSCertificateExpired, fmt.Sprintf(CommonMessages(ReasonTLSCertificateExpired), certValidationResult.Validity.Format(time.DateOnly))
+		return metav1.ConditionFalse, ReasonTLSCertificateExpired, fmt.Sprintf(getCommonMessage(ReasonTLSCertificateExpired), certValidationResult.Validity.Format(time.DateOnly))
 	}
 
 	//ensure not expired and about to expire
 	validUntil := time.Until(certValidationResult.Validity)
 	if validUntil > 0 && validUntil <= twoWeeks {
-		return metav1.ConditionTrue, ReasonTLSCertificateAboutToExpire, fmt.Sprintf(CommonMessages(ReasonTLSCertificateAboutToExpire), certValidationResult.Validity.Format(time.DateOnly))
+		return metav1.ConditionTrue, ReasonTLSCertificateAboutToExpire, fmt.Sprintf(getCommonMessage(ReasonTLSCertificateAboutToExpire), certValidationResult.Validity.Format(time.DateOnly))
 	}
 
 	return metav1.ConditionTrue, ReasonConfigurationGenerated, ""

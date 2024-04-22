@@ -117,7 +117,7 @@ func MessageForMetricPipeline(reason string) string {
 	return message(reason, metricPipelineMessages)
 }
 
-func CommonMessages(reason string) string {
+func getCommonMessage(reason string) string {
 	if condMessage, found := commonMessages[reason]; found {
 		return condMessage
 	}
