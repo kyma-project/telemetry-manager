@@ -93,9 +93,9 @@ func (m *metricComponentsChecker) determineConditionStatus(reason string) metav1
 }
 
 func (m *metricComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.MetricPipeline, reason string) string {
-	tlsAboutExpireMassage := m.checkTLSCertificateMessage(pipelines)
-	if len(tlsAboutExpireMassage) > 0 {
-		return tlsAboutExpireMassage
+	tlsAboutExpireMessage := m.firstTLSCertificateMessage(pipelines)
+	if len(tlsAboutExpireMessage) > 0 {
+		return tlsAboutExpireMessage
 	}
 	if reason != conditions.ReasonResourceBlocksDeletion {
 		return conditions.MessageForMetricPipeline(reason)
@@ -121,7 +121,7 @@ func (m *metricComponentsChecker) addReasonPrefix(reason string) string {
 	return reason
 }
 
-func (m *metricComponentsChecker) checkTLSCertificateMessage(pipelines []telemetryv1alpha1.MetricPipeline) string {
+func (m *metricComponentsChecker) firstTLSCertificateMessage(pipelines []telemetryv1alpha1.MetricPipeline) string {
 	for _, p := range pipelines {
 		tlsCertMsg := determineTLSCertMsg(p.Status.Conditions)
 		if tlsCertMsg != "" {
