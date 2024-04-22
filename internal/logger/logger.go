@@ -13,7 +13,7 @@ type Logger struct {
 	zapLogger *zap.SugaredLogger
 }
 
-// New returns a new logger with the given format and level.
+// New returns a logger with the given format and level.
 func New(atomicLevel zap.AtomicLevel) (*Logger, error) {
 	log := newWithAtomicLevel(atomicLevel)
 	level := atomicLevel.Level()
@@ -35,10 +35,10 @@ This function creates logger structure based on given format, atomicLevel and ad
 AtomicLevel structure allows to change level dynamically
 */
 func newWithAtomicLevel(atomicLevel zap.AtomicLevel, additionalCores ...zapcore.Core) *Logger {
-	return new(atomicLevel, additionalCores...)
+	return newLogger(atomicLevel, additionalCores...)
 }
 
-func new(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Core) *Logger {
+func newLogger(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Core) *Logger {
 	encoder := getZapEncoder()
 
 	defaultCore := zapcore.NewCore(
@@ -47,6 +47,7 @@ func new(levelEnabler zapcore.LevelEnabler, additionalCores ...zapcore.Core) *Lo
 		levelEnabler,
 	)
 	cores := append(additionalCores, defaultCore)
+
 	return &Logger{zap.New(zapcore.NewTee(cores...), zap.AddCaller()).Sugar()}
 }
 

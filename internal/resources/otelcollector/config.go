@@ -90,9 +90,9 @@ type AgentConfig struct {
 }
 
 func (cfg *AgentConfig) WithCollectorConfig(collectorCfgYAML string) *AgentConfig {
-	copy := *cfg
-	copy.CollectorConfig = collectorCfgYAML
-	return &copy
+	cp := *cfg
+	cp.CollectorConfig = collectorCfgYAML
+	return &cp
 }
 
 type DaemonSetConfig struct {

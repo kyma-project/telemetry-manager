@@ -29,8 +29,7 @@ func TestDaemonSetProber(t *testing.T) {
 		{summary: "generation mismatch", observedGeneration: 1, desiredGeneration: 2, expected: false},
 	}
 
-	for _, test := range tests {
-		tc := test
+	for _, tc := range tests {
 		t.Run(tc.summary, func(t *testing.T) {
 			t.Parallel()
 
