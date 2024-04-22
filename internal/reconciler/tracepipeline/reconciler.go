@@ -36,6 +36,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const defaultReplicaCount int32 = 2
@@ -58,12 +59,13 @@ type FlowHealthProber interface {
 
 type Reconciler struct {
 	client.Client
-	config                   Config
-	prober                   DeploymentProber
-	flowHealthProbingEnabled bool
-	flowHealthProber         FlowHealthProber
-	overridesHandler         *overrides.Handler
-	istioStatusChecker       istiostatus.Checker
+	config                     Config
+	prober                     DeploymentProber
+	flowHealthProbingEnabled   bool
+	flowHealthProber           FlowHealthProber
+	overridesHandler           *overrides.Handler
+	istioStatusChecker         istiostatus.Checker
+	pipelinesConditionsCleared bool
 }
 
 func NewReconciler(client client.Client,
@@ -131,6 +133,11 @@ func (r *Reconciler) doReconcile(ctx context.Context, pipeline *telemetryv1alpha
 	if err = r.List(ctx, &allPipelinesList); err != nil {
 		return fmt.Errorf("failed to list trace pipelines: %w", err)
 	}
+
+	if err = r.clearPipelinesConditions(ctx, allPipelinesList.Items); err != nil {
+		return fmt.Errorf("failed to clear the conditions list for trace pipelines: %w", err)
+	}
+
 	deployablePipelines, err := getDeployableTracePipelines(ctx, allPipelinesList.Items, r, lock)
 	if err != nil {
 		return fmt.Errorf("failed to fetch deployable trace pipelines: %w", err)
@@ -234,4 +241,20 @@ func (r *Reconciler) getReplicaCountFromTelemetry(ctx context.Context) int32 {
 		}
 	}
 	return defaultReplicaCount
+}
+
+func (r *Reconciler) clearPipelinesConditions(ctx context.Context, allPipelines []telemetryv1alpha1.TracePipeline) error {
+	if r.pipelinesConditionsCleared {
+		return nil
+	}
+
+	for i := range allPipelines {
+		allPipelines[i].Status.Conditions = []metav1.Condition{}
+		if err := r.Status().Update(ctx, &allPipelines[i]); err != nil {
+			return fmt.Errorf("failed to update TracePipeline status: %w", err)
+		}
+	}
+	r.pipelinesConditionsCleared = true
+
+	return nil
 }
