@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -37,12 +38,19 @@ type Backend struct {
 	persistentHostSecret bool
 	withTLS              bool
 	TLSCerts             tls.Certs
+	tlsOptions           TLSOptions
 
 	ConfigMap        *ConfigMap
 	FluentDConfigMap *fluentd.ConfigMap
 	Deployment       *Deployment
 	ExternalService  *ExternalService
 	HostSecret       *kitk8s.Secret
+}
+
+type TLSOptions struct {
+	timeFrom time.Time
+	timeUpto time.Time
+	invalid  bool
 }
 
 func New(name, namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -61,9 +69,18 @@ func New(name, namespace string, signalType SignalType, opts ...Option) *Backend
 	return backend
 }
 
-func WithTLS() Option {
+func WithTLS(timeFrom, timeUpto time.Time) Option {
 	return func(b *Backend) {
 		b.withTLS = true
+		b.tlsOptions.timeFrom = timeFrom
+		b.tlsOptions.timeUpto = timeUpto
+	}
+}
+
+func WithInvalidTLS() Option {
+	return func(b *Backend) {
+		b.withTLS = true
+		b.tlsOptions.invalid = true
 	}
 }
 
@@ -74,11 +91,20 @@ func WithPersistentHostSecret(persistentHostSecret bool) Option {
 }
 
 func (b *Backend) buildResources() {
+
 	if b.withTLS {
+		var certs tls.Certs
+		var err error
 		backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
-		certs, err := tls.GenerateTLSCerts(backendDNSName)
+		tlsCrt := tls.NewCerts()
+		if b.tlsOptions.invalid {
+			certs, err = tlsCrt.WithExpiry(b.tlsOptions.timeFrom, b.tlsOptions.timeUpto).GenerateTLSCerts(backendDNSName)
+		} else {
+			certs, err = tlsCrt.WithExpiry(b.tlsOptions.timeFrom, b.tlsOptions.timeUpto).GenerateTLSCerts(backendDNSName)
+		}
+
 		if err != nil {
-			panic(fmt.Errorf("could not generate TLS certs: %w", err))
+			panic(fmt.Errorf("could not generate TLS certs: %v", err))
 		}
 		b.TLSCerts = certs
 	}

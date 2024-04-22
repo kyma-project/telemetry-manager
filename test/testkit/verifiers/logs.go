@@ -40,3 +40,26 @@ func LogPipelineShouldBeHealthy(ctx context.Context, k8sClient client.Client, pi
 		g.Expect(meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypePending)).To(BeTrue())
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
+
+func LogPipelineShouldNotBeHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.LogPipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeAgentHealthy)).To(BeTrue())
+		g.Expect(meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
+		g.Expect(meta.IsStatusConditionTrue(pipeline.Status.Conditions, conditions.TypePending)).To(BeTrue())
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func LogPipelineWithInvalidTLSCertCondition(ctx context.Context, k8sClient client.Client, pipelineName string) {
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.LogPipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+		g.Expect(meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
+		condition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+		//g.Expect(condition.Status).To(BeFalse())
+		g.Expect(condition.Reason).To(Equal(conditions.ReasonTLSCertificateInvalid))
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}

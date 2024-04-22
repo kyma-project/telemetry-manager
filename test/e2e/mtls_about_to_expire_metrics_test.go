@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -17,11 +18,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics mTLS", Label("metrics"), func() {
+var _ = Describe("Metrics mTLS with certificates expiring within 2 weeks", Label("mtls"), func() {
 	const (
 		mockBackendName = "metric-tls-receiver"
-		mockNs          = "metric-mocks-tls-pipeline"
-		telemetrygenNs  = "metric-mtls"
+		mockNs          = "metric-mocks-2week-tls-pipeline"
+		telemetrygenNs  = "metric-mtls-2weeks-to-expire"
 	)
 	var (
 		pipelineName       string
@@ -34,7 +35,7 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
 		)
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS(time.Now(), time.Now().AddDate(0, 0, 30)))
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS(time.Now(), time.Now().AddDate(0, 0, 7)))
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
@@ -51,7 +52,7 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 		return objs
 	}
 
-	Context("When a metricpipeline with TLS activated exists", Ordered, func() {
+	Context("When a metric pipeline with TLS Cert expiring in 1 week is activated", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -63,6 +64,14 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 
 		It("Should have running pipelines", func() {
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+		})
+
+		It("Should have a tlsCertAboutToExpire Condition set in pipeline conditions", func() {
+			verifiers.MetricPipelineWithTLSCerAboutToExpireCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateAboutToExpire)
+		})
+
+		It("Should have telemetryCR showing correct condition in its status", func() {
+			verifiers.TelemetryCRShouldHaveTLSConditionForMetricPipeline(ctx, k8sClient, "MetricComponentsHealthy", conditions.ReasonTLSCertificateAboutToExpire, true)
 		})
 
 		It("Should have a metric backend running", func() {
