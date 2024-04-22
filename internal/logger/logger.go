@@ -13,7 +13,7 @@ type Logger struct {
 	zapLogger *zap.SugaredLogger
 }
 
-// New returns a newLogger logger with the given format and level.
+// New returns a logger with the given format and level.
 func New(atomicLevel zap.AtomicLevel) (*Logger, error) {
 	log := newWithAtomicLevel(atomicLevel)
 	level := atomicLevel.Level()
