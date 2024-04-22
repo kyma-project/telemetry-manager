@@ -29,6 +29,7 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/configchecksum"
 	"github.com/kyma-project/telemetry-manager/internal/overrides"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const checksumAnnotationKey = "checksum/logparser-config"
@@ -52,11 +53,12 @@ type DaemonSetAnnotator interface {
 
 type Reconciler struct {
 	client.Client
-	config           Config
-	prober           DaemonSetProber
-	annotator        DaemonSetAnnotator
-	syncer           syncer
-	overridesHandler *overrides.Handler
+	config                   Config
+	prober                   DaemonSetProber
+	annotator                DaemonSetAnnotator
+	syncer                   syncer
+	overridesHandler         *overrides.Handler
+	parsersConditionsCleared bool
 }
 
 func NewReconciler(client client.Client, config Config, prober DaemonSetProber, annotator DaemonSetAnnotator, overridesHandler *overrides.Handler) *Reconciler {
@@ -103,6 +105,15 @@ func (r *Reconciler) doReconcile(ctx context.Context, parser *telemetryv1alpha1.
 		}
 	}()
 
+	var allParsers telemetryv1alpha1.LogParserList
+	if err := r.List(ctx, &allParsers); err != nil {
+		return fmt.Errorf("failed to list log parsers: %w", err)
+	}
+
+	if err = r.clearParsersConditions(ctx, allParsers.Items); err != nil {
+		return fmt.Errorf("failed to clear the conditions list for log parsers: %w", err)
+	}
+
 	if err = ensureFinalizer(ctx, r.Client, parser); err != nil {
 		return err
 	}
@@ -133,4 +144,20 @@ func (r *Reconciler) calculateConfigChecksum(ctx context.Context) (string, error
 		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.ParsersConfigMap.Namespace, r.config.ParsersConfigMap.Name, err)
 	}
 	return configchecksum.Calculate([]corev1.ConfigMap{cm}, nil), nil
+}
+
+func (r *Reconciler) clearParsersConditions(ctx context.Context, allParsers []telemetryv1alpha1.LogParser) error {
+	if r.parsersConditionsCleared {
+		return nil
+	}
+
+	for i := range allParsers {
+		allParsers[i].Status.Conditions = []metav1.Condition{}
+		if err := r.Status().Update(ctx, &allParsers[i]); err != nil {
+			return fmt.Errorf("failed to update LogParser status: %w", err)
+		}
+	}
+	r.parsersConditionsCleared = true
+
+	return nil
 }
