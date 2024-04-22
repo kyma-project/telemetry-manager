@@ -23,30 +23,30 @@ spec:
         value: http://jaeger-collector.jaeger.svc.cluster.local:4317
 status:
   conditions:
-  - lastTransitionTime: "2024-02-29T01:18:28Z"
-    message: Trace gateway Deployment is ready
-    observedGeneration: 1
-    reason: DeploymentReady
-    status: "True"
-    type: GatewayHealthy
-  - lastTransitionTime: "2024-02-29T01:18:27Z"
-    message: ""
-    observedGeneration: 1
-    reason: ConfigurationGenerated
-    status: "True"
-    type: ConfigurationGenerated
-  - lastTransitionTime: "2024-02-29T01:18:28Z"
-    message: '[NOTE: The "Pending" type is deprecated] Trace gateway Deployment is not ready'
-    observedGeneration: 1
-    reason: TraceGatewayDeploymentNotReady
-    status: "False"
-    type: Pending
-  - lastTransitionTime: "2024-02-29T01:18:28Z"
-    message: '[NOTE: The "Running" type is deprecated] Trace gateway Deployment is ready'
-    observedGeneration: 1
-    reason: TraceGatewayDeploymentReady
-    status: "True"
-    type: Running
+    - lastTransitionTime: "2024-02-29T01:18:28Z"
+      message: Trace gateway Deployment is ready
+      observedGeneration: 1
+      reason: DeploymentReady
+      status: "True"
+      type: GatewayHealthy
+    - lastTransitionTime: "2024-02-29T01:18:27Z"
+      message: ""
+      observedGeneration: 1
+      reason: ConfigurationGenerated
+      status: "True"
+      type: ConfigurationGenerated
+    - lastTransitionTime: "2024-02-29T01:18:28Z"
+      message: '[NOTE: The "Pending" type is deprecated] Trace gateway Deployment is not ready'
+      observedGeneration: 1
+      reason: TraceGatewayDeploymentNotReady
+      status: "False"
+      type: Pending
+    - lastTransitionTime: "2024-02-29T01:18:28Z"
+      message: '[NOTE: The "Running" type is deprecated] Trace gateway Deployment is ready'
+      observedGeneration: 1
+      reason: TraceGatewayDeploymentReady
+      status: "True"
+      type: Running
 ```
 
 For further examples, see the [samples](https://github.com/kyma-project/telemetry-manager/tree/main/config/samples) directory.
@@ -147,20 +147,24 @@ The status of the TracePipeline is determined by the condition types `GatewayHea
 
 > **NOTE:** The condition types `Running` and `Pending` are deprecated and will be removed soon from the status conditions.
 
-| Condition Type         | Condition Status | Condition Reason        | Condition Message                          |
-|------------------------|------------------|-------------------------|--------------------------------------------|
-| GatewayHealthy         | True             | DeploymentReady         | Trace gateway Deployment is ready          |
-| GatewayHealthy         | False            | DeploymentNotReady      | Trace gateway Deployment is not ready      |
-| ConfigurationGenerated | True             | ConfigurationGenerated  |                                            |
-| ConfigurationGenerated | False            | ReferencedSecretMissing | One or more referenced Secrets are missing |
-| ConfigurationGenerated | False            | MaxPipelinesExceeded    | Maximum pipeline count limit exceeded      |
+| Condition Type         | Condition Status | Condition Reason            | Condition Message                                                                    |
+|------------------------|------------------|-----------------------------|--------------------------------------------------------------------------------------|
+| GatewayHealthy         | True             | DeploymentReady             | Trace gateway Deployment is ready                                                    |
+| GatewayHealthy         | False            | DeploymentNotReady          | Trace gateway Deployment is not ready                                                |
+| ConfigurationGenerated | True             | ConfigurationGenerated      |                                                                                      |
+| ConfigurationGenerated | False            | ReferencedSecretMissing     | One or more referenced Secrets are missing                                           |
+| ConfigurationGenerated | False            | MaxPipelinesExceeded        | Maximum pipeline count limit exceeded                                                |
+| ConfigurationGenerated | False            | TLSCertificateInvalid       | TLS certificate invalid                                                              |
+| ConfigurationGenerated | False            | TLSPrivateKeyInvalid        | TLS private key invalid                                                              |
+| ConfigurationGenerated | False            | TLSCertificateExpired       | TLS certificate expired on YYYY-MM-DD                                                |
+| ConfigurationGenerated | True             | TLSCertificateAboutToExpire | TLS certificate is about to expire, configured certificate is valid until YYYY-MM-DD |
 
 Reflecting the TracePipeline's data flow in `TelemetryFlowHealthy` condition type is currently under development and determined by the following reasons:
 
-| Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                   |
-|----------------------|------------------|-------------------|-------------------------------------------------------------------------------------|
-| TelemetryFlowHealthy | True             | FlowHealthy       | Traces are flowing normally to backend                                              |
+| Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                       |
+|----------------------|------------------|-------------------|-----------------------------------------------------------------------------------------|
+| TelemetryFlowHealthy | True             | FlowHealthy       | Traces are flowing normally to backend                                                  |
 | TelemetryFlowHealthy | False            | GatewayThrottling | Trace collector experiencing high influx: Unable to receive metrics at the current rate |
 | TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                    |
-| TelemetryFlowHealthy | False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting                               |
-| TelemetryFlowHealthy | False            | AllDataDropped    | All traces dropped: backend unreachable or rejecting                                |
+| TelemetryFlowHealthy | False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting                                   |
+| TelemetryFlowHealthy | False            | AllDataDropped    | All traces dropped: backend unreachable or rejecting                                    |
