@@ -92,6 +92,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	defer r.Body.Close()
 
 	var alerts []Alert
 	if unmarshallErr := json.Unmarshal(alertsYAML, &alerts); unmarshallErr != nil {
@@ -99,8 +100,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	defer r.Body.Close()
 
 	metricPipelineEvents := h.toMetricPipelineReconcileEvents(r.Context(), alerts)
 	tracePipelineEvents := h.toTracePipelineReconcileEvents(r.Context(), alerts)
