@@ -3,7 +3,6 @@ package logpipeline
 import (
 	"context"
 	"fmt"
-	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -17,8 +16,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 )
 
-const twoWeeks = time.Hour * 24 * 7 * 2
-
 func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) error {
 	var pipeline telemetryv1alpha1.LogPipeline
 	if err := r.Get(ctx, types.NamespacedName{Name: pipelineName}, &pipeline); err != nil {
@@ -27,7 +24,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 			return nil
 		}
 
-		return fmt.Errorf("failed to get LogPipeline: %v", err)
+		return fmt.Errorf("failed to get LogPipeline: %w", err)
 	}
 
 	if pipeline.DeletionTimestamp != nil {
@@ -60,7 +57,7 @@ func (r *Reconciler) updateStatusUnsupportedMode(ctx context.Context, pipeline *
 	if pipeline.Status.UnsupportedMode != desiredUnsupportedMode {
 		pipeline.Status.UnsupportedMode = desiredUnsupportedMode
 		if err := r.Status().Update(ctx, pipeline); err != nil {
-			return fmt.Errorf("failed to update LogPipeline unsupported mode status: %v", err)
+			return fmt.Errorf("failed to update LogPipeline unsupported mode status: %w", err)
 		}
 	}
 
@@ -93,51 +90,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 }
 
 func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
-	status := metav1.ConditionTrue
-	reason := conditions.ReasonConfigurationGenerated
-	certValidationResult := getTLSCertValidationResult(ctx, pipeline, r.tlsCertValidator, r.Client)
-	message := conditions.MessageForLogPipeline(reason)
-
-	// The order with checking TLS and the checking ReferenceSecretExists needs to be maintained. If the TLS Cert
-	// does not exist then checking TLS Cert will set a message saying CertIsInvalid which would be overridden by
-	// ReferenceSecretNot found.
-	if !certValidationResult.CertValid {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonTLSCertificateInvalid
-		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.CertValidationMessage)
-	}
-
-	if !certValidationResult.PrivateKeyValid {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonTLSPrivateKeyInvalid
-		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.PrivateKeyValidationMessage)
-	}
-
-	if time.Now().After(certValidationResult.Validity) {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonTLSCertificateExpired
-		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly))
-	}
-
-	//ensure not expired and about to expire
-	validUntil := time.Until(certValidationResult.Validity)
-	if validUntil > 0 && validUntil <= twoWeeks {
-		status = metav1.ConditionTrue
-		reason = conditions.ReasonTLSCertificateAboutToExpire
-		message = fmt.Sprintf(conditions.MessageForLogPipeline(reason), certValidationResult.Validity.Format(time.DateOnly))
-	}
-
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonReferencedSecretMissing
-		message = conditions.MessageForLogPipeline(reason)
-	}
-
-	if pipeline.Spec.Output.IsLokiDefined() {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonUnsupportedLokiOutput
-		message = conditions.MessageForLogPipeline(reason)
-	}
+	status, reason, message := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeConfigurationGenerated,
@@ -148,6 +101,23 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+}
+
+func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (status metav1.ConditionStatus, reason string, message string) {
+	if pipeline.Spec.Output.IsLokiDefined() {
+		return metav1.ConditionFalse, conditions.ReasonUnsupportedLokiOutput, conditions.MessageForLogPipeline(conditions.ReasonUnsupportedLokiOutput)
+	}
+
+	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.MessageForMetricPipeline(conditions.ReasonReferencedSecretMissing)
+	}
+
+	if tlsCertValidationRequired(pipeline) {
+		certValidationResult := r.tlsCertValidator.ValidateCertificate(ctx, pipeline.Spec.Output.HTTP.TLSConfig.Cert, pipeline.Spec.Output.HTTP.TLSConfig.Key)
+		return conditions.EvaluateTLSCertCondition(certValidationResult)
+	}
+
+	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForMetricPipeline(conditions.ReasonConfigurationGenerated)
 }
 
 func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {

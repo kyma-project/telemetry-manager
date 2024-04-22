@@ -80,7 +80,7 @@ func NewReconciler(client client.Client, scheme *runtime.Scheme, config Config, 
 		Scheme: scheme,
 		config: config,
 		healthCheckers: healthCheckers{
-			logs:    &logComponentsChecker{client: client},
+			logs:    &logComponentsChecker{client: client, flowHealthProbingEnabled: flowHealthProbingEnabled},
 			traces:  &traceComponentsChecker{client: client, flowHealthProbingEnabled: flowHealthProbingEnabled},
 			metrics: &metricComponentsChecker{client: client, flowHealthProbingEnabled: flowHealthProbingEnabled},
 		},

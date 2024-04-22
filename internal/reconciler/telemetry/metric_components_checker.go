@@ -30,7 +30,7 @@ func (m *metricComponentsChecker) Check(ctx context.Context, telemetryInDeletion
 	message := m.createMessageForReason(metricPipelines.Items, reason)
 	reasonWithPrefix := m.addReasonPrefix(reason)
 
-	const conditionType = "MetricComponentsHealthy"
+	conditionType := "MetricComponentsHealthy"
 	return &metav1.Condition{
 		Type:    conditionType,
 		Status:  status,
@@ -52,15 +52,22 @@ func (m *metricComponentsChecker) determineReason(pipelines []telemetryv1alpha1.
 		return reason
 	}
 
+	for _, pipeline := range pipelines {
+		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+		if cond != nil && cond.Reason == conditions.ReasonTLSCertificateAboutToExpire {
+			return cond.Reason
+		}
+	}
+
 	return conditions.ReasonMetricComponentsRunning
 }
 
 func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.MetricPipeline) string {
 	// condTypes order defines the priority of negative conditions
 	condTypes := []string{
+		conditions.TypeConfigurationGenerated,
 		conditions.TypeGatewayHealthy,
 		conditions.TypeAgentHealthy,
-		conditions.TypeConfigurationGenerated,
 	}
 
 	if m.flowHealthProbingEnabled {
@@ -79,13 +86,17 @@ func (m *metricComponentsChecker) firstUnhealthyPipelineReason(pipelines []telem
 }
 
 func (m *metricComponentsChecker) determineConditionStatus(reason string) metav1.ConditionStatus {
-	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonMetricComponentsRunning {
+	if reason == conditions.ReasonNoPipelineDeployed || reason == conditions.ReasonMetricComponentsRunning || reason == conditions.ReasonTLSCertificateAboutToExpire {
 		return metav1.ConditionTrue
 	}
 	return metav1.ConditionFalse
 }
 
 func (m *metricComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.MetricPipeline, reason string) string {
+	tlsAboutExpireMessage := m.firstTLSCertificateMessage(pipelines)
+	if len(tlsAboutExpireMessage) > 0 {
+		return tlsAboutExpireMessage
+	}
 	if reason != conditions.ReasonResourceBlocksDeletion {
 		return conditions.MessageForMetricPipeline(reason)
 	}
@@ -108,4 +119,14 @@ func (m *metricComponentsChecker) addReasonPrefix(reason string) string {
 		return "MetricPipeline" + reason
 	}
 	return reason
+}
+
+func (m *metricComponentsChecker) firstTLSCertificateMessage(pipelines []telemetryv1alpha1.MetricPipeline) string {
+	for _, p := range pipelines {
+		tlsCertMsg := determineTLSCertMsg(p.Status.Conditions)
+		if tlsCertMsg != "" {
+			return tlsCertMsg
+		}
+	}
+	return ""
 }

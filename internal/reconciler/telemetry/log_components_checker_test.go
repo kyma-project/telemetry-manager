@@ -21,11 +21,12 @@ func TestLogComponentsCheck(t *testing.T) {
 	runningCondition := metav1.Condition{Type: conditions.TypeRunning, Status: metav1.ConditionTrue, Reason: conditions.ReasonFluentBitDSReady}
 
 	tests := []struct {
-		name                string
-		pipelines           []telemetryv1alpha1.LogPipeline
-		parsers             []telemetryv1alpha1.LogParser
-		telemetryInDeletion bool
-		expectedCondition   *metav1.Condition
+		name                     string
+		pipelines                []telemetryv1alpha1.LogPipeline
+		parsers                  []telemetryv1alpha1.LogParser
+		telemetryInDeletion      bool
+		flowHealthProbingEnabled bool
+		expectedCondition        *metav1.Condition
 	}{
 		{
 			name:                "should be healthy if no pipelines deployed",
@@ -131,7 +132,7 @@ func TestLogComponentsCheck(t *testing.T) {
 			},
 		},
 		{
-			name: "should prioritize unready fluent bit reason over missing secret",
+			name: "should prioritize unready ConfigGenerated reason over AgentHealthy reason",
 			pipelines: []telemetryv1alpha1.LogPipeline{
 				testutils.NewLogPipelineBuilder().
 					WithStatusCondition(metav1.Condition{Type: conditions.TypeAgentHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonDaemonSetNotReady}).
@@ -148,8 +149,8 @@ func TestLogComponentsCheck(t *testing.T) {
 			expectedCondition: &metav1.Condition{
 				Type:    "LogComponentsHealthy",
 				Status:  "False",
-				Reason:  "FluentBitDaemonSetNotReady",
-				Message: "Fluent Bit DaemonSet is not ready",
+				Reason:  "LogPipelineReferencedSecretMissing",
+				Message: "One or more referenced Secrets are missing",
 			},
 		},
 		{
@@ -197,6 +198,59 @@ func TestLogComponentsCheck(t *testing.T) {
 				Message: "The deletion of the module is blocked. To unblock the deletion, delete the following resources: LogPipelines (baz,foo), LogParsers (bar)",
 			},
 		},
+		{
+			name: "should be healthy if telemetry flow probing enabled and healthy",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionTrue, Reason: conditions.ReasonFlowHealthy}).
+					Build(),
+			},
+			flowHealthProbingEnabled: true,
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "True",
+				Reason:  "LogComponentsRunning",
+				Message: "All log components are running",
+			},
+		},
+		{
+			name: "should not be healthy if telemetry flow probing enabled and not healthy",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeFlowHealthy, Status: metav1.ConditionFalse, Reason: conditions.ReasonNoLogsDelivered}).
+					Build(),
+			},
+			flowHealthProbingEnabled: true,
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "False",
+				Reason:  "NoLogsDelivered",
+				Message: "No logs delivered to backend",
+			},
+		},
+		{
+			name: "should return show tlsCertificateExpired if one of the pipelines has expired tls cert",
+			pipelines: []telemetryv1alpha1.LogPipeline{
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(configGeneratedCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypePending, Status: metav1.ConditionFalse, Reason: conditions.ReasonFluentBitDSNotReady}).
+					WithStatusCondition(runningCondition).
+					Build(),
+				testutils.NewLogPipelineBuilder().
+					WithStatusCondition(healthyAgentCond).
+					WithStatusCondition(metav1.Condition{Type: conditions.TypeConfigurationGenerated, Status: metav1.ConditionFalse, Reason: conditions.ReasonTLSCertificateExpired, Message: "TLS certificate expired on 20.01.2023"}).
+					Build(),
+			},
+			expectedCondition: &metav1.Condition{
+				Type:    "LogComponentsHealthy",
+				Status:  "False",
+				Reason:  "TLSCertificateExpired",
+				Message: "TLS certificate expired on 20.01.2023",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -215,7 +269,8 @@ func TestLogComponentsCheck(t *testing.T) {
 			fakeClient := b.Build()
 
 			m := &logComponentsChecker{
-				client: fakeClient,
+				client:                   fakeClient,
+				flowHealthProbingEnabled: test.flowHealthProbingEnabled,
 			}
 
 			condition, err := m.Check(context.Background(), test.telemetryInDeletion)

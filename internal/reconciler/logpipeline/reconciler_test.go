@@ -15,15 +15,15 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/reconciler/logpipeline/mocks"
-	"github.com/kyma-project/telemetry-manager/internal/tls/cert"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
-func TestGetDeployableLogPipelines(t *testing.T) {
+func TestGetReconcilableLogPipelines(t *testing.T) {
 	timestamp := metav1.Now()
 	tests := []struct {
-		name                string
-		pipelines           []telemetryv1alpha1.LogPipeline
-		deployablePipelines bool
+		name                     string
+		pipelines                []telemetryv1alpha1.LogPipeline
+		reconcilableLogPipelines bool
 	}{
 		{
 			name: "should reject LogPipelines which are being deleted",
@@ -39,7 +39,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 						}},
 				},
 			},
-			deployablePipelines: false,
+			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should reject LogPipelines with missing Secrets",
@@ -64,7 +64,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 						}},
 				},
 			},
-			deployablePipelines: false,
+			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should reject LogPipelines with Loki Output",
@@ -83,7 +83,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 						}},
 				},
 			},
-			deployablePipelines: false,
+			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should accept healthy LogPipelines",
@@ -107,7 +107,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 						}},
 				},
 			},
-			deployablePipelines: true,
+			reconcilableLogPipelines: true,
 		},
 		{
 			name: "should reject LogPipelines with invalid certificate",
@@ -135,7 +135,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 					},
 				},
 			},
-			deployablePipelines: false,
+			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should reject LogPipelines with invalid certificate key",
@@ -163,7 +163,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 					},
 				},
 			},
-			deployablePipelines: false,
+			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should reject LogPipelines with expired certificate",
@@ -191,7 +191,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 					},
 				},
 			},
-			deployablePipelines: false,
+			reconcilableLogPipelines: false,
 		},
 		{
 			name: "should accept LogPipelines with valid certificate",
@@ -219,7 +219,7 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 					},
 				},
 			},
-			deployablePipelines: true,
+			reconcilableLogPipelines: true,
 		},
 	}
 
@@ -233,29 +233,33 @@ func TestGetDeployableLogPipelines(t *testing.T) {
 
 			validatorStub := &mocks.TLSCertValidator{}
 
-			validatorStub.On("ValidateCertificate", []byte("invalidcert"), []byte("somekey")).Return(cert.TLSCertValidationResult{
+			validatorStub.On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "invalidcert"}, &telemetryv1alpha1.ValueType{Value: "somekey"}).Return(tlscert.TLSCertValidationResult{
 				CertValid:       false,
 				PrivateKeyValid: true,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", []byte("somecert"), []byte("invalidkey")).Return(cert.TLSCertValidationResult{
+			}).On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "somecert"}, &telemetryv1alpha1.ValueType{Value: "invalidkey"}).Return(tlscert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: false,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", []byte("valid"), []byte("valid")).Return(cert.TLSCertValidationResult{
+			}).On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "valid"}, &telemetryv1alpha1.ValueType{Value: "valid"}).Return(tlscert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: true,
 				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", []byte("expired"), []byte("expired")).Return(cert.TLSCertValidationResult{
+			}).On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "expired"}, &telemetryv1alpha1.ValueType{Value: "expired"}).Return(tlscert.TLSCertValidationResult{
 				CertValid:       true,
 				PrivateKeyValid: true,
 				Validity:        time.Now().AddDate(-1, -1, -1),
 			})
-			deployablePipelines := getDeployableLogPipelines(ctx, test.pipelines, fakeClient, validatorStub)
+			reconciler := Reconciler{
+				Client:           fakeClient,
+				tlsCertValidator: validatorStub,
+			}
+			reconcilablePipelines := reconciler.getReconcilablePipelines(ctx, test.pipelines)
 			for _, pipeline := range test.pipelines {
-				if test.deployablePipelines == true {
-					require.Contains(t, deployablePipelines, pipeline)
+				if test.reconcilableLogPipelines == true {
+					require.Contains(t, reconcilablePipelines, pipeline)
 				} else {
-					require.NotContains(t, deployablePipelines, pipeline)
+					require.NotContains(t, reconcilablePipelines, pipeline)
 				}
 			}
 		})

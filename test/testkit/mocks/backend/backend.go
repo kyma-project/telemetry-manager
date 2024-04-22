@@ -78,7 +78,7 @@ func (b *Backend) buildResources() {
 		backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
 		certs, err := tls.GenerateTLSCerts(backendDNSName)
 		if err != nil {
-			panic(fmt.Errorf("could not generate TLS certs: %v", err))
+			panic(fmt.Errorf("could not generate TLS certs: %w", err))
 		}
 		b.TLSCerts = certs
 	}

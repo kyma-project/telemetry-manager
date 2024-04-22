@@ -14,7 +14,8 @@ import (
 )
 
 type logComponentsChecker struct {
-	client client.Client
+	client                   client.Client
+	flowHealthProbingEnabled bool
 }
 
 func (l *logComponentsChecker) Check(ctx context.Context, telemetryInDeletion bool) (*metav1.Condition, error) {
@@ -57,19 +58,27 @@ func (l *logComponentsChecker) determineReason(pipelines []telemetryv1alpha1.Log
 		return reason
 	}
 
+	for _, pipeline := range pipelines {
+		cond := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+		if cond != nil && cond.Reason == conditions.ReasonTLSCertificateAboutToExpire {
+			return cond.Reason
+		}
+	}
+
 	return conditions.ReasonLogComponentsRunning
 }
 
 func (l *logComponentsChecker) firstUnhealthyPipelineReason(pipelines []telemetryv1alpha1.LogPipeline) string {
 	// condTypes order defines the priority of negative conditions
 	condTypes := []string{
-		conditions.TypeAgentHealthy,
 		conditions.TypeConfigurationGenerated,
+		conditions.TypeAgentHealthy,
+		conditions.TypeFlowHealthy,
 	}
 	for _, condType := range condTypes {
 		for _, pipeline := range pipelines {
 			cond := meta.FindStatusCondition(pipeline.Status.Conditions, condType)
-			if cond != nil && (cond.Status == metav1.ConditionFalse || cond.Reason == conditions.ReasonTLSCertificateAboutToExpire) {
+			if cond != nil && cond.Status == metav1.ConditionFalse {
 				return cond.Reason
 			}
 		}
@@ -85,7 +94,7 @@ func (l *logComponentsChecker) determineConditionStatus(reason string) metav1.Co
 }
 
 func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alpha1.LogPipeline, parsers []telemetryv1alpha1.LogParser, reason string) string {
-	tlsAboutExpireMassage := determineFormattedTLSCertificateMessage(pipelines)
+	tlsAboutExpireMassage := l.firstTLSCertificateMessage(pipelines)
 	if len(tlsAboutExpireMassage) > 0 {
 		return tlsAboutExpireMassage
 	}
@@ -107,15 +116,11 @@ func (l *logComponentsChecker) createMessageForReason(pipelines []telemetryv1alp
 	})
 }
 
-func determineFormattedTLSCertificateMessage(pipelines []telemetryv1alpha1.LogPipeline) string {
-
+func (l *logComponentsChecker) firstTLSCertificateMessage(pipelines []telemetryv1alpha1.LogPipeline) string {
 	for _, p := range pipelines {
-		cond := meta.FindStatusCondition(p.Status.Conditions, conditions.TypeConfigurationGenerated)
-		if cond != nil && (cond.Reason == conditions.ReasonTLSCertificateAboutToExpire ||
-			cond.Reason == conditions.ReasonTLSCertificateExpired ||
-			cond.Reason == conditions.ReasonTLSCertificateInvalid ||
-			cond.Reason == conditions.ReasonTLSPrivateKeyInvalid) {
-			return cond.Message
+		tlsCertMsg := determineTLSCertMsg(p.Status.Conditions)
+		if tlsCertMsg != "" {
+			return tlsCertMsg
 		}
 	}
 	return ""

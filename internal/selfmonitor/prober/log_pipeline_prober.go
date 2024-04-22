@@ -50,41 +50,41 @@ func (p *LogPipelineProber) Probe(ctx context.Context, pipelineName string) (Log
 }
 
 func (p *LogPipelineProber) allDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	exporterSentLogs := p.evaluateRule(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
-	exporterDroppedLogs := p.evaluateRule(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
-	bufferFull := p.evaluateRule(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
+	exporterSentLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
+	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
+	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
 	return !exporterSentLogs && (exporterDroppedLogs || bufferFull)
 }
 
 func (p *LogPipelineProber) someDataDropped(alerts []promv1.Alert, pipelineName string) bool {
-	exporterSentLogs := p.evaluateRule(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
-	exporterDroppedLogs := p.evaluateRule(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
-	bufferFull := p.evaluateRule(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
+	exporterSentLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
+	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
+	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
 	return exporterSentLogs && (exporterDroppedLogs || bufferFull)
 }
 
 func (p *LogPipelineProber) noLogsDelivered(alerts []promv1.Alert, pipelineName string) bool {
-	receiverReadLogs := p.evaluateRule(alerts, config.RuleNameLogAgentReceiverReadLogs, pipelineName)
-	exporterSentLogs := p.evaluateRule(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
+	receiverReadLogs := p.isFiring(alerts, config.RuleNameLogAgentReceiverReadLogs, pipelineName)
+	exporterSentLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
 	return receiverReadLogs && !exporterSentLogs
 }
 
 func (p *LogPipelineProber) bufferFillingUp(alerts []promv1.Alert, pipelineName string) bool {
-	return p.evaluateRule(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
+	return p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
 }
 
 func (p *LogPipelineProber) healthy(alerts []promv1.Alert, pipelineName string) bool {
 	// The pipeline is healthy if none of the following conditions are met:
-	bufferInUse := p.evaluateRule(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
-	bufferFull := p.evaluateRule(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
-	exporterDroppedLogs := p.evaluateRule(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
+	bufferInUse := p.isFiring(alerts, config.RuleNameLogAgentBufferInUse, pipelineName)
+	bufferFull := p.isFiring(alerts, config.RuleNameLogAgentBufferFull, pipelineName)
+	exporterDroppedLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterDroppedLogs, pipelineName)
 
 	// The pipeline is healthy if either no logs are being read or all logs are being sent
-	receiverReadLogs := p.evaluateRule(alerts, config.RuleNameLogAgentReceiverReadLogs, pipelineName)
-	exporterSentLogs := p.evaluateRule(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
+	receiverReadLogs := p.isFiring(alerts, config.RuleNameLogAgentReceiverReadLogs, pipelineName)
+	exporterSentLogs := p.isFiring(alerts, config.RuleNameLogAgentExporterSentLogs, pipelineName)
 	return !(bufferInUse || bufferFull || exporterDroppedLogs) && (!receiverReadLogs || exporterSentLogs)
 }
 
-func (p *LogPipelineProber) evaluateRule(alerts []promv1.Alert, alertName, pipelineName string) bool {
-	return evaluateRuleWithMatcher(alerts, alertName, pipelineName, config.MatchesLogPipelineRule)
+func (p *LogPipelineProber) isFiring(alerts []promv1.Alert, ruleName, pipelineName string) bool {
+	return isFiringWithMatcher(alerts, ruleName, pipelineName, config.MatchesLogPipelineRule)
 }

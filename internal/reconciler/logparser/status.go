@@ -21,7 +21,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, parserName string) error 
 			return nil
 		}
 
-		return fmt.Errorf("failed to get LogParser: %v", err)
+		return fmt.Errorf("failed to get LogParser: %w", err)
 	}
 
 	if parser.DeletionTimestamp != nil {

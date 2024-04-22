@@ -18,7 +18,7 @@ func WithLds(matcher types.GomegaMatcher) types.GomegaMatcher {
 
 		lds, err := unmarshalLogs(jsonlLogs)
 		if err != nil {
-			return nil, fmt.Errorf("WithLds requires a valid OTLP JSON document: %v", err)
+			return nil, fmt.Errorf("WithLds requires a valid OTLP JSON document: %w", err)
 		}
 
 		return lds, nil

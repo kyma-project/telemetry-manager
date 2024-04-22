@@ -98,9 +98,9 @@ func (r *Reconciler) doReconcile(ctx context.Context, parser *telemetryv1alpha1.
 	defer func() {
 		if statusErr := r.updateStatus(ctx, parser.Name); statusErr != nil {
 			if err != nil {
-				err = fmt.Errorf("failed while updating status: %v: %v", statusErr, err)
+				err = fmt.Errorf("failed while updating status: %w: %w", statusErr, err)
 			} else {
-				err = fmt.Errorf("failed to update status: %v", statusErr)
+				err = fmt.Errorf("failed to update status: %w", statusErr)
 			}
 		}
 	}()
@@ -141,7 +141,7 @@ func (r *Reconciler) doReconcile(ctx context.Context, parser *telemetryv1alpha1.
 func (r *Reconciler) calculateConfigChecksum(ctx context.Context) (string, error) {
 	var cm corev1.ConfigMap
 	if err := r.Get(ctx, r.config.ParsersConfigMap, &cm); err != nil {
-		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %v", r.config.ParsersConfigMap.Namespace, r.config.ParsersConfigMap.Name, err)
+		return "", fmt.Errorf("failed to get %s/%s ConfigMap: %w", r.config.ParsersConfigMap.Namespace, r.config.ParsersConfigMap.Name, err)
 	}
 	return configchecksum.Calculate([]corev1.ConfigMap{cm}, nil), nil
 }

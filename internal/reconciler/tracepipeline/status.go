@@ -24,7 +24,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 			return nil
 		}
 
-		return fmt.Errorf("failed to get TracePipeline: %v", err)
+		return fmt.Errorf("failed to get TracePipeline: %w", err)
 	}
 
 	if pipeline.DeletionTimestamp != nil {
@@ -72,28 +72,34 @@ func (r *Reconciler) setGatewayHealthyCondition(ctx context.Context, pipeline *t
 }
 
 func (r *Reconciler) setGatewayConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) {
-	status := metav1.ConditionTrue
-	reason := conditions.ReasonConfigurationGenerated
-
-	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonReferencedSecretMissing
-	}
-
-	if !withinPipelineCountLimit {
-		status = metav1.ConditionFalse
-		reason = conditions.ReasonMaxPipelinesExceeded
-	}
+	status, reason, message := r.evaluateConfigGeneratedCondition(ctx, pipeline, withinPipelineCountLimit)
 
 	condition := metav1.Condition{
 		Type:               conditions.TypeConfigurationGenerated,
 		Status:             status,
 		ObservedGeneration: pipeline.Generation,
 		Reason:             reason,
-		Message:            conditions.MessageForTracePipeline(reason),
+		Message:            message,
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+}
+
+func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline, withinPipelineCountLimit bool) (status metav1.ConditionStatus, reason string, message string) {
+	if !withinPipelineCountLimit {
+		return metav1.ConditionFalse, conditions.ReasonMaxPipelinesExceeded, conditions.MessageForTracePipeline(conditions.ReasonMaxPipelinesExceeded)
+	}
+
+	if secretref.ReferencesNonExistentSecret(ctx, r.Client, pipeline) {
+		return metav1.ConditionFalse, conditions.ReasonReferencedSecretMissing, conditions.MessageForTracePipeline(conditions.ReasonReferencedSecretMissing)
+	}
+
+	if tlsCertValidationRequired(pipeline) {
+		certValidationResult := r.tlsCertValidator.ValidateCertificate(ctx, pipeline.Spec.Output.Otlp.TLS.Cert, pipeline.Spec.Output.Otlp.TLS.Key)
+		return conditions.EvaluateTLSCertCondition(certValidationResult)
+	}
+
+	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForTracePipeline(conditions.ReasonConfigurationGenerated)
 }
 
 func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.TracePipeline) {
