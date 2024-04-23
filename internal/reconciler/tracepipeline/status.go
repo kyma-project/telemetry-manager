@@ -102,8 +102,13 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	}
 
 	if tlsCertValidationRequired(pipeline) {
-		certValidationResult := r.tlsCertValidator.ValidateCertificate(ctx, pipeline.Spec.Output.Otlp.TLS.Cert, pipeline.Spec.Output.Otlp.TLS.Key)
-		return conditions.EvaluateTLSCertCondition(certValidationResult)
+		if tlsCertValidationRequired(pipeline) {
+			cert := pipeline.Spec.Output.Otlp.TLS.Cert
+			key := pipeline.Spec.Output.Otlp.TLS.Key
+
+			err := r.tlsCertValidator.ValidateCertificate(ctx, cert, key)
+			return conditions.EvaluateTLSCertCondition(err)
+		}
 	}
 
 	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForTracePipeline(conditions.ReasonConfigurationGenerated)
