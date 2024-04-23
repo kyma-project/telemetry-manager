@@ -314,11 +314,13 @@ func TestUpdateStatus(t *testing.T) {
 
 	t.Run("flow healthy", func(t *testing.T) {
 		tests := []struct {
-			name           string
-			probe          prober.OTelPipelineProbeResult
-			probeErr       error
-			expectedStatus metav1.ConditionStatus
-			expectedReason string
+			name                string
+			probe               prober.OTelPipelineProbeResult
+			probeErr            error
+			missingSecret       bool
+			maxPipelinesReached bool
+			expectedStatus      metav1.ConditionStatus
+			expectedReason      string
 		}{
 			{
 				name:           "prober fails",
@@ -393,11 +395,27 @@ func TestUpdateStatus(t *testing.T) {
 				expectedStatus: metav1.ConditionFalse,
 				expectedReason: conditions.ReasonAllDataDropped,
 			},
+			{
+				name:           "unknown if missing secret",
+				missingSecret:  true,
+				expectedStatus: metav1.ConditionUnknown,
+				expectedReason: conditions.ReasonFlowHealthy,
+			},
+			{
+				name:                "unknown if max pipelines reached",
+				maxPipelinesReached: true,
+				expectedStatus:      metav1.ConditionUnknown,
+				expectedReason:      conditions.ReasonFlowHealthy,
+			},
 		}
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				pipeline := testutils.NewMetricPipelineBuilder().Build()
+				if tt.missingSecret {
+					pipeline = testutils.NewMetricPipelineBuilder().WithBasicAuthFromSecret("unknown", "unknown", "user", "password").Build()
+				}
+
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				gatewayProberStub := &mocks.DeploymentProber{}
@@ -412,7 +430,7 @@ func TestUpdateStatus(t *testing.T) {
 					flowHealthProbingEnabled: true,
 					flowHealthProber:         flowHealthProberStub,
 				}
-				err := sut.updateStatus(context.Background(), pipeline.Name, false)
+				err := sut.updateStatus(context.Background(), pipeline.Name, !tt.maxPipelinesReached)
 				require.NoError(t, err)
 
 				var updatedPipeline telemetryv1alpha1.MetricPipeline

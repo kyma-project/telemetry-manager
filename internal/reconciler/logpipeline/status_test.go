@@ -29,21 +29,8 @@ func TestUpdateStatus(t *testing.T) {
 
 	t.Run("fluent bit is not ready", func(t *testing.T) {
 		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.LogPipeline{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       pipelineName,
-				Generation: 1,
-			},
-			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
-					HTTP: &telemetryv1alpha1.HTTPOutput{
-						Host: telemetryv1alpha1.ValueType{
-							Value: "localhost",
-						},
-					},
-				}},
-		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
@@ -84,21 +71,8 @@ func TestUpdateStatus(t *testing.T) {
 
 	t.Run("fluent bit is ready", func(t *testing.T) {
 		pipelineName := "pipeline"
-		pipeline := &telemetryv1alpha1.LogPipeline{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:       pipelineName,
-				Generation: 1,
-			},
-			Spec: telemetryv1alpha1.LogPipelineSpec{
-				Output: telemetryv1alpha1.Output{
-					HTTP: &telemetryv1alpha1.HTTPOutput{
-						Host: telemetryv1alpha1.ValueType{
-							Value: "localhost",
-						},
-					},
-				}},
-		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(pipeline).WithStatusSubresource(pipeline).Build()
+		pipeline := testutils.NewLogPipelineBuilder().WithName(pipelineName).Build()
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		proberStub := &mocks.DaemonSetProber{}
 		proberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)

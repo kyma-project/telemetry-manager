@@ -13,11 +13,15 @@ import (
 type TracePipelineBuilder struct {
 	randSource rand.Source
 
-	name              string
-	endpoint          string
-	basicAuthUser     string
-	basicAuthPassword string
-	statusConditions  []metav1.Condition
+	name                       string
+	endpoint                   string
+	basicAuthUser              string
+	basicAuthPassword          string
+	basicAuthSecretName        string
+	basicAuthSecretNamespace   string
+	basicAuthSecretUserKey     string
+	basicAuthSecretPasswordKey string
+	statusConditions           []metav1.Condition
 }
 
 func NewTracePipelineBuilder() *TracePipelineBuilder {
@@ -40,6 +44,14 @@ func (b *TracePipelineBuilder) WithEndpoint(endpoint string) *TracePipelineBuild
 func (b *TracePipelineBuilder) WithBasicAuth(user, password string) *TracePipelineBuilder {
 	b.basicAuthUser = user
 	b.basicAuthPassword = password
+	return b
+}
+
+func (b *TracePipelineBuilder) WithBasicAuthFromSecret(secretName, secretNamespace, userKey, passwordKey string) *TracePipelineBuilder {
+	b.basicAuthSecretName = secretName
+	b.basicAuthSecretNamespace = secretNamespace
+	b.basicAuthSecretUserKey = userKey
+	b.basicAuthSecretPasswordKey = passwordKey
 	return b
 }
 
@@ -69,9 +81,23 @@ func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
 						Basic: &telemetryv1alpha1.BasicAuthOptions{
 							User: telemetryv1alpha1.ValueType{
 								Value: b.basicAuthUser,
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      b.basicAuthSecretName,
+										Namespace: b.basicAuthSecretNamespace,
+										Key:       b.basicAuthSecretUserKey,
+									},
+								},
 							},
 							Password: telemetryv1alpha1.ValueType{
 								Value: b.basicAuthPassword,
+								ValueFrom: &telemetryv1alpha1.ValueFromSource{
+									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+										Name:      b.basicAuthSecretName,
+										Namespace: b.basicAuthSecretNamespace,
+										Key:       b.basicAuthSecretPasswordKey,
+									},
+								},
 							},
 						},
 					},
