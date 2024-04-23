@@ -7,9 +7,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
@@ -17,15 +17,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics mTLS", Label("metrics"), func() {
+var _ = Describe("Metrics mTLS with invalid certificate", Label("metrics"), func() {
 	const (
-		mockBackendName = "metric-tls-receiver"
-		mockNs          = "metric-mocks-tls-pipeline"
-		telemetrygenNs  = "metric-mtls"
+		mockBackendName = "metrics-tls-receiver"
+		mockNs          = "metrics-mocks-invalid-tls"
+		telemetrygenNs  = "metrics-invalid-mtls-cert"
 	)
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		pipelineName string
 	)
 
 	makeResources := func() []client.Object {
@@ -34,12 +33,13 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
 		)
 
-		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(mockBackendName, mockNs).Build()
+		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(mockBackendName, mockNs).
+			WithInvalidClientCert().
+			Build()
 		Expect(err).ToNot(HaveOccurred())
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
@@ -54,7 +54,7 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 		return objs
 	}
 
-	Context("When a metricpipeline with TLS activated exists", Ordered, func() {
+	Context("When a metric pipeline with invalid TLS Cert is created", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -64,16 +64,17 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have running pipelines", func() {
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+		It("Should not have running pipelines", func() {
+			verifiers.MetricPipelineShouldNotBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a metric backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+		It("Should have a tlsCertificateInvalid Condition set in pipeline conditions", func() {
+			verifiers.MetricPipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateInvalid)
 		})
 
-		It("Should deliver telemetrygen metrics", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs, telemetrygen.MetricNames)
+		It("Should have telemetryCR showing tls certificate expired for metric component in its status", func() {
+			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "MetricComponentsHealthy", conditions.ReasonTLSCertificateInvalid, false)
 		})
+
 	})
 })
