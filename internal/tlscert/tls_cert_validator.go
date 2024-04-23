@@ -5,6 +5,8 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
+	"fmt"
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -13,8 +15,6 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 
 	_ "crypto"
-	"errors"
-	"fmt"
 )
 
 var (

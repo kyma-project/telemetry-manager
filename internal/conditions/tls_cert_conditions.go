@@ -1,12 +1,13 @@
 package conditions
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
-	"errors"
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 func EvaluateTLSCertCondition(errValidation error) (status metav1.ConditionStatus, reason, message string) {
