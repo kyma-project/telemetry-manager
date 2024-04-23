@@ -22,7 +22,7 @@ func NewCertBuilder(serverName, serverNamespace string) *CertBuilder {
 	return &CertBuilder{
 		serverDNSName:   serverName + "." + serverNamespace + ".svc.cluster.local",
 		clientNotBefore: time.Now(),
-		clientNotAfter:  time.Now().Add(time.Hour),
+		clientNotAfter:  time.Now().AddDate(0, 0, 30),
 	}
 }
 
@@ -41,11 +41,13 @@ type ClientCerts struct {
 }
 
 func (c *CertBuilder) WithExpiredClientCert() *CertBuilder {
-	return &CertBuilder{clientNotBefore: time.Now(), clientNotAfter: time.Now().AddDate(0, 0, -7)}
+	c.clientNotAfter = time.Now().AddDate(0, 0, -7)
+	return c
 }
 
 func (c *CertBuilder) WithAboutToExpireClientCert() *CertBuilder {
-	return &CertBuilder{clientNotBefore: time.Now(), clientNotAfter: time.Now().AddDate(0, 0, 7)}
+	c.clientNotAfter = time.Now().AddDate(0, 0, 7)
+	return c
 }
 
 func (c *CertBuilder) WithInvalidClientCert() *CertBuilder {
