@@ -3,11 +3,14 @@
 package e2e
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
@@ -15,44 +18,47 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs mTLS", Label("logs"), Ordered, func() {
+var _ = Describe("Logs mTLS with certificates expiring within 2 weeks", Label("logs"), func() {
 	const (
 		mockBackendName = "logs-tls-receiver"
-		mockNs          = "logs-mtls"
-		logProducerName = "log-producer-mtls"
-		pipelineName    = "pipeline-mtls-test"
+		mockNs          = "logs-mocks-2week-tls-pipeline"
+		logProducerName = "http-output-pipeline-alpha1"
 	)
-	var telemetryExportURL string
+	var (
+		pipelineName       string
+		telemetryExportURL string
+	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(mockBackendName, mockNs).Build()
+		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(mockBackendName, mockNs).
+			WithAboutToExpireClientCert().
+			Build()
 		Expect(err).ToNot(HaveOccurred())
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
-		mockLogProducer := loggen.New(logProducerName, mockNs)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-mtls-test")))
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
+		logPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
 			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
 			WithTLS(*clientCerts)
+		pipelineName = logPipeline.Name()
 
-		objs = append(objs, pipeline.K8sObject())
+		mockLogProducer := loggen.New(logProducerName, mockNs)
+		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
+
+		objs = append(objs,
+			logPipeline.K8sObject(),
+		)
+
 		return objs
 	}
 
-	Context("Before deploying a logpipeline", func() {
-		It("Should have a healthy webhook", func() {
-			verifiers.WebhookShouldBeHealthy(ctx, k8sClient)
-		})
-	})
-
-	Context("When a logpipeline with TLS activated exists", Ordered, func() {
+	Context("When a log pipeline with TLS Cert expiring within 2 weeks is activated", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -62,19 +68,27 @@ var _ = Describe("Logs mTLS", Label("logs"), Ordered, func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running logpipeline", func() {
+		It("Should have running pipelines", func() {
 			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a log backend running", func() {
+		It("Should have a tlsCertAboutToExpire Condition set in pipeline conditions", func() {
+			verifiers.LogPipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateAboutToExpire)
+		})
+
+		It("Should have telemetryCR showing correct condition in its status", func() {
+			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateAboutToExpire, true)
+		})
+
+		It("Should have a log backend running", Label(operationalTest), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
 		})
 
-		It("Should have a log producer running", func() {
+		It("Should have a log producer running", Label(operationalTest), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
 		})
 
-		It("Should have log-producer logs in the backend", func() {
+		It("Should have produced logs in the backend", Label(operationalTest), func() {
 			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
 		})
 	})
