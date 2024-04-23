@@ -89,7 +89,7 @@ func TracePipelineShouldNotBeHealthy(ctx context.Context, k8sClient client.Clien
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func TracePipelineWithTLSCertCondition(ctx context.Context, k8sClient client.Client, pipelineName string, tlsCondition string) {
+func TracePipelineShouldHaveTLSCondition(ctx context.Context, k8sClient client.Client, pipelineName string, tlsCondition string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.TracePipeline
 		key := types.NamespacedName{Name: pipelineName}

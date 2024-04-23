@@ -69,11 +69,11 @@ var _ = Describe("Logs mTLS with expired certificate", Label("logs"), func() {
 		})
 
 		It("Should have a tls certificate expired Condition set in pipeline conditions", func() {
-			verifiers.LogPipelineWithTLSCertCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateExpired)
+			verifiers.LogPipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateExpired)
 		})
 
 		It("Should have telemetryCR showing tls certificate expired for log component in its status", func() {
-			verifiers.TelemetryCRShouldHaveTLSConditionForPipeline(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateExpired, false)
+			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateExpired, false)
 		})
 
 	})

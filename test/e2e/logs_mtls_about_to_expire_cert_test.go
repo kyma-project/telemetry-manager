@@ -72,11 +72,11 @@ var _ = Describe("Logs mTLS with certificates expiring within 2 weeks", Label("l
 		})
 
 		It("Should have a tlsCertAboutToExpire Condition set in pipeline conditions", func() {
-			verifiers.LogPipelineWithTLSCertCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateAboutToExpire)
+			verifiers.LogPipelineShouldHaveTLSCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateAboutToExpire)
 		})
 
 		It("Should have telemetryCR showing correct condition in its status", func() {
-			verifiers.TelemetryCRShouldHaveTLSConditionForPipeline(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateAboutToExpire, true)
+			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateAboutToExpire, true)
 		})
 
 		It("Should have a log backend running", Label(operationalTest), func() {

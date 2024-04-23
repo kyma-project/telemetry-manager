@@ -54,7 +54,7 @@ func LogPipelineShouldNotBeHealthy(ctx context.Context, k8sClient client.Client,
 }
 
 //nolint:dupl // This provides a better readability for the test as we can test the TLS condition in a clear way
-func LogPipelineWithTLSCertCondition(ctx context.Context, k8sClient client.Client, pipelineName string, tlsCondition string) {
+func LogPipelineShouldHaveTLSCondition(ctx context.Context, k8sClient client.Client, pipelineName string, tlsCondition string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
