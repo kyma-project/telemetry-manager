@@ -9,7 +9,7 @@ spec:
   group: telemetry.kyma-project.io
   names:
     categories:
-    - telemetry
+    - telemetry-pipelines
     kind: LogPipeline
     listKind: LogPipelineList
     plural: logpipelines
