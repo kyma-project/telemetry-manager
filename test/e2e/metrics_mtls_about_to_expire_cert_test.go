@@ -52,7 +52,7 @@ var _ = Describe("Metrics mTLS with certificates expiring within 2 weeks", Label
 		return objs
 	}
 
-	Context("When a metric pipeline with TLS Cert expiring in 1 week is activated", Ordered, func() {
+	Context("When a metric pipeline with TLS Cert expiring within 2 weeks is activated", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 

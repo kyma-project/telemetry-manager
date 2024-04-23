@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces mTLS with invalid certificate", Label("tracing"), func() {
+var _ = Describe("Traces mTLS with invalid certificate", Label("traces"), func() {
 	const (
 		mockBackendName = "traces-tls-receiver"
 		mockNs          = "traces-mocks-invalid-tls"
@@ -75,7 +75,7 @@ var _ = Describe("Traces mTLS with invalid certificate", Label("tracing"), func(
 			verifiers.TracePipelineShouldNotBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a tls certificate invalid Condition set in pipeline conditions", func() {
+		It("Should have a tlsCertificateInvalid Condition set in pipeline conditions", func() {
 			verifiers.TracePipelineWithTLSCertCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateInvalid)
 		})
 

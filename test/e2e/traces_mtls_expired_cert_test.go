@@ -17,7 +17,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces mTLS with expired certificate", Label("tracing"), func() {
+var _ = Describe("Traces mTLS with expired certificate", Label("traces"), func() {
 	const (
 		mockBackendName = "traces-tls-receiver"
 		mockNs          = "traces-mocks-expired-tls"
@@ -63,7 +63,7 @@ var _ = Describe("Traces mTLS with expired certificate", Label("tracing"), func(
 			verifiers.TracePipelineShouldNotBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a tls certificate expired Condition set in pipeline conditions", func() {
+		It("Should have a tlsCertificateExpired Condition set in pipeline conditions", func() {
 			verifiers.TracePipelineWithTLSCertCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateExpired)
 		})
 

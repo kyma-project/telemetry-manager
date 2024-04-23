@@ -22,8 +22,7 @@ var _ = Describe("Logs mTLS with certificates expiring within 2 weeks", Label("l
 	const (
 		mockBackendName = "logs-tls-receiver"
 		mockNs          = "logs-mocks-2week-tls-pipeline"
-		logProducerName = "http-output-pipeline-alpha1" //#nosec G101 -- This is a false positive
-
+		logProducerName = "http-output-pipeline-alpha1"
 	)
 	var (
 		pipelineName       string
@@ -54,7 +53,7 @@ var _ = Describe("Logs mTLS with certificates expiring within 2 weeks", Label("l
 		return objs
 	}
 
-	Context("When a log pipeline with TLS Cert expiring in 1 week is activated", Ordered, func() {
+	Context("When a log pipeline with TLS Cert expiring within 2 weeks is activated", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 

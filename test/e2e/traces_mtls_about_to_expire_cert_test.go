@@ -18,7 +18,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces mTLS with certificates expiring within 2 weeks", Label("tracing"), func() {
+var _ = Describe("Traces mTLS with certificates expiring within 2 weeks", Label("traces"), func() {
 	const (
 		mockBackendName = "traces-tls-receiver"
 		mockNs          = "traces-mocks-2week-tls-pipeline"
@@ -52,7 +52,7 @@ var _ = Describe("Traces mTLS with certificates expiring within 2 weeks", Label(
 		return objs
 	}
 
-	Context("When a trace pipeline with TLS Cert expiring in 1 week is activated", Ordered, func() {
+	Context("When a trace pipeline with TLS Cert expiring within 2 weeks is activated", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
