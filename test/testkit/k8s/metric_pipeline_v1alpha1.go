@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
+	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 )
 
 type metricPipelineV1Alpha1 struct {
@@ -149,7 +149,7 @@ func (p *metricPipelineV1Alpha1) IstioInputDiagnosticMetrics(enable bool) *metri
 	return p
 }
 
-func (p *metricPipelineV1Alpha1) WithTLS(certs tls.Certs) *metricPipelineV1Alpha1 {
+func (p *metricPipelineV1Alpha1) WithTLS(certs tlsgen.ClientCerts) *metricPipelineV1Alpha1 {
 	p.tls = &telemetryv1alpha1.OtlpTLS{
 		Insecure:           false,
 		InsecureSkipVerify: false,

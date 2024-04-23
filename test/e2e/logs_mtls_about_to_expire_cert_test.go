@@ -4,8 +4,6 @@ package e2e
 
 import (
 	"fmt"
-	"time"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
@@ -15,6 +13,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -33,14 +32,19 @@ var _ = Describe("Logs mTLS with certificates expiring within 2 weeks", Label("l
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithTLS(time.Now(), time.Now().AddDate(0, 0, 7)))
+		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(mockBackendName, mockNs).
+			WithAboutToExpireClientCert().
+			Build()
+		Expect(err).ToNot(HaveOccurred())
+
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
 			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
-			WithTLS(mockBackend.TLSCerts)
+			WithTLS(*clientCerts)
 		pipelineName = logPipeline.Name()
 
 		mockLogProducer := loggen.New(logProducerName, mockNs)

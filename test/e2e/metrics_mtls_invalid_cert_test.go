@@ -3,10 +3,7 @@
 package e2e
 
 import (
-	"bytes"
 	"fmt"
-	"time"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,8 +11,8 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -35,22 +32,17 @@ var _ = Describe("Metrics mTLS with invalid certificate", Label("metrics"), func
 			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
 		)
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS(time.Now(), time.Now().AddDate(0, 0, 7)))
-		objs = append(objs, mockBackend.K8sObjects()...)
-		buf := bytes.Buffer{}
-		buf.WriteString("invalid cert")
+		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(mockBackendName, mockNs).
+			WithInvalidClientCert().
+			Build()
+		Expect(err).ToNot(HaveOccurred())
 
-		certs := tls.Certs{
-			CaCertPem:     buf,
-			ServerCertPem: buf,
-			ServerKeyPem:  buf,
-			ClientCertPem: buf,
-			ClientKeyPem:  buf,
-		}
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
+		objs = append(objs, mockBackend.K8sObjects()...)
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
-			WithTLS(certs)
+			WithTLS(*clientCerts)
 		pipelineName = metricPipeline.Name()
 
 		objs = append(objs,

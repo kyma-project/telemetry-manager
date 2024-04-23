@@ -4,8 +4,6 @@ package e2e
 
 import (
 	"fmt"
-	"time"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,6 +12,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -33,12 +32,17 @@ var _ = Describe("Metrics mTLS with expired certificate", Label("metrics"), func
 			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
 		)
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS(time.Now(), time.Now().AddDate(0, 0, -7)))
+		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(mockBackendName, mockNs).
+			WithExpiredClientCert().
+			Build()
+		Expect(err).ToNot(HaveOccurred())
+
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
 		objs = append(objs, mockBackend.K8sObjects()...)
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
-			WithTLS(mockBackend.TLSCerts)
+			WithTLS(*clientCerts)
 		pipelineName = metricPipeline.Name()
 
 		objs = append(objs,

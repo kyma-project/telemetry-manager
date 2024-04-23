@@ -3,8 +3,6 @@
 package e2e
 
 import (
-	"time"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
@@ -13,6 +11,7 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -29,7 +28,10 @@ var _ = Describe("Logs mTLS", Label("logs"), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithTLS(time.Now(), time.Now().AddDate(0, 0, 30)))
+		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(mockBackendName, mockNs).Build()
+		Expect(err).ToNot(HaveOccurred())
+
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
 		mockLogProducer := loggen.New(logProducerName, mockNs)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-mtls-test")))
@@ -38,7 +40,7 @@ var _ = Describe("Logs mTLS", Label("logs"), Ordered, func() {
 		pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
 			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
-			WithTLS(mockBackend.TLSCerts)
+			WithTLS(*clientCerts)
 
 		objs = append(objs, pipeline.K8sObject())
 		return objs

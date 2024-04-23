@@ -3,17 +3,15 @@ package backend
 import (
 	"fmt"
 	"path/filepath"
-	"strconv"
-	"time"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/fluentd"
-	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
+	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 )
 
 type SignalType string
@@ -36,21 +34,13 @@ type Backend struct {
 	signalType SignalType
 
 	persistentHostSecret bool
-	withTLS              bool
-	TLSCerts             tls.Certs
-	tlsOptions           TLSOptions
+	certs                *tlsgen.ServerCerts
 
 	ConfigMap        *ConfigMap
 	FluentDConfigMap *fluentd.ConfigMap
 	Deployment       *Deployment
 	ExternalService  *ExternalService
 	HostSecret       *kitk8s.Secret
-}
-
-type TLSOptions struct {
-	timeFrom time.Time
-	timeUpto time.Time
-	invalid  bool
 }
 
 func New(name, namespace string, signalType SignalType, opts ...Option) *Backend {
@@ -69,18 +59,9 @@ func New(name, namespace string, signalType SignalType, opts ...Option) *Backend
 	return backend
 }
 
-func WithTLS(timeFrom, timeUpto time.Time) Option {
+func WithTLS(certKey tlsgen.ServerCerts) Option {
 	return func(b *Backend) {
-		b.withTLS = true
-		b.tlsOptions.timeFrom = timeFrom
-		b.tlsOptions.timeUpto = timeUpto
-	}
-}
-
-func WithInvalidTLS() Option {
-	return func(b *Backend) {
-		b.withTLS = true
-		b.tlsOptions.invalid = true
+		b.certs = &certKey
 	}
 }
 
@@ -91,31 +72,13 @@ func WithPersistentHostSecret(persistentHostSecret bool) Option {
 }
 
 func (b *Backend) buildResources() {
-
-	if b.withTLS {
-		var certs tls.Certs
-		var err error
-		backendDNSName := fmt.Sprintf("%s.%s.svc.cluster.local", b.name, b.namespace)
-		tlsCrt := tls.NewCerts()
-		if b.tlsOptions.invalid {
-			certs, err = tlsCrt.WithExpiry(b.tlsOptions.timeFrom, b.tlsOptions.timeUpto).GenerateTLSCerts(backendDNSName)
-		} else {
-			certs, err = tlsCrt.WithExpiry(b.tlsOptions.timeFrom, b.tlsOptions.timeUpto).GenerateTLSCerts(backendDNSName)
-		}
-
-		if err != nil {
-			panic(fmt.Errorf("could not generate TLS certs: %w", err))
-		}
-		b.TLSCerts = certs
-	}
-
 	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), TelemetryDataFilename)
 
-	b.ConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.withTLS, b.TLSCerts)
+	b.ConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.certs)
 	b.Deployment = NewDeployment(b.name, b.namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(HTTPWebPort)})
 
 	if b.signalType == SignalTypeLogs {
-		b.FluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.withTLS, b.TLSCerts)
+		b.FluentDConfigMap = fluentd.NewConfigMap(fmt.Sprintf("%s-receiver-config-fluentd", b.name), b.namespace, b.certs)
 		b.Deployment.WithFluentdConfigName(b.FluentDConfigMap.Name())
 	}
 
