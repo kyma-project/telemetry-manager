@@ -447,7 +447,13 @@ func TestUpdateStatus(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				pipeline := testutils.NewTracePipelineBuilder().Build()
 				if tt.missingSecret {
-					pipeline = testutils.NewTracePipelineBuilder().WithBasicAuthFromSecret("unknown", "unknown", "user", "password").Build()
+					pipeline.Spec.Output.Otlp.Endpoint.ValueFrom = &telemetryv1alpha1.ValueFromSource{
+						SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+							Name:      "unknown",
+							Namespace: "unknown",
+							Key:       "unknown",
+						},
+					}
 				}
 
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
