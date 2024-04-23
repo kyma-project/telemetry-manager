@@ -44,10 +44,11 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 	}
 
 	r.setAgentHealthyCondition(ctx, &pipeline)
-	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
+
+	configGenerated := r.setAgentConfigGeneratedCondition(ctx, &pipeline)
 
 	if r.flowHealthProbingEnabled {
-		r.setFlowHealthCondition(ctx, &pipeline)
+		r.setFlowHealthCondition(ctx, &pipeline, configGenerated)
 	}
 
 	r.setLegacyConditions(ctx, &pipeline)
@@ -96,7 +97,7 @@ func (r *Reconciler) setAgentHealthyCondition(ctx context.Context, pipeline *tel
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+func (r *Reconciler) setAgentConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) bool {
 	status, reason, message := r.evaluateConfigGeneratedCondition(ctx, pipeline)
 
 	condition := metav1.Condition{
@@ -108,6 +109,7 @@ func (r *Reconciler) setFluentBitConfigGeneratedCondition(ctx context.Context, p
 	}
 
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
+	return status == metav1.ConditionTrue
 }
 
 func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) (status metav1.ConditionStatus, reason string, message string) {
@@ -130,25 +132,30 @@ func (r *Reconciler) evaluateConfigGeneratedCondition(ctx context.Context, pipel
 	return metav1.ConditionTrue, conditions.ReasonConfigurationGenerated, conditions.MessageForMetricPipeline(conditions.ReasonConfigurationGenerated)
 }
 
-func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline) {
+func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telemetryv1alpha1.LogPipeline, configGenerated bool) {
 	var reason string
 	var status metav1.ConditionStatus
 
-	probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
-	if err == nil {
-		logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
-
-		reason = flowHealthReasonFor(probeResult)
-		if probeResult.Healthy {
-			status = metav1.ConditionTrue
-		} else {
-			status = metav1.ConditionFalse
-		}
-	} else {
-		logf.FromContext(ctx).Error(err, "Failed to probe flow health")
-
+	if !configGenerated {
 		reason = conditions.ReasonFlowHealthy
 		status = metav1.ConditionUnknown
+	} else {
+		probeResult, err := r.flowHealthProber.Probe(ctx, pipeline.Name)
+		if err == nil {
+			logf.FromContext(ctx).V(1).Info("Probed flow health", "result", probeResult)
+
+			reason = mapProbeResultToReason(probeResult)
+			if probeResult.Healthy {
+				status = metav1.ConditionTrue
+			} else {
+				status = metav1.ConditionFalse
+			}
+		} else {
+			logf.FromContext(ctx).Error(err, "Failed to probe flow health")
+
+			reason = conditions.ReasonFlowHealthy
+			status = metav1.ConditionUnknown
+		}
 	}
 
 	condition := metav1.Condition{
@@ -162,7 +169,7 @@ func (r *Reconciler) setFlowHealthCondition(ctx context.Context, pipeline *telem
 	meta.SetStatusCondition(&pipeline.Status.Conditions, condition)
 }
 
-func flowHealthReasonFor(probeResult prober.LogPipelineProbeResult) string {
+func mapProbeResultToReason(probeResult prober.LogPipelineProbeResult) string {
 	switch {
 	case probeResult.AllDataDropped:
 		return conditions.ReasonAllDataDropped

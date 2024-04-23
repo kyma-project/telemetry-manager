@@ -40,10 +40,13 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	}
 
 	r.setGatewayHealthyCondition(ctx, &pipeline)
+
 	configGenerated := r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
+
 	if r.flowHealthProbingEnabled {
 		r.setFlowHealthCondition(ctx, &pipeline, configGenerated)
 	}
+
 	r.setLegacyConditions(ctx, &pipeline, withinPipelineCountLimit)
 
 	if err := r.Status().Update(ctx, &pipeline); err != nil {

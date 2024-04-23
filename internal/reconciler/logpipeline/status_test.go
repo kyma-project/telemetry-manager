@@ -305,6 +305,7 @@ func TestUpdateStatus(t *testing.T) {
 			name           string
 			probe          prober.LogPipelineProbeResult
 			probeErr       error
+			missingSecret  bool
 			expectedStatus metav1.ConditionStatus
 			expectedReason string
 		}{
@@ -383,11 +384,29 @@ func TestUpdateStatus(t *testing.T) {
 				expectedStatus: metav1.ConditionFalse,
 				expectedReason: conditions.ReasonAllDataDropped,
 			},
+			{
+				name:           "unknown if missing secret",
+				missingSecret:  true,
+				expectedStatus: metav1.ConditionUnknown,
+				expectedReason: conditions.ReasonFlowHealthy,
+			},
 		}
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				pipeline := testutils.NewLogPipelineBuilder().Build()
+				if tt.missingSecret {
+					pipeline.Spec.Output.HTTP.Host = telemetryv1alpha1.ValueType{
+						ValueFrom: &telemetryv1alpha1.ValueFromSource{
+							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+								Name:      "unknown",
+								Namespace: "unknown",
+								Key:       "unknown",
+							},
+						},
+					}
+				}
+
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				agentProberStub := &mocks.DaemonSetProber{}

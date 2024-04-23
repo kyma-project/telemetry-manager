@@ -42,7 +42,15 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: telemetryv1alpha1.LogPipelineSpec{},
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			Output: telemetryv1alpha1.Output{
+				HTTP: &telemetryv1alpha1.HTTPOutput{
+					Host: telemetryv1alpha1.ValueType{
+						Value: "localhost",
+					},
+				},
+			},
+		},
 		Status: telemetryv1alpha1.LogPipelineStatus{
 			Conditions: b.statusConditions,
 		},

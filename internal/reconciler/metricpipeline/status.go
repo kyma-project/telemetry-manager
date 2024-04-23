@@ -33,7 +33,9 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string, with
 	}
 
 	r.setAgentHealthyCondition(ctx, &pipeline)
+
 	r.setGatewayHealthyCondition(ctx, &pipeline)
+
 	configGenerated := r.setGatewayConfigGeneratedCondition(ctx, &pipeline, withinPipelineCountLimit)
 
 	if r.flowHealthProbingEnabled {
