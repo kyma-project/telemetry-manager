@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,91 +13,125 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
 
 	_ "crypto"
+	"errors"
+	"fmt"
 )
 
-type TLSCertValidator struct {
+var (
+	ErrCertDecodeFailed = errors.New("failed to decode PEM block containing cert")
+	ErrCertParseFailed  = errors.New("failed to parse certificate")
+
+	ErrKeyDecodeFailed = errors.New("failed to decode PEM block containing private key")
+	ErrKeyParseFailed  = errors.New("failed to parse private key")
+
+	ErrValueResolveFailed = errors.New("failed to resolve value")
+)
+
+const twoWeeks = time.Hour * 24 * 7 * 2
+
+type CertExpiredError struct {
+	Expiry time.Time
+}
+
+func (cee *CertExpiredError) Error() string {
+	return fmt.Sprintf("cert expired on %s", cee.Expiry)
+}
+
+func IsCertExpiredError(err error) bool {
+	var errCertExpired *CertExpiredError
+	return errors.As(err, &errCertExpired)
+}
+
+type CertAboutToExpireError struct {
+	Expiry time.Time
+}
+
+func (cate *CertAboutToExpireError) Error() string {
+	return fmt.Sprintf("cert is about to expire, it is valid until %s", cate.Expiry)
+}
+
+func IsCertAboutToExpireError(err error) bool {
+	var errCertAboutToExpire *CertAboutToExpireError
+	return errors.As(err, &errCertAboutToExpire)
+}
+
+type Validator struct {
 	client client.Reader
+	now    func() time.Time
 }
 
-type TLSCertValidationResult struct {
-	CertValid                   bool
-	CertValidationMessage       string
-	PrivateKeyValid             bool
-	PrivateKeyValidationMessage string
-	Validity                    time.Time
-}
-
-func New(client client.Client) *TLSCertValidator {
-	return &TLSCertValidator{
+func New(client client.Client) *Validator {
+	return &Validator{
 		client: client,
+		now:    time.Now,
 	}
 }
 
-func (tcv *TLSCertValidator) ValidateCertificate(ctx context.Context, certPEM *telemetryv1alpha1.ValueType, keyPEM *telemetryv1alpha1.ValueType) TLSCertValidationResult {
-	result := TLSCertValidationResult{
-		CertValid:       true,
-		PrivateKeyValid: true,
-		Validity:        time.Now().Add(time.Hour * 24 * 365),
-	}
-
-	certData, err := resolveValue(ctx, tcv.client, *certPEM)
+func (v *Validator) ValidateCertificate(ctx context.Context, cert, key *telemetryv1alpha1.ValueType) error {
+	certPEM, err := resolveValue(ctx, v.client, *cert)
 	if err != nil {
-		result.CertValid = false
-		return result
+		return err
 	}
 
-	keyData, err := resolveValue(ctx, tcv.client, *keyPEM)
+	keyPEM, err := resolveValue(ctx, v.client, *key)
 	if err != nil {
-		result.PrivateKeyValid = false
-		return result
+		return err
 	}
 
-	// Make a best effort replacement of linebreaks in cert/key if present.
-	sanitizedCert := bytes.ReplaceAll(certData, []byte("\\n"), []byte("\n"))
-	sanitizedKey := bytes.ReplaceAll(keyData, []byte("\\n"), []byte("\n"))
+	// Make the best effort replacement of linebreaks in cert/key if present.
+	sanitizedCert := bytes.ReplaceAll(certPEM, []byte("\\n"), []byte("\n"))
+	sanitizedKey := bytes.ReplaceAll(keyPEM, []byte("\\n"), []byte("\n"))
 
 	// Parse the certificate
-	cert, err := parseCertificate(sanitizedCert)
+	certExpiry, err := parseCertificate(sanitizedCert)
 	if err != nil {
-		result.CertValid = false
-		result.CertValidationMessage = err.Error()
+		return err
 	}
 
 	// Parse the private key
-	if _, err := parsePrivateKey(sanitizedKey); err != nil {
-		result.PrivateKeyValid = false
-		result.PrivateKeyValidationMessage = err.Error()
+	if err = parsePrivateKey(sanitizedKey); err != nil {
+		return err
 	}
 
-	if result.CertValid && result.PrivateKeyValid {
-		result.Validity = cert.NotAfter
+	if !v.now().Before(certExpiry) {
+		return &CertExpiredError{Expiry: certExpiry}
 	}
 
-	return result
+	if validUntil := time.Until(certExpiry); validUntil > 0 && validUntil <= twoWeeks {
+		return &CertAboutToExpireError{Expiry: certExpiry}
+	}
+
+	return nil
 }
 
-func parseCertificate(certPEM []byte) (*x509.Certificate, error) {
+func parseCertificate(certPEM []byte) (time.Time, error) {
 	block, _ := pem.Decode(certPEM)
 	if block == nil {
-		return nil, fmt.Errorf("failed to decode PEM block containing certificate")
+		return time.Time{}, ErrCertDecodeFailed
 	}
-	return x509.ParseCertificate(block.Bytes)
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return time.Time{}, ErrCertParseFailed
+	}
+
+	return cert.NotAfter, nil
 }
 
-func parsePrivateKey(keyPEM []byte) (interface{}, error) {
+func parsePrivateKey(keyPEM []byte) error {
 	block, _ := pem.Decode(keyPEM)
 	if block == nil {
-		return nil, fmt.Errorf("failed to decode PEM block containing private key")
+		return ErrKeyDecodeFailed
 	}
-	// try to parse as PKCS8 / PRIVATE KEY
-	privateKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 
-	// try to parse as PKCS1 / RSA PRIVATE KEY
+	_, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		return x509.ParsePKCS1PrivateKey(block.Bytes)
+		if _, err = x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
+			return ErrKeyParseFailed
+		}
 	}
 
-	return privateKey, nil
+	return nil
 }
 
 func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.ValueType) ([]byte, error) {
@@ -109,5 +142,5 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 		return secretref.GetValue(ctx, c, *value.ValueFrom.SecretKeyRef)
 	}
 
-	return nil, fmt.Errorf("either value or secret key reference must be defined")
+	return nil, ErrValueResolveFailed
 }

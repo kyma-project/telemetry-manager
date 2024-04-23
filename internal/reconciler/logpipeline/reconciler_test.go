@@ -233,27 +233,17 @@ func TestGetReconcilableLogPipelines(t *testing.T) {
 
 			validatorStub := &mocks.TLSCertValidator{}
 
-			validatorStub.On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "invalidcert"}, &telemetryv1alpha1.ValueType{Value: "somekey"}).Return(tlscert.TLSCertValidationResult{
-				CertValid:       false,
-				PrivateKeyValid: true,
-				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "somecert"}, &telemetryv1alpha1.ValueType{Value: "invalidkey"}).Return(tlscert.TLSCertValidationResult{
-				CertValid:       true,
-				PrivateKeyValid: false,
-				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "valid"}, &telemetryv1alpha1.ValueType{Value: "valid"}).Return(tlscert.TLSCertValidationResult{
-				CertValid:       true,
-				PrivateKeyValid: true,
-				Validity:        time.Now().Add(time.Hour * 24 * 365),
-			}).On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "expired"}, &telemetryv1alpha1.ValueType{Value: "expired"}).Return(tlscert.TLSCertValidationResult{
-				CertValid:       true,
-				PrivateKeyValid: true,
-				Validity:        time.Now().AddDate(-1, -1, -1),
-			})
+			validatorStub.
+				On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "invalidcert"}, &telemetryv1alpha1.ValueType{Value: "somekey"}).Return(tlscert.ErrCertParseFailed).
+				On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "somecert"}, &telemetryv1alpha1.ValueType{Value: "invalidkey"}).Return(tlscert.ErrKeyParseFailed).
+				On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "valid"}, &telemetryv1alpha1.ValueType{Value: "valid"}).Return(nil).
+				On("ValidateCertificate", context.Background(), &telemetryv1alpha1.ValueType{Value: "expired"}, &telemetryv1alpha1.ValueType{Value: "expired"}).Return(&tlscert.CertExpiredError{Expiry: time.Now().Add(-time.Hour)})
+
 			reconciler := Reconciler{
 				Client:           fakeClient,
 				tlsCertValidator: validatorStub,
 			}
+
 			reconcilablePipelines := reconciler.getReconcilablePipelines(ctx, test.pipelines)
 			for _, pipeline := range test.pipelines {
 				if test.reconcilableLogPipelines == true {

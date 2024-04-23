@@ -4,31 +4,28 @@ import (
 	"fmt"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	"errors"
 	"github.com/kyma-project/telemetry-manager/internal/tlscert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const twoWeeks = time.Hour * 24 * 7 * 2
-
-func EvaluateTLSCertCondition(certValidationResult tlscert.TLSCertValidationResult) (status metav1.ConditionStatus, reason, message string) {
-	if !certValidationResult.CertValid {
-		return metav1.ConditionFalse, ReasonTLSCertificateInvalid, fmt.Sprintf(commonMessages[ReasonTLSCertificateInvalid], certValidationResult.CertValidationMessage)
+func EvaluateTLSCertCondition(errValidation error) (status metav1.ConditionStatus, reason, message string) {
+	if errors.Is(errValidation, tlscert.ErrCertDecodeFailed) || errors.Is(errValidation, tlscert.ErrCertParseFailed) {
+		return metav1.ConditionFalse, ReasonTLSCertificateInvalid, fmt.Sprintf(commonMessages[ReasonTLSCertificateInvalid], errValidation)
 	}
 
-	if !certValidationResult.PrivateKeyValid {
-		return metav1.ConditionFalse, ReasonTLSPrivateKeyInvalid, fmt.Sprintf(commonMessages[ReasonTLSPrivateKeyInvalid], certValidationResult.PrivateKeyValidationMessage)
-
+	if errors.Is(errValidation, tlscert.ErrKeyDecodeFailed) || errors.Is(errValidation, tlscert.ErrKeyParseFailed) {
+		return metav1.ConditionFalse, ReasonTLSPrivateKeyInvalid, fmt.Sprintf(commonMessages[ReasonTLSPrivateKeyInvalid], errValidation)
 	}
 
-	if time.Now().After(certValidationResult.Validity) {
-		return metav1.ConditionFalse, ReasonTLSCertificateExpired, fmt.Sprintf(commonMessages[ReasonTLSCertificateExpired], certValidationResult.Validity.Format(time.DateOnly))
+	var errCertExpired *tlscert.CertExpiredError
+	if errors.As(errValidation, &errCertExpired) {
+		return metav1.ConditionFalse, ReasonTLSCertificateExpired, fmt.Sprintf(commonMessages[ReasonTLSCertificateExpired], errCertExpired.Expiry.Format(time.DateOnly))
 	}
 
-	//ensure not expired and about to expire
-	validUntil := time.Until(certValidationResult.Validity)
-	if validUntil > 0 && validUntil <= twoWeeks {
-		return metav1.ConditionTrue, ReasonTLSCertificateAboutToExpire, fmt.Sprintf(commonMessages[ReasonTLSCertificateAboutToExpire], certValidationResult.Validity.Format(time.DateOnly))
+	var errCertAboutToExpire *tlscert.CertAboutToExpireError
+	if errors.As(errValidation, &errCertAboutToExpire) {
+		return metav1.ConditionTrue, ReasonTLSCertificateAboutToExpire, fmt.Sprintf(commonMessages[ReasonTLSCertificateAboutToExpire], errCertAboutToExpire.Expiry.Format(time.DateOnly))
 	}
 
 	return metav1.ConditionTrue, ReasonConfigurationGenerated, ""

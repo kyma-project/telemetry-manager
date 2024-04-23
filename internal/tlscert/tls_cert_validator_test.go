@@ -2,17 +2,20 @@ package tlscert
 
 import (
 	"context"
-	"testing"
-	"time"
-
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"testing"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"time"
+)
+
+var (
+	// certNotAfter is a time when the certificate expires
+	certNotAfter = time.Date(2024, time.March, 19, 14, 24, 14, 0, time.UTC)
 )
 
 func TestExpiredCertificate(t *testing.T) {
-
 	certData := []byte(`-----BEGIN CERTIFICATE-----
 MIICNjCCAZ+gAwIBAgIBADANBgkqhkiG9w0BAQ0FADA4MQswCQYDVQQGEwJ1czEL
 MAkGA1UECAwCTlkxDTALBgNVBAoMBFRlc3QxDTALBgNVBAMMBFRlc3QwHhcNMjQw
@@ -46,7 +49,10 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 -----END PRIVATE KEY-----`)
 
 	fakeClient := fake.NewClientBuilder().Build()
-	validator := New(fakeClient)
+	validator := Validator{
+		client: fakeClient,
+		now:    func() time.Time { return certNotAfter },
+	}
 
 	cert := telemetryv1alpha1.ValueType{
 		Value: string(certData),
@@ -56,12 +62,13 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 		Value: string(keyData),
 	}
 
-	validationResult := validator.ValidateCertificate(context.TODO(), &cert, &key)
-
-	require.True(t, time.Now().After(validationResult.Validity), "Certificate is not expired")
+	err := validator.ValidateCertificate(context.Background(), &cert, &key)
+	require.ErrorIs(t, err, &CertExpiredError{
+		Expiry: certNotAfter,
+	})
 }
 
-func TestCertificateAndPrivateKeyValidity(t *testing.T) {
+func TestValidCertificateAndPrivateKey(t *testing.T) {
 
 	certData := []byte(`-----BEGIN CERTIFICATE-----
 MIICNjCCAZ+gAwIBAgIBADANBgkqhkiG9w0BAQ0FADA4MQswCQYDVQQGEwJ1czEL
@@ -96,7 +103,10 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 -----END PRIVATE KEY-----`)
 
 	fakeClient := fake.NewClientBuilder().Build()
-	validator := New(fakeClient)
+	validator := Validator{
+		client: fakeClient,
+		now:    func() time.Time { return certNotAfter.Add(-24 * time.Hour) },
+	}
 
 	cert := telemetryv1alpha1.ValueType{
 		Value: string(certData),
@@ -106,10 +116,8 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 		Value: string(keyData),
 	}
 
-	validationResult := validator.ValidateCertificate(context.TODO(), &cert, &key)
-
-	require.True(t, validationResult.CertValid, "Certificate is not valid")
-	require.True(t, validationResult.PrivateKeyValid, "Private Key is not valid")
+	err := validator.ValidateCertificate(context.Background(), &cert, &key)
+	require.NoError(t, err)
 }
 
 func TestInvalidCertificate(t *testing.T) {
@@ -146,7 +154,10 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 5VAuzWx+wV5WwQ==
 -----END PRIVATE KEY-----`)
 	fakeClient := fake.NewClientBuilder().Build()
-	validator := New(fakeClient)
+	validator := Validator{
+		client: fakeClient,
+		now:    func() time.Time { return certNotAfter.Add(-24 * time.Hour) },
+	}
 
 	cert := telemetryv1alpha1.ValueType{
 		Value: string(certData),
@@ -155,11 +166,9 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 	key := telemetryv1alpha1.ValueType{
 		Value: string(keyData),
 	}
-	ctx := context.TODO()
-	validationResult := validator.ValidateCertificate(ctx, &cert, &key)
 
-	require.False(t, validationResult.CertValid, "Certificate is valid")
-	require.True(t, validationResult.PrivateKeyValid, "Private Key is not valid")
+	err := validator.ValidateCertificate(context.Background(), &cert, &key)
+	require.ErrorIs(t, err, ErrCertDecodeFailed)
 }
 
 func TestInvalidPrivateKey(t *testing.T) {
@@ -207,10 +216,8 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 		Value: string(keyData),
 	}
 
-	validationResult := validator.ValidateCertificate(context.TODO(), &cert, &key)
-
-	require.True(t, validationResult.CertValid, "Certificate is not valid")
-	require.False(t, validationResult.PrivateKeyValid, "Private Key is valid")
+	err := validator.ValidateCertificate(context.Background(), &cert, &key)
+	require.ErrorIs(t, err, ErrKeyDecodeFailed)
 }
 
 func TestSanitizeTLSSecretWithEscapedNewLine(t *testing.T) {
@@ -228,10 +235,8 @@ func TestSanitizeTLSSecretWithEscapedNewLine(t *testing.T) {
 		Value: keyData,
 	}
 
-	validationResult := validator.ValidateCertificate(context.TODO(), &cert, &key)
-
-	require.True(t, validationResult.CertValid)
-	require.True(t, validationResult.PrivateKeyValid)
+	err := validator.ValidateCertificate(context.Background(), &cert, &key)
+	require.NoError(t, err)
 }
 
 func TestSanitizeValidTLSSecret(t *testing.T) {
@@ -248,10 +253,9 @@ func TestSanitizeValidTLSSecret(t *testing.T) {
 	key := telemetryv1alpha1.ValueType{
 		Value: keyData,
 	}
-	validationResult := validator.ValidateCertificate(context.TODO(), &cert, &key)
 
-	require.True(t, validationResult.CertValid)
-	require.True(t, validationResult.PrivateKeyValid)
+	err := validator.ValidateCertificate(context.Background(), &cert, &key)
+	require.NoError(t, err)
 }
 
 func TestMissingCertValue(t *testing.T) {
@@ -259,32 +263,28 @@ func TestMissingCertValue(t *testing.T) {
 	validator := New(fakeClient)
 
 	tests := []struct {
-		name              string
-		inputCert         telemetryv1alpha1.ValueType
-		inputKey          telemetryv1alpha1.ValueType
-		expectedCertValid bool
-		expectedKeyValue  bool
+		name        string
+		inputCert   telemetryv1alpha1.ValueType
+		inputKey    telemetryv1alpha1.ValueType
+		expectedErr error
 	}{
 		{
-			name:              "Cert value is empty",
-			inputCert:         telemetryv1alpha1.ValueType{Value: "", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
-			inputKey:          telemetryv1alpha1.ValueType{Value: "key", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
-			expectedCertValid: false,
-			expectedKeyValue:  true,
+			name:        "Cert value is empty",
+			inputCert:   telemetryv1alpha1.ValueType{Value: "", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
+			inputKey:    telemetryv1alpha1.ValueType{Value: "key", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
+			expectedErr: ErrValueResolveFailed,
 		}, {
-			name:              "Key value is empty",
-			inputCert:         telemetryv1alpha1.ValueType{Value: "Cert", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
-			inputKey:          telemetryv1alpha1.ValueType{Value: "", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
-			expectedCertValid: true,
-			expectedKeyValue:  false,
+			name:        "Key value is empty",
+			inputCert:   telemetryv1alpha1.ValueType{Value: "Cert", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
+			inputKey:    telemetryv1alpha1.ValueType{Value: "", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
+			expectedErr: ErrValueResolveFailed,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			tt := test
-			validationResult := validator.ValidateCertificate(context.TODO(), &tt.inputCert, &tt.inputKey)
-			require.Equal(t, tt.expectedCertValid, validationResult.CertValid)
-			require.Equal(t, tt.expectedKeyValue, validationResult.PrivateKeyValid)
+			err := validator.ValidateCertificate(context.TODO(), &tt.inputCert, &tt.inputKey)
+			require.ErrorIs(t, err, tt.expectedErr)
 		})
 	}
 
