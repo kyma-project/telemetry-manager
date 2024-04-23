@@ -41,6 +41,7 @@ func LogPipelineShouldBeHealthy(ctx context.Context, k8sClient client.Client, pi
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
+//nolint:dupl // This provides a better readability for the test as we know pipeline should not be healthy
 func LogPipelineShouldNotBeHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
@@ -52,6 +53,7 @@ func LogPipelineShouldNotBeHealthy(ctx context.Context, k8sClient client.Client,
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
+//nolint:dupl // This provides a better readability for the test as we can test the TLS condition in a clear way
 func LogPipelineWithTLSCertCondition(ctx context.Context, k8sClient client.Client, pipelineName string, tlsCondition string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline

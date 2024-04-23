@@ -3,19 +3,21 @@ package verifiers
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strings"
+
+	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
 	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
-	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/types"
-	"net/http"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 func TracePipelineShouldBeHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
