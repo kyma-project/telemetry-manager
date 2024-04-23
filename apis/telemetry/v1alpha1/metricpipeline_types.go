@@ -35,7 +35,7 @@ type MetricPipelineList struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster,categories={kyma-modules,telemetry}
+// +kubebuilder:resource:scope=Cluster,categories={telemetry}
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Configuration Generated",type=string,JSONPath=`.status.conditions[?(@.type=="ConfigurationGenerated")].status`
 // +kubebuilder:printcolumn:name="Gateway Healthy",type=string,JSONPath=`.status.conditions[?(@.type=="GatewayHealthy")].status`
