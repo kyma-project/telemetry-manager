@@ -93,11 +93,11 @@ func (v *Validator) ValidateCertificate(ctx context.Context, cert, key *telemetr
 		return err
 	}
 
-	if !v.now().Before(certExpiry) {
+	if v.now().After(certExpiry) {
 		return &CertExpiredError{Expiry: certExpiry}
 	}
 
-	if validUntil := time.Until(certExpiry); validUntil > 0 && validUntil <= twoWeeks {
+	if certExpiry.Sub(v.now()) <= twoWeeks {
 		return &CertAboutToExpireError{Expiry: certExpiry}
 	}
 
