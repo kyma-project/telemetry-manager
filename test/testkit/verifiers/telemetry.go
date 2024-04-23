@@ -63,11 +63,12 @@ func TelemetryReconciliationShouldBeDisabled(ctx context.Context, k8sClient clie
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func TelemetryCRShouldHaveTLSConditionForMetricPipeline(ctx context.Context, k8sClient client.Client, conditionType, tlsReason string, status bool) {
+func TelemetryCRShouldHaveTLSConditionForPipeline(ctx context.Context, k8sClient client.Client, conditionType, tlsReason string, status bool) {
 	Eventually(func(g Gomega) {
 		var telemetryCR telemetryv1alpha1.Telemetry
 		res := types.NamespacedName{Name: "default", Namespace: kitkyma.SystemNamespaceName}
 		g.Expect(k8sClient.Get(ctx, res, &telemetryCR)).To(Succeed())
+		g.Expect(telemetryCR.Status.State).To(Equal(telemetryv1alpha1.StateWarning))
 		g.Expect(meta.IsStatusConditionTrue(telemetryCR.Status.Conditions, conditionType)).To(Equal(status))
 		condition := meta.FindStatusCondition(telemetryCR.Status.Conditions, conditionType)
 		g.Expect(condition.Reason).To(Equal(tlsReason))

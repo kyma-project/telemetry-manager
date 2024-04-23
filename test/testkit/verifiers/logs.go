@@ -52,14 +52,12 @@ func LogPipelineShouldNotBeHealthy(ctx context.Context, k8sClient client.Client,
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func LogPipelineWithInvalidTLSCertCondition(ctx context.Context, k8sClient client.Client, pipelineName string) {
+func LogPipelineWithTLSCertCondition(ctx context.Context, k8sClient client.Client, pipelineName string, tlsCondition string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.LogPipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		g.Expect(meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
 		condition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
-		//g.Expect(condition.Status).To(BeFalse())
-		g.Expect(condition.Reason).To(Equal(conditions.ReasonTLSCertificateInvalid))
+		g.Expect(condition.Reason).To(Equal(tlsCondition))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

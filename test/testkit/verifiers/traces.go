@@ -3,6 +3,12 @@ package verifiers
 import (
 	"context"
 	"fmt"
+	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
+	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
+	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -10,13 +16,6 @@ import (
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
-
-	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/test/testkit/apiserverproxy"
-	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
-	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/trace"
-	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
 func TracePipelineShouldBeHealthy(ctx context.Context, k8sClient client.Client, pipelineName string) {
@@ -88,14 +87,12 @@ func TracePipelineShouldNotBeHealthy(ctx context.Context, k8sClient client.Clien
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
 
-func TracePipelineWithTLSCerExpiredCondition(ctx context.Context, k8sClient client.Client, pipelineName string) {
+func TracePipelineWithTLSCertCondition(ctx context.Context, k8sClient client.Client, pipelineName string, tlsCondition string) {
 	Eventually(func(g Gomega) {
 		var pipeline telemetryv1alpha1.TracePipeline
 		key := types.NamespacedName{Name: pipelineName}
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
-		g.Expect(meta.IsStatusConditionFalse(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)).To(BeTrue())
 		condition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
-		//g.Expect(condition.Status).To(BeFalse())
-		g.Expect(condition.Reason).To(Equal(conditions.ReasonTLSCertificateExpired))
+		g.Expect(condition.Reason).To(Equal(tlsCondition))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

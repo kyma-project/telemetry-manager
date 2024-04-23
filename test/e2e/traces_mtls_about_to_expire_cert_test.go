@@ -18,11 +18,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics mTLS with certificates expiring within 2 weeks", Label("mtls"), func() {
+var _ = Describe("Traces mTLS with certificates expiring within 2 weeks", Label("tracing"), func() {
 	const (
-		mockBackendName = "metric-tls-receiver"
-		mockNs          = "metric-mocks-2week-tls-pipeline"
-		telemetrygenNs  = "metric-mtls-2weeks-to-expire"
+		mockBackendName = "traces-tls-receiver"
+		mockNs          = "traces-mocks-2week-tls-pipeline"
+		telemetrygenNs  = "traces-mtls-2weeks-to-expire"
 	)
 	var (
 		pipelineName       string
@@ -35,24 +35,24 @@ var _ = Describe("Metrics mTLS with certificates expiring within 2 weeks", Label
 			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
 		)
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS(time.Now(), time.Now().AddDate(0, 0, 7)))
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces, backend.WithTLS(time.Now(), time.Now().AddDate(0, 0, 7)))
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
+		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
 			WithTLS(mockBackend.TLSCerts)
-		pipelineName = metricPipeline.Name()
+		pipelineName = tracePipeline.Name()
 
 		objs = append(objs,
-			telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeMetrics).K8sObject(),
-			metricPipeline.K8sObject(),
+			telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeTraces).K8sObject(),
+			tracePipeline.K8sObject(),
 		)
 
 		return objs
 	}
 
-	Context("When a metric pipeline with TLS Cert expiring in 1 week is activated", Ordered, func() {
+	Context("When a trace pipeline with TLS Cert expiring in 1 week is activated", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -63,23 +63,23 @@ var _ = Describe("Metrics mTLS with certificates expiring within 2 weeks", Label
 		})
 
 		It("Should have running pipelines", func() {
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a tlsCertAboutToExpire Condition set in pipeline conditions", func() {
-			verifiers.MetricPipelineWithTLSCerAboutToExpireCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateAboutToExpire)
+		It("Should have a tlsCertificateAboutToExpire Condition set in pipeline conditions", func() {
+			verifiers.TracePipelineWithTLSCertCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateAboutToExpire)
 		})
 
 		It("Should have telemetryCR showing correct condition in its status", func() {
-			verifiers.TelemetryCRShouldHaveTLSConditionForMetricPipeline(ctx, k8sClient, "MetricComponentsHealthy", conditions.ReasonTLSCertificateAboutToExpire, true)
+			verifiers.TelemetryCRShouldHaveTLSConditionForPipeline(ctx, k8sClient, "TraceComponentsHealthy", conditions.ReasonTLSCertificateAboutToExpire, true)
 		})
 
-		It("Should have a metric backend running", func() {
+		It("Should have a trace backend running", func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 		})
 
-		It("Should deliver telemetrygen metrics", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs, telemetrygen.MetricNames)
+		It("Should deliver telemetrygen traces", func() {
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs)
 		})
 	})
 })

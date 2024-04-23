@@ -3,8 +3,10 @@
 package e2e
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
+	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend/tls"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -17,11 +19,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces mTLS with expired certificate", Label("mtls"), func() {
+var _ = Describe("Traces mTLS with invalid certificate", Label("tracing"), func() {
 	const (
 		mockBackendName = "traces-tls-receiver"
-		mockNs          = "traces-mocks-expired-tls"
-		telemetrygenNs  = "trace-expired-mtls-cert"
+		mockNs          = "traces-mocks-invalid-tls"
+		telemetrygenNs  = "traces-invalid-mtls-cert"
 	)
 	var (
 		pipelineName string
@@ -33,24 +35,33 @@ var _ = Describe("Traces mTLS with expired certificate", Label("mtls"), func() {
 			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
 		)
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS(time.Now(), time.Now().AddDate(0, 0, -7)))
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces, backend.WithTLS(time.Now(), time.Now().AddDate(0, 0, 7)))
 		objs = append(objs, mockBackend.K8sObjects()...)
-		//telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		buf := bytes.Buffer{}
+		buf.WriteString("invalid cert")
+
+		certs := tls.Certs{
+			CaCertPem:     buf,
+			ServerCertPem: buf,
+			ServerKeyPem:  buf,
+			ClientCertPem: buf,
+			ClientKeyPem:  buf,
+		}
 
 		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
-			WithTLS(mockBackend.TLSCerts)
+			WithTLS(certs)
 		pipelineName = tracePipeline.Name()
 
 		objs = append(objs,
-			telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeMetrics).K8sObject(),
+			telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeTraces).K8sObject(),
 			tracePipeline.K8sObject(),
 		)
 
 		return objs
 	}
 
-	Context("When a trace pipeline with TLS Cert is expired", Ordered, func() {
+	Context("When a trace pipeline with invalid TLS Cert is created", Ordered, func() {
 		BeforeAll(func() {
 			k8sObjects := makeResources()
 
@@ -64,12 +75,12 @@ var _ = Describe("Traces mTLS with expired certificate", Label("mtls"), func() {
 			verifiers.TracePipelineShouldNotBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should have a tls certificate expired Condition set in pipeline conditions", func() {
-			verifiers.TracePipelineWithTLSCerExpiredCondition(ctx, k8sClient, pipelineName)
+		It("Should have a tls certificate invalid Condition set in pipeline conditions", func() {
+			verifiers.TracePipelineWithTLSCertCondition(ctx, k8sClient, pipelineName, conditions.ReasonTLSCertificateInvalid)
 		})
 
 		It("Should have telemetryCR showing tls certificate expired for trace component in its status", func() {
-			verifiers.TelemetryCRShouldHaveTLSConditionForMetricPipeline(ctx, k8sClient, "TraceComponentsHealthy", conditions.ReasonTLSCertificateExpired, false)
+			verifiers.TelemetryCRShouldHaveTLSConditionForPipeline(ctx, k8sClient, "TraceComponentsHealthy", conditions.ReasonTLSCertificateInvalid, false)
 		})
 
 	})
