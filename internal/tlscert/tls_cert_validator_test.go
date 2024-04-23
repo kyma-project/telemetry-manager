@@ -10,6 +10,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -72,6 +74,7 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 	var certExpiredErr *CertExpiredError
 	require.True(t, errors.As(err, &certExpiredErr))
 	require.Equal(t, certExpiry, certExpiredErr.Expiry)
+	require.EqualError(t, err, "cert expired on 2024-03-19 14:24:14 +0000 UTC")
 }
 
 func TestAboutToExpireCertificate(t *testing.T) {
@@ -159,6 +162,7 @@ ga5H3f7hUBINasQIdOGEAy3clqCBpLj2eUMXHHNxVsVGBnJOEqckn6fg6pcHnhmK
 			var certAboutToExpireErr *CertAboutToExpireError
 			require.True(t, errors.As(err, &certAboutToExpireErr))
 			require.Equal(t, certExpiry, certAboutToExpireErr.Expiry)
+			require.EqualError(t, err, "cert is about to expire, it is valid until 2024-03-19 14:24:14 +0000 UTC")
 		})
 	}
 }
@@ -354,8 +358,19 @@ func TestSanitizeValidTLSSecret(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestMissingCertValue(t *testing.T) {
-	fakeClient := fake.NewClientBuilder().Build()
+func TestResolveValue(t *testing.T) {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"cert": []byte("cert"),
+			"key":  []byte("key"),
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithObjects(secret).Build()
 	validator := New(fakeClient)
 
 	tests := []struct {
@@ -365,15 +380,58 @@ func TestMissingCertValue(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			name:        "Cert value is empty",
-			inputCert:   telemetryv1alpha1.ValueType{Value: "", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
-			inputKey:    telemetryv1alpha1.ValueType{Value: "key", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
+			name: "cert missing",
+			inputCert: telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      "unknown",
+					Namespace: "default",
+					Key:       "cert",
+				}},
+			},
+			inputKey: telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      "test",
+					Namespace: "default",
+					Key:       "key",
+				}},
+			},
 			expectedErr: ErrValueResolveFailed,
-		}, {
-			name:        "Key value is empty",
-			inputCert:   telemetryv1alpha1.ValueType{Value: "Cert", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
-			inputKey:    telemetryv1alpha1.ValueType{Value: "", ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: nil}},
+		},
+		{
+			name: "key missing",
+			inputCert: telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      "test",
+					Namespace: "default",
+					Key:       "cert",
+				}},
+			},
+			inputKey: telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      "unknown",
+					Namespace: "default",
+					Key:       "key",
+				}},
+			},
 			expectedErr: ErrValueResolveFailed,
+		},
+		{
+			name: "certs and key are present",
+			inputCert: telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      "test",
+					Namespace: "default",
+					Key:       "cert",
+				}},
+			},
+			inputKey: telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{
+				SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+					Name:      "test",
+					Namespace: "default",
+					Key:       "key",
+				}},
+			},
+			expectedErr: ErrCertDecodeFailed,
 		},
 	}
 	for _, test := range tests {
