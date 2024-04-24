@@ -3,7 +3,9 @@ package metricpipeline
 import (
 	"context"
 	"errors"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -424,5 +426,78 @@ func TestUpdateStatus(t *testing.T) {
 				require.Equal(t, tt.expectedReason, cond.Reason)
 			})
 		}
+	})
+	t.Run("tls conditions", func(t *testing.T) {
+		tests := []struct {
+			name           string
+			tlsCertErr     error
+			expectedStatus metav1.ConditionStatus
+			expectedReason string
+		}{
+			{
+				name:           "cert expired",
+				tlsCertErr:     &tlscert.CertExpiredError{Expiry: time.Now().Add(-time.Hour)},
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSCertificateExpired,
+			},
+			{
+				name:           "cert about to expire",
+				tlsCertErr:     &tlscert.CertAboutToExpireError{Expiry: time.Now().Add(7 * 24 * time.Hour)},
+				expectedStatus: metav1.ConditionTrue,
+				expectedReason: conditions.ReasonTLSCertificateAboutToExpire,
+			},
+			{
+				name:           "cert decode failed",
+				tlsCertErr:     tlscert.ErrCertDecodeFailed,
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
+			},
+			{
+				name:           "key decode failed",
+				tlsCertErr:     tlscert.ErrKeyDecodeFailed,
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSPrivateKeyInvalid,
+			},
+			{
+				name:           "key parse failed",
+				tlsCertErr:     tlscert.ErrKeyParseFailed,
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSPrivateKeyInvalid,
+			},
+			{
+				name:           "cert parse failed",
+				tlsCertErr:     tlscert.ErrCertParseFailed,
+				expectedStatus: metav1.ConditionFalse,
+				expectedReason: conditions.ReasonTLSCertificateInvalid,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pipeline := testutils.NewMetricPipelineBuilder().WithTLS("fooCert", "fooKey").Build()
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
+
+				gatewayProberStub := &mocks.DeploymentProber{}
+				gatewayProberStub.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
+				tlsStub := &mocks.TLSCertValidator{}
+				tlsStub.On("ValidateCertificate", mock.Anything, mock.Anything, mock.Anything).Return(tt.tlsCertErr)
+
+				sut := Reconciler{
+					Client:           fakeClient,
+					tlsCertValidator: tlsStub,
+					gatewayProber:    gatewayProberStub,
+				}
+
+				err := sut.updateStatus(context.Background(), pipeline.Name, true)
+				require.NoError(t, err)
+
+				var updatedPipeline telemetryv1alpha1.MetricPipeline
+				_ = fakeClient.Get(context.Background(), types.NamespacedName{Name: pipeline.Name}, &updatedPipeline)
+				cond := meta.FindStatusCondition(updatedPipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
+				require.NotNil(t, cond, "could not find condition of type %s", conditions.TypeConfigurationGenerated)
+				require.Equal(t, tt.expectedStatus, cond.Status)
+				require.Equal(t, tt.expectedReason, cond.Reason)
+			})
+		}
+
 	})
 }

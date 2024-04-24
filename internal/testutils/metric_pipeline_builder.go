@@ -26,6 +26,8 @@ type MetricPipelineBuilder struct {
 	basicAuthSecretUserKey     string
 	basicAuthSecretPasswordKey string
 	statusConditions           []metav1.Condition
+	tlsCert                    string
+	tlsKey                     string
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
@@ -178,9 +180,60 @@ func (b *MetricPipelineBuilder) WithBasicAuthFromSecret(secretName, secretNamesp
 	return b
 }
 
+func (b *MetricPipelineBuilder) WithTLS(tlsCert, tlsKey string) *MetricPipelineBuilder {
+	b.tlsCert = tlsCert
+	b.tlsKey = tlsKey
+	return b
+}
+
 func (b *MetricPipelineBuilder) WithStatusCondition(cond metav1.Condition) *MetricPipelineBuilder {
 	b.statusConditions = append(b.statusConditions, cond)
 	return b
+}
+
+func (b *MetricPipelineBuilder) basicAuthOutput() telemetryv1alpha1.MetricPipelineOutput {
+	return telemetryv1alpha1.MetricPipelineOutput{
+		Otlp: &telemetryv1alpha1.OtlpOutput{
+			Endpoint: telemetryv1alpha1.ValueType{
+				Value: b.endpoint,
+			},
+			Authentication: &telemetryv1alpha1.AuthenticationOptions{
+				Basic: &telemetryv1alpha1.BasicAuthOptions{
+					User: telemetryv1alpha1.ValueType{
+						Value: b.basicAuthUser,
+						ValueFrom: &telemetryv1alpha1.ValueFromSource{
+							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+								Name:      b.basicAuthSecretName,
+								Namespace: b.basicAuthSecretNamespace,
+								Key:       b.basicAuthSecretUserKey,
+							},
+						},
+					},
+					Password: telemetryv1alpha1.ValueType{
+						Value: b.basicAuthPassword,
+						ValueFrom: &telemetryv1alpha1.ValueFromSource{
+							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+								Name:      b.basicAuthSecretName,
+								Namespace: b.basicAuthSecretNamespace,
+								Key:       b.basicAuthSecretPasswordKey,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func (b *MetricPipelineBuilder) tlsOutput() telemetryv1alpha1.MetricPipelineOutput {
+	return telemetryv1alpha1.MetricPipelineOutput{
+		Otlp: &telemetryv1alpha1.OtlpOutput{
+			TLS: &telemetryv1alpha1.OtlpTLS{
+				Cert: &telemetryv1alpha1.ValueType{Value: b.tlsCert},
+				Key:  &telemetryv1alpha1.ValueType{Value: b.tlsKey},
+			},
+		},
+	}
 }
 
 func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
@@ -203,39 +256,17 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 				Istio:      b.istio,
 				Otlp:       b.otlp,
 			},
-			Output: telemetryv1alpha1.MetricPipelineOutput{
-				Otlp: &telemetryv1alpha1.OtlpOutput{
-					Endpoint: telemetryv1alpha1.ValueType{
-						Value: b.endpoint,
-					},
-					Authentication: &telemetryv1alpha1.AuthenticationOptions{
-						Basic: &telemetryv1alpha1.BasicAuthOptions{
-							User: telemetryv1alpha1.ValueType{
-								Value: b.basicAuthUser,
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-										Name:      b.basicAuthSecretName,
-										Namespace: b.basicAuthSecretNamespace,
-										Key:       b.basicAuthSecretUserKey,
-									},
-								},
-							},
-							Password: telemetryv1alpha1.ValueType{
-								Value: b.basicAuthPassword,
-								ValueFrom: &telemetryv1alpha1.ValueFromSource{
-									SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-										Name:      b.basicAuthSecretName,
-										Namespace: b.basicAuthSecretNamespace,
-										Key:       b.basicAuthSecretPasswordKey,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
 		},
+	}
+	if !b.isTLSEnabled() {
+		pipeline.Spec.Output = b.basicAuthOutput()
+	} else {
+		pipeline.Spec.Output = b.tlsOutput()
 	}
 
 	return pipeline
+}
+
+func (b *MetricPipelineBuilder) isTLSEnabled() bool {
+	return b.tlsCert != "" && b.tlsKey != ""
 }

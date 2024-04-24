@@ -15,6 +15,8 @@ type LogPipelineBuilder struct {
 
 	name             string
 	statusConditions []metav1.Condition
+	tlsCert          string
+	tlsKey           string
 }
 
 func NewLogPipelineBuilder() *LogPipelineBuilder {
@@ -33,12 +35,29 @@ func (b *LogPipelineBuilder) WithStatusCondition(cond metav1.Condition) *LogPipe
 	return b
 }
 
+func (b *LogPipelineBuilder) WithTLS(tlsCert, tlsKey string) *LogPipelineBuilder {
+	b.tlsCert = tlsCert
+	b.tlsKey = tlsKey
+	return b
+}
+
+func (b *LogPipelineBuilder) WithTLSOutPut() telemetryv1alpha1.Output {
+	return telemetryv1alpha1.Output{
+		HTTP: &telemetryv1alpha1.HTTPOutput{
+			TLSConfig: telemetryv1alpha1.TLSConfig{
+				Cert: &telemetryv1alpha1.ValueType{Value: b.tlsCert},
+				Key:  &telemetryv1alpha1.ValueType{Value: b.tlsKey},
+			},
+		},
+	}
+}
+
 func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 	name := b.name
 	if name == "" {
 		name = fmt.Sprintf("test-%d", b.randSource.Int63())
 	}
-	return telemetryv1alpha1.LogPipeline{
+	logPipeline := telemetryv1alpha1.LogPipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
@@ -47,4 +66,14 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 			Conditions: b.statusConditions,
 		},
 	}
+
+	if b.isTLSEnabled() {
+		logPipeline.Spec.Output = b.WithTLSOutPut()
+	}
+	
+	return logPipeline
+}
+
+func (b *LogPipelineBuilder) isTLSEnabled() bool {
+	return b.tlsCert != "" && b.tlsKey != ""
 }
