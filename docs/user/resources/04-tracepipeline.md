@@ -163,7 +163,7 @@ Reflecting the TracePipeline's data flow in `TelemetryFlowHealthy` condition typ
 
 | Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                       |
 |----------------------|------------------|-------------------|-----------------------------------------------------------------------------------------|
-| TelemetryFlowHealthy | True             | FlowHealthy       | Traces are flowing normally to backend                                                  |
+| TelemetryFlowHealthy | True             | FlowHealthy       | No problems detected in the trace flow                                                  |
 | TelemetryFlowHealthy | False            | GatewayThrottling | Trace collector experiencing high influx: Unable to receive metrics at the current rate |
 | TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                    |
 | TelemetryFlowHealthy | False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting                                   |
