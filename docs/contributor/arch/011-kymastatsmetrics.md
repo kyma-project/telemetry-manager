@@ -17,7 +17,11 @@ This record describes a way to integrate similar functionality to the Telemetry 
 An OpenTelemetry Collector receiver with similar scope as kube-state-metrics is the [Kubernetes Cluster Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver). However, this receiver does not support monitoring custom resources.
 Another available source to monitor changes of arbitrary Kubernetes objects is the [Kubernetes Objects Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sobjectsreceiver). This receiver produces only logs and no metrics.
 
+The OpenTelemetry Collector provides interfaces for enhancements by implementing custom receiver plugins. The OpenTelemetry project provides [documentation](https://opentelemetry.io/docs/collector/building/receiver/) on implementing a custom receiver and adding it to a custom distribution of the Collector.
+
 ## Decision
+
+Due to the restrictions of available telemetry resources for Kubernetes resources, building a custom receiver is the most suitable option.
 
 ### Extended MetricPipeline API
 
@@ -46,14 +50,14 @@ spec:
         value: http://example.com:4317
 ```
 
-Enabling the Kyma input will enable a custom metrics receiver, called `kymastats`, in the telemetry-metric-gateway that produces metrics for the module state and status conditions. 
+Enabling the Kyma input will enable a custom metrics receiver, called `kymastats`, in the telemetry-metric-gateway that produces metrics for the module state and status conditions.
 The receiver configuration will follow the shown example.
 
 ```yaml
 receivers:
   kymastats:
     k8s_cluster:
-        auth_type: serviceAccount 
+        auth_type: serviceAccount
     collection_interval: 30s
     api_groups:
     - operator.kyma-project.io
