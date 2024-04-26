@@ -43,12 +43,13 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
 		)
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
+		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces, backend.WithPersistentHostSecret(isOperational()))
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 
 		pipeline := kitk8s.NewTracePipelineV1Beta1(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Beta1())
+			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Beta1()).
+			Persistent(isOperational())
 		pipelineName = pipeline.Name()
 		objs = append(objs,
 			telemetrygen.New(telemetrygenNs, telemetrygen.SignalTypeTraces).K8sObject(),
@@ -68,11 +69,11 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running trace gateway deployment", func() {
+		It("Should have a running trace gateway deployment", Label(operationalTest), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, kitkyma.TraceGatewayName)
 		})
 
-		It("Should have 2 trace gateway replicas", func() {
+		It("Should have 2 trace gateway replicas", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
@@ -81,7 +82,7 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 
-		It("Should reject scaling below minimum", func() {
+		It("Should reject scaling below minimum", Label(operationalTest), func() {
 			var telemetry operatorv1alpha1.Telemetry
 			err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
 			Expect(err).NotTo(HaveOccurred())
@@ -100,7 +101,7 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		It("Should scale up trace gateway replicas", func() {
+		It("Should scale up trace gateway replicas", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
 				var telemetry operatorv1alpha1.Telemetry
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
@@ -122,7 +123,7 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(4)))
 		})
 
-		It("Should have 4 trace gateway replicas after scaling up", func() {
+		It("Should have 4 trace gateway replicas after scaling up", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
@@ -131,7 +132,7 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(4)))
 		})
 
-		It("Should scale down trace gateway replicas", func() {
+		It("Should scale down trace gateway replicas", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
 				var telemetry operatorv1alpha1.Telemetry
 				err := k8sClient.Get(ctx, kitkyma.TelemetryName, &telemetry)
@@ -153,7 +154,7 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 
-		It("Should have 2 trace gateway replicas after scaling down", func() {
+		It("Should have 2 trace gateway replicas after scaling down", Label(operationalTest), func() {
 			Eventually(func(g Gomega) int32 {
 				var deployment appsv1.Deployment
 				err := k8sClient.Get(ctx, kitkyma.TraceGatewayName, &deployment)
@@ -162,24 +163,28 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 			}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Equal(int32(2)))
 		})
 
-		It("Should have a trace backend running", func() {
+		It("Should have a trace backend running", Label(operationalTest), func() {
 			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
 		})
 
-		It("Should have a running pipeline", func() {
+		It("Should have a running pipeline", Label(operationalTest), func() {
 			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+		})
+
+		It("Should have a pipeline with legacy condition types at the end of the conditions list", Label(operationalTest), func() {
+			verifiers.TracePipelineShouldHaveLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should deliver telemetrygen traces", Label(operationalTest), func() {
 			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs)
 		})
 
-		It("Should be able to get trace gateway metrics endpoint", func() {
+		It("Should be able to get trace gateway metrics endpoint", Label(operationalTest), func() {
 			gatewayMetricsURL := proxyClient.ProxyURLForService(kitkyma.TraceGatewayMetrics.Namespace, kitkyma.TraceGatewayMetrics.Name, "metrics", ports.Metrics)
 			verifiers.ShouldExposeCollectorMetrics(proxyClient, gatewayMetricsURL)
 		})
 
-		It("Should have a working network policy", func() {
+		It("Should have a working network policy", Label(operationalTest), func() {
 			var networkPolicy networkingv1.NetworkPolicy
 			Expect(k8sClient.Get(ctx, kitkyma.TraceGatewayNetworkPolicy, &networkPolicy)).To(Succeed())
 
