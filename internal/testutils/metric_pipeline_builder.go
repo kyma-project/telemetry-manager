@@ -13,37 +13,29 @@ import (
 type MetricPipelineBuilder struct {
 	randSource rand.Source
 
-	name                       string
-	endpoint                   string
-	runtime                    *telemetryv1alpha1.MetricPipelineRuntimeInput
-	prometheus                 *telemetryv1alpha1.MetricPipelinePrometheusInput
-	istio                      *telemetryv1alpha1.MetricPipelineIstioInput
-	otlp                       *telemetryv1alpha1.MetricPipelineOtlpInput
-	basicAuthUser              string
-	basicAuthPassword          string
-	basicAuthSecretName        string
-	basicAuthSecretNamespace   string
-	basicAuthSecretUserKey     string
-	basicAuthSecretPasswordKey string
-	statusConditions           []metav1.Condition
-	tlsCert                    string
-	tlsKey                     string
+	name string
+
+	inRuntime    *telemetryv1alpha1.MetricPipelineRuntimeInput
+	inPrometheus *telemetryv1alpha1.MetricPipelinePrometheusInput
+	inIstio      *telemetryv1alpha1.MetricPipelineIstioInput
+	inOTLP       *telemetryv1alpha1.MetricPipelineOtlpInput
+
+	outOTLP *telemetryv1alpha1.OtlpOutput
+
+	statusConditions []metav1.Condition
 }
 
 func NewMetricPipelineBuilder() *MetricPipelineBuilder {
 	return &MetricPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
-		endpoint:   "https://localhost",
+		outOTLP: &telemetryv1alpha1.OtlpOutput{
+			Endpoint: telemetryv1alpha1.ValueType{Value: "http://localhost:4317"},
+		},
 	}
 }
 
 func (b *MetricPipelineBuilder) WithName(name string) *MetricPipelineBuilder {
 	b.name = name
-	return b
-}
-
-func (b *MetricPipelineBuilder) WithEndpoint(endpoint string) *MetricPipelineBuilder {
-	b.endpoint = endpoint
 	return b
 }
 
@@ -64,176 +56,120 @@ func ExcludeNamespaces(namespaces ...string) InputOptions {
 }
 
 func (b *MetricPipelineBuilder) RuntimeInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
-	if b.runtime == nil {
-		b.runtime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
+	if b.inRuntime == nil {
+		b.inRuntime = &telemetryv1alpha1.MetricPipelineRuntimeInput{}
 	}
-	b.runtime.Enabled = enable
+	b.inRuntime.Enabled = enable
 
 	if len(opts) == 0 {
 		return b
 	}
 
-	if b.runtime.Namespaces == nil {
-		b.runtime.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+	if b.inRuntime.Namespaces == nil {
+		b.inRuntime.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
 	}
 	for _, opt := range opts {
-		opt(b.runtime.Namespaces)
+		opt(b.inRuntime.Namespaces)
 	}
 	return b
 }
 
 func (b *MetricPipelineBuilder) PrometheusInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
-	if b.prometheus == nil {
-		b.prometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{}
+	if b.inPrometheus == nil {
+		b.inPrometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{}
 	}
-	b.prometheus.Enabled = enable
+	b.inPrometheus.Enabled = enable
 
 	if len(opts) == 0 {
 		return b
 	}
 
-	if b.prometheus.Namespaces == nil {
-		b.prometheus.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+	if b.inPrometheus.Namespaces == nil {
+		b.inPrometheus.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
 	}
 	for _, opt := range opts {
-		opt(b.prometheus.Namespaces)
+		opt(b.inPrometheus.Namespaces)
 	}
 	return b
 }
 
 func (b *MetricPipelineBuilder) IstioInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
-	if b.istio == nil {
-		b.istio = &telemetryv1alpha1.MetricPipelineIstioInput{}
+	if b.inIstio == nil {
+		b.inIstio = &telemetryv1alpha1.MetricPipelineIstioInput{}
 	}
-	b.istio.Enabled = enable
+	b.inIstio.Enabled = enable
 
 	if len(opts) == 0 {
 		return b
 	}
 
-	if b.istio.Namespaces == nil {
-		b.istio.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+	if b.inIstio.Namespaces == nil {
+		b.inIstio.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
 	}
 	for _, opt := range opts {
-		opt(b.istio.Namespaces)
+		opt(b.inIstio.Namespaces)
 	}
 	return b
 }
 
 func (b *MetricPipelineBuilder) PrometheusInputDiagnosticMetrics(enable bool) *MetricPipelineBuilder {
-	if b.prometheus == nil {
-		b.prometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{}
+	if b.inPrometheus == nil {
+		b.inPrometheus = &telemetryv1alpha1.MetricPipelinePrometheusInput{}
 	}
 
-	if b.prometheus.DiagnosticMetrics == nil {
-		b.prometheus.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{}
+	if b.inPrometheus.DiagnosticMetrics == nil {
+		b.inPrometheus.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{}
 	}
-	b.prometheus.DiagnosticMetrics.Enabled = enable
+	b.inPrometheus.DiagnosticMetrics.Enabled = enable
 
 	return b
 }
 
 func (b *MetricPipelineBuilder) IstioInputDiagnosticMetrics(enable bool) *MetricPipelineBuilder {
-	if b.istio == nil {
-		b.istio = &telemetryv1alpha1.MetricPipelineIstioInput{}
+	if b.inIstio == nil {
+		b.inIstio = &telemetryv1alpha1.MetricPipelineIstioInput{}
 	}
 
-	if b.istio.DiagnosticMetrics == nil {
-		b.istio.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{}
+	if b.inIstio.DiagnosticMetrics == nil {
+		b.inIstio.DiagnosticMetrics = &telemetryv1alpha1.DiagnosticMetrics{}
 	}
 
-	b.istio.DiagnosticMetrics.Enabled = enable
+	b.inIstio.DiagnosticMetrics.Enabled = enable
 
 	return b
 }
 
 func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *MetricPipelineBuilder {
-	if b.otlp == nil {
-		b.otlp = &telemetryv1alpha1.MetricPipelineOtlpInput{}
+	if b.inOTLP == nil {
+		b.inOTLP = &telemetryv1alpha1.MetricPipelineOtlpInput{}
 	}
-	b.otlp.Disabled = !enable
+	b.inOTLP.Disabled = !enable
 
 	if len(opts) == 0 {
 		return b
 	}
 
-	if b.otlp.Namespaces == nil {
-		b.otlp.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
+	if b.inOTLP.Namespaces == nil {
+		b.inOTLP.Namespaces = &telemetryv1alpha1.MetricPipelineInputNamespaceSelector{}
 	}
 	for _, opt := range opts {
-		opt(b.otlp.Namespaces)
+		opt(b.inOTLP.Namespaces)
 	}
 	return b
 }
 
-func (b *MetricPipelineBuilder) WithBasicAuth(user, password string) *MetricPipelineBuilder {
-	b.basicAuthUser = user
-	b.basicAuthPassword = password
-	return b
-}
+type OTLPOutputOption func(*telemetryv1alpha1.OtlpOutput)
 
-func (b *MetricPipelineBuilder) WithBasicAuthFromSecret(secretName, secretNamespace, userKey, passwordKey string) *MetricPipelineBuilder {
-	b.basicAuthSecretName = secretName
-	b.basicAuthSecretNamespace = secretNamespace
-	b.basicAuthSecretUserKey = userKey
-	b.basicAuthSecretPasswordKey = passwordKey
-	return b
-}
-
-func (b *MetricPipelineBuilder) WithTLS(tlsCert, tlsKey string) *MetricPipelineBuilder {
-	b.tlsCert = tlsCert
-	b.tlsKey = tlsKey
+func (b *MetricPipelineBuilder) OtlpOutput(opts ...OTLPOutputOption) *MetricPipelineBuilder {
+	for _, opt := range opts {
+		opt(b.outOTLP)
+	}
 	return b
 }
 
 func (b *MetricPipelineBuilder) WithStatusCondition(cond metav1.Condition) *MetricPipelineBuilder {
 	b.statusConditions = append(b.statusConditions, cond)
 	return b
-}
-
-func (b *MetricPipelineBuilder) basicAuthOutput() telemetryv1alpha1.MetricPipelineOutput {
-	return telemetryv1alpha1.MetricPipelineOutput{
-		Otlp: &telemetryv1alpha1.OtlpOutput{
-			Endpoint: telemetryv1alpha1.ValueType{
-				Value: b.endpoint,
-			},
-			Authentication: &telemetryv1alpha1.AuthenticationOptions{
-				Basic: &telemetryv1alpha1.BasicAuthOptions{
-					User: telemetryv1alpha1.ValueType{
-						Value: b.basicAuthUser,
-						ValueFrom: &telemetryv1alpha1.ValueFromSource{
-							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-								Name:      b.basicAuthSecretName,
-								Namespace: b.basicAuthSecretNamespace,
-								Key:       b.basicAuthSecretUserKey,
-							},
-						},
-					},
-					Password: telemetryv1alpha1.ValueType{
-						Value: b.basicAuthPassword,
-						ValueFrom: &telemetryv1alpha1.ValueFromSource{
-							SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
-								Name:      b.basicAuthSecretName,
-								Namespace: b.basicAuthSecretNamespace,
-								Key:       b.basicAuthSecretPasswordKey,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func (b *MetricPipelineBuilder) tlsOutput() telemetryv1alpha1.MetricPipelineOutput {
-	return telemetryv1alpha1.MetricPipelineOutput{
-		Otlp: &telemetryv1alpha1.OtlpOutput{
-			TLS: &telemetryv1alpha1.OtlpTLS{
-				Cert: &telemetryv1alpha1.ValueType{Value: b.tlsCert},
-				Key:  &telemetryv1alpha1.ValueType{Value: b.tlsKey},
-			},
-		},
-	}
 }
 
 func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
@@ -251,22 +187,16 @@ func (b *MetricPipelineBuilder) Build() telemetryv1alpha1.MetricPipeline {
 		},
 		Spec: telemetryv1alpha1.MetricPipelineSpec{
 			Input: telemetryv1alpha1.MetricPipelineInput{
-				Runtime:    b.runtime,
-				Prometheus: b.prometheus,
-				Istio:      b.istio,
-				Otlp:       b.otlp,
+				Runtime:    b.inRuntime,
+				Prometheus: b.inPrometheus,
+				Istio:      b.inIstio,
+				Otlp:       b.inOTLP,
+			},
+			Output: telemetryv1alpha1.MetricPipelineOutput{
+				Otlp: b.outOTLP,
 			},
 		},
 	}
-	if !b.isTLSEnabled() {
-		pipeline.Spec.Output = b.basicAuthOutput()
-	} else {
-		pipeline.Spec.Output = b.tlsOutput()
-	}
 
 	return pipeline
-}
-
-func (b *MetricPipelineBuilder) isTLSEnabled() bool {
-	return b.tlsCert != "" && b.tlsKey != ""
 }

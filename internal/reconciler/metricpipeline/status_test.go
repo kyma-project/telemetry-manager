@@ -241,8 +241,9 @@ func TestUpdateStatus(t *testing.T) {
 			},
 			Data: map[string][]byte{"user": {}, "password": {}},
 		}
-		pipeline := testutils.NewMetricPipelineBuilder().WithBasicAuthFromSecret(
-			secret.Name, secret.Namespace, "user", "password").Build()
+		pipeline := testutils.NewMetricPipelineBuilder().OtlpOutput(testutils.OTLPBasicAuthFromSecret(secret.Name, secret.Namespace, "user", "password")).Build()
+		//WithBasicAuthFromSecret(
+		//	secret.Name, secret.Namespace, "user", "password").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline, secret).WithStatusSubresource(&pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
@@ -266,8 +267,9 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("referenced secret missing", func(t *testing.T) {
-		pipeline := testutils.NewMetricPipelineBuilder().WithBasicAuthFromSecret(
-			"some-secret", "some-namespace", "user", "password").Build()
+		pipeline := testutils.NewMetricPipelineBuilder().OtlpOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
+		//WithBasicAuthFromSecret(
+		//"some-secret", "some-namespace", "user", "password").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
@@ -291,8 +293,9 @@ func TestUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("waiting for lock", func(t *testing.T) {
-		pipeline := testutils.NewMetricPipelineBuilder().WithBasicAuthFromSecret(
-			"some-secret", "some-namespace", "user", "password").Build()
+		pipeline := testutils.NewMetricPipelineBuilder().OtlpOutput(testutils.OTLPBasicAuthFromSecret("some-secret", "some-namespace", "user", "password")).Build()
+		//WithBasicAuthFromSecret(
+		//"some-secret", "some-namespace", "user", "password").Build()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 		gatewayProberStub := &mocks.DeploymentProber{}
@@ -473,7 +476,7 @@ func TestUpdateStatus(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				pipeline := testutils.NewMetricPipelineBuilder().WithTLS("fooCert", "fooKey").Build()
+				pipeline := testutils.NewMetricPipelineBuilder().OtlpOutput(testutils.OTLPClientTLS("fooCert", "fooKey")).Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				gatewayProberStub := &mocks.DeploymentProber{}
