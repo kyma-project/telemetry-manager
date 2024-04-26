@@ -74,7 +74,7 @@ var metricPipelineMessages = map[string]string{
 	ReasonAllDataDropped:          "All metrics dropped: backend unreachable or rejecting",
 	ReasonSomeDataDropped:         "Some metrics dropped: backend unreachable or rejecting",
 	ReasonBufferFillingUp:         "Buffer nearing capacity: incoming metric rate exceeds export rate",
-	ReasonGatewayThrottling:       "Metric gateway experiencing high influx: Unable to receive metrics at current rate",
+	ReasonGatewayThrottling:       "Metric gateway experiencing high influx: unable to receive metrics at current rate",
 	ReasonFlowHealthy:             "No problems detected in the metric flow",
 }
 
@@ -87,7 +87,7 @@ var tracePipelineMessages = map[string]string{
 	ReasonAllDataDropped:                 "All traces dropped: backend unreachable or rejecting",
 	ReasonSomeDataDropped:                "Some traces dropped: backend unreachable or rejecting",
 	ReasonBufferFillingUp:                "Buffer nearing capacity: incoming trace rate exceeds export rate",
-	ReasonGatewayThrottling:              "Trace collector experiencing high influx: Unable to receive metrics at current rate",
+	ReasonGatewayThrottling:              "Trace gateway experiencing high influx: unable to receive traces at current rate",
 	ReasonFlowHealthy:                    "No problems detected in the trace flow",
 }
 
