@@ -1,19 +1,18 @@
 package fluentd
 
 import (
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 )
 
 type ConfigMap struct {
 	name      string
 	namespace string
-	certs     *tlsgen.ServerCerts
+	certs     *testutils.ServerCerts
 }
 
-func NewConfigMap(name, namespace string, certs *tlsgen.ServerCerts) *ConfigMap {
+func NewConfigMap(name, namespace string, certs *testutils.ServerCerts) *ConfigMap {
 	return &ConfigMap{
 		name:      name,
 		namespace: namespace,

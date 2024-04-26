@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -14,7 +15,6 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
-	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
@@ -35,7 +35,7 @@ var _ = Describe("Traces mTLS", Label("traces"), func() {
 			kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
 		)
 
-		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(mockBackendName, mockNs).Build()
+		serverCerts, clientCerts, err := testutils.NewCertBuilder(mockBackendName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
 		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces, backend.WithTLS(*serverCerts))

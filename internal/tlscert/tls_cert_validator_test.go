@@ -3,6 +3,7 @@ package tlscert
 import (
 	"context"
 	"errors"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"testing"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 )
 
 var (
@@ -446,9 +446,9 @@ func TestResolveValue(t *testing.T) {
 }
 
 func TestInvalidCertificateKeyPair(t *testing.T) {
-	_, clientCertsFoo, err := tlsgen.NewCertBuilder("foo", "fooNs").Build()
+	_, clientCertsFoo, err := testutils.NewCertBuilder("foo", "fooNs").Build()
 	require.NoError(t, err)
-	_, clientCertsBar, err := tlsgen.NewCertBuilder("bar", "barNs").Build()
+	_, clientCertsBar, err := testutils.NewCertBuilder("bar", "barNs").Build()
 	require.NoError(t, err)
 
 	keyData := clientCertsFoo.ClientKeyPem.String()

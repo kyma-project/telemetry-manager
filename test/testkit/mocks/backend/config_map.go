@@ -1,12 +1,11 @@
 package backend
 
 import (
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 )
 
 type ConfigMap struct {
@@ -14,10 +13,10 @@ type ConfigMap struct {
 	namespace        string
 	exportedFilePath string
 	signalType       SignalType
-	certs            *tlsgen.ServerCerts
+	certs            *testutils.ServerCerts
 }
 
-func NewConfigMap(name, namespace, path string, signalType SignalType, certs *tlsgen.ServerCerts) *ConfigMap {
+func NewConfigMap(name, namespace, path string, signalType SignalType, certs *testutils.ServerCerts) *ConfigMap {
 	return &ConfigMap{
 		name:             name,
 		namespace:        namespace,

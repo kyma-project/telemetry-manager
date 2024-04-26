@@ -3,12 +3,12 @@ package k8s
 
 import (
 	"fmt"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 
 	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
-	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 )
 
 const version = "1.0.0"
@@ -151,7 +151,7 @@ func (p *metricPipelineV1Beta1) IstioInputDiagnosticMetrics(enable bool) *metric
 	return p
 }
 
-func (p *metricPipelineV1Beta1) WithTLS(certs tlsgen.ClientCerts) *metricPipelineV1Beta1 {
+func (p *metricPipelineV1Beta1) WithTLS(certs testutils.ClientCerts) *metricPipelineV1Beta1 {
 	p.tls = &telemetryv1beta1.OTLPTLS{
 		Insecure:           false,
 		InsecureSkipVerify: false,

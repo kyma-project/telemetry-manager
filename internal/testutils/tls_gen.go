@@ -1,4 +1,4 @@
-package tlsgen
+package testutils
 
 import (
 	"bytes"
