@@ -56,8 +56,12 @@ var _ = Describe("Logs Basic v1beta1", Label("logs", "v1beta1"), Ordered, func()
 			Expect(kitk8s.CreateObjects(ctx, k8sClient, k8sObjects...)).Should(Succeed())
 		})
 
-		It("Should have a running logpipeline", func() {
+		It("Should have a running pipeline", func() {
 			verifiers.LogPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
+		})
+
+		It("Should have a pipeline with legacy condition types at the end of the conditions list", func() {
+			verifiers.LogPipelineShouldHaveLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
 		})
 
 		It("Should have a log backend running", func() {

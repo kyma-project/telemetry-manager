@@ -36,13 +36,6 @@ func (r *Reconciler) updateStatus(ctx context.Context, pipelineName string) erro
 		return err
 	}
 
-	// If the "AgentHealthy" type doesn't exist in the conditions,
-	// then we need to reset the conditions list to ensure that the "Pending" and "Running" conditions are appended to the end of the conditions list
-	// Check step 3 in https://github.com/kyma-project/telemetry-manager/blob/main/docs/contributor/arch/004-consolidate-pipeline-statuses.md#decision
-	if meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeAgentHealthy) == nil {
-		pipeline.Status.Conditions = []metav1.Condition{}
-	}
-
 	r.setAgentHealthyCondition(ctx, &pipeline)
 	r.setFluentBitConfigGeneratedCondition(ctx, &pipeline)
 

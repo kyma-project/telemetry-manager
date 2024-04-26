@@ -170,7 +170,11 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should deliver telemetrygen traces", Label(operationalTest), func() {
+		It("Should have a pipeline with legacy condition types at the end of the conditions list", func() {
+			verifiers.TracePipelineShouldHaveLegacyConditionsAtEnd(ctx, k8sClient, pipelineName)
+		})
+
+		It("Should deliver telemetrygen traces", func() {
 			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs)
 		})
 
