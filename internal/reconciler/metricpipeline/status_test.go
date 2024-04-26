@@ -3,7 +3,6 @@ package metricpipeline
 import (
 	"context"
 	"errors"
-	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 	"testing"
 	"time"
 
@@ -24,6 +23,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/internal/resources/otelcollector"
 	"github.com/kyma-project/telemetry-manager/internal/selfmonitor/prober"
 	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/internal/tlscert"
 )
 
 func TestUpdateStatus(t *testing.T) {

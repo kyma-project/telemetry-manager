@@ -70,7 +70,7 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 	if b.isTLSEnabled() {
 		logPipeline.Spec.Output = b.WithTLSOutPut()
 	}
-	
+
 	return logPipeline
 }
 
