@@ -1,4 +1,4 @@
-package envvar
+package builder
 
 import (
 	"testing"
