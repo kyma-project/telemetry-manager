@@ -32,8 +32,8 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 	)
 
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		pipelineName     string
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -45,7 +45,7 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 
 		mockBackend := backend.New(mockNs, backend.SignalTypeTraces)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		pipeline := kitk8s.NewTracePipelineV1Beta1(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Beta1())
@@ -175,7 +175,7 @@ var _ = Describe("Traces Basic v1beta1", Label("traces", "v1beta1"), func() {
 		})
 
 		It("Should deliver telemetrygen traces", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs)
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, telemetrygenNs)
 		})
 
 		It("Should be able to get trace gateway metrics endpoint", func() {

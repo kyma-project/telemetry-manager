@@ -27,7 +27,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		httpAnnotatedMetricProducerName  = "metric-producer-http"
 		unannotatedMetricProducerName    = "metric-producer"
 	)
-	var telemetryExportURL string
+	var backendExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -37,7 +37,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		// Mocks namespace objects
 		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		httpsAnnotatedMetricProducer := prommetricgen.New(mockNs, prommetricgen.WithName(httpsAnnotatedMetricProducerName))
 		httpAnnotatedMetricProducer := prommetricgen.New(mockNs, prommetricgen.WithName(httpAnnotatedMetricProducerName))
@@ -87,15 +87,15 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			// targets discovered via annotated pods must have no service label
 			Context("Annotated pods", func() {
 				It("Should scrape if prometheus.io/scheme=https", func() {
-					podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
+					podScrapedMetricsShouldBeDelivered(backendExportURL, httpsAnnotatedMetricProducerName)
 				})
 
 				It("Should scrape if prometheus.io/scheme=http", func() {
-					podScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
+					podScrapedMetricsShouldBeDelivered(backendExportURL, httpAnnotatedMetricProducerName)
 				})
 
 				It("Should scrape if prometheus.io/scheme unset", func() {
-					podScrapedMetricsShouldBeDelivered(telemetryExportURL, unannotatedMetricProducerName)
+					podScrapedMetricsShouldBeDelivered(backendExportURL, unannotatedMetricProducerName)
 				})
 			})
 
@@ -103,15 +103,15 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			// targets discovered via annotated service must have the service label
 			Context("Annotated services", func() {
 				It("Should scrape if prometheus.io/scheme=https", func() {
-					serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, httpsAnnotatedMetricProducerName)
+					serviceScrapedMetricsShouldBeDelivered(backendExportURL, httpsAnnotatedMetricProducerName)
 				})
 
 				It("Should scrape if prometheus.io/scheme=http", func() {
-					serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, httpAnnotatedMetricProducerName)
+					serviceScrapedMetricsShouldBeDelivered(backendExportURL, httpAnnotatedMetricProducerName)
 				})
 
 				It("Should scrape if prometheus.io/scheme unset", func() {
-					serviceScrapedMetricsShouldBeDelivered(telemetryExportURL, unannotatedMetricProducerName)
+					serviceScrapedMetricsShouldBeDelivered(backendExportURL, unannotatedMetricProducerName)
 				})
 			})
 		})

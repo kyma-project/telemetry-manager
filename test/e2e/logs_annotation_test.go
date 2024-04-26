@@ -19,27 +19,27 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Keep Annotations", Label("logs"), Ordered, func() {
+var _ = Describe(suite.Current(), Label(suite.LabelLogs), Ordered, func() {
 	var (
-		mockNs          = suite.Current()
-		logProducerName = suite.Current()
-		pipelineName    = suite.Current()
+		mockNs           = suite.Current()
+		logProducerName  = suite.Current()
+		pipelineName     = suite.Current()
+		backendExportURL string
 	)
-	var telemetryExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockNs, backend.SignalTypeLogs)
-		mockLogProducer := loggen.New(logProducerName, mockNs).
+		backend := backend.New(mockNs, backend.SignalTypeLogs)
+		logProducer := loggen.New(logProducerName, mockNs).
 			WithAnnotations(map[string]string{"release": "v1.0.0"})
-		objs = append(objs, mockBackend.K8sObjects()...)
-		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-annotation-test")))
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		objs = append(objs, backend.K8sObjects()...)
+		objs = append(objs, logProducer.K8sObject(kitk8s.WithLabel("app", logProducerName)))
+		backendExportURL = backend.ExportURL(proxyClient)
 
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
+			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
 			KeepAnnotations(true).
 			DropLabels(true)
@@ -77,7 +77,7 @@ var _ = Describe("Logs Keep Annotations", Label("logs"), Ordered, func() {
 
 		It("Should have logs with annotations in the backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(
@@ -88,7 +88,7 @@ var _ = Describe("Logs Keep Annotations", Label("logs"), Ordered, func() {
 
 		It("Should have no logs with labels in the backend", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(Not(ContainLd(ContainLogRecord(

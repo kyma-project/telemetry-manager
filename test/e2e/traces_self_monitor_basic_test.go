@@ -32,8 +32,8 @@ var _ = Describe("Traces Self Monitor", Label("self-mon-traces"), Ordered, func(
 	)
 
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		pipelineName     string
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -43,7 +43,7 @@ var _ = Describe("Traces Self Monitor", Label("self-mon-traces"), Ordered, func(
 
 		mockBackend := backend.New(mockNs, backend.SignalTypeTraces)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		pipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
@@ -98,7 +98,7 @@ var _ = Describe("Traces Self Monitor", Label("self-mon-traces"), Ordered, func(
 		})
 
 		It("Should deliver telemetrygen traces", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, kitkyma.DefaultNamespaceName)
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, kitkyma.DefaultNamespaceName)
 		})
 
 		It("The telemetryFlowHealthy condition should be true", func() {

@@ -19,10 +19,9 @@ import (
 var _ = Describe(suite.Current(), Label(suite.LabelLogs), Ordered, func() {
 	var (
 		mockNs           = suite.Current()
+		logProducerName  = suite.Current()
+		pipelineName     = suite.Current()
 		backendExportURL string
-
-		logProducerName = suite.Current()
-		pipelineName    = suite.Current()
 	)
 
 	makeResources := func() []client.Object {
@@ -36,7 +35,7 @@ var _ = Describe(suite.Current(), Label(suite.LabelLogs), Ordered, func() {
 		logProducer := loggen.New(logProducerName, mockNs)
 		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, logProducer.K8sObject(kitk8s.WithLabel("app", logProducerName)))
-		backendExportURL = backend.TelemetryExportURL(proxyClient)
+		backendExportURL = backend.ExportURL(proxyClient)
 
 		pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
 			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).

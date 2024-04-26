@@ -27,7 +27,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 	)
 	var (
 		runtimeInputPipelineName string
-		telemetryExportURL       string
+		backendExportURL         string
 	)
 
 	makeResources := func() []client.Object {
@@ -38,7 +38,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockBackend.K8sObjects()...)
 
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		runtimeInputPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-service-name-test").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
@@ -76,7 +76,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 
 		verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -132,7 +132,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 
 		It("Should have no kyma resource attributes", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -145,7 +145,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 
 		It("Should have metrics with service.name set to telemetry-metric-gateway", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -158,7 +158,7 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 
 		It("Should have metrics with service.name set to telemetry-metric-agent", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(

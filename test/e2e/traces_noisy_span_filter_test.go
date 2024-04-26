@@ -40,8 +40,8 @@ var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
 	)
 
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		pipelineName     string
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -62,7 +62,7 @@ var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
 		)
 
 		mockBackend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithPersistentHostSecret(true))
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 		objs = append(objs, mockBackend.K8sObjects()...)
 
 		pipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
@@ -168,11 +168,11 @@ var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
 		})
 
 		It("Should deliver regular telemetrygen traces", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, regularSpansNs)
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, regularSpansNs)
 		})
 
 		It("Should filter noisy spans", func() {
-			verifiers.TracesFromNamespacesShouldNotBeDelivered(proxyClient, telemetryExportURL, []string{
+			verifiers.TracesFromNamespacesShouldNotBeDelivered(proxyClient, backendExportURL, []string{
 				vmaScrapeSpansNs,
 				healthzSpansNs,
 				fluentBitSpansNs,

@@ -32,8 +32,8 @@ var _ = Describe("Metrics Basic v1alpha1", Label("metrics"), func() {
 	)
 
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		pipelineName     string
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -45,7 +45,7 @@ var _ = Describe("Metrics Basic v1alpha1", Label("metrics"), func() {
 
 		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithPersistentHostSecret(isOperational()))
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
@@ -162,7 +162,7 @@ var _ = Describe("Metrics Basic v1alpha1", Label("metrics"), func() {
 		})
 
 		It("Should deliver telemetrygen metrics", Label(operationalTest), func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, telemetrygenNs, telemetrygen.MetricNames)
 		})
 
 		It("Should be able to get metric gateway metrics endpoint", Label(operationalTest), func() {

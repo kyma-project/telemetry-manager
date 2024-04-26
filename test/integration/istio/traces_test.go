@@ -36,11 +36,11 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 	)
 
 	var (
-		pipelineName                                    string
-		istiofiedPipelineName                           string
-		telemetryExportURL, telemetryIstiofiedExportURL string
-		istiofiedAppURL, appURL                         string
-		metricServiceURL                                string
+		pipelineName                                  string
+		istiofiedPipelineName                         string
+		backendExportURL, telemetryIstiofiedExportURL string
+		istiofiedAppURL, appURL                       string
+		metricServiceURL                              string
 	)
 
 	makeResources := func() []client.Object {
@@ -52,11 +52,11 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 
 		mockBackend := backend.New(mockNs, backend.SignalTypeTraces)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		mockIstiofiedBackend := backend.New(mockIstiofiedBackendName, mockIstiofiedNs, backend.SignalTypeTraces)
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
-		telemetryIstiofiedExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		telemetryIstiofiedExportURL = mockBackend.ExportURL(proxyClient)
 
 		istioTracePipeline := kitk8s.NewTracePipelineV1Alpha1("istiofied-app-traces").WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRefV1Alpha1())
 		istiofiedPipelineName = istioTracePipeline.Name()
@@ -143,15 +143,15 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		})
 
 		It("Should have istio traces from istiofied app namespace", func() {
-			verifyIstioSpans(telemetryExportURL)
+			verifyIstioSpans(backendExportURL)
 			verifyIstioSpans(telemetryIstiofiedExportURL)
 		})
 		It("Should have custom spans in the backend from istiofied workload", func() {
-			verifyCustomIstiofiedAppSpans(telemetryExportURL)
+			verifyCustomIstiofiedAppSpans(backendExportURL)
 			verifyCustomIstiofiedAppSpans(telemetryIstiofiedExportURL)
 		})
 		It("Should have custom spans in the backend from app-namespace", func() {
-			verifyCustomAppSpans(telemetryExportURL)
+			verifyCustomAppSpans(backendExportURL)
 			verifyCustomAppSpans(telemetryIstiofiedExportURL)
 		})
 	})

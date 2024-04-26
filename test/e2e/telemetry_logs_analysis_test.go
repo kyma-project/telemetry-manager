@@ -36,16 +36,16 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 	)
 
 	var (
-		otelCollectorLogPipelineName       string
-		fluentBitLogPipelineName           string
-		metricPipelineName                 string
-		tracePipelineName                  string
-		otelCollectorLogTelemetryExportURL string
-		fluentBitLogTelemetryExportURL     string
-		metricTelemetryExportURL           string
-		traceTelemetryExportURL            string
-		gomegaMaxLength                    = format.MaxLength
-		errorWarningLevels                 = []string{
+		otelCollectorLogPipelineName     string
+		fluentBitLogPipelineName         string
+		metricPipelineName               string
+		tracePipelineName                string
+		otelCollectorLogbackendExportURL string
+		fluentBitLogbackendExportURL     string
+		metricbackendExportURL           string
+		tracebackendExportURL            string
+		gomegaMaxLength                  = format.MaxLength
+		errorWarningLevels               = []string{
 			"ERROR", "error",
 			"WARNING", "warning",
 			"WARN", "warn"}
@@ -58,12 +58,12 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		// backends
 		otelCollectorLogBackend := backend.New(otelCollectorNs, backend.SignalTypeLogs, backend.WithName(otelCollectorLogBackendName))
 		objs = append(objs, otelCollectorLogBackend.K8sObjects()...)
-		otelCollectorLogTelemetryExportURL = otelCollectorLogBackend.TelemetryExportURL(proxyClient)
+		otelCollectorLogbackendExportURL = otelCollectorLogBackend.ExportURL(proxyClient)
 		metricBackend := backend.New(otelCollectorNs, backend.SignalTypeMetrics, backend.WithName(metricBackendName))
-		metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
+		metricbackendExportURL = metricBackend.ExportURL(proxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
 		traceBackend := backend.New(otelCollectorNs, backend.SignalTypeTraces, backend.WithName(traceBackendName))
-		traceTelemetryExportURL = traceBackend.TelemetryExportURL(proxyClient)
+		tracebackendExportURL = traceBackend.ExportURL(proxyClient)
 		objs = append(objs, traceBackend.K8sObjects()...)
 
 		// log pipeline
@@ -110,7 +110,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		// backend
 		fluentBitLogBackend := backend.New(fluentBitNs, backend.SignalTypeLogs, backend.WithName(fluentBitLogBackendName))
 		objs = append(objs, fluentBitLogBackend.K8sObjects()...)
-		fluentBitLogTelemetryExportURL = fluentBitLogBackend.TelemetryExportURL(proxyClient)
+		fluentBitLogbackendExportURL = fluentBitLogBackend.ExportURL(proxyClient)
 
 		// log pipeline
 		fluentBitLogPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", fluentBitLogBackend.Name())).
@@ -156,16 +156,16 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		})
 
 		It("Should push metrics successfully", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, metricTelemetryExportURL, otelCollectorNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, metricbackendExportURL, otelCollectorNs, telemetrygen.MetricNames)
 		})
 
 		It("Should push traces successfully", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, traceTelemetryExportURL, otelCollectorNs)
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, tracebackendExportURL, otelCollectorNs)
 		})
 
 		It("Should not have any ERROR/WARNING logs in the OtelCollector containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(otelCollectorLogTelemetryExportURL)
+				resp, err := proxyClient.Get(otelCollectorLogbackendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -207,7 +207,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 
 		It("Should not have any ERROR/WARNING logs in the FluentBit containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(fluentBitLogTelemetryExportURL)
+				resp, err := proxyClient.Get(fluentBitLogbackendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(

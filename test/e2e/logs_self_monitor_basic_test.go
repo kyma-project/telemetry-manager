@@ -16,30 +16,30 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Self Monitor", Label("self-mon-logs"), Ordered, func() {
-	const (
-		mockBackendName = "log-receiver-selfmon"
-		mockNs          = "log-http-output-selfmon-test"
-		logProducerName = "log-producer-http-output-selfmon" //#nosec G101 -- This is a false positive
-		pipelineName    = "http-output-pipeline-selfmon"
+var _ = Describe(suite.Current(), Label(suite.LabelSelfMonitoringLogs), Ordered, func() {
+	var (
+		mockNs           = suite.Current()
+		logProducerName  = suite.Current()
+		pipelineName     = suite.Current()
+		backendExportURL string
 	)
-	var telemetryExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(isOperational()))
-		mockLogProducer := loggen.New(logProducerName, mockNs)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithPersistentHostSecret(isOperational()))
+		logProducer := loggen.New(logProducerName, mockNs)
+		objs = append(objs, backend.K8sObjects()...)
+		objs = append(objs, logProducer.K8sObject(kitk8s.WithLabel("app", logProducerName)))
+		backendExportURL = backend.ExportURL(proxyClient)
 
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
+			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
 			Persistent(isOperational())
 		objs = append(objs, logPipeline.K8sObject())
@@ -71,7 +71,7 @@ var _ = Describe("Logs Self Monitor", Label("self-mon-logs"), Ordered, func() {
 		})
 
 		It("Should have a log backend running", Label(operationalTest), func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
 		It("Should have a log producer running", Label(operationalTest), func() {
@@ -79,7 +79,7 @@ var _ = Describe("Logs Self Monitor", Label("self-mon-logs"), Ordered, func() {
 		})
 
 		It("Should have produced logs in the backend", Label(operationalTest), func() {
-			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
+			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, backendExportURL)
 		})
 
 		It("Should have TypeFlowHealthy condition set to True", func() {

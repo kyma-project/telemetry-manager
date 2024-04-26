@@ -19,4 +19,6 @@ const (
 	LabelLogs    = "logs"
 	LabelTraces  = "traces"
 	LabelMetrics = "metrics"
+
+	LabelSelfMonitoringLogs = "self-mon-logs"
 )

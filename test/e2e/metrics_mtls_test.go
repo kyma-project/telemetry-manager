@@ -24,8 +24,8 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 		telemetrygenNs  = "metric-mtls"
 	)
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		pipelineName     string
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -39,7 +39,7 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 
 		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
@@ -73,7 +73,7 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 		})
 
 		It("Should deliver telemetrygen metrics", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, telemetrygenNs, telemetrygen.MetricNames)
 		})
 	})
 })

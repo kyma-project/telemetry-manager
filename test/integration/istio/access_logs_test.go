@@ -30,9 +30,9 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 	)
 
 	var (
-		pipelineName       string
-		telemetryExportURL string
-		metricPodURL       string
+		pipelineName     string
+		backendExportURL string
+		metricPodURL     string
 	)
 
 	makeResources := func() []client.Object {
@@ -41,7 +41,7 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 
 		mockBackend := backend.New(mockNs, backend.SignalTypeLogs)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		istioAccessLogsPipeline := kitk8s.NewLogPipelineV1Alpha1("pipeline-istio-access-logs").
 			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
@@ -97,7 +97,7 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 
 		It("Should verify istio logs are present", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(

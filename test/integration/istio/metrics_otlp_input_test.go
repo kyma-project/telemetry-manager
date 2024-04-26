@@ -25,7 +25,7 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		pushMetricsDepName          = "push-metrics"
 		pushMetricsIstiofiedDepName = "push-metrics-istiofied"
 	)
-	var telemetryExportURL, telemetryIstiofiedExportURL string
+	var backendExportURL, telemetryIstiofiedExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
@@ -36,11 +36,11 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		// Mocks namespace objects
 		mockBackend := backend.New(backendName, backendNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		mockIstiofiedBackend := backend.New(istiofiedBackendName, istiofiedBackendNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
-		telemetryIstiofiedExportURL = mockIstiofiedBackend.TelemetryExportURL(proxyClient)
+		telemetryIstiofiedExportURL = mockIstiofiedBackend.ExportURL(proxyClient)
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-otlp-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
@@ -89,8 +89,8 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		})
 
 		It("Should push metrics successfully", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, backendNs, telemetrygen.MetricNames)
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, backendNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
 
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryIstiofiedExportURL, backendNs, telemetrygen.MetricNames)
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryIstiofiedExportURL, istiofiedBackendNs, telemetrygen.MetricNames)

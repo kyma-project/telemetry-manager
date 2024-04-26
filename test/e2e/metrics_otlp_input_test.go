@@ -21,14 +21,14 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		backendName = "backend"
 		appNs       = "app"
 	)
-	var telemetryExportURL string
+	var backendExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject(), kitk8s.NewNamespace(appNs).K8sObject())
 
 		mockBackend := backend.New(backendNs, backend.SignalTypeMetrics)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 		objs = append(objs, mockBackend.K8sObjects()...)
 
 		pipelineWithoutOTLP := kitk8s.NewMetricPipelineV1Alpha1("pipeline-without-otlp-input-enabled").
@@ -60,7 +60,7 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		})
 
 		It("Should not deliver OTLP metrics", func() {
-			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURL, appNs)
+			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, backendExportURL, appNs)
 		})
 	})
 })

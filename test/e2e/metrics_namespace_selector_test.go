@@ -27,7 +27,7 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 		app2Ns = "app-2"
 	)
 	var (
-		telemetryExportURLs = make(map[string]string)
+		backendExportURLs = make(map[string]string)
 	)
 
 	makeResources := func() []client.Object {
@@ -37,7 +37,7 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 			kitk8s.NewNamespace(app2Ns).K8sObject())
 
 		backend1 := backend.New(backendNs, backend.SignalTypeMetrics, backend.WithName(backend1Name))
-		telemetryExportURLs[backend1Name] = backend1.TelemetryExportURL(proxyClient)
+		backendExportURLs[backend1Name] = backend1.ExportURL(proxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 
 		pipelineIncludeApp1Ns := kitk8s.NewMetricPipelineV1Alpha1("include-"+app1Ns).
@@ -48,7 +48,7 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 		objs = append(objs, pipelineIncludeApp1Ns.K8sObject())
 
 		backend2 := backend.New(backendNs, backend.SignalTypeMetrics, backend.WithName(backend2Name))
-		telemetryExportURLs[backend2Name] = backend2.TelemetryExportURL(proxyClient)
+		backendExportURLs[backend2Name] = backend2.ExportURL(proxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 
 		pipelineExcludeApp1Ns := kitk8s.NewMetricPipelineV1Alpha1("exclude-"+app1Ns).
@@ -97,36 +97,36 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 
 		// verify metrics from apps1Ns delivered to backend1
 		It("Should deliver Runtime metrics from app1Ns to backend1", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend1Name], app1Ns, kubeletstats.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURLs[backend1Name], app1Ns, kubeletstats.MetricNames)
 		})
 
 		It("Should deliver Prometheus metrics from app1Ns to backend1", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend1Name], app1Ns, prommetricgen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURLs[backend1Name], app1Ns, prommetricgen.MetricNames)
 		})
 
 		It("Should deliver OTLP metrics from app1Ns to backend1", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend1Name], app1Ns, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURLs[backend1Name], app1Ns, telemetrygen.MetricNames)
 		})
 
 		It("Should not deliver metrics from app2Ns to backend1", func() {
-			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURLs[backend1Name], app2Ns)
+			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, backendExportURLs[backend1Name], app2Ns)
 		})
 
 		// verify metrics from apps2Ns delivered to backend1
 		It("Should deliver Runtime metrics from app2Ns to backend2", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend2Name], app2Ns, kubeletstats.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURLs[backend2Name], app2Ns, kubeletstats.MetricNames)
 		})
 
 		It("Should deliver Prometheus metrics from app2Ns to backend2", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend2Name], app2Ns, prommetricgen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURLs[backend2Name], app2Ns, prommetricgen.MetricNames)
 		})
 
 		It("Should deliver OTLP metrics from app2Ns to backend2", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURLs[backend2Name], app2Ns, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURLs[backend2Name], app2Ns, telemetrygen.MetricNames)
 		})
 
 		It("Should not deliver metrics from app1Ns to backend2", func() {
-			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURLs[backend2Name], app1Ns)
+			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, backendExportURLs[backend2Name], app1Ns)
 		})
 	})
 })

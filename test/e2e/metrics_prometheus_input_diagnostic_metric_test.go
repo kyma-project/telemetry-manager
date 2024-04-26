@@ -26,8 +26,8 @@ var _ = Describe("Metrics Prometheus Input Diagnostic Metrics", Label("metrics")
 	)
 
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		pipelineName     string
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -42,7 +42,7 @@ var _ = Describe("Metrics Prometheus Input Diagnostic Metrics", Label("metrics")
 			mockMetricProducer.Pod().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 			mockMetricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		}...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		// Default namespace objects.
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-prometheus-input-diagnostic-enabled").
@@ -83,7 +83,7 @@ var _ = Describe("Metrics Prometheus Input Diagnostic Metrics", Label("metrics")
 
 		It("Ensures diagnostic metrics are sent to the backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(

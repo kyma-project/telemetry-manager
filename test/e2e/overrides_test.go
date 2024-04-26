@@ -27,7 +27,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 		pipelineName    = "overrides-pipeline"
 		appNameLabelKey = "app.kubernetes.io/name"
 	)
-	var telemetryExportURL string
+	var backendExportURL string
 	var overrides *corev1.ConfigMap
 	var now time.Time
 
@@ -37,7 +37,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 
 		mockBackend := backend.New(mockNs, backend.SignalTypeLogs)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
 			WithSystemNamespaces(true).
@@ -80,7 +80,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 
 		It("Should have INFO level logs in the backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -94,7 +94,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 
 		It("Should not have any DEBUG level logs in the backend", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -130,7 +130,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 
 		It("Should have DEBUG level logs in the backend", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(

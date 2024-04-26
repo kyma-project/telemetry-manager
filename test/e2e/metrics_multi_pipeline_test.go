@@ -32,8 +32,8 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 			telemetrygenNs   = "metric-multi-pipeline-test"
 		)
 		var (
-			pipelines           = kitkyma.NewPipelineList()
-			telemetryExportURLs []string
+			pipelines         = kitkyma.NewPipelineList()
+			backendExportURLs []string
 		)
 
 		makeResources := func() []client.Object {
@@ -45,7 +45,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 			for _, backendName := range []string{mockBackendName1, mockBackendName2} {
 				mockBackend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithName(backendName))
 				objs = append(objs, mockBackend.K8sObjects()...)
-				telemetryExportURLs = append(telemetryExportURLs, mockBackend.TelemetryExportURL(proxyClient))
+				backendExportURLs = append(backendExportURLs, mockBackend.ExportURL(proxyClient))
 
 				metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
 				pipelines.Append(metricPipeline.Name())
@@ -82,8 +82,8 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 		})
 
 		It("Should deliver telemetrygen metrics", func() {
-			for _, telemetryExportURL := range telemetryExportURLs {
-				verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs, telemetrygen.MetricNames)
+			for _, backendExportURL := range backendExportURLs {
+				verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, telemetrygenNs, telemetrygen.MetricNames)
 			}
 		})
 	})
@@ -171,7 +171,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 		var (
 			healthyPipelineName string
 			brokenPipelineName  string
-			telemetryExportURL  string
+			backendExportURL    string
 		)
 
 		makeResources := func() []client.Object {
@@ -182,7 +182,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 
 			mockBackend := backend.New(mockNs, backend.SignalTypeMetrics)
 			objs = append(objs, mockBackend.K8sObjects()...)
-			telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+			backendExportURL = mockBackend.ExportURL(proxyClient)
 
 			healthyPipeline := kitk8s.NewMetricPipelineV1Alpha1("healthy").WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
 			healthyPipelineName = healthyPipeline.Name()
@@ -224,7 +224,7 @@ var _ = Describe("Metrics Multi-Pipeline", Label("metrics"), func() {
 		})
 
 		It("Should deliver telemetrygen metrics", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, telemetrygenNs, telemetrygen.MetricNames)
 		})
 	})
 })

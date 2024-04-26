@@ -67,7 +67,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 			"source_workload",
 			"source_workload_namespace",
 		}
-		telemetryExportURL string
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -78,7 +78,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 
 		mockBackend := backend.New(backendName, backendNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-istio-input-enabled").
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
@@ -117,7 +117,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 
 		It("Should verify istio proxy metric scraping", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -128,7 +128,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 
 		It("Should verify istio proxy metric attributes", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -159,23 +159,23 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		})
 
 		It("Should deliver metrics from app-1 namespace", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, app1Ns, istioProxyMetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, app1Ns, istioProxyMetricNames)
 		})
 
 		It("Should not deliver metrics from app-2 namespace", func() {
-			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, telemetryExportURL, app2Ns)
+			verifiers.MetricsFromNamespaceShouldNotBeDelivered(proxyClient, backendExportURL, app2Ns)
 		})
 
 		It("Should verify that istio metric with source_workload=telemetry-metric-agent does not exist", func() {
-			verifyMetricIsNotPresent(telemetryExportURL, "source_workload", "telemetry-telemetry-gateway")
+			verifyMetricIsNotPresent(backendExportURL, "source_workload", "telemetry-telemetry-gateway")
 		})
 		It("Should verify that istio metric with destination_workload=telemetry-metric-gateway does not exist", func() {
-			verifyMetricIsNotPresent(telemetryExportURL, "destination_workload", "telemetry-metric-gateway")
+			verifyMetricIsNotPresent(backendExportURL, "destination_workload", "telemetry-metric-gateway")
 		})
 
 		It("Ensures no diagnostic metrics are sent to backend", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(

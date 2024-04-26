@@ -25,8 +25,8 @@ var _ = Describe("Metrics mTLS with certificates expiring within 2 weeks", Label
 		telemetrygenNs  = "metric-mtls-2weeks-to-expire"
 	)
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		pipelineName     string
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -42,7 +42,7 @@ var _ = Describe("Metrics mTLS with certificates expiring within 2 weeks", Label
 
 		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
@@ -84,7 +84,7 @@ var _ = Describe("Metrics mTLS with certificates expiring within 2 weeks", Label
 		})
 
 		It("Should deliver telemetrygen metrics", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, telemetrygenNs, telemetrygen.MetricNames)
 		})
 	})
 })

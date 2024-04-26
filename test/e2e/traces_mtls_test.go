@@ -25,8 +25,8 @@ var _ = Describe("Traces mTLS", Label("traces"), func() {
 		telemetrygenNs  = "traces-mtls"
 	)
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		pipelineName     string
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -40,7 +40,7 @@ var _ = Describe("Traces mTLS", Label("traces"), func() {
 
 		mockBackend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithTLS(*serverCerts))
 		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = mockBackend.ExportURL(proxyClient)
 
 		pipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
@@ -78,7 +78,7 @@ var _ = Describe("Traces mTLS", Label("traces"), func() {
 		})
 
 		It("Should verify traces from telemetrygen are delivered", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, telemetrygenNs)
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, telemetrygenNs)
 		})
 
 	})

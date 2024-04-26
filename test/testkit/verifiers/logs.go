@@ -16,9 +16,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func LogsShouldBeDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix string, telemetryExportURL string) {
+func LogsShouldBeDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix string, backendExportURL string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(telemetryExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
