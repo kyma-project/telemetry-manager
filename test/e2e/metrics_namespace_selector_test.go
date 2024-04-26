@@ -36,7 +36,7 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 			kitk8s.NewNamespace(app1Ns).K8sObject(),
 			kitk8s.NewNamespace(app2Ns).K8sObject())
 
-		backend1 := backend.New(backend1Name, backendNs, backend.SignalTypeMetrics)
+		backend1 := backend.New(backendNs, backend.SignalTypeMetrics, backend.WithName(backend1Name))
 		telemetryExportURLs[backend1Name] = backend1.TelemetryExportURL(proxyClient)
 		objs = append(objs, backend1.K8sObjects()...)
 
@@ -47,7 +47,7 @@ var _ = Describe("Metrics Namespace Selector", Label("metrics"), func() {
 			OtlpInput(true, kitk8s.IncludeNamespacesV1Alpha1(app1Ns))
 		objs = append(objs, pipelineIncludeApp1Ns.K8sObject())
 
-		backend2 := backend.New(backend2Name, backendNs, backend.SignalTypeMetrics)
+		backend2 := backend.New(backendNs, backend.SignalTypeMetrics, backend.WithName(backend2Name))
 		telemetryExportURLs[backend2Name] = backend2.TelemetryExportURL(proxyClient)
 		objs = append(objs, backend2.K8sObjects()...)
 

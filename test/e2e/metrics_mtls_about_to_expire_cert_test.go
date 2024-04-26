@@ -40,7 +40,7 @@ var _ = Describe("Metrics mTLS with certificates expiring within 2 weeks", Label
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
+		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 

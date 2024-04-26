@@ -41,7 +41,7 @@ var _ = Describe("Traces Self Monitor", Label("self-mon-traces"), Ordered, func(
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
+		mockBackend := backend.New(mockNs, backend.SignalTypeTraces)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 

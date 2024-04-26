@@ -35,7 +35,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs)
+		mockBackend := backend.New(mockNs, backend.SignalTypeLogs)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 

@@ -42,7 +42,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 			)
 
 			for _, backendName := range []string{mockBackendName1, mockBackendName2} {
-				mockBackend := backend.New(backendName, mockNs, backend.SignalTypeTraces)
+				mockBackend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithName(backendName))
 				objs = append(objs, mockBackend.K8sObjects()...)
 				telemetryExportURLs = append(telemetryExportURLs, mockBackend.TelemetryExportURL(proxyClient))
 
@@ -182,7 +182,7 @@ var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
 				kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
 			)
 
-			mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
+			mockBackend := backend.New(mockNs, backend.SignalTypeTraces)
 			objs = append(objs, mockBackend.K8sObjects()...)
 			telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 

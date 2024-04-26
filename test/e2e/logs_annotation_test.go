@@ -15,15 +15,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
 var _ = Describe("Logs Keep Annotations", Label("logs"), Ordered, func() {
-	const (
-		mockNs          = "log-keep-anno-mocks"
-		mockBackendName = "log-receiver-annotation"
-		logProducerName = "log-producer"
-		pipelineName    = "pipeline-annotation-test"
+	var (
+		mockNs          = suite.Current()
+		logProducerName = suite.Current()
+		pipelineName    = suite.Current()
 	)
 	var telemetryExportURL string
 
@@ -31,7 +31,7 @@ var _ = Describe("Logs Keep Annotations", Label("logs"), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs)
+		mockBackend := backend.New(mockNs, backend.SignalTypeLogs)
 		mockLogProducer := loggen.New(logProducerName, mockNs).
 			WithAnnotations(map[string]string{"release": "v1.0.0"})
 		objs = append(objs, mockBackend.K8sObjects()...)
@@ -68,7 +68,7 @@ var _ = Describe("Logs Keep Annotations", Label("logs"), Ordered, func() {
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
 		It("Should have a log producer running", func() {

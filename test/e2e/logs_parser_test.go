@@ -32,7 +32,7 @@ var _ = Describe("Logs Parser", Label("logs"), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs)
+		mockBackend := backend.New(mockNs, backend.SignalTypeLogs)
 		mockLogProducer := loggen.New(logProducerName, mockNs).
 			WithAnnotations(map[string]string{"fluentbit.io/parser": "my-regex-parser"})
 		objs = append(objs, mockBackend.K8sObjects()...)

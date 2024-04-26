@@ -27,7 +27,7 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject(), kitk8s.NewNamespace(appNs).K8sObject())
 
-		mockBackend := backend.New(backendName, backendNs, backend.SignalTypeMetrics)
+		mockBackend := backend.New(backendNs, backend.SignalTypeMetrics)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, mockBackend.K8sObjects()...)
 

@@ -56,13 +56,13 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		objs = append(objs, kitk8s.NewNamespace(otelCollectorNs).K8sObject())
 
 		// backends
-		otelCollectorLogBackend := backend.New(otelCollectorLogBackendName, otelCollectorNs, backend.SignalTypeLogs)
+		otelCollectorLogBackend := backend.New(otelCollectorNs, backend.SignalTypeLogs, backend.WithName(otelCollectorLogBackendName))
 		objs = append(objs, otelCollectorLogBackend.K8sObjects()...)
 		otelCollectorLogTelemetryExportURL = otelCollectorLogBackend.TelemetryExportURL(proxyClient)
-		metricBackend := backend.New(metricBackendName, otelCollectorNs, backend.SignalTypeMetrics)
+		metricBackend := backend.New(otelCollectorNs, backend.SignalTypeMetrics, backend.WithName(metricBackendName))
 		metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
-		traceBackend := backend.New(traceBackendName, otelCollectorNs, backend.SignalTypeTraces)
+		traceBackend := backend.New(otelCollectorNs, backend.SignalTypeTraces, backend.WithName(traceBackendName))
 		traceTelemetryExportURL = traceBackend.TelemetryExportURL(proxyClient)
 		objs = append(objs, traceBackend.K8sObjects()...)
 
@@ -108,7 +108,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		objs = append(objs, overrides.K8sObject())
 
 		// backend
-		fluentBitLogBackend := backend.New(fluentBitLogBackendName, fluentBitNs, backend.SignalTypeLogs)
+		fluentBitLogBackend := backend.New(fluentBitNs, backend.SignalTypeLogs, backend.WithName(fluentBitLogBackendName))
 		objs = append(objs, fluentBitLogBackend.K8sObjects()...)
 		fluentBitLogTelemetryExportURL = fluentBitLogBackend.TelemetryExportURL(proxyClient)
 

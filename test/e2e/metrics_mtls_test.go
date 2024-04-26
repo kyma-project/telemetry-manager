@@ -37,7 +37,7 @@ var _ = Describe("Metrics mTLS", Label("metrics"), func() {
 		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(mockBackendName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
+		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 

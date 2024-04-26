@@ -50,7 +50,7 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(mockIstiofiedNs, kitk8s.WithIstioInjection()).K8sObject())
 		objs = append(objs, kitk8s.NewNamespace(sampleAppNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
+		mockBackend := backend.New(mockNs, backend.SignalTypeTraces)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
 

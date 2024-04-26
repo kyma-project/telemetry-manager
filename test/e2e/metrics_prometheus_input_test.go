@@ -36,7 +36,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		// Mocks namespace objects.
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeMetrics)
+		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics)
 		mockMetricProducer := prommetricgen.New(mockNs)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		objs = append(objs, []client.Object{
