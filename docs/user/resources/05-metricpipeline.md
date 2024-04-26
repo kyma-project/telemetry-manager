@@ -190,8 +190,8 @@ Reflecting the MetricPipeline's data flow in `TelemetryFlowHealthy` condition ty
 
 | Condition Type       | Condition Status | Condition Reason  | Condition Message                                                                      |
 |----------------------|------------------|-------------------|----------------------------------------------------------------------------------------|
-| TelemetryFlowHealthy | True             | FlowHealthy       | Metrics are flowing normally to backend                                                |
-| TelemetryFlowHealthy | False            | GatewayThrottling | Metric gateway experiencing high influx: Unable to receive metrics at the current rate |
+| TelemetryFlowHealthy | True             | FlowHealthy       | No problems detected in the metric flow                                                |
+| TelemetryFlowHealthy | False            | GatewayThrottling | Metric gateway experiencing high influx: unable to receive metrics at the current rate |
 | TelemetryFlowHealthy | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                   |
 | TelemetryFlowHealthy | False            | SomeDataDropped   | Some metrics dropped: backend unreachable or rejecting                                 |
 | TelemetryFlowHealthy | False            | AllDataDropped    | All metrics dropped: backend unreachable or rejecting                                  |
