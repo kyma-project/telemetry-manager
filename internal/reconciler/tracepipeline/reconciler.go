@@ -224,13 +224,13 @@ func (r *Reconciler) reconcileTraceGateway(ctx context.Context, pipeline *teleme
 	}
 
 	if isIstioActive {
-		allowedPorts = append(allowedPorts, ports.IstioEnvoy, ports.OpenCensus)
+		allowedPorts = append(allowedPorts, ports.IstioEnvoy)
 	}
 
 	if err := otelcollector.ApplyGatewayResources(ctx,
 		k8sutils.NewOwnerReferenceSetter(r.Client, pipeline),
 		r.config.Gateway.WithScaling(scaling).WithCollectorConfig(string(collectorConfigYAML), collectorEnvVars).
-			WithIstioConfig(fmt.Sprintf("%d, %d", ports.Metrics, ports.OpenCensus), isIstioActive).
+			WithIstioConfig(fmt.Sprintf("%d", ports.Metrics), isIstioActive).
 			WithAllowedPorts(allowedPorts)); err != nil {
 		return fmt.Errorf("failed to apply gateway resources: %w", err)
 	}

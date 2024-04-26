@@ -285,30 +285,6 @@ func TestApplyGatewayResources(t *testing.T) {
 			TargetPort: intstr.FromInt32(4318),
 		}, svc.Spec.Ports[1])
 	})
-
-	t.Run("should create open census service", func(t *testing.T) {
-		var svc corev1.Service
-		require.NoError(t, client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name + "-internal"}, &svc))
-
-		require.NotNil(t, svc)
-		require.Equal(t, name+"-internal", svc.Name)
-		require.Equal(t, namespace, svc.Namespace)
-		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
-		}, svc.Labels)
-		require.Equal(t, map[string]string{
-			"app.kubernetes.io/name": name,
-		}, svc.Spec.Selector)
-		require.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
-		require.Len(t, svc.Spec.Ports, 1)
-		require.Equal(t, corev1.ServicePort{
-			Name:       "http-opencensus",
-			Protocol:   corev1.ProtocolTCP,
-			Port:       55678,
-			TargetPort: intstr.FromInt32(55678),
-		}, svc.Spec.Ports[0])
-	})
-
 }
 func TestApplyGatewayResourcesWithIstioEnabled(t *testing.T) {
 	ctx := context.Background()
@@ -399,9 +375,8 @@ func createGatewayConfig(istioEnabled, selfMonEnabled bool) *GatewayConfig {
 			CollectorEnvVars:        envVars,
 			ObserveBySelfMonitoring: selfMonEnabled,
 		},
-		OTLPServiceName:      otlpServiceName,
-		CanReceiveOpenCensus: true,
-		allowedPorts:         []int32{5555, 6666},
+		OTLPServiceName: otlpServiceName,
+		allowedPorts:    []int32{5555, 6666},
 		Istio: IstioConfig{
 			Enabled:      istioEnabled,
 			ExcludePorts: "1111, 2222",

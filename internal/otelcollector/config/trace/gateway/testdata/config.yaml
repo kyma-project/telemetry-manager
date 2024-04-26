@@ -7,7 +7,6 @@ service:
     pipelines:
         traces/test:
             receivers:
-                - opencensus
                 - otlp
             processors:
                 - memory_limiter
@@ -29,8 +28,6 @@ service:
         - health_check
         - pprof
 receivers:
-    opencensus:
-        endpoint: ${MY_POD_IP}:55678
     otlp:
         protocols:
             http:

@@ -45,9 +45,6 @@ func MakeConfig(ctx context.Context, c client.Reader, pipelines []telemetryv1alp
 
 func makeReceiversConfig() Receivers {
 	return Receivers{
-		OpenCensus: config.Endpoint{
-			Endpoint: fmt.Sprintf("${%s}:%d", config.EnvVarCurrentPodIP, ports.OpenCensus),
-		},
 		OTLP: config.OTLPReceiver{
 			Protocols: config.ReceiverProtocols{
 				HTTP: config.Endpoint{
@@ -83,7 +80,7 @@ func makePipelineConfig(exporterIDs ...string) config.Pipeline {
 	sort.Strings(exporterIDs)
 
 	return config.Pipeline{
-		Receivers: []string{"opencensus", "otlp"},
+		Receivers: []string{"otlp"},
 		Processors: []string{"memory_limiter",
 			"k8sattributes",
 			"filter/drop-noisy-spans",
