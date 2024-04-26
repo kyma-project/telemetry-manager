@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Endpoint with Path", Label("tracing"), func() {
+var _ = Describe("Traces Endpoint with Path", Label("traces"), func() {
 	const (
 		path     = "/v1/mock"
 		endpoint = "trace-mock"
