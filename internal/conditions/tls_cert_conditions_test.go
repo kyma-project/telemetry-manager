@@ -68,6 +68,13 @@ func Test_EvaluateTLSCertCondition(t *testing.T) {
 			expectedReason:  ReasonConfigurationGenerated,
 			expectedMessage: MessageForLogPipeline(ReasonConfigurationGenerated),
 		},
+		{
+			name:            "invalid cert key pair",
+			given:           tlscert.ErrInvalidCertificateKeyPair,
+			expectedStatus:  metav1.ConditionFalse,
+			expectedReason:  ReasonTLSCertificateKeyPairInvalid,
+			expectedMessage: fmt.Sprintf(MessageForLogPipeline(ReasonTLSCertificateKeyPairInvalid), tlscert.ErrInvalidCertificateKeyPair),
+		},
 	}
 
 	for _, test := range tests {

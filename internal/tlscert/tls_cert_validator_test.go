@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/test/testkit/tlsgen"
 )
 
 var (
@@ -441,5 +442,30 @@ func TestResolveValue(t *testing.T) {
 			require.ErrorIs(t, err, tt.expectedErr)
 		})
 	}
+
+}
+
+func TestInvalidCertificateKeyPair(t *testing.T) {
+	_, clientCertsFoo, err := tlsgen.NewCertBuilder("foo", "fooNs").Build()
+	require.NoError(t, err)
+	_, clientCertsBar, err := tlsgen.NewCertBuilder("bar", "barNs").Build()
+	require.NoError(t, err)
+
+	keyData := clientCertsFoo.ClientKeyPem.String()
+	certData := clientCertsBar.ClientCertPem.String()
+
+	fakeClient := fake.NewClientBuilder().Build()
+	validator := New(fakeClient)
+
+	cert := telemetryv1alpha1.ValueType{
+		Value: certData,
+	}
+
+	key := telemetryv1alpha1.ValueType{
+		Value: keyData,
+	}
+
+	err = validator.ValidateCertificate(context.Background(), &cert, &key)
+	require.ErrorIs(t, err, ErrInvalidCertificateKeyPair)
 
 }
