@@ -143,7 +143,7 @@ Reflecting the trace data flow in the status condition is currently under develo
 | Condition Status | Condition Reason  | Condition Message                                                                       |
 |------------------|-------------------|-----------------------------------------------------------------------------------------|
 | True             | FlowHealthy       | No problems detected in the trace flow                                                  |
-| False            | GatewayThrottling | Trace gateway experiencing high influx: unable to receive metrics at the current rate |
+| False            | GatewayThrottling | Trace gateway experiencing high influx: unable to receive traces at the current rate |
 | False            | BufferFillingUp   | Buffer nearing capacity: incoming trace rate exceeds the export rate                    |
 | False            | SomeDataDropped   | Some traces dropped: backend unreachable or rejecting                                   |
 | False            | AllDataDropped    | All traces dropped: backend unreachable or rejecting                                    |
