@@ -12,9 +12,9 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config/builder"
 	"github.com/kyma-project/telemetry-manager/internal/k8sutils"
-	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
 type syncer struct {
@@ -134,7 +134,7 @@ func (s *syncer) syncEnvSecret(ctx context.Context, logPipelines []telemetryv1al
 		}
 
 		for _, ref := range logPipelines[i].GetEnvSecretRefs() {
-			targetKey := envvar.FormatEnvVarName(logPipelines[i].Name, ref.Namespace, ref.Name, ref.Key)
+			targetKey := config.FormatEnvVarName(logPipelines[i].Name, ref.Namespace, ref.Name, ref.Key)
 			if copyErr := s.copySecretData(ctx, ref, targetKey, newSecret.Data); copyErr != nil {
 				return fmt.Errorf("unable to copy secret data: %w", copyErr)
 			}

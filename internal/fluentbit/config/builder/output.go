@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
-	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
+	"github.com/kyma-project/telemetry-manager/internal/fluentbit/config"
 )
 
 // Considering Fluent Bit's exponential back-off and jitter algorithm with the default scheduler.base and scheduler.cap,
@@ -98,7 +98,7 @@ func resolveValue(value telemetryv1alpha1.ValueType, logPipeline string) string 
 	}
 	if value.ValueFrom != nil && value.ValueFrom.IsSecretKeyRef() {
 		secretKeyRef := value.ValueFrom.SecretKeyRef
-		return fmt.Sprintf("${%s}", envvar.FormatEnvVarName(logPipeline, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key))
+		return fmt.Sprintf("${%s}", config.FormatEnvVarName(logPipeline, secretKeyRef.Namespace, secretKeyRef.Name, secretKeyRef.Key))
 	}
 	return ""
 }
