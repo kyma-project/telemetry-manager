@@ -16,9 +16,10 @@ func Current() string {
 }
 
 const (
-	LabelLogs    = "logs"
-	LabelTraces  = "traces"
-	LabelMetrics = "metrics"
+	LabelLogs      = "logs"
+	LabelTraces    = "traces"
+	LabelMetrics   = "metrics"
+	LabelTelemetry = "telemetry"
 
 	LabelSelfMonitoringLogs = "self-mon-logs"
 )
