@@ -81,7 +81,7 @@ var _ = Describe(suite.Current(), Label(suite.LabelLogs), Ordered, func() {
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(
-					WithKubernetesLabels(HaveKeyWithValue("app", "logging-label-test")))),
+					WithKubernetesLabels(HaveKeyWithValue("app", logProducerName)))),
 				))
 			}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 		})
