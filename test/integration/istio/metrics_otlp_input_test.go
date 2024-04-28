@@ -34,11 +34,11 @@ var _ = Describe("Metrics OTLP Input", Label("metrics"), func() {
 		objs = append(objs, kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject())
 
 		// Mocks namespace objects
-		mockBackend := backend.New(backendName, backendNs, backend.SignalTypeMetrics)
+		mockBackend := backend.New(backendNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		backendExportURL = mockBackend.ExportURL(proxyClient)
 
-		mockIstiofiedBackend := backend.New(istiofiedBackendName, istiofiedBackendNs, backend.SignalTypeMetrics)
+		mockIstiofiedBackend := backend.New(istiofiedBackendNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
 		telemetryIstiofiedExportURL = mockIstiofiedBackend.ExportURL(proxyClient)
 

@@ -76,7 +76,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 			kitk8s.NewNamespace(app1Ns, kitk8s.WithIstioInjection()).K8sObject(),
 			kitk8s.NewNamespace(app2Ns, kitk8s.WithIstioInjection()).K8sObject())
 
-		mockBackend := backend.New(backendName, backendNs, backend.SignalTypeMetrics)
+		mockBackend := backend.New(backendNs, backend.SignalTypeMetrics)
 		objs = append(objs, mockBackend.K8sObjects()...)
 		backendExportURL = mockBackend.ExportURL(proxyClient)
 
