@@ -2,9 +2,6 @@
 package k8s
 
 import (
-	"fmt"
-
-	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
@@ -14,7 +11,6 @@ import (
 type metricPipelineV1Alpha1 struct {
 	persistent bool
 
-	id              string
 	name            string
 	otlpEndpointRef *telemetryv1alpha1.SecretKeyRef
 	otlpEndpoint    string
@@ -29,7 +25,6 @@ type metricPipelineV1Alpha1 struct {
 
 func NewMetricPipelineV1Alpha1(name string) *metricPipelineV1Alpha1 {
 	return &metricPipelineV1Alpha1{
-		id:           uuid.New().String(),
 		name:         name,
 		otlpEndpoint: "http://unreachable:4317",
 	}
@@ -46,10 +41,7 @@ func (p *metricPipelineV1Alpha1) WithOutputEndpointFromSecret(otlpEndpointRef *t
 }
 
 func (p *metricPipelineV1Alpha1) Name() string {
-	if p.persistent {
-		return p.name
-	}
-	return fmt.Sprintf("%s-%s", p.name, p.id)
+	return p.name
 }
 
 func (p *metricPipelineV1Alpha1) Persistent(persistent bool) *metricPipelineV1Alpha1 {
@@ -206,7 +198,7 @@ func (p *metricPipelineV1Alpha1) K8sObject() *telemetryv1alpha1.MetricPipeline {
 
 	metricPipeline := telemetryv1alpha1.MetricPipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   p.Name(),
+			Name:   p.name,
 			Labels: labels,
 		},
 		Spec: telemetryv1alpha1.MetricPipelineSpec{

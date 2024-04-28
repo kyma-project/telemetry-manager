@@ -22,10 +22,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Self Monitor", Label("self-mon-metrics"), Ordered, func() {
+var _ = Describe(suite.Current(), Label(suite.LabelSelfMonitoringMetrics), Ordered, func() {
 	const (
 		mockBackendName = "metrics-receiver-selfmon"
 		mockNs          = "metrics-basic-selfmon-test"
@@ -47,7 +48,6 @@ var _ = Describe("Metrics Self Monitor", Label("self-mon-metrics"), Ordered, fun
 
 		pipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", mockBackendName)).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
-		pipelineName = pipeline.Name()
 		objs = append(objs,
 			telemetrygen.New(kitkyma.DefaultNamespaceName, telemetrygen.SignalTypeMetrics).K8sObject(),
 			pipeline.K8sObject(),

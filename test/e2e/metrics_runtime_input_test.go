@@ -19,17 +19,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/otel/kubeletstats"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
-	const (
-		mockNs          = "metric-runtime-input-mocks"
-		mockBackendName = "metric-agent-receiver"
-	)
-
+var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
-		pipelineName     string
+		mockNs           = suite.Current()
+		pipelineName     = suite.Current()
 		backendExportURL string
 	)
 
@@ -37,14 +34,13 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		backendExportURL = mockBackend.ExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeMetrics)
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-runtime-input-enabled").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
 			RuntimeInput(true)
-		pipelineName = metricPipeline.Name()
 		objs = append(objs, metricPipeline.K8sObject())
 
 		return objs
@@ -66,7 +62,7 @@ var _ = Describe("Metrics Runtime Input", Label("metrics"), func() {
 		})
 
 		It("Ensures the metrics backend is ready", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Ensures the metric agent daemonset is ready", func() {

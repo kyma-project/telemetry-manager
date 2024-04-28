@@ -7,10 +7,10 @@ import (
 	. "github.com/onsi/gomega"
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe("Metrics Validating Endpoint Path", Label("metrics"), Ordered, func() {
-
+var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 	metricPipelineDefaultGRPCWithPath := kitk8s.NewMetricPipelineV1Alpha1("metricpipeline-default-reject-with-path").
 		WithOutputEndpoint("mock-endpoint:4817").WithEndpointPath("/v1/mock/metrics").
 		Persistent(isOperational()).K8sObject()

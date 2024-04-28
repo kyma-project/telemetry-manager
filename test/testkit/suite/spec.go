@@ -21,5 +21,9 @@ const (
 	LabelMetrics   = "metrics"
 	LabelTelemetry = "telemetry"
 
-	LabelSelfMonitoringLogs = "self-mon-logs"
+	LabelSelfMonitoringLogs    = "self-mon-logs"
+	LabelSelfMonitoringTraces  = "self-mon-traces"
+	LabelSelfMonitoringMetrics = "self-mon-metrics"
+
+	LabelV1Beta1 = "v1beta1"
 )

@@ -17,17 +17,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Service Name", Label("metrics"), func() {
-	const (
-		mockNs          = "metric-mocks-service-name"
-		mockBackendName = "metric-receiver"
-	)
+var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
-		runtimeInputPipelineName string
-		backendExportURL         string
+		mockNs           = suite.Current()
+		pipelineName     = suite.Current()
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -40,11 +38,10 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 
 		backendExportURL = mockBackend.ExportURL(proxyClient)
 
-		runtimeInputPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-service-name-test").
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
 			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
 			RuntimeInput(true, kitk8s.IncludeNamespacesV1Alpha1(kitkyma.SystemNamespaceName))
-		runtimeInputPipelineName = runtimeInputPipeline.Name()
-		objs = append(objs, runtimeInputPipeline.K8sObject())
+		objs = append(objs, metricPipeline.K8sObject())
 
 		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeMetrics)...)
 
@@ -67,11 +64,11 @@ var _ = Describe("Metrics Service Name", Label("metrics"), func() {
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
-			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, runtimeInputPipelineName)
+			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
 		verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {
