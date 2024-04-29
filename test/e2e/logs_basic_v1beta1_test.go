@@ -17,9 +17,9 @@ import (
 
 var _ = Describe("Logs Basic v1beta1", Label("logs", "v1beta1"), Ordered, func() {
 	var (
-		mockNs           = suite.Current()
-		logProducerName  = suite.Current()
-		pipelineName     = suite.Current()
+		mockNs           = suite.ID()
+		logProducerName  = suite.ID()
+		pipelineName     = suite.ID()
 		backendExportURL string
 	)
 

@@ -21,7 +21,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	// https://istio.io/latest/docs/reference/config/metrics/
 	var (
 		istioProxyMetricNames = []string{
@@ -62,10 +62,10 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 			"source_workload",
 			"source_workload_namespace",
 		}
-		mockNs           = suite.Current()
-		app1Ns           = suite.CurrentWithSuffix("app-1")
-		app2Ns           = suite.CurrentWithSuffix("app-2")
-		pipelineName     = suite.Current()
+		mockNs           = suite.ID()
+		app1Ns           = suite.IDWithSuffix("app-1")
+		app2Ns           = suite.IDWithSuffix("app-2")
+		pipelineName     = suite.ID()
 		backendExportURL string
 	)
 

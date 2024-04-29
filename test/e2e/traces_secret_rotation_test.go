@@ -20,9 +20,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelTraces), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	Context("When tracepipeline with missing secret reference exists", Ordered, func() {
-		var pipelineName = suite.Current()
+		var pipelineName = suite.ID()
 
 		hostSecret := kitk8s.NewOpaqueSecret("trace-rcv-hostname", kitkyma.DefaultNamespaceName, kitk8s.WithStringData("trace-host", "http://localhost:4317"))
 		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).WithOutputEndpointFromSecret(hostSecret.SecretKeyRefV1Alpha1("trace-host"))

@@ -16,9 +16,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
-		mockNs           = suite.Current()
+		mockNs           = suite.ID()
 		appNs            = "app"
 		backendExportURL string
 	)
@@ -31,7 +31,7 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 		backendExportURL = backend.ExportURL(proxyClient)
 		objs = append(objs, backend.K8sObjects()...)
 
-		pipelineWithoutOTLP := kitk8s.NewMetricPipelineV1Alpha1(suite.Current()).
+		pipelineWithoutOTLP := kitk8s.NewMetricPipelineV1Alpha1(suite.ID()).
 			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
 			OtlpInput(false)
 		objs = append(objs, pipelineWithoutOTLP.K8sObject())

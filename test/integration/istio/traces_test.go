@@ -21,7 +21,7 @@ import (
 	"net/http"
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelTraces), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 	const (
 		appName          = "app-1"
 		istiofiedAppName = "app-2"
@@ -29,11 +29,11 @@ var _ = Describe(suite.Current(), Label(suite.LabelTraces), Ordered, func() {
 	)
 
 	var (
-		backendNs                 = suite.Current()
-		istiofiedBackendNs        = suite.CurrentWithSuffix("istiofied")
-		appNs                     = suite.CurrentWithSuffix("app")
-		pipeline1Name             = suite.CurrentWithSuffix("1")
-		pipeline2Name             = suite.CurrentWithSuffix("2")
+		backendNs                 = suite.ID()
+		istiofiedBackendNs        = suite.IDWithSuffix("istiofied")
+		appNs                     = suite.IDWithSuffix("app")
+		pipeline1Name             = suite.IDWithSuffix("1")
+		pipeline2Name             = suite.IDWithSuffix("2")
 		backendExportURL          string
 		istiofiedBackendExportURL string
 		appURL                    string

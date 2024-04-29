@@ -16,7 +16,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	const (
 		metricProducer1Name = "metric-producer-1"
 		metricProducer2Name = "metric-producer-2"
@@ -24,12 +24,12 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 
 	var (
 		// backend1Ns is a namespace without Istio sidecar injection
-		backend1Ns = suite.CurrentWithSuffix("backend-1")
+		backend1Ns = suite.IDWithSuffix("backend-1")
 		// backend2Ns is a namespace with Istio sidecar injection
-		backend2Ns = suite.CurrentWithSuffix("backend-2")
+		backend2Ns = suite.IDWithSuffix("backend-2")
 
-		pipeline1Name     = suite.CurrentWithSuffix("1")
-		pipeline2Name     = suite.CurrentWithSuffix("2")
+		pipeline1Name     = suite.IDWithSuffix("1")
+		pipeline2Name     = suite.IDWithSuffix("2")
 		backend1ExportURL string
 		backend2ExportURL string
 	)

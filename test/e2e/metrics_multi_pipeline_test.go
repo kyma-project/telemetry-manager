@@ -24,15 +24,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	Context("When multiple metricpipelines exist", Ordered, func() {
 		var (
-			mockNs            = suite.CurrentWithSuffix("multi-pipeline")
-			backend1Name      = suite.CurrentWithSuffix("backend-1")
-			pipeline1Name     = suite.CurrentWithSuffix("1")
+			mockNs            = suite.IDWithSuffix("multi-pipeline")
+			backend1Name      = suite.IDWithSuffix("backend-1")
+			pipeline1Name     = suite.IDWithSuffix("1")
 			backend1ExportURL string
-			backend2Name      = suite.CurrentWithSuffix("backend-2")
-			pipeline2Name     = suite.CurrentWithSuffix("2")
+			backend2Name      = suite.IDWithSuffix("backend-2")
+			pipeline2Name     = suite.IDWithSuffix("2")
 			backend2ExportURL string
 		)
 
@@ -101,7 +101,7 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 		makeResources := func() []client.Object {
 			var objs []client.Object
 			for i := 0; i < maxNumberOfMetricPipelines; i++ {
-				pipelineName := fmt.Sprintf("%s-limit-%d", suite.Current(), i)
+				pipelineName := fmt.Sprintf("%s-limit-%d", suite.ID(), i)
 				pipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName)
 				pipelinesNames = append(pipelinesNames, pipelineName)
 
@@ -136,7 +136,7 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 
 		It("Should set ConfigurationGenerated condition to false", func() {
 			By("Creating an additional pipeline", func() {
-				pipelineName := fmt.Sprintf("%s-limit-exceeding", suite.Current())
+				pipelineName := fmt.Sprintf("%s-limit-exceeding", suite.ID())
 				pipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName)
 				pipelineCreatedLater = pipeline.K8sObject()
 				pipelinesNames = append(pipelinesNames, pipelineName)
@@ -168,9 +168,9 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 
 	Context("When a broken metricpipeline exists", Ordered, func() {
 		var (
-			mockNs              = suite.CurrentWithSuffix("broken-pipeline")
-			healthyPipelineName = suite.CurrentWithSuffix("healthy")
-			brokenPipelineName  = suite.CurrentWithSuffix("broken")
+			mockNs              = suite.IDWithSuffix("broken-pipeline")
+			healthyPipelineName = suite.IDWithSuffix("healthy")
+			brokenPipelineName  = suite.IDWithSuffix("broken")
 			backendExportURL    string
 		)
 

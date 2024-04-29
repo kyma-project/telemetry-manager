@@ -22,15 +22,15 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelLogs), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	const (
 		//creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
 		sampleAppNs = "istio-permissive-mtls"
 	)
 
 	var (
-		mockNs           = suite.Current()
-		pipelineName     = suite.Current()
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
 		backendExportURL string
 		metricPodURL     string
 	)

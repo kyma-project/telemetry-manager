@@ -15,7 +15,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelTraces), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	const (
 		path     = "/v1/mock"
 		endpoint = "trace-mock"
@@ -26,7 +26,7 @@ var _ = Describe(suite.Current(), Label(suite.LabelTraces), func() {
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		pipelineName := suite.Current()
+		pipelineName := suite.ID()
 		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
 			WithProtocol("http").
 			WithOutputEndpoint(endpoint).WithEndpointPath(path)

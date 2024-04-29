@@ -8,10 +8,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 )
 
-// Current returns the current test suite ID.
+// ID returns the current test suite ID.
 // It is based on the file name of the test suite.
 // It is useful for generating unique names for resources created in the test suite (telemetry pipelines, mock namespaces, etc.).
-func Current() string {
+func ID() string {
 	_, filePath, _, ok := runtime.Caller(1)
 	if !ok {
 		panic("Cannot get the current file path")
@@ -20,9 +20,9 @@ func Current() string {
 	return sanitizeSpecID(filePath)
 }
 
-// CurrentWithSuffix returns the current test suite ID with the provided suffix.
+// IDWithSuffix returns the current test suite ID with the provided suffix.
 // If no suffix is provided, it defaults to an empty string.
-func CurrentWithSuffix(suffix string) string {
+func IDWithSuffix(suffix string) string {
 	_, filePath, _, ok := runtime.Caller(1)
 	if !ok {
 		panic("Cannot get the current file path")

@@ -18,9 +18,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
-		mockNs            = suite.Current()
+		mockNs            = suite.ID()
 		app1Ns            = "app-1"
 		app2Ns            = "app-2"
 		backend1Name      = "backend-1"

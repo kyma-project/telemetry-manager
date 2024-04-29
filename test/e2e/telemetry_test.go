@@ -27,7 +27,7 @@ var (
 	}
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelTelemetry), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 	Context("After creating Telemetry resources", Ordered, func() {
 		It("Should have ValidatingWebhookConfiguration", func() {
 			Eventually(func(g Gomega) {

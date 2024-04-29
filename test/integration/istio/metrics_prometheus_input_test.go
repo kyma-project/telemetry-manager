@@ -20,13 +20,13 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
-		mockNs                           = suite.Current()
-		pipelineName                     = suite.Current()
-		httpsAnnotatedMetricProducerName = suite.CurrentWithSuffix("producer-https")
-		httpAnnotatedMetricProducerName  = suite.CurrentWithSuffix("producer-http")
-		unannotatedMetricProducerName    = suite.CurrentWithSuffix("producer")
+		mockNs                           = suite.ID()
+		pipelineName                     = suite.ID()
+		httpsAnnotatedMetricProducerName = suite.IDWithSuffix("producer-https")
+		httpAnnotatedMetricProducerName  = suite.IDWithSuffix("producer-http")
+		unannotatedMetricProducerName    = suite.IDWithSuffix("producer")
 	)
 	var backendExportURL string
 

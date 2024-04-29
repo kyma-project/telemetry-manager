@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 )
 
-var _ = Describe(suite.Current(), func() {
+var _ = Describe(suite.ID(), func() {
 	Context("After deploying manifest", func() {
 		It("Should have kyma-system namespace", Label(suite.LabelTelemetry), func() {
 			var namespace corev1.Namespace

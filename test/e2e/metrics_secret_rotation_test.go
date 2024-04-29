@@ -20,9 +20,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	Context("When a metricpipeline with missing secret reference exists", Ordered, func() {
-		var pipelineName = suite.Current()
+		var pipelineName = suite.ID()
 
 		hostSecret := kitk8s.NewOpaqueSecret("metric-rcv-hostname", kitkyma.DefaultNamespaceName,
 			kitk8s.WithStringData("metric-host", "http://localhost:4317"))

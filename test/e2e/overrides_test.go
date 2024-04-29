@@ -21,14 +21,14 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelTelemetry), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTelemetry), Ordered, func() {
 	const (
 		appNameLabelKey = "app.kubernetes.io/name"
 	)
 
 	var (
-		mockNs           = suite.Current()
-		pipelineName     = suite.Current()
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
 		backendExportURL string
 		overrides        *corev1.ConfigMap
 		now              time.Time

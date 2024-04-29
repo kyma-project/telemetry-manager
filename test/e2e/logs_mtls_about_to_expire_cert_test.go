@@ -17,11 +17,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe(suite.Current(), Label(suite.LabelLogs), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	var (
-		mockNs           = suite.Current()
-		logProducerName  = suite.Current()
-		pipelineName     = suite.Current()
+		mockNs           = suite.ID()
+		logProducerName  = suite.ID()
+		pipelineName     = suite.ID()
 		backendExportURL string
 	)
 
