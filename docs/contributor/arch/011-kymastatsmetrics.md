@@ -110,7 +110,9 @@ Additional attributes, like the `endpoints` of the Telemetry status, are ignored
 
 Status and conditions should result in the following metrics:
 
-| Metric Name                                   | Attributes     | Description                                                                                                           |
-|-----------------------------------------------|----------------|-----------------------------------------------------------------------------------------------------------------------|
-| kyma_module_\<name>_status_state              | state          | Reflects .status.state field of the module CRD. Value is 1 if the state is `Ready`, else 0.                           |
-| kyma_module_\<name>_status_condition\_\<type> | reason, status | Exports condition status of all conditions under .status.conditions. Value is 1 if the condition status is 1, else 0. |
+| Metric Name                  | Attributes                 | Description                                                                                                           |
+|------------------------------|----------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| kyma.module.status.state     | state, name                | Reflects .status.state field of the module CRD. Value is 1 if the state is `Ready`, else 0.                           |
+| kyma.module.status.condition | reason, status, name, type | Exports condition status of all conditions under .status.conditions. Value is 1 if the condition status is 1, else 0. |
+
+Collecting the module specific metrics should continue working in the case of a Node or Pod failure (high availability) without emitting metrics multiple times. To ensure this behavior, Kubernetes API server [leases](https://kubernetes.io/docs/concepts/architecture/leases/) can be used while only the lease holder should emit metrics. We will investigate for a generic solution in the OpenTelemetry Collector.
