@@ -54,7 +54,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 
 		backend2 := backend.New(istiofiedBackendNs, backend.SignalTypeTraces)
 		objs = append(objs, backend2.K8sObjects()...)
-		istiofiedBackendExportURL = backend1.ExportURL(proxyClient)
+		istiofiedBackendExportURL = backend2.ExportURL(proxyClient)
 
 		istioTracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipeline2Name).WithOutputEndpointFromSecret(backend2.HostSecretRefV1Alpha1())
 		objs = append(objs, istioTracePipeline.K8sObject())
