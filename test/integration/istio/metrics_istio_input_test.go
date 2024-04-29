@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"fmt"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/metric"
@@ -132,7 +133,7 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 				g.Expect(resp).To(HaveHTTPBody(
 					ContainMd(SatisfyAll(
 						ContainResourceAttrs(SatisfyAll(
-							HaveKeyWithValue("k8s.namespace.name", "app-1"),
+							HaveKeyWithValue("k8s.namespace.name", app1Ns),
 							HaveKeyWithValue("k8s.pod.name", "destination"),
 							HaveKeyWithValue("k8s.container.name", "istio-proxy"),
 							HaveKeyWithValue("service.name", "destination"),
@@ -143,11 +144,11 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 							ContainDataPointAttrs(HaveKeyWithValue("destination_workload", "destination")),
 							ContainDataPointAttrs(HaveKeyWithValue("destination_app", "destination")),
 							ContainDataPointAttrs(HaveKeyWithValue("destination_service_name", "destination")),
-							ContainDataPointAttrs(HaveKeyWithValue("destination_service", "destination.app-1.svc.cluster.local")),
+							ContainDataPointAttrs(HaveKeyWithValue("destination_service", fmt.Sprintf("destination.%s.svc.cluster.local", app1Ns))),
 							ContainDataPointAttrs(HaveKeyWithValue("destination_service_namespace", app1Ns)),
-							ContainDataPointAttrs(HaveKeyWithValue("destination_principal", "spiffe://cluster.local/ns/app-1/sa/default")),
+							ContainDataPointAttrs(HaveKeyWithValue("destination_principal", fmt.Sprintf("spiffe://cluster.local/ns/%s/sa/default", app1Ns))),
 							ContainDataPointAttrs(HaveKeyWithValue("source_workload", "source")),
-							ContainDataPointAttrs(HaveKeyWithValue("source_principal", "spiffe://cluster.local/ns/app-1/sa/default")),
+							ContainDataPointAttrs(HaveKeyWithValue("source_principal", fmt.Sprintf("spiffe://cluster.local/ns/%s/sa/default", app1Ns))),
 							ContainDataPointAttrs(HaveKeyWithValue("response_code", "200")),
 							ContainDataPointAttrs(HaveKeyWithValue("request_protocol", "http")),
 							ContainDataPointAttrs(HaveKeyWithValue("connection_security_policy", "mutual_tls")),
