@@ -7,7 +7,11 @@ import (
 )
 
 func Current() string {
-	_, filePath, _, _ := runtime.Caller(1)
+	_, filePath, _, ok := runtime.Caller(1)
+	if !ok {
+		panic("Cannot get the current file path")
+	}
+
 	fileName := path.Base(filePath)
 	specID := strings.TrimSuffix(fileName, "_test.go")
 	specID = strings.ReplaceAll(specID, "_", "-")
