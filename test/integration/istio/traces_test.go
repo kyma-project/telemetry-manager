@@ -69,13 +69,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")))
 
 		// Abusing metrics provider for istio traces
-		istioSampleApp := prommetricgen.New(appNs, prommetricgen.WithName(appName))
-		objs = append(objs, istioSampleApp.Pod().K8sObject())
-		appURL = istioSampleApp.PodURL(proxyClient)
+		istiofiedApp := prommetricgen.New(istiofiedAppNs, prommetricgen.WithName(istiofiedAppName))
+		objs = append(objs, istiofiedApp.Pod().K8sObject())
+		appURL = istiofiedApp.PodURL(proxyClient)
 
-		sampleApp := prommetricgen.New(istiofiedAppNs, prommetricgen.WithName(istiofiedAppName))
-		objs = append(objs, sampleApp.Pod().K8sObject())
-		istiofiedAppURL = sampleApp.PodURL(proxyClient)
+		app := prommetricgen.New(appNs, prommetricgen.WithName(appName))
+		objs = append(objs, app.Pod().K8sObject())
+		istiofiedAppURL = app.PodURL(proxyClient)
 
 		return objs
 	}
