@@ -215,7 +215,7 @@ Reflecting the LogPipeline's data flow in `TelemetryFlowHealthy` condition type 
 
 | Condition Type       | Condition Status | Condition Reason | Condition Message                                                  |
 |----------------------|------------------|------------------|--------------------------------------------------------------------|
-| TelemetryFlowHealthy | True             | FlowHealthy      | Logs are flowing normally to backend                               |
+| TelemetryFlowHealthy | True             | FlowHealthy      | No problems detected in the log flow                               |
 | TelemetryFlowHealthy | False            | BufferFillingUp  | Buffer nearing capacity: incoming log rate exceeds the export rate |
 | TelemetryFlowHealthy | False            | NoLogsDelivered  | No logs delivered to backend                                       |
 | TelemetryFlowHealthy | False            | SomeDataDropped  | Some logs dropped: backend unreachable or rejecting                |

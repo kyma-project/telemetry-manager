@@ -98,3 +98,19 @@ func TracePipelineShouldHaveTLSCondition(ctx context.Context, k8sClient client.C
 		g.Expect(condition.Reason).To(Equal(tlsCondition))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }
+
+func TracePipelineShouldHaveLegacyConditionsAtEnd(ctx context.Context, k8sClient client.Client, pipelineName string) {
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.TracePipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+
+		conditionsSize := len(pipeline.Status.Conditions)
+
+		pendingCond := pipeline.Status.Conditions[conditionsSize-2]
+		g.Expect(pendingCond.Type).To(Equal(conditions.TypePending))
+
+		runningCond := pipeline.Status.Conditions[conditionsSize-1]
+		g.Expect(runningCond.Type).To(Equal(conditions.TypeRunning))
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
