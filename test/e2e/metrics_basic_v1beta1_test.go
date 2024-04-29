@@ -152,7 +152,7 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics, suite.LabelV1Beta1),
 			verifiers.MetricPipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
 		})
 
-		It("Should deliver telemetrygen metrics", Label(operationalTest), func() {
+		It("Should deliver telemetrygen metrics", Label(suite.LabelOperational), func() {
 			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, mockNs, telemetrygen.MetricNames)
 		})
 

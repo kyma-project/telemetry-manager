@@ -4,6 +4,8 @@ import (
 	"path"
 	"runtime"
 	"strings"
+
+	. "github.com/onsi/ginkgo/v2"
 )
 
 func Current() string {
@@ -29,4 +31,14 @@ const (
 	LabelSelfMonitoringMetrics = "self-mon-metrics"
 	LabelV1Beta1               = "v1beta1"
 	LabelTelemetryLogsAnalysis = "telemetry-logs-analysis"
+
+	// Operational tests preserve K8s objects between test runs.
+	LabelOperational = "operational"
 )
+
+// IsOperational returns true if the test is invoked with an "operational" tag.
+func IsOperational() bool {
+	labelsFilter := GinkgoLabelFilter()
+
+	return labelsFilter != "" && Label(LabelOperational).MatchesLabelFilter(labelsFilter)
+}

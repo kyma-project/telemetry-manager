@@ -13,27 +13,27 @@ import (
 var _ = Describe(suite.Current(), Label(suite.LabelTraces), func() {
 	tracePipelineDefaultGRPCWithPath := kitk8s.NewTracePipelineV1Alpha1("tracepipeline-default-reject-with-path").
 		WithOutputEndpoint("mock-endpoint:4817").WithEndpointPath("/v1/mock/traces").
-		Persistent(isOperational()).K8sObject()
+		Persistent(suite.IsOperational()).K8sObject()
 
 	tracePipelineWithGRPCAndPath := kitk8s.NewTracePipelineV1Alpha1("tracepipeline-reject-with-grpc-and-path").
 		WithOutputEndpoint("mock-endpoint:4817").WithEndpointPath("/v1/mock/traces").
 		WithProtocol("grpc").
-		Persistent(isOperational()).K8sObject()
+		Persistent(suite.IsOperational()).K8sObject()
 
 	tracePipelineWithGRPCAndWithoutPath := kitk8s.NewTracePipelineV1Alpha1("tracepipeline-accept-with-grpc-and-no-path").
 		WithOutputEndpoint("mock-endpoint:4817").
 		WithProtocol("grpc").
-		Persistent(isOperational()).K8sObject()
+		Persistent(suite.IsOperational()).K8sObject()
 
 	tracePipelineWithHTTPAndPath := kitk8s.NewTracePipelineV1Alpha1("tracepipeline-accept-with-http-and-path").
 		WithOutputEndpoint("mock-endpoint:4817").WithEndpointPath("/v1/mock/traces").
 		WithProtocol("http").
-		Persistent(isOperational()).K8sObject()
+		Persistent(suite.IsOperational()).K8sObject()
 
 	tracePipelineWithHTTPAndWithoutPath := kitk8s.NewTracePipelineV1Alpha1("tracepipeline-accept-with-http-and-no-path").
 		WithOutputEndpoint("mock-endpoint:4817").
 		WithProtocol("http").
-		Persistent(isOperational()).K8sObject()
+		Persistent(suite.IsOperational()).K8sObject()
 
 	Context("When a trace pipeline set endpoint path", Ordered, func() {
 

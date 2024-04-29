@@ -51,19 +51,19 @@ var _ = Describe(suite.Current(), Label(suite.LabelTraces), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(mockIstiofiedNs, kitk8s.WithIstioInjection()).K8sObject())
 		objs = append(objs, kitk8s.NewNamespace(sampleAppNs).K8sObject())
 
-		backend := backend.New(mockNs, backend.SignalTypeTraces)
-		objs = append(objs, backend.K8sObjects()...)
-		backendExportURL = backend.ExportURL(proxyClient)
+		backend1 := backend.New(mockNs, backend.SignalTypeTraces)
+		objs = append(objs, backend1.K8sObjects()...)
+		backendExportURL = backend1.ExportURL(proxyClient)
 
-		mockIstiofiedBackend := backend.New(mockIstiofiedNs, backend.SignalTypeTraces)
-		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
-		telemetryIstiofiedExportURL = backend.ExportURL(proxyClient)
+		backend2 := backend.New(mockIstiofiedNs, backend.SignalTypeTraces)
+		objs = append(objs, backend2.K8sObjects()...)
+		telemetryIstiofiedExportURL = backend1.ExportURL(proxyClient)
 
-		istioTracePipeline := kitk8s.NewTracePipelineV1Alpha1("istiofied-app-traces").WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRefV1Alpha1())
+		istioTracePipeline := kitk8s.NewTracePipelineV1Alpha1("istiofied-app-traces").WithOutputEndpointFromSecret(backend2.HostSecretRefV1Alpha1())
 		istiofiedPipelineName = istioTracePipeline.Name()
 		objs = append(objs, istioTracePipeline.K8sObject())
 
-		tracePipeline := kitk8s.NewTracePipelineV1Alpha1("app-traces").WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1())
+		tracePipeline := kitk8s.NewTracePipelineV1Alpha1("app-traces").WithOutputEndpointFromSecret(backend1.HostSecretRefV1Alpha1())
 		pipelineName = tracePipeline.Name()
 		objs = append(objs, tracePipeline.K8sObject())
 
