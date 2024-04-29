@@ -46,7 +46,7 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 
 		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject())
 		objs = append(objs, kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject())
-		objs = append(objs, kitk8s.NewNamespace(appNs, kitk8s.WithIstioInjection()).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(appNs).K8sObject())
 
 		backend1 := backend.New(backendNs, backend.SignalTypeTraces)
 		objs = append(objs, backend1.K8sObjects()...)
@@ -71,11 +71,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 		// Abusing metrics provider for istio traces
 		istiofiedApp := prommetricgen.New(istiofiedAppNs, prommetricgen.WithName(istiofiedAppName))
 		objs = append(objs, istiofiedApp.Pod().K8sObject())
-		appURL = istiofiedApp.PodURL(proxyClient)
+		istiofiedAppURL = istiofiedApp.PodURL(proxyClient)
 
 		app := prommetricgen.New(appNs, prommetricgen.WithName(appName))
 		objs = append(objs, app.Pod().K8sObject())
-		istiofiedAppURL = app.PodURL(proxyClient)
+		appURL = app.PodURL(proxyClient)
 
 		return objs
 	}
