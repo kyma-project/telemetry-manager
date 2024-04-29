@@ -47,7 +47,6 @@ var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
 			WithIncludeContainers([]string{"istio-proxy"}).
 			WithHTTPOutput()
-		pipelineName = istioAccessLogsPipeline.Name()
 		objs = append(objs, istioAccessLogsPipeline.K8sObject())
 
 		// Abusing metrics provider for istio access logs
