@@ -31,7 +31,8 @@ func TestMakeConfig(t *testing.T) {
 	})
 
 	t.Run("secure", func(t *testing.T) {
-		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().WithName("test").Build()})
+		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{testutils.NewMetricPipelineBuilder().
+			WithName("test").OtlpOutput(testutils.OTLPEndpoint("https://localhost")).Build()})
 		require.NoError(t, err)
 
 		require.Contains(t, collectorConfig.Exporters, "otlp/test")
@@ -41,7 +42,7 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("insecure", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test-insecure").WithEndpoint("http://localhost").Build()},
+			testutils.NewMetricPipelineBuilder().WithName("test-insecure").OtlpOutput(testutils.OTLPEndpoint("http://localhost")).Build()},
 		)
 		require.NoError(t, err)
 
@@ -52,7 +53,7 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("basic auth", func(t *testing.T) {
 		collectorConfig, _, err := MakeConfig(ctx, fakeClient, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test-basic-auth").WithBasicAuth("user", "password").Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test-basic-auth").OtlpOutput(testutils.OTLPBasicAuth("user", "password")).Build(),
 		})
 		require.NoError(t, err)
 
@@ -390,7 +391,7 @@ func TestMakeConfig(t *testing.T) {
 
 	t.Run("marshaling", func(t *testing.T) {
 		config, _, err := MakeConfig(context.Background(), fakeClient, []telemetryv1alpha1.MetricPipeline{
-			testutils.NewMetricPipelineBuilder().WithName("test").Build(),
+			testutils.NewMetricPipelineBuilder().WithName("test").OtlpOutput(testutils.OTLPEndpoint("https://localhost")).Build(),
 		})
 		require.NoError(t, err)
 

@@ -890,7 +890,7 @@ func TestUpdateStatus(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				pipeline := testutils.NewLogPipelineBuilder().WithTLS("fooCert", "fooKey").Build()
+				pipeline := testutils.NewLogPipelineBuilder().HTTPOutput(testutils.HTTPClientTLS("fooCert", "fooKey")).Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				proberStub := &mocks.DaemonSetProber{}

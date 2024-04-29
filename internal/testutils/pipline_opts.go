@@ -4,6 +4,8 @@ import (
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 )
 
+type OTLPOutputOption func(*telemetryv1alpha1.OtlpOutput)
+
 func OTLPEndpoint(endpoint string) OTLPOutputOption {
 	return func(output *telemetryv1alpha1.OtlpOutput) {
 		output.Endpoint = telemetryv1alpha1.ValueType{Value: endpoint}
@@ -51,6 +53,17 @@ func OTLPBasicAuthFromSecret(secretName, secretNamespace, userKey, passwordKey s
 func OTLPClientTLS(cert, key string) OTLPOutputOption {
 	return func(output *telemetryv1alpha1.OtlpOutput) {
 		output.TLS = &telemetryv1alpha1.OtlpTLS{
+			Cert: &telemetryv1alpha1.ValueType{Value: cert},
+			Key:  &telemetryv1alpha1.ValueType{Value: key},
+		}
+	}
+}
+
+type HTTPOutputOption func(output *telemetryv1alpha1.HTTPOutput)
+
+func HTTPClientTLS(cert, key string) HTTPOutputOption {
+	return func(output *telemetryv1alpha1.HTTPOutput) {
+		output.TLSConfig = telemetryv1alpha1.TLSConfig{
 			Cert: &telemetryv1alpha1.ValueType{Value: cert},
 			Key:  &telemetryv1alpha1.ValueType{Value: key},
 		}

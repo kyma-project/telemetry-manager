@@ -585,7 +585,8 @@ func TestUpdateStatus(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				pipeline := testutils.NewTracePipelineBuilder().WithTLS("fooCert", "fooKey").Build()
+				pipeline := testutils.NewTracePipelineBuilder().OtlpOutput(testutils.OTLPClientTLS("fooCert", "fooKey")).Build()
+				//WithTLS("fooCert", "fooKey").Build()
 				fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(&pipeline).WithStatusSubresource(&pipeline).Build()
 
 				proberStub := &mocks.DeploymentProber{}

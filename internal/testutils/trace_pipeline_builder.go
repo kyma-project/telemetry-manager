@@ -13,19 +13,22 @@ import (
 type TracePipelineBuilder struct {
 	randSource rand.Source
 
-	name              string
-	endpoint          string
-	basicAuthUser     string
-	basicAuthPassword string
-	statusConditions  []metav1.Condition
-	tlsCert           string
-	tlsKey            string
+	name string
+	//endpoint string
+	//basicAuthUser     string
+	//basicAuthPassword string
+	statusConditions []metav1.Condition
+	//tlsCert          string
+	//tlsKey           string
+	outOTLP *telemetryv1alpha1.OtlpOutput
 }
 
 func NewTracePipelineBuilder() *TracePipelineBuilder {
 	return &TracePipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
-		endpoint:   "https://localhost",
+		outOTLP: &telemetryv1alpha1.OtlpOutput{
+			Endpoint: telemetryv1alpha1.ValueType{Value: "https://localhost:4317"},
+		},
 	}
 }
 
@@ -34,57 +37,64 @@ func (b *TracePipelineBuilder) WithName(name string) *TracePipelineBuilder {
 	return b
 }
 
-func (b *TracePipelineBuilder) WithEndpoint(endpoint string) *TracePipelineBuilder {
-	b.endpoint = endpoint
-	return b
-}
+//func (b *TracePipelineBuilder) WithEndpoint(endpoint string) *TracePipelineBuilder {
+//	b.endpoint = endpoint
+//	return b
+//}
 
-func (b *TracePipelineBuilder) WithBasicAuth(user, password string) *TracePipelineBuilder {
-	b.basicAuthUser = user
-	b.basicAuthPassword = password
-	return b
-}
-
-func (b *TracePipelineBuilder) WithTLS(tlsCert, tlsKey string) *TracePipelineBuilder {
-	b.tlsCert = tlsCert
-	b.tlsKey = tlsKey
-	return b
-}
+//func (b *TracePipelineBuilder) WithBasicAuth(user, password string) *TracePipelineBuilder {
+//	b.basicAuthUser = user
+//	b.basicAuthPassword = password
+//	return b
+//}
+//
+//func (b *TracePipelineBuilder) WithTLS(tlsCert, tlsKey string) *TracePipelineBuilder {
+//	b.tlsCert = tlsCert
+//	b.tlsKey = tlsKey
+//	return b
+//}
 
 func (b *TracePipelineBuilder) WithStatusCondition(cond metav1.Condition) *TracePipelineBuilder {
 	b.statusConditions = append(b.statusConditions, cond)
 	return b
 }
 
-func (b *TracePipelineBuilder) basicAuthOutput() telemetryv1alpha1.TracePipelineOutput {
-	return telemetryv1alpha1.TracePipelineOutput{
-		Otlp: &telemetryv1alpha1.OtlpOutput{
-			Endpoint: telemetryv1alpha1.ValueType{
-				Value: b.endpoint,
-			},
-			Authentication: &telemetryv1alpha1.AuthenticationOptions{
-				Basic: &telemetryv1alpha1.BasicAuthOptions{
-					User: telemetryv1alpha1.ValueType{
-						Value: b.basicAuthUser,
-					},
-					Password: telemetryv1alpha1.ValueType{
-						Value: b.basicAuthPassword,
-					},
-				},
-			},
-		},
-	}
-}
+//func (b *TracePipelineBuilder) basicAuthOutput() telemetryv1alpha1.TracePipelineOutput {
+//	return telemetryv1alpha1.TracePipelineOutput{
+//		Otlp: &telemetryv1alpha1.OtlpOutput{
+//			Endpoint: telemetryv1alpha1.ValueType{
+//				Value: b.endpoint,
+//			},
+//			Authentication: &telemetryv1alpha1.AuthenticationOptions{
+//				Basic: &telemetryv1alpha1.BasicAuthOptions{
+//					User: telemetryv1alpha1.ValueType{
+//						Value: b.basicAuthUser,
+//					},
+//					Password: telemetryv1alpha1.ValueType{
+//						Value: b.basicAuthPassword,
+//					},
+//				},
+//			},
+//		},
+//	}
+//}
 
-func (b *TracePipelineBuilder) tlsOutput() telemetryv1alpha1.TracePipelineOutput {
-	return telemetryv1alpha1.TracePipelineOutput{
-		Otlp: &telemetryv1alpha1.OtlpOutput{
-			TLS: &telemetryv1alpha1.OtlpTLS{
-				Cert: &telemetryv1alpha1.ValueType{Value: b.tlsCert},
-				Key:  &telemetryv1alpha1.ValueType{Value: b.tlsKey},
-			},
-		},
+//func (b *TracePipelineBuilder) tlsOutput() telemetryv1alpha1.TracePipelineOutput {
+//	return telemetryv1alpha1.TracePipelineOutput{
+//		Otlp: &telemetryv1alpha1.OtlpOutput{
+//			TLS: &telemetryv1alpha1.OtlpTLS{
+//				Cert: &telemetryv1alpha1.ValueType{Value: b.tlsCert},
+//				Key:  &telemetryv1alpha1.ValueType{Value: b.tlsKey},
+//			},
+//		},
+//	}
+//}
+
+func (b *TracePipelineBuilder) OtlpOutput(opts ...OTLPOutputOption) *TracePipelineBuilder {
+	for _, opt := range opts {
+		opt(b.outOTLP)
 	}
+	return b
 }
 
 func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
@@ -93,25 +103,30 @@ func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
 		name = fmt.Sprintf("test-%d", b.randSource.Int63())
 	}
 
-	tracePipeline := telemetryv1alpha1.TracePipeline{
+	pipeline := telemetryv1alpha1.TracePipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       name,
 			Generation: 1,
+		},
+		Spec: telemetryv1alpha1.TracePipelineSpec{
+			Output: telemetryv1alpha1.TracePipelineOutput{
+				Otlp: b.outOTLP,
+			},
 		},
 		Status: telemetryv1alpha1.TracePipelineStatus{
 			Conditions: b.statusConditions,
 		},
 	}
 
-	if !b.isTLSEnabled() {
-		tracePipeline.Spec.Output = b.basicAuthOutput()
-	} else {
-		tracePipeline.Spec.Output = b.tlsOutput()
-	}
+	//if !b.isTLSEnabled() {
+	//	tracePipeline.Spec.Output = b.basicAuthOutput()
+	//} else {
+	//	tracePipeline.Spec.Output = b.tlsOutput()
+	//}
 
-	return tracePipeline
+	return pipeline
 }
 
-func (b *TracePipelineBuilder) isTLSEnabled() bool {
-	return b.tlsCert != "" && b.tlsKey != ""
-}
+//func (b *TracePipelineBuilder) isTLSEnabled() bool {
+//	return b.tlsCert != "" && b.tlsKey != ""
+//}

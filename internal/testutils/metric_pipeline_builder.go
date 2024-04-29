@@ -158,7 +158,7 @@ func (b *MetricPipelineBuilder) OtlpInput(enable bool, opts ...InputOptions) *Me
 	return b
 }
 
-type OTLPOutputOption func(*telemetryv1alpha1.OtlpOutput)
+//type OTLPOutputOption func(*telemetryv1alpha1.OtlpOutput)
 
 func (b *MetricPipelineBuilder) OtlpOutput(opts ...OTLPOutputOption) *MetricPipelineBuilder {
 	for _, opt := range opts {

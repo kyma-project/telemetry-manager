@@ -15,13 +15,17 @@ type LogPipelineBuilder struct {
 
 	name             string
 	statusConditions []metav1.Condition
-	tlsCert          string
-	tlsKey           string
+	httpOutput       *telemetryv1alpha1.HTTPOutput
+	//tlsCert          string
+	//tlsKey           string
 }
 
 func NewLogPipelineBuilder() *LogPipelineBuilder {
 	return &LogPipelineBuilder{
 		randSource: rand.NewSource(time.Now().UnixNano()),
+		httpOutput: &telemetryv1alpha1.HTTPOutput{
+			Host: telemetryv1alpha1.ValueType{Value: "https://localhost:4317"},
+		},
 	}
 }
 
@@ -35,21 +39,28 @@ func (b *LogPipelineBuilder) WithStatusCondition(cond metav1.Condition) *LogPipe
 	return b
 }
 
-func (b *LogPipelineBuilder) WithTLS(tlsCert, tlsKey string) *LogPipelineBuilder {
-	b.tlsCert = tlsCert
-	b.tlsKey = tlsKey
-	return b
-}
+//func (b *LogPipelineBuilder) WithTLS(tlsCert, tlsKey string) *LogPipelineBuilder {
+//	b.tlsCert = tlsCert
+//	b.tlsKey = tlsKey
+//	return b
+//}
+//
+//func (b *LogPipelineBuilder) WithTLSOutPut() telemetryv1alpha1.Output {
+//	return telemetryv1alpha1.Output{
+//		HTTP: &telemetryv1alpha1.HTTPOutput{
+//			TLSConfig: telemetryv1alpha1.TLSConfig{
+//				Cert: &telemetryv1alpha1.ValueType{Value: b.tlsCert},
+//				Key:  &telemetryv1alpha1.ValueType{Value: b.tlsKey},
+//			},
+//		},
+//	}
+//}
 
-func (b *LogPipelineBuilder) WithTLSOutPut() telemetryv1alpha1.Output {
-	return telemetryv1alpha1.Output{
-		HTTP: &telemetryv1alpha1.HTTPOutput{
-			TLSConfig: telemetryv1alpha1.TLSConfig{
-				Cert: &telemetryv1alpha1.ValueType{Value: b.tlsCert},
-				Key:  &telemetryv1alpha1.ValueType{Value: b.tlsKey},
-			},
-		},
+func (b *LogPipelineBuilder) HTTPOutput(opts ...HTTPOutputOption) *LogPipelineBuilder {
+	for _, opt := range opts {
+		opt(b.httpOutput)
 	}
+	return b
 }
 
 func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
@@ -61,19 +72,23 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: telemetryv1alpha1.LogPipelineSpec{},
+		Spec: telemetryv1alpha1.LogPipelineSpec{
+			Output: telemetryv1alpha1.Output{
+				HTTP: b.httpOutput,
+			},
+		},
 		Status: telemetryv1alpha1.LogPipelineStatus{
 			Conditions: b.statusConditions,
 		},
 	}
 
-	if b.isTLSEnabled() {
-		logPipeline.Spec.Output = b.WithTLSOutPut()
-	}
+	//if b.isTLSEnabled() {
+	//	logPipeline.Spec.Output = b.WithTLSOutPut()
+	//}
 
 	return logPipeline
 }
 
-func (b *LogPipelineBuilder) isTLSEnabled() bool {
-	return b.tlsCert != "" && b.tlsKey != ""
-}
+//func (b *LogPipelineBuilder) isTLSEnabled() bool {
+//	return b.tlsCert != "" && b.tlsKey != ""
+//}
