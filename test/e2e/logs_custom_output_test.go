@@ -27,13 +27,13 @@ var _ = Describe(suite.Current(), Label(suite.LabelLogs), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockNs, backend.SignalTypeLogs)
+		backend := backend.New(mockNs, backend.SignalTypeLogs)
 		mockLogProducer := loggen.New(logProducerName, mockNs)
-		objs = append(objs, mockBackend.K8sObjects()...)
+		objs = append(objs, backend.K8sObjects()...)
 		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
-		backendExportURL = mockBackend.ExportURL(proxyClient)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).WithCustomOutput(mockBackend.ExternalService.Host())
+		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).WithCustomOutput(backend.ExternalService.Host())
 		objs = append(objs, logPipeline.K8sObject())
 
 		return objs

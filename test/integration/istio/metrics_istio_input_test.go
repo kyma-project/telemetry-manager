@@ -16,17 +16,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
-	const (
-		backendNs   = "istio-metric-istio-input"
-		backendName = "backend"
-		app1Ns      = "app-1"
-		app2Ns      = "app-2"
-	)
-
+var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 	// https://istio.io/latest/docs/reference/config/metrics/
 	var (
 		istioProxyMetricNames = []string{
@@ -67,21 +61,25 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 			"source_workload",
 			"source_workload_namespace",
 		}
+		mockNs           = suite.Current()
+		app1Ns           = suite.Current() + "-app-1"
+		app2Ns           = suite.Current() + "-app-2"
+		pipelineName     = suite.Current()
 		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
-		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject(),
+		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(),
 			kitk8s.NewNamespace(app1Ns, kitk8s.WithIstioInjection()).K8sObject(),
 			kitk8s.NewNamespace(app2Ns, kitk8s.WithIstioInjection()).K8sObject())
 
-		mockBackend := backend.New(backendNs, backend.SignalTypeMetrics)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		backendExportURL = mockBackend.ExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeMetrics)
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-istio-input-enabled").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
 			OtlpInput(false).
 			IstioInput(true, kitk8s.IncludeNamespacesV1Alpha1(app1Ns))
 		objs = append(objs, metricPipeline.K8sObject())
@@ -108,7 +106,7 @@ var _ = Describe("Metrics Istio Input", Label("metrics"), func() {
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backendName, Namespace: backendNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running metric agent daemonset", func() {

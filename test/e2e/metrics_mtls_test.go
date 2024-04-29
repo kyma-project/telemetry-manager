@@ -30,12 +30,12 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 		serverCerts, clientCerts, err := tlsgen.NewCertBuilder(backend.DefaultName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
-		objs = append(objs, mockBackend.K8sObjects()...)
-		backendExportURL = mockBackend.ExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeMetrics, backend.WithTLS(*serverCerts))
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
 			WithTLS(*clientCerts)
 
 		objs = append(objs,

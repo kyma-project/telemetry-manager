@@ -27,12 +27,12 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(), kitk8s.NewNamespace(appNs).K8sObject())
 
-		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics)
-		backendExportURL = mockBackend.ExportURL(proxyClient)
-		objs = append(objs, mockBackend.K8sObjects()...)
+		backend := backend.New(mockNs, backend.SignalTypeMetrics)
+		backendExportURL = backend.ExportURL(proxyClient)
+		objs = append(objs, backend.K8sObjects()...)
 
 		pipelineWithoutOTLP := kitk8s.NewMetricPipelineV1Alpha1(suite.Current()).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
 			OtlpInput(false)
 		objs = append(objs, pipelineWithoutOTLP.K8sObject())
 

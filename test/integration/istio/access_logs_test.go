@@ -17,20 +17,20 @@ import (
 
 	"github.com/kyma-project/telemetry-manager/test/testkit/istio"
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Access Logs", Label("logs"), func() {
+var _ = Describe(suite.Current(), Label(suite.LabelLogs), Ordered, func() {
 	const (
-		mockNs          = "istio-access-logs-mocks"
-		mockBackendName = "istio-access-logs-backend"
 		//creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
 		sampleAppNs = "istio-permissive-mtls"
 	)
 
 	var (
-		pipelineName     string
+		mockNs           = suite.Current()
+		pipelineName     = suite.Current()
 		backendExportURL string
 		metricPodURL     string
 	)
@@ -39,12 +39,12 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockNs, backend.SignalTypeLogs)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		backendExportURL = mockBackend.ExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeLogs)
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		istioAccessLogsPipeline := kitk8s.NewLogPipelineV1Alpha1("pipeline-istio-access-logs").
-			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
+		istioAccessLogsPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
+			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
 			WithIncludeContainers([]string{"istio-proxy"}).
 			WithHTTPOutput()
 		pipelineName = istioAccessLogsPipeline.Name()
@@ -68,7 +68,7 @@ var _ = Describe("Access Logs", Label("logs"), func() {
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have sample app running", func() {

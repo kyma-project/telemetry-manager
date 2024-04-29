@@ -17,10 +17,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"net/http"
 )
 
-var _ = Describe("Traces", Label("traces"), Ordered, func() {
+var _ = Describe(suite.Current(), Label(suite.LabelTraces), Ordered, func() {
 	const (
 		mockNs          = "tracing-mock"
 		mockIstiofiedNs = "istiofied-tracing-mock"
@@ -50,19 +51,19 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		objs = append(objs, kitk8s.NewNamespace(mockIstiofiedNs, kitk8s.WithIstioInjection()).K8sObject())
 		objs = append(objs, kitk8s.NewNamespace(sampleAppNs).K8sObject())
 
-		mockBackend := backend.New(mockNs, backend.SignalTypeTraces)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		backendExportURL = mockBackend.ExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeTraces)
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
 		mockIstiofiedBackend := backend.New(mockIstiofiedNs, backend.SignalTypeTraces)
 		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
-		telemetryIstiofiedExportURL = mockBackend.ExportURL(proxyClient)
+		telemetryIstiofiedExportURL = backend.ExportURL(proxyClient)
 
 		istioTracePipeline := kitk8s.NewTracePipelineV1Alpha1("istiofied-app-traces").WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRefV1Alpha1())
 		istiofiedPipelineName = istioTracePipeline.Name()
 		objs = append(objs, istioTracePipeline.K8sObject())
 
-		tracePipeline := kitk8s.NewTracePipelineV1Alpha1("app-traces").WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
+		tracePipeline := kitk8s.NewTracePipelineV1Alpha1("app-traces").WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1())
 		pipelineName = tracePipeline.Name()
 		objs = append(objs, tracePipeline.K8sObject())
 

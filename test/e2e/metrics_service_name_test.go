@@ -33,13 +33,13 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics)
-		objs = append(objs, mockBackend.K8sObjects()...)
+		backend := backend.New(mockNs, backend.SignalTypeMetrics)
+		objs = append(objs, backend.K8sObjects()...)
 
-		backendExportURL = mockBackend.ExportURL(proxyClient)
+		backendExportURL = backend.ExportURL(proxyClient)
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
 			RuntimeInput(true, kitk8s.IncludeNamespacesV1Alpha1(kitkyma.SystemNamespaceName))
 		objs = append(objs, metricPipeline.K8sObject())
 

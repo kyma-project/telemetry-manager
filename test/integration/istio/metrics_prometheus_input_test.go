@@ -16,16 +16,17 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/prommetricgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
-	const (
-		mockNs                           = "istio-metric-prometheus-input"
-		mockBackendName                  = "metric-agent-receiver"
-		httpsAnnotatedMetricProducerName = "metric-producer-https"
-		httpAnnotatedMetricProducerName  = "metric-producer-http"
-		unannotatedMetricProducerName    = "metric-producer"
+var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
+	var (
+		mockNs                           = suite.Current()
+		pipelineName                     = suite.Current()
+		httpsAnnotatedMetricProducerName = suite.Current() + "-producer-https"
+		httpAnnotatedMetricProducerName  = suite.Current() + "-producer-http"
+		unannotatedMetricProducerName    = suite.Current() + "-producer"
 	)
 	var backendExportURL string
 
@@ -35,9 +36,9 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 		// Mocks namespace objects
-		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		backendExportURL = mockBackend.ExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeMetrics)
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
 		httpsAnnotatedMetricProducer := prommetricgen.New(mockNs, prommetricgen.WithName(httpsAnnotatedMetricProducerName))
 		httpAnnotatedMetricProducer := prommetricgen.New(mockNs, prommetricgen.WithName(httpAnnotatedMetricProducerName))
@@ -51,8 +52,8 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 			unannotatedMetricProducer.Service().WithPrometheusAnnotations(prommetricgen.SchemeHTTP).K8sObject(),
 		}...)
 
-		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1("pipeline-with-prometheus-input-enabled").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1()).
+		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1()).
 			PrometheusInput(true)
 		objs = append(objs, metricPipeline.K8sObject())
 
@@ -75,7 +76,7 @@ var _ = Describe("Metrics Prometheus Input", Label("metrics"), func() {
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running metric agent daemonset", func() {
