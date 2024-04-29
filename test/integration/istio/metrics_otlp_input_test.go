@@ -23,13 +23,13 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 	)
 
 	var (
-		backendNs          = suite.IDWithSuffix("backend-1")
-		istiofiedBackendNs = suite.IDWithSuffix("backend-2")
+		backendNs          = suite.ID()
+		istiofiedBackendNs = suite.IDWithSuffix("istiofied")
 
-		pipeline1Name     = suite.IDWithSuffix("1")
-		pipeline2Name     = suite.IDWithSuffix("2")
-		backend1ExportURL string
-		backend2ExportURL string
+		pipeline1Name             = suite.IDWithSuffix("1")
+		pipeline2Name             = suite.IDWithSuffix("2")
+		backendExportURL          string
+		istiofiedBackendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -41,11 +41,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		// Mocks namespace objects
 		backend1 := backend.New(backendNs, backend.SignalTypeMetrics)
 		objs = append(objs, backend1.K8sObjects()...)
-		backend1ExportURL = backend1.ExportURL(proxyClient)
+		backendExportURL = backend1.ExportURL(proxyClient)
 
 		backend2 := backend.New(istiofiedBackendNs, backend.SignalTypeMetrics)
 		objs = append(objs, backend2.K8sObjects()...)
-		backend2ExportURL = backend2.ExportURL(proxyClient)
+		istiofiedBackendExportURL = backend2.ExportURL(proxyClient)
 
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipeline1Name).
 			WithOutputEndpointFromSecret(backend1.HostSecretRefV1Alpha1()).
@@ -94,11 +94,11 @@ var _ = Describe(suite.ID(), Label(suite.LabelMetrics), Ordered, func() {
 		})
 
 		It("Should push metrics successfully", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend1ExportURL, backendNs, telemetrygen.MetricNames)
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend1ExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, backendNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
 
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend2ExportURL, backendNs, telemetrygen.MetricNames)
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, backend2ExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, istiofiedBackendExportURL, backendNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, istiofiedBackendExportURL, istiofiedBackendNs, telemetrygen.MetricNames)
 
 		})
 	})
