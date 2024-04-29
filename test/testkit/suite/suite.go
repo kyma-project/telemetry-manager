@@ -8,6 +8,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 )
 
+// Current returns the current test suite ID.
+// It is based on the file name of the test suite.
 func Current() string {
 	_, filePath, _, ok := runtime.Caller(1)
 	if !ok {
