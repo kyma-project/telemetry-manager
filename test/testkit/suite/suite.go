@@ -17,17 +17,25 @@ func Current() string {
 		panic("Cannot get the current file path")
 	}
 
-	fileName := path.Base(filePath)
-	specID := strings.TrimSuffix(fileName, "_test.go")
-	specID = strings.ReplaceAll(specID, "_", "-")
-
-	return specID
+	return sanitizeSpecID(filePath)
 }
 
 // CurrentWithSuffix returns the current test suite ID with the provided suffix.
 // If no suffix is provided, it defaults to an empty string.
 func CurrentWithSuffix(suffix string) string {
-	return Current() + "-" + suffix
+	_, filePath, _, ok := runtime.Caller(1)
+	if !ok {
+		panic("Cannot get the current file path")
+	}
+
+	return sanitizeSpecID(filePath) + "-" + suffix
+}
+
+func sanitizeSpecID(filePath string) string {
+	fileName := path.Base(filePath)
+	specID := strings.TrimSuffix(fileName, "_test.go")
+	specID = strings.ReplaceAll(specID, "_", "-")
+	return specID
 }
 
 const (
