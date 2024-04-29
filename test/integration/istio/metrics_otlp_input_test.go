@@ -17,15 +17,21 @@ import (
 )
 
 var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
+	const (
+		metricProducer1Name = "metric-producer"
+		metricProducer2Name = "metric-producer-istiofied"
+	)
+
 	var (
-		metricProducer1Name = suite.Current()
-		metricProducer2Name = suite.Current() + "-istiofied"
-		backend1Ns          = suite.Current()
-		backend2Ns          = suite.Current() + "-istiofied"
-		pipeline1Name       = suite.Current()
-		pipeline2Name       = suite.Current() + "-istiofied"
-		backend1ExportURL   string
-		backend2ExportURL   string
+		// backend1Ns is a namespace without Istio sidecar injection
+		backend1Ns = suite.Current()
+		// backend2Ns is a namespace with Istio sidecar injection
+		backend2Ns = suite.Current() + "-with-istio"
+
+		pipeline1Name     = suite.Current() + "-1"
+		pipeline2Name     = suite.Current() + "-2"
+		backend1ExportURL string
+		backend2ExportURL string
 	)
 
 	makeResources := func() []client.Object {
