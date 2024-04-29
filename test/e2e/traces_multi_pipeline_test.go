@@ -26,12 +26,12 @@ import (
 var _ = Describe(suite.Current(), Label(suite.LabelTraces), Ordered, func() {
 	Context("When multiple tracepipelines exist", Ordered, func() {
 		var (
-			mockNs            = suite.Current() + "-multi-pipeline"
-			backend1Name      = "backend-1"
-			pipeline1Name     = suite.Current() + "-1"
+			mockNs            = suite.CurrentWithSuffix("multi-pipeline")
+			backend1Name      = suite.CurrentWithSuffix("backend-1")
+			pipeline1Name     = suite.CurrentWithSuffix("1")
 			backend1ExportURL string
-			backend2Name      = "backend-2"
-			pipeline2Name     = suite.Current() + "-2"
+			backend2Name      = suite.CurrentWithSuffix("backend-2")
+			pipeline2Name     = suite.CurrentWithSuffix("2")
 			backend2ExportURL string
 		)
 
@@ -126,7 +126,7 @@ var _ = Describe(suite.Current(), Label(suite.LabelTraces), Ordered, func() {
 
 		It("Should set ConfigurationGenerated condition to false and Pending condition to true", func() {
 			By("Creating an additional pipeline", func() {
-				pipelineName := fmt.Sprintf("%s-limit-exceeding", suite.Current())
+				pipelineName := suite.CurrentWithSuffix("limit-exceeding")
 				pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName)
 				pipelineCreatedLater = pipeline.K8sObject()
 				pipelinesNames = append(pipelinesNames, pipelineName)
@@ -167,9 +167,9 @@ var _ = Describe(suite.Current(), Label(suite.LabelTraces), Ordered, func() {
 
 	Context("When a broken tracepipeline exists", Ordered, func() {
 		var (
-			mockNs              = suite.Current() + "-broken-pipeline"
-			healthyPipelineName = suite.Current() + "-healthy"
-			brokenPipelineName  = suite.Current() + "-broken"
+			mockNs              = suite.CurrentWithSuffix("broken-pipeline")
+			healthyPipelineName = suite.CurrentWithSuffix("healthy")
+			brokenPipelineName  = suite.CurrentWithSuffix("broken")
 			backendExportURL    string
 		)
 

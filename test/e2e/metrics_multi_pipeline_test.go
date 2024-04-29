@@ -27,12 +27,12 @@ import (
 var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 	Context("When multiple metricpipelines exist", Ordered, func() {
 		var (
-			mockNs            = suite.Current() + "-multi-pipeline"
-			backend1Name      = "backend-1"
-			pipeline1Name     = suite.Current() + "-1"
+			mockNs            = suite.CurrentWithSuffix("multi-pipeline")
+			backend1Name      = suite.CurrentWithSuffix("backend-1")
+			pipeline1Name     = suite.CurrentWithSuffix("1")
 			backend1ExportURL string
-			backend2Name      = "backend-2"
-			pipeline2Name     = suite.Current() + "-2"
+			backend2Name      = suite.CurrentWithSuffix("backend-2")
+			pipeline2Name     = suite.CurrentWithSuffix("2")
 			backend2ExportURL string
 		)
 
@@ -168,9 +168,9 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 
 	Context("When a broken metricpipeline exists", Ordered, func() {
 		var (
-			mockNs              = suite.Current() + "-broken-pipeline"
-			healthyPipelineName = suite.Current() + "-healthy"
-			brokenPipelineName  = suite.Current() + "-broken"
+			mockNs              = suite.CurrentWithSuffix("broken-pipeline")
+			healthyPipelineName = suite.CurrentWithSuffix("healthy")
+			brokenPipelineName  = suite.CurrentWithSuffix("broken")
 			backendExportURL    string
 		)
 

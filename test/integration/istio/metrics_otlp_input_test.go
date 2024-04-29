@@ -18,18 +18,18 @@ import (
 
 var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 	const (
-		metricProducer1Name = "metric-producer"
-		metricProducer2Name = "metric-producer-istiofied"
+		metricProducer1Name = "metric-producer-1"
+		metricProducer2Name = "metric-producer-2"
 	)
 
 	var (
 		// backend1Ns is a namespace without Istio sidecar injection
-		backend1Ns = suite.Current()
+		backend1Ns = suite.CurrentWithSuffix("backend-1")
 		// backend2Ns is a namespace with Istio sidecar injection
-		backend2Ns = suite.Current() + "-with-istio"
+		backend2Ns = suite.CurrentWithSuffix("backend-2")
 
-		pipeline1Name     = suite.Current() + "-1"
-		pipeline2Name     = suite.Current() + "-2"
+		pipeline1Name     = suite.CurrentWithSuffix("1")
+		pipeline2Name     = suite.CurrentWithSuffix("2")
 		backend1ExportURL string
 		backend2ExportURL string
 	)

@@ -23,39 +23,38 @@ import (
 
 var _ = Describe(suite.Current(), Label(suite.LabelTraces), Ordered, func() {
 	const (
-		appWithSidecarName = "istiofied-trace-emitter"
-		appNoSidecarName   = "trace-emitter"
+		appName          = "app-1"
+		istiofiedAppName = "app-2"
+		istiofiedAppNs   = "istio-permissive-mtls" //creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
 	)
 
 	var (
-		backend1Ns        = suite.Current() + "-1"
-		backend2Ns        = suite.Current() + "-2"
-		pipeline1Name     = suite.Current() + "-1"
-		pipeline2Name     = suite.Current() + "-2"
-		app1Ns            = suite.Current() + "-app-1"
-		app2Ns            = suite.Current() + "-app-2"
-		backend1ExportURL string
-		backend2ExportURL string
-		app1URL           string
-		app2URL           string
-		metricServiceURL  string
+		backendNs                 = suite.Current()
+		istiofiedBackendNs        = suite.CurrentWithSuffix("istiofied")
+		appNs                     = suite.CurrentWithSuffix("app")
+		pipeline1Name             = suite.CurrentWithSuffix("1")
+		pipeline2Name             = suite.CurrentWithSuffix("2")
+		backendExportURL          string
+		istiofiedBackendExportURL string
+		appURL                    string
+		istiofiedAppURL           string
+		metricServiceURL          string
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		objs = append(objs, kitk8s.NewNamespace(backend1Ns).K8sObject())
-		objs = append(objs, kitk8s.NewNamespace(backend2Ns, kitk8s.WithIstioInjection()).K8sObject())
-		objs = append(objs, kitk8s.NewNamespace(app1Ns, kitk8s.WithIstioInjection()).K8sObject())
-		objs = append(objs, kitk8s.NewNamespace(app2Ns).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(appNs, kitk8s.WithIstioInjection()).K8sObject())
 
-		backend1 := backend.New(backend1Ns, backend.SignalTypeTraces)
+		backend1 := backend.New(backendNs, backend.SignalTypeTraces)
 		objs = append(objs, backend1.K8sObjects()...)
-		backend1ExportURL = backend1.ExportURL(proxyClient)
+		backendExportURL = backend1.ExportURL(proxyClient)
 
-		backend2 := backend.New(backend2Ns, backend.SignalTypeTraces)
+		backend2 := backend.New(istiofiedBackendNs, backend.SignalTypeTraces)
 		objs = append(objs, backend2.K8sObjects()...)
-		backend2ExportURL = backend1.ExportURL(proxyClient)
+		istiofiedBackendExportURL = backend1.ExportURL(proxyClient)
 
 		istioTracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipeline2Name).WithOutputEndpointFromSecret(backend2.HostSecretRefV1Alpha1())
 		objs = append(objs, istioTracePipeline.K8sObject())
@@ -70,13 +69,13 @@ var _ = Describe(suite.Current(), Label(suite.LabelTraces), Ordered, func() {
 		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")))
 
 		// Abusing metrics provider for istio traces
-		istioSampleApp := prommetricgen.New(app1Ns, prommetricgen.WithName(appWithSidecarName))
+		istioSampleApp := prommetricgen.New(appNs, prommetricgen.WithName(appName))
 		objs = append(objs, istioSampleApp.Pod().K8sObject())
-		app1URL = istioSampleApp.PodURL(proxyClient)
+		appURL = istioSampleApp.PodURL(proxyClient)
 
-		sampleApp := prommetricgen.New(app2Ns, prommetricgen.WithName(appNoSidecarName))
+		sampleApp := prommetricgen.New(istiofiedAppNs, prommetricgen.WithName(istiofiedAppName))
 		objs = append(objs, sampleApp.Pod().K8sObject())
-		app2URL = sampleApp.PodURL(proxyClient)
+		istiofiedAppURL = sampleApp.PodURL(proxyClient)
 
 		return objs
 	}
@@ -92,17 +91,17 @@ var _ = Describe(suite.Current(), Label(suite.LabelTraces), Ordered, func() {
 		})
 
 		It("Should have a trace backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backend1Ns})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backend2Ns})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
-			verifyAppIsRunning(app1Ns, map[string]string{"app": "sample-metrics"})
-			verifySidecarPresent(app1Ns, map[string]string{"app": "sample-metrics"})
+			verifyAppIsRunning(appNs, map[string]string{"app": "sample-metrics"})
+			verifySidecarPresent(appNs, map[string]string{"app": "sample-metrics"})
 		})
 
 		It("Should have sample app without istio sidecar", func() {
-			verifyAppIsRunning(app2Ns, map[string]string{"app": "sample-metrics"})
+			verifyAppIsRunning(istiofiedAppNs, map[string]string{"app": "sample-metrics"})
 		})
 
 		It("Should have a running trace collector deployment", func() {
@@ -126,7 +125,7 @@ var _ = Describe(suite.Current(), Label(suite.LabelTraces), Ordered, func() {
 
 		It("Should invoke istiofied and non-istiofied apps", func() {
 			By("Sending http requests", func() {
-				for _, podURLs := range []string{app1URL, app2URL} {
+				for _, podURLs := range []string{appURL, istiofiedAppURL} {
 					for i := 0; i < 100; i++ {
 						Eventually(func(g Gomega) {
 							resp, err := proxyClient.Get(podURLs)
@@ -139,16 +138,16 @@ var _ = Describe(suite.Current(), Label(suite.LabelTraces), Ordered, func() {
 		})
 
 		It("Should have istio traces from istiofied app namespace", func() {
-			verifyIstioSpans(backend1ExportURL)
-			verifyIstioSpans(backend2ExportURL)
+			verifyIstioSpans(backendExportURL)
+			verifyIstioSpans(istiofiedBackendExportURL)
 		})
 		It("Should have custom spans in the backend from istiofied workload", func() {
-			verifyCustomIstiofiedAppSpans(backend1ExportURL)
-			verifyCustomIstiofiedAppSpans(backend2ExportURL)
+			verifyCustomIstiofiedAppSpans(backendExportURL)
+			verifyCustomIstiofiedAppSpans(istiofiedBackendExportURL)
 		})
 		It("Should have custom spans in the backend from app-namespace", func() {
-			verifyCustomAppSpans(backend1ExportURL)
-			verifyCustomAppSpans(backend2ExportURL)
+			verifyCustomAppSpans(backendExportURL)
+			verifyCustomAppSpans(istiofiedBackendExportURL)
 		})
 	})
 })

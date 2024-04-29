@@ -63,8 +63,8 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 			"source_workload_namespace",
 		}
 		mockNs           = suite.Current()
-		app1Ns           = suite.Current() + "-app-1"
-		app2Ns           = suite.Current() + "-app-2"
+		app1Ns           = suite.CurrentWithSuffix("app-1")
+		app2Ns           = suite.CurrentWithSuffix("app-2")
 		pipelineName     = suite.Current()
 		backendExportURL string
 	)

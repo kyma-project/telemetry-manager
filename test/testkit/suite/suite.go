@@ -10,6 +10,7 @@ import (
 
 // Current returns the current test suite ID.
 // It is based on the file name of the test suite.
+// It is useful for generating unique names for resources created in the test suite (telemetry pipelines, mock namespaces, etc.).
 func Current() string {
 	_, filePath, _, ok := runtime.Caller(1)
 	if !ok {
@@ -21,6 +22,12 @@ func Current() string {
 	specID = strings.ReplaceAll(specID, "_", "-")
 
 	return specID
+}
+
+// CurrentWithSuffix returns the current test suite ID with the provided suffix.
+// If no suffix is provided, it defaults to an empty string.
+func CurrentWithSuffix(suffix string) string {
+	return Current() + "-" + suffix
 }
 
 const (

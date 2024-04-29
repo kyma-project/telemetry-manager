@@ -24,9 +24,9 @@ var _ = Describe(suite.Current(), Label(suite.LabelMetrics), Ordered, func() {
 	var (
 		mockNs                           = suite.Current()
 		pipelineName                     = suite.Current()
-		httpsAnnotatedMetricProducerName = suite.Current() + "-producer-https"
-		httpAnnotatedMetricProducerName  = suite.Current() + "-producer-http"
-		unannotatedMetricProducerName    = suite.Current() + "-producer"
+		httpsAnnotatedMetricProducerName = suite.CurrentWithSuffix("producer-https")
+		httpAnnotatedMetricProducerName  = suite.CurrentWithSuffix("producer-http")
+		unannotatedMetricProducerName    = suite.CurrentWithSuffix("producer")
 	)
 	var backendExportURL string
 
