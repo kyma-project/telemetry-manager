@@ -38,7 +38,7 @@ var _ = Describe(suite.Current(), Label(suite.LabelTraces), func() {
 		It("Should set ConfigurationGenerated condition to false and Pending condition to true", func() {
 			Eventually(func(g Gomega) {
 				var fetched telemetryv1alpha1.TracePipeline
-				key := types.NamespacedName{Name: tracePipeline.Name()}
+				key := types.NamespacedName{Name: pipelineName}
 				g.Expect(k8sClient.Get(ctx, key, &fetched)).To(Succeed())
 
 				configurationGeneratedCond := meta.FindStatusCondition(fetched.Status.Conditions, conditions.TypeConfigurationGenerated)
