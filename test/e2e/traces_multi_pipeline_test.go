@@ -19,27 +19,25 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Multi-Pipeline", Label("traces"), func() {
+var _ = Describe(suite.Current(), Label(suite.LabelTraces), Ordered, func() {
 	Context("When multiple tracepipelines exist", Ordered, func() {
-		const (
-			mockNs           = "traces-multi-pipeline"
-			mockBackendName1 = "trace-receiver-1"
-			mockBackendName2 = "trace-receiver-2"
-			telemetrygenNs   = "trace-multi-pipeline-test"
-		)
 		var (
-			pipelines         = kitkyma.NewPipelineList()
-			backendExportURLs []string
+			mockNs            = suite.Current() + "-multi-pipeline"
+			backend1Name      = "backend-1"
+			pipeline1Name     = suite.Current() + "-1"
+			backend1ExportURL string
+			backend2Name      = "backend-2"
+			pipeline2Name     = suite.Current() + "-2"
+			backend2ExportURL string
 		)
 
 		makeResources := func() []client.Object {
 			var objs []client.Object
-			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject(),
-				kitk8s.NewNamespace(telemetrygenNs).K8sObject(),
-			)
+			objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
 			for _, backendName := range []string{mockBackendName1, mockBackendName2} {
 				mockBackend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithName(backendName))

@@ -20,10 +20,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("telemetry-logs-analysis"), Ordered, func() {
+var _ = Describe(suite.Current(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, func() {
 	const (
 		otelCollectorNs             = "tlogs-otelcollector"
 		fluentBitNs                 = "tlogs-fluentbit"

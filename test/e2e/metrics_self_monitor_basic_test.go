@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"fmt"
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -27,13 +26,9 @@ import (
 )
 
 var _ = Describe(suite.Current(), Label(suite.LabelSelfMonitoringMetrics), Ordered, func() {
-	const (
-		mockBackendName = "metrics-receiver-selfmon"
-		mockNs          = "metrics-basic-selfmon-test"
-	)
-
 	var (
-		pipelineName     string
+		mockNs           = suite.Current()
+		pipelineName     = suite.Current()
 		backendExportURL string
 	)
 
@@ -42,12 +37,12 @@ var _ = Describe(suite.Current(), Label(suite.LabelSelfMonitoringMetrics), Order
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockNs, backend.SignalTypeMetrics)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		backendExportURL = mockBackend.ExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeMetrics)
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		pipeline := kitk8s.NewMetricPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", mockBackendName)).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
+		pipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1())
 		objs = append(objs,
 			telemetrygen.New(kitkyma.DefaultNamespaceName, telemetrygen.SignalTypeMetrics).K8sObject(),
 			pipeline.K8sObject(),
@@ -94,7 +89,7 @@ var _ = Describe(suite.Current(), Label(suite.LabelSelfMonitoringMetrics), Order
 		})
 
 		It("Should have a metrics backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {

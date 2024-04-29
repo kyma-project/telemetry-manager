@@ -17,31 +17,34 @@ import (
 	. "github.com/kyma-project/telemetry-manager/test/testkit/matchers/log"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
+var _ = Describe(suite.Current(), Label(suite.LabelTelemetry), Ordered, func() {
 	const (
-		mockBackendName = "overrides-receiver"
-		mockNs          = "overrides-http-output"
-		pipelineName    = "overrides-pipeline"
 		appNameLabelKey = "app.kubernetes.io/name"
 	)
-	var backendExportURL string
-	var overrides *corev1.ConfigMap
-	var now time.Time
+
+	var (
+		mockNs           = suite.Current()
+		pipelineName     = suite.Current()
+		backendExportURL string
+		overrides        *corev1.ConfigMap
+		now              time.Time
+	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockNs, backend.SignalTypeLogs)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		backendExportURL = mockBackend.ExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeLogs)
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
 		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
 			WithSystemNamespaces(true).
-			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
+			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput()
 		metricPipeline := kitk8s.NewMetricPipelineV1Alpha1(pipelineName)
 		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName)
@@ -75,7 +78,7 @@ var _ = Describe("Overrides", Label("telemetry"), Ordered, func() {
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
 		It("Should have INFO level logs in the backend", func() {
