@@ -3,7 +3,6 @@ package tlscert
 import (
 	"context"
 	"errors"
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"testing"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 var (

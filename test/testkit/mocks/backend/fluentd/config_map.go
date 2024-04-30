@@ -1,9 +1,10 @@
 package fluentd
 
 import (
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 type ConfigMap struct {

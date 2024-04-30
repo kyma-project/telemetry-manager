@@ -3,12 +3,12 @@ package k8s
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
 
 	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	telemetryv1beta1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1beta1"
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 )
 
 type tracePipelineV1Beta1 struct {

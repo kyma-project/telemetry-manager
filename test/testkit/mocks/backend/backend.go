@@ -2,9 +2,10 @@ package backend
 
 import (
 	"fmt"
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	"path/filepath"
 	"strconv"
+
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
