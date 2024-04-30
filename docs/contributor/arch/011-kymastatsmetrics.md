@@ -76,7 +76,7 @@ The receiver needs the following properties:
 
 We assume that the status subresource of a module CRD contains a `conditions` list that uses the type [meta/v1/Condition](https://pkg.go.dev/k8s.io/apimachinery@v0.30.0/pkg/apis/meta/v1#Condition), and an overarching state attribute. We assume positive polarity for all conditions.
 
-As an example for this structure, see the **status** subresource of the Telemetry module:
+As an example for this structure, see the `status` subresource of the Telemetry module:
 
 ```yaml
 status:
