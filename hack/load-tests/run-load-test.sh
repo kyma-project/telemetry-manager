@@ -16,7 +16,7 @@ BACKPRESSURE_TEST="false"
 TEST_TARGET="traces"
 TEST_NAME="No Name"
 TEST_DURATION=1200
-OTEL_IMAGE="europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.97.0-cccde9ac"
+OTEL_IMAGE="europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.99.0-41265c69"
 
 while getopts m:b:n:t:d: flag; do
     case "$flag" in
