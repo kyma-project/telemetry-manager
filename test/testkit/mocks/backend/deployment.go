@@ -12,7 +12,7 @@ import (
 
 const (
 	replicas           int32 = 1
-	otelCollectorImage       = "europe-docker.pkg.dev/kyma-project/dev/tpi/otel-collector:PR-427"
+	otelCollectorImage       = "europe-docker.pkg.dev/kyma-project/prod/tpi/otel-collector:0.99.0-41265c69"
 	nginxImage               = "europe-docker.pkg.dev/kyma-project/prod/external/nginx:1.23.3"
 	fluentDImage             = "europe-docker.pkg.dev/kyma-project/prod/external/fluent/fluentd:v1.16-debian-1"
 )
