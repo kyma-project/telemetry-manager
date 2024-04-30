@@ -65,15 +65,5 @@ func (b *TracePipelineBuilder) Build() telemetryv1alpha1.TracePipeline {
 		},
 	}
 
-	//if !b.isTLSEnabled() {
-	//	tracePipeline.Spec.Output = b.basicAuthOutput()
-	//} else {
-	//	tracePipeline.Spec.Output = b.tlsOutput()
-	//}
-
 	return pipeline
 }
-
-//func (b *TracePipelineBuilder) isTLSEnabled() bool {
-//	return b.tlsCert != "" && b.tlsKey != ""
-//}
