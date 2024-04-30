@@ -3,54 +3,48 @@
 package e2e
 
 import (
-	"fmt"
-
-
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs mTLS with certificates expiring within 2 weeks", Label("logs"), func() {
-	const (
-		mockBackendName = "logs-tls-receiver"
-		mockNs          = "logs-mocks-2week-tls-pipeline"
-		logProducerName = "http-output-pipeline-alpha1"
-	)
+var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, clientCerts, err := testutils.NewCertBuilder(mockBackendName, mockNs).
+		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).
 			WithAboutToExpireClientCert().
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
-		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
+		objs = append(objs, backend.K8sObjects()...)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
-			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
+		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
+			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
 			WithTLS(*clientCerts)
-		pipelineName = logPipeline.Name()
 
-		mockLogProducer := loggen.New(logProducerName, mockNs)
-		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
+		logProducer := loggen.New(mockNs)
+		objs = append(objs, logProducer.K8sObject())
 
 		objs = append(objs,
 			logPipeline.K8sObject(),
@@ -81,16 +75,16 @@ var _ = Describe("Logs mTLS with certificates expiring within 2 weeks", Label("l
 			verifiers.TelemetryShouldHaveCondition(ctx, k8sClient, "LogComponentsHealthy", conditions.ReasonTLSCertificateAboutToExpire, true)
 		})
 
-		It("Should have a log backend running", Label(operationalTest), func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
+		It("Should have a log backend running", Label(suite.LabelOperational), func() {
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
-		It("Should have a log producer running", Label(operationalTest), func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
+		It("Should have a log producer running", Label(suite.LabelOperational), func() {
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
-		It("Should have produced logs in the backend", Label(operationalTest), func() {
-			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
+		It("Should have produced logs in the backend", Label(suite.LabelOperational), func() {
+			verifiers.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backendExportURL)
 		})
 	})
 })

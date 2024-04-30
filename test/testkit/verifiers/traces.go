@@ -52,9 +52,9 @@ func TraceCollectorConfigShouldNotContainPipeline(ctx context.Context, k8sClient
 	}, periodic.ConsistentlyTimeout, periodic.DefaultInterval).Should(BeTrue())
 }
 
-func TracesFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL, namespace string) {
+func TracesFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, backendExportURL, namespace string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(telemetryExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(
@@ -65,9 +65,9 @@ func TracesFromNamespaceShouldBeDelivered(proxyClient *apiserverproxy.Client, te
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func TracesFromNamespacesShouldNotBeDelivered(proxyClient *apiserverproxy.Client, telemetryExportURL string, namespaces []string) {
+func TracesFromNamespacesShouldNotBeDelivered(proxyClient *apiserverproxy.Client, backendExportURL string, namespaces []string) {
 	Consistently(func(g Gomega) {
-		resp, err := proxyClient.Get(telemetryExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 		g.Expect(resp).To(HaveHTTPBody(
@@ -96,5 +96,21 @@ func TracePipelineShouldHaveTLSCondition(ctx context.Context, k8sClient client.C
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		condition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		g.Expect(condition.Reason).To(Equal(tlsCondition))
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func TracePipelineShouldHaveLegacyConditionsAtEnd(ctx context.Context, k8sClient client.Client, pipelineName string) {
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.TracePipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+
+		conditionsSize := len(pipeline.Status.Conditions)
+
+		pendingCond := pipeline.Status.Conditions[conditionsSize-2]
+		g.Expect(pendingCond.Type).To(Equal(conditions.TypePending))
+
+		runningCond := pipeline.Status.Conditions[conditionsSize-1]
+		g.Expect(runningCond.Type).To(Equal(conditions.TypeRunning))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

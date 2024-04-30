@@ -20,10 +20,11 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/trafficgen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("telemetry-logs-analysis"), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTelemetryLogsAnalysis), Ordered, func() {
 	const (
 		otelCollectorNs             = "tlogs-otelcollector"
 		fluentBitNs                 = "tlogs-fluentbit"
@@ -36,16 +37,16 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 	)
 
 	var (
-		otelCollectorLogPipelineName       string
-		fluentBitLogPipelineName           string
-		metricPipelineName                 string
-		tracePipelineName                  string
-		otelCollectorLogTelemetryExportURL string
-		fluentBitLogTelemetryExportURL     string
-		metricTelemetryExportURL           string
-		traceTelemetryExportURL            string
-		gomegaMaxLength                    = format.MaxLength
-		errorWarningLevels                 = []string{
+		otelCollectorLogPipelineName     string
+		fluentBitLogPipelineName         string
+		metricPipelineName               string
+		tracePipelineName                string
+		otelCollectorLogbackendExportURL string
+		fluentBitLogbackendExportURL     string
+		metricbackendExportURL           string
+		tracebackendExportURL            string
+		gomegaMaxLength                  = format.MaxLength
+		errorWarningLevels               = []string{
 			"ERROR", "error",
 			"WARNING", "warning",
 			"WARN", "warn"}
@@ -56,14 +57,14 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		objs = append(objs, kitk8s.NewNamespace(otelCollectorNs).K8sObject())
 
 		// backends
-		otelCollectorLogBackend := backend.New(otelCollectorLogBackendName, otelCollectorNs, backend.SignalTypeLogs)
+		otelCollectorLogBackend := backend.New(otelCollectorNs, backend.SignalTypeLogs, backend.WithName(otelCollectorLogBackendName))
 		objs = append(objs, otelCollectorLogBackend.K8sObjects()...)
-		otelCollectorLogTelemetryExportURL = otelCollectorLogBackend.TelemetryExportURL(proxyClient)
-		metricBackend := backend.New(metricBackendName, otelCollectorNs, backend.SignalTypeMetrics)
-		metricTelemetryExportURL = metricBackend.TelemetryExportURL(proxyClient)
+		otelCollectorLogbackendExportURL = otelCollectorLogBackend.ExportURL(proxyClient)
+		metricBackend := backend.New(otelCollectorNs, backend.SignalTypeMetrics, backend.WithName(metricBackendName))
+		metricbackendExportURL = metricBackend.ExportURL(proxyClient)
 		objs = append(objs, metricBackend.K8sObjects()...)
-		traceBackend := backend.New(traceBackendName, otelCollectorNs, backend.SignalTypeTraces)
-		traceTelemetryExportURL = traceBackend.TelemetryExportURL(proxyClient)
+		traceBackend := backend.New(otelCollectorNs, backend.SignalTypeTraces, backend.WithName(traceBackendName))
+		tracebackendExportURL = traceBackend.ExportURL(proxyClient)
 		objs = append(objs, traceBackend.K8sObjects()...)
 
 		// log pipeline
@@ -108,9 +109,9 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		objs = append(objs, overrides.K8sObject())
 
 		// backend
-		fluentBitLogBackend := backend.New(fluentBitLogBackendName, fluentBitNs, backend.SignalTypeLogs)
+		fluentBitLogBackend := backend.New(fluentBitNs, backend.SignalTypeLogs, backend.WithName(fluentBitLogBackendName))
 		objs = append(objs, fluentBitLogBackend.K8sObjects()...)
-		fluentBitLogTelemetryExportURL = fluentBitLogBackend.TelemetryExportURL(proxyClient)
+		fluentBitLogbackendExportURL = fluentBitLogBackend.ExportURL(proxyClient)
 
 		// log pipeline
 		fluentBitLogPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-pipeline", fluentBitLogBackend.Name())).
@@ -156,16 +157,16 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 		})
 
 		It("Should push metrics successfully", func() {
-			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, metricTelemetryExportURL, otelCollectorNs, telemetrygen.MetricNames)
+			verifiers.MetricsFromNamespaceShouldBeDelivered(proxyClient, metricbackendExportURL, otelCollectorNs, telemetrygen.MetricNames)
 		})
 
 		It("Should push traces successfully", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, traceTelemetryExportURL, otelCollectorNs)
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, tracebackendExportURL, otelCollectorNs)
 		})
 
 		It("Should not have any ERROR/WARNING logs in the OtelCollector containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(otelCollectorLogTelemetryExportURL)
+				resp, err := proxyClient.Get(otelCollectorLogbackendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -207,7 +208,7 @@ var _ = Describe("Telemetry Components Error/Warning Logs Analysis", Label("tele
 
 		It("Should not have any ERROR/WARNING logs in the FluentBit containers", func() {
 			Consistently(func(g Gomega) {
-				resp, err := proxyClient.Get(fluentBitLogTelemetryExportURL)
+				resp, err := proxyClient.Get(fluentBitLogbackendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(

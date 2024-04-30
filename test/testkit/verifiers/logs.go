@@ -16,9 +16,9 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
 )
 
-func LogsShouldBeDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix string, telemetryExportURL string) {
+func LogsShouldBeDelivered(proxyClient *apiserverproxy.Client, expectedPodNamePrefix string, backendExportURL string) {
 	Eventually(func(g Gomega) {
-		resp, err := proxyClient.Get(telemetryExportURL)
+		resp, err := proxyClient.Get(backendExportURL)
 		g.Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 		g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
@@ -61,5 +61,21 @@ func LogPipelineShouldHaveTLSCondition(ctx context.Context, k8sClient client.Cli
 		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
 		condition := meta.FindStatusCondition(pipeline.Status.Conditions, conditions.TypeConfigurationGenerated)
 		g.Expect(condition.Reason).To(Equal(tlsCondition))
+	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
+}
+
+func LogPipelineShouldHaveLegacyConditionsAtEnd(ctx context.Context, k8sClient client.Client, pipelineName string) {
+	Eventually(func(g Gomega) {
+		var pipeline telemetryv1alpha1.LogPipeline
+		key := types.NamespacedName{Name: pipelineName}
+		g.Expect(k8sClient.Get(ctx, key, &pipeline)).To(Succeed())
+
+		conditionsSize := len(pipeline.Status.Conditions)
+
+		pendingCond := pipeline.Status.Conditions[conditionsSize-2]
+		g.Expect(pendingCond.Type).To(Equal(conditions.TypePending))
+
+		runningCond := pipeline.Status.Conditions[conditionsSize-1]
+		g.Expect(runningCond.Type).To(Equal(conditions.TypeRunning))
 	}, periodic.EventuallyTimeout, periodic.DefaultInterval).Should(Succeed())
 }

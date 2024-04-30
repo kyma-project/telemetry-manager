@@ -80,17 +80,6 @@ func TestUpdateStatus(t *testing.T) {
 				Name:       parserName,
 				Generation: 1,
 			},
-			Status: telemetryv1alpha1.LogParserStatus{
-				Conditions: []metav1.Condition{
-					{
-						Type:               conditions.TypePending,
-						Status:             metav1.ConditionTrue,
-						Reason:             conditions.ReasonFluentBitDSNotReady,
-						Message:            conditions.MessageForLogPipeline(conditions.ReasonFluentBitDSNotReady),
-						LastTransitionTime: metav1.Now(),
-					},
-				},
-			},
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(parser).WithStatusSubresource(parser).Build()
 

@@ -11,10 +11,11 @@ import (
 
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Endpoint with Path", Label("traces"), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	const (
 		path     = "/v1/mock"
 		endpoint = "trace-mock"
@@ -25,11 +26,11 @@ var _ = Describe("Traces Endpoint with Path", Label("traces"), func() {
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		tracePipeline := kitk8s.NewTracePipelineV1Alpha1("mock-trace-endpoint-path").
+		pipelineName := suite.ID()
+		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
 			WithProtocol("http").
 			WithOutputEndpoint(endpoint).WithEndpointPath(path)
 
-		pipelineName := tracePipeline.Name()
 		endpointDataKey = fmt.Sprintf("%s_%s", "OTLP_ENDPOINT", kitkyma.MakeEnvVarCompliant(pipelineName))
 		objs = append(objs, tracePipeline.K8sObject())
 		return objs

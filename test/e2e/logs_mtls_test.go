@@ -12,33 +12,34 @@ import (
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs mTLS", Label("logs"), Ordered, func() {
-	const (
-		mockBackendName = "logs-tls-receiver"
-		mockNs          = "logs-mtls"
-		logProducerName = "log-producer-mtls"
-		pipelineName    = "pipeline-mtls-test"
+var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
+	var (
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
-	var telemetryExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, clientCerts, err := testutils.NewCertBuilder(mockBackendName, mockNs).Build()
+		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
-		mockLogProducer := loggen.New(logProducerName, mockNs)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-mtls-test")))
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
+		logProducer := loggen.New(mockNs)
+		objs = append(objs, backend.K8sObjects()...)
+		objs = append(objs, logProducer.K8sObject())
+		backendExportURL = backend.ExportURL(proxyClient)
 
 		pipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
+			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
 			WithTLS(*clientCerts)
 
@@ -67,15 +68,15 @@ var _ = Describe("Logs mTLS", Label("logs"), Ordered, func() {
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
 		It("Should have a log producer running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		It("Should have log-producer logs in the backend", func() {
-			verifiers.LogsShouldBeDelivered(proxyClient, logProducerName, telemetryExportURL)
+			verifiers.LogsShouldBeDelivered(proxyClient, loggen.DefaultName, backendExportURL)
 		})
 	})
 })

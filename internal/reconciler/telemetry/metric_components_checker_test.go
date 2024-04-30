@@ -197,7 +197,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
 				Reason:  "GatewayThrottling",
-				Message: "Metric gateway experiencing high influx: Unable to receive metrics at current rate",
+				Message: "Metric gateway experiencing high influx: unable to receive metrics at current rate",
 			},
 		},
 		{
@@ -214,7 +214,7 @@ func TestMetricComponentsCheck(t *testing.T) {
 				Type:    "MetricComponentsHealthy",
 				Status:  "False",
 				Reason:  "GatewayThrottling",
-				Message: "Metric gateway experiencing high influx: Unable to receive metrics at current rate",
+				Message: "Metric gateway experiencing high influx: unable to receive metrics at current rate",
 			},
 		},
 		{

@@ -19,10 +19,16 @@ import (
 type SignalType string
 
 const (
-	// TelemetryDataFilename is the filename for the OpenTelemetry collector's file exporter.
-	TelemetryDataFilename = "otlp-data.jsonl"
+	// telemetryDataFilename is the filename for the OpenTelemetry collector's file exporter.
+	telemetryDataFilename = "otlp-data.jsonl"
 	defaultNamespaceName  = "default"
+)
 
+const (
+	DefaultName = "backend"
+)
+
+const (
 	SignalTypeTraces  = "traces"
 	SignalTypeMetrics = "metrics"
 	SignalTypeLogs    = "logs"
@@ -45,9 +51,9 @@ type Backend struct {
 	HostSecret       *kitk8s.Secret
 }
 
-func New(name, namespace string, signalType SignalType, opts ...Option) *Backend {
+func New(namespace string, signalType SignalType, opts ...Option) *Backend {
 	backend := &Backend{
-		name:       name,
+		name:       DefaultName,
 		namespace:  namespace,
 		signalType: signalType,
 	}
@@ -59,6 +65,12 @@ func New(name, namespace string, signalType SignalType, opts ...Option) *Backend
 	backend.buildResources()
 
 	return backend
+}
+
+func WithName(name string) Option {
+	return func(b *Backend) {
+		b.name = name
+	}
 }
 
 func WithTLS(certKey testutils.ServerCerts) Option {
@@ -74,7 +86,7 @@ func WithPersistentHostSecret(persistentHostSecret bool) Option {
 }
 
 func (b *Backend) buildResources() {
-	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), TelemetryDataFilename)
+	exportedFilePath := fmt.Sprintf("/%s/%s", string(b.signalType), telemetryDataFilename)
 
 	b.ConfigMap = NewConfigMap(fmt.Sprintf("%s-receiver-config", b.name), b.namespace, exportedFilePath, b.signalType, b.certs)
 	b.Deployment = NewDeployment(b.name, b.namespace, b.ConfigMap.Name(), filepath.Dir(exportedFilePath), b.signalType).WithAnnotations(map[string]string{"traffic.sidecar.istio.io/excludeInboundPorts": strconv.Itoa(HTTPWebPort)})
@@ -108,8 +120,8 @@ func (b *Backend) HostSecretRefV1Beta1() *telemetryv1beta1.SecretKeyRef {
 	return b.HostSecret.SecretKeyRefV1Beta1("host")
 }
 
-func (b *Backend) TelemetryExportURL(proxyClient *apiserverproxy.Client) string {
-	return proxyClient.ProxyURLForService(b.namespace, b.name, TelemetryDataFilename, HTTPWebPort)
+func (b *Backend) ExportURL(proxyClient *apiserverproxy.Client) string {
+	return proxyClient.ProxyURLForService(b.namespace, b.name, telemetryDataFilename, HTTPWebPort)
 }
 
 func (b *Backend) K8sObjects() []client.Object {

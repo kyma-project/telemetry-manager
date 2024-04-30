@@ -16,31 +16,30 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs Parser", Label("logs"), Ordered, func() {
-	const (
-		mockNs          = "log-parser-mocks"
-		mockBackendName = "log-receiver-parser"
-		logProducerName = "log-producer"
-		pipelineName    = "pipeline-parser-test"
+var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
+	var (
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
-	var telemetryExportURL string
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs)
-		mockLogProducer := loggen.New(logProducerName, mockNs).
+		backend := backend.New(mockNs, backend.SignalTypeLogs)
+		logProducer := loggen.New(mockNs).
 			WithAnnotations(map[string]string{"fluentbit.io/parser": "my-regex-parser"})
-		objs = append(objs, mockBackend.K8sObjects()...)
-		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "regex-parser-testing-service")))
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		objs = append(objs, backend.K8sObjects()...)
+		objs = append(objs, logProducer.K8sObject())
+		backendExportURL = backend.ExportURL(proxyClient)
 
 		logHTTPPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
-			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
+			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput()
 
 		parser := `Format regex
@@ -75,17 +74,17 @@ Types user:string pass:string`
 		})
 
 		It("Should have a log backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: mockBackendName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: backend.DefaultName})
 		})
 
 		It("Should have a log producer running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: logProducerName})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Namespace: mockNs, Name: loggen.DefaultName})
 		})
 
 		It("Should have parsed logs in the backend", func() {
 			Eventually(func(g Gomega) {
 				time.Sleep(20 * time.Second)
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(ContainLd(ContainLogRecord(SatisfyAll(

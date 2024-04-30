@@ -13,7 +13,6 @@ import (
 
 	telemetryv1alpha1 "github.com/kyma-project/telemetry-manager/apis/telemetry/v1alpha1"
 	"github.com/kyma-project/telemetry-manager/internal/secretref"
-	"github.com/kyma-project/telemetry-manager/internal/utils/envvar"
 )
 
 const (
@@ -59,7 +58,7 @@ func makeAuthenticationEnvVar(ctx context.Context, c client.Reader, secretData m
 			return err
 		}
 		basicAuthHeader := formatBasicAuthHeader(string(username), string(password))
-		basicAuthHeaderVariable := fmt.Sprintf("%s_%s", basicAuthHeaderVariablePrefix, envvar.MakeEnvVarCompliant(pipelineName))
+		basicAuthHeaderVariable := fmt.Sprintf("%s_%s", basicAuthHeaderVariablePrefix, sanitizeEnvVarName(pipelineName))
 		secretData[basicAuthHeaderVariable] = []byte(basicAuthHeader)
 	}
 	return nil
@@ -166,25 +165,33 @@ func resolveValue(ctx context.Context, c client.Reader, value telemetryv1alpha1.
 }
 
 func makeOtlpEndpointVariable(pipelineName string) string {
-	return fmt.Sprintf("%s_%s", otlpEndpointVariablePrefix, envvar.MakeEnvVarCompliant(pipelineName))
+	return fmt.Sprintf("%s_%s", otlpEndpointVariablePrefix, sanitizeEnvVarName(pipelineName))
 }
 
 func makeBasicAuthHeaderVariable(pipelineName string) string {
-	return fmt.Sprintf("%s_%s", basicAuthHeaderVariablePrefix, envvar.MakeEnvVarCompliant(pipelineName))
+	return fmt.Sprintf("%s_%s", basicAuthHeaderVariablePrefix, sanitizeEnvVarName(pipelineName))
 }
 
 func makeHeaderVariable(header telemetryv1alpha1.Header, pipelineName string) string {
-	return fmt.Sprintf("HEADER_%s_%s", envvar.MakeEnvVarCompliant(pipelineName), envvar.MakeEnvVarCompliant(header.Name))
+	return fmt.Sprintf("HEADER_%s_%s", sanitizeEnvVarName(pipelineName), sanitizeEnvVarName(header.Name))
 }
 
 func makeTLSCertVariable(pipelineName string) string {
-	return fmt.Sprintf("%s_%s", tlsConfigCertVariablePrefix, envvar.MakeEnvVarCompliant(pipelineName))
+	return fmt.Sprintf("%s_%s", tlsConfigCertVariablePrefix, sanitizeEnvVarName(pipelineName))
 }
 
 func makeTLSKeyVariable(pipelineName string) string {
-	return fmt.Sprintf("%s_%s", tlsConfigKeyVariablePrefix, envvar.MakeEnvVarCompliant(pipelineName))
+	return fmt.Sprintf("%s_%s", tlsConfigKeyVariablePrefix, sanitizeEnvVarName(pipelineName))
 }
 
 func makeTLSCaVariable(pipelineName string) string {
-	return fmt.Sprintf("%s_%s", tlsConfigCaVariablePrefix, envvar.MakeEnvVarCompliant(pipelineName))
+	return fmt.Sprintf("%s_%s", tlsConfigCaVariablePrefix, sanitizeEnvVarName(pipelineName))
+}
+
+func sanitizeEnvVarName(input string) string {
+	result := input
+	result = strings.ToUpper(result)
+	result = strings.Replace(result, ".", "_", -1)
+	result = strings.Replace(result, "-", "_", -1)
+	return result
 }

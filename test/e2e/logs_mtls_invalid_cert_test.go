@@ -3,51 +3,47 @@
 package e2e
 
 import (
-	"fmt"
-
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kyma-project/telemetry-manager/internal/conditions"
-	"github.com/kyma-project/telemetry-manager/internal/testutils"
 	kitk8s "github.com/kyma-project/telemetry-manager/test/testkit/k8s"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/loggen"
+
+	"github.com/kyma-project/telemetry-manager/internal/testutils"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
+
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Logs mTLS with invalid certificate", Label("logs"), func() {
-	const (
-		mockBackendName = "logs-tls-receiver"
-		mockNs          = "logs-mocks-invalid-tls"
-		logProducerName = "logs-invalid-mtls-cert"
-	)
+var _ = Describe(suite.ID(), Label(suite.LabelLogs), Ordered, func() {
 	var (
-		pipelineName string
+		mockNs       = suite.ID()
+		pipelineName = suite.ID()
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		serverCerts, clientCerts, err := testutils.NewCertBuilder(mockBackendName, mockNs).
+		serverCerts, clientCerts, err := testutils.NewCertBuilder(backend.DefaultName, mockNs).
 			WithInvalidClientCert().
 			Build()
 		Expect(err).ToNot(HaveOccurred())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
-		objs = append(objs, mockBackend.K8sObjects()...)
+		backend := backend.New(mockNs, backend.SignalTypeLogs, backend.WithTLS(*serverCerts))
+		objs = append(objs, backend.K8sObjects()...)
 
-		logPipeline := kitk8s.NewLogPipelineV1Alpha1(fmt.Sprintf("%s-%s", mockBackend.Name(), "pipeline")).
-			WithSecretKeyRef(mockBackend.HostSecretRefV1Alpha1()).
+		logPipeline := kitk8s.NewLogPipelineV1Alpha1(pipelineName).
+			WithSecretKeyRef(backend.HostSecretRefV1Alpha1()).
 			WithHTTPOutput().
 			WithTLS(*clientCerts)
 		pipelineName = logPipeline.Name()
 
-		mockLogProducer := loggen.New(logProducerName, mockNs)
-		objs = append(objs, mockLogProducer.K8sObject(kitk8s.WithLabel("app", "logging-test")))
+		logProducer := loggen.New(mockNs)
+		objs = append(objs, logProducer.K8sObject())
 		objs = append(objs,
 			logPipeline.K8sObject(),
 		)

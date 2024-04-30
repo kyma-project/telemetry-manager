@@ -3,8 +3,6 @@
 package e2e
 
 import (
-	"fmt"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
@@ -14,15 +12,18 @@ import (
 	kitkyma "github.com/kyma-project/telemetry-manager/test/testkit/kyma"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/backend"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
+	var (
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
+	)
 
 	const (
-		mockBackendName = "traces-filter-receiver"
-		mockNs          = "traces-noisy-span-filter-test"
-
 		// regular spans should NOT be filtered
 		regularSpansNs = "regular-spans"
 
@@ -37,11 +38,6 @@ var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
 		traceGatewaySpansNs         = "trace-gateway-spans"
 		traceServiceSpansNs         = "trace-service-spans"
 		traceServiceInternalSpansNs = "trace-service-internal-spans"
-	)
-
-	var (
-		pipelineName       string
-		telemetryExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -61,13 +57,12 @@ var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
 			kitk8s.NewNamespace(traceServiceInternalSpansNs).K8sObject(),
 		)
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces, backend.WithPersistentHostSecret(true))
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
-		objs = append(objs, mockBackend.K8sObjects()...)
+		backend := backend.New(mockNs, backend.SignalTypeTraces, backend.WithPersistentHostSecret(true))
+		backendExportURL = backend.ExportURL(proxyClient)
+		objs = append(objs, backend.K8sObjects()...)
 
-		pipeline := kitk8s.NewTracePipelineV1Alpha1(fmt.Sprintf("%s-pipeline", mockBackend.Name())).
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
-		pipelineName = pipeline.Name()
+		pipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1())
 		objs = append(objs, pipeline.K8sObject())
 
 		regularSpansGen := telemetrygen.New(regularSpansNs, telemetrygen.SignalTypeTraces).K8sObject()
@@ -164,15 +159,15 @@ var _ = Describe("Traces Noisy Span Filter", Label("traces"), func() {
 		})
 
 		It("Should have a trace backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should deliver regular telemetrygen traces", func() {
-			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, telemetryExportURL, regularSpansNs)
+			verifiers.TracesFromNamespaceShouldBeDelivered(proxyClient, backendExportURL, regularSpansNs)
 		})
 
 		It("Should filter noisy spans", func() {
-			verifiers.TracesFromNamespacesShouldNotBeDelivered(proxyClient, telemetryExportURL, []string{
+			verifiers.TracesFromNamespacesShouldNotBeDelivered(proxyClient, backendExportURL, []string{
 				vmaScrapeSpansNs,
 				healthzSpansNs,
 				fluentBitSpansNs,

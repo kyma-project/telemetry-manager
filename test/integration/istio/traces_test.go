@@ -17,53 +17,49 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"net/http"
 )
 
-var _ = Describe("Traces", Label("traces"), Ordered, func() {
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), Ordered, func() {
 	const (
-		mockNs          = "tracing-mock"
-		mockIstiofiedNs = "istiofied-tracing-mock"
-		mockBackendName = "tracing-backend"
-
-		mockIstiofiedBackendName = "istio-tracing-backend" //creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
-
-		istiofiedSampleAppNs   = "istio-permissive-mtls"
-		istiofiedSampleAppName = "istiofied-trace-emitter"
-
-		sampleAppNs   = "app-namespace"
-		sampleAppName = "trace-emitter"
+		appName          = "app-1"
+		istiofiedAppName = "app-2"
+		istiofiedAppNs   = "istio-permissive-mtls" //creating mocks in a specially prepared namespace that allows calling workloads in the mesh via API server proxy
 	)
 
 	var (
-		pipelineName                                    string
-		istiofiedPipelineName                           string
-		telemetryExportURL, telemetryIstiofiedExportURL string
-		istiofiedAppURL, appURL                         string
-		metricServiceURL                                string
+		backendNs                 = suite.ID()
+		istiofiedBackendNs        = suite.IDWithSuffix("istiofied")
+		appNs                     = suite.IDWithSuffix("app")
+		pipeline1Name             = suite.IDWithSuffix("1")
+		pipeline2Name             = suite.IDWithSuffix("2")
+		backendExportURL          string
+		istiofiedBackendExportURL string
+		appURL                    string
+		istiofiedAppURL           string
+		metricServiceURL          string
 	)
 
 	makeResources := func() []client.Object {
 		var objs []client.Object
 
-		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
-		objs = append(objs, kitk8s.NewNamespace(mockIstiofiedNs, kitk8s.WithIstioInjection()).K8sObject())
-		objs = append(objs, kitk8s.NewNamespace(sampleAppNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(backendNs).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(istiofiedBackendNs, kitk8s.WithIstioInjection()).K8sObject())
+		objs = append(objs, kitk8s.NewNamespace(appNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
-		objs = append(objs, mockBackend.K8sObjects()...)
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend1 := backend.New(backendNs, backend.SignalTypeTraces)
+		objs = append(objs, backend1.K8sObjects()...)
+		backendExportURL = backend1.ExportURL(proxyClient)
 
-		mockIstiofiedBackend := backend.New(mockIstiofiedBackendName, mockIstiofiedNs, backend.SignalTypeTraces)
-		objs = append(objs, mockIstiofiedBackend.K8sObjects()...)
-		telemetryIstiofiedExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backend2 := backend.New(istiofiedBackendNs, backend.SignalTypeTraces)
+		objs = append(objs, backend2.K8sObjects()...)
+		istiofiedBackendExportURL = backend2.ExportURL(proxyClient)
 
-		istioTracePipeline := kitk8s.NewTracePipelineV1Alpha1("istiofied-app-traces").WithOutputEndpointFromSecret(mockIstiofiedBackend.HostSecretRefV1Alpha1())
-		istiofiedPipelineName = istioTracePipeline.Name()
+		istioTracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipeline2Name).WithOutputEndpointFromSecret(backend2.HostSecretRefV1Alpha1())
 		objs = append(objs, istioTracePipeline.K8sObject())
 
-		tracePipeline := kitk8s.NewTracePipelineV1Alpha1("app-traces").WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
-		pipelineName = tracePipeline.Name()
+		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipeline1Name).WithOutputEndpointFromSecret(backend1.HostSecretRefV1Alpha1())
 		objs = append(objs, tracePipeline.K8sObject())
 
 		traceGatewayExternalService := kitk8s.NewService("telemetry-otlp-traces-external", kitkyma.SystemNamespaceName).
@@ -73,13 +69,13 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		objs = append(objs, traceGatewayExternalService.K8sObject(kitk8s.WithLabel("app.kubernetes.io/name", "telemetry-trace-collector")))
 
 		// Abusing metrics provider for istio traces
-		istioSampleApp := prommetricgen.New(istiofiedSampleAppNs, prommetricgen.WithName(istiofiedSampleAppName))
-		objs = append(objs, istioSampleApp.Pod().K8sObject())
-		istiofiedAppURL = istioSampleApp.PodURL(proxyClient)
+		istiofiedApp := prommetricgen.New(istiofiedAppNs, prommetricgen.WithName(istiofiedAppName))
+		objs = append(objs, istiofiedApp.Pod().K8sObject())
+		istiofiedAppURL = istiofiedApp.PodURL(proxyClient)
 
-		sampleApp := prommetricgen.New(sampleAppNs, prommetricgen.WithName(sampleAppName))
-		objs = append(objs, sampleApp.Pod().K8sObject())
-		appURL = sampleApp.PodURL(proxyClient)
+		app := prommetricgen.New(appNs, prommetricgen.WithName(appName))
+		objs = append(objs, app.Pod().K8sObject())
+		appURL = app.PodURL(proxyClient)
 
 		return objs
 	}
@@ -95,18 +91,17 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		})
 
 		It("Should have a trace backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockIstiofiedBackendName, Namespace: mockIstiofiedNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: backendNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: istiofiedBackendNs})
 		})
 
 		It("Should have sample app running with Istio sidecar", func() {
-			verifyAppIsRunning(istiofiedSampleAppNs, map[string]string{"app": "sample-metrics"})
-			verifySidecarPresent(istiofiedSampleAppNs, map[string]string{"app": "sample-metrics"})
-
+			verifyAppIsRunning(istiofiedAppNs, map[string]string{"app": "sample-metrics"})
+			verifySidecarPresent(istiofiedAppNs, map[string]string{"app": "sample-metrics"})
 		})
 
 		It("Should have sample app without istio sidecar", func() {
-			verifyAppIsRunning(sampleAppNs, map[string]string{"app": "sample-metrics"})
+			verifyAppIsRunning(appNs, map[string]string{"app": "sample-metrics"})
 		})
 
 		It("Should have a running trace collector deployment", func() {
@@ -114,8 +109,8 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		})
 
 		It("Should have the trace pipelines running", func() {
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipelineName)
-			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, istiofiedPipelineName)
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipeline1Name)
+			verifiers.TracePipelineShouldBeHealthy(ctx, k8sClient, pipeline2Name)
 		})
 
 		It("Trace collector with should answer requests", func() {
@@ -130,7 +125,7 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 
 		It("Should invoke istiofied and non-istiofied apps", func() {
 			By("Sending http requests", func() {
-				for _, podURLs := range []string{istiofiedAppURL, appURL} {
+				for _, podURLs := range []string{appURL, istiofiedAppURL} {
 					for i := 0; i < 100; i++ {
 						Eventually(func(g Gomega) {
 							resp, err := proxyClient.Get(podURLs)
@@ -143,16 +138,16 @@ var _ = Describe("Traces", Label("traces"), Ordered, func() {
 		})
 
 		It("Should have istio traces from istiofied app namespace", func() {
-			verifyIstioSpans(telemetryExportURL)
-			verifyIstioSpans(telemetryIstiofiedExportURL)
+			verifyIstioSpans(backendExportURL, istiofiedAppNs)
+			verifyIstioSpans(istiofiedBackendExportURL, istiofiedAppNs)
 		})
 		It("Should have custom spans in the backend from istiofied workload", func() {
-			verifyCustomIstiofiedAppSpans(telemetryExportURL)
-			verifyCustomIstiofiedAppSpans(telemetryIstiofiedExportURL)
+			verifyCustomIstiofiedAppSpans(backendExportURL, istiofiedAppName, istiofiedAppNs)
+			verifyCustomIstiofiedAppSpans(istiofiedBackendExportURL, istiofiedAppName, istiofiedAppNs)
 		})
 		It("Should have custom spans in the backend from app-namespace", func() {
-			verifyCustomAppSpans(telemetryExportURL)
-			verifyCustomAppSpans(telemetryIstiofiedExportURL)
+			verifyCustomAppSpans(backendExportURL, appName, appNs)
+			verifyCustomAppSpans(istiofiedBackendExportURL, appName, appNs)
 		})
 	})
 })
@@ -184,7 +179,7 @@ func verifyAppIsRunning(namespace string, labelSelector map[string]string) {
 	}, periodic.EventuallyTimeout*2, periodic.DefaultInterval).Should(Succeed())
 }
 
-func verifyIstioSpans(backendURL string) {
+func verifyIstioSpans(backendURL, namespace string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -193,12 +188,12 @@ func verifyIstioSpans(backendURL string) {
 		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
 			// Identify istio-proxy traces by component=proxy attribute
 			ContainSpan(WithSpanAttrs(HaveKeyWithValue("component", "proxy"))),
-			ContainSpan(WithSpanAttrs(HaveKeyWithValue("istio.namespace", "istio-permissive-mtls"))),
+			ContainSpan(WithSpanAttrs(HaveKeyWithValue("istio.namespace", namespace))),
 		))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func verifyCustomIstiofiedAppSpans(backendURL string) {
+func verifyCustomIstiofiedAppSpans(backendURL, name, namespace string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -207,13 +202,13 @@ func verifyCustomIstiofiedAppSpans(backendURL string) {
 		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
 			// Identify sample app by serviceName attribute
 			ContainResourceAttrs(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", "istiofied-trace-emitter")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", "istio-permissive-mtls")),
+			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", name)),
+			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", namespace)),
 		))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }
 
-func verifyCustomAppSpans(backendURL string) {
+func verifyCustomAppSpans(backendURL, name, namespace string) {
 	Eventually(func(g Gomega) {
 		resp, err := proxyClient.Get(backendURL)
 		g.Expect(err).NotTo(HaveOccurred())
@@ -221,8 +216,8 @@ func verifyCustomAppSpans(backendURL string) {
 		g.Expect(resp).To(HaveHTTPBody(ContainTd(SatisfyAll(
 			// Identify sample app by serviceName attribute
 			ContainResourceAttrs(HaveKeyWithValue("service.name", "monitoring-custom-metrics")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", "trace-emitter")),
-			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", "app-namespace")),
+			ContainResourceAttrs(HaveKeyWithValue("k8s.pod.name", name)),
+			ContainResourceAttrs(HaveKeyWithValue("k8s.namespace.name", namespace)),
 		))))
 	}, periodic.TelemetryEventuallyTimeout, periodic.TelemetryInterval).Should(Succeed())
 }

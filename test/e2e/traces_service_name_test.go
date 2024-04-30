@@ -17,17 +17,15 @@ import (
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/servicenamebundle"
 	"github.com/kyma-project/telemetry-manager/test/testkit/mocks/telemetrygen"
 	"github.com/kyma-project/telemetry-manager/test/testkit/periodic"
+	"github.com/kyma-project/telemetry-manager/test/testkit/suite"
 	"github.com/kyma-project/telemetry-manager/test/testkit/verifiers"
 )
 
-var _ = Describe("Traces Service Name", Label("traces"), func() {
-	const (
-		mockNs          = "trace-mocks-service-name" //#nosec G101 -- This is a false positive
-		mockBackendName = "trace-receiver"
-	)
+var _ = Describe(suite.ID(), Label(suite.LabelTraces), func() {
 	var (
-		pipelineName       string
-		telemetryExportURL string
+		mockNs           = suite.ID()
+		pipelineName     = suite.ID()
+		backendExportURL string
 	)
 
 	makeResources := func() []client.Object {
@@ -35,14 +33,13 @@ var _ = Describe("Traces Service Name", Label("traces"), func() {
 
 		objs = append(objs, kitk8s.NewNamespace(mockNs).K8sObject())
 
-		mockBackend := backend.New(mockBackendName, mockNs, backend.SignalTypeTraces)
-		objs = append(objs, mockBackend.K8sObjects()...)
+		backend := backend.New(mockNs, backend.SignalTypeTraces)
+		objs = append(objs, backend.K8sObjects()...)
 
-		telemetryExportURL = mockBackend.TelemetryExportURL(proxyClient)
+		backendExportURL = backend.ExportURL(proxyClient)
 
-		tracePipeline := kitk8s.NewTracePipelineV1Alpha1("pipeline-service-name-test").
-			WithOutputEndpointFromSecret(mockBackend.HostSecretRefV1Alpha1())
-		pipelineName = tracePipeline.Name()
+		tracePipeline := kitk8s.NewTracePipelineV1Alpha1(pipelineName).
+			WithOutputEndpointFromSecret(backend.HostSecretRefV1Alpha1())
 		objs = append(objs, tracePipeline.K8sObject())
 
 		objs = append(objs, servicenamebundle.K8sObjects(mockNs, telemetrygen.SignalTypeTraces)...)
@@ -65,7 +62,7 @@ var _ = Describe("Traces Service Name", Label("traces"), func() {
 		})
 
 		It("Should have a trace backend running", func() {
-			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: mockBackendName, Namespace: mockNs})
+			verifiers.DeploymentShouldBeReady(ctx, k8sClient, types.NamespacedName{Name: backend.DefaultName, Namespace: mockNs})
 		})
 
 		It("Should have a running pipeline", func() {
@@ -74,7 +71,7 @@ var _ = Describe("Traces Service Name", Label("traces"), func() {
 
 		verifyServiceNameAttr := func(givenPodPrefix, expectedServiceName string) {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
@@ -130,7 +127,7 @@ var _ = Describe("Traces Service Name", Label("traces"), func() {
 
 		It("Should have no kyma resource attributes", func() {
 			Eventually(func(g Gomega) {
-				resp, err := proxyClient.Get(telemetryExportURL)
+				resp, err := proxyClient.Get(backendExportURL)
 				g.Expect(err).NotTo(HaveOccurred())
 				g.Expect(resp).To(HaveHTTPStatus(http.StatusOK))
 				g.Expect(resp).To(HaveHTTPBody(
