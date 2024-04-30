@@ -69,3 +69,35 @@ func HTTPClientTLS(cert, key string) HTTPOutputOption {
 		}
 	}
 }
+
+func HTTPHost(host string) HTTPOutputOption {
+	return func(output *telemetryv1alpha1.HTTPOutput) {
+		output.Host = telemetryv1alpha1.ValueType{Value: host}
+	}
+}
+
+func HTTPHostFromSecret(secretName, secretNamespace, key string) HTTPOutputOption {
+	return func(output *telemetryv1alpha1.HTTPOutput) {
+		output.Host = telemetryv1alpha1.ValueType{ValueFrom: &telemetryv1alpha1.ValueFromSource{SecretKeyRef: &telemetryv1alpha1.SecretKeyRef{
+			Name:      secretName,
+			Namespace: secretNamespace,
+			Key:       key,
+		}}}
+	}
+}
+
+type LokiOutputOption func(output *telemetryv1alpha1.LokiOutput)
+
+func LokiHost(lokiURL string) LokiOutputOption {
+	return func(output *telemetryv1alpha1.LokiOutput) {
+		output.URL = telemetryv1alpha1.ValueType{Value: lokiURL}
+	}
+}
+
+type CustomHostOption func(output string)
+
+func CustomHost(host string) CustomHostOption {
+	return func(output string) {
+		output = host
+	}
+}

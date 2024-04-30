@@ -13,9 +13,12 @@ import (
 type LogPipelineBuilder struct {
 	randSource rand.Source
 
-	name             string
-	statusConditions []metav1.Condition
-	httpOutput       *telemetryv1alpha1.HTTPOutput
+	name              string
+	deletionTimeStamp metav1.Time
+	statusConditions  []metav1.Condition
+	httpOutput        *telemetryv1alpha1.HTTPOutput
+	lokiOutput        *telemetryv1alpha1.LokiOutput
+	customOutput      string
 }
 
 func NewLogPipelineBuilder() *LogPipelineBuilder {
@@ -25,6 +28,13 @@ func NewLogPipelineBuilder() *LogPipelineBuilder {
 			Host: telemetryv1alpha1.ValueType{Value: "https://localhost:4317"},
 		},
 	}
+}
+
+func (b *LogPipelineBuilder) WithLoki() *LogPipelineBuilder {
+	b.lokiOutput = &telemetryv1alpha1.LokiOutput{
+		URL: telemetryv1alpha1.ValueType{Value: "https://localhost:3100"},
+	}
+	return b
 }
 
 func (b *LogPipelineBuilder) WithName(name string) *LogPipelineBuilder {
@@ -44,6 +54,25 @@ func (b *LogPipelineBuilder) HTTPOutput(opts ...HTTPOutputOption) *LogPipelineBu
 	return b
 }
 
+func (b *LogPipelineBuilder) LokiOutput(opts ...LokiOutputOption) *LogPipelineBuilder {
+	for _, opt := range opts {
+		opt(b.lokiOutput)
+	}
+	return b
+}
+
+func (b *LogPipelineBuilder) CustomOutput(opts ...CustomHostOption) *LogPipelineBuilder {
+	for _, opt := range opts {
+		opt(b.customOutput)
+	}
+	return b
+}
+
+func (b *LogPipelineBuilder) WithDeletionTimeStamp(ts metav1.Time) *LogPipelineBuilder {
+	b.deletionTimeStamp = ts
+	return b
+}
+
 func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 	name := b.name
 	if name == "" {
@@ -55,12 +84,17 @@ func (b *LogPipelineBuilder) Build() telemetryv1alpha1.LogPipeline {
 		},
 		Spec: telemetryv1alpha1.LogPipelineSpec{
 			Output: telemetryv1alpha1.Output{
-				HTTP: b.httpOutput,
+				HTTP:   b.httpOutput,
+				Loki:   b.lokiOutput,
+				Custom: b.customOutput,
 			},
 		},
 		Status: telemetryv1alpha1.LogPipelineStatus{
 			Conditions: b.statusConditions,
 		},
+	}
+	if !b.deletionTimeStamp.IsZero() {
+		logPipeline.DeletionTimestamp = &b.deletionTimeStamp
 	}
 
 	return logPipeline
